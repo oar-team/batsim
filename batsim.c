@@ -44,18 +44,18 @@ char *task_type2str[] = {
 typedef struct s_task_data {
   e_task_type_t type;                     // type of task
   int job_id;
-  int profile_id;
   const char* src;           // used for logging
 } s_task_data_t, *task_data_t;
 
-typedef struct s_job_info {
+typedef struct s_job {
   int job_id;
   int profile_id;
   double submission_time;
-} s_jobd_info_t, *job_info_t;
+  double runtime;
+} s_job_t, *job_t;
 
 int nb_jobs = 0;
-s_jobd_info_t *job_infos;
+s_job_t *jobs;
 
 // process functions
 static int node(int argc, char *argv[]);
@@ -71,11 +71,12 @@ static void task_free(struct msg_task ** task)
   }
 }
 
-void msg_send(const char *dst, e_task_type_t type, int job_id, int profile_id)
+void msg_send(const char *dst, e_task_type_t type, int job_id)
 {
   msg_task_t task_sent;
   task_data_t req_data = xbt_new0(s_task_data_t,1);
   req_data->type = type;
+  req_data->job_id = job_id;
   req_data->src =  MSG_host_get_name(MSG_host_self());
   task_sent = MSG_task_create(NULL, COMP_SIZE, COMM_SIZE, req_data);
 
@@ -95,7 +96,7 @@ static int launch_job(int argc, char *argv[])
   msg_task_t ptask = NULL;
   int i, j;
 
-  int *parallel_job_ref = MSG_process_get_data(MSG_process_self() );
+  int *job_id = MSG_process_get_data(MSG_process_self() );
 
   slaves_dynar = MSG_hosts_as_dynar();
   slaves_count = xbt_dynar_length(slaves_dynar);
@@ -104,7 +105,6 @@ static int launch_job(int argc, char *argv[])
   computation_amount = xbt_new0(double, slaves_count);
   communication_amount = xbt_new0(double, slaves_count * slaves_count);
   
-
   task_comp_size = task_comp_size + rand() % 5000000;
 
   for (i = 0; i < slaves_count; i++)
@@ -114,7 +114,7 @@ static int launch_job(int argc, char *argv[])
     for (j = i + 1; j < slaves_count; j++)
       communication_amount[i * slaves_count + j] = task_comm_size;
 
-  XBT_INFO("Launch Job, parallel ref %d", *parallel_job_ref);
+  XBT_INFO("Launch Job id %d", *job_id);
   //slaves_count = 2;
   //MSG_process_sleep(rand() % 1000);
   ptask = MSG_parallel_task_create("parallel task",
@@ -125,7 +125,7 @@ static int launch_job(int argc, char *argv[])
 
   MSG_task_destroy(ptask);
 
-  msg_send("server", JOB_COMPLETED, 0, 0);
+  msg_send("server", JOB_COMPLETED, *job_id);
 
   /* There is no need to free that! */
 /*   free(communication_amount); */
@@ -143,7 +143,7 @@ static int node(int argc, char *argv[])
   task_data_t task_data;
   int flag = 1;
   int type = -1;
-  int parallel_ref = 10; //TODO change this
+  int job_id = -1; //TODO change this
 
   XBT_INFO("I am %s", node_id);
   
@@ -152,15 +152,17 @@ static int node(int argc, char *argv[])
     
     task_data = (task_data_t) MSG_task_get_data(task_received);
     type = task_data->type;
-    
+
     XBT_INFO("Task received %s, type %s", node_id, task_type2str[type]);
     
     if (type == FINALIZE) break;
 
     switch (type) {
     case LAUNCH_JOB:
-	MSG_process_create("launch_job", launch_job, &parallel_ref, MSG_host_self());
-	break;
+      //XBT_INFO("Launch_job");
+      job_id = task_data->job_id; //TODO need malloc ??
+      MSG_process_create("launch_job", launch_job, &job_id, MSG_host_self());
+      break;
     }
     task_free(&task_received);
     task_received = NULL;
@@ -170,26 +172,105 @@ static int node(int argc, char *argv[])
 }
 
 int server(int argc, char *argv[]) {
-  xbt_dynar_t nodes;
+  xbt_dynar_t nodes_dynar;
+  msg_host_t *nodes;
   msg_host_t node;
   int nb_nodes = 0;
   msg_task_t task_sent;
   msg_task_t task_received = NULL;
-  msg_comm_t comm_receive = NULL; 
+  task_data_t task_data;
+  int type = -1;
+  msg_error_t ret;
+  double timeout = -1.0;
+  double submission_time = 0.0;
+  int nb_completed_jobs = 0;
+  int job2submit_idx = 0;
+  int jobs2submit = FALSE;
+  xbt_dynar_t jobs2sub_dynar;
+  int job_id;
   int i;
-
-
+  
   const char *server_id = MSG_host_get_name(MSG_host_self());
 
-  nodes = MSG_hosts_as_dynar();
-  xbt_dynar_remove_at(nodes, 0, NULL); 		
-  nb_nodes = xbt_dynar_length(nodes);
+  nodes_dynar = MSG_hosts_as_dynar();
+  xbt_dynar_remove_at(nodes_dynar, 0, NULL);
+  nb_nodes = xbt_dynar_length(nodes_dynar);
+  nodes = xbt_dynar_to_array(nodes_dynar);
+  
+  do {
+    //
+    if (job2submit_idx < nb_jobs) { //remains job to launch
+      submission_time = jobs[job2submit_idx].submission_time;
+      jobs2submit = TRUE;
+      jobs2sub_dynar = xbt_dynar_new(sizeof(int), NULL);
+      while(submission_time == jobs[job2submit_idx].submission_time) {
+	xbt_dynar_push_as(jobs2sub_dynar, int, jobs[job2submit_idx].job_id);
+	XBT_INFO("job2submit_idx %d, job_id %d", job2submit_idx, jobs[job2submit_idx].job_id);
+	job2submit_idx++;
+      }
+      //job to launch
+    } else {
+      XBT_INFO("No more jobs to submit");
+      timeout = -1;
+    }
+    
+    /* server is waiting for communication from nodes */
+    do { 
+      if (jobs2submit) {
+	timeout = submission_time - MSG_get_clock();
+      } else {
+	timeout = -1;
+      }
+     
+      ret = MSG_task_receive_with_timeout(&(task_received), "server", timeout);
+      if (ret ==  MSG_OK) {
+	task_data = (task_data_t) MSG_task_get_data(task_received);
+	type = task_data->type;
+	//test if a job is completed
+	if (type == JOB_COMPLETED) {
+	  nb_completed_jobs++;
+	  XBT_INFO("Job id %d COMPLETED, %d jobs completed", task_data->job_id, nb_completed_jobs);
+	  //XBT_INFO("TODO 1: INFORM SCHED, TODO 2: wait some fraction of sec if more jobs completed");
+	  // TODO test when several jobs complete at same time
 
-  
-  xbt_dynar_foreach(nodes, i, node) {
-    msg_send(MSG_host_get_name(node), LAUNCH_JOB, 0, 0);
-  }
-  
+	} else {
+	  
+	  XBT_INFO("TODO: server receive message with type: %s", task_type2str[type]);
+	  
+	}
+
+	task_free(&task_received);
+
+      }
+
+      //XBT_INFO("**** jobs2submit %d next_job2submit_idx %d, ret %d", jobs2submit, job2submit_idx, ret); 
+
+      if ( (ret == MSG_TIMEOUT) || (MSG_get_clock() >= submission_time) ) {
+	if (jobs2submit) {
+	//
+	  XBT_INFO("TODO : INFORM SCHED that some jobs are submitted now and retrieve jobs to launched w/ resource assignement");
+	
+	  xbt_dynar_foreach(jobs2sub_dynar, i, job_id) {
+	    XBT_INFO("Job to launch: %d", job_id); 
+	    msg_send(MSG_host_get_name(nodes[i % nb_nodes]), LAUNCH_JOB, job_id);
+	  }
+
+	  jobs2submit = FALSE;
+	  xbt_dynar_free(&jobs2sub_dynar); 
+
+	}
+      }
+
+	
+    } while (jobs2submit);
+    
+
+  } while ( nb_completed_jobs < nb_jobs );
+
+  XBT_INFO("All jobs completed, time to finalize");
+       
+  /*
+
   for(i=0; i < nb_nodes; i++) {
 
      comm_receive = MSG_task_irecv(&(task_received), "server");
@@ -202,14 +283,15 @@ int server(int argc, char *argv[]) {
      MSG_comm_destroy(comm_receive);
      comm_receive = NULL;
   }
+  */
 
   /* send finalize */ 
-  xbt_dynar_foreach(nodes, i, node) {
-    msg_send(MSG_host_get_name(node), FINALIZE, 0, 0);
+  //xbt_dynar_foreach(nodes, i, node) {
+  for(i=0; i < nb_nodes; i++) {
+      msg_send(MSG_host_get_name(nodes[i]), FINALIZE, 0);
   }
 
 }
-
 
 msg_error_t deploy_all(const char *platform_file)
 {
@@ -218,7 +300,6 @@ msg_error_t deploy_all(const char *platform_file)
   msg_host_t first_host;
   msg_host_t host;
   int i;
-
 
   MSG_config("workstation/model", "ptask_L07");
   MSG_create_environment(platform_file);
@@ -263,13 +344,14 @@ int main(int argc, char *argv[])
   /*                        */  
 
   /* generate fake job workloak */
-  nb_jobs = 10;
-  job_infos = malloc(nb_jobs * sizeof(s_jobd_info_t));
+  nb_jobs = 3;
+  jobs = malloc(nb_jobs * sizeof(s_job_t));
 
   for(i=0; i<nb_jobs; i++) {
-    job_infos[i].job_id = i+1;
-    job_infos[i].profile_id = 2*i;
-    job_infos[i].submission_time = 10.0 * (i+1);
+    jobs[i].job_id = i;
+    jobs[i].profile_id = i;
+    jobs[i].submission_time = 10.0 * (i+1);
+    jobs[i].runtime = -1;
   }
 
   /*                       */
