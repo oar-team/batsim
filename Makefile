@@ -114,19 +114,6 @@ batsim/fast:
 	$(MAKE) -f CMakeFiles/batsim.dir/build.make CMakeFiles/batsim.dir/build
 .PHONY : batsim/fast
 
-#=============================================================================
-# Target rules for targets named parallel_task
-
-# Build rule for target.
-parallel_task: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 parallel_task
-.PHONY : parallel_task
-
-# fast build rule for target.
-parallel_task/fast:
-	$(MAKE) -f CMakeFiles/parallel_task.dir/build.make CMakeFiles/parallel_task.dir/build
-.PHONY : parallel_task/fast
-
 batsim.o: batsim.c.o
 .PHONY : batsim.o
 
@@ -151,30 +138,6 @@ batsim.c.s:
 	$(MAKE) -f CMakeFiles/batsim.dir/build.make CMakeFiles/batsim.dir/batsim.c.s
 .PHONY : batsim.c.s
 
-parallel_task.o: parallel_task.c.o
-.PHONY : parallel_task.o
-
-# target to build an object file
-parallel_task.c.o:
-	$(MAKE) -f CMakeFiles/parallel_task.dir/build.make CMakeFiles/parallel_task.dir/parallel_task.c.o
-.PHONY : parallel_task.c.o
-
-parallel_task.i: parallel_task.c.i
-.PHONY : parallel_task.i
-
-# target to preprocess a source file
-parallel_task.c.i:
-	$(MAKE) -f CMakeFiles/parallel_task.dir/build.make CMakeFiles/parallel_task.dir/parallel_task.c.i
-.PHONY : parallel_task.c.i
-
-parallel_task.s: parallel_task.c.s
-.PHONY : parallel_task.s
-
-# target to generate assembly for a file
-parallel_task.c.s:
-	$(MAKE) -f CMakeFiles/parallel_task.dir/build.make CMakeFiles/parallel_task.dir/parallel_task.c.s
-.PHONY : parallel_task.c.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -183,14 +146,10 @@ help:
 	@echo "... depend"
 	@echo "... batsim"
 	@echo "... edit_cache"
-	@echo "... parallel_task"
 	@echo "... rebuild_cache"
 	@echo "... batsim.o"
 	@echo "... batsim.i"
 	@echo "... batsim.s"
-	@echo "... parallel_task.o"
-	@echo "... parallel_task.i"
-	@echo "... parallel_task.s"
 .PHONY : help
 
 
