@@ -5,6 +5,13 @@
  * under the terms of the license (GNU LGPL) which comes with this package. */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include <string.h>
+
 #include "msg/msg.h"            /* Yeah! If you want to use msg, you need to include msg/msg.h */
 #include "xbt/sysdep.h"         /* calloc, printf */
 
@@ -13,6 +20,10 @@
 #include "xbt/asserts.h"
 XBT_LOG_NEW_DEFAULT_CATEGORY(msg_test,
                              "Messages specific for this msg example");
+
+
+
+#define BAT_SOCK_NAME "/tmp/bat_socket"
 
 #define COMM_SIZE 0
 #define COMP_SIZE 0
@@ -54,13 +65,71 @@ typedef struct s_job {
   double runtime;
 } s_job_t, *job_t;
 
+typedef struct s_answer_sched {
+  double time;
+  int type;
+  int nb_jobs_2l;
+  int *job_ids_2l;
+  int **resources_by_jid_2l;
+} s_answer_sched_t;
+
 int nb_jobs = 0;
 s_job_t *jobs;
+
+int uds_fd = -1; 
 
 // process functions
 static int node(int argc, char *argv[]);
 static int server(int argc, char *argv[]);
 static int launch_job(int argc, char *argv[]);
+
+/*                                                  */
+/* Communication functions  with Unix Domain Socket */
+/*                                                  */
+int send_uds(char *msg) 
+{ 
+  int32_t lg = strlen(msg);
+  write(uds_fd, &lg, 4);
+  write(uds_fd, msg, lg);
+}
+
+char *recv_uds()
+{
+  int32_t lg;
+  char *msg;
+  read(uds_fd, &lg, 4);
+  printf("msg size to recv %d\n", lg);
+  msg = (char *) malloc(sizeof(char)*(lg+1)); /* 1 for null terminator */
+  read(uds_fd, msg, lg);
+  msg[lg] = 0;
+  printf("msg: %s\n", msg);
+
+  return msg;  
+}
+
+void open_uds() 
+{
+  struct sockaddr_un address;
+
+  uds_fd = socket(PF_UNIX, SOCK_STREAM, 0);
+  if(uds_fd < 0) {
+    XBT_ERROR("socket() failed\n");
+    exit(1);
+  }
+  /* start with a clean address structure */
+  memset(&address, 0, sizeof(struct sockaddr_un));
+
+  address.sun_family = AF_UNIX;
+  snprintf(address.sun_path, 255, BAT_SOCK_NAME);
+
+  if(connect(uds_fd, 
+	     (struct sockaddr *) &address, 
+	     sizeof(struct sockaddr_un)) != 0)
+    {
+      XBT_ERROR("connect() failed\n");
+      exit(1);
+    }
+}
 
 static void task_free(struct msg_task ** task)
 {
@@ -83,6 +152,21 @@ void msg_send(const char *dst, e_task_type_t type, int job_id)
   MSG_task_send(task_sent, dst);
 }
 
+void free_s_answer_sched( s_answer_sched_t *ans) {
+  //TODO ?
+}
+
+void send_sched_job_completed(int job_id) {
+  char buffer[256];
+  snprintf(buffer, 256, "0:%d:C:%d", MSG_get_clock(), job_id);
+  send_uds(buffer);
+}
+
+void recv_sched_job_recv() {
+  s_answer_sched_t answer;
+  char *str_answer = recv_uds();
+  //split string
+}
 
 static int launch_job(int argc, char *argv[])
 {
@@ -128,8 +212,8 @@ static int launch_job(int argc, char *argv[])
   msg_send("server", JOB_COMPLETED, *job_id);
 
   /* There is no need to free that! */
-/*   free(communication_amount); */
-/*   free(computation_amount); */
+  /*   free(communication_amount); */
+  /*   free(computation_amount); */
 
   //free(slaves);
   return 0;
@@ -232,6 +316,9 @@ int server(int argc, char *argv[]) {
 	  XBT_INFO("Job id %d COMPLETED, %d jobs completed", task_data->job_id, nb_completed_jobs);
 	  //XBT_INFO("TODO 1: INFORM SCHED, TODO 2: wait some fraction of sec if more jobs completed");
 	  // TODO test when several jobs complete at same time
+	  send_sched_job_completed(task_data->job_id);
+	  recv_sched()
+	  
 
 	} else {
 	  
@@ -269,24 +356,6 @@ int server(int argc, char *argv[]) {
 
   XBT_INFO("All jobs completed, time to finalize");
        
-  /*
-
-  for(i=0; i < nb_nodes; i++) {
-
-     comm_receive = MSG_task_irecv(&(task_received), "server");
-     //MSG_comm_wait(comm_receive, -1);
-     while (!MSG_comm_test(comm_receive)) {
-       XBT_INFO("Server is waiting comm");
-       MSG_process_sleep(0.05);
-     } 
-     task_free(&task_received);
-     MSG_comm_destroy(comm_receive);
-     comm_receive = NULL;
-  }
-  */
-
-  /* send finalize */ 
-  //xbt_dynar_foreach(nodes, i, node) {
   for(i=0; i < nb_nodes; i++) {
       msg_send(MSG_host_get_name(nodes[i]), FINALIZE, 0);
   }
@@ -330,6 +399,8 @@ int main(int argc, char *argv[])
   int i;
 
   //srand(time(NULL));
+
+  open_uds();
 
   MSG_init(&argc, argv);
   if (argc < 2) {
