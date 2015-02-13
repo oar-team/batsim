@@ -18,7 +18,7 @@
 /* Create a log channel to have nice outputs. */
 #include "xbt/log.h"
 #include "xbt/asserts.h"
-XBT_LOG_NEW_DEFAULT_CATEGORY(msg_test,
+XBT_LOG_NEW_DEFAULT_CATEGORY(batsim,
                              "Messages specific for this msg example");
 
 #define BAT_SOCK_NAME "/tmp/bat_socket"
@@ -97,6 +97,7 @@ static int launch_job(int argc, char *argv[]);
 int send_uds(char *msg) 
 { 
   int32_t lg = strlen(msg);
+  XBT_INFO("send_uds, lg: %d", lg);
   write(uds_fd, &lg, 4);
   write(uds_fd, msg, lg);
   free(msg);
@@ -177,8 +178,8 @@ static int send_sched(int argc, char *argv[])
   
   answer_dynar = xbt_str_split(message_recv, ":");	
 
-  t_answer = atof( xbt_dynar_get_ptr(answer_dynar, 1) );  
-	       
+  t_answer = atof( *(char **)xbt_dynar_get_ptr(answer_dynar, 1) ); 
+
   //waiting before consider the sched's answer
   MSG_process_sleep(t_answer - t_send);
 
@@ -200,9 +201,10 @@ static int launch_job(int argc, char *argv[])
   double *communication_amount = NULL;
   msg_task_t ptask = NULL;
   int i, j;
-
+ 
+  XBT_INFO("Launch_job_poy1");
   int *job_id = MSG_process_get_data(MSG_process_self());
-
+  XBT_INFO("Launch_job_poy2");
   slaves_dynar = MSG_hosts_as_dynar();
   slaves_count = xbt_dynar_length(slaves_dynar);
   slaves = xbt_dynar_to_array(slaves_dynar);
@@ -264,14 +266,16 @@ static int node(int argc, char *argv[])
 
     switch (type) {
     case LAUNCH_JOB:
-      //XBT_INFO("Launch_job");
+     
+      XBT_INFO("Launch_job");
+      
       job_id = task_data->job_id; //TODO need malloc ??
+      XBT_INFO("Launch_job_yop %d", job_id );
       MSG_process_create("launch_job", launch_job, &job_id, MSG_host_self());
+      
       break;
     }
     task_free(&task_received);
-    task_received = NULL;
-
   }
 
 }
@@ -292,6 +296,7 @@ static int jobs_submitter(int argc, char *argv[]) {
       xbt_dynar_push_as(jobs2sub_dynar, int, jobs[job2submit_idx].job_id);
       XBT_INFO("job2submit_idx %d, job_id %d", job2submit_idx, jobs[job2submit_idx].job_id);
       job2submit_idx++;
+      if (job2submit_idx == nb_jobs) break;
     }
     
     MSG_process_sleep(submission_time - t);
@@ -320,7 +325,7 @@ int server(int argc, char *argv[]) {
   int sched_ready = true;
   char *sched_message = "";
   char *tmp;
-  char *job_ready;
+  char *jobid_ready;
   int size_m = 0;
   double t = 0;
   int i;
@@ -330,7 +335,7 @@ int server(int argc, char *argv[]) {
   nb_nodes = xbt_dynar_length(nodes_dynar);
   nodes = xbt_dynar_to_array(nodes_dynar);
 
-  while ( nb_completed_jobs < nb_jobs ) {
+  while ( (nb_completed_jobs < nb_jobs) || !sched_ready ) {
 
     // wait message node, submitter, scheduler...
     MSG_task_receive(&(task_received), "server");
@@ -343,39 +348,60 @@ int server(int argc, char *argv[]) {
     case JOB_COMPLETED:
       nb_completed_jobs++;
       XBT_INFO("Job id %d COMPLETED, %d jobs completed", task_data->job_id, nb_completed_jobs);
-      tmp = sched_message;
-      size_m = asprintf(&sched_message, "%s0:%f:C:%d|", tmp, MSG_get_clock(), task_data->job_id);
-      free(tmp);
+      size_m = asprintf(&sched_message, "%s0:%f:C:%d|", sched_message, MSG_get_clock(), task_data->job_id);
+      XBT_INFO("sched_message: %s", sched_message);
+
       //TODO add job_id + msg to send
       break;
     case JOB_SUBMITTED:
       nb_submitted_jobs++;
       XBT_INFO("Job id %d SUBMITTED, %d jobs submitted", task_data->job_id, nb_submitted_jobs);
-      tmp = sched_message;
-      size_m = asprintf(&sched_message, "%s0:%f:S:%d|", tmp, MSG_get_clock(), task_data->job_id);
-      free(tmp);
+      size_m = asprintf(&sched_message, "%s0:%f:S:%d|", sched_message, MSG_get_clock(), task_data->job_id);
+      XBT_INFO("sched_message: %s", sched_message);
+
       break;
     case SCHED_READY:
       //process scheduler message
       //up to now only jobs to launch
       // 0:timestamp:J:jid1=0,1,3;jid2=5,7,8,9
       // 0:        1:2:3
-      tmp = xbt_dynar_get_ptr( *(task_data->answer_dynar_ptr), 2 );
+      
+      tmp = *(char **)xbt_dynar_get_ptr( *(task_data->answer_dynar_ptr), 2 );
 
-      if (strcmp(tmp,"J") == 0) {
-	tmp = xbt_dynar_get_ptr( *(task_data->answer_dynar_ptr), 3 );
+      XBT_INFO("type of receive message from scheduler: %s", tmp);
+      switch (*tmp) {
+      case 'J':
+	tmp = *(char **)xbt_dynar_get_ptr( *(task_data->answer_dynar_ptr), 3 );
+	XBT_INFO("poy");
 	xbt_dynar_t jobs_ready_dynar = xbt_str_split(tmp, ";");
-	xbt_dynar_foreach(jobs_ready_dynar, i, job_ready) {
-	  XBT_INFO("job_ready: %s", job_ready);
-	  //TODO LAUNCH JOB
-	}
-	xbt_dynar_free(&jobs_ready_dynar);
+	
+	//xbt_dynar_shift(jobs_ready_dynar, &jobid_ready); 
+	//XBT_INFO("job_ready: %s", jobid_ready);
+	//TODO COMPLETE LAUNCH JOB
+	//msg_send(MSG_host_get_name(nodes[0]), LAUNCH_JOB, atoi(jobid_ready), NULL);
 
-      } else {
+	xbt_dynar_foreach(jobs_ready_dynar, i, jobid_ready) {
+	  if (jobid_ready != NULL) {
+	    XBT_INFO("job_ready: %s", jobid_ready);
+	    //TODO COMPLETE LAUNCH JOB
+	    msg_send(MSG_host_get_name(nodes[i % nb_nodes]), LAUNCH_JOB, atoi(jobid_ready), NULL);
+	  }
+	}
+	  
+	xbt_dynar_free(&jobs_ready_dynar);
+	break;
+
+      case 'N':
+	XBT_DEBUG("Nothing to do");
+	break;
+
+      default:
 	XBT_ERROR("Command %s is not supported", tmp); 
+	break;
       }
       
-      xbt_dynar_free(task_data->answer_dynar_ptr);
+      // core dump why ???
+      //xbt_dynar_free(task_data->answer_dynar_ptr);
 
       sched_ready = true;
 
@@ -383,12 +409,13 @@ int server(int argc, char *argv[]) {
     }
 
     task_free(&task_received);
-    task_received = NULL;
 
     if ( sched_ready && (strcmp(sched_message, "") !=0) ) {
-       MSG_process_create("send message to sched", send_sched, sched_message, MSG_host_self() );
-       sched_message = NULL;
-       sched_ready = false;
+      //add current time to sched_message 
+      size_m = asprintf(&sched_message, "%s0:%f:T", sched_message, MSG_get_clock());
+      MSG_process_create("send message to sched", send_sched, sched_message, MSG_host_self() );
+      sched_message = "";
+      sched_ready = false;
     }
 
 
@@ -418,14 +445,15 @@ msg_error_t deploy_all(const char *platform_file)
   all_hosts = MSG_hosts_as_dynar();
   first_host = xbt_dynar_getfirst_as(all_hosts,msg_host_t);
  	
-  MSG_process_create("server", server, NULL, first_host);
-
   xbt_dynar_foreach(all_hosts, i, host) {
     if (i!=0) {
       XBT_INFO("Create node process! %d", i);
       MSG_process_create("node", node, NULL, host);
     }
   }
+
+  MSG_process_create("server", server, NULL, first_host);
+  MSG_process_create("jobs_submitter", jobs_submitter, NULL, first_host);
     
   res = MSG_main();
   xbt_dynar_free(&all_hosts);
@@ -440,7 +468,8 @@ int main(int argc, char *argv[])
   msg_error_t res = MSG_OK;
   int i;
 
-  //srand(time(NULL));
+  //Comment to remove debug message
+  xbt_log_control_set("batsim.threshold:debug");
 
   open_uds();
 

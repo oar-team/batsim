@@ -1,0 +1,24 @@
+* TODO : document principles / format / architecture w/ global picture
+- [ ] install procedure
+- [ ] basic usage
+* TODO : valgrind 
+* TODO : complete prototype w/ kao
+* TODO : python wrapper batsim.py + batcore ???
+* TODO : utils to job profile generation and manipulation
+* TODO : fake_sched 
+* TODO : use json and  http://jansson.readthedocs.org/ to store file job profile
+* TODO : multiple Job type: delay, msg, smpi, vm, moldable
+
+** first step
+ mkdir build
+ cd build
+ cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" ../
+
+** second step
+ make
+
+** usage
+*** test with fake scheduler
+ python ../fake_sched_uds.py >> /tmp/yop & sleep 0.1; ./batsim ../platforms/small_platform.xml
+
+valgrind --trace-children=yes --leak-check=yes ./batsim ../platforms/small_platform.xml
