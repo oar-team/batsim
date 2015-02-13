@@ -69,7 +69,7 @@ while True:
                 for job_id in new_jobs_submitted:
                     #TODO
                     #msg += str(job_id) + "=0,1,2...;"
-                    msg += str(job_id) + ";"
+                    msg += str(job_id) + "=0,1,2" + ";"
                     msg = msg[:-1]
             else:
                 msg = "0:" + str(time) + ":N"
