@@ -1,0 +1,22 @@
+{
+    "version": 0,
+    "description": "profile test",
+    "jobs": [
+	{"id":1, "subtime":10, "walltime": 100, "res": 4, "profile": "1"},
+	{"id":2, "subtime":20, "walltime": 100, "res": 4, "profile": "1"},
+	{"id":3, "subtime":30, "walltime": 100, "res": 4, "profile": "1"},
+	{"id":4, "subtime":40, "walltime": 100, "res": 4, "profile": "1"}
+    ],
+
+    "profiles": {
+	"1": {
+	    "type": "msg_par",
+	    "cpu": [5e6,5e6,5e6,5e6],
+	    "com": [5e6,5e6,5e6,5e6,
+		    5e6,5e6,5e6,5e6,
+		    5e6,5e6,5e6,5e6,
+		    5e6,5e6,5e6,5e6]
+	}
+	
+    }
+}
