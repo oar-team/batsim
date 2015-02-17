@@ -2,8 +2,20 @@ import struct
 import socket
 import sys
 import os
+import json
+from random import sample
 
 server_address = '/tmp/bat_socket'
+
+def load_json_workload_profile(filename):
+    wkp_file = open(filename)
+    wkp = json.load(wkp_file)
+    return wkp["jobs"], wkp["nb_res"] 
+
+
+json_jobs, nb_res = load_json_workload_profile(sys.argv[1])
+
+job_res_req = { j["id"]: j["res"] for j in json_jobs} 
 
 # Make sure the socket does not already exist
 try:
@@ -63,13 +75,18 @@ while True:
 
             time += sched_delay
 
-            #TODO: TO CHANGE
             if data[2] == 'S':
                 msg = "0:" + str(time) + ":J:"
                 for job_id in new_jobs_submitted:
-                    #TODO
-                    #msg += str(job_id) + "=0,1,2...;"
-                    msg += str(job_id) + "=0,1,2,3" + ";"
+                    #
+                    # always schedule jobs !
+                    # random resources assignment !
+                    # 
+                    nb_res_req = job_res_req[job_id]
+                    res = sample(range(nb_res), nb_res_req)
+                    str_res = ",".join([str(r) for r in res])
+
+                    msg += str(job_id) + "=" + str_res + ";"
                     msg = msg[:-1]
             else:
                 msg = "0:" + str(time) + ":N"
@@ -77,14 +94,6 @@ while True:
             lg = struct.pack("i",int(len(msg)))
             connection.sendall(lg)
             connection.sendall(msg)
-
-            #print >>sys.stderr, 'received %d' % data
-            #if data:
-            #    print >>sys.stderr, 'sending data back to the client'
-            #    connection.sendall(data)
-            #else:
-            #    print >>sys.stderr, 'no more data from', client_address
-            #    break
             
     finally:
         # Clean up the connection

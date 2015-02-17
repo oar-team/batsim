@@ -569,15 +569,15 @@ msg_error_t deploy_all(const char *platform_file)
 
 
 /**
- * \brief Load jobs profile and workload
+ * \brief Load workload with jobs' profiles file
  */
-json_t *load_json_profile(char *filename) {
+json_t *load_json_workload_profile(char *filename) {
   json_t *root;
   json_error_t error;
   json_t *e;
 
   if (filename == NULL) {
-    filename = "./profiles/test_profile.json";
+    filename = "../workload_profiles/test_workload_profile.json";
   }
 
   root = json_load_file(filename, 0, &error);
@@ -618,7 +618,7 @@ void retrieve_jobs(json_t *root) {
   e = json_object_get(root, "jobs");
   if ( e != NULL ) {
     nb_jobs = json_array_size(e);
-    XBT_INFO("Json Profile and Workload File: nb_jobs %d", nb_jobs);
+    XBT_INFO("Json Workload with Profile File: nb_jobs %d", nb_jobs);
     for(i=0; i<nb_jobs; i++) {
       job = (job_t)malloc( sizeof(s_job_t) );
 
@@ -646,7 +646,7 @@ void retrieve_jobs(json_t *root) {
     jobs = xbt_dynar_to_array(jobs_dynar); 
     //xbt_dynar_free_container(&jobs_dynar);
   } else {
-    XBT_INFO("Json Profile and Workload File: jobs array is missing !");
+    XBT_INFO("Json Workload with Profile File: jobs array is missing !");
     exit(1);
   }
 
@@ -665,14 +665,10 @@ void retrieve_profiles(json_t *root) {
   msg_par_t m_par;
   profile_t profile;
 
-  printf("POYPOY\n");
-
   j_profiles = json_object_get(root, "profiles");
   if ( j_profiles != NULL ) {
 
     profiles = xbt_dict_new();
-
-    printf("DICT\n");
 
     void *iter = json_object_iter(j_profiles);
     while(iter) {
@@ -681,9 +677,6 @@ void retrieve_profiles(json_t *root) {
       j_profile = json_object_iter_value(iter);
    
       type = json_string_value( json_object_get(j_profile, "type") );
-
-      printf("KEY %s, profile type %s\n", key, type);
-
 
       if (strcmp(type, "msg_par") ==0) {
 	e = json_object_get(j_profile, "cpu");
@@ -715,7 +708,7 @@ void retrieve_profiles(json_t *root) {
     }
 
   } else {
-    XBT_INFO("Json Profile and Workload File: profiles dict is missing !");
+    XBT_INFO("Json Workload with Profile File: profiles dict is missing !");
     exit(1);
   }
 
@@ -727,14 +720,14 @@ int main(int argc, char *argv[])
   msg_error_t res = MSG_OK;
   int i;
 
-  json_t *json_profile_workload;
+  json_t *json_workload_profile;
 
   //Comment to remove debug message
   xbt_log_control_set("batsim.threshold:debug");
 
-  json_profile_workload = load_json_profile(NULL);
-  retrieve_jobs(json_profile_workload);
-  retrieve_profiles(json_profile_workload);
+  json_workload_profile = load_json_workload_profile(NULL);
+  retrieve_jobs(json_workload_profile);
+  retrieve_profiles(json_workload_profile);
 
   open_uds();
 

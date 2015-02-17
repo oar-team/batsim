@@ -1,6 +1,7 @@
 {
     "version": 0,
-    "description": "profile test",
+    "description": "workload with profile file for test",
+    "nb_res": 4,
     "jobs": [
 	{"id":1, "subtime":10, "walltime": 100, "res": 4, "profile": "1"},
 	{"id":2, "subtime":20, "walltime": 100, "res": 4, "profile": "1"},
