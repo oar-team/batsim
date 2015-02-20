@@ -170,22 +170,33 @@ static int send_sched(int argc, char *argv[])
   
   char *message_recv = NULL;
   char *message_send = MSG_process_get_data(MSG_process_self());
+  char *core_message = NULL;
+  xbt_dynar_t core_message_dynar;
+
+  int size_m;
 
   xbt_dynar_t answer_dynar;
 
-  send_uds(message_send);
-  message_recv = recv_uds();
-  
-  answer_dynar = xbt_str_split(message_recv, ":");	
 
-  t_answer = atof( *(char **)xbt_dynar_get_ptr(answer_dynar, 1) ); 
+  //add current time to message
+  size_m = asprintf(&message_send, "0:%f%s", MSG_get_clock(), message_send );
+  send_uds(message_send);
+
+  message_recv = recv_uds();
+  answer_dynar = xbt_str_split(message_recv, "|");
+  
+  t_answer = atof( * (char **)xbt_dynar_get_ptr(answer_dynar, 0) + 2 );//2 left shift to skip "0:" 
 
   //waiting before consider the sched's answer
   MSG_process_sleep(t_answer - t_send);
-  XBT_INFO("send_sched, msg type %p", (char **)xbt_dynar_get_ptr(answer_dynar, 2));
-  //signal 
-  send_message("server", SCHED_READY, 0, &answer_dynar);
 
+  //XBT_INFO("send_sched, msg type %p", (char **)xbt_dynar_get_ptr(answer_dynar, 1));
+  //signal
+  core_message = *(char **)xbt_dynar_get_ptr(answer_dynar, 1);
+  core_message_dynar = xbt_str_split(core_message, ":");
+  send_message("server", SCHED_READY, 0, &core_message_dynar);
+
+  xbt_dynar_free(&answer_dynar);
   free(message_recv);
   return 0;
 }
@@ -411,11 +422,11 @@ int server(int argc, char *argv[]) {
   int nb_submitted_jobs = 0;
   int sched_ready = true;
   char *sched_message = "";
+  int size_m;
   char *tmp;
   char *job_ready_str;
   char *jobid_ready;
   char *job_id_str;
-  int size_m = 0;
   double t = 0;
   int i;
 
@@ -433,7 +444,7 @@ int server(int argc, char *argv[]) {
       nb_completed_jobs++;
       job_id_str= jobs[task_data->job_idx].id_str;
       XBT_INFO("Job id %s COMPLETED, %d jobs completed", job_id_str, nb_completed_jobs);
-      size_m = asprintf(&sched_message, "%s0:%f:C:%s|", sched_message, MSG_get_clock(), job_id_str);
+      size_m = asprintf(&sched_message, "%s|%f:C:%s", sched_message, MSG_get_clock(), job_id_str);
       XBT_INFO("sched_message: %s", sched_message);
 
       //TODO add job_id + msg to send
@@ -442,25 +453,25 @@ int server(int argc, char *argv[]) {
       nb_submitted_jobs++;
       job_id_str = jobs[task_data->job_idx].id_str;
       XBT_INFO("Job id %s SUBMITTED, %d jobs submitted", job_id_str, nb_submitted_jobs);
-      size_m = asprintf(&sched_message, "%s0:%f:S:%s|", sched_message, MSG_get_clock(), job_id_str);
+      size_m = asprintf(&sched_message, "%s|%f:S:%s", sched_message, MSG_get_clock(), job_id_str);
       XBT_INFO("sched_message: %s", sched_message);
 
       break;
     case SCHED_READY:
       //process scheduler message
       //up to now only jobs to launch
-      // 0:timestamp:J:jid1=0,1,3;jid2=5,7,8,9
+      // 0:timestamp|J:jid1=0,1,3;jid2=5,7,8,9
       // 0:        1:2:3
 
     
-      XBT_DEBUG("Pointer %p", (char **)xbt_dynar_get_ptr( *( (xbt_dynar_t *)task_data->data), 2 ));
+      XBT_DEBUG("Pointer %p", (char **)xbt_dynar_get_ptr( *( (xbt_dynar_t *)task_data->data), 1 ));
 
-      tmp = *(char **)xbt_dynar_get_ptr( *( (xbt_dynar_t *)task_data->data), 2 );
+      tmp = *(char **)xbt_dynar_get_ptr( *( (xbt_dynar_t *)task_data->data), 1 );
 
       XBT_INFO("type of receive message from scheduler: %c", *tmp);
       switch (*tmp) {
       case 'J':
-	tmp = *(char **)xbt_dynar_get_ptr( *( (xbt_dynar_t *)task_data->data), 3 );
+	tmp = *(char **)xbt_dynar_get_ptr( *( (xbt_dynar_t *)task_data->data), 2 );
 	xbt_dynar_t jobs_ready_dynar = xbt_str_split(tmp, ";");
 	
        	xbt_dynar_foreach(jobs_ready_dynar, i, job_ready_str) {
@@ -508,7 +519,7 @@ int server(int argc, char *argv[]) {
 
     if ( sched_ready && (strcmp(sched_message, "") !=0) ) {
       //add current time to sched_message 
-      size_m = asprintf(&sched_message, "%s0:%f:T", sched_message, MSG_get_clock());
+      //size_m = asprintf(&sched_message, "%s0:%f:T", sched_message, MSG_get_clock());
       MSG_process_create("send message to sched", send_sched, sched_message, MSG_host_self() );
       sched_message = "";
       sched_ready = false;

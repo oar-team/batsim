@@ -37,28 +37,29 @@ def read_bat_msg(connection):
     msg = connection.recv(lg)
     print 'from batsim : %r' % msg
     sub_msgs = msg.split('|')
-    data = sub_msgs[-1].split(":")
-    if data[2] != 'T':
-        raise Exception("Terminal submessage must be T type")
+    data = sub_msgs[0].split(":")
+    version = int(data[0])
     now = float(data[1])
+    
+    print "version: ", version, " now: ", now
 
     jobs_submitted = []
     new_jobs_completed = []
-    for i in range(len(sub_msgs)-1):
+    for i in range(1, len(sub_msgs)):
         data = sub_msgs[i].split(':')
-        if data[2] == 'S':
-            jobs_submitted.append( int(data[3]) )
-        elif data[2] == 'C':
-            new_jobs_completed.append(int(data[3]))
+        if data[1] == 'S':
+            jobs_submitted.append( int(data[2]) )
+        elif data[1] == 'C':
+            new_jobs_completed.append(int(data[2]))
         else:
-            raise Exception("Unknow submessage type" + data[2] )  
+            raise Exception("Unknow submessage type" + data[1] )  
 
     return (now, jobs_submitted, new_jobs_completed)
 
 def send_bat_msg(connection, now, jids_toLaunch, jobs):
-    msg = "0:" + str(now)
+    msg = "0:" + str(now) + "|"
     if jids_toLaunch:
-        msg += ":J:" 
+        msg +=  str(now) + ":J:" 
         for jid in jids_toLaunch:
             msg += str(jid) + "="
             for r in jobs[jid]:
@@ -67,7 +68,7 @@ def send_bat_msg(connection, now, jids_toLaunch, jobs):
         msg = msg[:-1] # remove last semicolon
 
     else: #Do nothing        
-        msg += ":N"
+        msg +=  str(now) +":N"
 
     print msg
     lg = struct.pack("i",int(len(msg)))
