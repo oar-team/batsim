@@ -1,17 +1,10 @@
-* TODO : document principles / format / architecture w/ global picture
-- [ ] install procedure
-- [ ] basic usage
-* TODO : valgrind 
-* TODO : complete prototype w/ kao
-* TODO : python wrapper batsim.py + batcore ???
-* TODO : utils to job profile generation and manipulation
-* TODO : fake_sched 
-* TODO : use json and  http://jansson.readthedocs.org/ to store file job profile
-* TODO : multiple Job type: delay, msg, smpi, vm, moldable
-* TODO : kill, suspend, extend job
-* TODO : walltime (manage by simulator or kill signal ?)
 
 * Installation 
+
+** dependencies
+ - simgrid 3.12 (minimun)
+ - Jansson: a C library for encoding, decoding and manipulating JSON data. 
+   apt-get install libjansson4
 ** first step: prepare Makefile
  mkdir build
  cd build
@@ -22,6 +15,28 @@
 
 ** usage
 *** test with fake scheduler
- python ../fake_sched_uds.py >> /tmp/yop & sleep 0.1; ./batsim ../platforms/small_platform.xml
+ # open 2 terminal
+ # first terminal
+ python fake_sched_uds.py workload_profiles/test_workload_profile.json
 
-valgrind --trace-children=yes --leak-check=yes ./batsim ../platforms/small_platform.xml
+ # second terminal
+ cd build 
+ ./batsim ../platforms/small_platform.xml ../workload_profiles/test_workload_profile.json
+
+*** test with oar core scheduler
+ # install 
+
+ git clone https://gforge.inria.fr/git/oar/oar-kao.git
+ git clone https://gforge.inria.fr/git/oar/python-oar-lib.git
+
+ cd python-oar-lib
+ sudo python setup.py install
+ cd oar-kao
+ sudo python setup.py install
+ cd oar_kao
+ python batsim.py ../../batsim/workload_profiles/test_workload_profile.json
+
+
+
+
+
