@@ -12,21 +12,21 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <jansson.h> /* json parsing */
+#include "msg/msg.h" 
 
-#include "msg/msg.h"            
 #include "xbt/sysdep.h"         /* calloc, printf */
-
 /* Create a log channel to have nice outputs. */
 #include "xbt/log.h"
 #include "xbt/asserts.h"
-XBT_LOG_NEW_DEFAULT_CATEGORY(batsim,
-                             "Messages specific for this msg example");
+
+XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "Batsim");
+
+#include "job.h"
+#include "utils.h"
 
 #define BAT_SOCK_NAME "/tmp/bat_socket"
 
-#define COMM_SIZE 0.000001
-//#define COMM_SIZE 0.0 // => raise core dump 
+#define COMM_SIZE 0.000001 //#define COMM_SIZE 0.0 // => raise core dump 
 #define COMP_SIZE 0.0
 
 #define true 1
@@ -67,34 +67,9 @@ typedef struct s_task_data {
   const char* src;           // used for logging
 } s_task_data_t, *task_data_t;
 
-typedef struct s_job {
-  int id;
-  char *id_str;
-  const char *profile;
-  double submission_time;
-  double walltime;
-  double runtime;
-} s_job_t, *job_t;
-
-typedef struct s_msg_par {
-  int nb_res;
-  double *cpu;
-  double *com;
-} s_msg_par_t, *msg_par_t;
-
-typedef struct s_profile {
-  const char *type;
-  void *data;
-} s_profile_t, *profile_t;
-
 int nb_nodes = 0;
 msg_host_t *nodes;
 
-int nb_jobs = 0;
-s_job_t *jobs;
-
-xbt_dict_t profiles;
-xbt_dict_t jobs_idx2id;
 int uds_fd = -1; 
 
 // process functions
@@ -211,7 +186,7 @@ void send_message(const char *dst, e_task_type_t type, int job_idx, void *data)
   req_data->type = type;
   req_data->job_idx = job_idx;
   req_data->data = data;
-  req_data->src =  MSG_host_get_name(MSG_host_self());
+  req_data->src = MSG_host_get_name(MSG_host_self());
   task_sent = MSG_task_create(NULL, COMP_SIZE, COMM_SIZE, req_data);
 
   XBT_INFO("data pointer %p", req_data->data);
@@ -237,107 +212,24 @@ static void task_free(struct msg_task ** task)
  */
 static int launch_job(int argc, char *argv[])
 {
-  //double task_comp_size = 1000000;
-  //double task_comm_size = 10000;
-  double *computation_amount;
-  double *communication_amount;
-  msg_host_t *job_res;
-  char *res;
-  msg_task_t ptask;
-  s_job_t job;
-  int i, j;
-  int nb_res;
-  profile_t profile;
 
   task_data_t task_data = MSG_process_get_data(MSG_process_self());
 
   int job_idx = task_data->job_idx;
 
-  xbt_dynar_t res_dynar = (xbt_dynar_t)(task_data->data);
+  int *res_idxs = (int *)(task_data->data);
 
-  XBT_INFO("head node id %s", *(char **)xbt_dynar_get_ptr(res_dynar, 0));
+  XBT_INFO("head node -> res id %d", res_idxs[0]);
   
-  XBT_DEBUG("Launch_job: idx %d, id %s profile %s", job_idx, jobs[job_idx].id_str, job.profile);
   
-  job = jobs[job_idx]; 
+  job_exec(job_idx, res_idxs, nodes);
 
-  profile = xbt_dict_get(profiles, job.profile);
-  
-  if (strcmp(profile->type, "msg_par") == 0) {
-
-    nb_res = ((msg_par_t)(profile->data))->nb_res;
-
-    
-    computation_amount = malloc(nb_res * sizeof(double));
-    communication_amount = malloc(nb_res * nb_res * sizeof(double));
-
-    double *cpu = ((msg_par_t)(profile->data))->cpu;
-    double *com = ((msg_par_t)(profile->data))->com;
-
-    memcpy(computation_amount , cpu, nb_res * sizeof(double));
-    memcpy(communication_amount, com, nb_res * nb_res * sizeof(double));
-    
-    //computation_amount = ((msg_par_t)(profile->data))->cpu;
-    //communication_amount = ((msg_par_t)(profile->data))->com;
-    
-    //printf("nb_res %d cpu %f com %f \n", nb_res, cpu[0], com[0]);
-
-    job_res = (msg_host_t *)malloc( nb_res * sizeof(s_msg_host_t) );
-    xbt_dynar_foreach(res_dynar, i, res){
-      job_res[i] = nodes[atoi(res)];
-    }
-
-    ptask = MSG_parallel_task_create("parallel task",
-				     nb_res, job_res,
-				     computation_amount,
-				     communication_amount, NULL);
-    MSG_parallel_task_execute(ptask);
-
-    MSG_task_destroy(ptask);
-
-  } else {
-    xbt_die("Type %s of profile is not supported", profile->type);
-  }
-  
-
-  /*
-
-  computation_amount = xbt_new0(double, nb_nodes);
-  communication_amount = xbt_new0(double, nb_nodes * nb_nodes);
-  
-  task_comp_size = task_comp_size + rand() % 5000000;
-
-  for (i = 0; i < nb_nodes; i++)
-    computation_amount[i] = task_comp_size;
-
-  for (i = 0; i < nb_nodes; i++)
-    for (j = i + 1; j < nb_nodes; j++)
-      communication_amount[i * nb_nodes + j] = task_comm_size;
-  //nodes_count = 2;
-  //MSG_process_sleep(rand() % 1000);
-  ptask = MSG_parallel_task_create("parallel task",
-                                   nb_nodes, nodes,
-                                   computation_amount,
-                                   communication_amount, NULL);
-  MSG_parallel_task_execute(ptask);
-
-  MSG_task_destroy(ptask);
-  
-  */
-
-  xbt_dynar_free(&res_dynar);
+  free(res_idxs);
  
   send_message("server", JOB_COMPLETED, job_idx, NULL);
 
-  /* There is no need to free that! why ???*/
-  /*   free(communication_amount); */
-  /*   free(computation_amount); */
-  //free(nodes);
-
   return 0;
 }
-
-
 
 /** 
  * \brief 
@@ -427,6 +319,7 @@ int server(int argc, char *argv[]) {
   char *job_ready_str;
   char *jobid_ready;
   char *job_id_str;
+  char *res_str;
   double t = 0;
   int i;
 
@@ -458,12 +351,7 @@ int server(int argc, char *argv[]) {
 
       break;
     case SCHED_READY:
-      //process scheduler message
-      //up to now only jobs to launch
-      // 0:timestamp|J:jid1=0,1,3;jid2=5,7,8,9
-      // 0:        1:2:3
-
-    
+        
       XBT_DEBUG("Pointer %p", (char **)xbt_dynar_get_ptr( *( (xbt_dynar_t *)task_data->data), 1 ));
 
       tmp = *(char **)xbt_dynar_get_ptr( *( (xbt_dynar_t *)task_data->data), 1 );
@@ -488,8 +376,14 @@ int server(int argc, char *argv[]) {
  
 	    int head_node = atoi(*(char **)xbt_dynar_get_ptr(res_dynar, 0));
 	    XBT_INFO("head node: %s, id: %d", MSG_host_get_name(nodes[head_node]), head_node);
+
+	    int nb_res = xbt_dynar_length(res_dynar);
+	    int *res_idxs = (int *)malloc(nb_res * sizeof(int)); 
+	    xbt_dynar_foreach(res_dynar, i, res_str){
+	      res_idxs[i] = atoi(res_str);
+	    }
 	 
-	    send_message(MSG_host_get_name(nodes[head_node]), LAUNCH_JOB, *job_idx, res_dynar);
+	    send_message(MSG_host_get_name(nodes[head_node]), LAUNCH_JOB, *job_idx, res_idxs);
 
 	    xbt_dynar_free(&job_id_res); 
 	  }
@@ -578,154 +472,6 @@ msg_error_t deploy_all(const char *platform_file)
   return res;
 }
 
-
-/**
- * \brief Load workload with jobs' profiles file
- */
-json_t *load_json_workload_profile(char *filename) {
-  json_t *root;
-  json_error_t error;
-  json_t *e;
-
-  if (filename == NULL) {
-    filename = "../workload_profiles/test_workload_profile.json";
-  }
-
-  root = json_load_file(filename, 0, &error);
-
-  if(!root){
-    XBT_ERROR("error : root\n");
-    XBT_ERROR("error : on line %d: %s\n", error.line, error.text);
-    exit(1);
-  } else {
-
-    e = json_object_get(root, "description");
-    if ( e != NULL ) {
-      XBT_INFO("Json Profile and Workload File's description: \n%s", json_string_value(e)); 
-    }
-    return root;
-  }
-}
-
-double json_number_to_double(json_t *e) {
-  double value;
-  if (json_typeof(e) == JSON_INTEGER) {
-    value = (double)json_integer_value(e);
-  } else {
-    value = (double)json_real_value(e);
-  }
-  return value;
-}
-
-void retrieve_jobs(json_t *root) {
-  json_t *e;
-  json_t *j;
-  job_t job;
-  int i = 0;
-  int *idx;
-  xbt_dynar_t jobs_dynar = xbt_dynar_new(sizeof(s_job_t), NULL);
-  jobs_idx2id = xbt_dict_new();
-
-  e = json_object_get(root, "jobs");
-  if ( e != NULL ) {
-    nb_jobs = json_array_size(e);
-    XBT_INFO("Json Workload with Profile File: nb_jobs %d", nb_jobs);
-    for(i=0; i<nb_jobs; i++) {
-      job = (job_t)malloc( sizeof(s_job_t) );
-
-      j = json_array_get(e, i);
-      job->id = json_integer_value(json_object_get(j,"id"));
-      job->id_str = (char *)malloc(10);
-      snprintf(job->id_str, 10, "%d", job->id);
-
-      job->submission_time = json_number_to_double(json_object_get(j,"subtime"));
-      job->walltime = json_number_to_double(json_object_get(j,"walltime"));
-      job->profile = json_string_value(json_object_get(j,"profile"));      
-      job->runtime = -1;
-   
-      XBT_INFO("Job:: idx: %d, id: %s, subtime: %f, profile: %s",
-	       i, job->id_str, job->submission_time, job->profile);
-      
-      xbt_dynar_push(jobs_dynar, job);
-      
-      idx = (int *)malloc(sizeof(int));
-      *idx = i; 
-      xbt_dict_set(jobs_idx2id, job->id_str, idx, free);
-
-    }
-
-    jobs = xbt_dynar_to_array(jobs_dynar); 
-    //xbt_dynar_free_container(&jobs_dynar);
-  } else {
-    XBT_INFO("Json Workload with Profile File: jobs array is missing !");
-    exit(1);
-  }
-
-}
-
-void retrieve_profiles(json_t *root) {
-  json_t *j_profiles;
-  const char *key;
-  json_t *j_profile;
-  json_t *e;
-  const char *type;
-  int nb_res = 0;
-  double *cpu;
-  double *com;
-  int i = 0;
-  msg_par_t m_par;
-  profile_t profile;
-
-  j_profiles = json_object_get(root, "profiles");
-  if ( j_profiles != NULL ) {
-
-    profiles = xbt_dict_new();
-
-    void *iter = json_object_iter(j_profiles);
-    while(iter) {
-      
-      key = json_object_iter_key(iter);
-      j_profile = json_object_iter_value(iter);
-   
-      type = json_string_value( json_object_get(j_profile, "type") );
-
-      if (strcmp(type, "msg_par") ==0) {
-	e = json_object_get(j_profile, "cpu");
-	nb_res = json_array_size(e);
-	cpu = xbt_new0(double, nb_res);
-	com = xbt_new0(double, nb_res * nb_res);
-	for(i=0; i < nb_res; i++) 
-	  cpu[i] = (double)json_number_to_double( json_array_get(e,i) );
-
-	e = json_object_get(j_profile, "com");
-	for(i=0; i < nb_res * nb_res; i++) 
-	  com[i] = (double)json_number_to_double( json_array_get(e,i) );
-	
-	m_par = (msg_par_t)malloc( sizeof(s_msg_par_t) ); 
-	profile = (profile_t)malloc( sizeof(s_profile_t) ); 
-
-	m_par->nb_res = nb_res;
-	m_par->cpu = cpu;
-	m_par->com = com;
-
-	profile->type = type;
-	profile->data = m_par;
-	
-	xbt_dict_set(profiles, key, profile, free);
-
-      }
-      
-      iter = json_object_iter_next(j_profiles, iter);
-    }
-
-  } else {
-    XBT_INFO("Json Workload with Profile File: profiles dict is missing !");
-    exit(1);
-  }
-
-}
-
-
 int main(int argc, char *argv[])
 {
   msg_error_t res = MSG_OK;
@@ -748,24 +494,6 @@ int main(int argc, char *argv[])
     printf("example: %s msg_platform.xml\n", argv[0]);
     exit(1);
   }
-
-
-  /*                        */
-  /* TODO load job workload */
-  /*                        */  
-
-  /* generate fake job workload
-  nb_jobs = 3;
-  jobs = malloc(nb_jobs * sizeof(s_job_t));
-
-  for(i=0; i<nb_jobs; i++) {
-    jobs[i].id = i;
-    jobs[i].profile = "nop";
-    jobs[i].submission_time = 10.0 * (i+1);
-    jobs[i].runtime = -1;
-  }
-
-  */
 
   res = deploy_all(argv[1]);
 
