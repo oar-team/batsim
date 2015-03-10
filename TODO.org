@@ -1,0 +1,15 @@
+
+* TODO msg_par_homogenous profile
+* TODO job composed of sequence of profile 1, [1, 5, 5 ]
+* TODO smpi profile
+* TODO support for job creation during simulation
+* TODO simulation termination w/ job creation 
+* TODO wallime support by node
+* TODO suspend/resume commands
+* TODO timer callback for scheduler (C command in format ?)
+* TODO kill job command
+* TODO shared nodes
+* TODO node sleep/wakeup 
+* TODO energy
+* TODO file I/O
+* TODO VM
