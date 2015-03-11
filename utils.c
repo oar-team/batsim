@@ -99,11 +99,7 @@ void retrieve_profiles(json_t *root) {
   json_t *j_profile;
   json_t *e;
   const char *type;
-  int nb_res = 0;
-  double *cpu;
-  double *com;
   int i = 0;
-  msg_par_t m_par;
   profile_t profile;
 
   j_profiles = json_object_get(root, "profiles");
@@ -117,13 +113,22 @@ void retrieve_profiles(json_t *root) {
       key = json_object_iter_key(iter);
       j_profile = json_object_iter_value(iter);
    
+      profile = (profile_t)malloc( sizeof(s_profile_t) ); 
+      xbt_dict_set(profiles, key, profile, free);
+
       type = json_string_value( json_object_get(j_profile, "type") );
+      profile->type = type;
 
       if (strcmp(type, "msg_par") ==0) {
+
+	msg_par_t m_par = (msg_par_t)malloc( sizeof(s_msg_par_t) ); 
+	profile->data = m_par;
+
 	e = json_object_get(j_profile, "cpu");
-	nb_res = json_array_size(e);
-	cpu = xbt_new0(double, nb_res);
-	com = xbt_new0(double, nb_res * nb_res);
+	int nb_res = json_array_size(e);
+	double *cpu = xbt_new0(double, nb_res);
+	double *com = xbt_new0(double, nb_res * nb_res);
+
 	for(i=0; i < nb_res; i++) 
 	  cpu[i] = (double)json_number_to_double( json_array_get(e,i) );
 
@@ -131,18 +136,54 @@ void retrieve_profiles(json_t *root) {
 	for(i=0; i < nb_res * nb_res; i++) 
 	  com[i] = (double)json_number_to_double( json_array_get(e,i) );
 	
-	m_par = (msg_par_t)malloc( sizeof(s_msg_par_t) ); 
-	profile = (profile_t)malloc( sizeof(s_profile_t) ); 
-
 	m_par->nb_res = nb_res;
 	m_par->cpu = cpu;
 	m_par->com = com;
 
-	profile->type = type;
-	profile->data = m_par;
-	
-	xbt_dict_set(profiles, key, profile, free);
+      } else if (strcmp(type, "msg_par_hg") ==0) {
 
+	msg_par_hg_t m_par_hg = (msg_par_hg_t)malloc( sizeof(s_msg_par_hg_t) ); 
+	profile->data = m_par_hg;
+
+	e = json_object_get(j_profile, "cpu");
+	m_par_hg->cpu = (double)json_number_to_double(e);
+	e = json_object_get(j_profile, "com");
+	m_par_hg->com = (double)json_number_to_double(e);
+
+      } else if (strcmp(type, "composed") ==0) {
+	composed_prof_t composed = (composed_prof_t)malloc( sizeof(s_composed_prof_t) ); 
+	profile->data = composed;
+
+	e = json_object_get(j_profile, "nb");
+	composed->nb = (int)json_integer_value(e);
+
+	e = json_object_get(j_profile, "seq");
+	int lg_seq = json_array_size(e);
+	int *seq = xbt_new0(int, lg_seq);
+	
+	for (i=0; i < lg_seq; i++) {
+	  seq[i] = (int)json_integer_value( json_array_get(e,i) );
+	}
+	
+	composed->lg_seq = lg_seq;
+	composed->seq = seq;
+
+      } else if (strcmp(type, "delay") ==0) {
+
+	delay_t delay_prof = (delay_t)malloc( sizeof(s_delay_t) ); 
+	profile->data = delay_prof;
+
+	e = json_object_get(j_profile, "delay");
+	delay_prof->delay = (double)json_number_to_double(e);
+
+      } else if (strcmp(type, "smpi") ==0) {
+
+	XBT_WARN("Profile with type %s is not yet implemented", type);
+
+      } else {
+
+	XBT_WARN("Profile with type %s is not supported", profile->type);
+	
       }
       
       iter = json_object_iter_next(j_profiles, iter);

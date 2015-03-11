@@ -29,6 +29,21 @@ typedef struct s_msg_par {
   double *com;
 } s_msg_par_t, *msg_par_t;
 
+typedef struct s_msg_par_hg {
+  double cpu;
+  double com;
+} s_msg_par_hg_t, *msg_par_hg_t;
+
+typedef struct s_composed_prof {
+  int nb;
+  int lg_seq;
+  int *seq;
+} s_composed_prof_t, *composed_prof_t;
+
+typedef struct s_delay {
+  double delay;
+} s_delay_t, *delay_t;
+
 void job_exec(int job_idx, int *res_idxs, msg_host_t *nodes);
 
 #endif                          /* BATSIM_JOB_H */

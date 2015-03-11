@@ -1,5 +1,6 @@
 
 * TODO msg_par_homogenous profile
+* TODO profile composed
 * TODO job composed of sequence of profile 1, [1, 5, 5 ]
 * TODO smpi profile
 * TODO support for job creation during simulation
@@ -13,3 +14,4 @@
 * TODO energy
 * TODO file I/O
 * TODO VM
+* TODO evoluving job support 
