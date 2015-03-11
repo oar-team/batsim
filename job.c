@@ -46,17 +46,17 @@ void profile_exec(const char *profile_str, int nb_res, msg_host_t *job_res) {
     communication_amount = malloc(nb_res * nb_res * sizeof(double));
 
     XBT_DEBUG("msg_par_hg: nb_res: %d , cpu: %f , com: %f", nb_res, cpu, com);
-
+    
     for (i = 0; i < nb_res; i++) {
       computation_amount[i] = cpu;
     }
-
+    
     for (j = 0; j < nb_res; j++) {
       for (i = 0; i < nb_res; i++) {
-	computation_amount[nb_res * j + i] = com;
+	communication_amount[nb_res * j + i] = com;
       }
     }
-
+    
     ptask = MSG_parallel_task_create("parallel task hg",
 				     nb_res, job_res,
 				     computation_amount,

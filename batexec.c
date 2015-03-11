@@ -1,5 +1,6 @@
 /* Copyright (c) 2007-2014. The SimGrid Team and OAR Team
  * All rights reserved.                                                     */
+
 #include "msg/msg.h" 
 
 #include "xbt/sysdep.h"         /* calloc, printf */
@@ -91,13 +92,21 @@ int main(int argc, char *argv[])
   retrieve_profiles(json_workload_profile);
 
   MSG_init(&argc, argv);
+
   if (argc < 2) {
-    printf("Usage: %s platform_file\n", argv[0]);
-    printf("example: %s msg_platform.xml\n", argv[0]);
+    printf("Batexec: execute a list of jobs in FIFO.\n");
+    printf("Resources are assigned from 0, only one job is running at a time\n");    
+    printf("\n");
+    printf("Usage: %s platform_file workload_file\n", argv[0]);
+    printf("example: %s ../platforms/small_platform.xml ../workload_profiles/test_workload_profile.json\n", argv[0]);
     exit(1);
   }
 
-    res = deploy_all(argv[1]);
-
+  res = deploy_all(argv[1]);
+    
+ if (res == MSG_OK)
+    return 0;
+  else
+    return 1;
 
 }
