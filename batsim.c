@@ -482,13 +482,6 @@ int main(int argc, char *argv[])
   //Comment to remove debug message
   xbt_log_control_set("batsim.threshold:debug");
 
-  json_workload_profile = load_json_workload_profile(NULL);
-  retrieve_jobs(json_workload_profile);
-  retrieve_profiles(json_workload_profile);
-
-  open_uds();
-
-  MSG_init(&argc, argv);
   if (argc < 2) { 
     printf("Batsim: Batch System Simulator.\n");
     printf("\n");
@@ -496,6 +489,15 @@ int main(int argc, char *argv[])
     printf("example: %s platforms/small_platform.xml workload_profiles/test_workload_profile.json\n", argv[0]);
     exit(1);
   }
+
+  json_workload_profile = load_json_workload_profile(argv[2]);
+  retrieve_jobs(json_workload_profile);
+  retrieve_profiles(json_workload_profile);
+
+  open_uds();
+
+  MSG_init(&argc, argv);
+
 
   res = deploy_all(argv[1]);
 
