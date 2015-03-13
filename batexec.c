@@ -87,12 +87,6 @@ int main(int argc, char *argv[])
   //Comment to remove debug message
   xbt_log_control_set("batexec.threshold:debug");
 
-  json_workload_profile = load_json_workload_profile(NULL);
-  retrieve_jobs(json_workload_profile);
-  retrieve_profiles(json_workload_profile);
-
-  MSG_init(&argc, argv);
-
   if (argc < 2) {
     printf("Batexec: execute a list of jobs in FIFO.\n");
     printf("Resources are assigned from 0, only one job is running at a time\n");    
@@ -101,6 +95,13 @@ int main(int argc, char *argv[])
     printf("example: %s ../platforms/small_platform.xml ../workload_profiles/test_workload_profile.json\n", argv[0]);
     exit(1);
   }
+
+  json_workload_profile = load_json_workload_profile(argv[2]);
+  retrieve_jobs(json_workload_profile);
+  retrieve_profiles(json_workload_profile);
+
+  MSG_init(&argc, argv);
+
 
   res = deploy_all(argv[1]);
     
