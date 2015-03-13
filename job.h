@@ -3,11 +3,13 @@
 #ifndef BATSIM_JOB_H
 #define BATSIM_JOB_H
 
-#include "msg/msg.h" 
-#include "xbt.h"
-#include "xbt/sysdep.h"
-#include "xbt/log.h"
-#include "xbt/asserts.h"
+#include <sys/types.h> /* ssize_t, needed by xbt/str.h, included by msg/msg.h */
+
+#include <msg/msg.h> 
+#include <xbt.h>
+#include <xbt/sysdep.h>
+#include <xbt/log.h>
+#include <xbt/asserts.h>
 
 #include <jansson.h> /* json parsing */
 

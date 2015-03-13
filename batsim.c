@@ -12,17 +12,18 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "msg/msg.h" 
+#include <msg/msg.h>
 
-#include "xbt/sysdep.h"         /* calloc, printf */
+#include <xbt/sysdep.h>         /* calloc, printf */
 /* Create a log channel to have nice outputs. */
-#include "xbt/log.h"
-#include "xbt/asserts.h"
+#include <xbt/log.h>
+#include <xbt/asserts.h>
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "Batsim");
 
 #include "job.h"
 #include "utils.h"
+#include "export.h"
 
 #define BAT_SOCK_NAME "/tmp/bat_socket"
 
@@ -70,7 +71,9 @@ typedef struct s_task_data {
 int nb_nodes = 0;
 msg_host_t *nodes;
 
-int uds_fd = -1; 
+int uds_fd = -1;
+
+PajeTracer * tracer;
 
 // process functions
 static int node(int argc, char *argv[]);
@@ -221,8 +224,12 @@ static int launch_job(int argc, char *argv[])
 
   XBT_INFO("head node -> res id %d", res_idxs[0]);
   
-  
+  pajeTracer_addJobLaunching(tracer, MSG_get_clock(), job_idx, jobs[job_idx].nb_res, res_idxs);
+  pajeTracer_addJobRunning(tracer, MSG_get_clock(), job_idx, jobs[job_idx].nb_res, res_idxs);
+
   job_exec(job_idx, res_idxs, nodes);
+
+  pajeTracer_addJobEnding(tracer, MSG_get_clock(), job_idx, jobs[job_idx].nb_res, res_idxs);
 
   free(res_idxs);
  
@@ -464,9 +471,14 @@ msg_error_t deploy_all(const char *platform_file)
 
   MSG_process_create("server", server, NULL, first_host);
   MSG_process_create("jobs_submitter", jobs_submitter, NULL, first_host);
+
+  tracer = pajeTracer_create("schedule.trace", 0, 32);
+  pajeTracer_initialize(tracer, MSG_get_clock(), nb_nodes, nodes);
     
   res = MSG_main();
-  
+
+  pajeTracer_finalize(tracer, MSG_get_clock(), nb_nodes, nodes);  
+  pajeTracer_destroy(&tracer);
 
   XBT_INFO("Simulation time %g", MSG_get_clock());
   return res;
