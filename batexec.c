@@ -41,7 +41,7 @@ static int job_launcher(int argc, char *argv[])
       res_idxs[i] = i;
     }  
 
-    job_exec(job_idx, res_idxs, nodes);
+    job_exec(job_idx, job.nb_res, res_idxs, nodes, NULL);
     XBT_INFO("Job id %d, job simulation time: %f", job.id,  MSG_get_clock() - t);
     free(res_idxs);
   }

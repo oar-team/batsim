@@ -1,7 +1,6 @@
 /* Copyright (c) 2015. The OAR Team.
  * All rights reserved.                       */ 
-#ifndef BATSIM_JOB_H
-#define BATSIM_JOB_H
+#pragma once
 
 #include <sys/types.h> /* ssize_t, needed by xbt/str.h, included by msg/msg.h */
 
@@ -46,6 +45,4 @@ typedef struct s_delay {
   double delay;
 } s_delay_t, *delay_t;
 
-void job_exec(int job_idx, int *res_idxs, msg_host_t *nodes);
-
-#endif                          /* BATSIM_JOB_H */
+void job_exec(int job_idx, int nb_res, int *res_idxs, msg_host_t *nodes, xbt_dict_t * allocatedStuff);

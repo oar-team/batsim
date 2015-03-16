@@ -1,7 +1,6 @@
 /* Copyright (c) 2015. The OAR Team.
  * All rights reserved.                       */ 
-#ifndef BATSIM_UTILS_H
-#define BATSIM_UTILS_H
+#pragma once
 
 #include "msg/msg.h" 
 #include "xbt.h"
@@ -27,4 +26,3 @@ json_t *load_json_workload_profile(char *filename);
 void retrieve_jobs(json_t *root);
 void retrieve_profiles(json_t *root);
 
-#endif                          /* BATSIM_UTILS_H */
