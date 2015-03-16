@@ -83,7 +83,7 @@ static char *recv_uds()
     char *msg;
     read(uds_fd, &lg, 4);
     printf("msg size to recv %d\n", lg);
-    msg = (char *) malloc(sizeof(char)*(lg+1)); /* 1 for null terminator */
+    msg = (char *) malloc(sizeof(char)*(lg+1)); /* +1 for null terminator */
     read(uds_fd, msg, lg);
     msg[lg] = 0;
     printf("msg: %s\n", msg);
@@ -130,7 +130,7 @@ static int send_sched(int argc, char *argv[])
     char *message_recv = NULL;
     char *message_send = MSG_process_get_data(MSG_process_self());
     char *core_message = NULL;
-    xbt_dynar_t core_message_dynar;
+    xbt_dynar_t * core_message_dynar = malloc(sizeof(xbt_dynar_t));
 
     int size_m;
     xbt_dynar_t answer_dynar;
@@ -142,7 +142,7 @@ static int send_sched(int argc, char *argv[])
     message_recv = recv_uds();
     answer_dynar = xbt_str_split(message_recv, "|");
 
-    t_answer = atof( * (char **)xbt_dynar_get_ptr(answer_dynar, 0) + 2 );//2 left shift to skip "0:"
+    t_answer = atof(*(char **)xbt_dynar_get_ptr(answer_dynar, 0) + 2 );//2 left shift to skip "0:"
 
     //waiting before consider the sched's answer
     MSG_process_sleep(t_answer - t_send);
@@ -150,8 +150,8 @@ static int send_sched(int argc, char *argv[])
     //XBT_INFO("send_sched, msg type %p", (char **)xbt_dynar_get_ptr(answer_dynar, 1));
     //signal
     core_message = *(char **)xbt_dynar_get_ptr(answer_dynar, 1);
-    core_message_dynar = xbt_str_split(core_message, ":");
-    send_message("server", SCHED_READY, 0, &core_message_dynar);
+    *core_message_dynar = xbt_str_split(core_message, ":");
+    send_message("server", SCHED_READY, 0, core_message_dynar);
 
     xbt_dynar_free(&answer_dynar);
     free(message_recv);
@@ -183,7 +183,7 @@ static void task_free(struct msg_task ** task)
 {
     if(*task != NULL)
     {
-        xbt_free(MSG_task_get_data(*task));
+        //xbt_free(MSG_task_get_data(*task));
         MSG_task_destroy(*task);
         *task = NULL;
     }
@@ -397,7 +397,6 @@ static int jobs_submitter(int argc, char *argv[])
  */
 int server(int argc, char *argv[])
 {
-
     msg_host_t node;
 
     msg_task_t task_received = NULL;
@@ -414,11 +413,10 @@ int server(int argc, char *argv[])
     char *job_id_str;
     char *res_str;
     double t = 0;
-    int i;
+    int i, j;
 
-    while ( (nb_completed_jobs < nb_jobs) || !sched_ready )
+    while ((nb_completed_jobs < nb_jobs) || !sched_ready)
     {
-
         // wait message node, submitter, scheduler...
         MSG_task_receive(&(task_received), "server");
 
@@ -429,6 +427,7 @@ int server(int argc, char *argv[])
         switch (task_data->type)
         {
         case JOB_COMPLETED:
+        {
             nb_completed_jobs++;
             job_id_str= jobs[task_data->job_idx].id_str;
             XBT_INFO("Job id %s COMPLETED, %d jobs completed", job_id_str, nb_completed_jobs);
@@ -437,7 +436,9 @@ int server(int argc, char *argv[])
 
             //TODO add job_id + msg to send
             break;
+        } // end of case JOB_COMPLETED
         case JOB_SUBMITTED:
+        {
             nb_submitted_jobs++;
             job_id_str = jobs[task_data->job_idx].id_str;
             XBT_INFO("Job id %s SUBMITTED, %d jobs submitted", job_id_str, nb_submitted_jobs);
@@ -445,17 +446,19 @@ int server(int argc, char *argv[])
             XBT_INFO("sched_message: %s", sched_message);
 
             break;
+        } // end of case JOB_SUBMITTED
         case SCHED_READY:
+        {
+            xbt_dynar_t * input = (xbt_dynar_t *)task_data->data;
 
-            XBT_DEBUG("Pointer %p", (char **)xbt_dynar_get_ptr( *( (xbt_dynar_t *)task_data->data), 1 ));
-
-            tmp = *(char **)xbt_dynar_get_ptr( *( (xbt_dynar_t *)task_data->data), 1 );
+            tmp = *(char **)xbt_dynar_get_ptr(*input, 1);
 
             XBT_INFO("type of receive message from scheduler: %c", *tmp);
             switch (*tmp)
             {
-            case 'J':
-                tmp = *(char **)xbt_dynar_get_ptr( *( (xbt_dynar_t *)task_data->data), 2 );
+            case 'J': // "timestampJ"
+            {
+                tmp = *(char **)xbt_dynar_get_ptr(*input, 2); // to skip the timestamp and the 'J'
                 xbt_dynar_t jobs_ready_dynar = xbt_str_split(tmp, ";");
 
                 xbt_dynar_foreach(jobs_ready_dynar, i, job_ready_str)
@@ -465,11 +468,11 @@ int server(int argc, char *argv[])
                         XBT_INFO("job_ready: %s", job_ready_str);
                         xbt_dynar_t job_id_res = xbt_str_split(tmp, "=");
                         job_id_str = *(char **)xbt_dynar_get_ptr(job_id_res, 0);
+                        char * job_reservs_str = *(char **)xbt_dynar_get_ptr(job_id_res, 1);
 
                         int *job_idx =  xbt_dict_get(jobs_idx2id, job_id_str);
 
-                        xbt_dynar_t res_dynar = xbt_str_split(*(char **)xbt_dynar_get_ptr(job_id_res, 1), ",");
-                        XBT_INFO("YOP %p", res_dynar );
+                        xbt_dynar_t res_dynar = xbt_str_split(job_reservs_str, ",");
 
                         int head_node = atoi(*(char **)xbt_dynar_get_ptr(res_dynar, 0));
                         XBT_INFO("head node: %s, id: %d", MSG_host_get_name(nodes[head_node]), head_node);
@@ -488,40 +491,47 @@ int server(int argc, char *argv[])
                         xbt_dict_set(launchData->dataToRelease, "reservedNodesIDs", launchData->reservedNodesIDs, free);
 
                         // Let's fill the reserved node IDs from the XBT dynar
-                        xbt_dynar_foreach(res_dynar, i, res_str)
+                        xbt_dynar_foreach(res_dynar, j, res_str)
                         {
-                            launchData->reservedNodesIDs[i] = atoi(res_str);
+                            launchData->reservedNodesIDs[j] = atoi(res_str);
                         }
 
                         send_message(MSG_host_get_name(nodes[head_node]), LAUNCH_JOB, *job_idx, launchData);
 
+                        xbt_dynar_free(&res_dynar);
                         xbt_dynar_free(&job_id_res);
-                    }
-                }
+                    } // end of if
+                } // end of xbt_dynar_foreach
 
                 xbt_dynar_free(&jobs_ready_dynar);
                 break;
-
+            } // end of case J
             case 'N':
+            {
                 XBT_DEBUG("Nothing to do");
                 break;
-
+            } // end of case N
             default:
+            {
                 XBT_ERROR("Command %s is not supported", tmp);
                 break;
-            }
+            } // end of default
+            } // end of switch (inner)
 
-            // why this raises a core dump ???
-            //xbt_dynar_free( (xbt_dynar_t *)task_data->data );
+            XBT_INFO("before freeing dynar");
+            xbt_dynar_free(input);
+            free(input);
+            XBT_INFO("after freeing dynar");
 
             sched_ready = true;
 
             break;
-        }
+        } // end of case SCHED_READY
+        } // end of switch (outer)
 
         task_free(&task_received);
 
-        if ( sched_ready && (strcmp(sched_message, "") !=0) )
+        if (sched_ready && (strcmp(sched_message, "") !=0))
         {
             //add current time to sched_message
             //size_m = asprintf(&sched_message, "%s0:%f:T", sched_message, MSG_get_clock());
@@ -530,17 +540,13 @@ int server(int argc, char *argv[])
             sched_ready = false;
         }
 
+    } // end of while
 
-    }
-
-    //send finalize to node
+    // send finalize to node
     XBT_INFO("All jobs completed, time to finalize");
 
-    for(i=0; i < nb_nodes; i++)
-    {
+    for(i = 0; i < nb_nodes; i++)
         send_message(MSG_host_get_name(nodes[i]), FINALIZE, 0, NULL);
-    }
-
 }
 
 /**
@@ -617,8 +623,25 @@ int main(int argc, char *argv[])
 
     MSG_init(&argc, argv);
 
-
     res = deploy_all(argv[1]);
+
+    // Let's clear global allocated data
+    xbt_dict_free(&jobs_idx2id);
+
+    xbt_dict_cursor_t cursor=NULL;
+    char *key;
+    s_profile_t * data;
+
+    xbt_dict_foreach(profiles,cursor,key,data)
+    {
+        free(data->data);
+        data->data = NULL;
+    }
+    xbt_dict_free(&profiles);
+
+    for (int i = 0; i < nb_jobs; ++i)
+        free(jobs[i].id_str);
+    //xbt_dynar_free(&jobs_dynar);
 
     if (res == MSG_OK)
         return 0;

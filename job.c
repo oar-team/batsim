@@ -115,7 +115,7 @@ void job_exec(int job_idx, int nb_res, int *res_idxs, msg_host_t *nodes, xbt_dic
     s_job_t job = jobs[job_idx];
     XBT_DEBUG("Launch_job: idx %d, id %s profile %s", job_idx, jobs[job_idx].id_str, job.profile);
 
-    msg_host_t * job_res = (msg_host_t *)malloc( nb_res * sizeof(s_msg_host_t) );
+    msg_host_t * job_res = (msg_host_t *) malloc(nb_res * sizeof(s_msg_host_t));
     xbt_dict_set(*allocatedStuff, "hosts", job_res, free);
 
     for(int i = 0; i < nb_res; i++)

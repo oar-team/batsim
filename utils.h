@@ -20,6 +20,7 @@ s_job_t *jobs;
 
 xbt_dict_t profiles;
 xbt_dict_t jobs_idx2id;
+xbt_dynar_t jobs_dynar;
 
 double json_number_to_double(json_t *e);
 json_t *load_json_workload_profile(char *filename);
