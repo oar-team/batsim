@@ -1,12 +1,12 @@
 /* Copyright (c) 2007-2014. The SimGrid Team and OAR Team
  * All rights reserved.                                                     */
 
-#include "msg/msg.h" 
+#include <msg/msg.h>
 
-#include "xbt/sysdep.h"         /* calloc, printf */
+#include <xbt/sysdep.h>         /* calloc, printf */
 /* Create a log channel to have nice outputs. */
-#include "xbt/log.h"
-#include "xbt/asserts.h"
+#include <xbt/log.h>
+#include <xbt/asserts.h>
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(batexec, "Batexec");
 
