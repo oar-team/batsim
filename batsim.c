@@ -143,6 +143,7 @@ static int send_sched(int argc, char *argv[])
     answer_dynar = xbt_str_split(message_recv, "|");
 
     t_answer = atof(*(char **)xbt_dynar_get_ptr(answer_dynar, 0) + 2 );//2 left shift to skip "0:"
+    // todo : receive a list of events and not a single one
 
     //waiting before consider the sched's answer
     MSG_process_sleep(t_answer - t_send);
@@ -554,40 +555,55 @@ int server(int argc, char *argv[])
  */
 msg_error_t deploy_all(const char *platform_file)
 {
-    msg_error_t res = MSG_OK;
-    xbt_dynar_t all_hosts;
-    msg_host_t first_host;
-    msg_host_t host;
-    int i;
-
     MSG_config("workstation/model", "ptask_L07");
     MSG_create_environment(platform_file);
 
-    all_hosts = MSG_hosts_as_dynar();
-    xbt_dynar_get_cpy(all_hosts, 0, &first_host); // todo: maybe use a specific host (with a given name) rather than using the first host
-    //first_host = xbt_dynar_getfirst_as(all_hosts,msg_host_t);
-    xbt_dynar_remove_at(all_hosts, 0, NULL);
+    xbt_dynar_t all_hosts = MSG_hosts_as_dynar();
 
+    // Let's find the master host (the one on which the simulator and the job submitters run)
+    const char * masterHostName = "master_host";
+    msg_host_t master_host = MSG_get_host_by_name(masterHostName);
+    int masterIndex = -1;
+    xbt_assert(master_host != NULL,"Invalid SimGrid platform file '%s': cannot find any host named '%s'. "
+        "This special host is the one on which the simulator and the job submitters run.",
+        platform_file, masterHostName);
+ 
+    // Let's remove the master host from the hosts used to run jobs
+    msg_host_t host;
+    int i;
+    xbt_dynar_foreach(all_hosts, i, host)
+    {
+        if (strcmp(MSG_host_get_name(host), masterHostName) == 0)
+        {
+            masterIndex = i;
+            break;
+        }
+    }
+
+    xbt_assert(masterIndex >= 0);
+    xbt_dynar_remove_at(all_hosts, masterIndex, NULL);
+
+    // Let's create a MSG process for each node
     xbt_dynar_foreach(all_hosts, i, host)
     {
         XBT_INFO("Create node process %d !", i);
         MSG_process_create("node", node, NULL, host);
     }
 
-
     nb_nodes = xbt_dynar_length(all_hosts);
     nodes = xbt_dynar_to_array(all_hosts);
-    //xbt_dynar_free(&all_hosts);
 
     XBT_INFO("Nb nodes: %d", nb_nodes);
 
-    MSG_process_create("server", server, NULL, first_host);
-    MSG_process_create("jobs_submitter", jobs_submitter, NULL, first_host);
+    // Let's create processes on the master host
+    MSG_process_create("server", server, NULL, master_host);
+    MSG_process_create("jobs_submitter", jobs_submitter, NULL, master_host);
 
+    // We can now initialize the tracing and run the processes
     tracer = pajeTracer_create("schedule.trace", 0, 32);
     pajeTracer_initialize(tracer, MSG_get_clock(), nb_nodes, nodes);
 
-    res = MSG_main();
+    msg_error_t res = MSG_main();
 
     pajeTracer_finalize(tracer, MSG_get_clock(), nb_nodes, nodes);
     pajeTracer_destroy(&tracer);
