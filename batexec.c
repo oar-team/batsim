@@ -35,7 +35,7 @@ static int job_launcher(int argc, char *argv[])
     t = MSG_get_clock();
     job = jobs[job_idx];
 
-    res_idxs = (int *) malloc( (job.nb_res) * sizeof(int));
+    res_idxs = (int *) malloc((job.nb_res) * sizeof(int));
 
     for(i = 0; i < job.nb_res ; i++) {
       res_idxs[i] = i;

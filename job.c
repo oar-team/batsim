@@ -9,7 +9,7 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(job, "job");
 
-void profile_exec(const char *profile_str, int nb_res, msg_host_t *job_res, xbt_dict_t * allocatedStuff)
+void profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *job_res, xbt_dict_t * allocatedStuff)
 {
     double *computation_amount;
     double *communication_amount;
@@ -29,13 +29,17 @@ void profile_exec(const char *profile_str, int nb_res, msg_host_t *job_res, xbt_
         memcpy(computation_amount , cpu, nb_res * sizeof(double));
         memcpy(communication_amount, com, nb_res * nb_res * sizeof(double));
 
-        ptask = MSG_parallel_task_create("parallel task",
+        char * tname = NULL;
+        asprintf(&tname, "p %d", job_id);
+        XBT_INFO("Creating task '%s'", tname);
+
+        //ptask = malloc(sizeof(msg_task_t *));
+        ptask = MSG_parallel_task_create(tname,
                                          nb_res, job_res,
                                          computation_amount,
                                          communication_amount, NULL);
+        xbt_dict_set(*allocatedStuff, tname, (void*)ptask, freeTask);
         MSG_parallel_task_execute(ptask);
-
-        MSG_task_destroy(ptask);
     }
     else if (strcmp(profile->type, "msg_par_hg") == 0)
     {
@@ -55,12 +59,17 @@ void profile_exec(const char *profile_str, int nb_res, msg_host_t *job_res, xbt_
             for (int i = 0; i < nb_res; i++)
                 communication_amount[nb_res * j + i] = com;
 
-        ptask = MSG_parallel_task_create("parallel task hg",
+        char * tname = NULL;
+        asprintf(&tname, "hg %d", job_id);
+        XBT_INFO("Creating task '%s'", tname);
+
+        //ptask = malloc(sizeof(msg_task_t *));
+        ptask = MSG_parallel_task_create(tname,
                                          nb_res, job_res,
                                          computation_amount,
                                          communication_amount, NULL);
+        xbt_dict_set(*allocatedStuff, tname, (void*)ptask, freeTask);
         MSG_parallel_task_execute(ptask);
-        MSG_task_destroy(ptask);
     }
     else if (strcmp(profile->type, "composed") == 0)
     {
@@ -77,7 +86,7 @@ void profile_exec(const char *profile_str, int nb_res, msg_host_t *job_res, xbt_
             for (int i = 0; i < nb; i++)
             {
                 sprintf(buffer, "%d", seq[j]);
-                profile_exec(buffer, nb_res, job_res, allocatedStuff);
+                profile_exec(buffer, job_id, nb_res, job_res, allocatedStuff);
             }
         }
     }
@@ -121,7 +130,7 @@ void job_exec(int job_idx, int nb_res, int *res_idxs, msg_host_t *nodes, xbt_dic
     for(int i = 0; i < nb_res; i++)
         job_res[i] = nodes[res_idxs[i]];
 
-    profile_exec(job.profile, nb_res, job_res, allocatedStuff);
+    profile_exec(job.profile, job_idx, nb_res, job_res, allocatedStuff);
 
     if (dictCreatedHere)
     {
@@ -130,4 +139,17 @@ void job_exec(int job_idx, int nb_res, int *res_idxs, msg_host_t *nodes, xbt_dic
     }
 }
 
-// TODO ! don't free manually set elements, they will be released automatically on reset !
+void freeTask(void * task)
+{
+    msg_task_t t = (msg_task_t) task;
+    char * tname = (char *) MSG_task_get_name(t);
+
+    XBT_INFO("freeing task '%s' (with memory leak)", tname);
+
+    //MSG_task_destroy(t); // why does this make the next MSG_task_create crash?
+    // todo : solve this (memory leak: task won't be freed on KILL)
+    
+    //free(t);
+    XBT_INFO("freeing task '%s' (with memory leak) done", tname);
+    free(tname);
+}

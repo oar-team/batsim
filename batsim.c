@@ -82,11 +82,11 @@ static char *recv_uds()
     int32_t lg;
     char *msg;
     read(uds_fd, &lg, 4);
-    printf("msg size to recv %d\n", lg);
+    XBT_INFO("Received message length: %d bytes", lg);
     msg = (char *) malloc(sizeof(char)*(lg+1)); /* +1 for null terminator */
     read(uds_fd, msg, lg);
     msg[lg] = 0;
-    printf("msg: %s\n", msg);
+    XBT_INFO("Received message: '%s'", msg);
 
     return msg;
 }
@@ -172,7 +172,8 @@ void send_message(const char *dst, e_task_type_t type, int job_idx, void *data)
     req_data->src = MSG_host_get_name(MSG_host_self());
     task_sent = MSG_task_create(NULL, COMP_SIZE, COMM_SIZE, req_data);
 
-    XBT_INFO("send_message data pointer %p", req_data->data);
+    XBT_INFO("message from '%s' to '%s' of type '%s' with data %p",
+             MSG_process_get_name(MSG_process_self()), dst, task_type2str[type], data);
 
     MSG_task_send(task_sent, dst);
 }
@@ -208,7 +209,7 @@ static int launch_job(int argc, char *argv[])
     s_kill_data_t * kdata = data->killerData;
     int jobID = data->jobID;
 
-    XBT_INFO("job launcher %d ready\t(killp=%p, launchp=%p)", jobID, data->killerProcess, MSG_process_self());
+    XBT_INFO("Launching job %d", jobID, data->killerProcess, MSG_process_self());
 
     // Let's run the job
     pajeTracer_addJobLaunching(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
@@ -225,19 +226,19 @@ static int launch_job(int argc, char *argv[])
     // /     *     \
     // ‾‾‾‾‾‾‾‾‾‾‾‾‾
 
-    XBT_INFO("job launcher %d completed", jobID);
+    XBT_INFO("Job %d finished in time.", jobID);
     int dbg = 0;
 
     pajeTracer_addJobEnding(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
 
     // Let's kill the killer, destroy its associated data then our data
-    XBT_INFO("job launcher %d killing killer", jobID);
+    XBT_INFO("Killing killer %d...", jobID);
     MSG_process_kill(data->killerProcess);
     free(kdata);
     xbt_dict_free(&(data->dataToRelease));
     free(data);
 
-    XBT_INFO("job launcher %d freeing done", jobID);
+    XBT_INFO("Killing and freeing done");
 
     send_message("server", JOB_COMPLETED, jobID, NULL);
 
@@ -261,7 +262,7 @@ static int kill_job(int argc, char *argv[])
     s_launch_data_t * ldata = data->launcherData;
     int jobID = ldata->jobID;
 
-    XBT_INFO("job killer %d ready", jobID);
+    XBT_INFO("Sleeping for %lf seconds to possibly kill job %d", jobs[jobID].walltime, jobID);
 
     // Let's sleep until the walltime is reached
     MSG_process_sleep(jobs[jobID].walltime);
@@ -275,22 +276,24 @@ static int kill_job(int argc, char *argv[])
     // /     *     \
     // ‾‾‾‾‾‾‾‾‾‾‾‾‾
 
-    XBT_INFO("job killer %d completed", jobID);
+    XBT_INFO("Sleeping done. Job %d did NOT finish in time and must be killed", jobID);
 
     pajeTracer_addJobEnding(tracer, MSG_get_clock(), jobID, ldata->reservedNodeCount, ldata->reservedNodesIDs);
     pajeTracer_addJobKill(tracer, MSG_get_clock(), jobID, ldata->reservedNodeCount, ldata->reservedNodesIDs);
 
     // Let's kill the launcher, destroy its associated data then our data
-    XBT_INFO("job killer %d killing launcher", jobID);
-    MSG_process_kill(data->launcherProcess);
     xbt_dict_free(&(ldata->dataToRelease));
+    XBT_INFO("Killing launcher %d", jobID);
+    MSG_process_kill(data->launcherProcess);
     free(ldata);
     free(data);
 
-    XBT_INFO("job killer %d freeing done", jobID);
+    XBT_INFO("Killing and freeing done", jobID);
 
     // Let's say to the server that the job execution finished
     send_message("server", JOB_COMPLETED, jobID, NULL);
+
+    return 0;
 }
 
 /**
@@ -329,9 +332,17 @@ static int node(int argc, char *argv[])
                 msg_bar_t barrier = MSG_barrier_init(3);
                 launchData->barrier = killData->barrier = &barrier;
 
+                char * plname = NULL;
+                char * pkname = NULL;
+                asprintf(&plname, "launcher %d", launchData->jobID);
+                asprintf(&pkname, "killer %d", launchData->jobID);
+
                 // MSG process launching. These processes wait on the given barrier on their beginning
-                msg_process_t launcher = MSG_process_create("launch_job", launch_job, launchData, MSG_host_self());
-                msg_process_t killer = MSG_process_create("kill_job", kill_job, killData, MSG_host_self());
+                msg_process_t launcher = MSG_process_create(plname, launch_job, launchData, MSG_host_self());
+                msg_process_t killer = MSG_process_create(pkname, kill_job, killData, MSG_host_self());
+
+                free(plname);
+                free(pkname);
 
                 // The processes can now know each other
                 launchData->killerProcess = killer;
@@ -360,7 +371,6 @@ static int node(int argc, char *argv[])
  */
 static int jobs_submitter(int argc, char *argv[])
 {
-
     double submission_time = 0.0;
     int job2submit_idx = 0;
     xbt_dynar_t jobs2sub_dynar;
@@ -430,10 +440,10 @@ int server(int argc, char *argv[])
         case JOB_COMPLETED:
         {
             nb_completed_jobs++;
-            job_id_str= jobs[task_data->job_idx].id_str;
+            job_id_str = jobs[task_data->job_idx].id_str;
             XBT_INFO("Job id %s COMPLETED, %d jobs completed", job_id_str, nb_completed_jobs);
             size_m = asprintf(&sched_message, "%s|%f:C:%s", sched_message, MSG_get_clock(), job_id_str);
-            XBT_INFO("sched_message: %s", sched_message);
+            XBT_INFO("Message to send to scheduler: %s", sched_message);
 
             //TODO add job_id + msg to send
             break;
@@ -444,7 +454,7 @@ int server(int argc, char *argv[])
             job_id_str = jobs[task_data->job_idx].id_str;
             XBT_INFO("Job id %s SUBMITTED, %d jobs submitted", job_id_str, nb_submitted_jobs);
             size_m = asprintf(&sched_message, "%s|%f:S:%s", sched_message, MSG_get_clock(), job_id_str);
-            XBT_INFO("sched_message: %s", sched_message);
+            XBT_INFO("Message to send to scheduler: %s", sched_message);
 
             break;
         } // end of case JOB_SUBMITTED
@@ -519,10 +529,10 @@ int server(int argc, char *argv[])
             } // end of default
             } // end of switch (inner)
 
-            XBT_INFO("before freeing dynar");
+            //XBT_INFO("before freeing dynar");
             xbt_dynar_free(input);
             free(input);
-            XBT_INFO("after freeing dynar");
+            //XBT_INFO("after freeing dynar");
 
             sched_ready = true;
 
@@ -532,7 +542,7 @@ int server(int argc, char *argv[])
 
         task_free(&task_received);
 
-        if (sched_ready && (strcmp(sched_message, "") !=0))
+        if (sched_ready && (strcmp(sched_message, "") != 0))
         {
             //add current time to sched_message
             //size_m = asprintf(&sched_message, "%s0:%f:T", sched_message, MSG_get_clock());
@@ -587,7 +597,10 @@ msg_error_t deploy_all(const char *platform_file)
     xbt_dynar_foreach(all_hosts, i, host)
     {
         XBT_INFO("Create node process %d !", i);
-        MSG_process_create("node", node, NULL, host);
+        char * pname = NULL;
+        asprintf(&pname, "node %d", i);
+        MSG_process_create(pname, node, NULL, host);
+        free(pname);
     }
 
     nb_nodes = xbt_dynar_length(all_hosts);
@@ -641,23 +654,18 @@ int main(int argc, char *argv[])
 
     res = deploy_all(argv[1]);
 
+    json_decref(json_workload_profile);
     // Let's clear global allocated data
     xbt_dict_free(&jobs_idx2id);
-
-    xbt_dict_cursor_t cursor=NULL;
-    char *key;
-    s_profile_t * data;
-
-    xbt_dict_foreach(profiles,cursor,key,data)
-    {
-        free(data->data);
-        data->data = NULL;
-    }
     xbt_dict_free(&profiles);
 
     for (int i = 0; i < nb_jobs; ++i)
+    {
         free(jobs[i].id_str);
-    //xbt_dynar_free(&jobs_dynar);
+        //free(jobs[i]);
+    }
+
+    //free(jobs);
 
     if (res == MSG_OK)
         return 0;

@@ -46,3 +46,5 @@ typedef struct s_delay {
 } s_delay_t, *delay_t;
 
 void job_exec(int job_idx, int nb_res, int *res_idxs, msg_host_t *nodes, xbt_dict_t * allocatedStuff);
+
+void freeTask(void * task);

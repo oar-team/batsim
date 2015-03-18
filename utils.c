@@ -10,6 +10,18 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(utils, "utils");
  */
 
 int nb_jobs = 0;
+s_job_t * jobs = NULL;
+xbt_dict_t profiles = NULL;
+xbt_dict_t jobs_idx2id = NULL;
+xbt_dynar_t jobs_dynar = NULL;
+
+void freeProfile(void * profile)
+{
+    s_profile_t * prof = (s_profile_t *) profile;
+
+    free(prof->data);
+    free(prof);
+}
 
 json_t *load_json_workload_profile(char *filename)
 {
@@ -56,20 +68,23 @@ void retrieve_jobs(json_t *root)
 {
     json_t *e;
     json_t *j;
-    job_t job;
-    int i = 0;
-    int *idx;
     jobs_dynar = xbt_dynar_new(sizeof(s_job_t), NULL);
     jobs_idx2id = xbt_dict_new();
 
     e = json_object_get(root, "jobs");
+
     if (e != NULL)
     {
         nb_jobs = json_array_size(e);
         XBT_INFO("Json Workload with Profile File: nb_jobs %d", nb_jobs);
-        for(i=0; i<nb_jobs; i++)
+
+        // todo: avoid using a xbt_dynar : strange things to memory.
+        // todo: check if valid jobIDs (they must be between 0 and nb_jobs - 1 and all different)
+        //       or use a map...
+        
+        for(int i = 0; i < nb_jobs; i++)
         {
-            job = (job_t)malloc(sizeof(s_job_t));
+            job_t job = (job_t)malloc(sizeof(s_job_t));
 
             j = json_array_get(e, i);
             job->id = json_integer_value(json_object_get(j,"id"));
@@ -87,7 +102,7 @@ void retrieve_jobs(json_t *root)
 
             xbt_dynar_push(jobs_dynar, job);
 
-            idx = (int *)malloc(sizeof(int));
+            int * idx = (int *) malloc(sizeof(int));
             *idx = i;
             xbt_dict_set(jobs_idx2id, job->id_str, idx, free);
         }
@@ -123,16 +138,16 @@ void retrieve_profiles(json_t *root)
             key = json_object_iter_key(iter);
             j_profile = json_object_iter_value(iter);
 
-            profile = (profile_t)malloc( sizeof(s_profile_t) );
-            xbt_dict_set(profiles, key, profile, free);
+            profile = (profile_t) malloc(sizeof(s_profile_t));
+            xbt_dict_set(profiles, key, profile, freeProfile);
 
-            type = json_string_value( json_object_get(j_profile, "type") );
+            type = json_string_value(json_object_get(j_profile, "type"));
             profile->type = type;
             profile->data = NULL;
 
-            if (strcmp(type, "msg_par") ==0)
+            if (strcmp(type, "msg_par") == 0)
             {
-                msg_par_t m_par = (msg_par_t)malloc( sizeof(s_msg_par_t) );
+                msg_par_t m_par = (msg_par_t) malloc(sizeof(s_msg_par_t));
                 profile->data = m_par;
 
                 e = json_object_get(j_profile, "cpu");
@@ -151,7 +166,7 @@ void retrieve_profiles(json_t *root)
                 m_par->cpu = cpu;
                 m_par->com = com;
             }
-            else if (strcmp(type, "msg_par_hg") ==0)
+            else if (strcmp(type, "msg_par_hg") == 0)
             {
                 msg_par_hg_t m_par_hg = (msg_par_hg_t)malloc( sizeof(s_msg_par_hg_t) );
                 profile->data = m_par_hg;
@@ -200,7 +215,6 @@ void retrieve_profiles(json_t *root)
 
             iter = json_object_iter_next(j_profiles, iter);
         }
-
     }
     else
     {
