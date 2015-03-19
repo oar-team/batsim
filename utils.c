@@ -1,5 +1,8 @@
 /* Copyright (c) 2015. The OAR Team.
  * All rights reserved.                       */
+
+#include <string.h>
+
 #include "job.h"
 #include "utils.h"
 
@@ -10,18 +13,9 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(utils, "utils");
  */
 
 int nb_jobs = 0;
-s_job_t * jobs = NULL;
 xbt_dict_t profiles = NULL;
-xbt_dict_t jobs_idx2id = NULL;
 xbt_dynar_t jobs_dynar = NULL;
-
-void freeProfile(void * profile)
-{
-    s_profile_t * prof = (s_profile_t *) profile;
-
-    free(prof->data);
-    free(prof);
-}
+xbt_dict_t job_id_to_dynar_pos = NULL;
 
 json_t *load_json_workload_profile(char *filename)
 {
@@ -64,50 +58,53 @@ double json_number_to_double(json_t *e)
     return value;
 }
 
-void retrieve_jobs(json_t *root)
+void retrieve_jobs(json_t *root) // todo: sort jobs by ascending submission time
 {
     json_t *e;
     json_t *j;
-    jobs_dynar = xbt_dynar_new(sizeof(s_job_t), NULL);
-    jobs_idx2id = xbt_dict_new();
 
+    initializeJobStructures();
     e = json_object_get(root, "jobs");
 
     if (e != NULL)
     {
         nb_jobs = json_array_size(e);
         XBT_INFO("Json Workload with Profile File: nb_jobs %d", nb_jobs);
-
-        // todo: avoid using a xbt_dynar : strange things to memory.
-        // todo: check if valid jobIDs (they must be between 0 and nb_jobs - 1 and all different)
-        //       or use a map...
         
         for(int i = 0; i < nb_jobs; i++)
         {
-            job_t job = (job_t)malloc(sizeof(s_job_t));
+            s_job_t * job = (s_job_t *) malloc(sizeof(s_job_t));
 
             j = json_array_get(e, i);
             job->id = json_integer_value(json_object_get(j,"id"));
-            job->id_str = (char *)malloc(10);
-            snprintf(job->id_str, 10, "%d", job->id);
+            asprintf(&(job->id_str), "%d", job->id);
 
             job->submission_time = json_number_to_double(json_object_get(j,"subtime"));
             job->walltime = json_number_to_double(json_object_get(j,"walltime"));
-            job->profile = json_string_value(json_object_get(j,"profile"));
+            asprintf(&(job->profile), "%s", json_string_value(json_object_get(j,"profile"))); // todo: clean
+            XBT_INFO("Read profile '%s' from job %d", job->profile, job->id);
             job->runtime = -1;
             job->nb_res = json_number_to_double(json_object_get(j,"res"));
+            job->state = JOB_STATE_NOT_SUBMITTED;
 
-            XBT_INFO("Job:: idx: %d, id: %s, subtime: %f, profile: %s, nb_res: %d",
-                     i, job->id_str, job->submission_time, job->profile, job->nb_res);
+            XBT_INFO("Read job: id=%d, subtime=%lf, walltime=%lf, profile='%s', nb_res=%d",
+                     job->id, job->submission_time, job->walltime, job->profile, job->nb_res);
 
-            xbt_dynar_push(jobs_dynar, job);
+            if (!jobExists(job->id))
+            {
+                xbt_dynar_push(jobs_dynar, &job);
 
-            int * idx = (int *) malloc(sizeof(int));
-            *idx = i;
-            xbt_dict_set(jobs_idx2id, job->id_str, idx, free);
+                int * insertPosition = (int *) malloc(sizeof(int));
+                *insertPosition = xbt_dynar_length(jobs_dynar) - 1;
+                xbt_dict_set(job_id_to_dynar_pos, job->id_str, insertPosition, free);
+                XBT_INFO("Added to map '%s'->%d", job->id_str, *insertPosition);
+            }
+            else
+            {
+                XBT_WARN("Trying to insert job %d whereas it already exists. The new job is discarded.", job->id);
+                freeJob(job);
+            }
         }
-
-        jobs = xbt_dynar_to_array(jobs_dynar);
     }
     else
     {
@@ -115,6 +112,25 @@ void retrieve_jobs(json_t *root)
         exit(1);
     }
 
+    /*XBT_INFO("Checking dynar values via foreach");
+    int job_index = -1;
+    s_job_t * job = NULL;
+
+    xbt_dynar_foreach(jobs_dynar, job_index, job)
+    {
+        //XBT_INFO("job_index=%d, job=%p", job_index, job);
+        XBT_INFO("  id=%d, ptr=%p, submit_time=%lf, walltime=%lf, id_str='%s', profile='%s'",
+                 job->id, job, job->submission_time, job->walltime, job->id_str, job->profile);
+    }
+
+    XBT_INFO("Checking dynar values by hand");
+    int nb_jobs = xbt_dynar_length(jobs_dynar);
+    for (int i = 0; i < nb_jobs; ++i)
+    {
+        s_job_t ** pjob = xbt_dynar_get_ptr(jobs_dynar, i);
+        job = *pjob;
+        XBT_INFO("  idx=%d, ptr=%p", i, job);
+    }*/
 }
 
 void retrieve_profiles(json_t *root)
@@ -123,15 +139,14 @@ void retrieve_profiles(json_t *root)
     const char *key;
     json_t *j_profile;
     json_t *e;
-    const char *type;
     int i = 0;
     profile_t profile;
+
+    initializeJobStructures();
 
     j_profiles = json_object_get(root, "profiles");
     if ( j_profiles != NULL )
     {
-        profiles = xbt_dict_new();
-
         void *iter = json_object_iter(j_profiles);
         while(iter)
         {
@@ -141,13 +156,13 @@ void retrieve_profiles(json_t *root)
             profile = (profile_t) malloc(sizeof(s_profile_t));
             xbt_dict_set(profiles, key, profile, freeProfile);
 
-            type = json_string_value(json_object_get(j_profile, "type"));
+            char * type = strdup(json_string_value(json_object_get(j_profile, "type")));
             profile->type = type;
             profile->data = NULL;
 
             if (strcmp(type, "msg_par") == 0)
             {
-                msg_par_t m_par = (msg_par_t) malloc(sizeof(s_msg_par_t));
+                s_msg_par_t * m_par = (s_msg_par_t *) malloc(sizeof(s_msg_par_t));
                 profile->data = m_par;
 
                 e = json_object_get(j_profile, "cpu");
@@ -168,7 +183,7 @@ void retrieve_profiles(json_t *root)
             }
             else if (strcmp(type, "msg_par_hg") == 0)
             {
-                msg_par_hg_t m_par_hg = (msg_par_hg_t)malloc( sizeof(s_msg_par_hg_t) );
+                s_msg_par_hg_t * m_par_hg = (s_msg_par_hg_t *) malloc(sizeof(s_msg_par_hg_t));
                 profile->data = m_par_hg;
 
                 e = json_object_get(j_profile, "cpu");
@@ -178,7 +193,7 @@ void retrieve_profiles(json_t *root)
             }
             else if (strcmp(type, "composed") ==0)
             {
-                composed_prof_t composed = (composed_prof_t)malloc( sizeof(s_composed_prof_t) );
+                s_composed_prof_t * composed = (s_composed_prof_t *) malloc(sizeof(s_composed_prof_t));
                 profile->data = composed;
 
                 e = json_object_get(j_profile, "nb");
@@ -186,11 +201,14 @@ void retrieve_profiles(json_t *root)
 
                 e = json_object_get(j_profile, "seq");
                 int lg_seq = json_array_size(e);
-                int *seq = xbt_new0(int, lg_seq);
+                char ** seq = xbt_new(char*, lg_seq);
 
                 for (i=0; i < lg_seq; i++)
                 {
-                    seq[i] = (int)json_integer_value( json_array_get(e,i) );
+                    json_t * elem = json_array_get(e,i);
+                    xbt_assert(json_is_string(elem), "In composed, the profile array must be made of strings");
+
+                    seq[i] = strdup(json_string_value(elem));
                 }
 
                 composed->lg_seq = lg_seq;
@@ -198,7 +216,7 @@ void retrieve_profiles(json_t *root)
             }
             else if (strcmp(type, "delay") ==0)
             {
-                delay_t delay_prof = (delay_t)malloc( sizeof(s_delay_t) );
+                s_delay_t * delay_prof = (s_delay_t *)malloc( sizeof(s_delay_t) );
                 profile->data = delay_prof;
 
                 e = json_object_get(j_profile, "delay");
@@ -221,5 +239,114 @@ void retrieve_profiles(json_t *root)
         XBT_INFO("Json Workload with Profile File: profiles dict is missing !");
         exit(1);
     }
+}
 
+void freeProfile(void * profile)
+{
+    s_profile_t * prof = (s_profile_t *) profile;
+
+    if (strcmp(prof->type, "msg_par") == 0)
+    {
+        s_msg_par_t * data = prof->data;
+
+        xbt_free(data->cpu);
+        xbt_free(data->com);
+    }
+    else if (strcmp(prof->type, "composed") == 0)
+    {
+        s_composed_prof_t * data = prof->data;
+
+        for (int i = 0; i < data->lg_seq; ++i)
+            free(data->seq[i]);
+
+        xbt_free(data->seq);
+    }
+
+    free(prof->type);
+    free(prof->data);
+    free(prof);
+}
+
+void freeJob(void * job)
+{
+    s_job_t * j = (s_job_t *) job;
+
+    free(j->id_str);
+    free(j->profile);
+    free(j);
+}
+
+void initializeJobStructures()
+{
+    static int alreadyCalled = 0;
+
+    if (!alreadyCalled)
+    {
+        xbt_assert(jobs_dynar == NULL && job_id_to_dynar_pos == NULL && profiles == NULL);
+        XBT_INFO("Creating job structures");
+
+        jobs_dynar = xbt_dynar_new(sizeof(s_job_t*), NULL);
+        job_id_to_dynar_pos = xbt_dict_new();
+        profiles = xbt_dict_new();
+
+        alreadyCalled = 1;
+    }
+}
+
+void freeJobStructures()
+{
+    if (jobs_dynar != NULL)
+    {
+        XBT_INFO("Freeing jobs_dynar");
+
+        unsigned int i;
+        s_job_t * job;
+
+        xbt_dynar_foreach(jobs_dynar, i, job)
+        {
+            freeJob(job);
+        }
+
+        xbt_dynar_free(&jobs_dynar);
+        jobs_dynar = NULL;
+    }
+
+    if (job_id_to_dynar_pos != NULL)
+    {
+        XBT_INFO("Freeing jobs_id_to_dynar_pos");
+
+        xbt_dict_free(&job_id_to_dynar_pos);
+        job_id_to_dynar_pos = NULL;
+    }
+
+    if (profiles != NULL)
+    {
+        XBT_INFO("Freeing profiles");
+        xbt_dict_free(&profiles);
+        profiles = NULL;
+    }
+}
+
+int jobExists(int jobID)
+{
+    char * jobName;
+    asprintf(&jobName, "%d", jobID);
+
+    int * dynarPosition = (int *) xbt_dict_get_or_null(job_id_to_dynar_pos, jobName);
+    free (jobName);
+
+    return dynarPosition != NULL;
+}
+
+s_job_t * jobFromJobID(int jobID)
+{
+    char * jobName;
+    asprintf(&jobName, "%d", jobID);
+
+    int * dynarPosition = (int *) xbt_dict_get_or_null(job_id_to_dynar_pos, jobName);
+    xbt_assert(dynarPosition != NULL, "Invalid call: jobID %d does NOT exist", jobID);
+
+    free(jobName);
+
+    return *((s_job_t **) xbt_dynar_get_ptr(jobs_dynar, *dynarPosition));
 }

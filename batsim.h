@@ -21,7 +21,7 @@ typedef enum {
  */
 typedef struct s_task_data {
 	e_task_type_t type;                     // type of task
-	int job_idx;
+	int job_id;
 	void *data;
 	const char* src;           // used for logging
 } s_task_data_t, *task_data_t;

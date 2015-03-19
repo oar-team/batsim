@@ -23,8 +23,8 @@ void profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *j
         computation_amount = malloc(nb_res * sizeof(double));
         communication_amount = malloc(nb_res * nb_res * sizeof(double));
 
-        double *cpu = ((msg_par_t)(profile->data))->cpu;
-        double *com = ((msg_par_t)(profile->data))->com;
+        double *cpu = ((s_msg_par_t *)(profile->data))->cpu;
+        double *com = ((s_msg_par_t *)(profile->data))->com;
 
         memcpy(computation_amount , cpu, nb_res * sizeof(double));
         memcpy(communication_amount, com, nb_res * nb_res * sizeof(double));
@@ -43,8 +43,8 @@ void profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *j
     }
     else if (strcmp(profile->type, "msg_par_hg") == 0)
     {
-        double cpu = ((msg_par_hg_t)(profile->data))->cpu;
-        double com = ((msg_par_hg_t)(profile->data))->com;
+        double cpu = ((s_msg_par_hg_t *)(profile->data))->cpu;
+        double com = ((s_msg_par_hg_t *)(profile->data))->com;
 
         // These amounts are deallocated by SG
         computation_amount = malloc(nb_res * sizeof(double));
@@ -73,26 +73,24 @@ void profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *j
     }
     else if (strcmp(profile->type, "composed") == 0)
     {
-        char buffer[20];
-
-        int nb = ((composed_prof_t)(profile->data))->nb;
-        int lg_seq = ((composed_prof_t)(profile->data))->lg_seq;
-        int *seq = ((composed_prof_t)(profile->data))->seq;
+        s_composed_prof_t * data = (s_composed_prof_t *) profile->data;
+        int nb = data->nb;
+        int lg_seq = data->lg_seq;
+        char **seq = data->seq;
 
         XBT_DEBUG("composed: nb: %d, lg_seq: %d", nb, lg_seq);
 
-        for (int j = 0; j < lg_seq; j++)
+        for (int i = 0; i < nb; i++)
         {
-            for (int i = 0; i < nb; i++)
+            for (int j = 0; j < lg_seq; j++)
             {
-                sprintf(buffer, "%d", seq[j]);
-                profile_exec(buffer, job_id, nb_res, job_res, allocatedStuff);
+                profile_exec(seq[j], job_id, nb_res, job_res, allocatedStuff);
             }
         }
     }
     else if (strcmp(profile->type, "delay") == 0)
     {
-        double delay = ((delay_t)(profile->data))->delay;
+        double delay = ((s_delay_t *)(profile->data))->delay;
         MSG_process_sleep(delay);
 
     }
@@ -110,7 +108,7 @@ void profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *j
  * \brief Load workload with jobs' profiles file
  */
 
-void job_exec(int job_idx, int nb_res, int *res_idxs, msg_host_t *nodes, xbt_dict_t * allocatedStuff)
+void job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, xbt_dict_t * allocatedStuff)
 {
     int dictCreatedHere = 0;
 
@@ -121,8 +119,8 @@ void job_exec(int job_idx, int nb_res, int *res_idxs, msg_host_t *nodes, xbt_dic
         dictCreatedHere = 1;
     }
 
-    s_job_t job = jobs[job_idx];
-    XBT_DEBUG("Launch_job: idx %d, id %s profile %s", job_idx, jobs[job_idx].id_str, job.profile);
+    s_job_t * job = jobFromJobID(job_id);
+    XBT_INFO("job_exec: jobID %d, job=%p", job_id, job);
 
     msg_host_t * job_res = (msg_host_t *) malloc(nb_res * sizeof(s_msg_host_t));
     xbt_dict_set(*allocatedStuff, "hosts", job_res, free);
@@ -130,7 +128,7 @@ void job_exec(int job_idx, int nb_res, int *res_idxs, msg_host_t *nodes, xbt_dic
     for(int i = 0; i < nb_res; i++)
         job_res[i] = nodes[res_idxs[i]];
 
-    profile_exec(job.profile, job_idx, nb_res, job_res, allocatedStuff);
+    profile_exec(job->profile, job_id, nb_res, job_res, allocatedStuff);
 
     if (dictCreatedHere)
     {

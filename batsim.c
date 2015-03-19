@@ -71,6 +71,8 @@ static int send_uds(char *msg)
     write(uds_fd, &lg, 4);
     write(uds_fd, msg, lg);
     free(msg);
+
+    return 0;
 }
 
 /**
@@ -83,6 +85,7 @@ static char *recv_uds()
     char *msg;
     read(uds_fd, &lg, 4);
     XBT_INFO("Received message length: %d bytes", lg);
+    xbt_assert(lg > 0, "Invalid message received (size=%d)", lg);
     msg = (char *) malloc(sizeof(char)*(lg+1)); /* +1 for null terminator */
     read(uds_fd, msg, lg);
     msg[lg] = 0;
@@ -162,12 +165,12 @@ static int send_sched(int argc, char *argv[])
 /**
  * \brief
  */
-void send_message(const char *dst, e_task_type_t type, int job_idx, void *data)
+void send_message(const char *dst, e_task_type_t type, int job_id, void *data)
 {
     msg_task_t task_sent;
     task_data_t req_data = xbt_new0(s_task_data_t,1);
     req_data->type = type;
-    req_data->job_idx = job_idx;
+    req_data->job_id = job_id;
     req_data->data = data;
     req_data->src = MSG_host_get_name(MSG_host_self());
     task_sent = MSG_task_create(NULL, COMP_SIZE, COMM_SIZE, req_data);
@@ -191,7 +194,6 @@ static void task_free(struct msg_task ** task)
     }
 }
 
-
 /**
  * @brief The function in charge of job launching
  * @return 0
@@ -208,8 +210,9 @@ static int launch_job(int argc, char *argv[])
     data = MSG_process_get_data(MSG_process_self());
     s_kill_data_t * kdata = data->killerData;
     int jobID = data->jobID;
+    s_job_t * job = jobFromJobID(jobID);
 
-    XBT_INFO("Launching job %d", jobID, data->killerProcess, MSG_process_self());
+    XBT_INFO("Launching job %d", jobID);
 
     // Let's run the job
     pajeTracer_addJobLaunching(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
@@ -217,16 +220,17 @@ static int launch_job(int argc, char *argv[])
 
     job_exec(jobID, data->reservedNodeCount, data->reservedNodesIDs, nodes, &(data->dataToRelease));
     
-    //       .
-    //      / \
-    //     / | \     
-    //    /  |  \    The remaining code of this function is executed ONLY IF
-    //   /   |   \   the job finished in time (its execution time was smaller than its walltime)
-    //  /         \  
-    // /     *     \
+    //       .       |
+    //      / \      |
+    //     / | \     |
+    //    /  |  \    | The remaining code of this function is executed ONLY IF
+    //   /   |   \   | the job finished in time (its execution time was smaller than its walltime)
+    //  /         \  |
+    // /     *     \ |
     // ‾‾‾‾‾‾‾‾‾‾‾‾‾
 
     XBT_INFO("Job %d finished in time.", jobID);
+    job->state = JOB_STATE_COMPLETED_SUCCESSFULLY;
     int dbg = 0;
 
     pajeTracer_addJobEnding(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
@@ -261,22 +265,25 @@ static int kill_job(int argc, char *argv[])
     data = MSG_process_get_data(MSG_process_self());
     s_launch_data_t * ldata = data->launcherData;
     int jobID = ldata->jobID;
+    s_job_t * job = jobFromJobID(jobID);
+    double walltime = job->walltime;
 
-    XBT_INFO("Sleeping for %lf seconds to possibly kill job %d", jobs[jobID].walltime, jobID);
+    XBT_INFO("Sleeping for %lf seconds to possibly kill job %d", walltime, jobID);
 
     // Let's sleep until the walltime is reached
-    MSG_process_sleep(jobs[jobID].walltime);
+    MSG_process_sleep(walltime);
 
     //       .
-    //      / \
-    //     / | \     
-    //    /  |  \    The remaining code of this function is executed ONLY IF
-    //   /   |   \   the killer finished its wait before the launcher completion
-    //  /         \
-    // /     *     \
+    //      / \      |
+    //     / | \     |
+    //    /  |  \    | The remaining code of this function is executed ONLY IF
+    //   /   |   \   | the killer finished its wait before the launcher completion
+    //  /         \  |
+    // /     *     \ |
     // ‾‾‾‾‾‾‾‾‾‾‾‾‾
 
     XBT_INFO("Sleeping done. Job %d did NOT finish in time and must be killed", jobID);
+    job->state = JOB_STATE_COMPLETED_SUCCESSFULLY;
 
     pajeTracer_addJobEnding(tracer, MSG_get_clock(), jobID, ldata->reservedNodeCount, ldata->reservedNodesIDs);
     pajeTracer_addJobKill(tracer, MSG_get_clock(), jobID, ldata->reservedNodeCount, ldata->reservedNodesIDs);
@@ -288,7 +295,7 @@ static int kill_job(int argc, char *argv[])
     free(ldata);
     free(data);
 
-    XBT_INFO("Killing and freeing done", jobID);
+    XBT_INFO("Killing and freeing of job %d done", jobID);
 
     // Let's say to the server that the job execution finished
     send_message("server", JOB_COMPLETED, jobID, NULL);
@@ -350,7 +357,7 @@ static int node(int argc, char *argv[])
                 killData->launcherProcess = launcher;
                 killData->launcherData = launchData;
 
-                XBT_INFO("job %d master: processes and data set", task_data->job_idx);
+                XBT_INFO("job %d master: processes and data set", task_data->job_id);
 
                 // Let's wake the processes then destroy the barrier
                 MSG_barrier_wait(barrier);
@@ -362,6 +369,7 @@ static int node(int argc, char *argv[])
         task_free(&task_received);
     }
 
+    return 0;
 }
 
 /**
@@ -371,6 +379,25 @@ static int node(int argc, char *argv[])
  */
 static int jobs_submitter(int argc, char *argv[])
 {
+    s_job_t * job;
+    unsigned int job_index;
+
+    // todo: read jobs here and sort them by ascending submission date
+    double previousSubmissionDate = MSG_get_clock();
+
+    xbt_dynar_foreach(jobs_dynar, job_index, job)
+    {
+        if (job->submission_time < previousSubmissionDate)
+            XBT_ERROR("The input workload JSON file is not sorted by ascending date, which is not handled yet");
+
+        double timeToSleep = max(0, job->submission_time - previousSubmissionDate);
+        MSG_process_sleep(timeToSleep);
+
+        previousSubmissionDate = MSG_get_clock();
+        send_message("server", JOB_SUBMITTED, job->id, NULL);
+    }
+
+    /*
     double submission_time = 0.0;
     int job2submit_idx = 0;
     xbt_dynar_t jobs2sub_dynar;
@@ -398,7 +425,8 @@ static int jobs_submitter(int argc, char *argv[])
             send_message("server", JOB_SUBMITTED, job_idx, NULL);
         }
         xbt_dynar_free(&jobs2sub_dynar);
-    }
+    }*/
+
     return 0;
 }
 
@@ -421,10 +449,10 @@ int server(int argc, char *argv[])
     char *tmp;
     char *job_ready_str;
     char *jobid_ready;
-    char *job_id_str;
     char *res_str;
+    char *job_id_str;
     double t = 0;
-    int i, j;
+    unsigned int i, j;
 
     while ((nb_completed_jobs < nb_jobs) || !sched_ready)
     {
@@ -440,9 +468,10 @@ int server(int argc, char *argv[])
         case JOB_COMPLETED:
         {
             nb_completed_jobs++;
-            job_id_str = jobs[task_data->job_idx].id_str;
-            XBT_INFO("Job id %s COMPLETED, %d jobs completed", job_id_str, nb_completed_jobs);
-            size_m = asprintf(&sched_message, "%s|%f:C:%s", sched_message, MSG_get_clock(), job_id_str);
+            s_job_t * job = jobFromJobID(task_data->job_id);
+
+            XBT_INFO("Job %d COMPLETED. %d jobs completed so far", job->id, nb_completed_jobs);
+            size_m = asprintf(&sched_message, "%s|%f:C:%s", sched_message, MSG_get_clock(), job->id_str);
             XBT_INFO("Message to send to scheduler: %s", sched_message);
 
             //TODO add job_id + msg to send
@@ -451,9 +480,11 @@ int server(int argc, char *argv[])
         case JOB_SUBMITTED:
         {
             nb_submitted_jobs++;
-            job_id_str = jobs[task_data->job_idx].id_str;
-            XBT_INFO("Job id %s SUBMITTED, %d jobs submitted", job_id_str, nb_submitted_jobs);
-            size_m = asprintf(&sched_message, "%s|%f:S:%s", sched_message, MSG_get_clock(), job_id_str);
+            s_job_t * job = jobFromJobID(task_data->job_id);
+            job->state = JOB_STATE_SUBMITTED;
+
+            XBT_INFO("Job %d SUBMITTED. %d jobs submitted so far", job->id, nb_submitted_jobs);
+            size_m = asprintf(&sched_message, "%s|%f:S:%s", sched_message, MSG_get_clock(), job->id_str);
             XBT_INFO("Message to send to scheduler: %s", sched_message);
 
             break;
@@ -481,7 +512,11 @@ int server(int argc, char *argv[])
                         job_id_str = *(char **)xbt_dynar_get_ptr(job_id_res, 0);
                         char * job_reservs_str = *(char **)xbt_dynar_get_ptr(job_id_res, 1);
 
-                        int *job_idx =  xbt_dict_get(jobs_idx2id, job_id_str);
+                        int jobID = strtol(job_id_str, NULL, 10);
+                        xbt_assert(jobExists(jobID), "Invalid jobID '%s' received from the scheduler: the job does not exist", job_id_str);
+                        s_job_t * job = jobFromJobID(jobID);
+                        xbt_assert(job->state == JOB_STATE_SUBMITTED, "Invalid allocation from the scheduler: the job %d is either not submitted yet or already scheduled", jobID);
+                        job->state = JOB_STATE_RUNNING;
 
                         xbt_dynar_t res_dynar = xbt_str_split(job_reservs_str, ",");
 
@@ -490,12 +525,12 @@ int server(int argc, char *argv[])
 
                         // Let's create a launch data structure, which will be given to the head_node then used to launch the job
                         s_launch_data_t * launchData = (s_launch_data_t*) malloc(sizeof(s_launch_data_t));
-                        launchData->jobID = *job_idx;
+                        launchData->jobID = jobID;
                         launchData->reservedNodeCount = xbt_dynar_length(res_dynar);
 
-                        xbt_assert(launchData->reservedNodeCount == jobs[launchData->jobID].nb_res,
+                        xbt_assert(launchData->reservedNodeCount == jobFromJobID(launchData->jobID)->nb_res,
                                    "Invalid scheduling algorithm decision: allocation of job %d is done on %d nodes (instead of %d)",
-                                   launchData->jobID, launchData->reservedNodeCount, jobs[launchData->jobID].nb_res);
+                                   launchData->jobID, launchData->reservedNodeCount, jobFromJobID(launchData->jobID)->nb_res);
 
                         launchData->reservedNodesIDs = (int*) malloc(launchData->reservedNodeCount * sizeof(int));
                         launchData->dataToRelease = xbt_dict_new();
@@ -504,10 +539,13 @@ int server(int argc, char *argv[])
                         // Let's fill the reserved node IDs from the XBT dynar
                         xbt_dynar_foreach(res_dynar, j, res_str)
                         {
-                            launchData->reservedNodesIDs[j] = atoi(res_str);
+                            int machineID = atoi(res_str);
+                            launchData->reservedNodesIDs[j] = machineID;
+                            xbt_assert(machineID >= 0 && machineID < nb_nodes,
+                                       "Invalid machineID (%d) received from the scheduler: not in range [0;%d]", machineID, nb_nodes);
                         }
 
-                        send_message(MSG_host_get_name(nodes[head_node]), LAUNCH_JOB, *job_idx, launchData);
+                        send_message(MSG_host_get_name(nodes[head_node]), LAUNCH_JOB, jobID, launchData);
 
                         xbt_dynar_free(&res_dynar);
                         xbt_dynar_free(&job_id_res);
@@ -538,6 +576,10 @@ int server(int argc, char *argv[])
 
             break;
         } // end of case SCHED_READY
+        default:
+        {
+            XBT_ERROR("Unhandled data type received (%d)", task_data->type);
+        }
         } // end of switch (outer)
 
         task_free(&task_received);
@@ -558,6 +600,8 @@ int server(int argc, char *argv[])
 
     for(i = 0; i < nb_nodes; i++)
         send_message(MSG_host_get_name(nodes[i]), FINALIZE, 0, NULL);
+
+    return 0;
 }
 
 /**
@@ -580,7 +624,7 @@ msg_error_t deploy_all(const char *platform_file)
  
     // Let's remove the master host from the hosts used to run jobs
     msg_host_t host;
-    int i;
+    unsigned int i;
     xbt_dynar_foreach(all_hosts, i, host)
     {
         if (strcmp(MSG_host_get_name(host), masterHostName) == 0)
@@ -656,14 +700,7 @@ int main(int argc, char *argv[])
 
     json_decref(json_workload_profile);
     // Let's clear global allocated data
-    xbt_dict_free(&jobs_idx2id);
-    xbt_dict_free(&profiles);
-
-    for (int i = 0; i < nb_jobs; ++i)
-    {
-        free(jobs[i].id_str);
-        //free(jobs[i]);
-    }
+    freeJobStructures();
 
     //free(jobs);
 
