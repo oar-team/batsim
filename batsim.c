@@ -35,6 +35,8 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "Batsim");
 #define true 1
 #define false 0
 
+const int schedMessageMaxLength = 1024*1024 - 1; // 1 Mio should be enough...
+
 char *task_type2str[] =
 {
     "ECHO",
@@ -70,10 +72,11 @@ static void send_message(const char *dst, e_task_type_t type, int job_id, void *
 static int send_uds(char *msg)
 {
     int32_t lg = strlen(msg);
-    XBT_INFO("send_uds, lg: %d", lg);
     write(uds_fd, &lg, 4);
     write(uds_fd, msg, lg);
-    free(msg);
+    XBT_INFO("send_uds lg=%d, msg='%s'", lg, msg);
+    
+    sprintf(msg, "");
 
     return 0;
 }
@@ -137,7 +140,8 @@ static int requestReplyScheduler(int argc, char *argv[])
     char sendDateAsString[16];
     sprintf(sendDateAsString, "%f", MSG_get_clock());
 
-    asprintf(&message_send, "0:%s%s", sendDateAsString, message_send ); // todo: memory leak
+    int nb = snprintf(message_send, schedMessageMaxLength, "0:%s%s", sendDateAsString, message_send);
+    xbt_assert(nb <= schedMessageMaxLength, "Buffer for sending messages to the scheduler is not big enough...");
     send_uds(message_send);
 
     char * message_recv = recv_uds();
@@ -435,7 +439,6 @@ int server(int argc, char *argv[])
     int nb_completed_jobs = 0;
     int nb_submitted_jobs = 0;
     int sched_ready = true;
-    char *sched_message = "";
     int size_m;
     char *tmp;
     char *job_ready_str;
@@ -445,7 +448,10 @@ int server(int argc, char *argv[])
     double t = 0;
     unsigned int i, j;
 
-    // todo: solve memory leaks caused by asprintf calls
+    xbt_assert(schedMessageMaxLength > 0);
+    char *sched_message = malloc(sizeof(char) * (schedMessageMaxLength+1)); // + 1 for NULL-terminated
+    xbt_assert(sched_message != NULL, "Cannot allocate the send message buffer (requested bytes: %d)", schedMessageMaxLength+1);
+    snprintf(sched_message, schedMessageMaxLength, "");
 
     while ((nb_completed_jobs < nb_jobs) || !sched_ready)
     {
@@ -464,7 +470,9 @@ int server(int argc, char *argv[])
             s_job_t * job = jobFromJobID(task_data->job_id);
 
             XBT_INFO("Job %d COMPLETED. %d jobs completed so far", job->id, nb_completed_jobs);
-            size_m = asprintf(&sched_message, "%s|%f:C:%s", sched_message, MSG_get_clock(), job->id_str);
+            size_m = snprintf(sched_message, schedMessageMaxLength,
+                              "%s|%f:C:%s", sched_message, MSG_get_clock(), job->id_str);
+            xbt_assert(size_m <= schedMessageMaxLength, "Buffer for sending messages to the scheduler is not big enough...");
             XBT_INFO("Message to send to scheduler: %s", sched_message);
 
             //TODO add job_id + msg to send
@@ -477,7 +485,9 @@ int server(int argc, char *argv[])
             job->state = JOB_STATE_SUBMITTED;
 
             XBT_INFO("Job %d SUBMITTED. %d jobs submitted so far", job->id, nb_submitted_jobs);
-            size_m = asprintf(&sched_message, "%s|%f:S:%s", sched_message, MSG_get_clock(), job->id_str);
+            size_m = snprintf(sched_message, schedMessageMaxLength,
+                              "%s|%f:S:%s", sched_message, MSG_get_clock(), job->id_str);
+            xbt_assert(size_m <= schedMessageMaxLength, "Buffer for sending messages to the scheduler is not big enough...");
             XBT_INFO("Message to send to scheduler: %s", sched_message);
 
             break;
@@ -583,10 +593,7 @@ int server(int argc, char *argv[])
 
         if (sched_ready && (strcmp(sched_message, "") != 0))
         {
-            //add current time to sched_message
-            //size_m = asprintf(&sched_message, "%s0:%f:T", sched_message, MSG_get_clock());
-            MSG_process_create("Request and reply scheduler", requestReplyScheduler, sched_message, MSG_host_self() );
-            sched_message = "";
+            MSG_process_create("Request and reply scheduler", requestReplyScheduler, sched_message, MSG_host_self());
             sched_ready = false;
         }
 
@@ -597,6 +604,8 @@ int server(int argc, char *argv[])
 
     for(i = 0; i < nb_nodes; i++)
         send_message(MSG_host_get_name(nodes[i]), FINALIZE, 0, NULL);
+
+    free(sched_message);
 
     return 0;
 }
