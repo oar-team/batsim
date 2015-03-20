@@ -40,10 +40,11 @@ char *task_type2str[] =
     "ECHO",
     "FINALIZE",
     "LAUNCH_JOB",
-    "JOB_SUMITTED",
+    "JOB_SUBMITTED",
     "JOB_COMPLETED",
     "KILL_JOB",
     "SUSPEND_JOB",
+    "SCHED_EVENT",
     "SCHED_READY",
     "LAUNCHER_INFORMATION",
     "KILLER_INFORMATION"
@@ -125,39 +126,48 @@ static void open_uds()
 }
 
 /**
- * \brief
+ * @brief Sends a request to the scheduler (via UDS) and handles its reply.
+ * @details This function sends a SCHED_EVENT by event received then a SCHED_READY when all events have been sent
+ * @return 1
  */
-static int send_sched(int argc, char *argv[])
+static int requestReplyScheduler(int argc, char *argv[])
 {
-    double t_send = MSG_get_clock();
-    double t_answer = 0;
-
-    char *message_recv = NULL;
     char *message_send = MSG_process_get_data(MSG_process_self());
-    char *core_message = NULL;
-    xbt_dynar_t * core_message_dynar = malloc(sizeof(xbt_dynar_t));
 
-    int size_m;
-    xbt_dynar_t answer_dynar;
+    char sendDateAsString[16];
+    sprintf(sendDateAsString, "%f", MSG_get_clock());
 
-    //add current time to message
-    size_m = asprintf(&message_send, "0:%f%s", MSG_get_clock(), message_send );
+    asprintf(&message_send, "0:%s%s", sendDateAsString, message_send ); // todo: memory leak
     send_uds(message_send);
 
-    message_recv = recv_uds();
-    answer_dynar = xbt_str_split(message_recv, "|");
+    char * message_recv = recv_uds();
+    xbt_dynar_t answer_dynar = xbt_str_split(message_recv, "|");
 
-    t_answer = atof(*(char **)xbt_dynar_get_ptr(answer_dynar, 0) + 2 );//2 left shift to skip "0:"
-    // todo : receive a list of events and not a single one
+    int answerParts = xbt_dynar_length(answer_dynar);
+    xbt_assert(answerParts >= 2, "Invalid message received ('%s'): it should be composed of at least 2 parts separated by a '|'", message_recv);
 
-    //waiting before consider the sched's answer
-    MSG_process_sleep(max(0, t_answer - t_send));
+    double previousDate = atof(sendDateAsString);
 
-    //XBT_INFO("send_sched, msg type %p", (char **)xbt_dynar_get_ptr(answer_dynar, 1));
-    //signal
-    core_message = *(char **)xbt_dynar_get_ptr(answer_dynar, 1);
-    *core_message_dynar = xbt_str_split(core_message, ":");
-    send_message("server", SCHED_READY, 0, core_message_dynar);
+    for (int i = 1; i < answerParts; ++i)
+    {
+        char * eventString = *(char **) xbt_dynar_get_ptr(answer_dynar, i);
+        xbt_dynar_t * eventDynar = malloc(sizeof(xbt_dynar_t));
+        *eventDynar = xbt_str_split(eventString, ":");
+        int eventParts = xbt_dynar_length(*eventDynar);
+        xbt_assert(eventParts >= 2, "Invalid event received ('%s'): it should be composed of at least 2 parts separated by a ':'", eventString);
+
+        double eventDate = atof(*(char **)xbt_dynar_get_ptr(*eventDynar, 0));
+        xbt_assert(eventDate >= previousDate, "Invalid event received ('%s'): its date (%lf) cannot be before the previous event date (%lf)",
+                   eventString, eventDate, previousDate);
+
+        MSG_process_sleep(max(0, eventDate - previousDate));
+
+        send_message("server", SCHED_EVENT, -1, eventDynar);
+
+        previousDate = eventDate;
+    }
+
+    send_message("server", SCHED_READY, 0, NULL);
 
     xbt_dynar_free(&answer_dynar);
     free(message_recv);
@@ -408,36 +418,6 @@ static int jobs_submitter(int argc, char *argv[])
         send_message("server", JOB_SUBMITTED, job->id, NULL);
     }
 
-    /*
-    double submission_time = 0.0;
-    int job2submit_idx = 0;
-    xbt_dynar_t jobs2sub_dynar;
-    double t = MSG_get_clock();
-    int job_idx, i;
-
-    while (job2submit_idx < nb_jobs)
-    {
-        submission_time = jobs[job2submit_idx].submission_time;
-
-        jobs2sub_dynar = xbt_dynar_new(sizeof(int), NULL);
-        while(submission_time == jobs[job2submit_idx].submission_time)
-        {
-            xbt_dynar_push_as(jobs2sub_dynar, int, job2submit_idx);
-            XBT_INFO("job2submit_idx %d, job_id %d", job2submit_idx, jobs[job2submit_idx].id);
-            job2submit_idx++;
-            if (job2submit_idx == nb_jobs) break;
-        }
-
-        MSG_process_sleep(submission_time - t);
-        t = MSG_get_clock();
-
-        xbt_dynar_foreach(jobs2sub_dynar, i, job_idx)
-        {
-            send_message("server", JOB_SUBMITTED, job_idx, NULL);
-        }
-        xbt_dynar_free(&jobs2sub_dynar);
-    }*/
-
     return 0;
 }
 
@@ -464,6 +444,8 @@ int server(int argc, char *argv[])
     char *job_id_str;
     double t = 0;
     unsigned int i, j;
+
+    // todo: solve memory leaks caused by asprintf calls
 
     while ((nb_completed_jobs < nb_jobs) || !sched_ready)
     {
@@ -500,7 +482,7 @@ int server(int argc, char *argv[])
 
             break;
         } // end of case JOB_SUBMITTED
-        case SCHED_READY:
+        case SCHED_EVENT:
         {
             xbt_dynar_t * input = (xbt_dynar_t *)task_data->data;
 
@@ -584,10 +566,13 @@ int server(int argc, char *argv[])
             free(input);
             //XBT_INFO("after freeing dynar");
 
-            sched_ready = true;
-
             break;
-        } // end of case SCHED_READY
+        } // end of case SCHED_EVENT
+        case SCHED_READY:
+        {
+            sched_ready = true;
+            break;
+        }
         default:
         {
             XBT_ERROR("Unhandled data type received (%d)", task_data->type);
@@ -600,7 +585,7 @@ int server(int argc, char *argv[])
         {
             //add current time to sched_message
             //size_m = asprintf(&sched_message, "%s0:%f:T", sched_message, MSG_get_clock());
-            MSG_process_create("send message to sched", send_sched, sched_message, MSG_host_self() );
+            MSG_process_create("Request and reply scheduler", requestReplyScheduler, sched_message, MSG_host_self() );
             sched_message = "";
             sched_ready = false;
         }

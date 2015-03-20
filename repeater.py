@@ -119,20 +119,19 @@ assert(new_jobs_completed == [])
 jobs_res[1] = [0,1,2,3]
 send_bat_msg(connection, float(now_str), jobs_submitted, jobs_res)
 
-# Submission of 2, but cannot be scheduled yet
-now_str, jobs_submitted, new_jobs_completed = read_bat_msg(connection)
-assert(jobs_submitted == [2])
-assert(new_jobs_completed == [])
-jobs_submitted = []
-send_bat_msg(connection, float(now_str), jobs_submitted, jobs_res)
-
-# Completion of 1, allocation of 2
+# Completion of 1, nothing to do
 now_str, jobs_submitted, new_jobs_completed = read_bat_msg(connection)
 assert(jobs_submitted == [])
 assert(new_jobs_completed == [1])
-jobs_submitted = [2]
+send_bat_msg(connection, float(now_str), jobs_submitted, jobs_res)
+
+# Submission of 2, which is instantly allocated
+now_str, jobs_submitted, new_jobs_completed = read_bat_msg(connection)
+assert(jobs_submitted == [2])
+assert(new_jobs_completed == [])
 jobs_res[2] = [0,1,2,3]
 send_bat_msg(connection, float(now_str), jobs_submitted, jobs_res)
+
 
 # Completion of 2, nothing to do
 now_str, jobs_submitted, new_jobs_completed = read_bat_msg(connection)
