@@ -75,8 +75,6 @@ static int send_uds(char *msg)
     write(uds_fd, &lg, 4);
     write(uds_fd, msg, lg);
     XBT_INFO("send_uds lg=%d, msg='%s'", lg, msg);
-    
-    sprintf(msg, "");
 
     return 0;
 }
@@ -136,13 +134,17 @@ static void open_uds()
 static int requestReplyScheduler(int argc, char *argv[])
 {
     char *message_send = MSG_process_get_data(MSG_process_self());
+    XBT_INFO("Buffer received in REQ-REP: '%s'", message_send);
 
     char sendDateAsString[16];
     sprintf(sendDateAsString, "%f", MSG_get_clock());
 
-    int nb = snprintf(message_send, schedMessageMaxLength, "0:%s%s", sendDateAsString, message_send);
-    xbt_assert(nb <= schedMessageMaxLength, "Buffer for sending messages to the scheduler is not big enough...");
-    send_uds(message_send);
+    char * sendBuf;
+    asprintf(&sendBuf, "0:%s%s", sendDateAsString, message_send);
+    send_uds(sendBuf);
+
+    free(sendBuf);
+    sprintf(message_send, "");
 
     char * message_recv = recv_uds();
     xbt_dynar_t answer_dynar = xbt_str_split(message_recv, "|");
@@ -453,6 +455,8 @@ int server(int argc, char *argv[])
     xbt_assert(sched_message != NULL, "Cannot allocate the send message buffer (requested bytes: %d)", schedMessageMaxLength+1);
     snprintf(sched_message, schedMessageMaxLength, "");
 
+    // todo: add a better finition, for example the submitters could say "hello" and "goodbye" to the scheduler
+    // it may avoid the SG deadlock...
     while ((nb_completed_jobs < nb_jobs) || !sched_ready)
     {
         // wait message node, submitter, scheduler...
@@ -475,7 +479,6 @@ int server(int argc, char *argv[])
             xbt_assert(size_m <= schedMessageMaxLength, "Buffer for sending messages to the scheduler is not big enough...");
             XBT_INFO("Message to send to scheduler: %s", sched_message);
 
-            //TODO add job_id + msg to send
             break;
         } // end of case JOB_COMPLETED
         case JOB_SUBMITTED:
