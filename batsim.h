@@ -3,32 +3,30 @@
 #include <msg/msg.h>
 
 /**
- * Types of tasks exchanged between nodes.
+ * @brief Types of tasks exchanged between nodes.
  */
 typedef enum
 {
-	ECHO,
-	FINALIZE,
-	LAUNCH_JOB,
-	JOB_SUBMITTED,
-	JOB_COMPLETED,
-	KILL_JOB,
-	SUSPEND_JOB,
-	SCHED_EVENT,
-	SCHED_READY,
-	LAUNCHER_INFORMATION,
-	KILLER_INFORMATION
+	FINALIZE				//! Server -> Node
+	,LAUNCH_JOB				//! Server -> Node
+	,JOB_SUBMITTED			//! Submitter -> Server
+	,JOB_COMPLETED			//! Launcher/killer -> Server
+	,SCHED_EVENT			//! SchedulerHandler -> Server
+	,SCHED_READY			//! SchedulerHandler -> Server
+	,LAUNCHER_INFORMATION	//! Node -> Launcher
+	,KILLER_INFORMATION		//! Node -> Killer
+	,SUBMITTER_HELLO		//! Submitter -> Server
+	,SUBMITTER_BYE			//! Submitter -> Server
 } e_task_type_t;
 
 /*
- * Data attached with the tasks sent and received
+ * @brief Data attached with the tasks used to communicate between MSG processes
  */
 typedef struct s_task_data
 {
-	e_task_type_t type;                     // type of task
-	int job_id;
-	void *data;
-	const char* src;           // used for logging
+	e_task_type_t type;	//! Type of task
+	int job_id;			//! The job ID
+	void *data;			//! Either NULL or points to something else based on type
 } s_task_data_t;
 
 /**
