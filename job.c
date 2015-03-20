@@ -142,12 +142,21 @@ void freeTask(void * task)
     msg_task_t t = (msg_task_t) task;
     char * tname = (char *) MSG_task_get_name(t);
 
-    XBT_INFO("freeing task '%s' (with memory leak)", tname);
+    const static int doLeak = 1;
 
-    //MSG_task_destroy(t); // why does this make the next MSG_task_create crash?
-    // todo : solve this (memory leak: task won't be freed on KILL)
+    if (doLeak)
+    {
+        XBT_INFO("freeing task '%s' (with memory leak)", tname);
+        XBT_INFO("freeing task '%s' (with memory leak) done", tname);  
+    }
+    else
+    {
+        // todo: make this work -> SG mailing list? cancelling the task might be better BEFORE killing the associated process...
+        XBT_INFO("freeing task '%s'", tname);
+        MSG_task_cancel(t);
+        MSG_task_destroy(t);
+        XBT_INFO("freeing task '%s' done", tname);
+    }
     
-    //free(t);
-    XBT_INFO("freeing task '%s' (with memory leak) done", tname);
     free(tname);
 }

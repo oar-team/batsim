@@ -151,7 +151,7 @@ static int send_sched(int argc, char *argv[])
     // todo : receive a list of events and not a single one
 
     //waiting before consider the sched's answer
-    MSG_process_sleep(t_answer - t_send);
+    MSG_process_sleep(max(0, t_answer - t_send));
 
     //XBT_INFO("send_sched, msg type %p", (char **)xbt_dynar_get_ptr(answer_dynar, 1));
     //signal
@@ -293,7 +293,7 @@ static int kill_job(int argc, char *argv[])
     // ‾‾‾‾‾‾‾‾‾‾‾‾‾
 
     XBT_INFO("Sleeping done. Job %d did NOT finish in time and must be killed", jobID);
-    job->state = JOB_STATE_COMPLETED_SUCCESSFULLY;
+    job->state = JOB_STATE_COMPLETED_KILLED;
 
     pajeTracer_addJobEnding(tracer, MSG_get_clock(), jobID, ldata->reservedNodeCount, ldata->reservedNodesIDs);
     pajeTracer_addJobKill(tracer, MSG_get_clock(), jobID, ldata->reservedNodeCount, ldata->reservedNodesIDs);
@@ -519,14 +519,15 @@ int server(int argc, char *argv[])
                     if (job_ready_str != NULL)
                     {
                         XBT_INFO("job_ready: %s", job_ready_str);
-                        xbt_dynar_t job_id_res = xbt_str_split(tmp, "=");
+                        xbt_dynar_t job_id_res = xbt_str_split(job_ready_str, "=");
                         job_id_str = *(char **)xbt_dynar_get_ptr(job_id_res, 0);
                         char * job_reservs_str = *(char **)xbt_dynar_get_ptr(job_id_res, 1);
 
                         int jobID = strtol(job_id_str, NULL, 10);
                         xbt_assert(jobExists(jobID), "Invalid jobID '%s' received from the scheduler: the job does not exist", job_id_str);
                         s_job_t * job = jobFromJobID(jobID);
-                        xbt_assert(job->state == JOB_STATE_SUBMITTED, "Invalid allocation from the scheduler: the job %d is either not submitted yet or already scheduled", jobID);
+                        xbt_assert(job->state == JOB_STATE_SUBMITTED, "Invalid allocation from the scheduler: the job %d is either not submitted yet"
+                                   "or already scheduled (state=%d)", jobID, job->state);
                         job->state = JOB_STATE_RUNNING;
 
                         xbt_dynar_t res_dynar = xbt_str_split(job_reservs_str, ",");
