@@ -44,7 +44,9 @@ char *task_type2str[] =
     "JOB_COMPLETED",
     "KILL_JOB",
     "SUSPEND_JOB",
-    "SCHED_READY"
+    "SCHED_READY",
+    "LAUNCHER_INFORMATION",
+    "KILLER_INFORMATION"
 };
 
 int nb_nodes = 0;
@@ -168,7 +170,7 @@ static int send_sched(int argc, char *argv[])
 void send_message(const char *dst, e_task_type_t type, int job_id, void *data)
 {
     msg_task_t task_sent;
-    task_data_t req_data = xbt_new0(s_task_data_t,1);
+    s_task_data_t * req_data = xbt_new0(s_task_data_t,1);
     req_data->type = type;
     req_data->job_id = job_id;
     req_data->data = data;
@@ -200,17 +202,21 @@ static void task_free(struct msg_task ** task)
  */
 static int launch_job(int argc, char *argv[])
 {
-    // Let's read a first time the input to get the barrier
-    s_launch_data_t * data = MSG_process_get_data(MSG_process_self());
+    // Let's wait our data
+    msg_task_t task_received = NULL;
+    MSG_task_receive(&(task_received), MSG_process_get_name(MSG_process_self()));
 
-    // Let's wait on the barrier to be sure we can read our arguments
-    MSG_barrier_wait(*(data->barrier));
+    // Let's get our data
+    s_task_data_t * task_data = (s_task_data_t *) MSG_task_get_data(task_received);
+    xbt_assert(task_data->type == LAUNCHER_INFORMATION);
 
-    // After the second read, we know who the killerProcess is and its associated data
-    data = MSG_process_get_data(MSG_process_self());
+    s_launch_data_t * data = task_data->data;
     s_kill_data_t * kdata = data->killerData;
     int jobID = data->jobID;
     s_job_t * job = jobFromJobID(jobID);
+
+    task_free(&task_received);
+    free(task_data);
 
     XBT_INFO("Launching job %d", jobID);
 
@@ -255,18 +261,22 @@ static int launch_job(int argc, char *argv[])
  */
 static int kill_job(int argc, char *argv[])
 {
-    // Let's read a first time the input to get the barrier
-    s_kill_data_t * data = MSG_process_get_data(MSG_process_self());
+    // Let's wait our data
+    msg_task_t task_received = NULL;
+    MSG_task_receive(&(task_received), MSG_process_get_name(MSG_process_self()));
 
-    // Let's wait on the barrier to be sure we can read our arguments
-    MSG_barrier_wait(*(data->barrier));
+    // Let's get our data
+    s_task_data_t * task_data = (s_task_data_t *) MSG_task_get_data(task_received);
+    xbt_assert(task_data->type == KILLER_INFORMATION);
 
-    // After the second read, we know who the launcherProcess is and its associated data
-    data = MSG_process_get_data(MSG_process_self());
+    s_kill_data_t * data = task_data->data;
     s_launch_data_t * ldata = data->launcherData;
     int jobID = ldata->jobID;
     s_job_t * job = jobFromJobID(jobID);
     double walltime = job->walltime;
+
+    task_free(&task_received);
+    free(task_data);
 
     XBT_INFO("Sleeping for %lf seconds to possibly kill job %d", walltime, jobID);
 
@@ -311,7 +321,7 @@ static int node(int argc, char *argv[])
     const char *node_id = MSG_host_get_name(MSG_host_self());
 
     msg_task_t task_received = NULL;
-    task_data_t task_data;
+    s_task_data_t * task_data;
     int type = -1;
 
     XBT_INFO("I am %s", node_id);
@@ -320,50 +330,51 @@ static int node(int argc, char *argv[])
     {
         MSG_task_receive(&(task_received), node_id);
 
-        task_data = (task_data_t) MSG_task_get_data(task_received);
+        task_data = (s_task_data_t *) MSG_task_get_data(task_received);
         type = task_data->type;
 
         XBT_INFO("MSG_Task received %s, type %s", node_id, task_type2str[type]);
 
-        if (type == FINALIZE) break;
-
         switch (type)
         {
+            case FINALIZE:
+            {
+                return 0;
+                break;
+            }
             case LAUNCH_JOB:
             {
                 // Let's retrieve the launch data and create a kill data
                 s_launch_data_t * launchData = (s_launch_data_t *) task_data->data;
                 s_kill_data_t * killData = (s_kill_data_t *) malloc(sizeof(s_kill_data_t));
 
-                // Since the launcher needs to know the killer and vice versa, let's synchronize this knowledge by a barrier
-                msg_bar_t barrier = MSG_barrier_init(3);
-                launchData->barrier = killData->barrier = &barrier;
-
                 char * plname = NULL;
                 char * pkname = NULL;
                 asprintf(&plname, "launcher %d", launchData->jobID);
                 asprintf(&pkname, "killer %d", launchData->jobID);
 
-                // MSG process launching. These processes wait on the given barrier on their beginning
+                // MSG process launching. These processes wait because their data is incomplete
                 msg_process_t launcher = MSG_process_create(plname, launch_job, launchData, MSG_host_self());
                 msg_process_t killer = MSG_process_create(pkname, kill_job, killData, MSG_host_self());
 
-                free(plname);
-                free(pkname);
-
-                // The processes can now know each other
+                // Now that both processes exist, they know each other
                 launchData->killerProcess = killer;
                 launchData->killerData = killData;
                 killData->launcherProcess = launcher;
                 killData->launcherData = launchData;
 
-                XBT_INFO("job %d master: processes and data set", task_data->job_id);
+                // Let's send their data to the processes
+                send_message(plname, LAUNCHER_INFORMATION, launchData->jobID, launchData);
+                send_message(pkname, KILLER_INFORMATION, launchData->jobID, killData);
 
-                // Let's wake the processes then destroy the barrier
-                MSG_barrier_wait(barrier);
-                MSG_barrier_destroy(barrier);
+                free(plname);
+                free(pkname);
 
                 break;
+            }
+            default:
+            {
+                XBT_ERROR("Unhandled message type received (%d)", type);
             }
         }
         task_free(&task_received);
@@ -439,7 +450,7 @@ int server(int argc, char *argv[])
     msg_host_t node;
 
     msg_task_t task_received = NULL;
-    task_data_t task_data;
+    s_task_data_t * task_data;
 
     int nb_completed_jobs = 0;
     int nb_submitted_jobs = 0;
@@ -459,7 +470,7 @@ int server(int argc, char *argv[])
         // wait message node, submitter, scheduler...
         MSG_task_receive(&(task_received), "server");
 
-        task_data = (task_data_t) MSG_task_get_data(task_received);
+        task_data = (s_task_data_t *) MSG_task_get_data(task_received);
 
         XBT_INFO("Server receive Task/message type %s:", task_type2str[task_data->type]);
 
