@@ -453,8 +453,10 @@ int server(int argc, char *argv[])
 
     int nb_completed_jobs = 0;
     int nb_submitted_jobs = 0;
+    int nb_scheduled_jobs = 0;
     int nb_submitters = 0;
     int nb_submitters_finished = 0;
+    int nb_running_jobs = 0;
     int sched_ready = true;
     int size_m;
     char *tmp;
@@ -497,6 +499,8 @@ int server(int argc, char *argv[])
         } // end of case SUBMITTER_BYE
         case JOB_COMPLETED:
         {
+            nb_running_jobs--;
+            xbt_assert(nb_running_jobs >= 0);
             nb_completed_jobs++;
             s_job_t * job = jobFromJobID(task_data->job_id);
 
@@ -550,7 +554,13 @@ int server(int argc, char *argv[])
                         s_job_t * job = jobFromJobID(jobID);
                         xbt_assert(job->state == JOB_STATE_SUBMITTED, "Invalid allocation from the scheduler: the job %d is either not submitted yet"
                                    "or already scheduled (state=%d)", jobID, job->state);
+                        
                         job->state = JOB_STATE_RUNNING;
+                        
+                        nb_running_jobs++;
+                        xbt_assert(nb_running_jobs <= nb_submitted_jobs);
+                        nb_scheduled_jobs++;
+                        xbt_assert(nb_scheduled_jobs <= nb_submitted_jobs);
 
                         xbt_dynar_t res_dynar = xbt_str_split(job_reservs_str, ",");
 
@@ -591,7 +601,9 @@ int server(int argc, char *argv[])
             } // end of case J
             case 'N':
             {
-                XBT_DEBUG("Nothing to do");
+                XBT_INFO("Nothing to do received.");
+                if (nb_running_jobs == 0 && nb_scheduled_jobs < nb_submitted_jobs)
+                    XBT_INFO("Nothing to do whereas no job is running and that they are jobs waiting to be scheduled... This might cause a deadlock!");
                 break;
             } // end of case N
             default:
