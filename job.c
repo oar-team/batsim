@@ -38,8 +38,10 @@ void profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *j
                                          nb_res, job_res,
                                          computation_amount,
                                          communication_amount, NULL);
-        xbt_dict_set(*allocatedStuff, tname, (void*)ptask, freeTask);
-        MSG_parallel_task_execute(ptask);
+        free(tname);
+        xbt_dict_set(*allocatedStuff, "task", (void*)ptask, freeTask);
+        msg_error_t err = MSG_parallel_task_execute(ptask);
+        xbt_assert(err == MSG_OK);
     }
     else if (strcmp(profile->type, "msg_par_hg") == 0)
     {
@@ -68,8 +70,10 @@ void profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *j
                                          nb_res, job_res,
                                          computation_amount,
                                          communication_amount, NULL);
-        xbt_dict_set(*allocatedStuff, tname, (void*)ptask, freeTask);
-        MSG_parallel_task_execute(ptask);
+        free(tname);
+        xbt_dict_set(*allocatedStuff, "task", (void*)ptask, freeTask);
+        msg_error_t err = MSG_parallel_task_execute(ptask);
+        xbt_assert(err == MSG_OK);
     }
     else if (strcmp(profile->type, "composed") == 0)
     {
@@ -140,23 +144,20 @@ void job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, xbt_dict
 void freeTask(void * task)
 {
     msg_task_t t = (msg_task_t) task;
-    char * tname = (char *) MSG_task_get_name(t);
 
-    const static int doLeak = 1;
+    const static int doLeak = 0;
 
     if (doLeak)
     {
-        XBT_INFO("freeing task '%s' (with memory leak)", tname);
-        XBT_INFO("freeing task '%s' (with memory leak) done", tname);  
+        XBT_INFO("freeing task '%s' (with memory leak)", MSG_task_get_name(t));
+        XBT_INFO("freeing task (with memory leak) done");
     }
     else
     {
         // todo: make this work -> SG mailing list? cancelling the task might be better BEFORE killing the associated process...
-        XBT_INFO("freeing task '%s'", tname);
-        MSG_task_cancel(t);
+        XBT_INFO("freeing task '%s'", MSG_task_get_name(t));
+        //MSG_task_cancel(t);
         MSG_task_destroy(t);
-        XBT_INFO("freeing task '%s' done", tname);
+        XBT_INFO("freeing task done");
     }
-    
-    free(tname);
 }

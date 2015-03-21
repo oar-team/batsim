@@ -185,7 +185,7 @@ static int requestReplyScheduler(int argc, char *argv[])
 void send_message(const char *dst, e_task_type_t type, int job_id, void *data)
 {
     msg_task_t task_sent;
-    s_task_data_t * req_data = xbt_new0(s_task_data_t,1);
+    s_task_data_t * req_data = malloc(sizeof(s_task_data_t));
     req_data->type = type;
     req_data->job_id = job_id;
     req_data->data = data;
@@ -200,7 +200,7 @@ void send_message(const char *dst, e_task_type_t type, int job_id, void *data)
 /**
  * \brief
  */
-static void task_free(struct msg_task ** task)
+static void task_free(msg_task_t * task)
 {
     if(*task != NULL)
     {
@@ -313,6 +313,14 @@ static int kill_job(int argc, char *argv[])
     pajeTracer_addJobKill(tracer, MSG_get_clock(), jobID, ldata->reservedNodeCount, ldata->reservedNodesIDs);
 
     // Let's kill the launcher, destroy its associated data then our data
+    msg_task_t task = xbt_dict_get_or_null(ldata->dataToRelease, "task");
+    if (task != NULL)
+    {
+        XBT_INFO("Cancelling the associated task");
+        MSG_task_cancel(task);
+        XBT_INFO("Task cancelled");
+    }
+
     xbt_dict_free(&(ldata->dataToRelease));
     XBT_INFO("Killing launcher %d", jobID);
     MSG_process_kill(data->launcherProcess);
@@ -353,6 +361,8 @@ static int node(int argc, char *argv[])
         {
             case FINALIZE:
             {
+                task_free(&task_received);
+                free(task_data);
                 return 0;
                 break;
             }
@@ -384,6 +394,8 @@ static int node(int argc, char *argv[])
                 free(plname);
                 free(pkname);
 
+                task_free(&task_received);
+                free(task_data);
                 break;
             }
             default:
@@ -391,7 +403,6 @@ static int node(int argc, char *argv[])
                 XBT_ERROR("Unhandled message type received (%d)", type);
             }
         }
-        task_free(&task_received);
     }
 
     return 0;
@@ -477,13 +488,13 @@ int server(int argc, char *argv[])
             nb_submitters++;
             XBT_INFO("New submitter said hello. Number of polite submitters: %d", nb_submitters);
             break;
-        }
+        } // end of case SUBMITTER_HELLO
         case SUBMITTER_BYE:
         {   
             nb_submitters_finished++;
             XBT_INFO("A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
             break;
-        }
+        } // end of case SUBMITTER_BYE
         case JOB_COMPLETED:
         {
             nb_completed_jobs++;
@@ -601,7 +612,7 @@ int server(int argc, char *argv[])
         {
             sched_ready = true;
             break;
-        }
+        } // end of case SCHED_READY
         default:
         {
             XBT_ERROR("Unhandled data type received (%d)", task_data->type);
@@ -609,6 +620,7 @@ int server(int argc, char *argv[])
         } // end of switch (outer)
 
         task_free(&task_received);
+        free(task_data);
 
         if (sched_ready && (strcmp(sched_message, "") != 0))
         {
@@ -726,6 +738,7 @@ int main(int argc, char *argv[])
     json_decref(json_workload_profile);
     // Let's clear global allocated data
     freeJobStructures();
+    free(nodes);
 
     //free(jobs);
 
