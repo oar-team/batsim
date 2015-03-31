@@ -71,6 +71,7 @@ static void send_message(const char *dst, e_task_type_t type, int job_id, void *
 static int send_uds(char *msg)
 {
     int32_t lg = strlen(msg);
+    fprintf(stderr, "sending scheduler '%s'\n", msg);
     write(uds_fd, &lg, 4);
     write(uds_fd, msg, lg);
     XBT_INFO("send_uds lg=%d, msg='%s'", lg, msg);
@@ -426,13 +427,17 @@ static int jobs_submitter(int argc, char *argv[])
     xbt_dynar_foreach(jobs_dynar, job_index, job)
     {
         if (job->submission_time < previousSubmissionDate)
+	  {
             XBT_ERROR("The input workload JSON file is not sorted by ascending date, which is not handled yet");
+	    job->submission_time = previousSubmissionDate; //correcting sub time -- TODO remove temporary hack
+	  }
 
         double timeToSleep = max(0, job->submission_time - previousSubmissionDate);
         MSG_process_sleep(timeToSleep);
 
         previousSubmissionDate = MSG_get_clock();
         send_message("server", JOB_SUBMITTED, job->id, NULL);
+	fprintf(stderr, "envoi scheduler soumission Job %d\n", job->id);
     }
 
     send_message("server", SUBMITTER_BYE, 0, NULL);
@@ -634,7 +639,8 @@ int server(int argc, char *argv[])
         task_free(&task_received);
         free(task_data);
 
-        if (sched_ready && (strcmp(sched_message, "") != 0))
+        if (//sched_ready && <--- pourquoi ceci ? on perd des messages, qui sont écrasés et du coup pas envoyés...
+(strcmp(sched_message, "") != 0))
         {
             MSG_process_create("Request and reply scheduler", requestReplyScheduler, sched_message, MSG_host_self());
             sched_ready = false;
