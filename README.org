@@ -5,6 +5,7 @@
  - simgrid 3.12 (minimun)
  - Jansson: a C library for encoding, decoding and manipulating JSON data. 
    apt-get install libjansson4
+   apt-get install libjansson-dev
 ** first step: prepare Makefile
  mkdir build
  cd build
