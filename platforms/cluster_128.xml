@@ -1,0 +1,373 @@
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
+<platform version="3">
+
+<AS id="AS_0"  routing="Full">
+<AS id="exitAS_0"  routing="Full">
+	<router id="router_0"/>
+</AS>
+<AS id="AS_1"  routing="Full">
+<AS id="exitAS_1"  routing="Full">
+	<router id="router_1"/>
+</AS>
+<AS id="AS_2"  routing="Full">
+<AS id="exitAS_2"  routing="Full">
+	<router id="router_2"/>
+</AS>
+<cluster id="cl_2_1" prefix="c_2_1-" suffix="" radical="1-16" power="1000000000" bw="125000000" lat="5E-5" bb_bw="2250000000" bb_lat="5E-4"/>
+<cluster id="cl_2_2" prefix="c_2_2-" suffix="" radical="1-16" power="1000000000" bw="125000000" lat="5E-5" bb_bw="2250000000" bb_lat="5E-4"/>
+<cluster id="cl_2_3" prefix="c_2_3-" suffix="" radical="1-16" power="1000000000" bw="125000000" lat="5E-5" bb_bw="2250000000" bb_lat="5E-4"/>
+<cluster id="cl_2_4" prefix="c_2_4-" suffix="" radical="1-16" power="1000000000" bw="125000000" lat="5E-5" bb_bw="2250000000" bb_lat="5E-4"/>
+<cluster id="cl_2_5" prefix="c_2_5-" suffix="" radical="1-16" power="1000000000" bw="125000000" lat="5E-5" bb_bw="2250000000" bb_lat="5E-4"/>
+<cluster id="cl_2_6" prefix="c_2_6-" suffix="" radical="1-16" power="1000000000" bw="125000000" lat="5E-5" bb_bw="2250000000" bb_lat="5E-4"/>
+<cluster id="cl_2_7" prefix="c_2_7-" suffix="" radical="1-16" power="1000000000" bw="125000000" lat="5E-5" bb_bw="2250000000" bb_lat="5E-4"/>
+<cluster id="cl_2_8" prefix="c_2_8-" suffix="" radical="1-16" power="1000000000" bw="125000000" lat="5E-5" bb_bw="2250000000" bb_lat="5E-4"/>
+<link id="2_1" bandwidth="2250000000" latency="5E-5"/>
+<link id="2_2" bandwidth="2250000000" latency="5E-5"/>
+<link id="2_3" bandwidth="2250000000" latency="5E-5"/>
+<link id="2_4" bandwidth="2250000000" latency="5E-5"/>
+<link id="2_5" bandwidth="2250000000" latency="5E-5"/>
+<link id="2_6" bandwidth="2250000000" latency="5E-5"/>
+<link id="2_7" bandwidth="2250000000" latency="5E-5"/>
+<link id="2_8" bandwidth="2250000000" latency="5E-5"/>
+<link id="bb_2" bandwidth="2250000000" latency="5E-4"/>
+<ASroute src="cl_2_1"
+	dst="cl_2_2"
+	gw_src="c_2_1-cl_2_1_router"
+	gw_dst="c_2_2-cl_2_2_router"
+	symmetrical="YES">
+		<link_ctn id="2_1"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_2"/>
+</ASroute>
+<ASroute src="cl_2_1"
+	dst="cl_2_3"
+	gw_src="c_2_1-cl_2_1_router"
+	gw_dst="c_2_3-cl_2_3_router"
+	symmetrical="YES">
+		<link_ctn id="2_1"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_3"/>
+</ASroute>
+<ASroute src="cl_2_1"
+	dst="cl_2_4"
+	gw_src="c_2_1-cl_2_1_router"
+	gw_dst="c_2_4-cl_2_4_router"
+	symmetrical="YES">
+		<link_ctn id="2_1"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_4"/>
+</ASroute>
+<ASroute src="cl_2_1"
+	dst="cl_2_5"
+	gw_src="c_2_1-cl_2_1_router"
+	gw_dst="c_2_5-cl_2_5_router"
+	symmetrical="YES">
+		<link_ctn id="2_1"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_5"/>
+</ASroute>
+<ASroute src="cl_2_1"
+	dst="cl_2_6"
+	gw_src="c_2_1-cl_2_1_router"
+	gw_dst="c_2_6-cl_2_6_router"
+	symmetrical="YES">
+		<link_ctn id="2_1"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_6"/>
+</ASroute>
+<ASroute src="cl_2_1"
+	dst="cl_2_7"
+	gw_src="c_2_1-cl_2_1_router"
+	gw_dst="c_2_7-cl_2_7_router"
+	symmetrical="YES">
+		<link_ctn id="2_1"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_7"/>
+</ASroute>
+<ASroute src="cl_2_1"
+	dst="cl_2_8"
+	gw_src="c_2_1-cl_2_1_router"
+	gw_dst="c_2_8-cl_2_8_router"
+	symmetrical="YES">
+		<link_ctn id="2_1"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_8"/>
+</ASroute>
+<ASroute src="cl_2_2"
+	dst="cl_2_3"
+	gw_src="c_2_2-cl_2_2_router"
+	gw_dst="c_2_3-cl_2_3_router"
+	symmetrical="YES">
+		<link_ctn id="2_2"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_3"/>
+</ASroute>
+<ASroute src="cl_2_2"
+	dst="cl_2_4"
+	gw_src="c_2_2-cl_2_2_router"
+	gw_dst="c_2_4-cl_2_4_router"
+	symmetrical="YES">
+		<link_ctn id="2_2"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_4"/>
+</ASroute>
+<ASroute src="cl_2_2"
+	dst="cl_2_5"
+	gw_src="c_2_2-cl_2_2_router"
+	gw_dst="c_2_5-cl_2_5_router"
+	symmetrical="YES">
+		<link_ctn id="2_2"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_5"/>
+</ASroute>
+<ASroute src="cl_2_2"
+	dst="cl_2_6"
+	gw_src="c_2_2-cl_2_2_router"
+	gw_dst="c_2_6-cl_2_6_router"
+	symmetrical="YES">
+		<link_ctn id="2_2"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_6"/>
+</ASroute>
+<ASroute src="cl_2_2"
+	dst="cl_2_7"
+	gw_src="c_2_2-cl_2_2_router"
+	gw_dst="c_2_7-cl_2_7_router"
+	symmetrical="YES">
+		<link_ctn id="2_2"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_7"/>
+</ASroute>
+<ASroute src="cl_2_2"
+	dst="cl_2_8"
+	gw_src="c_2_2-cl_2_2_router"
+	gw_dst="c_2_8-cl_2_8_router"
+	symmetrical="YES">
+		<link_ctn id="2_2"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_8"/>
+</ASroute>
+<ASroute src="cl_2_3"
+	dst="cl_2_4"
+	gw_src="c_2_3-cl_2_3_router"
+	gw_dst="c_2_4-cl_2_4_router"
+	symmetrical="YES">
+		<link_ctn id="2_3"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_4"/>
+</ASroute>
+<ASroute src="cl_2_3"
+	dst="cl_2_5"
+	gw_src="c_2_3-cl_2_3_router"
+	gw_dst="c_2_5-cl_2_5_router"
+	symmetrical="YES">
+		<link_ctn id="2_3"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_5"/>
+</ASroute>
+<ASroute src="cl_2_3"
+	dst="cl_2_6"
+	gw_src="c_2_3-cl_2_3_router"
+	gw_dst="c_2_6-cl_2_6_router"
+	symmetrical="YES">
+		<link_ctn id="2_3"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_6"/>
+</ASroute>
+<ASroute src="cl_2_3"
+	dst="cl_2_7"
+	gw_src="c_2_3-cl_2_3_router"
+	gw_dst="c_2_7-cl_2_7_router"
+	symmetrical="YES">
+		<link_ctn id="2_3"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_7"/>
+</ASroute>
+<ASroute src="cl_2_3"
+	dst="cl_2_8"
+	gw_src="c_2_3-cl_2_3_router"
+	gw_dst="c_2_8-cl_2_8_router"
+	symmetrical="YES">
+		<link_ctn id="2_3"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_8"/>
+</ASroute>
+<ASroute src="cl_2_4"
+	dst="cl_2_5"
+	gw_src="c_2_4-cl_2_4_router"
+	gw_dst="c_2_5-cl_2_5_router"
+	symmetrical="YES">
+		<link_ctn id="2_4"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_5"/>
+</ASroute>
+<ASroute src="cl_2_4"
+	dst="cl_2_6"
+	gw_src="c_2_4-cl_2_4_router"
+	gw_dst="c_2_6-cl_2_6_router"
+	symmetrical="YES">
+		<link_ctn id="2_4"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_6"/>
+</ASroute>
+<ASroute src="cl_2_4"
+	dst="cl_2_7"
+	gw_src="c_2_4-cl_2_4_router"
+	gw_dst="c_2_7-cl_2_7_router"
+	symmetrical="YES">
+		<link_ctn id="2_4"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_7"/>
+</ASroute>
+<ASroute src="cl_2_4"
+	dst="cl_2_8"
+	gw_src="c_2_4-cl_2_4_router"
+	gw_dst="c_2_8-cl_2_8_router"
+	symmetrical="YES">
+		<link_ctn id="2_4"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_8"/>
+</ASroute>
+<ASroute src="cl_2_5"
+	dst="cl_2_6"
+	gw_src="c_2_5-cl_2_5_router"
+	gw_dst="c_2_6-cl_2_6_router"
+	symmetrical="YES">
+		<link_ctn id="2_5"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_6"/>
+</ASroute>
+<ASroute src="cl_2_5"
+	dst="cl_2_7"
+	gw_src="c_2_5-cl_2_5_router"
+	gw_dst="c_2_7-cl_2_7_router"
+	symmetrical="YES">
+		<link_ctn id="2_5"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_7"/>
+</ASroute>
+<ASroute src="cl_2_5"
+	dst="cl_2_8"
+	gw_src="c_2_5-cl_2_5_router"
+	gw_dst="c_2_8-cl_2_8_router"
+	symmetrical="YES">
+		<link_ctn id="2_5"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_8"/>
+</ASroute>
+<ASroute src="cl_2_6"
+	dst="cl_2_7"
+	gw_src="c_2_6-cl_2_6_router"
+	gw_dst="c_2_7-cl_2_7_router"
+	symmetrical="YES">
+		<link_ctn id="2_6"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_7"/>
+</ASroute>
+<ASroute src="cl_2_6"
+	dst="cl_2_8"
+	gw_src="c_2_6-cl_2_6_router"
+	gw_dst="c_2_8-cl_2_8_router"
+	symmetrical="YES">
+		<link_ctn id="2_6"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_8"/>
+</ASroute>
+<ASroute src="cl_2_7"
+	dst="cl_2_8"
+	gw_src="c_2_7-cl_2_7_router"
+	gw_dst="c_2_8-cl_2_8_router"
+	symmetrical="YES">
+		<link_ctn id="2_7"/>
+		<link_ctn id="bb_2"/>
+		<link_ctn id="2_8"/>
+</ASroute>
+<ASroute src="cl_2_1"
+	dst="exitAS_2"
+	gw_src="c_2_1-cl_2_1_router"
+	gw_dst="router_2"
+	symmetrical="YES">
+		<link_ctn id="2_1"/>
+		<link_ctn id="bb_2"/>
+</ASroute>
+<ASroute src="cl_2_2"
+	dst="exitAS_2"
+	gw_src="c_2_2-cl_2_2_router"
+	gw_dst="router_2"
+	symmetrical="YES">
+		<link_ctn id="2_2"/>
+		<link_ctn id="bb_2"/>
+</ASroute>
+<ASroute src="cl_2_3"
+	dst="exitAS_2"
+	gw_src="c_2_3-cl_2_3_router"
+	gw_dst="router_2"
+	symmetrical="YES">
+		<link_ctn id="2_3"/>
+		<link_ctn id="bb_2"/>
+</ASroute>
+<ASroute src="cl_2_4"
+	dst="exitAS_2"
+	gw_src="c_2_4-cl_2_4_router"
+	gw_dst="router_2"
+	symmetrical="YES">
+		<link_ctn id="2_4"/>
+		<link_ctn id="bb_2"/>
+</ASroute>
+<ASroute src="cl_2_5"
+	dst="exitAS_2"
+	gw_src="c_2_5-cl_2_5_router"
+	gw_dst="router_2"
+	symmetrical="YES">
+		<link_ctn id="2_5"/>
+		<link_ctn id="bb_2"/>
+</ASroute>
+<ASroute src="cl_2_6"
+	dst="exitAS_2"
+	gw_src="c_2_6-cl_2_6_router"
+	gw_dst="router_2"
+	symmetrical="YES">
+		<link_ctn id="2_6"/>
+		<link_ctn id="bb_2"/>
+</ASroute>
+<ASroute src="cl_2_7"
+	dst="exitAS_2"
+	gw_src="c_2_7-cl_2_7_router"
+	gw_dst="router_2"
+	symmetrical="YES">
+		<link_ctn id="2_7"/>
+		<link_ctn id="bb_2"/>
+</ASroute>
+<ASroute src="cl_2_8"
+	dst="exitAS_2"
+	gw_src="c_2_8-cl_2_8_router"
+	gw_dst="router_2"
+	symmetrical="YES">
+		<link_ctn id="2_8"/>
+		<link_ctn id="bb_2"/>
+</ASroute>
+</AS>
+<link id="2" bandwidth="2250000000" latency="5E-5"/>
+<link id="bb_1" bandwidth="2250000000" latency="5E-4"/>
+<ASroute src="AS_2"
+	dst="exitAS_1"
+	gw_src="router_2"
+	gw_dst="router_1"
+	symmetrical="YES">
+		<link_ctn id="2"/>
+		<link_ctn id="bb_1"/>
+</ASroute>
+</AS>
+<link id="1" bandwidth="2250000000" latency="5E-5"/>
+<link id="bb_0" bandwidth="2250000000" latency="5E-4"/>
+<ASroute src="AS_1"
+	dst="exitAS_0"
+	gw_src="router_1"
+	gw_dst="router_0"
+	symmetrical="YES">
+		<link_ctn id="1"/>
+		<link_ctn id="bb_0"/>
+</ASroute>
+</AS>
+</platform>
