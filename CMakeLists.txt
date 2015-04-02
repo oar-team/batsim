@@ -1,3 +1,5 @@
+#cmake_minimum_required(VERSION 2.8)
+#Do we really need of 3.0.2 version ?
 cmake_minimum_required(VERSION 3.0.2)
 
 project("Batsim")

@@ -12,6 +12,7 @@
 * TODO file I/O
 * TODO VM
 * TODO evolving/moldable/malleable job support
+* TODO msg_par_homogenous profile wo/ diagonal
 
  
 * DONE msg_par_homogenous profile

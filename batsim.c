@@ -133,18 +133,14 @@ static void open_uds()
  */
 static int requestReplyScheduler(int argc, char *argv[])
 {
-    char *message_send = MSG_process_get_data(MSG_process_self());
-    XBT_INFO("Buffer received in REQ-REP: '%s'", message_send);
-
     char sendDateAsString[16];
     sprintf(sendDateAsString, "%f", MSG_get_clock());
+    
+    char *sendBuf = MSG_process_get_data(MSG_process_self());
+    XBT_INFO("Buffer received in REQ-REP: '%s'", sendBuf);
 
-    char * sendBuf;
-    asprintf(&sendBuf, "0:%s%s", sendDateAsString, message_send);
     send_uds(sendBuf);
-
     free(sendBuf);
-    sprintf(message_send, "");
 
     char * message_recv = recv_uds();
     xbt_dynar_t answer_dynar = xbt_str_split(message_recv, "|");
@@ -452,7 +448,7 @@ static int jobs_submitter(int argc, char *argv[])
 int server(int argc, char *argv[])
 {
     msg_host_t node;
-
+    
     msg_task_t task_received = NULL;
     s_task_data_t * task_data;
 
@@ -476,6 +472,7 @@ int server(int argc, char *argv[])
     char *sched_message = malloc(sizeof(char) * (schedMessageMaxLength+1)); // + 1 for NULL-terminated
     xbt_assert(sched_message != NULL, "Cannot allocate the send message buffer (requested bytes: %d)", schedMessageMaxLength+1);
     snprintf(sched_message, schedMessageMaxLength, "");
+    int lg_sched_message = 0;
 
     // todo: add a better finition, for example the submitters could say "hello" and "goodbye" to the scheduler
     // it may avoid the SG deadlock...
@@ -510,9 +507,11 @@ int server(int argc, char *argv[])
             s_job_t * job = jobFromJobID(task_data->job_id);
 
             XBT_INFO("Job %d COMPLETED. %d jobs completed so far", job->id, nb_completed_jobs);
-            size_m = snprintf(sched_message, schedMessageMaxLength,
+            size_m = snprintf(sched_message + lg_sched_message, schedMessageMaxLength,
                               "%s|%f:C:%s", sched_message, MSG_get_clock(), job->id_str);
-            xbt_assert(size_m <= schedMessageMaxLength, "Buffer for sending messages to the scheduler is not big enough...");
+            lg_sched_message += size_m;
+            xbt_assert(lg_sched_message <= schedMessageMaxLength, 
+                       "Buffer for sending messages to the scheduler is not big enough...");
             XBT_INFO("Message to send to scheduler: %s", sched_message);
 
             break;
@@ -524,9 +523,11 @@ int server(int argc, char *argv[])
             job->state = JOB_STATE_SUBMITTED;
 
             XBT_INFO("Job %d SUBMITTED. %d jobs submitted so far", job->id, nb_submitted_jobs);
-            size_m = snprintf(sched_message, schedMessageMaxLength,
-                              "%s|%f:S:%s", sched_message, MSG_get_clock(), job->id_str);
-            xbt_assert(size_m <= schedMessageMaxLength, "Buffer for sending messages to the scheduler is not big enough...");
+            size_m = snprintf(sched_message + lg_sched_message, schedMessageMaxLength,
+                              "|%f:S:%s", MSG_get_clock(), job->id_str);
+            lg_sched_message += size_m;
+            xbt_assert(lg_sched_message <= schedMessageMaxLength, 
+                        "Buffer for sending messages to the scheduler is not big enough...");
             XBT_INFO("Message to send to scheduler: %s", sched_message);
 
             break;
@@ -638,11 +639,17 @@ int server(int argc, char *argv[])
 
         task_free(&task_received);
         free(task_data);
-
-        if (//sched_ready && <--- pourquoi ceci ? on perd des messages, qui sont écrasés et du coup pas envoyés...
-(strcmp(sched_message, "") != 0))
+        
+        if (sched_ready && (strcmp(sched_message, "") != 0))
         {
-            MSG_process_create("Request and reply scheduler", requestReplyScheduler, sched_message, MSG_host_self());
+            char * sendBuf;
+
+	        asprintf(&sendBuf, "0:%f%s", MSG_get_clock(), sched_message);
+	        sprintf(sched_message, "");
+	        lg_sched_message = 0;
+
+            MSG_process_create("Request and reply scheduler", requestReplyScheduler, sendBuf, MSG_host_self());
+	    
             sched_ready = false;
         }
 
