@@ -507,8 +507,8 @@ int server(int argc, char *argv[])
             s_job_t * job = jobFromJobID(task_data->job_id);
 
             XBT_INFO("Job %d COMPLETED. %d jobs completed so far", job->id, nb_completed_jobs);
-            size_m = snprintf(sched_message + lg_sched_message, schedMessageMaxLength,
-                              "%s|%f:C:%s", sched_message, MSG_get_clock(), job->id_str);
+            size_m = snprintf(sched_message + lg_sched_message, schedMessageMaxLength - lg_sched_message,
+                              "|%f:C:%s", MSG_get_clock(), job->id_str);
             lg_sched_message += size_m;
             xbt_assert(lg_sched_message <= schedMessageMaxLength, 
                        "Buffer for sending messages to the scheduler is not big enough...");
@@ -523,7 +523,7 @@ int server(int argc, char *argv[])
             job->state = JOB_STATE_SUBMITTED;
 
             XBT_INFO("Job %d SUBMITTED. %d jobs submitted so far", job->id, nb_submitted_jobs);
-            size_m = snprintf(sched_message + lg_sched_message, schedMessageMaxLength,
+            size_m = snprintf(sched_message + lg_sched_message, schedMessageMaxLength - lg_sched_message,
                               "|%f:S:%s", MSG_get_clock(), job->id_str);
             lg_sched_message += size_m;
             xbt_assert(lg_sched_message <= schedMessageMaxLength, 
