@@ -116,13 +116,34 @@ static void open_uds()
     address.sun_family = AF_UNIX;
     snprintf(address.sun_path, 255, BAT_SOCK_NAME);
 
-    if(connect(uds_fd,
-               (struct sockaddr *) &address,
-               sizeof(struct sockaddr_un)) != 0)
+    int nb_try = 10;
+    int secondsBetweenEachTry = 1;
+    int connected = 0;
+
+    for (int i = 0; i < nb_try && !connected; ++i)
     {
-        XBT_ERROR("connect() failed\n");
-        exit(1);
+        XBT_INFO("Trying to connect (try %d)", i+1);
+
+        if(connect(uds_fd,
+                   (struct sockaddr *) &address,
+                   sizeof(struct sockaddr_un)) != 0)
+        {
+            if (i < nb_try-1)
+            {
+                XBT_INFO("Failed... Trying again in %d seconds\n", secondsBetweenEachTry);
+                sleep(secondsBetweenEachTry);
+            }
+            else
+                XBT_INFO("Failed...");
+        }
+        else
+            connected = 1;
     }
+
+    if (!connected)
+        xbt_die("connect() failed %d times", nb_try);
+
+
 }
 
 /**
