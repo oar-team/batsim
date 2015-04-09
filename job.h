@@ -4,7 +4,7 @@
 
 #include <sys/types.h> /* ssize_t, needed by xbt/str.h, included by msg/msg.h */
 
-#include <msg/msg.h>
+#include <simgrid/msg.h>
 #include <xbt.h>
 #include <xbt/sysdep.h>
 #include <xbt/log.h>
@@ -60,6 +60,13 @@ typedef struct s_delay
     double delay;
 } s_delay_t;
 
-void job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, xbt_dict_t * allocatedStuff);
-
-void freeTask(void * task);
+/**
+ * @brief Executes a job
+ * @param[in] job_id The job number
+ * @param[in] nb_res The number of resources on which the job will be executed
+ * @param[in] res_idxs The resources on which the job will be executed (indexes of the nodes parameter)
+ * @param[in] nodes The array of hosts which can be used to execute the job
+ * @param[in] walltime The maximum execution time of the job
+ * @return 1 if the job finished in time, 0 if the walltime had been reached
+ */
+int job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, double walltime);

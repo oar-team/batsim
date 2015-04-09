@@ -9,7 +9,44 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(job, "job");
 
-void profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *job_res, xbt_dict_t * allocatedStuff)
+//! The input data of a killerDelay
+typedef struct s_killer_delay_data
+{
+    msg_task_t task; //! The task that will be cancelled if the walltime is reached
+    double walltime; //! The number of seconds to wait before cancelling the task
+} KillerDelayData;
+
+int killerDelay(int argc, char *argv[])
+{
+    (void) argc;
+    (void) argv;
+
+    KillerDelayData * data = MSG_process_get_data(MSG_process_self());
+
+    // The sleep can either stop normally (res=MSG_OK) or be cancelled when the task execution completed (res=MSG_TASK_CANCELED)
+    msg_error_t res = MSG_process_sleep(data->walltime);
+
+    if (res == MSG_OK)
+    {
+        // If we had time to sleep until walltime (res=MSG_OK), the task execution is not over and must be cancelled
+        MSG_task_cancel(data->task);
+    }
+
+    free(data);
+
+    return 0;
+}
+
+/**
+ * @brief Executes the profile of a given job
+ * @param[in] profile_str The name of the profile to execute
+ * @param[in] job_id The job number
+ * @param[in] nb_res The number of resources on which the job will be executed
+ * @param[in] job_res The resources on which the job will be executed
+ * @param[in,out] remainingTime The time remaining to execute the full profile
+ * @return 1 if the profile had been executed in time, 0 if the walltime had been reached
+ */
+int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *job_res, double * remainingTime)
 {
     double *computation_amount;
     double *communication_amount;
@@ -33,15 +70,34 @@ void profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *j
         asprintf(&tname, "p %d", job_id);
         XBT_INFO("Creating task '%s'", tname);
 
-        //ptask = malloc(sizeof(msg_task_t *));
         ptask = MSG_parallel_task_create(tname,
                                          nb_res, job_res,
                                          computation_amount,
                                          communication_amount, NULL);
         free(tname);
-        xbt_dict_set(*allocatedStuff, "task", (void*)ptask, freeTask);
+
+        // Let's spawn a process which will wait until walltime and cancel the task if needed
+        KillerDelayData * killData = malloc(sizeof(KillerDelayData));
+        killData->task = ptask;
+        killData->walltime = *remainingTime;
+
+        msg_process_t killProcess = MSG_process_create("killer", killerDelay, killData, MSG_host_self());
+
+        double timeBeforeExecute = MSG_get_clock();
         msg_error_t err = MSG_parallel_task_execute(ptask);
-        xbt_assert(err == MSG_OK);
+        *remainingTime = *remainingTime - (MSG_get_clock() - timeBeforeExecute);
+
+        int ret = 1;
+        if (err == MSG_OK)
+            SIMIX_process_throw(killProcess, cancel_error, 0, "wake up");
+        else if (err == MSG_TASK_CANCELED)
+            ret = 0;
+        else
+            xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
+
+        MSG_task_destroy(ptask);
+        return ret;
+
     }
     else if (strcmp(profile->type, "msg_par_hg") == 0)
     {
@@ -65,15 +121,33 @@ void profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *j
         asprintf(&tname, "hg %d", job_id);
         XBT_INFO("Creating task '%s'", tname);
 
-        //ptask = malloc(sizeof(msg_task_t *));
         ptask = MSG_parallel_task_create(tname,
                                          nb_res, job_res,
                                          computation_amount,
                                          communication_amount, NULL);
         free(tname);
-        xbt_dict_set(*allocatedStuff, "task", (void*)ptask, freeTask);
+
+        // Let's spawn a process which will wait until walltime and cancel the task if needed
+        KillerDelayData * killData = malloc(sizeof(KillerDelayData));
+        killData->task = ptask;
+        killData->walltime = *remainingTime;
+
+        msg_process_t killProcess = MSG_process_create("killer", killerDelay, killData, MSG_host_self());
+
+        double timeBeforeExecute = MSG_get_clock();
         msg_error_t err = MSG_parallel_task_execute(ptask);
-        xbt_assert(err == MSG_OK);
+        *remainingTime = *remainingTime - (MSG_get_clock() - timeBeforeExecute);
+
+        int ret = 1;
+        if (err == MSG_OK)
+            SIMIX_process_throw(killProcess, cancel_error, 0, "wake up");
+        else if (err == MSG_TASK_CANCELED)
+            ret = 0;
+        else
+            xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
+
+        MSG_task_destroy(ptask);
+        return ret;
     }
     else if (strcmp(profile->type, "composed") == 0)
     {
@@ -85,79 +159,46 @@ void profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *j
         XBT_DEBUG("composed: nb: %d, lg_seq: %d", nb, lg_seq);
 
         for (int i = 0; i < nb; i++)
-        {
             for (int j = 0; j < lg_seq; j++)
-            {
-                profile_exec(seq[j], job_id, nb_res, job_res, allocatedStuff);
-            }
-        }
+                if (profile_exec(seq[j], job_id, nb_res, job_res, remainingTime) == 0)
+                    return 0;
     }
     else if (strcmp(profile->type, "delay") == 0)
     {
         double delay = ((s_delay_t *)(profile->data))->delay;
-        MSG_process_sleep(delay);
 
+        if (delay < *remainingTime)
+        {
+            MSG_process_sleep(delay);
+            return 1;
+        }
+        else
+        {
+            MSG_process_sleep(*remainingTime);
+            *remainingTime = 0;
+            return 0;
+        }
     }
     else if (strcmp(profile->type, "smpi") == 0)
-    {
         xbt_die("Profile with type %s is not yet implemented", profile->type);
-    }
     else
-    {
         xbt_die("Profile with type %s is not supported", profile->type);
-    }
+
+    return 0;
 }
 
-/**
- * \brief Load workload with jobs' profiles file
- */
-
-void job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, xbt_dict_t * allocatedStuff)
+int job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, double walltime)
 {
-    int dictCreatedHere = 0;
-
-    if (allocatedStuff == NULL)
-    {
-        allocatedStuff = malloc(sizeof(xbt_dict_t));
-        *allocatedStuff = xbt_dict_new();
-        dictCreatedHere = 1;
-    }
-
     s_job_t * job = jobFromJobID(job_id);
     XBT_INFO("job_exec: jobID %d, job=%p", job_id, job);
 
     msg_host_t * job_res = (msg_host_t *) malloc(nb_res * sizeof(s_msg_host_t));
-    xbt_dict_set(*allocatedStuff, "hosts", job_res, free);
 
     for(int i = 0; i < nb_res; i++)
         job_res[i] = nodes[res_idxs[i]];
 
-    profile_exec(job->profile, job_id, nb_res, job_res, allocatedStuff);
+    int ret = profile_exec(job->profile, job_id, nb_res, job_res, &walltime);
 
-    if (dictCreatedHere)
-    {
-        xbt_dict_free(allocatedStuff);
-        free(allocatedStuff);
-    }
-}
-
-void freeTask(void * task)
-{
-    msg_task_t t = (msg_task_t) task;
-
-    const static int doLeak = 0;
-
-    if (doLeak)
-    {
-        XBT_INFO("freeing task '%s' (with memory leak)", MSG_task_get_name(t));
-        XBT_INFO("freeing task (with memory leak) done");
-    }
-    else
-    {
-        // todo: make this work -> SG mailing list? cancelling the task might be better BEFORE killing the associated process...
-        XBT_INFO("freeing task '%s'", MSG_task_get_name(t));
-        //MSG_task_cancel(t);
-        MSG_task_destroy(t);
-        XBT_INFO("freeing task done");
-    }
+    free(job_res);
+    return ret;
 }

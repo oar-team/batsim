@@ -2,7 +2,7 @@
  * All rights reserved.                       */ 
 #pragma once
 
-#include <msg/msg.h>
+#include <simgrid/msg.h>
 #include <xbt.h>
 #include <xbt/sysdep.h>
 #include <xbt/log.h>

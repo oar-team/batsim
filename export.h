@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <sys/types.h> /* ssize_t, needed by xbt/str.h, included by msg/msg.h */
-#include <msg/msg.h>
+#include <simgrid/msg.h>
 
 /**
  * @brief Handles bufferized writings into a single file

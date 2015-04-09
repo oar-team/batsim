@@ -1,12 +1,14 @@
 /* Copyright (c) 2007-2014. The SimGrid Team and OAR Team
  * All rights reserved.                                                     */
 
-#include <msg/msg.h>
+#include <simgrid/msg.h>
 
 #include <xbt/sysdep.h>         /* calloc, printf */
 /* Create a log channel to have nice outputs. */
 #include <xbt/log.h>
 #include <xbt/asserts.h>
+
+#include <math.h>
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(batexec, "Batexec");
 
@@ -25,6 +27,9 @@ msg_host_t *nodes;
  */
 static int job_launcher(int argc, char *argv[])
 {
+    (void) argc;
+    (void) argv;
+
     unsigned int job_index;
     s_job_t * job;
 
@@ -36,7 +41,7 @@ static int job_launcher(int argc, char *argv[])
         for (int i = 0; i < job->nb_res; i++)
             res_idxs[i] = i;
 
-        job_exec(job->id, job->nb_res, res_idxs, nodes, NULL);
+        job_exec(job->id, job->nb_res, res_idxs, nodes, INFINITY);
         XBT_INFO("Job id %d, job simulation time: %f", job->id,  MSG_get_clock() - t);
         free(res_idxs);
     }
@@ -49,8 +54,6 @@ msg_error_t deploy_all(const char *platform_file)
     msg_error_t res = MSG_OK;
     xbt_dynar_t all_hosts;
     msg_host_t first_host;
-    msg_host_t host;
-    int i;
 
     MSG_config("workstation/model", "ptask_L07");
     MSG_create_environment(platform_file);
@@ -77,7 +80,6 @@ msg_error_t deploy_all(const char *platform_file)
 int main(int argc, char *argv[])
 {
     msg_error_t res = MSG_OK;
-    int i;
 
     json_t *json_workload_profile;
 

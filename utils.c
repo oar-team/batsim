@@ -82,13 +82,13 @@ void retrieve_jobs(json_t *root) // todo: sort jobs by ascending submission time
             job->submission_time = json_number_to_double(json_object_get(j,"subtime"));
             job->walltime = json_number_to_double(json_object_get(j,"walltime"));
             asprintf(&(job->profile), "%s", json_string_value(json_object_get(j,"profile"))); // todo: clean
-            XBT_INFO("Read profile '%s' from job %d", job->profile, job->id);
+            /*XBT_INFO("Read profile '%s' from job %d", job->profile, job->id);*/
             job->runtime = -1;
             job->nb_res = json_number_to_double(json_object_get(j,"res"));
             job->state = JOB_STATE_NOT_SUBMITTED;
 
-            XBT_INFO("Read job: id=%d, subtime=%lf, walltime=%lf, profile='%s', nb_res=%d",
-                     job->id, job->submission_time, job->walltime, job->profile, job->nb_res);
+            /*XBT_INFO("Read job: id=%d, subtime=%lf, walltime=%lf, profile='%s', nb_res=%d",
+                     job->id, job->submission_time, job->walltime, job->profile, job->nb_res);*/
 
             if (!jobExists(job->id))
             {
@@ -97,7 +97,7 @@ void retrieve_jobs(json_t *root) // todo: sort jobs by ascending submission time
                 int * insertPosition = (int *) malloc(sizeof(int));
                 *insertPosition = xbt_dynar_length(jobs_dynar) - 1;
                 xbt_dict_set(job_id_to_dynar_pos, job->id_str, insertPosition, free);
-                XBT_INFO("Added to map '%s'->%d", job->id_str, *insertPosition);
+                /*XBT_INFO("Added to map '%s'->%d", job->id_str, *insertPosition);*/
             }
             else
             {
