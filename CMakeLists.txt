@@ -19,6 +19,8 @@ else()
         message(STATUS "The compiler ${CMAKE_C_COMPILER} has no C11 nor C99 support. Please update your C compiler.")
 endif()
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+
 add_executable(batsim batsim.c job.c utils.c export.c)
 add_executable(batexec batexec.c job.c utils.c export.c)
 
