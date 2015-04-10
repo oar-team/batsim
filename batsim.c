@@ -13,6 +13,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <string.h>
+#include <argp.h>
 
 #include <simgrid/msg.h>
 
@@ -26,14 +27,6 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "Batsim");
 #include "job.h"
 #include "utils.h"
 #include "export.h"
-
-#define BAT_SOCK_NAME "/tmp/bat_socket"
-
-#define COMM_SIZE 0.000001 //#define COMM_SIZE 0.0 // => raise core dump 
-#define COMP_SIZE 0.0
-
-#define true 1
-#define false 0
 
 const int schedMessageMaxLength = 1024*1024 - 1; // 1 Mio should be enough...
 
@@ -100,7 +93,7 @@ static char *recv_uds()
 /**
  * \brief Open Unix Domain Socket for communication with scheduler
  */
-static void open_uds()
+static void open_uds(const char * socketFilename, int nb_try, double msBetweenTries)
 {
     struct sockaddr_un address;
 
@@ -114,15 +107,12 @@ static void open_uds()
     memset(&address, 0, sizeof(struct sockaddr_un));
 
     address.sun_family = AF_UNIX;
-    snprintf(address.sun_path, 255, BAT_SOCK_NAME);
+    snprintf(address.sun_path, 255, "%s", socketFilename);
 
-    int nb_try = 10;
-    int secondsBetweenEachTry = 1;
     int connected = 0;
-
     for (int i = 0; i < nb_try && !connected; ++i)
     {
-        XBT_INFO("Trying to connect (try %d)", i+1);
+        XBT_INFO("Trying to connect to '%s' (try %d/%d)", socketFilename, i+1, nb_try);
 
         if(connect(uds_fd,
                    (struct sockaddr *) &address,
@@ -130,8 +120,8 @@ static void open_uds()
         {
             if (i < nb_try-1)
             {
-                XBT_INFO("Failed... Trying again in %d seconds\n", secondsBetweenEachTry);
-                sleep(secondsBetweenEachTry);
+                XBT_INFO("Failed... Trying again in %lf ms\n", msBetweenTries);
+                usleep(msBetweenTries * 1000);
             }
             else
                 XBT_INFO("Failed...");
@@ -141,7 +131,7 @@ static void open_uds()
     }
 
     if (!connected)
-        xbt_die("connect() failed %d times", nb_try);
+        xbt_die("Connection failed %d times, aborting.", nb_try);
 
 
 }
@@ -209,7 +199,8 @@ void send_message(const char *dst, e_task_type_t type, int job_id, void *data)
     req_data->type = type;
     req_data->job_id = job_id;
     req_data->data = data;
-    task_sent = MSG_task_create(NULL, COMP_SIZE, COMM_SIZE, req_data);
+
+    task_sent = MSG_task_create(NULL, 0, 1e-6, req_data);
 
     XBT_INFO("message from '%s' to '%s' of type '%s' with data %p",
              MSG_process_get_name(MSG_process_self()), dst, task_type2str[type], data);
@@ -395,7 +386,7 @@ int server(int argc, char *argv[])
     int nb_submitters = 0;
     int nb_submitters_finished = 0;
     int nb_running_jobs = 0;
-    int sched_ready = true;
+    int sched_ready = 1;
     int size_m;
     char *tmp;
     char *job_ready_str;
@@ -563,7 +554,7 @@ int server(int argc, char *argv[])
         } // end of case SCHED_EVENT
         case SCHED_READY:
         {
-            sched_ready = true;
+            sched_ready = 1;
             break;
         } // end of case SCHED_READY
         default:
@@ -585,7 +576,7 @@ int server(int argc, char *argv[])
 
             MSG_process_create("Request and reply scheduler", requestReplyScheduler, sendBuf, MSG_host_self());
 	    
-            sched_ready = false;
+            sched_ready = 0;
         }
 
     } // end of while
@@ -604,7 +595,7 @@ int server(int argc, char *argv[])
 /**
  * \brief
  */
-msg_error_t deploy_all(const char *platform_file)
+msg_error_t deploy_all(const char *platform_file, const char * masterHostName)
 {
     MSG_config("workstation/model", "ptask_L07");
     MSG_create_environment(platform_file);
@@ -612,7 +603,6 @@ msg_error_t deploy_all(const char *platform_file)
     xbt_dynar_t all_hosts = MSG_hosts_as_dynar();
 
     // Let's find the master host (the one on which the simulator and the job submitters run)
-    const char * masterHostName = "master_host";
     msg_host_t master_host = MSG_get_host_by_name(masterHostName);
     int masterIndex = -1;
     xbt_assert(master_host != NULL,"Invalid SimGrid platform file '%s': cannot find any host named '%s'. "
@@ -666,33 +656,140 @@ msg_error_t deploy_all(const char *platform_file)
     return res;
 }
 
+typedef struct s_main_args
+{
+    char * socketFilename;  //! The Unix Domain Socket filename
+    int nbConnectTries;     //! The number of connection tries to do on socketFilename
+    double connectDelay;    //! The delay (in ms) between each connection try
+    char * platformFilename;//! The SimGrid platform filename
+    char * workloadFilename;//! The JSON workload filename
+    char * masterHostName;  //! The name of the SimGrid host which runs scheduler processes and not user tasks
+    int abort;              //! A boolean value. If set to yet, the launching should be aborted for reason abortReason
+    char * abortReason;     //! Human readable reasons which explains why the launch should be aborted
+} s_main_args_t;
+
+static int parse_opt (int key, char *arg, struct argp_state *state)
+{
+    s_main_args_t * mainArgs = state->input;
+    char * tmp = NULL;
+
+    switch (key)
+    {
+    case 'd':
+        mainArgs->connectDelay = atof(arg);
+        if (mainArgs->connectDelay < 100 || mainArgs->connectDelay > 10000)
+        {
+            mainArgs->abort = 1;
+            asprintf(&tmp, "\n  invalid connection delay (%lf): it must be in [100,10000] ms", mainArgs->connectDelay);
+            strcat(mainArgs->abortReason, tmp);
+            free(tmp);
+        }
+        break;
+    case 'm':
+        mainArgs->masterHostName = arg;
+        break;
+    case 's':
+        mainArgs->socketFilename = arg;
+        break;
+    case 't':
+        mainArgs->nbConnectTries = atoi(arg);
+        if (mainArgs->nbConnectTries < 1)
+        {
+            mainArgs->abort = 1;
+            asprintf(&tmp, "\n  invalid number of connection tries (%d): it must be greater than or equal to 1", mainArgs->nbConnectTries);
+            strcat(mainArgs->abortReason, tmp);
+            free(tmp);
+        }
+        break;
+    case ARGP_KEY_ARG:
+        switch(state->arg_num)
+        {
+        case 0:
+            mainArgs->platformFilename = arg;
+            if (access(mainArgs->platformFilename, R_OK) == -1)
+            {
+                mainArgs->abort = 1;
+                asprintf(&tmp, "\n  invalid PLATFORM_FILE argument: file '%s' cannot be read", mainArgs->platformFilename);
+                strcat(mainArgs->abortReason, tmp);
+                free(tmp);
+            }
+            break;
+        case 1:
+            mainArgs->workloadFilename = arg;
+            if (access(mainArgs->workloadFilename, R_OK) == -1)
+            {
+                mainArgs->abort = 1;
+                asprintf(&tmp, "\n  invalid WORKLOAD_FILE argument: file '%s' cannot be read", mainArgs->workloadFilename);
+                strcat(mainArgs->abortReason, tmp);
+                free(tmp);
+            }
+            break;
+        }
+        break;
+    case ARGP_KEY_END:
+        if (state->arg_num < 2)
+        {
+            mainArgs->abort = 1;
+            strcat(mainArgs->abortReason, "\n\tToo few arguments.");
+        }
+        else if (state->arg_num > 2)
+        {
+            mainArgs->abort = 1;
+            strcat(mainArgs->abortReason, "\n\tToo many arguments.");
+        }
+        break;
+    }
+
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
-    msg_error_t res = MSG_OK;
+    s_main_args_t mainArgs;
+    mainArgs.socketFilename = "/tmp/bat_socket";
+    mainArgs.nbConnectTries = 10;
+    mainArgs.connectDelay = 1000;
+    mainArgs.platformFilename = NULL;
+    mainArgs.workloadFilename = NULL;
+    mainArgs.masterHostName = "master_host";
+    mainArgs.abort = 0;
+    mainArgs.abortReason = malloc(4096);
+    sprintf(mainArgs.abortReason, "");
+
+    struct argp_option options[] =
+    {
+        {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename"},
+        {"connection-tries", 't', "NUM", 0, "The maximum number of connection tries"},
+        {"connection-delay", 'd', "MS", 0, "The number of milliseconds between each connection try"},
+        {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks"},
+        {0}
+    };
+    struct argp argp = {options, parse_opt, "PLATFORM_FILE WORKLOAD_FILE"};
+    argp_parse(&argp, argc, argv, 0, 0, &mainArgs);
+
+    if (mainArgs.abort)
+    {
+        fprintf(stderr, "Impossible to run batsim:%s\n", mainArgs.abortReason);
+        free(mainArgs.abortReason);
+        return 1;
+    }
+
+    free (mainArgs.abortReason);
 
     json_t *json_workload_profile;
 
     //Comment to remove debug message
     xbt_log_control_set("batsim.threshold:debug");
 
-    if (argc < 2)
-    {
-        printf("Batsim: Batch System Simulator.\n");
-        printf("\n");
-        printf("Usage: %s platform_file workload_file\n", argv[0]);
-        printf("example: %s platforms/small_platform.xml workload_profiles/test_workload_profile.json\n", argv[0]);
-        exit(1);
-    }
-
-    json_workload_profile = load_json_workload_profile(argv[2]);
+    json_workload_profile = load_json_workload_profile(mainArgs.workloadFilename);
     retrieve_jobs(json_workload_profile);
     retrieve_profiles(json_workload_profile);
 
-    open_uds();
+    open_uds(mainArgs.socketFilename, mainArgs.nbConnectTries, mainArgs.connectDelay);
 
     MSG_init(&argc, argv);
 
-    res = deploy_all(argv[1]);
+    msg_error_t res = deploy_all(mainArgs.platformFilename, mainArgs.masterHostName);
 
     json_decref(json_workload_profile);
     // Let's clear global allocated data
