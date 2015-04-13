@@ -120,7 +120,7 @@ static void open_uds(const char * socketFilename, int nb_try, double msBetweenTr
         {
             if (i < nb_try-1)
             {
-                XBT_INFO("Failed... Trying again in %lf ms\n", msBetweenTries);
+                XBT_INFO("Failed... Trying again in %g ms\n", msBetweenTries);
                 usleep(msBetweenTries * 1000);
             }
             else
@@ -758,13 +758,13 @@ int main(int argc, char *argv[])
 
     struct argp_option options[] =
     {
-        {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename"},
-        {"connection-tries", 't', "NUM", 0, "The maximum number of connection tries"},
-        {"connection-delay", 'd', "MS", 0, "The number of milliseconds between each connection try"},
-        {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks"},
-        {0}
+        {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename", 0},
+        {"connection-tries", 't', "NUM", 0, "The maximum number of connection tries", 0},
+        {"connection-delay", 'd', "MS", 0, "The number of milliseconds between each connection try", 0},
+        {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks", 0},
+        {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
     };
-    struct argp argp = {options, parse_opt, "PLATFORM_FILE WORKLOAD_FILE"};
+    struct argp argp = {options, parse_opt, "PLATFORM_FILE WORKLOAD_FILE", "A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.", 0, 0, 0};
     argp_parse(&argp, argc, argv, 0, 0, &mainArgs);
 
     if (mainArgs.abort)
