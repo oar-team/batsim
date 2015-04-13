@@ -44,8 +44,11 @@ void writeBuffer_append(WriteBuffer * wbuf, const char * text);
  */
 void writeBuffer_flush(WriteBuffer * wbuf);
 
-
-
+/**
+ * @brief Exports the job execution to a CSV file.
+ * @param filename This is the name of the output file used to write the CSV data.
+ */
+void exportJobsToCSV(const char * filename);
 
 /**
  * @brief The states of a PajeTracer

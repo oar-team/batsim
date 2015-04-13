@@ -30,8 +30,11 @@ typedef struct s_job
     char *profile;          //! The job profile
     double submission_time; //! The time at which the job is available to be scheduled
     double walltime;        //! The maximum execution time autorized for the job
-    double runtime;         //! The execution time of the job
     int nb_res;             //! The number of resources the job asked for
+
+    double startingTime;    //! The time at which the job started being executed
+    double runtime;         //! The execution time of the job
+    int * alloc_ids;        //! The resources allocated that were allocated to this job
     e_job_state_t state;    //! The state
 } s_job_t;
 

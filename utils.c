@@ -17,6 +17,11 @@ xbt_dict_t profiles = NULL;
 xbt_dynar_t jobs_dynar = NULL;
 xbt_dict_t job_id_to_dynar_pos = NULL;
 
+static int sortJobsByAscendingSubmissionTimeComp(const void *e1, const void *e2)
+{
+   // s_job_t * j1 = *()
+}
+
 json_t *load_json_workload_profile(char *filename)
 {
     json_t *root;
@@ -83,8 +88,11 @@ void retrieve_jobs(json_t *root) // todo: sort jobs by ascending submission time
             job->walltime = json_number_to_double(json_object_get(j,"walltime"));
             asprintf(&(job->profile), "%s", json_string_value(json_object_get(j,"profile"))); // todo: clean
             /*XBT_INFO("Read profile '%s' from job %d", job->profile, job->id);*/
-            job->runtime = -1;
             job->nb_res = json_number_to_double(json_object_get(j,"res"));
+
+            job->startingTime = -1;
+            job->runtime = -1;
+            job->alloc_ids = 0;
             job->state = JOB_STATE_NOT_SUBMITTED;
 
             /*XBT_INFO("Read job: id=%d, subtime=%lf, walltime=%lf, profile='%s', nb_res=%d",
@@ -273,6 +281,7 @@ void freeJob(void * job)
 
     free(j->id_str);
     free(j->profile);
+    free(j->alloc_ids);
     free(j);
 }
 

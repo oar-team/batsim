@@ -49,7 +49,7 @@ msg_host_t *nodes;
 
 int uds_fd = -1;
 
-PajeTracer * tracer;
+PajeTracer * tracer = NULL;
 
 // process functions
 static int node(int argc, char *argv[]);
@@ -234,25 +234,29 @@ static int launch_job(int argc, char *argv[])
     int jobID = data->jobID;
     s_job_t * job = jobFromJobID(jobID);
 
-
     XBT_INFO("Launching job %d", jobID);
-
+    job->startingTime = MSG_get_clock();
+    job->alloc_ids = data->reservedNodesIDs;
     pajeTracer_addJobLaunching(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
     pajeTracer_addJobRunning(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
 
     if (job_exec(jobID, data->reservedNodeCount, data->reservedNodesIDs, nodes, job->walltime) == 1)
     {
         XBT_INFO("Job %d finished in time", data->jobID);
+        job->state = JOB_STATE_COMPLETED_SUCCESSFULLY;
         pajeTracer_addJobEnding(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
     }
     else
     {
         XBT_INFO("Job %d had been killed (walltime %lf reached)", job->id, job->walltime);
+        job->state = JOB_STATE_COMPLETED_KILLED;
         pajeTracer_addJobEnding(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
         pajeTracer_addJobKill(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
     }
 
-    free(data->reservedNodesIDs);
+    job->runtime = MSG_get_clock() - job->startingTime;
+
+    //free(data->reservedNodesIDs);
     free(data);
     send_message("server", JOB_COMPLETED, jobID, NULL);
 
@@ -506,9 +510,9 @@ int server(int argc, char *argv[])
                         launchData->jobID = jobID;
                         launchData->reservedNodeCount = xbt_dynar_length(res_dynar);
 
-                        xbt_assert(launchData->reservedNodeCount == jobFromJobID(launchData->jobID)->nb_res,
+                        xbt_assert(launchData->reservedNodeCount == job->nb_res,
                                    "Invalid scheduling algorithm decision: allocation of job %d is done on %d nodes (instead of %d)",
-                                   launchData->jobID, launchData->reservedNodeCount, jobFromJobID(launchData->jobID)->nb_res);
+                                   launchData->jobID, launchData->reservedNodeCount, job->nb_res);
 
                         launchData->reservedNodesIDs = (int*) malloc(launchData->reservedNodeCount * sizeof(int));
 
@@ -651,6 +655,8 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName)
 
     pajeTracer_finalize(tracer, MSG_get_clock(), nb_nodes, nodes);
     pajeTracer_destroy(&tracer);
+
+    exportJobsToCSV("outJobs.csv");
 
     XBT_INFO("Simulation time %g", MSG_get_clock());
     return res;

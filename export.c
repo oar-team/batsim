@@ -4,6 +4,11 @@
 #include <xbt.h>
 #include <math.h>
 
+#include "job.h"
+#include "utils.h"
+
+XBT_LOG_NEW_DEFAULT_CATEGORY(export, "export");
+
 WriteBuffer * writeBuffer_create(const char * filename, int bufferSize)
 {
 	xbt_assert(bufferSize > 0, "Invalid buffer size (%d)", bufferSize);
@@ -556,4 +561,64 @@ void hsvToRgb(double h, double s, double v, double * r, double * g, double * b)
 		*b = q;
 		break;
 	}
+}
+
+
+void exportJobsToCSV(const char *filename)
+{
+    FILE * f = fopen(filename, "w");
+
+    /*jobID
+    submit time
+    number of processors
+    rejected (0 or 1)
+    wall time
+    starting time
+    execution time
+    used processors (list of ranges)*/
+
+    if (f != NULL)
+    {
+        fputs("jobID,submission_time,requested_number_of_processors,requested_time,executed,starting_time,execution_time,allocated_processors\n", f);
+
+        if (jobs_dynar != NULL)
+        {
+            unsigned int i;
+            s_job_t * job;
+            char * buf;
+
+            xbt_dynar_foreach(jobs_dynar, i, job)
+            {
+                if (job->state == JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JOB_STATE_COMPLETED_KILLED)
+                {
+                    int executed = job->state == JOB_STATE_COMPLETED_SUCCESSFULLY;
+                    asprintf(&buf, "%d,%lf,%d,%lf,%d,%lf,%lf,", job->id, job->submission_time, job->nb_res, job->walltime, executed,
+                             job->startingTime, job->runtime);
+                    fputs(buf, f);
+                    free(buf);
+
+                    if (job->nb_res > 0)
+                    {
+                        asprintf(&buf, "%d", job->alloc_ids[0]);
+                        fputs(buf, f);
+                        free(buf);
+
+                        for (int i = 1; i < job->nb_res; ++i)
+                        {
+                            asprintf(&buf," %d", job->alloc_ids[i]);
+                            fputs(buf, f);
+                            free(buf);
+                        }
+                    }
+
+                    fputs("\n", f);
+                }
+            }
+        }
+
+        int err = fclose(f);
+        xbt_assert(err == 0, "Impossible to close file '%s'...", filename);
+    }
+    else
+        XBT_INFO("Impossible to write file '%s'", filename);
 }
