@@ -579,7 +579,7 @@ void exportJobsToCSV(const char *filename)
 
     if (f != NULL)
     {
-        fputs("jobID,submission_time,requested_number_of_processors,requested_time,executed,starting_time,execution_time,allocated_processors\n", f);
+        fputs("jobID,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,allocated_processors\n", f);
 
         if (jobs_dynar != NULL)
         {
@@ -591,9 +591,19 @@ void exportJobsToCSV(const char *filename)
             {
                 if (job->state == JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JOB_STATE_COMPLETED_KILLED)
                 {
-                    int executed = job->state == JOB_STATE_COMPLETED_SUCCESSFULLY;
-                    asprintf(&buf, "%d,%lf,%d,%lf,%d,%lf,%lf,", job->id, job->submission_time, job->nb_res, job->walltime, executed,
-                             job->startingTime, job->runtime);
+                    int success = job->state == JOB_STATE_COMPLETED_SUCCESSFULLY;
+                    asprintf(&buf, "%d,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,", job->id,
+                             job->submission_time,
+                             job->nb_res,
+                             job->walltime,
+                             success,
+                             job->startingTime,
+                             job->runtime,
+                             job->startingTime + job->runtime, // finish_time
+                             job->startingTime - job->submission_time, // waiting_time
+                             job->startingTime + job->runtime - job->submission_time, // turnaround_time
+                             (job->startingTime + job->runtime - job->submission_time) / job->runtime // stretch
+                             );
                     fputs(buf, f);
                     free(buf);
 
