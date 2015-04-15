@@ -599,7 +599,7 @@ int server(int argc, char *argv[])
 /**
  * \brief
  */
-msg_error_t deploy_all(const char *platform_file, const char * masterHostName)
+msg_error_t deploy_all(const char *platform_file, const char * masterHostName, const char * pajeTraceFilename, const char * csvFilename)
 {
     MSG_config("workstation/model", "ptask_L07");
     MSG_create_environment(platform_file);
@@ -648,7 +648,7 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName)
     MSG_process_create("server", server, NULL, master_host);
 
     // We can now initialize the tracing and run the processes
-    tracer = pajeTracer_create("schedule.trace", 0, 32);
+    tracer = pajeTracer_create(pajeTraceFilename, 0, 32);
     pajeTracer_initialize(tracer, MSG_get_clock(), nb_nodes, nodes);
 
     msg_error_t res = MSG_main();
@@ -656,7 +656,7 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName)
     pajeTracer_finalize(tracer, MSG_get_clock(), nb_nodes, nodes);
     pajeTracer_destroy(&tracer);
 
-    exportJobsToCSV("outJobs.csv");
+    exportJobsToCSV(csvFilename);
 
     XBT_INFO("Simulation time %g", MSG_get_clock());
     return res;
@@ -664,12 +664,16 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName)
 
 typedef struct s_main_args
 {
+    char * platformFilename;//! The SimGrid platform filename
+    char * workloadFilename;//! The JSON workload filename
+
     char * socketFilename;  //! The Unix Domain Socket filename
     int nbConnectTries;     //! The number of connection tries to do on socketFilename
     double connectDelay;    //! The delay (in ms) between each connection try
-    char * platformFilename;//! The SimGrid platform filename
-    char * workloadFilename;//! The JSON workload filename
+
     char * masterHostName;  //! The name of the SimGrid host which runs scheduler processes and not user tasks
+    char * exportPrefix;    //! The filename prefix used to export simulation information
+
     int abort;              //! A boolean value. If set to yet, the launching should be aborted for reason abortReason
     char * abortReason;     //! Human readable reasons which explains why the launch should be aborted
 } s_main_args_t;
@@ -690,6 +694,9 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
             strcat(mainArgs->abortReason, tmp);
             free(tmp);
         }
+        break;
+    case 'e':
+        mainArgs->exportPrefix = arg;
         break;
     case 'm':
         mainArgs->masterHostName = arg;
@@ -758,6 +765,7 @@ int main(int argc, char *argv[])
     mainArgs.platformFilename = NULL;
     mainArgs.workloadFilename = NULL;
     mainArgs.masterHostName = "master_host";
+    mainArgs.exportPrefix = "out";
     mainArgs.abort = 0;
     mainArgs.abortReason = malloc(4096);
     sprintf(mainArgs.abortReason, "");
@@ -768,6 +776,7 @@ int main(int argc, char *argv[])
         {"connection-tries", 't', "NUM", 0, "The maximum number of connection tries", 0},
         {"connection-delay", 'd', "MS", 0, "The number of milliseconds between each connection try", 0},
         {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks", 0},
+        {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output", 0},
         {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
     };
     struct argp argp = {options, parse_opt, "PLATFORM_FILE WORKLOAD_FILE", "A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.", 0, 0, 0};
@@ -795,7 +804,16 @@ int main(int argc, char *argv[])
 
     MSG_init(&argc, argv);
 
-    msg_error_t res = deploy_all(mainArgs.platformFilename, mainArgs.masterHostName);
+    char * pajeFilename;
+    char * csvFilename;
+
+    asprintf(&pajeFilename, "%s.trace", mainArgs.exportPrefix);
+    asprintf(&csvFilename, "%s.csv", mainArgs.exportPrefix);
+
+    msg_error_t res = deploy_all(mainArgs.platformFilename, mainArgs.masterHostName, pajeFilename, csvFilename);
+
+    free(pajeFilename);
+    free(csvFilename);
 
     json_decref(json_workload_profile);
     // Let's clear global allocated data
