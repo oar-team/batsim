@@ -7,7 +7,7 @@
 #include "job.h"
 #include "utils.h"
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(job, "job");
+XBT_LOG_NEW_DEFAULT_CATEGORY(task, "task");
 
 //! The input data of a killerDelay
 typedef struct s_killer_delay_data
@@ -29,6 +29,7 @@ int killerDelay(int argc, char *argv[])
     if (res == MSG_OK)
     {
         // If we had time to sleep until walltime (res=MSG_OK), the task execution is not over and must be cancelled
+        XBT_INFO("Cancelling task '%s'", MSG_task_get_name(data->task));
         MSG_task_cancel(data->task);
     }
 
@@ -84,6 +85,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         msg_process_t killProcess = MSG_process_create("killer", killerDelay, killData, MSG_host_self());
 
         double timeBeforeExecute = MSG_get_clock();
+        XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
         msg_error_t err = MSG_parallel_task_execute(ptask);
         *remainingTime = *remainingTime - (MSG_get_clock() - timeBeforeExecute);
 
@@ -95,6 +97,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         else
             xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
 
+        XBT_INFO("Task '%s' finished", MSG_task_get_name(ptask));
         MSG_task_destroy(ptask);
         return ret;
 
@@ -108,7 +111,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         computation_amount = malloc(nb_res * sizeof(double));
         communication_amount = malloc(nb_res * nb_res * sizeof(double));
 
-        XBT_DEBUG("msg_par_hg: nb_res: %d , cpu: %f , com: %f", nb_res, cpu, com);
+        //XBT_DEBUG("msg_par_hg: nb_res: %d , cpu: %f , com: %f", nb_res, cpu, com);
 
         for (int i = 0; i < nb_res; i++)
             computation_amount[i] = cpu;
@@ -135,6 +138,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         msg_process_t killProcess = MSG_process_create("killer", killerDelay, killData, MSG_host_self());
 
         double timeBeforeExecute = MSG_get_clock();
+        XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
         msg_error_t err = MSG_parallel_task_execute(ptask);
         *remainingTime = *remainingTime - (MSG_get_clock() - timeBeforeExecute);
 
@@ -146,6 +150,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         else
             xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
 
+        XBT_INFO("Task '%s' finished", MSG_task_get_name(ptask));
         MSG_task_destroy(ptask);
         return ret;
     }
@@ -155,8 +160,6 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         int nb = data->nb;
         int lg_seq = data->lg_seq;
         char **seq = data->seq;
-
-        XBT_DEBUG("composed: nb: %d, lg_seq: %d", nb, lg_seq);
 
         for (int i = 0; i < nb; i++)
             for (int j = 0; j < lg_seq; j++)
@@ -169,12 +172,16 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
 
         if (delay < *remainingTime)
         {
+            XBT_INFO("Sleeping the whole task length");
             MSG_process_sleep(delay);
+            XBT_INFO("Sleeping done");
             return 1;
         }
         else
         {
+            XBT_INFO("Sleeping until walltime");
             MSG_process_sleep(*remainingTime);
+            XBT_INFO("Walltime reached");
             *remainingTime = 0;
             return 0;
         }
@@ -190,7 +197,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
 int job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, double walltime)
 {
     s_job_t * job = jobFromJobID(job_id);
-    XBT_INFO("job_exec: jobID %d, job=%p", job_id, job);
+    //XBT_INFO("job_exec: jobID %d, job=%p", job_id, job);
 
     msg_host_t * job_res = (msg_host_t *) malloc(nb_res * sizeof(s_msg_host_t));
 

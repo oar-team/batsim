@@ -45,8 +45,8 @@ json_t *load_json_workload_profile(char *filename)
     {
         e = json_object_get(root, "description");
 
-        if ( e != NULL )
-            XBT_INFO("Json Profile and Workload File's description: \n%s", json_string_value(e));
+        if (e != NULL)
+            XBT_INFO("Json Profile and Workload File's description:\n  %s", json_string_value(e));
         return root;
     }
 }
@@ -292,7 +292,7 @@ void initializeJobStructures()
     if (!alreadyCalled)
     {
         xbt_assert(jobs_dynar == NULL && job_id_to_dynar_pos == NULL && profiles == NULL);
-        XBT_INFO("Creating job structures");
+        //XBT_INFO("Creating job structures");
 
         jobs_dynar = xbt_dynar_new(sizeof(s_job_t*), NULL);
         job_id_to_dynar_pos = xbt_dict_new();
@@ -306,7 +306,7 @@ void freeJobStructures()
 {
     if (jobs_dynar != NULL)
     {
-        XBT_INFO("Freeing jobs_dynar");
+        //XBT_INFO("Freeing jobs_dynar");
 
         unsigned int i;
         s_job_t * job;
@@ -322,7 +322,7 @@ void freeJobStructures()
 
     if (job_id_to_dynar_pos != NULL)
     {
-        XBT_INFO("Freeing jobs_id_to_dynar_pos");
+        //XBT_INFO("Freeing jobs_id_to_dynar_pos");
 
         xbt_dict_free(&job_id_to_dynar_pos);
         job_id_to_dynar_pos = NULL;
@@ -330,7 +330,7 @@ void freeJobStructures()
 
     if (profiles != NULL)
     {
-        XBT_INFO("Freeing profiles");
+        //XBT_INFO("Freeing profiles");
         xbt_dict_free(&profiles);
         profiles = NULL;
     }

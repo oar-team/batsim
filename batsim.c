@@ -23,6 +23,7 @@
 #include <xbt/asserts.h>
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "Batsim");
+XBT_LOG_NEW_CATEGORY(network, "Network");
 
 #include "job.h"
 #include "utils.h"
@@ -63,10 +64,10 @@ static void send_message(const char *dst, e_task_type_t type, int job_id, void *
 static int send_uds(char *msg)
 {
     int32_t lg = strlen(msg);
-    fprintf(stderr, "sending scheduler '%s'\n", msg);
+    XBT_CINFO(network, "Sending '%s'", msg);
     write(uds_fd, &lg, 4);
     write(uds_fd, msg, lg);
-    XBT_INFO("send_uds lg=%d, msg='%s'", lg, msg);
+    //XBT_INFO("send_uds lg=%d, msg='%s'", lg, msg);
 
     return 0;
 }
@@ -80,12 +81,12 @@ static char *recv_uds()
     int32_t lg;
     char *msg;
     read(uds_fd, &lg, 4);
-    XBT_INFO("Received message length: %d bytes", lg);
+    //XBT_INFO("Received message length: %d bytes", lg);
     xbt_assert(lg > 0, "Invalid message received (size=%d)", lg);
     msg = (char *) malloc(sizeof(char)*(lg+1)); /* +1 for null terminator */
     read(uds_fd, msg, lg);
     msg[lg] = 0;
-    XBT_INFO("Received message: '%s'", msg);
+    XBT_CINFO(network, "Received '%s'", msg);
 
     return msg;
 }
@@ -100,7 +101,7 @@ static void open_uds(const char * socketFilename, int nb_try, double msBetweenTr
     uds_fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if(uds_fd < 0)
     {
-        XBT_ERROR("socket() failed\n");
+        XBT_CERROR(network, "socket() failed\n");
         exit(1);
     }
     /* start with a clean address structure */
@@ -112,7 +113,7 @@ static void open_uds(const char * socketFilename, int nb_try, double msBetweenTr
     int connected = 0;
     for (int i = 0; i < nb_try && !connected; ++i)
     {
-        XBT_INFO("Trying to connect to '%s' (try %d/%d)", socketFilename, i+1, nb_try);
+        XBT_CINFO(network, "Trying to connect to '%s' (try %d/%d)", socketFilename, i+1, nb_try);
 
         if(connect(uds_fd,
                    (struct sockaddr *) &address,
@@ -120,11 +121,11 @@ static void open_uds(const char * socketFilename, int nb_try, double msBetweenTr
         {
             if (i < nb_try-1)
             {
-                XBT_INFO("Failed... Trying again in %g ms\n", msBetweenTries);
+                XBT_CINFO(network, "Failed... Trying again in %g ms\n", msBetweenTries);
                 usleep(msBetweenTries * 1000);
             }
             else
-                XBT_INFO("Failed...");
+                XBT_CINFO(network, "Failed...");
         }
         else
             connected = 1;
@@ -132,8 +133,6 @@ static void open_uds(const char * socketFilename, int nb_try, double msBetweenTr
 
     if (!connected)
         xbt_die("Connection failed %d times, aborting.", nb_try);
-
-
 }
 
 /**
@@ -364,7 +363,6 @@ static int jobs_submitter(int argc, char *argv[])
 
         previousSubmissionDate = MSG_get_clock();
         send_message("server", JOB_SUBMITTED, job->id, NULL);
-        fprintf(stderr, "envoi scheduler soumission Job %d\n", job->id);
     }
 
     send_message("server", SUBMITTER_BYE, 0, NULL);
@@ -578,7 +576,7 @@ int server(int argc, char *argv[])
 	        sprintf(sched_message, "");
 	        lg_sched_message = 0;
 
-            MSG_process_create("Request and reply scheduler", requestReplyScheduler, sendBuf, MSG_host_self());
+            MSG_process_create("Sched REQ-REP", requestReplyScheduler, sendBuf, MSG_host_self());
 	    
             sched_ready = 0;
         }
@@ -745,11 +743,11 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
             mainArgs->abort = 1;
             strcat(mainArgs->abortReason, "\n\tToo few arguments.");
         }
-        else if (state->arg_num > 2)
+        /*else if (state->arg_num > 2)
         {
             mainArgs->abort = 1;
             strcat(mainArgs->abortReason, "\n\tToo many arguments.");
-        }
+        }*/
         break;
     }
 
@@ -795,14 +793,16 @@ int main(int argc, char *argv[])
 
     //Comment to remove debug message
     xbt_log_control_set("batsim.threshold:debug");
+    xbt_log_control_set("network.threshold:info");
+    xbt_log_control_set("task.threshold:critical");
 
     json_workload_profile = load_json_workload_profile(mainArgs.workloadFilename);
     retrieve_jobs(json_workload_profile);
     retrieve_profiles(json_workload_profile);
 
-    open_uds(mainArgs.socketFilename, mainArgs.nbConnectTries, mainArgs.connectDelay);
-
     MSG_init(&argc, argv);
+
+    open_uds(mainArgs.socketFilename, mainArgs.nbConnectTries, mainArgs.connectDelay);
 
     char * pajeFilename;
     char * csvFilename;

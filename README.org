@@ -37,7 +37,15 @@
  cd oar_kao
  python batsim.py ../../batsim/workload_profiles/test_workload_profile.json
 
+*** display information control
+ Batsim has its own set of options but it can also handle standard SimGrid ones.
+ The end-of-options delimiter "--" must then be used to use SimGrid options.
 
+**** Quiet run
+  ./batsim [batsim_options...] -- PLATFORM WORKLOAD --log=batsim.thresh:critical --log=network.thresh:critical
 
+**** Display network information only
+  ./batsim [batsim_options...] -- PLATFORM WORKLAOD --log=batsim.thresh:critical
 
-
+**** Display SimGrid options help
+  ./batsim -- PLATFORM WORKLOAD --help
