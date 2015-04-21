@@ -36,3 +36,7 @@ void freeJobStructures();
 
 int jobExists(int jobID);
 s_job_t * jobFromJobID(int jobID);
+
+void checkJobsAndProfilesValidity();
+
+int profileExists(const char * profileName);

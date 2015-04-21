@@ -403,7 +403,6 @@ int server(int argc, char *argv[])
     snprintf(sched_message, schedMessageMaxLength, "");
     int lg_sched_message = 0;
 
-    // todo: add a better finition, for example the submitters could say "hello" and "goodbye" to the scheduler
     // it may avoid the SG deadlock...
     while ((nb_submitters == 0) || (nb_submitters_finished < nb_submitters) ||
            (nb_completed_jobs < nb_submitted_jobs) || !sched_ready)
@@ -626,6 +625,8 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName, c
     xbt_assert(masterIndex >= 0);
     xbt_dynar_remove_at(all_hosts, masterIndex, NULL);
 
+    // todo: sort the hosts by lexicographical order of their names
+
     // Let's create a MSG process for each node
     xbt_dynar_foreach(all_hosts, i, host)
     {
@@ -799,6 +800,7 @@ int main(int argc, char *argv[])
     json_workload_profile = load_json_workload_profile(mainArgs.workloadFilename);
     retrieve_jobs(json_workload_profile);
     retrieve_profiles(json_workload_profile);
+    checkJobsAndProfilesValidity();
 
     MSG_init(&argc, argv);
 
