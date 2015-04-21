@@ -17,10 +17,13 @@ xbt_dict_t profiles = NULL;
 xbt_dynar_t jobs_dynar = NULL;
 xbt_dict_t job_id_to_dynar_pos = NULL;
 
-/*static int sortJobsByAscendingSubmissionTimeComp(const void *e1, const void *e2)
+static int job_submission_time_comparator(const void *e1, const void *e2)
 {
-   // s_job_t * j1 = *()
-}*/
+   const s_job_t * j1 = *(s_job_t **) e1;
+   const s_job_t * j2 = *(s_job_t **) e2;
+
+   return j1->submission_time - j2->submission_time;
+}
 
 json_t *load_json_workload_profile(char *filename)
 {
@@ -63,7 +66,7 @@ double json_number_to_double(json_t *e)
     return value;
 }
 
-void retrieve_jobs(json_t *root) // todo: sort jobs by ascending submission time
+void retrieve_jobs(json_t *root)
 {
     json_t *e;
     json_t *j;
@@ -122,10 +125,12 @@ void retrieve_jobs(json_t *root) // todo: sort jobs by ascending submission time
 
         xbt_dynar_push(jobs_dynar, &job);
 
-        int * insertPosition = (int *) malloc(sizeof(int));
+        int * insertPosition = xbt_new(int, 1);
         *insertPosition = xbt_dynar_length(jobs_dynar) - 1;
         xbt_dict_set(job_id_to_dynar_pos, job->id_str, insertPosition, free);
     }
+
+    xbt_dynar_sort(jobs_dynar, job_submission_time_comparator);
 
     XBT_INFO("%d jobs had been read from the JSON file", nb_jobs);
 }

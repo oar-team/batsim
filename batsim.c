@@ -45,6 +45,14 @@ char *task_type2str[] =
     "SUBMITTER_BYE"
 };
 
+static int machine_comparator(const void * e1, const void * e2)
+{
+    const msg_host_t * m1 = (msg_host_t *) e1;
+    const msg_host_t * m2 = (msg_host_t *) e2;
+
+    return strcmp(MSG_host_get_name(*m1), MSG_host_get_name(*m2));
+}
+
 int nb_nodes = 0;
 msg_host_t *nodes;
 
@@ -335,34 +343,15 @@ static int jobs_submitter(int argc, char *argv[])
 
     send_message("server", SUBMITTER_HELLO, 0, NULL);
 
-    // todo: read jobs here and sort them by ascending submission date
     double previousSubmissionDate = MSG_get_clock();
-    //int first = 1;
-
-    /*XBT_INFO("debug %d", __LINE__);
-
-    s_job_t * firstJob = *(s_job_t **) xbt_dynar_get_ptr(jobs_dynar, 0);
-    if (firstJob->submission_time < previousSubmissionDate)
-    {
-        MSG_process_sleep(firstJob->submission_time - previousSubmissionDate);
-        previousSubmissionDate = MSG_get_clock();
-    }
-
-    XBT_INFO("debug %d", __LINE__);*/
 
     xbt_dynar_foreach(jobs_dynar, job_index, job)
     {
-        if (job->submission_time < previousSubmissionDate)
-        {
-            XBT_WARN("The input workload JSON file is not sorted by ascending date, which is not handled yet");
-            //job->submission_time = previousSubmissionDate; //correcting sub time -- TODO remove temporary hack
-        }
+        if (job->submission_time > previousSubmissionDate)
+            MSG_process_sleep(job->submission_time - previousSubmissionDate);
 
-        double timeToSleep = max(0, job->submission_time - previousSubmissionDate);
-        MSG_process_sleep(timeToSleep);
-
-        previousSubmissionDate = MSG_get_clock();
         send_message("server", JOB_SUBMITTED, job->id, NULL);
+        previousSubmissionDate = MSG_get_clock();
     }
 
     send_message("server", SUBMITTER_BYE, 0, NULL);
@@ -536,7 +525,36 @@ int server(int argc, char *argv[])
             {
                 XBT_INFO("Nothing to do received.");
                 if (nb_running_jobs == 0 && nb_scheduled_jobs < nb_submitted_jobs)
+                {
                     XBT_INFO("Nothing to do whereas no job is running and that they are jobs waiting to be scheduled... This might cause a deadlock!");
+
+                    // Let's display the available jobs (to help the scheduler debugging)
+                    int bufSize = 1024;
+                    int strSize = 0;
+                    char * buf = xbt_new(char, bufSize+1);
+                    xbt_assert(sizeof(char) == 1);
+                    sprintf(buf, "");
+
+                    s_job_t * job;
+                    unsigned int job_index;
+
+                    xbt_dynar_foreach(jobs_dynar, job_index, job)
+                    {
+                        if (job->state == JOB_STATE_SUBMITTED)
+                        {
+                            char * tmp;
+                            asprintf(&tmp, ",%d", job->id);
+
+                            strncat(buf, tmp, max(0,bufSize - strSize));
+                            strSize += strlen(tmp);
+
+                            free(tmp);
+                        }
+                    }
+
+                    XBT_INFO("The available jobs are:%s", buf);
+                    free(buf);
+                }
                 break;
             } // end of case N
             default:
@@ -625,7 +643,7 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName, c
     xbt_assert(masterIndex >= 0);
     xbt_dynar_remove_at(all_hosts, masterIndex, NULL);
 
-    // todo: sort the hosts by lexicographical order of their names
+    xbt_dynar_sort(all_hosts, machine_comparator);
 
     // Let's create a MSG process for each node
     xbt_dynar_foreach(all_hosts, i, host)
