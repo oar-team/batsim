@@ -1,0 +1,21 @@
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
+
+<platform version="3">
+	<AS id="AS0" routing="Full">
+		<AS  id="my_cluster1"  routing="Cluster">
+			<cabinet id="cabinet1" prefix="bob00" suffix="" 
+				power="45Mf" bw="20MBps" lat="100us" radical="0-9"/>
+			<cabinet id="cabinet2" prefix="bob0" suffix="" 
+				power="45Mf" bw="20MBps" lat="100us" radical="10-99"/>
+			<cabinet id="cabinet3" prefix="bob" suffix="" 
+				power="45Mf" bw="20MBps" lat="100us" radical="100-511"/>
+			
+			<cabinet id="cabinet4" prefix="master_host" suffix="" 
+				power="45Mf" bw="20MBps" lat="100us" radical="0-0"/>
+
+			<router  id="router1"/>
+			<backbone id="backbone1" bandwidth="2.25GBps" latency="500us"/>
+		</AS>
+	</AS>
+</platform>
