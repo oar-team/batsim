@@ -124,13 +124,22 @@ void retrieve_jobs(json_t *root)
         job->state = JOB_STATE_NOT_SUBMITTED;
 
         xbt_dynar_push(jobs_dynar, &job);
-
-        int * insertPosition = xbt_new(int, 1);
-        *insertPosition = xbt_dynar_length(jobs_dynar) - 1;
-        xbt_dict_set(job_id_to_dynar_pos, job->id_str, insertPosition, free);
     }
 
     xbt_dynar_sort(jobs_dynar, job_submission_time_comparator);
+
+    s_job_t * job;
+    unsigned int job_index;
+
+    // Let's create a mapping from the jobID to its position in the dynar
+    xbt_dynar_foreach(jobs_dynar, job_index, job)
+    {
+        int * insertPosition = xbt_new(int, 1);
+        *insertPosition = job_index;
+        xbt_dict_set(job_id_to_dynar_pos, job->id_str, insertPosition, free);
+
+        xbt_assert(job == jobFromJobID(job->id));
+    }
 
     XBT_INFO("%d jobs had been read from the JSON file", nb_jobs);
 }
