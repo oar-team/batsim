@@ -51,6 +51,12 @@ void writeBuffer_flush(WriteBuffer * wbuf);
 void exportJobsToCSV(const char * filename);
 
 /**
+ * @brief Compute and exports some schedule criteria to a CSV file.
+ * @param filename The is the name of the output file used to write the CSV data.
+ */
+void exportScheduleToCSV(const char * filename);
+
+/**
  * @brief The states of a PajeTracer
  */
 typedef enum

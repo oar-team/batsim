@@ -476,7 +476,7 @@ int server(int argc, char *argv[])
                         xbt_assert(jobExists(jobID), "Invalid jobID '%s' received from the scheduler: the job does not exist", job_id_str);
                         s_job_t * job = jobFromJobID(jobID);
                         xbt_assert(job->state == JOB_STATE_SUBMITTED, "Invalid allocation from the scheduler: the job %d is either not submitted yet"
-                                   "or already scheduled (state=%d)", jobID, job->state);
+                                   " or already scheduled (state=%d)", jobID, job->state);
                         
                         job->state = JOB_STATE_RUNNING;
                         
@@ -614,7 +614,7 @@ int server(int argc, char *argv[])
 /**
  * \brief
  */
-msg_error_t deploy_all(const char *platform_file, const char * masterHostName, const char * pajeTraceFilename, const char * csvFilename)
+msg_error_t deploy_all(const char *platform_file, const char * masterHostName, const char * pajeTraceFilename, const char * csvJobsFilename, const char * csvScheduleFilename)
 {
     MSG_config("workstation/model", "ptask_L07");
     MSG_create_environment(platform_file);
@@ -673,7 +673,8 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName, c
     pajeTracer_finalize(tracer, MSG_get_clock(), nb_nodes, nodes);
     pajeTracer_destroy(&tracer);
 
-    exportJobsToCSV(csvFilename);
+    exportJobsToCSV(csvJobsFilename);
+    exportScheduleToCSV(csvScheduleFilename);
 
     XBT_INFO("Simulation time %g", MSG_get_clock());
     return res;
@@ -825,15 +826,18 @@ int main(int argc, char *argv[])
     open_uds(mainArgs.socketFilename, mainArgs.nbConnectTries, mainArgs.connectDelay);
 
     char * pajeFilename;
-    char * csvFilename;
+    char * csvJobsFilename;
+    char * csvScheduleFilename;
 
-    asprintf(&pajeFilename, "%s.trace", mainArgs.exportPrefix);
-    asprintf(&csvFilename, "%s.csv", mainArgs.exportPrefix);
+    asprintf(&pajeFilename, "%s_schedule.trace", mainArgs.exportPrefix);
+    asprintf(&csvJobsFilename, "%s_jobs.csv", mainArgs.exportPrefix);
+    asprintf(&csvScheduleFilename, "%s_schedule.csv", mainArgs.exportPrefix);
 
-    msg_error_t res = deploy_all(mainArgs.platformFilename, mainArgs.masterHostName, pajeFilename, csvFilename);
+    msg_error_t res = deploy_all(mainArgs.platformFilename, mainArgs.masterHostName, pajeFilename, csvJobsFilename, csvScheduleFilename);
 
     free(pajeFilename);
-    free(csvFilename);
+    free(csvJobsFilename);
+    free(csvScheduleFilename);
 
     json_decref(json_workload_profile);
     // Let's clear global allocated data

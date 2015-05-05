@@ -632,3 +632,64 @@ void exportJobsToCSV(const char *filename)
     else
         XBT_INFO("Impossible to write file '%s'", filename);
 }
+
+
+void exportScheduleToCSV(const char *filename)
+{
+    FILE * f = fopen(filename, "w");
+
+    if (f != NULL)
+    {
+        fputs("nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,makespan,max_turnaround_time\n", f);
+
+        if (jobs_dynar != NULL)
+        {
+            unsigned int i;
+            s_job_t * job;
+            char * buf;
+
+            int nb_jobs = 0;
+            int nb_jobs_finished = 0;
+            int nb_jobs_success = 0;
+            int nb_jobs_killed = 0;
+            double makespan = 0;
+            double max_turnaround_time = 0;
+
+            xbt_dynar_foreach(jobs_dynar, i, job)
+            {
+                nb_jobs++;
+
+                if (job->state == JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JOB_STATE_COMPLETED_KILLED)
+                {
+                    nb_jobs_finished++;
+
+                    if (job->state == JOB_STATE_COMPLETED_SUCCESSFULLY)
+                        nb_jobs_success++;
+                    else
+                        nb_jobs_killed++;
+
+                    double completion_time = job->startingTime + job->runtime;
+                    double turnaround_time = job->startingTime + job->runtime - job->submission_time;
+
+                    if (completion_time > makespan)
+                        makespan = completion_time;
+
+                    if (turnaround_time > max_turnaround_time)
+                        max_turnaround_time = turnaround_time;
+                }
+            }
+
+            asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf\n",
+                     nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed,
+                     (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time);
+
+            fputs(buf, f);
+            free(buf);
+
+            int err = fclose(f);
+            xbt_assert(err == 0, "Impossible to close file '%s'...", filename);
+        }
+    }
+    else
+        XBT_INFO("Impossible to write file '%s'", filename);
+}
