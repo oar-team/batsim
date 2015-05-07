@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <string.h>
 #include <argp.h>
@@ -28,6 +29,8 @@ XBT_LOG_NEW_CATEGORY(network, "Network");
 #include "job.h"
 #include "utils.h"
 #include "export.h"
+
+long long microseconds_used_by_scheduler = 0;
 
 const int schedMessageMaxLength = 1024*1024 - 1; // 1 Mio should be enough...
 
@@ -153,6 +156,9 @@ static int requestReplyScheduler(int argc, char *argv[])
     (void) argc;
     (void) argv;
 
+    struct timeval t0;
+    struct timeval t1;
+
     char sendDateAsString[16];
     sprintf(sendDateAsString, "%f", MSG_get_clock());
     
@@ -162,7 +168,13 @@ static int requestReplyScheduler(int argc, char *argv[])
     send_uds(sendBuf);
     free(sendBuf);
 
+    gettimeofday(&t0, 0);
     char * message_recv = recv_uds();
+
+    gettimeofday(&t1, 0);
+    long long elapsed = (t1.tv_sec-t0.tv_sec)*1000000LL + t1.tv_usec-t0.tv_usec;
+    microseconds_used_by_scheduler += elapsed;
+
     xbt_dynar_t answer_dynar = xbt_str_split(message_recv, "|");
 
     int answerParts = xbt_dynar_length(answer_dynar);
@@ -674,7 +686,7 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName, c
     pajeTracer_destroy(&tracer);
 
     exportJobsToCSV(csvJobsFilename);
-    exportScheduleToCSV(csvScheduleFilename);
+    exportScheduleToCSV(csvScheduleFilename, microseconds_used_by_scheduler / (double)(1e6));
 
     XBT_INFO("Simulation time %g", MSG_get_clock());
     return res;

@@ -26,7 +26,7 @@ typedef struct
 WriteBuffer * writeBuffer_create(const char * filename, int bufferSize);
 
 /**
- * @brief Destroys a WriteBuffer
+ * @brief Destroys a WriteBufferex
  * @param[in, out] wbuf The WriteBuffer
  */
 void writeBuffer_destroy(WriteBuffer ** wbuf);
@@ -53,8 +53,9 @@ void exportJobsToCSV(const char * filename);
 /**
  * @brief Compute and exports some schedule criteria to a CSV file.
  * @param filename The is the name of the output file used to write the CSV data.
+ * @param microseconds_used_by_scheduler The number of seconds the scheduler had hand on execution flow
  */
-void exportScheduleToCSV(const char * filename);
+void exportScheduleToCSV(const char * filename, double scheduling_time);
 
 /**
  * @brief The states of a PajeTracer

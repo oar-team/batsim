@@ -634,13 +634,13 @@ void exportJobsToCSV(const char *filename)
 }
 
 
-void exportScheduleToCSV(const char *filename)
+void exportScheduleToCSV(const char *filename, double scheduling_time)
 {
     FILE * f = fopen(filename, "w");
 
     if (f != NULL)
     {
-        fputs("nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,makespan,max_turnaround_time\n", f);
+        fputs("nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,makespan,max_turnaround_time,scheduling_time\n", f);
 
         if (jobs_dynar != NULL)
         {
@@ -679,9 +679,10 @@ void exportScheduleToCSV(const char *filename)
                 }
             }
 
-            asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf\n",
+            asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf\n",
                      nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed,
-                     (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time);
+                     (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time,
+                     scheduling_time);
 
             fputs(buf, f);
             free(buf);
