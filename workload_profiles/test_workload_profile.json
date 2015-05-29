@@ -6,38 +6,42 @@
     
     "nb_res": 4,
     "jobs": [
-	{"id":1, "subtime":10, "walltime": 100, "res": 4, "profile": "2"},
+	{"id":1, "subtime":10, "walltime": 100, "res": 4, "profile": "6"},
 	{"id":2, "subtime":20, "walltime": 100, "res": 4, "profile": "1"},
-	{"id":3, "subtime":30, "walltime": 3,   "res": 4, "profile": "4"},
-	{"id":4, "subtime":32, "walltime": 100, "res": 4, "profile": "3"}
+	{"id":3, "subtime":30, "walltime": 3,   "res": 4, "profile": "1"},
+	{"id":4, "subtime":32, "walltime": 100, "res": 4, "profile": "1"}
     ],
 
     "profiles": {
-	"1": {
-	    "type": "msg_par",
-	    "cpu": [5e6,5e6,5e6,5e6],
-	    "com": [5e6,5e6,5e6,5e6,
-		    5e6,5e6,5e6,5e6,
-		    5e6,5e6,5e6,5e6,
-		    5e6,5e6,5e6,5e6]
-	},
-	"2": {
-	    "type": "msg_par_hg",
-	    "cpu": 10e6,
-	    "com": 1e6
-	},
-	"3": {
-	    "type": "composed",
-	    "nb" : 4,
-	    "seq": ["1","4","1"]
-	},
-	"4": {
-	    "type": "delay",
-	    "delay": 20.20
-	},
-	"5": {
-	    "type": "smpi",
-	    "trace": "smpi_simgrid.txt"
-	}
+	    "1": {
+	        "type": "msg_par",
+	        "cpu": [5e6,5e6,5e6,5e6],
+	        "com": [5e6,5e6,5e6,5e6,
+		            5e6,5e6,5e6,5e6,
+		            5e6,5e6,5e6,5e6,
+		            5e6,5e6,5e6,5e6]
+	    },
+	    "2": {
+	        "type": "msg_par_hg",
+	        "cpu": 10e6,
+	        "com": 1e6
+	    },
+	    "3": {
+	        "type": "composed",
+	        "nb" : 4,
+	        "seq": ["1","2","3"]
+	    },
+	    "4": {
+	        "type": "delay",
+	        "delay": 20.20
+	    },
+	    "5": {
+	        "type": "smpi",
+	        "trace": "traces.txt"
+	    },
+        "6": {
+	        "type": "smpi",
+	        "trace": "traces.txt"
+	    }
     }
 }

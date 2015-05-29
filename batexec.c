@@ -8,6 +8,7 @@
 #include <xbt/log.h>
 #include <xbt/asserts.h>
 
+#include <float.h>
 #include <math.h>
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(batexec, "Batexec");
@@ -41,7 +42,7 @@ static int job_launcher(int argc, char *argv[])
         for (int i = 0; i < job->nb_res; i++)
             res_idxs[i] = i;
 
-        job_exec(job->id, job->nb_res, res_idxs, nodes, INFINITY);
+        job_exec(job->id, job->nb_res, res_idxs, nodes, DBL_MAX);
         XBT_INFO("Job id %d, job simulation time: %f", job->id,  MSG_get_clock() - t);
         free(res_idxs);
     }
