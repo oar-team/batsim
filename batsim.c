@@ -520,7 +520,7 @@ int server(int argc, char *argv[])
                             int machineID = atoi(res_str);
                             launchData->reservedNodesIDs[j] = machineID;
                             xbt_assert(machineID >= 0 && machineID < nb_nodes,
-                                       "Invalid machineID (%d) received from the scheduler: not in range [0;%d]", machineID, nb_nodes);
+                                       "Invalid machineID (%d) received from the scheduler: not in range [0;%d[", machineID, nb_nodes);
                         }
 
                         send_message(MSG_host_get_name(nodes[head_node]), LAUNCH_JOB, jobID, launchData);
@@ -773,7 +773,7 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
         if (state->arg_num < 2)
         {
             mainArgs->abort = 1;
-            strcat(mainArgs->abortReason, "\n\tToo few arguments.");
+            strcat(mainArgs->abortReason, "\n\tToo few arguments. Try the --help option to display usage information.");
         }
         /*else if (state->arg_num > 2)
         {

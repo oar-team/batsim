@@ -187,9 +187,11 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         }
     }
     else if (strcmp(profile->type, "smpi") == 0)
-        xbt_die("Profile with type %s is not yet implemented", profile->type);
+    {
+        xbt_die("Cannot execute job %d: the profile type '%s' is not yet implemented", job_id, profile->type);
+    }
     else
-        xbt_die("Profile with type %s is not supported", profile->type);
+        xbt_die("Cannot execute job %d: the profile type '%s' is unknown", job_id, profile->type);
 
     return 0;
 }
