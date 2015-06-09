@@ -424,7 +424,7 @@ int server(int argc, char *argv[])
     xbt_assert(schedMessageMaxLength > 0);
     char *sched_message = malloc(sizeof(char) * (schedMessageMaxLength+1)); // + 1 for NULL-terminated
     xbt_assert(sched_message != NULL, "Cannot allocate the send message buffer (requested bytes: %d)", schedMessageMaxLength+1);
-    snprintf(sched_message, schedMessageMaxLength, "");
+    sched_message[0] = '\0'; // Empties the string
     int lg_sched_message = 0;
 
     // it may avoid the SG deadlock...
@@ -568,7 +568,7 @@ int server(int argc, char *argv[])
                     int strSize = 0;
                     char * buf = xbt_new(char, bufSize+1);
                     xbt_assert(sizeof(char) == 1);
-                    sprintf(buf, "");
+                    buf[0] = '\0'; // Empties the string
 
                     s_job_t * job;
                     unsigned int job_index;
@@ -625,7 +625,7 @@ int server(int argc, char *argv[])
             char * sendBuf;
 
 	        asprintf(&sendBuf, "0:%f%s", MSG_get_clock(), sched_message);
-	        sprintf(sched_message, "");
+            sched_message[0] = '\0'; // empties the string
 	        lg_sched_message = 0;
 
             MSG_process_create("Sched REQ-REP", requestReplyScheduler, sendBuf, MSG_host_self());
@@ -843,7 +843,7 @@ int main(int argc, char *argv[])
     mainArgs.exportPrefix = "out";
     mainArgs.abort = 0;
     mainArgs.abortReason = malloc(4096);
-    sprintf(mainArgs.abortReason, "");
+    mainArgs.abortReason[0] = '\0'; // Empties the string
 
     struct argp_option options[] =
     {
