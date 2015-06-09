@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <xbt.h>
 #include <math.h>
+#include <float.h>
 
 #include "job.h"
 #include "utils.h"
@@ -640,7 +641,7 @@ void exportScheduleToCSV(const char *filename, double scheduling_time)
 
     if (f != NULL)
     {
-        fputs("nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,makespan,max_turnaround_time,scheduling_time\n", f);
+        fputs("nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,makespan,max_turnaround_time,scheduling_time,jobs_execution_time_boundary_ratio\n", f);
 
         if (jobs_dynar != NULL)
         {
@@ -654,6 +655,8 @@ void exportScheduleToCSV(const char *filename, double scheduling_time)
             int nb_jobs_killed = 0;
             double makespan = 0;
             double max_turnaround_time = 0;
+            double min_job_execution_time = DBL_MAX;
+            double max_job_execution_time = DBL_MIN;
 
             xbt_dynar_foreach(jobs_dynar, i, job)
             {
@@ -662,6 +665,11 @@ void exportScheduleToCSV(const char *filename, double scheduling_time)
                 if (job->state == JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JOB_STATE_COMPLETED_KILLED)
                 {
                     nb_jobs_finished++;
+
+                    if (job->runtime < min_job_execution_time)
+                        min_job_execution_time = job->runtime;
+                    if (job->runtime > max_job_execution_time)
+                        max_job_execution_time = job->runtime;
 
                     if (job->state == JOB_STATE_COMPLETED_SUCCESSFULLY)
                         nb_jobs_success++;
@@ -679,10 +687,10 @@ void exportScheduleToCSV(const char *filename, double scheduling_time)
                 }
             }
 
-            asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf\n",
+            asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf\n",
                      nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed,
                      (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time,
-                     scheduling_time);
+                     scheduling_time, max_job_execution_time / min_job_execution_time);
 
             fputs(buf, f);
             free(buf);
