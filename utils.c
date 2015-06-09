@@ -98,7 +98,8 @@ void retrieve_jobs(json_t *root)
         job->id = json_integer_value(tmp);
         xbt_assert(job->id >= 0, "Invalid JSON file: a job has a negative id (%d)", job->id);
         xbt_assert(!jobExists(job->id), "Invalid JSON file: duplication of job %d", job->id);
-        asprintf(&(job->id_str), "%d", job->id);
+        int ret = asprintf(&(job->id_str), "%d", job->id);
+        xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
         // submission time
         tmp = json_object_get(j, "subtime");
@@ -122,7 +123,8 @@ void retrieve_jobs(json_t *root)
         tmp = json_object_get(j, "profile");
         xbt_assert(tmp != NULL, "Invalid job %d from JSON file: it does not have a 'profile' field.", job->id);
         xbt_assert(json_typeof(tmp) == JSON_STRING, "Invalid job %d from JSON file: its 'profile' field must be a string", job->id);
-        asprintf(&(job->profile), "%s", json_string_value(tmp));
+        ret = asprintf(&(job->profile), "%s", json_string_value(tmp));
+        xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
         job->startingTime = -1;
         job->runtime = -1;
@@ -172,14 +174,15 @@ void retrieve_profiles(json_t *root)
         xbt_assert(!profileExists(key), "Invalid JSON file: many profile share the name '%s'", key);
         j_profile = json_object_iter_value(iter);
 
-        profile = (profile_t) malloc(sizeof(s_profile_t));
+        profile = xbt_new(s_profile_t, 1);
         xbt_dict_set(profiles, key, profile, freeProfile);
 
         const json_t * typeObject = json_object_get(j_profile, "type");
         xbt_assert(typeObject != NULL, "The profile '%s' has no 'type' field", key);
         xbt_assert(json_typeof(typeObject) == JSON_STRING, "The profile '%s' has a non-textual 'type' field", key);
         char * type;
-        asprintf(&type, "%s", json_string_value(typeObject));
+        int ret = asprintf(&type, "%s", json_string_value(typeObject));
+        xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
         profile->type = type;
         profile->data = NULL;
 
@@ -257,7 +260,8 @@ void retrieve_profiles(json_t *root)
             {
                 json_t * elem = json_array_get(e,i);
                 xbt_assert(json_is_string(elem), "Invalid 'seq' field of the composed profile '%s': all its elements must be strings", key);
-                asprintf(&(seq[i]), "%s", json_string_value(elem));
+                ret = asprintf(&(seq[i]), "%s", json_string_value(elem));
+                xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
             }
 
             composed->lg_seq = lg_seq;
@@ -377,7 +381,8 @@ void freeJobStructures()
 int jobExists(int jobID)
 {
     char * jobName;
-    asprintf(&jobName, "%d", jobID);
+    int ret = asprintf(&jobName, "%d", jobID);
+    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
     int * dynarPosition = (int *) xbt_dict_get_or_null(job_id_to_dynar_pos, jobName);
     free(jobName);
@@ -388,7 +393,8 @@ int jobExists(int jobID)
 s_job_t * jobFromJobID(int jobID)
 {
     char * jobName;
-    asprintf(&jobName, "%d", jobID);
+    int ret = asprintf(&jobName, "%d", jobID);
+    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
     int * dynarPosition = (int *) xbt_dict_get_or_null(job_id_to_dynar_pos, jobName);
     xbt_assert(dynarPosition != NULL, "Invalid call: jobID %d does NOT exist", jobID);

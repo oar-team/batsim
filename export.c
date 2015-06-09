@@ -14,11 +14,11 @@ WriteBuffer * writeBuffer_create(const char * filename, int bufferSize)
 {
 	xbt_assert(bufferSize > 0, "Invalid buffer size (%d)", bufferSize);
 
-	WriteBuffer * wbuf = (WriteBuffer*) malloc(sizeof(WriteBuffer));
+    WriteBuffer * wbuf = xbt_new(WriteBuffer, 1);
 
 	wbuf->f = fopen(filename, "w"); 
 	wbuf->bufferSize = bufferSize;
-	wbuf->buffer = (char *) malloc(sizeof(char) * bufferSize);
+    wbuf->buffer = xbt_new0(char, bufferSize);
 	wbuf->bufferPos = 0;
 
 	xbt_assert(wbuf->f != NULL, "Cannot write file '%s'", filename);
@@ -126,7 +126,7 @@ PajeTracer * pajeTracer_create(const char * filename, int logLaunchings, int col
 	xbt_assert(logLaunchings == 0 || logLaunchings == 1, "logLaunchings must be either 0 or 1");
 	xbt_assert(colorCount > 0);
 
-	PajeTracer * tracer = (PajeTracer *) malloc(sizeof(PajeTracer));
+    PajeTracer * tracer = xbt_new(PajeTracer, 1);
 	xbt_assert(tracer != NULL);
 
 	tracer->state = PAJE_STATE_UNINITIALIZED;
@@ -373,13 +373,13 @@ void pajeTracer_private_generateColors(PajeTracer * tracer, int colorCount)
 	double h, s=1, v=1, r, g, b;
 	const int bufSize = 32;
 
-	tracer->colors = (char**) malloc(colorCount * sizeof(char *));
+    tracer->colors = xbt_new(char*, colorCount);
 	xbt_assert(tracer->colors != NULL);
 
 	double hueFraction = 360.0 / colorCount;
 	for (int i = 0; i < colorCount; ++i)
 	{
-		tracer->colors[i] = (char*) malloc(bufSize * sizeof(char));
+        tracer->colors[i] = xbt_new(char, bufSize);
 		xbt_assert(tracer->colors[i] != NULL);
 
 		h = i * hueFraction;
@@ -596,7 +596,7 @@ void exportJobsToCSV(const char *filename)
                 if (job->state == JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JOB_STATE_COMPLETED_KILLED)
                 {
                     int success = job->state == JOB_STATE_COMPLETED_SUCCESSFULLY;
-                    asprintf(&buf, "%d,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,", job->id,
+                    int ret = asprintf(&buf, "%d,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,", job->id,
                              job->submission_time,
                              job->nb_res,
                              job->walltime,
@@ -608,18 +608,21 @@ void exportJobsToCSV(const char *filename)
                              job->startingTime + job->runtime - job->submission_time, // turnaround_time
                              (job->startingTime + job->runtime - job->submission_time) / job->runtime // stretch
                              );
+                    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
                     fputs(buf, f);
                     free(buf);
 
                     if (job->nb_res > 0)
                     {
-                        asprintf(&buf, "%d", job->alloc_ids[0]);
+                        int ret = asprintf(&buf, "%d", job->alloc_ids[0]);
+                        xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
                         fputs(buf, f);
                         free(buf);
 
                         for (int i = 1; i < job->nb_res; ++i)
                         {
-                            asprintf(&buf," %d", job->alloc_ids[i]);
+                            ret = asprintf(&buf," %d", job->alloc_ids[i]);
+                            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
                             fputs(buf, f);
                             free(buf);
                         }
@@ -690,10 +693,11 @@ void exportScheduleToCSV(const char *filename, double scheduling_time)
                 }
             }
 
-            asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf\n",
+            int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf\n",
                      nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed,
                      (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time,
                      scheduling_time, max_job_execution_time / min_job_execution_time);
+            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
             fputs(buf, f);
             free(buf);
