@@ -1,21 +1,16 @@
-* TODO smpi profile
-* TODO support for job creation during simulation
-* TODO simulation termination w/ job creation 
-* TODO wallime manage by node
-* TODO suspend/resume commands
-* TODO timer callback for scheduler (C command in format ?)
-* TODO kill job command
-* TODO shared nodes
-* TODO node sleep/wakeup 
 * TODO energy
 * TODO file I/O
-* TODO VM
+* TODO smpi profile
 * TODO evolving/moldable/malleable job support
-* TODO msg_par_homogenous profile wo/ diagonal
-* TODO improve the Pajé trace generation (there are warnings when the trace are opened via vite)
+* TODO VM
+* TODO support for job creation during simulation
+* TODO suspend/resume commands
+* TODO kill job command
+* TODO shared nodes
+* TODO node sleep/wakeup
 
- 
 * DONE msg_par_homogenous profile
 * DONE job composed of sequence of profile [1, 5, 5 ]
 * DONE delay job profile
 * DONE profile composed
+* DONE (VITE ISSUE) improve the Pajé trace generation (there are warnings when the trace are opened via vite)
