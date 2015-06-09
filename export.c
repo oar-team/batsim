@@ -228,7 +228,7 @@ void pajeTracer_initialize(PajeTracer * tracer, double date, int machineCount, c
 		"%% Type string\n"
 		"%% Alias string\n"
 		"%% Name string\n"
-		"%% Color string\n"
+        "%% Color color\n"
 		"%%EndEventDef\n"
 		"\n"
 		"%%EventDef PajeSetVariable %d\n"

@@ -1,4 +1,3 @@
-
 * TODO smpi profile
 * TODO support for job creation during simulation
 * TODO simulation termination w/ job creation 
@@ -13,6 +12,7 @@
 * TODO VM
 * TODO evolving/moldable/malleable job support
 * TODO msg_par_homogenous profile wo/ diagonal
+* TODO improve the Pajé trace generation (there are warnings when the trace are opened via vite)
 
  
 * DONE msg_par_homogenous profile
