@@ -1,5 +1,5 @@
 /* Copyright (c) 2015. The OAR Team.
- * All rights reserved.                       */ 
+ * All rights reserved.                       */
 #pragma once
 
 #include <simgrid/msg.h>

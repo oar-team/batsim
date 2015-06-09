@@ -10,17 +10,17 @@
  */
 typedef struct
 {
-	FILE * f; 		//! The file stream
-	int bufferSize; //! The size of the buffer (octets)
-	char * buffer;  //! The buffer
-	int bufferPos;  //! The number of octets currently in the buffer
+    FILE * f; 		//! The file stream
+    int bufferSize; //! The size of the buffer (octets)
+    char * buffer;  //! The buffer
+    int bufferPos;  //! The number of octets currently in the buffer
 } WriteBuffer;
 
 /**
  * @brief Creates a WriteBuffer
  * @param[in] filename The file name
  * @param[in] bufferSize The strictly positive buffer size
- * 
+ *
  * @return The newly created WriteBuffer
  */
 WriteBuffer * writeBuffer_create(const char * filename, int bufferSize);
@@ -72,11 +72,11 @@ typedef enum
  */
 typedef struct
 {
-	PajeTracerState state;	//! The current state of the PajeTracer
-	int logLaunchings; 		//! If set to TRUE, job launchings will appear in the Pajé file
-	WriteBuffer * buf; 		//! Handles the writings to the file
-	int colorCount; 		//! The number of different colors used for the jobs
-	char ** colors; 		//! The different colors used for the jobs (as C strings)
+    PajeTracerState state;	//! The current state of the PajeTracer
+    int logLaunchings; 		//! If set to TRUE, job launchings will appear in the Pajé file
+    WriteBuffer * buf; 		//! Handles the writings to the file
+    int colorCount; 		//! The number of different colors used for the jobs
+    char ** colors; 		//! The different colors used for the jobs (as C strings)
 } PajeTracer;
 
 /**

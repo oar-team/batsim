@@ -24,9 +24,9 @@ typedef enum
  */
 typedef struct s_task_data
 {
-	e_task_type_t type;	//! Type of task
-	int job_id;			//! The job ID
-	void *data;			//! Either NULL or points to something else based on type
+    e_task_type_t type;	//! Type of task
+    int job_id;			//! The job ID
+    void *data;			//! Either NULL or points to something else based on type
 } s_task_data_t;
 
 /**
@@ -34,7 +34,7 @@ typedef struct s_task_data
  */
 typedef struct s_lauch_data
 {
-	int jobID;                       	//! The job identification number
-	int reservedNodeCount;           	//! The number of reserved nodes
-	int * reservedNodesIDs;          	//! The nodes on which the job will be run
+    int jobID;                       	//! The job identification number
+    int reservedNodeCount;           	//! The number of reserved nodes
+    int * reservedNodesIDs;          	//! The nodes on which the job will be run
 } s_launch_data_t;

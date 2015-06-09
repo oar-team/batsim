@@ -175,7 +175,7 @@ static int requestReplyScheduler(int argc, char *argv[])
 
     char sendDateAsString[16];
     sprintf(sendDateAsString, "%f", MSG_get_clock());
-    
+
     char *sendBuf = MSG_process_get_data(MSG_process_self());
     XBT_INFO("Buffer received in REQ-REP: '%s'", sendBuf);
 
@@ -447,7 +447,7 @@ int server(int argc, char *argv[])
             break;
         } // end of case SUBMITTER_HELLO
         case SUBMITTER_BYE:
-        {   
+        {
             nb_submitters_finished++;
             XBT_INFO("A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
             break;
@@ -463,7 +463,7 @@ int server(int argc, char *argv[])
             size_m = snprintf(sched_message + lg_sched_message, schedMessageMaxLength - lg_sched_message,
                               "|%f:C:%s", MSG_get_clock(), job->id_str);
             lg_sched_message += size_m;
-            xbt_assert(lg_sched_message <= schedMessageMaxLength, 
+            xbt_assert(lg_sched_message <= schedMessageMaxLength,
                        "Buffer for sending messages to the scheduler is not big enough...");
             XBT_INFO("Message to send to scheduler: %s", sched_message);
 
@@ -479,7 +479,7 @@ int server(int argc, char *argv[])
             size_m = snprintf(sched_message + lg_sched_message, schedMessageMaxLength - lg_sched_message,
                               "|%f:S:%s", MSG_get_clock(), job->id_str);
             lg_sched_message += size_m;
-            xbt_assert(lg_sched_message <= schedMessageMaxLength, 
+            xbt_assert(lg_sched_message <= schedMessageMaxLength,
                         "Buffer for sending messages to the scheduler is not big enough...");
             XBT_INFO("Message to send to scheduler: %s", sched_message);
 
@@ -513,9 +513,9 @@ int server(int argc, char *argv[])
                         s_job_t * job = jobFromJobID(jobID);
                         xbt_assert(job->state == JOB_STATE_SUBMITTED, "Invalid allocation from the scheduler: the job %d is either not submitted yet"
                                    " or already scheduled (state=%d)", jobID, job->state);
-                        
+
                         job->state = JOB_STATE_RUNNING;
-                        
+
                         nb_running_jobs++;
                         xbt_assert(nb_running_jobs <= nb_submitted_jobs);
                         nb_scheduled_jobs++;
@@ -621,7 +621,7 @@ int server(int argc, char *argv[])
 
         task_free(&task_received);
         free(task_data);
-        
+
         if (sched_ready && (strcmp(sched_message, "") != 0))
         {
             char * sendBuf;
@@ -629,10 +629,10 @@ int server(int argc, char *argv[])
             int ret = asprintf(&sendBuf, "0:%f%s", MSG_get_clock(), sched_message);
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
             sched_message[0] = '\0'; // empties the string
-	        lg_sched_message = 0;
+            lg_sched_message = 0;
 
             MSG_process_create("Sched REQ-REP", requestReplyScheduler, sendBuf, MSG_host_self());
-	    
+
             sched_ready = 0;
         }
 
@@ -671,7 +671,7 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName, c
     xbt_assert(master_host != NULL,"Invalid SimGrid platform file '%s': cannot find any host named '%s'. "
         "This special host is the one on which the simulator and the job submitters run.",
         platform_file, masterHostName);
- 
+
     // Let's remove the master host from the hosts used to run jobs
     msg_host_t host;
     unsigned int i;
