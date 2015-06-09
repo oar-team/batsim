@@ -63,8 +63,8 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
     if (strcmp(profile->type, "msg_par") == 0)
     {
         // These amounts are deallocated by SG
-        computation_amount = malloc(nb_res * sizeof(double));
-        communication_amount = malloc(nb_res * nb_res * sizeof(double));
+        computation_amount = xbt_new(double, nb_res);
+        communication_amount = xbt_new(double, nb_res * nb_res);
 
         double *cpu = ((s_msg_par_t *)(profile->data))->cpu;
         double *com = ((s_msg_par_t *)(profile->data))->com;
@@ -73,7 +73,8 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         memcpy(communication_amount, com, nb_res * nb_res * sizeof(double));
 
         char * tname = NULL;
-        asprintf(&tname, "p %d", job_id);
+        int ret = asprintf(&tname, "p %d", job_id);
+        xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
         XBT_INFO("Creating task '%s'", tname);
 
         ptask = MSG_parallel_task_create(tname,
@@ -83,7 +84,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         free(tname);
 
         // Let's spawn a process which will wait until walltime and cancel the task if needed
-        KillerDelayData * killData = malloc(sizeof(KillerDelayData));
+        KillerDelayData * killData = xbt_new(KillerDelayData, 1);
         killData->task = ptask;
         killData->walltime = *remainingTime;
 
@@ -94,7 +95,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         msg_error_t err = MSG_parallel_task_execute(ptask);
         *remainingTime = *remainingTime - (MSG_get_clock() - timeBeforeExecute);
 
-        int ret = 1;
+        ret = 1;
         if (err == MSG_OK)
             SIMIX_process_throw(killProcess, cancel_error, 0, "wake up");
         else if (err == MSG_TASK_CANCELED)
@@ -113,8 +114,8 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         double com = ((s_msg_par_hg_t *)(profile->data))->com;
 
         // These amounts are deallocated by SG
-        computation_amount = malloc(nb_res * sizeof(double));
-        communication_amount = malloc(nb_res * nb_res * sizeof(double));
+        computation_amount = xbt_new(double, nb_res);
+        communication_amount = xbt_new(double, nb_res * nb_res);
 
         //XBT_DEBUG("msg_par_hg: nb_res: %d , cpu: %f , com: %f", nb_res, cpu, com);
 
@@ -126,7 +127,8 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
                 communication_amount[nb_res * j + i] = com;
 
         char * tname = NULL;
-        asprintf(&tname, "hg %d", job_id);
+        int ret = asprintf(&tname, "hg %d", job_id);
+        xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
         XBT_INFO("Creating task '%s'", tname);
 
         ptask = MSG_parallel_task_create(tname,
@@ -136,7 +138,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         free(tname);
 
         // Let's spawn a process which will wait until walltime and cancel the task if needed
-        KillerDelayData * killData = malloc(sizeof(KillerDelayData));
+        KillerDelayData * killData = xbt_new(KillerDelayData, 1);
         killData->task = ptask;
         killData->walltime = *remainingTime;
 
@@ -147,7 +149,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         msg_error_t err = MSG_parallel_task_execute(ptask);
         *remainingTime = *remainingTime - (MSG_get_clock() - timeBeforeExecute);
 
-        int ret = 1;
+        ret = 1;
         if (err == MSG_OK)
             SIMIX_process_throw(killProcess, cancel_error, 0, "wake up");
         else if (err == MSG_TASK_CANCELED)
@@ -206,7 +208,7 @@ int job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, double wa
     s_job_t * job = jobFromJobID(job_id);
     //XBT_INFO("job_exec: jobID %d, job=%p", job_id, job);
 
-    msg_host_t * job_res = (msg_host_t *) malloc(nb_res * sizeof(s_msg_host_t));
+    msg_host_t * job_res = (msg_host_t *) xbt_new(s_msg_host_t, nb_res);
 
     for(int i = 0; i < nb_res; i++)
         job_res[i] = nodes[res_idxs[i]];

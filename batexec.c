@@ -37,7 +37,7 @@ static int job_launcher(int argc, char *argv[])
     xbt_dynar_foreach(jobs_dynar, job_index, job)
     {
         int t = MSG_get_clock();
-        int * res_idxs = (int *) malloc((job->nb_res) * sizeof(int));
+        int * res_idxs = xbt_new(int, job->nb_res);
 
         for (int i = 0; i < job->nb_res; i++)
             res_idxs[i] = i;

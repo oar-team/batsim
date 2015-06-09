@@ -105,7 +105,7 @@ static char *recv_uds()
     read(uds_fd, &lg, 4);
     //XBT_INFO("Received message length: %d bytes", lg);
     xbt_assert(lg > 0, "Invalid message received (size=%d)", lg);
-    msg = (char *) malloc(sizeof(char)*(lg+1)); /* +1 for null terminator */
+    msg = xbt_new(char, lg+1); /* +1 for null terminator */
     read(uds_fd, msg, lg);
     msg[lg] = 0;
     XBT_CINFO(network, "Received '%s'", msg);
@@ -199,7 +199,7 @@ static int requestReplyScheduler(int argc, char *argv[])
     for (int i = 1; i < answerParts; ++i)
     {
         char * eventString = *(char **) xbt_dynar_get_ptr(answer_dynar, i);
-        xbt_dynar_t * eventDynar = malloc(sizeof(xbt_dynar_t));
+        xbt_dynar_t * eventDynar = xbt_new(xbt_dynar_t, 1);
         *eventDynar = xbt_str_split(eventString, ":");
         int eventParts = xbt_dynar_length(*eventDynar);
         xbt_assert(eventParts >= 2, "Invalid event received ('%s'): it should be composed of at least 2 parts separated by a ':'", eventString);
@@ -232,7 +232,7 @@ static int requestReplyScheduler(int argc, char *argv[])
 void send_message(const char *dst, e_task_type_t type, int job_id, void *data)
 {
     msg_task_t task_sent;
-    s_task_data_t * req_data = malloc(sizeof(s_task_data_t));
+    s_task_data_t * req_data = xbt_new(s_task_data_t, 1);
     req_data->type = type;
     req_data->job_id = job_id;
     req_data->data = data;
@@ -345,7 +345,8 @@ static int node(int argc, char *argv[])
                 s_launch_data_t * launchData = (s_launch_data_t *) task_data->data;
 
                 char * launcherName = 0;
-                asprintf(&launcherName, "launcher %d", launchData->jobID);
+                int ret = asprintf(&launcherName, "launcher %d", launchData->jobID);
+                xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
                 MSG_process_create(launcherName, launch_job, launchData, MSG_host_self());
                 free(launcherName);
 
@@ -422,9 +423,9 @@ int server(int argc, char *argv[])
     int k;
 
     xbt_assert(schedMessageMaxLength > 0);
-    char *sched_message = malloc(sizeof(char) * (schedMessageMaxLength+1)); // + 1 for NULL-terminated
+    char *sched_message = xbt_new(char, schedMessageMaxLength+1); // + 1 for NULL-terminated
     xbt_assert(sched_message != NULL, "Cannot allocate the send message buffer (requested bytes: %d)", schedMessageMaxLength+1);
-    snprintf(sched_message, schedMessageMaxLength, "");
+    sched_message[0] = '\0'; // Empties the string
     int lg_sched_message = 0;
 
     // it may avoid the SG deadlock...
@@ -527,7 +528,7 @@ int server(int argc, char *argv[])
                         XBT_INFO("head node: %s, id: %d", MSG_host_get_name(nodes[head_node]), head_node);
 
                         // Let's create a launch data structure, which will be given to the head_node then used to launch the job
-                        s_launch_data_t * launchData = (s_launch_data_t*) malloc(sizeof(s_launch_data_t));
+                        s_launch_data_t * launchData = xbt_new(s_launch_data_t, 1);
                         launchData->jobID = jobID;
                         launchData->reservedNodeCount = xbt_dynar_length(res_dynar);
 
@@ -535,7 +536,7 @@ int server(int argc, char *argv[])
                                    "Invalid scheduling algorithm decision: allocation of job %d is done on %d nodes (instead of %d)",
                                    launchData->jobID, launchData->reservedNodeCount, job->nb_res);
 
-                        launchData->reservedNodesIDs = (int*) malloc(launchData->reservedNodeCount * sizeof(int));
+                        launchData->reservedNodesIDs = xbt_new(int, launchData->reservedNodeCount);
 
                         // Let's fill the reserved node IDs from the XBT dynar
                         xbt_dynar_foreach(res_dynar, j, res_str)
@@ -568,7 +569,7 @@ int server(int argc, char *argv[])
                     int strSize = 0;
                     char * buf = xbt_new(char, bufSize+1);
                     xbt_assert(sizeof(char) == 1);
-                    sprintf(buf, "");
+                    buf[0] = '\0'; // Empties the string
 
                     s_job_t * job;
                     unsigned int job_index;
@@ -578,7 +579,8 @@ int server(int argc, char *argv[])
                         if (job->state == JOB_STATE_SUBMITTED)
                         {
                             char * tmp;
-                            asprintf(&tmp, ",%d", job->id);
+                            int ret = asprintf(&tmp, ",%d", job->id);
+                            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
                             strncat(buf, tmp, max(0,bufSize - strSize));
                             strSize += strlen(tmp);
@@ -624,8 +626,9 @@ int server(int argc, char *argv[])
         {
             char * sendBuf;
 
-	        asprintf(&sendBuf, "0:%f%s", MSG_get_clock(), sched_message);
-	        sprintf(sched_message, "");
+            int ret = asprintf(&sendBuf, "0:%f%s", MSG_get_clock(), sched_message);
+            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+            sched_message[0] = '\0'; // empties the string
 	        lg_sched_message = 0;
 
             MSG_process_create("Sched REQ-REP", requestReplyScheduler, sendBuf, MSG_host_self());
@@ -691,7 +694,8 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName, c
     {
         XBT_INFO("Create node process %d !", i);
         char * pname = NULL;
-        asprintf(&pname, "node %d", i);
+        int ret = asprintf(&pname, "node %d", i);
+        xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
         MSG_process_create(pname, node, NULL, host);
         free(pname);
     }
@@ -759,7 +763,8 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
         if (mainArgs->connectDelay < 100 || mainArgs->connectDelay > 10000)
         {
             mainArgs->abort = 1;
-            asprintf(&tmp, "\n  invalid connection delay (%lf): it must be in [100,10000] ms", mainArgs->connectDelay);
+            int ret = asprintf(&tmp, "\n  invalid connection delay (%lf): it must be in [100,10000] ms", mainArgs->connectDelay);
+            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
             strcat(mainArgs->abortReason, tmp);
             free(tmp);
         }
@@ -778,7 +783,8 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
         if (mainArgs->nbConnectTries < 1)
         {
             mainArgs->abort = 1;
-            asprintf(&tmp, "\n  invalid number of connection tries (%d): it must be greater than or equal to 1", mainArgs->nbConnectTries);
+            int ret = asprintf(&tmp, "\n  invalid number of connection tries (%d): it must be greater than or equal to 1", mainArgs->nbConnectTries);
+            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
             strcat(mainArgs->abortReason, tmp);
             free(tmp);
         }
@@ -791,7 +797,8 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
             if (access(mainArgs->platformFilename, R_OK) == -1)
             {
                 mainArgs->abort = 1;
-                asprintf(&tmp, "\n  invalid PLATFORM_FILE argument: file '%s' cannot be read", mainArgs->platformFilename);
+                int ret = asprintf(&tmp, "\n  invalid PLATFORM_FILE argument: file '%s' cannot be read", mainArgs->platformFilename);
+                xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
                 strcat(mainArgs->abortReason, tmp);
                 free(tmp);
             }
@@ -801,7 +808,8 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
             if (access(mainArgs->workloadFilename, R_OK) == -1)
             {
                 mainArgs->abort = 1;
-                asprintf(&tmp, "\n  invalid WORKLOAD_FILE argument: file '%s' cannot be read", mainArgs->workloadFilename);
+                int ret = asprintf(&tmp, "\n  invalid WORKLOAD_FILE argument: file '%s' cannot be read", mainArgs->workloadFilename);
+                xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
                 strcat(mainArgs->abortReason, tmp);
                 free(tmp);
             }
@@ -842,8 +850,8 @@ int main(int argc, char *argv[])
     mainArgs.masterHostName = "master_host";
     mainArgs.exportPrefix = "out";
     mainArgs.abort = 0;
-    mainArgs.abortReason = malloc(4096);
-    sprintf(mainArgs.abortReason, "");
+    mainArgs.abortReason = xbt_new(char, 4096);
+    mainArgs.abortReason[0] = '\0'; // Empties the string
 
     struct argp_option options[] =
     {
@@ -886,9 +894,12 @@ int main(int argc, char *argv[])
     char * csvJobsFilename;
     char * csvScheduleFilename;
 
-    asprintf(&pajeFilename, "%s_schedule.trace", mainArgs.exportPrefix);
-    asprintf(&csvJobsFilename, "%s_jobs.csv", mainArgs.exportPrefix);
-    asprintf(&csvScheduleFilename, "%s_schedule.csv", mainArgs.exportPrefix);
+    int ret = asprintf(&pajeFilename, "%s_schedule.trace", mainArgs.exportPrefix);
+    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+    ret = asprintf(&csvJobsFilename, "%s_jobs.csv", mainArgs.exportPrefix);
+    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+    ret = asprintf(&csvScheduleFilename, "%s_schedule.csv", mainArgs.exportPrefix);
+    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
     msg_error_t res = deploy_all(mainArgs.platformFilename, mainArgs.masterHostName, pajeFilename, csvJobsFilename, csvScheduleFilename);
 
