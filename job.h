@@ -12,17 +12,17 @@
 
 #include <jansson.h> /* json parsing */
 
-//XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "Batsim");
-
+//! Enumerates the job states
 typedef enum e_job_state
 {
-     JOB_STATE_NOT_SUBMITTED          //! The job exists but cannot be scheduled yet
-    ,JOB_STATE_SUBMITTED              //! The job has been submitted, it can now be scheduled
-    ,JOB_STATE_RUNNING                //! The job has been scheduled and is currently being processed
-    ,JOB_STATE_COMPLETED_SUCCESSFULLY //! The job execution finished before its walltime
-    ,JOB_STATE_COMPLETED_KILLED       //! The job execution time was longer than its walltime so the job had been killed
+     JOB_STATE_NOT_SUBMITTED          //!< The job exists but cannot be scheduled yet
+    ,JOB_STATE_SUBMITTED              //!< The job has been submitted, it can now be scheduled
+    ,JOB_STATE_RUNNING                //!< The job has been scheduled and is currently being processed
+    ,JOB_STATE_COMPLETED_SUCCESSFULLY //!< The job execution finished before its walltime
+    ,JOB_STATE_COMPLETED_KILLED       //!< The job execution time was longer than its walltime so the job had been killed
 } e_job_state_t;
 
+//! The structure used to store a job
 typedef struct s_job
 {
     int id;                 //! The job ID (as integer)
@@ -38,6 +38,7 @@ typedef struct s_job
     e_job_state_t state;    //! The state
 } s_job_t;
 
+//! The structure used to store additional information about profiles of type msg_par
 typedef struct s_msg_par
 {
     int nb_res;     //! The number of resources
@@ -45,12 +46,14 @@ typedef struct s_msg_par
     double *com;    //! The communication matrix
 } s_msg_par_t;
 
+//! The structure used to store additional information about profiles of type msg_par_hg
 typedef struct s_msg_par_hg
 {
     double cpu;     //! The computation amount on each node
     double com;     //! The communication amount between each pair of nodes
 } s_msg_par_hg_t;
 
+//! The structure used to store additional information about profiles of type composed
 typedef struct s_composed_prof
 {
     int nb;     //! The number of times the sequence must be repeated
@@ -58,6 +61,7 @@ typedef struct s_composed_prof
     char **seq; //! The sequence of profile names (array of char* of size lg_seq)
 } s_composed_prof_t;
 
+//! The structure used to store additional information about jobs of type delay
 typedef struct s_delay
 {
     double delay;

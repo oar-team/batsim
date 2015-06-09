@@ -17,6 +17,12 @@ xbt_dict_t profiles = NULL;
 xbt_dynar_t jobs_dynar = NULL;
 xbt_dict_t job_id_to_dynar_pos = NULL;
 
+/**
+ * @brief Compares two jobs according to their submission time
+ * @param[in] e1 The first job
+ * @param[in] e2 The second job
+ * @return An integer less than, equal to, or greater than zero if e1 is found, respectively, to be less than, to match, or be greater than e2
+ */
 static int job_submission_time_comparator(const void *e1, const void *e2)
 {
    const s_job_t * j1 = *(s_job_t **) e1;

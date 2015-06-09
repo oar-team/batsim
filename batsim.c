@@ -30,10 +30,12 @@ XBT_LOG_NEW_CATEGORY(network, "Network");
 #include "utils.h"
 #include "export.h"
 
+//! The total number of microseconds used by the external scheduler
 long long microseconds_used_by_scheduler = 0;
-
+//! The maximum length of the messages sent to the external scheduler
 const int schedMessageMaxLength = 1024*1024 - 1; // 1 Mio should be enough...
 
+//! Associates names to struct e_task_type_t
 char *task_type2str[] =
 {
     "FINALIZE",
@@ -48,6 +50,12 @@ char *task_type2str[] =
     "SUBMITTER_BYE"
 };
 
+/**
+ * @brief Compares two machines in function of their name (lexicographic order)
+ * @param[in] e1 The first machine
+ * @param[in] e2 The second machine
+ * @return An integer less than, equal to, or greater than zero if e1 is found, respectively, to be less than, to match, or be greater than e2
+ */
 static int machine_comparator(const void * e1, const void * e2)
 {
     const msg_host_t * m1 = (msg_host_t *) e1;
@@ -56,11 +64,13 @@ static int machine_comparator(const void * e1, const void * e2)
     return strcmp(MSG_host_get_name(*m1), MSG_host_get_name(*m2));
 }
 
+//! The number of computing nodes
 int nb_nodes = 0;
+//! The computing nodes
 msg_host_t *nodes;
-
+//! The Unix Domain Socket file descriptor
 int uds_fd = -1;
-
+//! The PajeTracer object
 PajeTracer * tracer = NULL;
 
 // process functions
@@ -70,23 +80,24 @@ static int launch_job(int argc, char *argv[]);
 static void send_message(const char *dst, e_task_type_t type, int job_id, void *data);
 
 /**
- * \brief Send message through Unix Domain Socket
+ * @brief Sends a message on the Unix Domain Socket
+ * @param[in] msg The message to send
+ * @return 0
  */
-static int send_uds(char *msg)
+static int send_uds(char * msg)
 {
     int32_t lg = strlen(msg);
     XBT_CINFO(network, "Sending '%s'", msg);
     write(uds_fd, &lg, 4);
     write(uds_fd, msg, lg);
-    //XBT_INFO("send_uds lg=%d, msg='%s'", lg, msg);
 
     return 0;
 }
 
 /**
- * \brief Receive message through Unix Domain Socket
+ * @brief Receives a message from the Unix Domain Socket
+ * @return The message (must be freed by the caller)
  */
-
 static char *recv_uds()
 {
     int32_t lg;
@@ -103,7 +114,10 @@ static char *recv_uds()
 }
 
 /**
- * \brief Open Unix Domain Socket for communication with scheduler
+ * @brief Opens the Unix Domain Socket to communicate with the external scheduler
+ * @param[in] socketFilename The socket filename
+ * @param[in] nb_try The maximum number of connection attempts
+ * @param[in] msBetweenTries The delay (in milliseconds) between two connection tries
  */
 static void open_uds(const char * socketFilename, int nb_try, double msBetweenTries)
 {
@@ -209,7 +223,11 @@ static int requestReplyScheduler(int argc, char *argv[])
 }
 
 /**
- * \brief
+ * @brief Sends a message from the given process to the given mailbox
+ * @param[in] dst The destination mailbox
+ * @param[in] type The type of message to send
+ * @param[in] job_id The job the message is about
+ * @param[in] data The data associated to the message
  */
 void send_message(const char *dst, e_task_type_t type, int job_id, void *data)
 {
@@ -228,13 +246,13 @@ void send_message(const char *dst, e_task_type_t type, int job_id, void *data)
 }
 
 /**
- * \brief
+ * @brief Frees a task then makes it point to NULL
+ * @param[in, out] The task to free
  */
 static void task_free(msg_task_t * task)
 {
     if(*task != NULL)
     {
-        //xbt_free(MSG_task_get_data(*task));
         MSG_task_destroy(*task);
         *task = NULL;
     }
@@ -242,6 +260,8 @@ static void task_free(msg_task_t * task)
 
 /**
  * @brief The function in charge of job launching
+ * @param[in] argc The number of input arguments
+ * @param[in] argv The input arguments
  * @return 0
  */
 static int launch_job(int argc, char *argv[])
@@ -283,7 +303,10 @@ static int launch_job(int argc, char *argv[])
 }
 
 /**
- * \brief
+ * @brief The function executed on each computing node
+ * @param[in] argc The number of input arguments
+ * @param[in] argv The arguments
+ * @return 0
  */
 static int node(int argc, char *argv[])
 {
@@ -624,7 +647,13 @@ int server(int argc, char *argv[])
 }
 
 /**
- * \brief
+ * @brief Deploys the simulator
+ * @param[in] platform_file The SimGrid platform filename used in the simulation
+ * @param[in] masterHostName The name of the host which will be used for scheduling and not for computing jobs
+ * @param[in] pajeTraceFilename The name of the Pajé trace to generate
+ * @param[in] csvJobsFilename The name of the CSV output file about jobs
+ * @param[in] csvScheduleFilename The name of the CSV output file about the schedule
+ * @return The msg_error_t result of the inner call of MSG_main() (MSG_OK on success)
  */
 msg_error_t deploy_all(const char *platform_file, const char * masterHostName, const char * pajeTraceFilename, const char * csvJobsFilename, const char * csvScheduleFilename)
 {
@@ -692,6 +721,9 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName, c
     return res;
 }
 
+/**
+ * @brief The main function arguments (a.k.a. program arguments)
+ */
 typedef struct s_main_args
 {
     char * platformFilename;//! The SimGrid platform filename
@@ -708,6 +740,13 @@ typedef struct s_main_args
     char * abortReason;     //! Human readable reasons which explains why the launch should be aborted
 } s_main_args_t;
 
+/**
+ * @brief Used to parse the main parameters
+ * @param[in] key The current key
+ * @param[in] arg The current argument
+ * @param[in, out] state The current argp_state
+ * @return 0
+ */
 static int parse_opt (int key, char *arg, struct argp_state *state)
 {
     s_main_args_t * mainArgs = state->input;
@@ -786,6 +825,12 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
     return 0;
 }
 
+/**
+ * @brief The main function (entry point of the program)
+ * @param[in] argc The number of input arguments
+ * @param[in] argv The input arguments
+ * @return 0 if the simulation run successfully, something else otherwise
+ */
 int main(int argc, char *argv[])
 {
     s_main_args_t mainArgs;

@@ -83,18 +83,21 @@ void writeBuffer_flush(WriteBuffer * wbuf)
 
 // Since there is no module nor module-like (namespace, class) feature in C,
 // Let's define some constants here
+/**
+ * @brief Enumerates the different Pajé keywords
+ */
 enum PajeKeyword
 {
-	PAJE_DEFINE_CONTAINER_TYPE = 1,
-	PAJE_CREATE_CONTAINER,
-	PAJE_DESTROY_CONTAINER,
-	PAJE_DEFINE_STATE_TYPE,
-	PAJE_DEFINE_ENTITY_VALUE,
-	PAJE_SET_STATE,
-	PAJE_DEFINE_EVENT_TYPE,
-	PAJE_NEW_EVENT,
-	PAJE_DEFINE_VARIABLE_TYPE,
-	PAJE_SET_VARIABLE,
+    PAJE_DEFINE_CONTAINER_TYPE = 1  //!< Defines a container type
+    ,PAJE_CREATE_CONTAINER          //!< Creates a container
+    ,PAJE_DESTROY_CONTAINER         //!< Destroys a container
+    ,PAJE_DEFINE_STATE_TYPE         //!< Defines a state type
+    ,PAJE_DEFINE_ENTITY_VALUE       //!< Define an entity value
+    ,PAJE_SET_STATE                 //!< Sets a state
+    ,PAJE_DEFINE_EVENT_TYPE         //!< Defines an event type
+    ,PAJE_NEW_EVENT                 //!< Creates an event
+    ,PAJE_DEFINE_VARIABLE_TYPE      //!< Defines a variable type
+    ,PAJE_SET_VARIABLE              //!< Set a variable
 };
 
 const char * PAJE_rootType = "root_ct";

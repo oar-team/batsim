@@ -16,6 +16,12 @@ typedef struct s_killer_delay_data
     double walltime; //! The number of seconds to wait before cancelling the task
 } KillerDelayData;
 
+/**
+ * @brief The function used to kill jobs which exceed their walltime
+ * @param[in] argc The number of input arguments
+ * @param[in] argv The input arguments
+ * @return 0
+ */
 int killerDelay(int argc, char *argv[])
 {
     (void) argc;
@@ -34,7 +40,6 @@ int killerDelay(int argc, char *argv[])
     }
 
     free(data);
-
     return 0;
 }
 

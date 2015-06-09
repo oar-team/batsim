@@ -62,9 +62,9 @@ void exportScheduleToCSV(const char * filename, double scheduling_time);
  */
 typedef enum
 {
-	PAJE_STATE_UNINITIALIZED, //! The PajeTracer has not been initialized yet
-	PAJE_STATE_INITIALIZED,   //! The PajeTracer has been initialized
-	PAJE_STATE_FINALIZED      //! The PajeTracer has been finalized
+    PAJE_STATE_UNINITIALIZED    //!< The PajeTracer has not been initialized yet
+    ,PAJE_STATE_INITIALIZED     //!< The PajeTracer has been initialized
+    ,PAJE_STATE_FINALIZED       //!< The PajeTracer has been finalized
 } PajeTracerState;
 
 /**
