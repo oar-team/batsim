@@ -6,7 +6,7 @@
 
     "nb_res": 4,
     "jobs": [
-        {"id":1, "subtime":10, "walltime": 100, "res": 4, "profile": "2"},
+        {"id":1, "subtime":10, "walltime": 100, "res": 1, "profile": "2"},
         {"id":2, "subtime":20, "walltime": 100, "res": 4, "profile": "1"},
         {"id":3, "subtime":30, "walltime": 3,   "res": 4, "profile": "1"},
         {"id":4, "subtime":32, "walltime": 100, "res": 4, "profile": "1"}
@@ -42,6 +42,21 @@
         "6": {
             "type": "smpi",
             "trace": "traces.txt"
+        },
+        "IO_read": {
+            "type": "IO",
+            "IOtype": "read",
+            "data_nodes": [", data_node2"],
+            "remote_IO_per_data_node":
+                [[10e6,10e6,5e6,0],
+                 [0,10e6,5e6,10e6]]
+        },
+        "IO_write": {
+            "type": "IO",
+            "IOtype": "write",
+            "remote_IO_per_data_node":
+                [[10e6,10e6,5e6,0],
+                 [0,10e6,5e6,10e6]]
         }
     }
 }

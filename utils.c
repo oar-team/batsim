@@ -238,6 +238,12 @@ void retrieve_profiles(json_t *root)
             m_par_hg->com = (double)json_number_to_double(e);
             xbt_assert(m_par_hg->com >= 0, "The 'com' field of the msg_par_hg profile '%s' must be positive", key);
         }
+        else if (strcmp(type, "IO_store_and_forward") == 0){
+            s_IO_read_store_and_forward_t * IO_sf = xbt_new(s_IO_read_store_and_forward_t, 1);
+            profile->data = IO_sf;
+            e = json_object_get(j_profile, "data_nodes");
+            //TODO:
+        }
         else if (strcmp(type, "composed") == 0)
         {
             s_composed_prof_t * composed = xbt_new(s_composed_prof_t, 1);
@@ -437,6 +443,8 @@ void checkJobsAndProfilesValidity()
     xbt_dynar_foreach(jobs_dynar, job_index, job)
     {
         xbt_assert(profileExists(job->profile), "Invalid job %d: the associated profile '%s' does not exist", job->id, job->profile);
+        xbt_assert(job->nb_res > 0, "Invalid job %d: the ressource number must be > 0", job->id);
+
         s_profile_t * prof = xbt_dict_get_or_null(profiles, job->profile);
 
         if (strcmp(prof->type, "msg_par") == 0)

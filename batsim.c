@@ -631,7 +631,7 @@ int server(int argc, char *argv[])
             sched_message[0] = '\0'; // empties the string
 	        lg_sched_message = 0;
 
-            MSG_process_create("Sched REQ-REP", requestReplyScheduler, sendBuf, MSG_host_self());
+            MSG_process_create("Sched_REQ-REP", requestReplyScheduler, sendBuf, MSG_host_self());
 	    
             sched_ready = 0;
         }

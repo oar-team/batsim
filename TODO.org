@@ -1,5 +1,8 @@
 * TODO energy
 * TODO file I/O
+  * Add profile type IO_store_and_forward
+  * Add profile type IO_streaming
+* TODO Parallel composed task profile
 * TODO smpi profile
 * TODO evolving/moldable/malleable job support
 * TODO VM

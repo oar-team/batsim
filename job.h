@@ -12,6 +12,9 @@
 
 #include <jansson.h> /* json parsing */
 
+
+// Job definition
+
 //! Enumerates the job states
 typedef enum e_job_state
 {
@@ -38,6 +41,15 @@ typedef struct s_job
     e_job_state_t state;    //! The state
 } s_job_t;
 
+
+// Profiles definition
+
+typedef enum e_IO_type
+{
+    READ,
+    WRITE
+} e_IO_type_t;
+
 //! The structure used to store additional information about profiles of type msg_par
 typedef struct s_msg_par
 {
@@ -52,6 +64,14 @@ typedef struct s_msg_par_hg
     double cpu;     //! The computation amount on each node
     double com;     //! The communication amount between each pair of nodes
 } s_msg_par_hg_t;
+
+//! The structure used to store additional information about profiles of type IO_store_and_forward
+typedef struct s_IO_store_and_forward
+{
+    char **data_nodes; 		//! The data node host id list
+    e_IO_type_t IOtype;		//! Type of IO from the data node (read or write)
+    double *remote_IO_per_data_node;	//! The remote IO matrix between ressources in x and data nodes in y
+} s_IO_read_store_and_forward_t;
 
 //! The structure used to store additional information about profiles of type composed
 typedef struct s_composed_prof
