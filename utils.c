@@ -443,7 +443,7 @@ void checkJobsAndProfilesValidity()
         {
             s_msg_par_t * data = prof->data;
             xbt_assert(data->nb_res == job->nb_res, "Invalid job %d: the requested number of resources (%d) do NOT match"
-                       "the number of resources of the associated profile '%s' (%d)", job->id, job->nb_res, job->profile, data->nb_res);
+                       " the number of resources of the associated profile '%s' (%d)", job->id, job->nb_res, job->profile, data->nb_res);
         }
         else if (strcmp(prof->type, "composed") == 0)
         {
