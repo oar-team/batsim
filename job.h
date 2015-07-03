@@ -3,7 +3,7 @@
 #pragma once
 
 #include <sys/types.h> /* ssize_t, needed by xbt/str.h, included by msg/msg.h */
-
+#include <math.h>
 #include <simgrid/msg.h>
 #include <xbt.h>
 #include <xbt/sysdep.h>
@@ -12,17 +12,17 @@
 
 #include <jansson.h> /* json parsing */
 
-//! Enumerates the job states
+//XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "Batsim");
+
 typedef enum e_job_state
 {
-     JOB_STATE_NOT_SUBMITTED          //!< The job exists but cannot be scheduled yet
-    ,JOB_STATE_SUBMITTED              //!< The job has been submitted, it can now be scheduled
-    ,JOB_STATE_RUNNING                //!< The job has been scheduled and is currently being processed
-    ,JOB_STATE_COMPLETED_SUCCESSFULLY //!< The job execution finished before its walltime
-    ,JOB_STATE_COMPLETED_KILLED       //!< The job execution time was longer than its walltime so the job had been killed
+     JOB_STATE_NOT_SUBMITTED          //! The job exists but cannot be scheduled yet
+    ,JOB_STATE_SUBMITTED              //! The job has been submitted, it can now be scheduled
+    ,JOB_STATE_RUNNING                //! The job has been scheduled and is currently being processed
+    ,JOB_STATE_COMPLETED_SUCCESSFULLY //! The job execution finished before its walltime
+    ,JOB_STATE_COMPLETED_KILLED       //! The job execution time was longer than its walltime so the job had been killed
 } e_job_state_t;
 
-//! The structure used to store a job
 typedef struct s_job
 {
     int id;                 //! The job ID (as integer)
@@ -31,14 +31,12 @@ typedef struct s_job
     double submission_time; //! The time at which the job is available to be scheduled
     double walltime;        //! The maximum execution time autorized for the job
     int nb_res;             //! The number of resources the job asked for
-
     double startingTime;    //! The time at which the job started being executed
     double runtime;         //! The execution time of the job
     int * alloc_ids;        //! The resources allocated that were allocated to this job
     e_job_state_t state;    //! The state
 } s_job_t;
 
-//! The structure used to store additional information about profiles of type msg_par
 typedef struct s_msg_par
 {
     int nb_res;     //! The number of resources
@@ -46,14 +44,12 @@ typedef struct s_msg_par
     double *com;    //! The communication matrix
 } s_msg_par_t;
 
-//! The structure used to store additional information about profiles of type msg_par_hg
 typedef struct s_msg_par_hg
 {
     double cpu;     //! The computation amount on each node
     double com;     //! The communication amount between each pair of nodes
 } s_msg_par_hg_t;
 
-//! The structure used to store additional information about profiles of type composed
 typedef struct s_composed_prof
 {
     int nb;     //! The number of times the sequence must be repeated
@@ -61,7 +57,6 @@ typedef struct s_composed_prof
     char **seq; //! The sequence of profile names (array of char* of size lg_seq)
 } s_composed_prof_t;
 
-//! The structure used to store additional information about jobs of type delay
 typedef struct s_delay
 {
     double delay;
@@ -77,3 +72,6 @@ typedef struct s_delay
  * @return 1 if the job finished in time, 0 if the walltime had been reached
  */
 int job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, double walltime);
+int job_exec1(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, double walltime, double coeff1,int casenum1,double coeff2, int casenum2,int squarechioce);
+//int job_exec2(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, double walltime, double coeff,int casenum,int cpu_com);
+int profile_exec1 (const char *profile_str, int job_id, int nb_res, msg_host_t *job_res, double * remainingTime,double coeff1,int casenum1,double coeff2, int casenum2, int squarechioce);
