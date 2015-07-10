@@ -29,6 +29,7 @@ XBT_LOG_NEW_CATEGORY(network, "Network");
 #include "job.h"
 #include "utils.h"
 #include "export.h"
+#include "machines.h"
 
 //! The total number of microseconds used by the external scheduler
 long long microseconds_used_by_scheduler = 0;
@@ -279,6 +280,8 @@ static int launch_job(int argc, char *argv[])
     pajeTracer_addJobLaunching(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
     pajeTracer_addJobRunning(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
 
+    updateMachinesOnJobRun(jobID, data->reservedNodeCount, data->reservedNodesIDs);
+
     if (job_exec(jobID, data->reservedNodeCount, data->reservedNodesIDs, nodes, job->walltime) == 1)
     {
         XBT_INFO("Job %d finished in time", data->jobID);
@@ -294,6 +297,8 @@ static int launch_job(int argc, char *argv[])
     }
 
     job->runtime = MSG_get_clock() - job->startingTime;
+
+    updateMachinesOnJobEnd(jobID, data->reservedNodeCount, data->reservedNodesIDs);
 
     //free(data->reservedNodesIDs);
     free(data);
@@ -701,6 +706,7 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName, c
     }
 
     nb_nodes = xbt_dynar_length(all_hosts);
+    createMachines(all_hosts);
     nodes = xbt_dynar_to_array(all_hosts);
 
     XBT_INFO("Nb nodes: %d", nb_nodes);
@@ -715,6 +721,7 @@ msg_error_t deploy_all(const char *platform_file, const char * masterHostName, c
 
     msg_error_t res = MSG_main();
 
+    freeMachines();
     pajeTracer_finalize(tracer, MSG_get_clock(), nb_nodes, nodes);
     pajeTracer_destroy(&tracer);
 

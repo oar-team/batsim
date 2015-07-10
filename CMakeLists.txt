@@ -11,17 +11,17 @@ include(CheckCCompilerFlag)
 CHECK_C_COMPILER_FLAG("-std=c11" COMPILER_SUPPORTS_C11)
 CHECK_C_COMPILER_FLAG("-std=c99" COMPILER_SUPPORTS_C99)
 if(COMPILER_SUPPORTS_C11)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
 elseif(COMPILER_SUPPORTS_C99)
-	message(STATUS "The compiler ${CMAKE_C_COMPILER} has no C11 support. Using C99 instead.")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+    message(STATUS "The compiler ${CMAKE_C_COMPILER} has no C11 support. Using C99 instead.")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 else()
-        message(STATUS "The compiler ${CMAKE_C_COMPILER} has no C11 nor C99 support. Please update your C compiler.")
+    message(STATUS "The compiler ${CMAKE_C_COMPILER} has no C11 nor C99 support. Please update your C compiler.")
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 
-add_executable(batsim batsim.c job.c utils.c export.c)
+add_executable(batsim batsim.c job.c utils.c export.c machines.c)
 add_executable(batexec batexec.c job.c utils.c export.c)
 
 ### Add definitions for compile
