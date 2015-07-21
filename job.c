@@ -208,7 +208,7 @@ int job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, double wa
     s_job_t * job = jobFromJobID(job_id);
     //XBT_INFO("job_exec: jobID %d, job=%p", job_id, job);
 
-    msg_host_t * job_res = (msg_host_t *) xbt_new(s_msg_host_t, nb_res);
+    msg_host_t * job_res = (msg_host_t *) xbt_new(msg_host_t, nb_res);
 
     for(int i = 0; i < nb_res; i++)
         job_res[i] = nodes[res_idxs[i]];

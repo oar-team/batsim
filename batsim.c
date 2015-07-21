@@ -665,7 +665,7 @@ int server(int argc, char *argv[])
  */
 msg_error_t deploy_all(const char *platform_file, const char * masterHostName, const char * pajeTraceFilename, const char * csvJobsFilename, const char * csvScheduleFilename)
 {
-    MSG_config("workstation/model", "ptask_L07");
+    MSG_config("host/model", "ptask_L07");
     MSG_create_environment(platform_file);
 
     xbt_dynar_t all_hosts = MSG_hosts_as_dynar();
