@@ -102,3 +102,7 @@ void checkJobsAndProfilesValidity();
  * @return TRUE if the profile exists, FALSE otherwise
  */
 int profileExists(const char * profileName);
+
+char * get_trimmed_string(const char * str);
+
+int get_long_from_string(const char * str, long * val);

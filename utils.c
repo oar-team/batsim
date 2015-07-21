@@ -2,6 +2,10 @@
  * All rights reserved.                       */
 
 #include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <limits.h>
 
 #include "job.h"
 #include "utils.h"
@@ -450,4 +454,52 @@ void checkJobsAndProfilesValidity()
             // todo: check if the number of resources matches a resource-constrained composed profile
         }
     }
+}
+
+
+char *get_trimmed_string(const char *str)
+{
+    const char * end;
+    size_t out_size;
+
+    // Trim leading space
+    while(isspace(*str)) str++;
+
+    if(*str == 0)  // All spaces?
+    {
+        char * out = xbt_new(char, 1);
+        out[0] = '\0';
+        return out;
+    }
+    else
+    {
+        // Trim trailing space
+        end = str + strlen(str) - 1;
+        while(end > str && isspace(*end)) end--;
+        end++;
+
+        // Set output size to minimum of trimmed string length and buffer size minus 1
+        out_size = end - str;
+        char * out = xbt_new(char, out_size + 1);
+
+        // Copy trimmed string and add null terminator
+        memcpy(out, str, out_size);
+        out[out_size] = 0;
+
+        return out;
+    }
+}
+
+int get_long_from_string(const char *str, long *val)
+{
+    char *temp;
+    int rc = 1;
+    errno = 0;
+    *val = strtol(str, &temp, 0);
+
+    if (temp == str || *temp != '\0' ||
+        ((*val == LONG_MIN || *val == LONG_MAX) && errno == ERANGE))
+        rc = 0;
+
+    return rc;
 }

@@ -17,6 +17,7 @@
 #include <argp.h>
 
 #include <simgrid/msg.h>
+#include <simgrid/plugins.h>    /* energy */
 
 #include <xbt/sysdep.h>         /* calloc, printf */
 /* Create a log channel to have nice outputs. */
@@ -893,6 +894,7 @@ int main(int argc, char *argv[])
     retrieve_profiles(json_workload_profile);
     checkJobsAndProfilesValidity();
 
+    sg_energy_plugin_init();
     MSG_init(&argc, argv);
 
     open_uds(mainArgs.socketFilename, mainArgs.nbConnectTries, mainArgs.connectDelay);
