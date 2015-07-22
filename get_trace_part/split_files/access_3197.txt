@@ -1,0 +1,3 @@
+3 init
+3 compute 0.201980
+3 bcast 1 0 1

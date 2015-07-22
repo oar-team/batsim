@@ -1,0 +1,3 @@
+3 compute 0.086780
+3 bcast 1 0 1
+3 compute 0.089560
