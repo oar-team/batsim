@@ -2,7 +2,10 @@
  * All rights reserved.                       */
 #pragma once
 
+
+#include <smpi/smpi.h>
 #include <sys/types.h> /* ssize_t, needed by xbt/str.h, included by msg/msg.h */
+#include <stdbool.h>
 
 #include <simgrid/msg.h>
 #include <xbt.h>
@@ -34,7 +37,7 @@ typedef struct s_job
 
     double startingTime;    //! The time at which the job started being executed
     double runtime;         //! The execution time of the job
-    int * alloc_ids;        //! The resources allocated that were allocated to this job
+    int * alloc_ids;        //! The resources that were allocated to this job
     e_job_state_t state;    //! The state
 } s_job_t;
 
@@ -67,6 +70,14 @@ typedef struct s_delay
     double delay;
 } s_delay_t;
 
+//! The structure used to store additional information about profiles of type smpi
+typedef struct s_smpi
+{
+    xbt_dynar_t trace_filenames_dynar; //! all defined tracefile
+    int nb_traces; //total number of trace files only valid for the head link
+} s_smpi_t;
+
+
 /**
  * @brief Executes a job
  * @param[in] job_id The job number
@@ -77,3 +88,6 @@ typedef struct s_delay
  * @return 1 if the job finished in time, 0 if the walltime had been reached
  */
 int job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, double walltime);
+
+bool register_smpi_app_instances();
+

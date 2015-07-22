@@ -10,6 +10,7 @@
 
 #include <float.h>
 #include <math.h>
+#include <stdbool.h>
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(batexec, "Batexec");
 
@@ -50,13 +51,15 @@ static int job_launcher(int argc, char *argv[])
     return 0;
 }
 
-msg_error_t deploy_all(const char *platform_file)
+msg_error_t deploy_all(const char *platform_file, bool smpi_used)
 {
     msg_error_t res = MSG_OK;
     xbt_dynar_t all_hosts;
     msg_host_t first_host;
 
-    MSG_config("host/model", "ptask_L07");
+    if (!smpi_used)
+      MSG_config("host/model", "ptask_L07");
+    
     MSG_create_environment(platform_file);
 
     all_hosts = MSG_hosts_as_dynar();
@@ -81,7 +84,7 @@ msg_error_t deploy_all(const char *platform_file)
 int main(int argc, char *argv[])
 {
     msg_error_t res = MSG_OK;
-
+    bool smpi_used;
     json_t *json_workload_profile;
 
     //Comment to remove debug message
@@ -102,9 +105,12 @@ int main(int argc, char *argv[])
     retrieve_profiles(json_workload_profile);
 
     MSG_init(&argc, argv);
+    
+    //register all smpi jobs app and init SMPI
+    smpi_used = register_smpi_app_instances();
+    XBT_INFO("finished initialize for smpi");
 
-
-    res = deploy_all(argv[1]);
+    res = deploy_all(argv[1], smpi_used);
 
     if (res == MSG_OK)
         return 0;

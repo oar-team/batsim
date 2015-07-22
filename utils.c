@@ -2,6 +2,7 @@
  * All rights reserved.                       */
 
 #include <string.h>
+#include <errno.h>
 
 #include "job.h"
 #include "utils.h"
@@ -280,7 +281,32 @@ void retrieve_profiles(json_t *root)
         }
         else if (strcmp(type, "smpi") == 0)
         {
-            XBT_WARN("Profile with type %s is not yet implemented", type);
+            s_smpi_t * smpi_prof = xbt_new(s_smpi_t, 1);
+            profile->data = smpi_prof;
+            
+            e = json_object_get(j_profile, "trace");
+            xbt_assert(e != NULL, "The smpi profile '%s' must have a 'trace' field", key);
+            xbt_assert(json_typeof(e) == JSON_STRING, "The 'trace' field of the smpi profile '%s' must be a string", key);
+            //! Retrieves filename of each traces
+            const char* filename = json_string_value(e);
+            FILE *fp = NULL;
+            ssize_t read;
+            char *line = NULL;
+            size_t n = 0;
+            xbt_dynar_t traceFilenamesDynar = xbt_dynar_new(sizeof(char *), NULL);
+            fp = fopen(filename, "r");
+            if (fp == NULL)
+              xbt_die("Cannot open %s: %s", filename, strerror(errno));
+            while ((read = xbt_getline(&line,&n,fp)) != -1){
+              xbt_str_trim(line, NULL);
+              xbt_dynar_push(traceFilenamesDynar, line);
+
+              printf("line: %s\n", line);
+              
+            }
+            smpi_prof->trace_filenames_dynar = traceFilenamesDynar; 
+            smpi_prof->nb_traces = xbt_dynar_length(traceFilenamesDynar);
+              
         }
         else
             xbt_die("Invalid profile '%s' : type '%s' is not supported", key, profile->type);

@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <stdbool.h>
+#include <smpi/smpi.h>
 #include "job.h"
 #include "utils.h"
 
@@ -217,4 +218,58 @@ int job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, double wa
 
     free(job_res);
     return ret;
+}
+
+
+int smpi_replay(int argc, char *argv[])
+{
+  //just to verify given argv
+  int index;
+  for(index = 0; index < argc; index++) {
+    printf("The %d is %s\n",index,argv[index]);
+  }
+  
+  printf("yop...\n");
+  smpi_replay_init(&argc, &argv);
+  //printf("smpi_rank %d\n", smpi_comm_rank(MPI_));
+
+  /* Actually do the simulation using smpi_action_trace_run */
+  smpi_action_trace_run(NULL);
+
+  //smpi_replay_finalize_instance();
+  smpi_replay_finalize();
+  return 0;
+}
+
+
+
+bool register_smpi_app_instances()
+{
+  bool smpi_used = false; 
+  s_job_t *job;
+  profile_t profile;
+  unsigned int job_index;
+  int nb_traces;
+  
+  xbt_dynar_foreach(jobs_dynar, job_index, job)
+    {
+
+      profile = xbt_dict_get(profiles,job->profile);
+      
+      if (strcmp(profile->type, "smpi") == 0)
+        {
+          smpi_used = true;
+          nb_traces = ((s_smpi_t *)(profile->data))->nb_traces;
+
+          if ( nb_traces != job->nb_res)
+            xbt_die("SMPI nb_traces (%d) and nb_res (%d) for job (%d) are not equal\n", nb_traces, job->nb_res, job->id);
+
+          SMPI_app_instance_register(job->id_str, smpi_replay, nb_traces);
+          XBT_INFO("register SMPI app instance %s with nb_traces %d", job->id_str, nb_traces);
+        }
+    }
+  if (smpi_used)
+    SMPI_init();
+  
+  return(smpi_used);
 }

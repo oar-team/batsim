@@ -1,6 +1,8 @@
 /* Copyright (c) 2015. The OAR Team.
  * All rights reserved.                       */
-#pragma once
+#ifndef _INCL_GUARD_UTIL
+#define _INCL_GUARD_UTIL
+#endif
 
 #include <simgrid/msg.h>
 #include <xbt.h>
