@@ -44,6 +44,21 @@ int killerDelay(int argc, char *argv[])
     return 0;
 }
 
+
+
+int smpi_replay(int argc, char *argv[])
+{
+  //just to verify given argv
+  int index;
+  for(index = 0; index < argc; index++) {
+    printf("The %d is %s\n",index,argv[index]);
+  }
+  
+  smpi_replay_run(&argc, &argv);
+  //printf("smpi_rank %d\n", smpi_comm_rank(MPI_));
+  return 0;
+}
+
 /**
  * @brief Executes the profile of a given job
  * @param[in] profile_str The name of the profile to execute
@@ -196,7 +211,35 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
     }
     else if (strcmp(profile->type, "smpi") == 0)
     {
-        xbt_die("Cannot execute job %d: the profile type '%s' is not yet implemented", job_id, profile->type);
+      
+      xbt_dynar_t traceFilenamesDynar = ((s_smpi_t *)(profile->data))->trace_filenames_dynar;
+
+      for (int i = 0; i < nb_res; i++)
+      {
+          char *str_instance_id = NULL;
+          int ret = asprintf(&str_instance_id, "%d", job_id);
+          xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+          
+          char *str_rank_id  = NULL;
+          ret = asprintf(&str_rank_id, "%d", i);
+          xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+
+          char *str_pname = NULL;
+          ret = asprintf(&str_pname, "%d_%d", job_id, i);
+          xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+          
+          char **argv = xbt_new(char*, 5);
+          argv[0] = xbt_strdup("1"); // Fonction_replay_label (can be ignored, for log only),
+          argv[1] = str_instance_id; // Instance Id (application) job_id is used
+          argv[2] = str_rank_id;     // Rank Id
+          argv[3] = xbt_dynar_get_as(traceFilenamesDynar, i, char *);
+          argv[4] = xbt_strdup("0"); //
+
+          MSG_process_create_with_arguments(str_pname, smpi_replay, NULL, job_res[i], 5, argv );
+          
+          free(str_pname);
+      }
+       
     }
     else
         xbt_die("Cannot execute job %d: the profile type '%s' is unknown", job_id, profile->type);
@@ -219,29 +262,6 @@ int job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, double wa
     free(job_res);
     return ret;
 }
-
-
-int smpi_replay(int argc, char *argv[])
-{
-  //just to verify given argv
-  int index;
-  for(index = 0; index < argc; index++) {
-    printf("The %d is %s\n",index,argv[index]);
-  }
-  
-  printf("yop...\n");
-  smpi_replay_init(&argc, &argv);
-  //printf("smpi_rank %d\n", smpi_comm_rank(MPI_));
-
-  /* Actually do the simulation using smpi_action_trace_run */
-  smpi_action_trace_run(NULL);
-
-  //smpi_replay_finalize_instance();
-  smpi_replay_finalize();
-  return 0;
-}
-
-
 
 bool register_smpi_app_instances()
 {

@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <argp.h>
+#include <stdbool.h>
 
 #include <simgrid/msg.h>
 
@@ -661,11 +662,14 @@ int server(int argc, char *argv[])
  * @param[in] pajeTraceFilename The name of the Pajé trace to generate
  * @param[in] csvJobsFilename The name of the CSV output file about jobs
  * @param[in] csvScheduleFilename The name of the CSV output file about the schedule
+ * @param[in] smpi_used The flag to indicate the presence of SMPI job
  * @return The msg_error_t result of the inner call of MSG_main() (MSG_OK on success)
  */
-msg_error_t deploy_all(const char *platform_file, const char * masterHostName, const char * pajeTraceFilename, const char * csvJobsFilename, const char * csvScheduleFilename)
+msg_error_t deploy_all(const char *platform_file, const char * masterHostName, const char * pajeTraceFilename, const char * csvJobsFilename, const char * csvScheduleFilename, bool smpi_used)
 {
-    MSG_config("host/model", "ptask_L07");
+    if (!smpi_used)
+        MSG_config("host/model", "ptask_L07");
+    
     MSG_create_environment(platform_file);
 
     xbt_dynar_t all_hosts = MSG_hosts_as_dynar();
@@ -895,6 +899,9 @@ int main(int argc, char *argv[])
 
     MSG_init(&argc, argv);
 
+    // Register all smpi jobs app and init SMPI
+    bool smpi_used = register_smpi_app_instances();
+
     open_uds(mainArgs.socketFilename, mainArgs.nbConnectTries, mainArgs.connectDelay);
 
     char * pajeFilename;
@@ -908,7 +915,7 @@ int main(int argc, char *argv[])
     ret = asprintf(&csvScheduleFilename, "%s_schedule.csv", mainArgs.exportPrefix);
     xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
-    msg_error_t res = deploy_all(mainArgs.platformFilename, mainArgs.masterHostName, pajeFilename, csvJobsFilename, csvScheduleFilename);
+    msg_error_t res = deploy_all(mainArgs.platformFilename, mainArgs.masterHostName, pajeFilename, csvJobsFilename, csvScheduleFilename, smpi_used);
 
     free(pajeFilename);
     free(csvJobsFilename);

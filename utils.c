@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include "job.h"
 #include "utils.h"
@@ -17,6 +18,7 @@ int nb_jobs = 0;
 xbt_dict_t profiles = NULL;
 xbt_dynar_t jobs_dynar = NULL;
 xbt_dict_t job_id_to_dynar_pos = NULL;
+char *dirname_workload_file = NULL;
 
 /**
  * @brief Compares two jobs according to their submission time
@@ -43,6 +45,8 @@ json_t *load_json_workload_profile(char *filename)
         filename = "../workload_profiles/test_workload_profile.json";
     }
 
+    dirname_workload_file = dirname(xbt_strdup(filename));
+  
     root = json_load_file(filename, 0, &error);
 
     if(!root)
@@ -288,24 +292,38 @@ void retrieve_profiles(json_t *root)
             xbt_assert(e != NULL, "The smpi profile '%s' must have a 'trace' field", key);
             xbt_assert(json_typeof(e) == JSON_STRING, "The 'trace' field of the smpi profile '%s' must be a string", key);
             //! Retrieves filename of each traces
-            const char* filename = json_string_value(e);
+            char* filename = NULL;
+            char* trace_filename = NULL;
             FILE *fp = NULL;
             ssize_t read;
             char *line = NULL;
             size_t n = 0;
+            char *dname = NULL;
+            
+            dirname(xbt_strdup(filename));
+            int ret = asprintf(&filename, "%s/%s", dirname_workload_file, json_string_value(e));
+            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+
+            dname = dirname(xbt_strdup(filename));
+                                  
             xbt_dynar_t traceFilenamesDynar = xbt_dynar_new(sizeof(char *), NULL);
             fp = fopen(filename, "r");
             if (fp == NULL)
               xbt_die("Cannot open %s: %s", filename, strerror(errno));
             while ((read = xbt_getline(&line,&n,fp)) != -1){
               xbt_str_trim(line, NULL);
-              xbt_dynar_push(traceFilenamesDynar, line);
-
-              printf("line: %s\n", line);
+              ret = asprintf(&trace_filename, "%s/%s", dname, line);
+              xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+              
+              xbt_dynar_push_as(traceFilenamesDynar, char *, trace_filename);
               
             }
+                        
             smpi_prof->trace_filenames_dynar = traceFilenamesDynar; 
             smpi_prof->nb_traces = xbt_dynar_length(traceFilenamesDynar);
+
+            free(filename);
+            free(dname);
               
         }
         else
@@ -314,6 +332,7 @@ void retrieve_profiles(json_t *root)
         iter = json_object_iter_next(j_profiles, iter);
     }
 
+    free(dirname_workload_file);
     XBT_INFO("%d profiles had been read from the JSON file", xbt_dict_size(profiles));
 }
 
@@ -336,6 +355,12 @@ void freeProfile(void * profile)
             free(data->seq[i]);
 
         xbt_free(data->seq);
+    }
+    else if (strcmp(prof->type, "smpi") == 0)
+    {
+      
+        s_smpi_t * data = prof->data;
+        xbt_dynar_free(&data->trace_filenames_dynar);
     }
 
     free(prof->type);

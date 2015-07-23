@@ -20,7 +20,6 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(batexec, "Batexec");
 int nb_nodes = 0;
 msg_host_t *nodes;
 
-
 /**
  * \brief Execute jobs alone
  *
@@ -83,9 +82,6 @@ msg_error_t deploy_all(const char *platform_file, bool smpi_used)
 
 int main(int argc, char *argv[])
 {
-    msg_error_t res = MSG_OK;
-    bool smpi_used;
-    json_t *json_workload_profile;
 
     //Comment to remove debug message
     xbt_log_control_set("batexec.threshold:debug");
@@ -99,18 +95,25 @@ int main(int argc, char *argv[])
         printf("example: %s ../platforms/small_platform.xml ../workload_profiles/test_workload_profile.json\n", argv[0]);
         exit(1);
     }
-
+    
+    json_t *json_workload_profile;
+    
     json_workload_profile = load_json_workload_profile(argv[2]);
     retrieve_jobs(json_workload_profile);
     retrieve_profiles(json_workload_profile);
-
+    checkJobsAndProfilesValidity();
+    
     MSG_init(&argc, argv);
     
-    //register all smpi jobs app and init SMPI
-    smpi_used = register_smpi_app_instances();
-    XBT_INFO("finished initialize for smpi");
+    // Register all smpi jobs app and init SMPI
+    bool smpi_used = register_smpi_app_instances();
 
-    res = deploy_all(argv[1], smpi_used);
+    msg_error_t res = deploy_all(argv[1], smpi_used);
+    
+    json_decref(json_workload_profile);
+    // Let's clear global allocated data
+    freeJobStructures();
+    free(nodes);
 
     if (res == MSG_OK)
         return 0;
