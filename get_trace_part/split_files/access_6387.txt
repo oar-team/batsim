@@ -1,3 +1,0 @@
-2 wait
-2 compute 0.129540
-2 allreduce 1 0.000000 0

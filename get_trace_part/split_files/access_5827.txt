@@ -1,3 +1,0 @@
-2 compute 0.047980
-2 wait
-2 compute 0.385500

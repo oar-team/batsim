@@ -1,3 +1,0 @@
-2 compute 1.185180
-2 irecv 0 720 0
-2 compute 0.047220

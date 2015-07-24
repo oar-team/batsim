@@ -1,3 +1,0 @@
-2 compute 0.370300
-2 send 0 25 0
-2 compute 0.381880

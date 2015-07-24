@@ -1,0 +1,24 @@
+3 allreduce 5 0.000000
+3 allreduce 5 0.000000
+3 allreduce 1 0.000000
+3 allreduce 5 0.000000
+3 allreduce 1 0.000000
+3 allreduce 1 0.000000
+3 allreduce 1 0.000000
+3 recv 2 2000.0
+3 recv 1 2000.0
+3 irecv 2 6480.0
+3 compute 111.55450000000005
+3 irecv 1 6480.0
+3 allreduce 5 0.000000
+3 allreduce 5 0.000000
+3 allreduce 1 0.000000
+3 allreduce 5 0.000000
+3 allreduce 1 0.000000
+3 allreduce 1 0.000000
+3 allreduce 1 0.000000
+3 recv 1 2000.0
+3 irecv 2 6480.0
+3 compute 111.55450000000005
+3 irecv 1 6480.0
+3 recv 2 2000.0

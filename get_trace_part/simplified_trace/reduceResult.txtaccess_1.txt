@@ -1,0 +1,18 @@
+0 allreduce 5 0.000000
+0 allreduce 1 0.000000
+0 allreduce 5 0.000000
+0 bcast 14.0
+0 compute 299.5571000000007
+0 irecv 2 17280.0
+0 irecv 1 17280.0
+0 recv 1 5250.0
+0 recv 2 5250.0
+0 allreduce 5 0.000000
+0 allreduce 1 0.000000
+0 allreduce 5 0.000000
+0 irecv 2 17280.0
+0 bcast 14.0
+0 recv 2 5250.0
+0 compute 299.5571000000007
+0 recv 1 5250.0
+0 irecv 1 17280.0

@@ -1,3 +1,0 @@
-2 bcast 5 0 0
-2 compute 0.090480
-2 bcast 1 0 1

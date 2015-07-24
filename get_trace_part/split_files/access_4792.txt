@@ -1,2 +1,0 @@
-3 compute 0.095380
-3 finalize

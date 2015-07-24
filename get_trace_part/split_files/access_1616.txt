@@ -1,3 +1,0 @@
-1 barrier
-1 compute 0.086100
-1 compute 0.638800

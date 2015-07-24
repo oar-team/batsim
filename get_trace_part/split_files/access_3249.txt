@@ -1,3 +1,0 @@
-3 send 1 720 0
-3 compute 1.764720
-3 allreduce 5 0.000000 0

@@ -1,3 +1,2000 @@
-0 bcast 5 0 0
-0 compute 0.021140
-0 bcast 1 0 1
+1 compute 0.047700
+1 wait
+1 compute 2.073620
+1 recv 0 25 0
+1 compute 0.377880
+1 send 3 25 0
+1 compute 0.367700
+1 recv 0 25 0
+1 compute 0.376780
+1 send 3 25 0
+1 compute 0.377480
+1 recv 0 25 0
+1 compute 0.387720
+1 send 3 25 0
+1 compute 0.360160
+1 recv 0 25 0
+1 compute 0.376800
+1 send 3 25 0
+1 compute 0.376020
+1 recv 0 25 0
+1 compute 0.387580
+1 send 3 25 0
+1 compute 0.359760
+1 recv 0 25 0
+1 compute 0.374240
+1 send 3 25 0
+1 compute 0.393360
+1 recv 0 25 0
+1 compute 0.381340
+1 send 3 25 0
+1 compute 0.374760
+1 recv 0 25 0
+1 compute 0.377260
+1 send 3 25 0
+1 compute 0.391860
+1 recv 0 25 0
+1 compute 0.381780
+1 send 3 25 0
+1 compute 0.378740
+1 recv 0 25 0
+1 compute 0.380400
+1 send 3 25 0
+1 compute 0.367660
+1 recv 3 25 0
+1 compute 0.413260
+1 send 0 25 0
+1 compute 0.374900
+1 recv 3 25 0
+1 compute 0.377640
+1 send 0 25 0
+1 compute 0.368160
+1 recv 3 25 0
+1 compute 0.379240
+1 send 0 25 0
+1 compute 0.368240
+1 recv 3 25 0
+1 compute 0.377360
+1 send 0 25 0
+1 compute 0.388380
+1 recv 3 25 0
+1 compute 0.387580
+1 send 0 25 0
+1 compute 0.352500
+1 recv 3 25 0
+1 compute 0.375100
+1 send 0 25 0
+1 compute 0.375160
+1 recv 3 25 0
+1 compute 0.384480
+1 send 0 25 0
+1 compute 0.352720
+1 recv 3 25 0
+1 compute 0.376220
+1 send 0 25 0
+1 compute 0.373660
+1 recv 3 25 0
+1 compute 0.386380
+1 send 0 25 0
+1 compute 0.358040
+1 recv 3 25 0
+1 compute 0.375280
+1 send 0 25 0
+1 compute 0.906780
+1 irecv 0 720 0
+1 compute 0.118220
+1 wait
+1 compute 0.314540
+1 send 0 720 0
+1 compute 0.998120
+1 send 3 720 0
+1 compute 0.030440
+1 irecv 3 720 0
+1 compute 0.046440
+1 wait
+1 compute 2.072820
+1 recv 0 25 0
+1 compute 0.375980
+1 send 3 25 0
+1 compute 0.498140
+1 recv 0 25 0
+1 compute 0.384160
+1 send 3 25 0
+1 compute 0.358680
+1 recv 0 25 0
+1 compute 0.376160
+1 send 3 25 0
+1 compute 0.367160
+1 recv 0 25 0
+1 compute 0.374500
+1 send 3 25 0
+1 compute 0.379200
+1 recv 0 25 0
+1 compute 0.386520
+1 send 3 25 0
+1 compute 0.360620
+1 recv 0 25 0
+1 compute 0.377780
+1 send 3 25 0
+1 compute 0.393420
+1 recv 0 25 0
+1 compute 0.385820
+1 send 3 25 0
+1 compute 0.375520
+1 recv 0 25 0
+1 compute 0.380100
+1 send 3 25 0
+1 compute 0.395720
+1 recv 0 25 0
+1 compute 0.384120
+1 send 3 25 0
+1 compute 0.377400
+1 recv 0 25 0
+1 compute 0.380260
+1 send 3 25 0
+1 compute 0.366840
+1 recv 3 25 0
+1 compute 0.413900
+1 send 0 25 0
+1 compute 0.375640
+1 recv 3 25 0
+1 compute 0.376200
+1 send 0 25 0
+1 compute 0.368020
+1 recv 3 25 0
+1 compute 0.380220
+1 send 0 25 0
+1 compute 0.371920
+1 recv 3 25 0
+1 compute 0.377320
+1 send 0 25 0
+1 compute 0.387440
+1 recv 3 25 0
+1 compute 0.387680
+1 send 0 25 0
+1 compute 0.351140
+1 recv 3 25 0
+1 compute 0.372560
+1 send 0 25 0
+1 compute 0.372960
+1 recv 3 25 0
+1 compute 0.385220
+1 send 0 25 0
+1 compute 0.354680
+1 recv 3 25 0
+1 compute 0.376060
+1 send 0 25 0
+1 compute 0.374940
+1 recv 3 25 0
+1 compute 0.386060
+1 send 0 25 0
+1 compute 0.352740
+1 recv 3 25 0
+1 compute 0.376700
+1 send 0 25 0
+1 compute 0.912400
+1 irecv 0 720 0
+1 compute 0.115000
+1 wait
+1 compute 0.314600
+1 send 0 720 0
+1 compute 0.993680
+1 send 3 720 0
+1 compute 0.027260
+1 irecv 3 720 0
+1 compute 0.047420
+1 wait
+1 compute 2.093640
+1 recv 0 25 0
+1 compute 0.376760
+1 send 3 25 0
+1 compute 0.366400
+1 recv 0 25 0
+1 compute 0.386160
+1 send 3 25 0
+1 compute 0.356280
+1 recv 0 25 0
+1 compute 0.373920
+1 send 3 25 0
+1 compute 0.367620
+1 recv 0 25 0
+1 compute 0.375980
+1 send 3 25 0
+1 compute 0.377020
+1 recv 0 25 0
+1 compute 0.384760
+1 send 3 25 0
+1 compute 0.360820
+1 recv 0 25 0
+1 compute 0.374700
+1 send 3 25 0
+1 compute 0.396140
+1 recv 0 25 0
+1 compute 0.384020
+1 send 3 25 0
+1 compute 0.375240
+1 recv 0 25 0
+1 compute 0.380640
+1 send 3 25 0
+1 compute 0.391300
+1 recv 0 25 0
+1 compute 0.380820
+1 send 3 25 0
+1 compute 0.378140
+1 recv 0 25 0
+1 compute 0.381160
+1 send 3 25 0
+1 compute 0.368880
+1 recv 3 25 0
+1 compute 0.413100
+1 send 0 25 0
+1 compute 0.379200
+1 recv 3 25 0
+1 compute 0.378380
+1 send 0 25 0
+1 compute 0.368240
+1 recv 3 25 0
+1 compute 0.381160
+1 send 0 25 0
+1 compute 0.367900
+1 recv 3 25 0
+1 compute 0.377000
+1 send 0 25 0
+1 compute 0.385700
+1 recv 3 25 0
+1 compute 0.386800
+1 send 0 25 0
+1 compute 0.352000
+1 recv 3 25 0
+1 compute 0.376680
+1 send 0 25 0
+1 compute 0.375600
+1 recv 3 25 0
+1 compute 0.383200
+1 send 0 25 0
+1 compute 0.351920
+1 recv 3 25 0
+1 compute 0.373060
+1 send 0 25 0
+1 compute 0.374600
+1 recv 3 25 0
+1 compute 0.384800
+1 send 0 25 0
+1 compute 0.352380
+1 recv 3 25 0
+1 compute 0.374680
+1 send 0 25 0
+1 compute 0.905840
+1 irecv 0 720 0
+1 compute 0.117820
+1 wait
+1 compute 0.316340
+1 send 0 720 0
+1 compute 0.998600
+1 send 3 720 0
+1 compute 0.028040
+1 irecv 3 720 0
+1 compute 0.046480
+1 wait
+1 compute 2.092680
+1 recv 0 25 0
+1 compute 0.379940
+1 send 3 25 0
+1 compute 0.368660
+1 recv 0 25 0
+1 compute 0.375960
+1 send 3 25 0
+1 compute 0.377600
+1 recv 0 25 0
+1 compute 0.386180
+1 send 3 25 0
+1 compute 0.357600
+1 recv 0 25 0
+1 compute 0.376660
+1 send 3 25 0
+1 compute 0.380840
+1 recv 0 25 0
+1 compute 0.386120
+1 send 3 25 0
+1 compute 0.361800
+1 recv 0 25 0
+1 compute 0.373560
+1 send 3 25 0
+1 compute 0.395740
+1 recv 0 25 0
+1 compute 0.384080
+1 send 3 25 0
+1 compute 0.375380
+1 recv 0 25 0
+1 compute 0.378200
+1 send 3 25 0
+1 compute 0.392860
+1 recv 0 25 0
+1 compute 0.383600
+1 send 3 25 0
+1 compute 0.378040
+1 recv 0 25 0
+1 compute 0.377560
+1 send 3 25 0
+1 compute 0.368260
+1 recv 3 25 0
+1 compute 0.412000
+1 send 0 25 0
+1 compute 0.376020
+1 recv 3 25 0
+1 compute 0.378140
+1 send 0 25 0
+1 compute 0.369080
+1 recv 3 25 0
+1 compute 0.379820
+1 send 0 25 0
+1 compute 0.367740
+1 recv 3 25 0
+1 compute 0.377680
+1 send 0 25 0
+1 compute 0.387160
+1 recv 3 25 0
+1 compute 0.386700
+1 send 0 25 0
+1 compute 0.352460
+1 recv 3 25 0
+1 compute 0.375140
+1 send 0 25 0
+1 compute 0.371020
+1 recv 3 25 0
+1 compute 0.374340
+1 send 0 25 0
+1 compute 0.363480
+1 recv 3 25 0
+1 compute 0.375640
+1 send 0 25 0
+1 compute 0.373840
+1 recv 3 25 0
+1 compute 0.387440
+1 send 0 25 0
+1 compute 0.352060
+1 recv 3 25 0
+1 compute 0.375940
+1 send 0 25 0
+1 compute 0.911560
+1 irecv 0 720 0
+1 compute 0.116380
+1 wait
+1 compute 0.315920
+1 send 0 720 0
+1 compute 1.000660
+1 send 3 720 0
+1 compute 0.027740
+1 irecv 3 720 0
+1 compute 0.047060
+1 wait
+1 compute 2.070580
+1 recv 0 25 0
+1 compute 0.380700
+1 send 3 25 0
+1 compute 0.368100
+1 recv 0 25 0
+1 compute 0.385640
+1 send 3 25 0
+1 compute 0.358760
+1 recv 0 25 0
+1 compute 0.377780
+1 send 3 25 0
+1 compute 0.372520
+1 recv 0 25 0
+1 compute 0.377120
+1 send 3 25 0
+1 compute 0.378140
+1 recv 0 25 0
+1 compute 0.387680
+1 send 3 25 0
+1 compute 0.360660
+1 recv 0 25 0
+1 compute 0.376160
+1 send 3 25 0
+1 compute 0.394200
+1 recv 0 25 0
+1 compute 0.381500
+1 send 3 25 0
+1 compute 0.372580
+1 recv 0 25 0
+1 compute 0.378560
+1 send 3 25 0
+1 compute 0.393820
+1 recv 0 25 0
+1 compute 0.383420
+1 send 3 25 0
+1 compute 0.376720
+1 recv 0 25 0
+1 compute 0.378000
+1 send 3 25 0
+1 compute 0.368340
+1 recv 3 25 0
+1 compute 0.413640
+1 send 0 25 0
+1 compute 0.377300
+1 recv 3 25 0
+1 compute 0.524180
+1 send 0 25 0
+1 compute 0.369700
+1 recv 3 25 0
+1 compute 0.380480
+1 send 0 25 0
+1 compute 0.369740
+1 recv 3 25 0
+1 compute 0.377460
+1 send 0 25 0
+1 compute 0.366040
+1 recv 3 25 0
+1 compute 0.375880
+1 send 0 25 0
+1 compute 0.363840
+1 recv 3 25 0
+1 compute 0.373880
+1 send 0 25 0
+1 compute 0.372960
+1 recv 3 25 0
+1 compute 0.384620
+1 send 0 25 0
+1 compute 0.352880
+1 recv 3 25 0
+1 compute 0.376800
+1 send 0 25 0
+1 compute 0.376440
+1 recv 3 25 0
+1 compute 0.385500
+1 send 0 25 0
+1 compute 0.351000
+1 recv 3 25 0
+1 compute 0.377500
+1 send 0 25 0
+1 compute 0.907680
+1 irecv 0 720 0
+1 compute 0.119880
+1 wait
+1 compute 0.316480
+1 send 0 720 0
+1 compute 0.996280
+1 send 3 720 0
+1 compute 0.026640
+1 irecv 3 720 0
+1 compute 0.049540
+1 wait
+1 compute 2.092600
+1 recv 0 25 0
+1 compute 0.377300
+1 send 3 25 0
+1 compute 0.370220
+1 recv 0 25 0
+1 compute 0.385500
+1 send 3 25 0
+1 compute 0.357880
+1 recv 0 25 0
+1 compute 0.376420
+1 send 3 25 0
+1 compute 0.366300
+1 recv 0 25 0
+1 compute 0.376080
+1 send 3 25 0
+1 compute 0.376460
+1 recv 0 25 0
+1 compute 0.385180
+1 send 3 25 0
+1 compute 0.363000
+1 recv 0 25 0
+1 compute 0.373180
+1 send 3 25 0
+1 compute 0.390640
+1 recv 0 25 0
+1 compute 0.384160
+1 send 3 25 0
+1 compute 0.510540
+1 recv 0 25 0
+1 compute 0.387200
+1 send 3 25 0
+1 compute 0.374820
+1 recv 0 25 0
+1 compute 0.377560
+1 send 3 25 0
+1 compute 0.377600
+1 recv 0 25 0
+1 compute 0.379420
+1 send 3 25 0
+1 compute 0.369320
+1 recv 3 25 0
+1 compute 0.412020
+1 send 0 25 0
+1 compute 0.376080
+1 recv 3 25 0
+1 compute 0.376480
+1 send 0 25 0
+1 compute 0.365820
+1 recv 3 25 0
+1 compute 0.379220
+1 send 0 25 0
+1 compute 0.369580
+1 recv 3 25 0
+1 compute 0.379120
+1 send 0 25 0
+1 compute 0.388040
+1 recv 3 25 0
+1 compute 0.386100
+1 send 0 25 0
+1 compute 0.354700
+1 recv 3 25 0
+1 compute 0.374680
+1 send 0 25 0
+1 compute 0.372640
+1 recv 3 25 0
+1 compute 0.517940
+1 send 0 25 0
+1 compute 0.352200
+1 recv 3 25 0
+1 compute 0.375320
+1 send 0 25 0
+1 compute 0.369660
+1 recv 3 25 0
+1 compute 0.378280
+1 send 0 25 0
+1 compute 0.363760
+1 recv 3 25 0
+1 compute 0.384540
+1 send 0 25 0
+1 compute 0.899300
+1 irecv 0 720 0
+1 compute 0.118080
+1 wait
+1 compute 0.315000
+1 send 0 720 0
+1 compute 0.996780
+1 send 3 720 0
+1 compute 0.027260
+1 irecv 3 720 0
+1 compute 0.047000
+1 wait
+1 compute 2.072840
+1 recv 0 25 0
+1 compute 0.376760
+1 send 3 25 0
+1 compute 0.369340
+1 recv 0 25 0
+1 compute 0.386240
+1 send 3 25 0
+1 compute 0.361500
+1 recv 0 25 0
+1 compute 0.377920
+1 send 3 25 0
+1 compute 0.367440
+1 recv 0 25 0
+1 compute 0.376380
+1 send 3 25 0
+1 compute 0.378780
+1 recv 0 25 0
+1 compute 0.386200
+1 send 3 25 0
+1 compute 0.360320
+1 recv 0 25 0
+1 compute 0.374360
+1 send 3 25 0
+1 compute 0.392560
+1 recv 0 25 0
+1 compute 0.383740
+1 send 3 25 0
+1 compute 0.375580
+1 recv 0 25 0
+1 compute 0.379600
+1 send 3 25 0
+1 compute 0.395580
+1 recv 0 25 0
+1 compute 0.382440
+1 send 3 25 0
+1 compute 0.377300
+1 recv 0 25 0
+1 compute 0.381840
+1 send 3 25 0
+1 compute 0.372360
+1 recv 3 25 0
+1 compute 0.414460
+1 send 0 25 0
+1 compute 0.377120
+1 recv 3 25 0
+1 compute 0.376560
+1 send 0 25 0
+1 compute 0.370340
+1 recv 3 25 0
+1 compute 0.380080
+1 send 0 25 0
+1 compute 0.367580
+1 recv 3 25 0
+1 compute 0.376420
+1 send 0 25 0
+1 compute 0.388920
+1 recv 3 25 0
+1 compute 0.384020
+1 send 0 25 0
+1 compute 0.353200
+1 recv 3 25 0
+1 compute 0.375660
+1 send 0 25 0
+1 compute 0.376620
+1 recv 3 25 0
+1 compute 0.384100
+1 send 0 25 0
+1 compute 0.354880
+1 recv 3 25 0
+1 compute 0.375920
+1 send 0 25 0
+1 compute 0.374260
+1 recv 3 25 0
+1 compute 0.386700
+1 send 0 25 0
+1 compute 0.351680
+1 recv 3 25 0
+1 compute 0.378280
+1 send 0 25 0
+1 compute 0.906480
+1 irecv 0 720 0
+1 compute 0.116660
+1 wait
+1 compute 0.315280
+1 send 0 720 0
+1 compute 0.996080
+1 send 3 720 0
+1 compute 0.026560
+1 irecv 3 720 0
+1 compute 0.046340
+1 wait
+1 compute 2.070660
+1 recv 0 25 0
+1 compute 0.377060
+1 send 3 25 0
+1 compute 0.368340
+1 recv 0 25 0
+1 compute 0.385020
+1 send 3 25 0
+1 compute 0.361060
+1 recv 0 25 0
+1 compute 0.376560
+1 send 3 25 0
+1 compute 0.368580
+1 recv 0 25 0
+1 compute 0.384720
+1 send 3 25 0
+1 compute 0.378480
+1 recv 0 25 0
+1 compute 0.375180
+1 send 3 25 0
+1 compute 0.366780
+1 recv 0 25 0
+1 compute 0.373640
+1 send 3 25 0
+1 compute 0.396340
+1 recv 0 25 0
+1 compute 0.382980
+1 send 3 25 0
+1 compute 0.375360
+1 recv 0 25 0
+1 compute 0.377680
+1 send 3 25 0
+1 compute 0.392180
+1 recv 0 25 0
+1 compute 0.383980
+1 send 3 25 0
+1 compute 0.377020
+1 recv 0 25 0
+1 compute 0.379860
+1 send 3 25 0
+1 compute 0.370660
+1 recv 3 25 0
+1 compute 0.409500
+1 send 0 25 0
+1 compute 0.374580
+1 recv 3 25 0
+1 compute 0.378060
+1 send 0 25 0
+1 compute 0.370360
+1 recv 3 25 0
+1 compute 0.377540
+1 send 0 25 0
+1 compute 0.374120
+1 recv 3 25 0
+1 compute 0.378880
+1 send 0 25 0
+1 compute 0.387480
+1 recv 3 25 0
+1 compute 0.386940
+1 send 0 25 0
+1 compute 0.353760
+1 recv 3 25 0
+1 compute 0.374880
+1 send 0 25 0
+1 compute 0.375780
+1 recv 3 25 0
+1 compute 0.382300
+1 send 0 25 0
+1 compute 0.354280
+1 recv 3 25 0
+1 compute 0.373840
+1 send 0 25 0
+1 compute 0.373380
+1 recv 3 25 0
+1 compute 0.385600
+1 send 0 25 0
+1 compute 0.353360
+1 recv 3 25 0
+1 compute 0.377720
+1 send 0 25 0
+1 compute 0.908480
+1 irecv 0 720 0
+1 compute 0.116020
+1 wait
+1 compute 0.317400
+1 send 0 720 0
+1 compute 0.997240
+1 send 3 720 0
+1 compute 0.027340
+1 irecv 3 720 0
+1 compute 0.047200
+1 wait
+1 compute 2.092540
+1 recv 0 25 0
+1 compute 0.376640
+1 send 3 25 0
+1 compute 0.367800
+1 recv 0 25 0
+1 compute 0.376280
+1 send 3 25 0
+1 compute 0.379160
+1 recv 0 25 0
+1 compute 0.383240
+1 send 3 25 0
+1 compute 0.359820
+1 recv 0 25 0
+1 compute 0.377440
+1 send 3 25 0
+1 compute 0.376940
+1 recv 0 25 0
+1 compute 0.387400
+1 send 3 25 0
+1 compute 0.362500
+1 recv 0 25 0
+1 compute 0.375740
+1 send 3 25 0
+1 compute 0.393000
+1 recv 0 25 0
+1 compute 0.386920
+1 send 3 25 0
+1 compute 0.376620
+1 recv 0 25 0
+1 compute 0.381160
+1 send 3 25 0
+1 compute 0.394020
+1 recv 0 25 0
+1 compute 0.390960
+1 send 3 25 0
+1 compute 0.378140
+1 recv 0 25 0
+1 compute 0.380820
+1 send 3 25 0
+1 compute 0.370120
+1 recv 3 25 0
+1 compute 0.412340
+1 send 0 25 0
+1 compute 0.375520
+1 recv 3 25 0
+1 compute 0.376620
+1 send 0 25 0
+1 compute 0.367460
+1 recv 3 25 0
+1 compute 0.378000
+1 send 0 25 0
+1 compute 0.367620
+1 recv 3 25 0
+1 compute 0.376760
+1 send 0 25 0
+1 compute 0.387420
+1 recv 3 25 0
+1 compute 0.387400
+1 send 0 25 0
+1 compute 0.352280
+1 recv 3 25 0
+1 compute 0.373480
+1 send 0 25 0
+1 compute 0.371300
+1 recv 3 25 0
+1 compute 0.386100
+1 send 0 25 0
+1 compute 0.355360
+1 recv 3 25 0
+1 compute 0.374680
+1 send 0 25 0
+1 compute 0.380820
+1 recv 3 25 0
+1 compute 0.384300
+1 send 0 25 0
+1 compute 0.354840
+1 recv 3 25 0
+1 compute 0.378760
+1 send 0 25 0
+1 compute 0.912760
+1 irecv 0 720 0
+1 compute 0.117460
+1 wait
+1 compute 0.316020
+1 send 0 720 0
+1 compute 0.998240
+1 send 3 720 0
+1 compute 0.026440
+1 irecv 3 720 0
+1 compute 0.046480
+1 wait
+1 compute 2.070560
+1 recv 0 25 0
+1 compute 0.379580
+1 send 3 25 0
+1 compute 0.369580
+1 recv 0 25 0
+1 compute 0.382820
+1 send 3 25 0
+1 compute 0.357560
+1 recv 0 25 0
+1 compute 0.378420
+1 send 3 25 0
+1 compute 0.366400
+1 recv 0 25 0
+1 compute 0.377220
+1 send 3 25 0
+1 compute 0.379920
+1 recv 0 25 0
+1 compute 0.384340
+1 send 3 25 0
+1 compute 0.359640
+1 recv 0 25 0
+1 compute 0.376500
+1 send 3 25 0
+1 compute 0.393980
+1 recv 0 25 0
+1 compute 0.385820
+1 send 3 25 0
+1 compute 0.375260
+1 recv 0 25 0
+1 compute 0.376720
+1 send 3 25 0
+1 compute 0.393040
+1 recv 0 25 0
+1 compute 0.381840
+1 send 3 25 0
+1 compute 0.377020
+1 recv 0 25 0
+1 compute 0.380020
+1 send 3 25 0
+1 compute 0.370700
+1 recv 3 25 0
+1 compute 0.411220
+1 send 0 25 0
+1 compute 0.377720
+1 recv 3 25 0
+1 compute 0.377640
+1 send 0 25 0
+1 compute 0.367640
+1 recv 3 25 0
+1 compute 0.377780
+1 send 0 25 0
+1 compute 0.369180
+1 recv 3 25 0
+1 compute 0.378860
+1 send 0 25 0
+1 compute 0.388500
+1 recv 3 25 0
+1 compute 0.384700
+1 send 0 25 0
+1 compute 0.353220
+1 recv 3 25 0
+1 compute 0.377260
+1 send 0 25 0
+1 compute 0.373860
+1 recv 3 25 0
+1 compute 0.385520
+1 send 0 25 0
+1 compute 0.351400
+1 recv 3 25 0
+1 compute 0.373480
+1 send 0 25 0
+1 compute 0.374760
+1 recv 3 25 0
+1 compute 0.384660
+1 send 0 25 0
+1 compute 0.351700
+1 recv 3 25 0
+1 compute 0.376440
+1 send 0 25 0
+1 compute 0.910000
+1 irecv 0 720 0
+1 compute 0.117500
+1 wait
+1 compute 0.316480
+1 send 0 720 0
+1 compute 0.999560
+1 send 3 720 0
+1 compute 0.027660
+1 irecv 3 720 0
+1 compute 0.047280
+1 wait
+1 compute 2.072840
+1 recv 0 25 0
+1 compute 0.374320
+1 send 3 25 0
+1 compute 0.367960
+1 recv 0 25 0
+1 compute 0.377320
+1 send 3 25 0
+1 compute 0.379160
+1 recv 0 25 0
+1 compute 0.388040
+1 send 3 25 0
+1 compute 0.360420
+1 recv 0 25 0
+1 compute 0.376860
+1 send 3 25 0
+1 compute 0.376860
+1 recv 0 25 0
+1 compute 0.387260
+1 send 3 25 0
+1 compute 0.363980
+1 recv 0 25 0
+1 compute 0.374660
+1 send 3 25 0
+1 compute 0.394140
+1 recv 0 25 0
+1 compute 0.384940
+1 send 3 25 0
+1 compute 0.374040
+1 recv 0 25 0
+1 compute 0.381060
+1 send 3 25 0
+1 compute 0.394440
+1 recv 0 25 0
+1 compute 0.384380
+1 send 3 25 0
+1 compute 0.378840
+1 recv 0 25 0
+1 compute 0.379060
+1 send 3 25 0
+1 compute 0.370880
+1 recv 3 25 0
+1 compute 0.409920
+1 send 0 25 0
+1 compute 0.377780
+1 recv 3 25 0
+1 compute 0.377780
+1 send 0 25 0
+1 compute 0.370220
+1 recv 3 25 0
+1 compute 0.380640
+1 send 0 25 0
+1 compute 0.370100
+1 recv 3 25 0
+1 compute 0.378340
+1 send 0 25 0
+1 compute 0.386480
+1 recv 3 25 0
+1 compute 0.388960
+1 send 0 25 0
+1 compute 0.353060
+1 recv 3 25 0
+1 compute 0.375500
+1 send 0 25 0
+1 compute 0.374400
+1 recv 3 25 0
+1 compute 0.386560
+1 send 0 25 0
+1 compute 0.354080
+1 recv 3 25 0
+1 compute 0.373060
+1 send 0 25 0
+1 compute 0.371620
+1 recv 3 25 0
+1 compute 0.377080
+1 send 0 25 0
+1 compute 0.362980
+1 recv 3 25 0
+1 compute 0.387540
+1 send 0 25 0
+1 compute 0.895560
+1 irecv 0 720 0
+1 compute 0.117820
+1 wait
+1 compute 0.314780
+1 send 0 720 0
+1 compute 0.997660
+1 send 3 720 0
+1 compute 0.027800
+1 irecv 3 720 0
+1 compute 0.048620
+1 wait
+1 compute 2.076560
+1 recv 0 25 0
+1 compute 0.377960
+1 send 3 25 0
+1 compute 0.366480
+1 recv 0 25 0
+1 compute 0.380500
+1 send 3 25 0
+1 compute 0.378420
+1 recv 0 25 0
+1 compute 0.385120
+1 send 3 25 0
+1 compute 0.358060
+1 recv 0 25 0
+1 compute 0.377340
+1 send 3 25 0
+1 compute 0.378220
+1 recv 0 25 0
+1 compute 0.389060
+1 send 3 25 0
+1 compute 0.359780
+1 recv 0 25 0
+1 compute 0.376060
+1 send 3 25 0
+1 compute 0.392100
+1 recv 0 25 0
+1 compute 0.386060
+1 send 3 25 0
+1 compute 0.377280
+1 recv 0 25 0
+1 compute 0.379220
+1 send 3 25 0
+1 compute 0.393880
+1 recv 0 25 0
+1 compute 0.385380
+1 send 3 25 0
+1 compute 0.375480
+1 recv 0 25 0
+1 compute 0.507660
+1 send 3 25 0
+1 compute 0.375000
+1 recv 3 25 0
+1 compute 0.412460
+1 send 0 25 0
+1 compute 0.377200
+1 recv 3 25 0
+1 compute 0.377400
+1 send 0 25 0
+1 compute 0.368380
+1 recv 3 25 0
+1 compute 0.378280
+1 send 0 25 0
+1 compute 0.368260
+1 recv 3 25 0
+1 compute 0.378660
+1 send 0 25 0
+1 compute 0.387080
+1 recv 3 25 0
+1 compute 0.388120
+1 send 0 25 0
+1 compute 0.353260
+1 recv 3 25 0
+1 compute 0.374960
+1 send 0 25 0
+1 compute 0.372040
+1 recv 3 25 0
+1 compute 0.383240
+1 send 0 25 0
+1 compute 0.353360
+1 recv 3 25 0
+1 compute 0.377860
+1 send 0 25 0
+1 compute 0.372640
+1 recv 3 25 0
+1 compute 0.385960
+1 send 0 25 0
+1 compute 0.478000
+1 recv 3 25 0
+1 compute 0.383380
+1 send 0 25 0
+1 compute 0.898580
+1 irecv 0 720 0
+1 compute 0.114120
+1 wait
+1 compute 0.315060
+1 send 0 720 0
+1 compute 0.998960
+1 send 3 720 0
+1 compute 0.027860
+1 irecv 3 720 0
+1 compute 0.049160
+1 wait
+1 compute 2.072480
+1 recv 0 25 0
+1 compute 0.376380
+1 send 3 25 0
+1 compute 0.363680
+1 recv 0 25 0
+1 compute 0.376400
+1 send 3 25 0
+1 compute 0.378260
+1 recv 0 25 0
+1 compute 0.385920
+1 send 3 25 0
+1 compute 0.358900
+1 recv 0 25 0
+1 compute 0.376280
+1 send 3 25 0
+1 compute 0.378480
+1 recv 0 25 0
+1 compute 0.384760
+1 send 3 25 0
+1 compute 0.360200
+1 recv 0 25 0
+1 compute 0.374740
+1 send 3 25 0
+1 compute 0.394060
+1 recv 0 25 0
+1 compute 0.384220
+1 send 3 25 0
+1 compute 0.375260
+1 recv 0 25 0
+1 compute 0.379760
+1 send 3 25 0
+1 compute 0.393000
+1 recv 0 25 0
+1 compute 0.384160
+1 send 3 25 0
+1 compute 0.376900
+1 recv 0 25 0
+1 compute 0.379120
+1 send 3 25 0
+1 compute 0.371980
+1 recv 3 25 0
+1 compute 0.409140
+1 send 0 25 0
+1 compute 0.394100
+1 recv 3 25 0
+1 compute 0.388780
+1 send 0 25 0
+1 compute 0.371060
+1 recv 3 25 0
+1 compute 0.380140
+1 send 0 25 0
+1 compute 0.368700
+1 recv 3 25 0
+1 compute 0.376720
+1 send 0 25 0
+1 compute 0.386780
+1 recv 3 25 0
+1 compute 0.383420
+1 send 0 25 0
+1 compute 0.354360
+1 recv 3 25 0
+1 compute 0.374300
+1 send 0 25 0
+1 compute 0.371820
+1 recv 3 25 0
+1 compute 0.383180
+1 send 0 25 0
+1 compute 0.352580
+1 recv 3 25 0
+1 compute 0.375560
+1 send 0 25 0
+1 compute 0.373440
+1 recv 3 25 0
+1 compute 0.385180
+1 send 0 25 0
+1 compute 0.355360
+1 recv 3 25 0
+1 compute 0.378380
+1 send 0 25 0
+1 compute 0.907600
+1 irecv 0 720 0
+1 compute 0.116840
+1 wait
+1 compute 0.318440
+1 send 0 720 0
+1 compute 0.992560
+1 send 3 720 0
+1 compute 0.027540
+1 irecv 3 720 0
+1 compute 0.047040
+1 wait
+1 compute 2.089680
+1 recv 0 25 0
+1 compute 0.376580
+1 send 3 25 0
+1 compute 0.367360
+1 recv 0 25 0
+1 compute 0.383420
+1 send 3 25 0
+1 compute 0.356380
+1 recv 0 25 0
+1 compute 0.375680
+1 send 3 25 0
+1 compute 0.367320
+1 recv 0 25 0
+1 compute 0.376940
+1 send 3 25 0
+1 compute 0.375560
+1 recv 0 25 0
+1 compute 0.376960
+1 send 3 25 0
+1 compute 0.368020
+1 recv 0 25 0
+1 compute 0.375280
+1 send 3 25 0
+1 compute 0.395140
+1 recv 0 25 0
+1 compute 0.389440
+1 send 3 25 0
+1 compute 0.375140
+1 recv 0 25 0
+1 compute 0.380780
+1 send 3 25 0
+1 compute 0.392680
+1 recv 0 25 0
+1 compute 0.387020
+1 send 3 25 0
+1 compute 0.374720
+1 recv 0 25 0
+1 compute 0.380920
+1 send 3 25 0
+1 compute 0.368240
+1 recv 3 25 0
+1 compute 0.410520
+1 send 0 25 0
+1 compute 0.377060
+1 recv 3 25 0
+1 compute 0.377540
+1 send 0 25 0
+1 compute 0.370080
+1 recv 3 25 0
+1 compute 0.379940
+1 send 0 25 0
+1 compute 0.372260
+1 recv 3 25 0
+1 compute 0.379660
+1 send 0 25 0
+1 compute 0.384900
+1 recv 3 25 0
+1 compute 0.385740
+1 send 0 25 0
+1 compute 0.352900
+1 recv 3 25 0
+1 compute 0.502380
+1 send 0 25 0
+1 compute 0.355020
+1 recv 3 25 0
+1 compute 0.377280
+1 send 0 25 0
+1 compute 0.364400
+1 recv 3 25 0
+1 compute 0.376340
+1 send 0 25 0
+1 compute 0.375180
+1 recv 3 25 0
+1 compute 0.386520
+1 send 0 25 0
+1 compute 0.352260
+1 recv 3 25 0
+1 compute 0.379160
+1 send 0 25 0
+1 compute 0.909720
+1 irecv 0 720 0
+1 compute 0.117280
+1 wait
+1 compute 0.314820
+1 send 0 720 0
+1 compute 1.001220
+1 send 3 720 0
+1 compute 0.029940
+1 irecv 3 720 0
+1 compute 0.046900
+1 wait
+1 compute 2.071360
+1 recv 0 25 0
+1 compute 0.379300
+1 send 3 25 0
+1 compute 0.367560
+1 recv 0 25 0
+1 compute 0.384060
+1 send 3 25 0
+1 compute 0.359420
+1 recv 0 25 0
+1 compute 0.374120
+1 send 3 25 0
+1 compute 0.367060
+1 recv 0 25 0
+1 compute 0.375760
+1 send 3 25 0
+1 compute 0.377820
+1 recv 0 25 0
+1 compute 0.384300
+1 send 3 25 0
+1 compute 0.359460
+1 recv 0 25 0
+1 compute 0.378540
+1 send 3 25 0
+1 compute 0.390980
+1 recv 0 25 0
+1 compute 0.385120
+1 send 3 25 0
+1 compute 0.375020
+1 recv 0 25 0
+1 compute 0.378740
+1 send 3 25 0
+1 compute 0.394320
+1 recv 0 25 0
+1 compute 0.382780
+1 send 3 25 0
+1 compute 0.375780
+1 recv 0 25 0
+1 compute 0.379640
+1 send 3 25 0
+1 compute 0.373380
+1 recv 3 25 0
+1 compute 0.412060
+1 send 0 25 0
+1 compute 0.378980
+1 recv 3 25 0
+1 compute 0.377140
+1 send 0 25 0
+1 compute 0.371340
+1 recv 3 25 0
+1 compute 0.379060
+1 send 0 25 0
+1 compute 0.368220
+1 recv 3 25 0
+1 compute 0.380120
+1 send 0 25 0
+1 compute 0.368880
+1 recv 3 25 0
+1 compute 0.376420
+1 send 0 25 0
+1 compute 0.363340
+1 recv 3 25 0
+1 compute 0.373800
+1 send 0 25 0
+1 compute 0.374640
+1 recv 3 25 0
+1 compute 0.384300
+1 send 0 25 0
+1 compute 0.354320
+1 recv 3 25 0
+1 compute 0.377640
+1 send 0 25 0
+1 compute 0.375520
+1 recv 3 25 0
+1 compute 0.385860
+1 send 0 25 0
+1 compute 0.352500
+1 recv 3 25 0
+1 compute 0.378040
+1 send 0 25 0
+1 compute 0.909340
+1 irecv 0 720 0
+1 compute 0.116840
+1 wait
+1 compute 0.315120
+1 send 0 720 0
+1 compute 0.999280
+1 send 3 720 0
+1 compute 0.027480
+1 irecv 3 720 0
+1 compute 0.047700
+1 wait
+1 compute 2.094300
+1 recv 0 25 0
+1 compute 0.376400
+1 send 3 25 0
+1 compute 0.366680
+1 recv 0 25 0
+1 compute 0.379040
+1 send 3 25 0
+1 compute 0.378340
+1 recv 0 25 0
+1 compute 0.390920
+1 send 3 25 0
+1 compute 0.359960
+1 recv 0 25 0
+1 compute 0.378280
+1 send 3 25 0
+1 compute 0.377640
+1 recv 0 25 0
+1 compute 0.386780
+1 send 3 25 0
+1 compute 0.361440
+1 recv 0 25 0
+1 compute 0.374220
+1 send 3 25 0
+1 compute 0.389380
+1 recv 0 25 0
+1 compute 0.385160
+1 send 3 25 0
+1 compute 0.373900
+1 recv 0 25 0
+1 compute 0.378560
+1 send 3 25 0
+1 compute 0.392200
+1 recv 0 25 0
+1 compute 0.382400
+1 send 3 25 0
+1 compute 0.377400
+1 recv 0 25 0
+1 compute 0.377640
+1 send 3 25 0
+1 compute 0.373300
+1 recv 3 25 0
+1 compute 0.410340
+1 send 0 25 0
+1 compute 0.376340
+1 recv 3 25 0
+1 compute 0.379540
+1 send 0 25 0
+1 compute 0.368280
+1 recv 3 25 0
+1 compute 0.378420
+1 send 0 25 0
+1 compute 0.371100
+1 recv 3 25 0
+1 compute 0.376560
+1 send 0 25 0
+1 compute 0.388960
+1 recv 3 25 0
+1 compute 0.386180
+1 send 0 25 0
+1 compute 0.349760
+1 recv 3 25 0
+1 compute 0.373240
+1 send 0 25 0
+1 compute 0.372440
+1 recv 3 25 0
+1 compute 0.383100
+1 send 0 25 0
+1 compute 0.352500
+1 recv 3 25 0
+1 compute 0.373300
+1 send 0 25 0
+1 compute 0.373720
+1 recv 3 25 0
+1 compute 0.384820
+1 send 0 25 0
+1 compute 0.352200
+1 recv 3 25 0
+1 compute 0.376020
+1 send 0 25 0
+1 compute 0.911120
+1 irecv 0 720 0
+1 compute 0.113800
+1 wait
+1 compute 0.314740
+1 send 0 720 0
+1 compute 0.998360
+1 send 3 720 0
+1 compute 0.027960
+1 irecv 3 720 0
+1 compute 0.046640
+1 wait
+1 compute 2.088860
+1 recv 0 25 0
+1 compute 0.377020
+1 send 3 25 0
+1 compute 0.369000
+1 recv 0 25 0
+1 compute 0.385400
+1 send 3 25 0
+1 compute 0.360260
+1 recv 0 25 0
+1 compute 0.375580
+1 send 3 25 0
+1 compute 0.367840
+1 recv 0 25 0
+1 compute 0.375900
+1 send 3 25 0
+1 compute 0.376580
+1 recv 0 25 0
+1 compute 0.386100
+1 send 3 25 0
+1 compute 0.362460
+1 recv 0 25 0
+1 compute 0.376200
+1 send 3 25 0
+1 compute 0.392860
+1 recv 0 25 0
+1 compute 0.382080
+1 send 3 25 0
+1 compute 0.375700
+1 recv 0 25 0
+1 compute 0.379540
+1 send 3 25 0
+1 compute 0.395760
+1 recv 0 25 0
+1 compute 0.384200
+1 send 3 25 0
+1 compute 0.376980
+1 recv 0 25 0
+1 compute 0.379760
+1 send 3 25 0
+1 compute 0.367680
+1 recv 3 25 0
+1 compute 0.411580
+1 send 0 25 0
+1 compute 0.374860
+1 recv 3 25 0
+1 compute 0.377640
+1 send 0 25 0
+1 compute 0.366480
+1 recv 3 25 0
+1 compute 0.380400
+1 send 0 25 0
+1 compute 0.368060
+1 recv 3 25 0
+1 compute 0.375180
+1 send 0 25 0
+1 compute 0.389300
+1 recv 3 25 0
+1 compute 0.387160
+1 send 0 25 0
+1 compute 0.354960
+1 recv 3 25 0
+1 compute 0.375680
+1 send 0 25 0
+1 compute 0.373900
+1 recv 3 25 0
+1 compute 0.380520
+1 send 0 25 0
+1 compute 0.356460
+1 recv 3 25 0
+1 compute 0.378500
+1 send 0 25 0
+1 compute 0.373060
+1 recv 3 25 0
+1 compute 0.385000
+1 send 0 25 0
+1 compute 0.350960
+1 recv 3 25 0
+1 compute 0.379020
+1 send 0 25 0
+1 compute 0.909300
+1 irecv 0 720 0
+1 compute 0.115780
+1 wait
+1 compute 0.319920
+1 send 0 720 0
+1 compute 0.997560
+1 send 3 720 0
+1 compute 0.027840
+1 irecv 3 720 0
+1 compute 0.046220
+1 wait
+1 compute 2.094580
+1 recv 0 25 0
+1 compute 0.379240
+1 send 3 25 0
+1 compute 0.367560
+1 recv 0 25 0
+1 compute 0.376180
+1 send 3 25 0
+1 compute 0.376220
+1 recv 0 25 0
+1 compute 0.384760
+1 send 3 25 0
+1 compute 0.358200
+1 recv 0 25 0
+1 compute 0.377120
+1 send 3 25 0
+1 compute 0.379040
+1 recv 0 25 0
+1 compute 0.387580
+1 send 3 25 0
+1 compute 0.361820
+1 recv 0 25 0
+1 compute 0.377360
+1 send 3 25 0
+1 compute 0.395460
+1 recv 0 25 0
+1 compute 0.385840
+1 send 3 25 0
+1 compute 0.374080
+1 recv 0 25 0
+1 compute 0.376200
+1 send 3 25 0
+1 compute 0.395740
+1 recv 0 25 0
+1 compute 0.381200
+1 send 3 25 0
+1 compute 0.377320
+1 recv 0 25 0
+1 compute 0.379160
+1 send 3 25 0
+1 compute 0.369400
+1 recv 3 25 0
+1 compute 0.410880
+1 send 0 25 0
+1 compute 0.377960
+1 recv 3 25 0
+1 compute 0.387600
+1 send 0 25 0
+1 compute 0.367920
+1 recv 3 25 0
+1 compute 0.380320
+1 send 0 25 0
+1 compute 0.371540
+1 recv 3 25 0
+1 compute 0.376020
+1 send 0 25 0
+1 compute 0.387860
+1 recv 3 25 0
+1 compute 0.387500
+1 send 0 25 0
+1 compute 0.351320
+1 recv 3 25 0
+1 compute 0.378600
+1 send 0 25 0
+1 compute 0.350860
+1 recv 3 25 0
+1 compute 0.376400
+1 send 0 25 0
+1 compute 0.363760
+1 recv 3 25 0
+1 compute 0.376120
+1 send 0 25 0
+1 compute 0.373700
+1 recv 3 25 0
+1 compute 0.387440
+1 send 0 25 0
+1 compute 0.350760
+1 recv 3 25 0
+1 compute 0.378800
+1 send 0 25 0
+1 compute 0.908560
+1 irecv 0 720 0
+1 compute 0.116440
+1 wait
+1 compute 0.317460
+1 send 0 720 0
+1 compute 1.000240
+1 send 3 720 0
+1 compute 0.027940
+1 irecv 3 720 0
+1 compute 0.047880
+1 wait
+1 compute 2.071300
+1 recv 0 25 0
+1 compute 0.378380
+1 send 3 25 0
+1 compute 0.368760
+1 recv 0 25 0
+1 compute 0.384160
+1 send 3 25 0
+1 compute 0.359280
+1 recv 0 25 0
+1 compute 0.377140
+1 send 3 25 0
+1 compute 0.370560
+1 recv 0 25 0
+1 compute 0.376520
+1 send 3 25 0
+1 compute 0.388980
+1 recv 0 25 0
+1 compute 0.386380
+1 send 3 25 0
+1 compute 0.358840
+1 recv 0 25 0
+1 compute 0.376480
+1 send 3 25 0
+1 compute 0.391980
+1 recv 0 25 0
+1 compute 0.382460
+1 send 3 25 0
+1 compute 0.376300
+1 recv 0 25 0
+1 compute 0.378560
+1 send 3 25 0
+1 compute 0.394940
+1 recv 0 25 0
+1 compute 0.385380
+1 send 3 25 0
+1 compute 0.378400
+1 recv 0 25 0
+1 compute 0.377520
+1 send 3 25 0
+1 compute 0.370420
+1 recv 3 25 0
+1 compute 0.411000
+1 send 0 25 0
+1 compute 0.377220
+1 recv 3 25 0
+1 compute 0.378600
+1 send 0 25 0
+1 compute 0.370380
+1 recv 3 25 0
+1 compute 0.377220
+1 send 0 25 0
+1 compute 0.368280
+1 recv 3 25 0
+1 compute 0.378100
+1 send 0 25 0
+1 compute 0.386400
+1 recv 3 25 0
+1 compute 0.385960
+1 send 0 25 0
+1 compute 0.354380
+1 recv 3 25 0
+1 compute 0.373120
+1 send 0 25 0
+1 compute 0.373000
+1 recv 3 25 0
+1 compute 0.383420
+1 send 0 25 0
+1 compute 0.353020
+1 recv 3 25 0
+1 compute 0.374380
+1 send 0 25 0
+1 compute 0.373840
+1 recv 3 25 0
+1 compute 0.386200
+1 send 0 25 0
+1 compute 0.352200
+1 recv 3 25 0
+1 compute 0.379880
+1 send 0 25 0
+1 compute 0.909740
+1 irecv 0 720 0
+1 compute 0.115800
+1 wait
+1 compute 0.315980
+1 send 0 720 0
+1 compute 1.000020
+1 send 3 720 0
+1 compute 0.026920
+1 irecv 3 720 0
+1 compute 0.048280
+1 wait
+1 compute 2.068820
+1 recv 0 25 0
+1 compute 0.377680
+1 send 3 25 0
+1 compute 0.367700
+1 recv 0 25 0
+1 compute 0.377960
+1 send 3 25 0
+1 compute 0.378100
+1 recv 0 25 0
+1 compute 0.384760
+1 send 3 25 0
+1 compute 0.358580
+1 recv 0 25 0
+1 compute 0.376500
+1 send 3 25 0
+1 compute 0.377420
+1 recv 0 25 0
+1 compute 0.377440
+1 send 3 25 0
+1 compute 0.368580
+1 recv 0 25 0
+1 compute 0.375120
+1 send 3 25 0
+1 compute 0.391980
+1 recv 0 25 0
+1 compute 0.383280
+1 send 3 25 0
+1 compute 0.378140
+1 recv 0 25 0
+1 compute 0.377640
+1 send 3 25 0
+1 compute 0.391980
+1 recv 0 25 0
+1 compute 0.380260
+1 send 3 25 0
+1 compute 0.381400
+1 recv 0 25 0
+1 compute 0.379720
+1 send 3 25 0
+1 compute 0.372780
+1 recv 3 25 0
+1 compute 0.412480
+1 send 0 25 0
+1 compute 0.377620
+1 recv 3 25 0
+1 compute 0.376800
+1 send 0 25 0
+1 compute 0.368560
+1 recv 3 25 0
+1 compute 0.381160
+1 send 0 25 0
+1 compute 0.371200
+1 recv 3 25 0
+1 compute 0.377740
+1 send 0 25 0
+1 compute 0.387680
+1 recv 3 25 0
+1 compute 0.386980
+1 send 0 25 0
+1 compute 0.353900
+1 recv 3 25 0
+1 compute 0.373700
+1 send 0 25 0
+1 compute 0.375140
+1 recv 3 25 0
+1 compute 0.383740
+1 send 0 25 0
+1 compute 0.355680
+1 recv 3 25 0
+1 compute 0.389660
+1 send 0 25 0
+1 compute 0.353180
+1 recv 3 25 0
+1 compute 0.376980
+1 send 0 25 0
+1 compute 0.366200
+1 recv 3 25 0
+1 compute 0.385680
+1 send 0 25 0
+1 compute 0.899040
+1 irecv 0 720 0
+1 compute 0.116040
+1 wait
+1 compute 0.316020
+1 send 0 720 0
+1 compute 1.001120
+1 send 3 720 0
+1 compute 0.026140
+1 irecv 3 720 0
+1 compute 0.047680
+1 wait
+1 compute 2.061940
+1 recv 0 25 0
+1 compute 0.377540
+1 send 3 25 0
+1 compute 0.368960
+1 recv 0 25 0
+1 compute 0.385600
+1 send 3 25 0
+1 compute 0.359260
+1 recv 0 25 0
+1 compute 0.377880
+1 send 3 25 0
+1 compute 0.368160
+1 recv 0 25 0
+1 compute 0.378600
+1 send 3 25 0
+1 compute 0.378880
+1 recv 0 25 0
+1 compute 0.383320
+1 send 3 25 0
+1 compute 0.361500
+1 recv 0 25 0
+1 compute 0.375460
+1 send 3 25 0
+1 compute 0.398740
+1 recv 0 25 0
+1 compute 0.384460
+1 send 3 25 0
+1 compute 0.374680
+1 recv 0 25 0
+1 compute 0.379920
+1 send 3 25 0
+1 compute 0.392620
+1 recv 0 25 0
+1 compute 0.383020
+1 send 3 25 0
+1 compute 0.376240
+1 recv 0 25 0
+1 compute 0.379560
+1 send 3 25 0
+1 compute 0.370140
+1 recv 3 25 0
+1 compute 0.416080
+1 send 0 25 0
+1 compute 0.376120
+1 recv 3 25 0
+1 compute 0.376160
+1 send 0 25 0
+1 compute 0.368620
+1 recv 3 25 0
+1 compute 0.379500
+1 send 0 25 0
+1 compute 0.367780
+1 recv 3 25 0
+1 compute 0.377280
+1 send 0 25 0
+1 compute 0.387160
+1 recv 3 25 0
+1 compute 0.384160
+1 send 0 25 0
+1 compute 0.353640
+1 recv 3 25 0
+1 compute 0.376220
+1 send 0 25 0
+1 compute 0.371840
+1 recv 3 25 0
+1 compute 0.381580
+1 send 0 25 0
+1 compute 0.351800
+1 recv 3 25 0
+1 compute 0.375820
+1 send 0 25 0
+1 compute 0.373420
+1 recv 3 25 0
+1 compute 0.387860
+1 send 0 25 0
+1 compute 0.354000
+1 recv 3 25 0
+1 compute 0.378760
+1 send 0 25 0
+1 compute 0.909740
+1 irecv 0 720 0
+1 compute 0.118060
+1 wait
+1 compute 0.317060
+1 send 0 720 0
+1 compute 0.998300
+1 send 3 720 0
+1 compute 0.026820
+1 irecv 3 720 0
+1 compute 0.046660
+1 wait
+1 compute 2.072540
+1 recv 0 25 0
+1 compute 0.374260
+1 send 3 25 0
+1 compute 0.369400
+1 recv 0 25 0
+1 compute 0.385920
+1 send 3 25 0
+1 compute 0.361360
+1 recv 0 25 0
+1 compute 0.376760
+1 send 3 25 0
+1 compute 0.367320
+1 recv 0 25 0
+1 compute 0.376960
+1 send 3 25 0
+1 compute 0.379060
+1 recv 0 25 0
+1 compute 0.402800
+1 send 3 25 0
+1 compute 0.360860
+1 recv 0 25 0
+1 compute 0.374940
+1 send 3 25 0
+1 compute 0.394680
+1 recv 0 25 0
+1 compute 0.383160
+1 send 3 25 0
+1 compute 0.373440
+1 recv 0 25 0
+1 compute 0.377440
+1 send 3 25 0
+1 compute 0.393460
+1 recv 0 25 0
+1 compute 0.383980
+1 send 3 25 0
+1 compute 0.377100
+1 recv 0 25 0
+1 compute 0.381180
+1 send 3 25 0
+1 compute 0.371100
+1 recv 3 25 0
+1 compute 0.410620
+1 send 0 25 0
+1 compute 0.377140
+1 recv 3 25 0
+1 compute 0.375240
+1 send 0 25 0
+1 compute 0.366460
+1 recv 3 25 0
+1 compute 0.378280
+1 send 0 25 0
+1 compute 0.368220
+1 recv 3 25 0
+1 compute 0.377300
+1 send 0 25 0
+1 compute 0.512520
+1 recv 3 25 0
+1 compute 0.386340
+1 send 0 25 0
+1 compute 0.354500
+1 recv 3 25 0
+1 compute 0.375000
+1 send 0 25 0
+1 compute 0.372240
+1 recv 3 25 0

@@ -1,3 +1,0 @@
-0 wait
-0 compute 2.139040
-0 send 1 25 0

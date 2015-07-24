@@ -1,3 +1,0 @@
-1 irecv 0 720 0
-1 compute 0.120120
-1 wait

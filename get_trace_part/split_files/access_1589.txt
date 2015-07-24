@@ -1,3 +1,0 @@
-0 compute 1.818520
-0 allreduce 5 0.000000 0
-0 compute 0.030600

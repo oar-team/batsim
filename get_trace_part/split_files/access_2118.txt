@@ -1,3 +1,0 @@
-1 compute 0.376340
-1 recv 0 25 0
-1 compute 0.378700

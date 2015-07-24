@@ -1,0 +1,18 @@
+1 allreduce 5 0.000000
+1 allreduce 1 0.000000
+1 allreduce 5 0.000000
+1 compute 428.45339999999976
+1 recv 3 5250.0
+1 irecv 0 17280.0
+1 irecv 3 17280.0
+1 recv 0 5250.0
+1 bcast 14.0
+1 allreduce 5 0.000000
+1 allreduce 1 0.000000
+1 allreduce 5 0.000000
+1 irecv 0 17280.0
+1 irecv 3 17280.0
+1 bcast 14.0
+1 recv 0 5250.0
+1 compute 428.45339999999976
+1 recv 3 5250.0
