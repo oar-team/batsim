@@ -53,7 +53,7 @@ int smpi_replay(int argc, char *argv[])
   for(index = 0; index < argc; index++) {
     printf("The %d is %s\n",index,argv[index]);
   }
-  
+
   smpi_replay_run(&argc, &argv);
   //printf("smpi_rank %d\n", smpi_comm_rank(MPI_));
   return 0;
@@ -211,7 +211,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
     }
     else if (strcmp(profile->type, "smpi") == 0)
     {
-      
+
       xbt_dynar_t traceFilenamesDynar = ((s_smpi_t *)(profile->data))->trace_filenames_dynar;
 
       for (int i = 0; i < nb_res; i++)
@@ -219,7 +219,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
           char *str_instance_id = NULL;
           int ret = asprintf(&str_instance_id, "%d", job_id);
           xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-          
+
           char *str_rank_id  = NULL;
           ret = asprintf(&str_rank_id, "%d", i);
           xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
@@ -227,7 +227,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
           char *str_pname = NULL;
           ret = asprintf(&str_pname, "%d_%d", job_id, i);
           xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-          
+
           char **argv = xbt_new(char*, 5);
           argv[0] = xbt_strdup("1"); // Fonction_replay_label (can be ignored, for log only),
           argv[1] = str_instance_id; // Instance Id (application) job_id is used
@@ -236,10 +236,10 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
           argv[4] = xbt_strdup("0"); //
 
           MSG_process_create_with_arguments(str_pname, smpi_replay, NULL, job_res[i], 5, argv );
-          
+
           free(str_pname);
       }
-       
+
     }
     else
         xbt_die("Cannot execute job %d: the profile type '%s' is unknown", job_id, profile->type);
@@ -265,17 +265,17 @@ int job_exec(int job_id, int nb_res, int *res_idxs, msg_host_t *nodes, double wa
 
 bool register_smpi_app_instances()
 {
-  bool smpi_used = false; 
+  bool smpi_used = false;
   s_job_t *job;
   profile_t profile;
   unsigned int job_index;
   int nb_traces;
-  
+
   xbt_dynar_foreach(jobs_dynar, job_index, job)
     {
 
       profile = xbt_dict_get(profiles,job->profile);
-      
+
       if (strcmp(profile->type, "smpi") == 0)
         {
           smpi_used = true;
@@ -290,6 +290,6 @@ bool register_smpi_app_instances()
     }
   if (smpi_used)
     SMPI_init();
-  
+
   return(smpi_used);
 }

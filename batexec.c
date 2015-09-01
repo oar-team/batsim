@@ -58,7 +58,7 @@ msg_error_t deploy_all(const char *platform_file, bool smpi_used)
 
     if (!smpi_used)
       MSG_config("host/model", "ptask_L07");
-    
+
     MSG_create_environment(platform_file);
 
     all_hosts = MSG_hosts_as_dynar();
@@ -95,21 +95,21 @@ int main(int argc, char *argv[])
         printf("example: %s ../platforms/small_platform.xml ../workload_profiles/test_workload_profile.json\n", argv[0]);
         exit(1);
     }
-    
+
     json_t *json_workload_profile;
-    
+
     json_workload_profile = load_json_workload_profile(argv[2]);
     retrieve_jobs(json_workload_profile);
     retrieve_profiles(json_workload_profile);
     checkJobsAndProfilesValidity();
-    
+
     MSG_init(&argc, argv);
-    
+
     // Register all smpi jobs app and init SMPI
     bool smpi_used = register_smpi_app_instances();
 
     msg_error_t res = deploy_all(argv[1], smpi_used);
-    
+
     json_decref(json_workload_profile);
     // Let's clear global allocated data
     freeJobStructures();
