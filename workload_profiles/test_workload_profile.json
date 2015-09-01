@@ -34,14 +34,6 @@
         "4": {
             "type": "delay",
             "delay": 20.20
-        },
-        "5": {
-            "type": "smpi",
-            "trace": "traces.txt"
-        },
-        "6": {
-            "type": "smpi",
-            "trace": "traces.txt"
         }
     }
 }
