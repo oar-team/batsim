@@ -1,17 +1,23 @@
 #pragma once
 
+#include <stdbool.h>
+
 #include <simgrid/msg.h>
+
+#include "export.h"
 
 enum e_machine_state_t
 {
     MACHINE_STATE_SLEEPING,
     MACHINE_STATE_IDLE,
     MACHINE_STATE_COMPUTING,
+    MACHINE_STATE_TRANSITING
 };
 typedef enum e_machine_state_t MachineState;
 
 struct s_machine_t
 {
+    int id;                             //! The unique machine identification number
     msg_host_t host;                    //! The host the machine corresponds to
     MachineState state;                 //! The current state of the machine
     xbt_dynar_t jobs_being_computed;    //! the IDs of the jobs being computed by the machine
@@ -22,7 +28,7 @@ struct s_machine_t
     int nb_sleep_pstates;               //! The number of sleep power states
     int * sleep_pstates;                //! The sleep power states (identified by their order in the SimGrid platform file)
 
-    // The transitions are stored in a naive 2D matrix, todo: use a more suited data structure to gain memory (without losing much RAM)
+    // The transitions are stored in a naive 2D matrix, todo: use a more suited data structure to gain memory
     int nb_pstates;                     //! The number of power states
     int * trans_pstates;                //! The transition matrix of size nb_pstates * nb_pstates stored in 1 dimension. The pstate -1 means there is no transition between two pstates. To get the transition from pstate 3 to pstate 5, access trans_pstate[3*nb_pstate+5].
 };
@@ -35,8 +41,10 @@ extern Machine* machines;
 void createMachines(xbt_dynar_t hosts);
 void freeMachines();
 
-void updateMachinesOnJobRun(int jobID, int nbUsedMachines, int * usedMachines);
-void updateMachinesOnJobEnd(int jobID, int nbUsedMachines, int * usedMachines);
+void updateMachinesOnJobRun(int jobID, int nbUsedMachines, int * usedMachines, PajeTracer * tracer);
+void updateMachinesOnJobEnd(int jobID, int nbUsedMachines, int * usedMachines, PajeTracer * tracer, bool killed);
+
+void update_machine_pstate(int machineID, int pstate);
 
 void retrieve_pstate_information(Machine * machine);
 void retrieve_comp_states_information(Machine * machine, const char * comp_states);
@@ -52,3 +60,6 @@ void check_pstates(Machine * machine);
  * @return The pstate from from_pstate to to_pstate if it is defined, -1 otherwise (no transition).
  */
 int get_transition_pstate(const Machine * machine, int from_pstate, int to_pstate);
+
+bool is_sleep_pstate(int machineID, int pstate);
+bool machine_exists(int machineID);

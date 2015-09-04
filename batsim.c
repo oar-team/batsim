@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <argp.h>
+#include <stdbool.h>
 
 #include <simgrid/msg.h>
 #include <simgrid/plugins.h>    /* energy */
@@ -44,10 +45,10 @@ char *task_type2str[] =
     "LAUNCH_JOB",
     "JOB_SUBMITTED",
     "JOB_COMPLETED",
+    "CHANGE_PSTATE",
+    "MACHINE_PSTATE_CHANGED",
     "SCHED_EVENT",
     "SCHED_READY",
-    "LAUNCHER_INFORMATION",
-    "KILLER_INFORMATION",
     "SUBMITTER_HELLO",
     "SUBMITTER_BYE"
 };
@@ -79,7 +80,7 @@ PajeTracer * tracer = NULL;
 static int node(int argc, char *argv[]);
 static int server(int argc, char *argv[]);
 static int launch_job(int argc, char *argv[]);
-static void send_message(const char *dst, e_task_type_t type, int job_id, void *data);
+static int machine_pstate_update_caller(int argc, char *argv[]);
 
 /**
  * @brief Sends a message on the Unix Domain Socket
@@ -167,7 +168,7 @@ static void open_uds(const char * socketFilename, int nb_try, double msBetweenTr
  * @details This function sends a SCHED_EVENT by event received then a SCHED_READY when all events have been sent
  * @return 1
  */
-static int requestReplyScheduler(int argc, char *argv[])
+static int request_reply_scheduler(int argc, char *argv[])
 {
     (void) argc;
     (void) argv;
@@ -278,32 +279,43 @@ static int launch_job(int argc, char *argv[])
     XBT_INFO("Launching job %d", jobID);
     job->startingTime = MSG_get_clock();
     job->alloc_ids = data->reservedNodesIDs;
-    pajeTracer_addJobLaunching(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
-    pajeTracer_addJobRunning(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
 
-    updateMachinesOnJobRun(jobID, data->reservedNodeCount, data->reservedNodesIDs);
+    updateMachinesOnJobRun(jobID, data->reservedNodeCount, data->reservedNodesIDs, tracer);
+
+    bool jobKilled = false;
 
     if (job_exec(jobID, data->reservedNodeCount, data->reservedNodesIDs, nodes, job->walltime) == 1)
     {
         XBT_INFO("Job %d finished in time", data->jobID);
         job->state = JOB_STATE_COMPLETED_SUCCESSFULLY;
-        pajeTracer_addJobEnding(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
     }
     else
     {
         XBT_INFO("Job %d had been killed (walltime %lf reached)", job->id, job->walltime);
         job->state = JOB_STATE_COMPLETED_KILLED;
-        pajeTracer_addJobEnding(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
-        pajeTracer_addJobKill(tracer, MSG_get_clock(), jobID, data->reservedNodeCount, data->reservedNodesIDs);
+        jobKilled = true;
     }
 
     job->runtime = MSG_get_clock() - job->startingTime;
 
-    updateMachinesOnJobEnd(jobID, data->reservedNodeCount, data->reservedNodesIDs);
+    updateMachinesOnJobEnd(jobID, data->reservedNodeCount, data->reservedNodesIDs, tracer, jobKilled);
 
     //free(data->reservedNodesIDs);
     free(data);
     send_message("server", JOB_COMPLETED, jobID, NULL);
+
+    return 0;
+}
+
+static int machine_pstate_update_caller(int argc, char *argv[])
+{
+    (void) argc;
+    (void) argv;
+
+    s_change_pstate_data_t * input = MSG_host_get_data(MSG_process_get_host(MSG_process_self()));
+    update_machine_pstate(input->machineID, input->pstate);
+
+    free(input);
 
     return 0;
 }
@@ -347,7 +359,7 @@ static int node(int argc, char *argv[])
             }
             case LAUNCH_JOB:
             {
-                // Let's retrieve the launch data and create a kill data
+                // Let's retrieve the launch data
                 s_launch_data_t * launchData = (s_launch_data_t *) task_data->data;
 
                 char * launcherName = 0;
@@ -358,6 +370,17 @@ static int node(int argc, char *argv[])
 
                 task_free(&task_received);
                 free(task_data);
+                break;
+            }
+            case CHANGE_PSTATE:
+            {
+                s_change_pstate_data_t * change_pstate_data = (s_change_pstate_data_t *) task_data->data;
+
+                char * process_name = 0;
+                int ret = asprintf(&process_name, "pstate updater %d", change_pstate_data->machineID);
+                xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+                MSG_process_create(process_name, machine_pstate_update_caller, change_pstate_data, MSG_host_self());
+                free(process_name);
                 break;
             }
             default:
@@ -419,10 +442,11 @@ int server(int argc, char *argv[])
     int nb_submitters = 0;
     int nb_submitters_finished = 0;
     int nb_running_jobs = 0;
-    int sched_ready = 1;
+    bool sched_ready = true;
     int size_m;
     char *tmp;
     char *job_ready_str;
+    char * machine_pstate_change_str;
     char *res_str;
     char *job_id_str;
     unsigned int i, j;
@@ -491,6 +515,20 @@ int server(int argc, char *argv[])
 
             break;
         } // end of case JOB_SUBMITTED
+        case MACHINE_PSTATE_CHANGED:
+        {
+            int machineID = task_data->job_id; // Yes, this field is used as a machineID in this case.
+            int new_pstate = MSG_host_get_pstate(machines[machineID].host);
+
+            size_m = snprintf(sched_message + lg_sched_message, schedMessageMaxLength - lg_sched_message,
+                              "|%f:P:%d", MSG_get_clock(), new_pstate);
+            lg_sched_message += size_m;
+            xbt_assert(lg_sched_message <= schedMessageMaxLength,
+                       "Buffer for sending messages to the scheduler is not big enough...");
+            XBT_INFO("Message to send to scheduler: %s", sched_message);
+
+            break;
+        } // end of case MACHINE_PSTATE_CHANGED
         case SCHED_EVENT:
         {
             xbt_dynar_t * input = (xbt_dynar_t *)task_data->data;
@@ -563,6 +601,37 @@ int server(int argc, char *argv[])
                 xbt_dynar_free(&jobs_ready_dynar);
                 break;
             } // end of case J
+            case 'p':
+            {
+                tmp = *(char **)xbt_dynar_get_ptr(*input, 2); // to skip the timestamp and the 'p'
+                xbt_dynar_t machines_whose_pstate_must_change_dynar = xbt_str_split(tmp, ";");
+
+                xbt_dynar_foreach(machines_whose_pstate_must_change_dynar, i, machine_pstate_change_str)
+                {
+                    xbt_dynar_t machine_id_pstate = xbt_str_split(machine_pstate_change_str, "=");
+                    char * machine_id_str = *(char **)xbt_dynar_get_ptr(machine_id_pstate, 0);
+                    char * pstate_str = *(char **)xbt_dynar_get_ptr(machine_id_pstate, 1);
+
+                    int machineID = strtol(machine_id_str, NULL, 10);
+                    xbt_assert(machine_exists(machineID), "Invalid machineID '%s' received from the scheduler: the machine does not exist", machine_id_str);
+                    xbt_assert(machines[machineID].state != MACHINE_STATE_TRANSITING, "The pstate of the machine %d cannot be changed now because it is currently being changed", machineID);
+                    xbt_assert(machines[machineID].state == MACHINE_STATE_COMPUTING, "Unimplemented: switching pstate while jobs are being computed");
+
+                    machines[machineID].state = MACHINE_STATE_TRANSITING;
+
+                    int pstate = strtol(pstate_str, NULL, 10);
+
+                    xbt_dynar_free(&machine_id_pstate);
+
+                    s_change_pstate_data_t * data = malloc(sizeof(s_change_pstate_data_t));
+                    data->machineID = machineID;
+                    data->pstate = pstate;
+
+                    send_message(MSG_host_get_name(machines[machineID].host), CHANGE_PSTATE, 0, data);
+                } // end of xbt_dynar_foreach
+
+                xbt_dynar_free(&machines_whose_pstate_must_change_dynar);
+            } // end of case p
             case 'N':
             {
                 XBT_INFO("Nothing to do received.");
@@ -616,7 +685,7 @@ int server(int argc, char *argv[])
         } // end of case SCHED_EVENT
         case SCHED_READY:
         {
-            sched_ready = 1;
+            sched_ready = true;
             break;
         } // end of case SCHED_READY
         default:
@@ -637,9 +706,9 @@ int server(int argc, char *argv[])
             sched_message[0] = '\0'; // empties the string
             lg_sched_message = 0;
 
-            MSG_process_create("Sched REQ-REP", requestReplyScheduler, sendBuf, MSG_host_self());
+            MSG_process_create("Sched REQ-REP", request_reply_scheduler, sendBuf, MSG_host_self());
 
-            sched_ready = 0;
+            sched_ready = false;
         }
 
     } // end of while

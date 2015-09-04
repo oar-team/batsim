@@ -2,10 +2,13 @@
 
 #include <string.h>
 
+#include "batsim.h"
 #include "utils.h"
 
 int nb_machines = 0;
 Machine * machines = NULL;
+
+XBT_LOG_NEW_DEFAULT_CATEGORY(machines, "machines");
 
 void createMachines(xbt_dynar_t hosts)
 {
@@ -20,9 +23,11 @@ void createMachines(xbt_dynar_t hosts)
     {
         Machine * machine = &machines[i];
 
+        machine->id = i;
         machine->host = host;
         machine->jobs_being_computed = xbt_dynar_new(sizeof(int), NULL);
         machine->state = MACHINE_STATE_IDLE;
+        MSG_host_set_data(machine->host, machine);
 
         retrieve_pstate_information(machine);
     }
@@ -388,8 +393,12 @@ void freeMachines()
 }
 
 
-void updateMachinesOnJobRun(int jobID, int nbUsedMachines, int *usedMachines)
+void updateMachinesOnJobRun(int jobID, int nbUsedMachines, int *usedMachines, PajeTracer *tracer)
 {
+    pajeTracer_addJobLaunching(tracer, MSG_get_clock(), jobID, nbUsedMachines, usedMachines);
+    pajeTracer_addJobRunning(tracer, MSG_get_clock(), jobID, nbUsedMachines, usedMachines);
+    // todo: better handle the trace file
+
     for (int i = 0; i < nbUsedMachines; ++i)
     {
         int machineID = usedMachines[i];
@@ -430,8 +439,13 @@ void updateMachinesOnJobRun(int jobID, int nbUsedMachines, int *usedMachines)
 }
 
 
-void updateMachinesOnJobEnd(int jobID, int nbUsedMachines, int *usedMachines)
+void updateMachinesOnJobEnd(int jobID, int nbUsedMachines, int *usedMachines, PajeTracer *tracer, bool killed)
 {
+    pajeTracer_addJobEnding(tracer, MSG_get_clock(), jobID, nbUsedMachines, usedMachines);
+
+    if (killed)
+        pajeTracer_addJobKill(tracer, MSG_get_clock(), jobID, nbUsedMachines, usedMachines);
+
     for (int i = 0; i < nbUsedMachines; ++i)
     {
         int machineID = usedMachines[i];
@@ -463,7 +477,7 @@ void updateMachinesOnJobEnd(int jobID, int nbUsedMachines, int *usedMachines)
         if (xbt_dynar_is_empty(machine->jobs_being_computed))
         {
             machine->state = MACHINE_STATE_IDLE;
-            // todo: handle the Pajé trace in this file, not directly in batsim.c
+            // todo: better handle the Pajé trace here rather than the global pajeTracer_addJobEnding
         }
     }
 }
@@ -475,4 +489,67 @@ int get_transition_pstate(const Machine *machine, int from_pstate, int to_pstate
     xbt_assert(arrayIndex >= 0 && arrayIndex < machine->nb_pstates * machine->nb_pstates);
 
     return machine->trans_pstates[arrayIndex];
+}
+
+void update_machine_pstate(int machineID, int pstate)
+{
+    xbt_assert(machineID >= 0 && machineID < nb_machines, "Invalid parameter machineID (%d) : must be in [0;%d[", machineID, nb_machines);
+
+    Machine * machine = machines + machineID;
+    xbt_assert(machine->state == MACHINE_STATE_TRANSITING);
+    int current_pstate = MSG_host_get_pstate(machine->host);
+
+    xbt_assert(pstate >= 0 && pstate < machine->nb_pstates, "Invalid parameter pstate (%d) : must be in [0:%d[ for machine %d", pstate, machine->nb_pstates, machineID);
+    xbt_assert(pstate != current_pstate, "Invalid parameter pstate (%d) : the machine %d is already in this pstate", pstate, machineID);
+
+    int transition = machine->trans_pstates[current_pstate*machine->nb_pstates+pstate];
+
+    // If a transition must be done
+    if (transition != -1)
+    {
+        xbt_assert(xbt_dynar_length(machine->jobs_being_computed) == 0,
+            "Jobs cannot be suspended and resumed at the moment. "
+            "Please only change the pstate of idle machines (machine %d is currently running %lu jobs",
+            machineID, xbt_dynar_length(machine->jobs_being_computed));
+
+        MSG_host_set_pstate(machine->host, transition);
+
+        msg_host_t host_list [1] = {machine->host};
+        double flops_amount [1] = {1};
+        double bytes_amount [1] = {0};
+        msg_task_t transition_task = MSG_parallel_task_create("shutdown", 1, host_list, flops_amount, bytes_amount, NULL);
+
+        XBT_INFO("Machine %d starts its transition from pstate %d to pstate %d", machineID, current_pstate, pstate);
+        MSG_task_execute(transition_task);
+        MSG_task_destroy(transition_task);
+    }
+
+    if (is_sleep_pstate(machineID, pstate))
+        machine->state = MACHINE_STATE_SLEEPING;
+    else
+        machine->state = MACHINE_STATE_IDLE;
+
+    MSG_host_set_pstate(machine->host, pstate);
+    XBT_INFO ("Machine %d finished its transition from pstate %d to pstate %d", machineID, current_pstate, pstate);
+
+    send_message("server", MACHINE_PSTATE_CHANGED, machineID, NULL);
+}
+
+bool is_sleep_pstate(int machineID, int pstate)
+{
+    xbt_assert(machineID >= 0 && machineID < nb_machines, "Invalid parameter machineID (%d) : must be in [0;%d[", machineID, nb_machines);
+
+    Machine * machine = machines + machineID;
+    xbt_assert(pstate >= 0 && pstate < machine->nb_pstates, "Invalid parameter pstate (%d) : must be in [0:%d[ for machine %d", pstate, machine->nb_pstates, machineID);
+
+    for (int i = 0; i < machine->nb_sleep_pstates; ++i)
+        if (machine->sleep_pstates[i] == pstate)
+            return true;
+
+    return false;
+}
+
+bool machine_exists(int machineID)
+{
+    return machineID >= 0 && machineID < nb_machines;
 }

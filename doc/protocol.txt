@@ -1,0 +1,110 @@
+Protocole Batsim
+
+= Explication =
+
+Le protocole est synchrone (REQ-REP) : Le simulateur envoie un message au scheduler et attend une réponse du scheduler pour continuer à simuler.
+Les messages sont toujours constitués ainsi : 4 octets d'entête (la taille du contenu du message en octets, en endianness native) suivi du contenu du message
+
+Le contenu du message est composé d'un ensemble de sous-parties. Ces sous parties sont séparées par le séparateur de premier niveau (|).
+La première sous-partie d'un message est toujours 'PV:DATE' où ':' sépare
+	- PV : la version du protocole (un entier positif écrit en mode texte),
+	- et DATE : la date dans la simulation où le message est envoyé 
+
+Les autres sous-parties sont ensuite toujours constitués ainsi : 'DATE:TYPE[:PARAMETERS]' avec
+	- DATE la date dans la simulation où l'action a été choisie,
+	- TYPE le type d'action à effectuer
+	- En fonction du type d'action à effectuer, des paramètres peuvent être ajoutés.
+
+= Table des symboles =
+Symbole		Sens							
+|			Séparateur de niveau 1
+:			Séparateur de niveau 2
+N 			NOP : rien à faire ou rien ne s'est passé.
+J 			Le scheduler veut lancer un job sur certaines machines
+S 			Un job a été soumis
+C 			Un job a fini son exécution
+
+= Les différentes types de message =
+
+=== Job submission ===
+Direction : Simulator -> Scheduler
+Symbol : S
+Meaning : A new job has been submitted (it can now be scheduled and executed)
+Content syntax : DATE:S:JOB_ID
+	- DATE : the simulation date at which the job has been submitted
+	- JOB_ID : the job unique identification number
+
+=== Job completion ===
+Direction : Simulator -> Scheduler
+Symbol : C
+Meaning : A job completed (it finished its execution)
+Content syntax : DATE:C:JOB_ID
+	- DATE : the simulation date at which the job completed
+	- JOB_ID : the job unique identification number
+
+=== NOP ===
+Direction : Any
+Symbol : N
+Meaning : Nothing happened. This message is useful when the scheduler takes no decision but gives
+		  the hand back to the simulator. It may also be used when the scheduler must be awaken but
+		  nothing happened.
+Content syntax : DATE:N
+	- DATE : the simulation date at which nothing happened
+
+=== Job allocation ===
+Direction : Scheduler -> Simulator
+Symbol : J
+Meaning : Some machines must run some jobs.
+		  This message contains many allocations (at least one). Allocations are separated by a ';'.
+		  An allocation consists of saying that one given job must be run now on many given machines
+Content syntax : DATE:J:JID1=MID1,MID2...[;JID2=MID3...[;...]]
+	DATE : the simulation date at which the allocations were done
+	JID1,JID2 : the unique identification number of two jobs
+	MID[1->4] : the unique identification number of four machines
+
+=== Pstate modification ===
+Direction : Scheduler -> Simulator
+Symbol : p
+Meaning : Some machines must change their pstate.
+		  This message contains many modifications (at least one). Modifications are separated by a ';'.
+		  A modification consists of setting a pstate to a machine.
+Content syntax: DATE:p:MID1=PS1[;MID2=PS2[;...]]
+	DATE : the simulation date at which the pstate modifications have been requested
+	MID1,MID2 = unique machine identification numbers
+	PS1,PS2 = pstates respectively of machines 1 and 2
+
+=== Pstate has been modified ===
+Direction : Simulator -> Scheduler
+Symbol : P
+Meaning : A machine changed its pstate
+Content syntax : DATE:P:MID=PSTATE
+	DATE : the simulation date at which the pstate of the machine had been changed
+	MID : the unique machine identification number
+	PSTATE : a pstate of the machine
+
+
+
+= Example =
+	SCHEDULER -> SIMULATOR
+		0:15.000015|15.000015:J:1=1,2,0,3;2=3
+		0:20.836694|20.836694:N
+		0:25.836709|25.836709:J:2=0,2,1,3
+		0:35.00003|35.00003:J:3=3,1,0,2
+		0:40.001305|40.001305:N
+		0:45.00132|45.00132:J:4=3,1,2,0
+		0:150.003855|150.003855:N
+
+		date:J:jobID1=mID1,mID2;jobID2=mID3,mID4
+		date:R:jobID1;jobID2;jobID3
+
+	SIMULATOR -> SCHEDULER
+		0:10.000015|10.000015:S:1
+		0:15.836694|15.836694:C:1
+		0:20.836709|20.000030:S:2
+		0:30.000030|30.000030:S:3
+		0:35.001305|30.005125:C:2
+		0:40.001320|38.002565:C:3|40.000030:S:4
+		0:145.003855|145.003855:C:4
+
+
+
