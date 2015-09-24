@@ -956,7 +956,7 @@ int main(int argc, char *argv[])
     //Comment to remove debug message
     xbt_log_control_set("batsim.threshold:debug");
     xbt_log_control_set("network.threshold:info");
-    xbt_log_control_set("task.threshold:critical");
+    xbt_log_control_set("task.threshold:info");
 
     json_workload_profile = load_json_workload_profile(mainArgs.workloadFilename);
     retrieve_jobs(json_workload_profile);

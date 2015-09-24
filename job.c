@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "job.h"
 #include "utils.h"
@@ -44,6 +45,48 @@ int killerDelay(int argc, char *argv[])
 }
 
 /**
+ * @brief Used to display a ptask (debug purpose)
+ * @param job_id The job number
+ * @param nb_res The number of required resources
+ * @param cpu The computation vector of size nb_res
+ * @param comT The communication matrix of size nb_res*nb_res
+ */
+void display_ptask(int job_id, int nb_res, double * cpu, double * com)
+{
+    char * buffer = xbt_new0(char, 4096);
+    char * off = buffer;
+
+    off += sprintf(off, "job_id = %d\n", job_id);
+    off += sprintf(off, "nb_res = %d\n", nb_res);
+
+    off += sprintf(off, "cpu = [%g", cpu[0]);
+    for (int i = 1; i < nb_res; ++i)
+    {
+        off += sprintf(off, ", %g", cpu[i]);
+    }
+    off += sprintf(off, "]\n");
+
+    off += sprintf(off, "com = [");
+    for (int y = 0; y < nb_res; ++y)
+    {
+        if (y != 0)
+            off += sprintf(off, "       ");
+
+        off += sprintf(off, "%g", com[y*nb_res]);
+        for (int x = 1; x < nb_res; ++x)
+            off += sprintf(off, ", %g", com[y*nb_res+x]);
+
+        if (y != nb_res - 1)
+            off += sprintf(off, ";\n");
+        else
+            off += sprintf(off, "]\n");
+    }
+
+    XBT_INFO("A job is about to be executed:\n%s", buffer);
+    free(buffer);
+}
+
+/**
  * @brief Executes the profile of a given job
  * @param[in] profile_str The name of the profile to execute
  * @param[in] job_id The job number
@@ -57,6 +100,7 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
     double *computation_amount;
     double *communication_amount;
     msg_task_t ptask;
+    const bool debug_display_ptasks = true;
 
     profile_t profile = xbt_dict_get(profiles, profile_str);
 
@@ -76,6 +120,9 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         int ret = asprintf(&tname, "p %d", job_id);
         xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
         XBT_INFO("Creating task '%s'", tname);
+
+        if (debug_display_ptasks)
+            display_ptask(job_id, nb_res, cpu, com);
 
         ptask = MSG_parallel_task_create(tname,
                                          nb_res, job_res,
@@ -130,6 +177,9 @@ int profile_exec(const char *profile_str, int job_id, int nb_res, msg_host_t *jo
         int ret = asprintf(&tname, "hg %d", job_id);
         xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
         XBT_INFO("Creating task '%s'", tname);
+
+        if (debug_display_ptasks)
+            display_ptask(job_id, nb_res, computation_amount, communication_amount);
 
         ptask = MSG_parallel_task_create(tname,
                                          nb_res, job_res,

@@ -43,7 +43,7 @@ int int_comparator(const void * a, const void * b)
 
 void retrieve_pstate_information(Machine * machine)
 {
-    // this guard avoids the program to crash because MSG_host_get_nb_pstates is unimplemented for model ptask_L07 at the moment (2015-07-21)
+    // this guard avoids the program to crash because MSG_host_get_nb_pstates is unimplemented for model ptask_L07 at the moment (2015-09-24)
     // todo: implement the function in SimGrid
     if (1)
     {
