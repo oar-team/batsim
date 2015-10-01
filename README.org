@@ -2,7 +2,7 @@
 * Installation 
 
 ** dependencies
- - simgrid (lastest unstable version)
+ - simgrid (revision 2b7c35f960b4 on git://scm.gforge.inria.fr/simgrid/simgrid.git)
  - Jansson: a C library for encoding, decoding and manipulating JSON data. 
    apt-get install libjansson4
    apt-get install libjansson-dev
