@@ -27,3 +27,8 @@ add_executable(batexec batexec.c job.c utils.c export.c)
 ### Add definitions for compile
 target_link_libraries(batsim simgrid jansson m)
 target_link_libraries(batexec simgrid jansson m)
+
+## Add intall target
+INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim
+    ${CMAKE_CURRENT_BINARY_DIR}/batexec
+    DESTINATION bin)
