@@ -7,13 +7,17 @@
 #==============================================================================
 
 ---
-#extend: default/chroot/debian8.yaml
-extend: default/virtualbox/debian8.yaml
+## Choose one of them :)
+extend: default/chroot/debian8.yaml
+checkpoint: btrfs.yaml
+#extend: default/virtualbox/debian8.yaml
+#extend: default/qemu/debian8.yaml
 
 global:
   # You can see the base template  to know the
   # variables that you can override
-  virtualbox_memory_size: 2048
+  # virtualbox_memory_size: 2048
+  # qemu_memory_size : 2048
 
 bootstrap:
   - "@base"
@@ -32,7 +36,7 @@ setup:
       - exec_in: |
           cd simgrid/build
           cmake -DCMAKE_INSTALL_PREFIX=/usr/local/ -Denable_documentation=OFF ../
-          make -j4
+          make -j$(nproc)
           make install
   - batsim_install:
     - install dependencies:
@@ -47,7 +51,7 @@ setup:
       - exec_in: |
           cd batsim/build
           cmake ..
-          make -j4
+          make -j$(nproc)
 
 export:
   - "@base"

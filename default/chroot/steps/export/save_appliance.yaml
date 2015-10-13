@@ -1,0 +1,34 @@
+- export_appliance_script: $$kameleon_cwd/export_appliance.py
+- export_tar_script: $$kameleon_cwd/export_tar.py
+- create_appliance_script: $$kameleon_cwd/create_appliance.py
+- need_bootloader_script: $$kameleon_cwd/need_bootloader.py
+
+- check_bootloader: 
+    - check_cmd_local: python
+    - exec_local: NEED_BOOTLOADER=$(python $$need_bootloader_script -F $$output_formats)
+
+- install_bootloader_if_needed:
+    - exec_local: |
+        if [ "$NEED_BOOTLOADER" = "yes" ]; then
+            # Create an appliance from rootfs directory
+            python $$create_appliance_script $$rootfs \
+              --size $$image_size \
+              -o $$output_filename \
+              --filesystem $$filesystem_type \
+              --format=qcow2 \
+              --append "$$kernel_args"
+            # Export the appliance to the desired formats
+            python $$export_appliance_script $${output_filename}.qcow2 \
+              -o $$output_filename \
+              --formats $$output_formats \
+              --tar-compression-level $$tar_compression_level \
+              --tar-excludes $$tar_excludes
+        fi
+    - exec_local: |
+        if [ "$NEED_BOOTLOADER" = "no" ]; then
+            python $$export_tar_script $$rootfs \
+              -o $$output_filename \
+              --formats $$output_formats \
+              --tar-compression-level $$tar_compression_level \
+              --tar-excludes $$tar_excludes
+        fi
