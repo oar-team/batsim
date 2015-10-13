@@ -1,0 +1,53 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# DESCRIPTION: An applicance for batsim experimentation
+#
+#==============================================================================
+
+---
+#extend: default/chroot/debian8.yaml
+extend: default/virtualbox/debian8.yaml
+
+global:
+  # You can see the base template  to know the
+  # variables that you can override
+  virtualbox_memory_size: 2048
+
+bootstrap:
+  - "@base"
+
+setup:
+  - "@base"
+  - simgrid_install:
+    - install dependencies:
+      - exec_in: apt-get -y --force-yes install git cmake build-essential libboost-all-dev 2>&1
+    - do_it:
+      - exec_in: git clone git://scm.gforge.inria.fr/simgrid/simgrid.git
+      - exec_in: |
+          cd simgrid
+          git checkout 2b7c35f960b4
+          mkdir build
+      - exec_in: |
+          cd simgrid/build
+          cmake -DCMAKE_INSTALL_PREFIX=/usr/local/ -Denable_documentation=OFF ../
+          make -j4
+          make install
+  - batsim_install:
+    - install dependencies:
+      - exec_in: apt-get -y --force-yes install libjansson4 libjansson-dev 2>&1
+    - do_it:
+      - exec_in: |
+          git clone https://scm.gforge.inria.fr/anonscm/git/batsim/batsim.git
+      - exec_in: |
+          cd batsim
+          git checkout 58ed9ba504b2
+          mkdir build
+      - exec_in: |
+          cd batsim/build
+          cmake ..
+          make -j4
+
+export:
+  - "@base"

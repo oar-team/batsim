@@ -1,0 +1,9 @@
+- kameleon_helpers_url: "https://github.com/oar-team/kameleon-helpers/archive/master.tar.gz"
+
+- download_kameleon_helpers:
+  - download_file_local:
+    - $$kameleon_helpers_url
+    - $$kameleon_cwd/kameleon-helpers.tar.gz
+
+- extract_kameleon_helpers_archive:
+  - exec_local: tar xvf $$kameleon_cwd/kameleon-helpers.tar.gz --strip-components 1 --exclude='*/README.md'

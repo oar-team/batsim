@@ -1,0 +1,44 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# DESCRIPTION: Debian 7 (Wheezy) appliance built with chroot.
+#
+#==============================================================================
+---
+extend: base.yaml
+
+# Global variables use by Kameleon engine and the steps
+global:
+  # Distribution
+  distrib: debian
+  release: wheezy
+  release_number: 7
+  kernel_arch: amd64
+
+  # Apt recipe options
+  apt_repository: http://ftp.debian.org/debian/
+  apt_enable_contrib: true
+  apt_enable_nonfree: true
+
+  setup_packages: >
+    bsdutils ca-certificates locales man-db less libui-dialog-perl dialog
+    isc-dhcp-client ifupdown iptables iputils-ping iproute netbase net-tools
+    psmisc openssh-server acpid acpi-support-base sysvinit bzip2 wget
+    apt-utils pciutils curl sudo vim bash-completion curl resolvconf
+
+# Bootstrap the new system and create the 'in_context'
+bootstrap:
+  - "@base"
+
+# Install and configuration steps
+setup:
+  - configure_apt:
+    - repository: $$apt_repository
+    - enable_contrib_repo: $$apt_enable_contrib
+    - enable_nonfree_repo: $$apt_enable_nonfree
+  - "@base"
+
+# Export the generated appliance in the format of your choice
+export:
+  - "@base"

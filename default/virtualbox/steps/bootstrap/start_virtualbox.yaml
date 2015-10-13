@@ -1,0 +1,91 @@
+- boot_timeout: 100
+- shutdown_timeout: 30
+
+- attached_image_disk: $$kameleon_cwd/attached_base_$$kameleon_recipe_name.$$image_format
+- initial_image_disk: $$image_disk.$$image_format
+
+- rename_attached_image_disk:
+  - exec_local: mv $$initial_image_disk $$attached_image_disk
+
+- register_vm:
+  - exec_local: echo "Creating virtual machine"
+  - exec_local: VBoxManage createvm --name $$virtualbox_vmid --register
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --ostype $$virtualbox_os_type
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --boot1 disk
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --memory $$virtualbox_memory_size
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --acpi on
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --nictype1 82540EM
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --nictype2 82540EM
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --nictype3 82540EM
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --nictype4 82540EM
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --nic1 nat --cableconnected1 on
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --natpf1 guestssh,tcp,,${SSH_FWD_PORT},,22
+  - exec_local: VBoxManage storagectl $$virtualbox_vmid --name "SATA Controller" --add sata --controller IntelAHCI
+  - exec_local: |
+      VBoxManage storageattach $$virtualbox_vmid \
+        --storagectl "SATA Controller" \
+        --port 0 \
+        --device 0 \
+        --type hdd \
+        --medium $$attached_image_disk
+
+- create_symbolic_link_to_image_disk:
+  - on_checkpoint: skip
+  - exec_local: ln -s $$attached_image_disk $$initial_image_disk
+
+- merge_snapshots_before_export:
+  - on_setup_clean:
+    - exec_local: |
+        if [ ! -e  $$initial_image_disk ]; then
+          VBoxManage clonehd $$attached_image_disk $$initial_image_disk \
+            --format $$image_format
+        fi
+
+- delete_vm_at_the_end:
+  - on_checkpoint: skip
+  - on_export_clean:
+    - exec_local: |
+        if VBoxManage list vms | grep -q $$virtualbox_vmid; then
+          echo "Removing the virtualbox vm ($$virtualbox_vmid)..."
+          VBoxManage unregistervm --delete $$virtualbox_vmid 2>&1
+        fi
+        rm -f $$initial_image_disk
+
+- start_vm:
+  - on_checkpoint: redo
+  - exec_local: echo "Starting virtualbox..."
+  - exec_local: VBoxManage startvm  $$virtualbox_vmid --type headless 2>&1
+  - exec_local: |
+        SSH_AVAILABLE=0
+        TIMEOUT=$(( $(date +%s) + $$boot_timeout ))
+        until timeout 2 ssh -q -F $$ssh_config_file -o ConnectTimeout=1 -o ConnectionAttempts=1  $${kameleon_recipe_name} -t true && SSH_AVAILABLE=1 || [ $(date +%s) -gt $TIMEOUT ];
+        do
+          echo -en "\rWaiting for SSH to become available for out_context...($(( TIMEOUT - $(date +%s) ))s)"
+          sleep 1
+        done
+        echo ""
+  - rescue:
+    - exec_local: test $SSH_AVAILABLE -eq 1
+    - breakpoint: Failed to connect to VM via SSH. Please verify the VM successfully booted by looking at the VirtualBox GUI.
+
+- shutdown_vm:
+  - on_checkpoint: redo
+  - on_setup_clean:
+    - exec_in: echo "Shutting down virtual machine"
+    - exec_in: shutdown -h now
+    - exec_local: |
+        if VBoxManage list runningvms | grep -q $$virtualbox_vmid; then
+          VBoxManage controlvm $$virtualbox_vmid acpipowerbutton
+          NEXT_WAIT_TIME=0
+          until $(VBoxManage showvminfo --machinereadable $$virtualbox_vmid | grep -q ^VMState=.poweroff.) || [ $NEXT_WAIT_TIME -eq $$shutdown_timeout ];
+          do
+            sleep 1
+            echo -en "\rWaiting for machine $$virtualbox_vmid to shutdown...($(( $$shutdown_timeout - 1 - NEXT_WAIT_TIME++ ))s)"
+          done
+        fi
+    - exec_local: |
+        if VBoxManage list runningvms | grep -q $$virtualbox_vmid; then
+          echo "  ~> Failed"
+          echo "Forcing shutdown !"
+          VBoxManage controlvm $$virtualbox_vmid poweroff
+        fi
