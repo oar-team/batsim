@@ -1,12 +1,13 @@
 # Use BTRFS as checkpoint motor
 
 # Assume that the entire disk is in btrfs
-btrfs_root: /
 
 enabled?:
-  - exec_local: test -f $$kameleon_cwd/checkpoint_enabled
-  - exec_local: btrfs subvolume create $$rootfs || true
-  - exec_local: btrfs subvolume list $$btrfs_root | grep -q ${$${rootfs}#"/"}
+  - exec_local: |
+      export rootfs="$${rootfs}"
+      test -f $$kameleon_cwd/checkpoint_enabled
+      btrfs subvolume create $$rootfs 2> /dev/null || true
+      btrfs subvolume list / | grep -q ${rootfs#"/"}
 
 create:
   - exec_local: btrfs subvolume snapshot $$rootfs $${rootfs}-@microstrep_id
@@ -20,11 +21,14 @@ apply:
 
 clear:
   - exec_local: |
-      $snap_list=$(btrfs subvolume list / | grep ${${rootfs}#"/"} | awk '{print "/"$9 }')
+      export rootfs="$${rootfs}"
+      snap_list=$(btrfs subvolume list / | grep ${rootfs#"/"} | awk '{print "/"$9 }')
       for snap in $snap_list
       do
           btrfs subvolume delete $snap
       done
 
 list:
-  - exec_local: btrfs subvolume list / | grep ${${rootfs}#"/"} | awk '{print "/"$9 }' | grep "${rootfs}-" | sed "s#${rootfs}-##"
+  - exec_local: |
+      export rootfs="$${rootfs}"
+      btrfs subvolume list / | grep ${rootfs#"/"} | awk '{print "/"$9 }' | grep "${rootfs}-" | sed "s#${rootfs}-##" || true
