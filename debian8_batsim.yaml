@@ -18,6 +18,8 @@ global:
   # variables that you can override
   # virtualbox_memory_size: 2048
   # qemu_memory_size : 2048
+  appliance_formats: tar.gz
+  btrfs_volume: "/"
 
 bootstrap:
   - "@base"

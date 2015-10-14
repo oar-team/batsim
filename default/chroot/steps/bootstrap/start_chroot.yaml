@@ -1,12 +1,13 @@
 # # Bootstrap
 - mount_chroot:
+  - on_checkpoint: redo
   - check_cmd_out: chroot
   - exec_out: mount -o bind /dev  $$rootfs/dev
   - exec_out: mount -o bind /dev/pts $$rootfs/dev/pts
   - exec_out: mount -t proc /proc  $$rootfs/proc
   - exec_out: mount -t sysfs /sys  $$rootfs/sys
   - exec_out: test -f $$rootfs/etc/mtab || cat /proc/mounts > $$rootfs/etc/mtab
-  - exec_out: cat /etc/resolv.conf > $$rootfs/etc/resolv.conf
+  - exec_out: rm $$rootfs/etc/resolv.conf && cp /etc/resolv.conf $$rootfs/etc/resolv.conf
   - on_setup_clean:
     - exec_out: rm -f $$rootfs/etc/resolv.conf
     - exec_out: echo try umount $$rootfs/sys... ; mountpoint -q $$rootfs/sys && umount -f -l $$rootfs/sys  || true
