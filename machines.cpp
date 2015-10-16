@@ -32,7 +32,7 @@ void Machines::createMachines(xbt_dynar_t hosts)
         machine.name = MSG_host_get_name(host);
         machine.host = host;
         machine.jobs_being_computed = {};
-        machine.state = machine_state::IDLE;
+        machine.state = Machine::IDLE;
     }
 }
 
@@ -51,7 +51,7 @@ void Machines::updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMa
     for (int machineID : usedMachines)
     {
         Machine & machine = _machines[machineID];
-        machine.state = machine_state::COMPUTING;
+        machine.state = Machine::COMPUTING;
 
         // cout << machine;
         machine.jobs_being_computed.insert(jobID);
@@ -72,7 +72,7 @@ void Machines::updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMa
 
         if (machine.jobs_being_computed.empty())
         {
-            machine.state = machine_state::IDLE;
+            machine.state = Machine::IDLE;
             // todo: handle the Pajé trace in this file, not directly in batsim.c
         }
 

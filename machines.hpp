@@ -7,22 +7,19 @@
 
 #include <simgrid/msg.h>
 
-namespace machine_state
+struct Machine
 {
-	enum MachineState
+	enum State
 	{
 	    SLEEPING,
 	    IDLE,
 	    COMPUTING,
 	};
-}
 
-struct Machine
-{
 	int id;
 	std::string name;
     msg_host_t host;
-    machine_state::MachineState state;
+    State state;
     std::set<int> jobs_being_computed;
 };
 
