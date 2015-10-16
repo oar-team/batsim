@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <set>
+#include <string>
 
 #include <simgrid/msg.h>
 
@@ -19,6 +20,7 @@ namespace machine_state
 struct Machine
 {
 	int id;
+	std::string name;
     msg_host_t host;
     machine_state::MachineState state;
     std::set<int> jobs_being_computed;

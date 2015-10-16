@@ -29,6 +29,7 @@ void Machines::createMachines(xbt_dynar_t hosts)
         Machine & machine = _machines[i];
 
         machine.id = i;
+        machine.name = MSG_host_get_name(host);
         machine.host = host;
         machine.jobs_being_computed = {};
         machine.state = machine_state::IDLE;
@@ -93,9 +94,4 @@ ostream & operator<<(ostream & out, const Machine & machine)
     out << "]" << endl;
 
     return out;
-}
-
-int main()
-{
-    return 0;
 }
