@@ -20,6 +20,7 @@ global:
   # qemu_memory_size : 2048
   appliance_formats: tar.gz
   btrfs_volume: "/"
+  setup_packages: $$setup_packages git cmake build-essential
 
 bootstrap:
   - "@base"
@@ -28,7 +29,7 @@ setup:
   - "@base"
   - simgrid_install:
     - install dependencies:
-      - exec_in: apt-get -y --force-yes install git cmake build-essential libboost-all-dev 2>&1
+      - exec_in: apt-get -y --force-yes install libboost-all-dev 2>&1
     - do_it:
       - exec_in: git clone git://scm.gforge.inria.fr/simgrid/simgrid.git
       - exec_in: |
@@ -54,6 +55,7 @@ setup:
           cd batsim/build
           cmake ..
           make -j$(nproc)
+          make install
 
 export:
   - "@base"
