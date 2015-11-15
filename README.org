@@ -1,51 +1,58 @@
 
 * Installation 
 
-** dependencies
+** Dependencies
  - simgrid (revision 2b7c35f960b4 on git://scm.gforge.inria.fr/simgrid/simgrid.git)
  - Jansson: a C library for encoding, decoding and manipulating JSON data. 
-   apt-get install libjansson4
-   apt-get install libjansson-dev
-** first step: prepare Makefile
- mkdir build
- cd build
- cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" ../
+: apt-get install libjansson4
+: apt-get install libjansson-dev
+** First step: prepare Makefile
+: mkdir build
+: cd build
+: cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" ../
 
-** second step
- make
+** Second step
+: make
 
-** usage
-*** test with fake scheduler
- # open 2 terminal
- # first terminal
- python fake_sched_uds.py workload_profiles/test_workload_profile.json
+* Usages
+** Common part for all cases:
+In a terminal:
+: cd build 
+: ./batsim ../platforms/small_platform.xml ../workload_profiles/test_workload_profile.json
 
- # second terminal
- cd build 
- ./batsim ../platforms/small_platform.xml ../workload_profiles/test_workload_profile.json
+** With fake scheduler
+In a second terminal:
+: python fake_sched_uds.py workload_profiles/test_workload_profile.json
 
-*** test with oar core scheduler
- # install 
+** With oar core scheduler
+In a second terminal:
+ 
+- First install the required oar-3 libraries.
 
- git clone https://gforge.inria.fr/git/oar/oar-kao.git
- git clone https://gforge.inria.fr/git/oar/python-oar-lib.git
+ : git clone https://gforge.inria.fr/git/oar/oar-kao.git
+ : git clone https://gforge.inria.fr/git/oar/python-oar-lib.git
 
- cd python-oar-lib
- sudo python setup.py install
- cd oar-kao
- sudo python setup.py install
- cd oar_kao
- python batsim.py ../../batsim/workload_profiles/test_workload_profile.json
+ : cd python-oar-lib
+ : sudo python setup.py install
+ : cd oar-kao
+ : sudo python setup.py install
 
-*** display information control
+- Second use *bataar.py* which is the adaptor for OAR3 to interact with BatSim.
+ : cd oar_kao
+ : ./baatar.py ../../batsim/workload_profiles/test_workload_profile.json
+
+Refer to [[https://github.com/oar-team/oar-kao][oar-kao]] site or bataar.py -h for more to information.
+
+* Display information control
+
  Batsim has its own set of options but it can also handle standard SimGrid ones.
  The end-of-options delimiter "--" must then be used to use SimGrid options.
 
-**** Quiet run
-  ./batsim [batsim_options...] -- PLATFORM WORKLOAD --log=batsim.thresh:critical --log=network.thresh:critical
+** Quiet run
+  : ./batsim [batsim_options...] -- PLATFORM WORKLOAD --log=batsim.thresh:critical --log=network.thresh:critical
 
-**** Display network information only
-  ./batsim [batsim_options...] -- PLATFORM WORKLAOD --log=batsim.thresh:critical
+** Display network information only
+  : ./batsim [batsim_options...] -- PLATFORM WORKLOAD --log=batsim.thresh:critical
 
-**** Display SimGrid options help
-  ./batsim -- PLATFORM WORKLOAD --help
+** Display SimGrid options help
+  : ./batsim -- PLATFORM WORKLOAD --help
