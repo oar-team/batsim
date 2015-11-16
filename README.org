@@ -29,10 +29,10 @@ In a second terminal:
  
 - First install the required oar-3 libraries.
 
- : git clone https://gforge.inria.fr/git/oar/oar-kao.git
- : git clone https://gforge.inria.fr/git/oar/python-oar-lib.git
+ : git clone https://github.com/oar-team/oar-lib.git 
+ : git clone https://github.com/oar-team/oar-kao.git
 
- : cd python-oar-lib
+ : cd oar-lib
  : sudo python setup.py install
  : cd oar-kao
  : sudo python setup.py install
