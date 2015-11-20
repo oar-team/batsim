@@ -7,19 +7,19 @@
 
 #include <simgrid/msg.h>
 
+enum class MachineState
+{
+    SLEEPING,
+    IDLE,
+    COMPUTING,
+};
+
 struct Machine
 {
-	enum State
-	{
-	    SLEEPING,
-	    IDLE,
-	    COMPUTING,
-	};
-
-	int id;
-	std::string name;
+    int id;
+    std::string name;
     msg_host_t host;
-    State state;
+    MachineState state;
     std::set<int> jobs_being_computed;
 };
 
@@ -28,18 +28,22 @@ std::ostream & operator<<(std::ostream & out, const Machine & machine);
 class Machines
 {
 public:
-	Machines();
-	~Machines();
-	void createMachines(xbt_dynar_t hosts);
-	void updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMachines);
-	void updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMachines);
+    Machines();
+    ~Machines();
+    void createMachines(xbt_dynar_t hosts);
+    void updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMachines);
+    void updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMachines);
 
-	const Machine & operator[](int machineID) const;
-	Machine & operator[](int machineID);
+    const Machine & operator[](int machineID) const;
+    Machine & operator[](int machineID);
+
+    bool exists(int machineID) const;
 
 private:
-	std::vector<Machine> _machines;
+    std::vector<Machine> _machines;
 };
+
+std::string machineStateToString(MachineState state);
 
 // The array of machines
 extern int nb_machines;

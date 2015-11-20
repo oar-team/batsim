@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <map>
 
 using namespace std;
 
@@ -32,7 +33,7 @@ void Machines::createMachines(xbt_dynar_t hosts)
         machine.name = MSG_host_get_name(host);
         machine.host = host;
         machine.jobs_being_computed = {};
-        machine.state = Machine::IDLE;
+        machine.state = MachineState::IDLE;
     }
 }
 
@@ -51,7 +52,7 @@ void Machines::updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMa
     for (int machineID : usedMachines)
     {
         Machine & machine = _machines[machineID];
-        machine.state = Machine::COMPUTING;
+        machine.state = MachineState::COMPUTING;
 
         // cout << machine;
         machine.jobs_being_computed.insert(jobID);
@@ -72,7 +73,7 @@ void Machines::updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMa
 
         if (machine.jobs_being_computed.empty())
         {
-            machine.state = Machine::IDLE;
+            machine.state = MachineState::IDLE;
             // todo: handle the Pajé trace in this file, not directly in batsim.c
         }
 
@@ -87,11 +88,23 @@ ostream & operator<<(ostream & out, const Machine & machine)
                                               "COMPUTING"};
 
     out << "Machine " << machine.id << ", ";
-    out << "state = " << machineStateToStr[machine.state] << ", ";
+    out << "state = " << machineStateToString(machine.state) << ", ";
     out << "jobs = [";
     std::copy(machine.jobs_being_computed.begin(), machine.jobs_being_computed.end(),
               std::ostream_iterator<char>(out, " "));
     out << "]" << endl;
 
     return out;
+}
+
+string machineStateToString(MachineState state)
+{
+    static const std::map<MachineState,std::string> conv =
+    {
+        {MachineState::SLEEPING, "sleeping"},
+        {MachineState::IDLE, "idle"},
+        {MachineState::COMPUTING, "computing"}
+    };
+
+    return conv.at(state);
 }
