@@ -34,13 +34,13 @@ public:
     void updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMachines);
     void updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMachines);
 
-    const Machine & operator[](int machineID) const;
-    Machine & operator[](int machineID);
+    const Machine * operator[](int machineID) const;
+    Machine * operator[](int machineID);
 
     bool exists(int machineID) const;
 
 private:
-    std::vector<Machine> _machines;
+    std::vector<Machine *> _machines;
 };
 
 std::string machineStateToString(MachineState state);

@@ -360,13 +360,13 @@ int uds_server_process(int argc, char *argv[])
                 // Let us display the available jobs (to help the scheduler debugging)
                 string debugBuffer;
 
-                const std::map<int, Job> & jobs = context->jobs.jobs();
+                const std::map<int, Job *> & jobs = context->jobs.jobs();
                 vector<string> submittedJobs;
 
                 for (auto & mit : jobs)
                 {
-                    if (mit.second.state == JobState::JOB_STATE_SUBMITTED)
-                        submittedJobs.push_back(std::to_string(mit.second.id));
+                    if (mit.second->state == JobState::JOB_STATE_SUBMITTED)
+                        submittedJobs.push_back(std::to_string(mit.second->id));
                 }
 
                 string submittedJobsString = boost::algorithm::join(submittedJobs, ", ");
@@ -393,7 +393,7 @@ int uds_server_process(int argc, char *argv[])
                 xbt_assert(nb_scheduled_jobs <= nb_submitted_jobs);
 
                 // TODO : launch the job.
-                //MSG_process_create("job " + to_string(job->id), launch_job, message, context->machines[allocation.machine_ids[0]].host);
+                //MSG_process_create("job " + to_string(job->id), launch_job, message, context->machines[allocation.machine_ids[0]]->host);
             }
 
             break;

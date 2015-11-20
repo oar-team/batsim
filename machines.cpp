@@ -13,6 +13,8 @@ Machines::Machines()
 
 Machines::~Machines()
 {
+    for (Machine * machine : _machines)
+        delete machine;
     _machines.clear();
 }
 
@@ -27,35 +29,42 @@ void Machines::createMachines(xbt_dynar_t hosts)
     unsigned int i;
     xbt_dynar_foreach(hosts, i, host)
     {
-        Machine & machine = _machines[i];
+        Machine * machine = new Machine;
 
-        machine.id = i;
-        machine.name = MSG_host_get_name(host);
-        machine.host = host;
-        machine.jobs_being_computed = {};
-        machine.state = MachineState::IDLE;
+        machine->id = i;
+        machine->name = MSG_host_get_name(host);
+        machine->host = host;
+        machine->jobs_being_computed = {};
+        machine->state = MachineState::IDLE;
+
+        _machines[i] = machine;
     }
 }
 
-const Machine & Machines::operator[](int machineID) const
+const Machine * Machines::operator[](int machineID) const
 {
     return _machines[machineID];
 }
 
-Machine & Machines::operator[](int machineID)
+Machine * Machines::operator[](int machineID)
 {
     return _machines[machineID];
+}
+
+bool Machines::exists(int machineID) const
+{
+    return machineID >= 0 && machineID < (int)_machines.size();
 }
 
 void Machines::updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMachines)
 {
     for (int machineID : usedMachines)
     {
-        Machine & machine = _machines[machineID];
-        machine.state = MachineState::COMPUTING;
+        Machine * machine = _machines[machineID];
+        machine->state = MachineState::COMPUTING;
 
         // cout << machine;
-        machine.jobs_being_computed.insert(jobID);
+        machine->jobs_being_computed.insert(jobID);
         // cout << machine;
     }
 }
@@ -64,16 +73,16 @@ void Machines::updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMa
 {
     for (int machineID : usedMachines)
     {
-        Machine & machine = _machines[machineID];
+        Machine * machine = _machines[machineID];
         // cout << machine;
 
         // Let's find where jobID is in the jobs_being_computed data structure
-        int ret = machine.jobs_being_computed.erase(jobID);
+        int ret = machine->jobs_being_computed.erase(jobID);
         xbt_assert(ret == 1);
 
-        if (machine.jobs_being_computed.empty())
+        if (machine->jobs_being_computed.empty())
         {
-            machine.state = MachineState::IDLE;
+            machine->state = MachineState::IDLE;
             // todo: handle the Pajé trace in this file, not directly in batsim.c
         }
 
@@ -83,10 +92,6 @@ void Machines::updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMa
 
 ostream & operator<<(ostream & out, const Machine & machine)
 {
-    static const char* machineStateToStr[] = {"SLEEPING",
-                                              "IDLE",
-                                              "COMPUTING"};
-
     out << "Machine " << machine.id << ", ";
     out << "state = " << machineStateToString(machine.state) << ", ";
     out << "jobs = [";

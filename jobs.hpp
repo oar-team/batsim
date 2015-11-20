@@ -5,6 +5,7 @@
 #pragma once
 
 #include <map>
+#include <vector>
 
 enum class JobState
 {
@@ -41,8 +42,8 @@ public:
     const Job * operator[](int job_id) const;
     bool exists(int job_id) const;
 
-    const std::map<int, Job> & jobs() const;
+    const std::map<int, Job*> & jobs() const;
 
 private:
-    std::map<int, Job> _jobs;
+    std::map<int, Job*> _jobs;
 };
