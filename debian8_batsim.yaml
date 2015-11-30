@@ -25,6 +25,7 @@ global:
   default_timezone: Europe/Paris
   root_password: root
   hostname: simctn
+  simctn_dir: /root
 
 
 bootstrap:
@@ -39,13 +40,16 @@ setup:
     - install dependencies:
       - exec_in: apt-get -y --force-yes install libboost-all-dev 2>&1
     - do_it:
-      - exec_in: git clone git://scm.gforge.inria.fr/simgrid/simgrid.git
       - exec_in: |
-          cd simgrid
+          mkdir -p $$simctn_dir
+          cd $$simctn_dir
+          git clone git://scm.gforge.inria.fr/simgrid/simgrid.git
+      - exec_in: |
+          cd $$simctn_dir/simgrid
           git checkout 2b7c35f960b4
           mkdir build
       - exec_in: |
-          cd simgrid/build
+          cd $$simctn_dir/simgrid/build
           cmake -DCMAKE_INSTALL_PREFIX=/usr/local/ -Denable_documentation=OFF ../
           make -j$(nproc)
           make install
@@ -54,13 +58,14 @@ setup:
       - exec_in: apt-get -y --force-yes install libjansson4 libjansson-dev 2>&1
     - do_it:
       - exec_in: |
+          cd $$simctn_dir
           git clone https://scm.gforge.inria.fr/anonscm/git/batsim/batsim.git
       - exec_in: |
-          cd batsim
+          cd $$simctn_dir/batsim
           git checkout 58ed9ba504b2
           mkdir build
       - exec_in: |
-          cd batsim/build
+          cd $$simctn_dir/batsim/build
           cmake ..
           make -j$(nproc)
           #make install
@@ -68,27 +73,42 @@ setup:
     - install dependencies:
       - exec_in: apt-get -y --force-yes install liblog-log4perl-perl 2>&1
     - get_it:
-      - exec_in: git clone https://github.com/wagnerf42/batch-simulator.git
       - exec_in: |
-          cd batch-simulator
+          cd $$simctn_dir
+          git clone https://github.com/wagnerf42/batch-simulator.git
+      - exec_in: |
+          cd $$simctn_dir/batch-simulator
           git checkout 170521bd1ec6
   - oar_sched:
     - install dependencies:
       - exec_in: apt-get -y --force-yes install python-setuptools 2>&1
     - install_oar_lib:
-      - exec_in: git clone https://github.com/oar-team/oar-lib.git
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://github.com/oar-team/oar-lib.git
       - exec_in: |
           # FIXME: This install need a retry to work!
-          cd oar-lib
+          cd $$simctn_dir/oar-lib
           git checkout 840ac5e
           python setup.py install
     - install_oar_kao:
-      - exec_in: git clone https://github.com/oar-team/oar-kao.git
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://github.com/oar-team/oar-kao.git
       - exec_in: |
           # FIXME: This install need a retry to work!
-          cd oar-kao
+          cd $$simctn_dir/oar-kao
           git checkout ae82dce
           python setup.py install
+  - import_experiment_material:
+    - copy_platfom:
+      - local2in:
+        - $$kameleon_data_dir/griffon_modified.xml
+        - $$simctn_dir/griffon_modified.xml
+    - copy_job_description:
+      - local2in:
+        - $$kameleon_data_dir/300_16_0001000000.0_0000000000.0_010.json
+        - $$simctn_dir/300_16_0001000000.0_0000000000.0_010.json
 
 export:
   - "@base"
