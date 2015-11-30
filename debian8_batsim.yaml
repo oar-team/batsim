@@ -18,15 +18,23 @@ global:
   # variables that you can override
   # virtualbox_memory_size: 2048
   # qemu_memory_size : 2048
-  appliance_formats: tar.gz
+  appliance_formats: tar.gz qcow2
   btrfs_volume: "/"
   setup_packages: $$setup_packages git cmake build-essential
+  default_keyboard_layout: fr
+  default_timezone: Europe/Paris
+  root_password: root
+  hostname: simctn
+
 
 bootstrap:
   - "@base"
 
 setup:
   - "@base"
+  - enable_root_login:
+    - change_sshd_config:
+      - exec_in: sed -i s/PermitRootLogin\ without-password/PermitRootLogin\ yes/ /etc/ssh/sshd_config
   - simgrid_install:
     - install dependencies:
       - exec_in: apt-get -y --force-yes install libboost-all-dev 2>&1
@@ -70,12 +78,14 @@ setup:
     - install_oar_lib:
       - exec_in: git clone https://github.com/oar-team/oar-lib.git
       - exec_in: |
+          # FIXME: This install need a retry to work!
           cd oar-lib
           git checkout 840ac5e
           python setup.py install
     - install_oar_kao:
       - exec_in: git clone https://github.com/oar-team/oar-kao.git
       - exec_in: |
+          # FIXME: This install need a retry to work!
           cd oar-kao
           git checkout ae82dce
           python setup.py install
