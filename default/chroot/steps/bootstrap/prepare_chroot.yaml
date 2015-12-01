@@ -13,7 +13,6 @@
   - on_checkpoint: skip
   - on_export_clean:
     - exec_local: |
-        sync
         mountpoint -q $$rootfs/dev/pts && \
         mountpoint -q $$rootfs/dev && \
         mountpoint -q $$rootfs/proc && \
