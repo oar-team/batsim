@@ -40,12 +40,15 @@ commands::
 
   docker import -m simctn build/debian8_batsim/debian8_batsim.tar.gz
   # Here you get the image hash
-  docker run -ti --cpu <nb_of_cpu_to_assign> <image_hash> bash
+  docker run -ti <image_hash> bash
 
 Now you should be in the container. You can run the experiment like this::
 
   cd /root
   ./experiment.py
+
+You can modify the experimentation parameters directly inside the
+``experiment.py`` script.
 
 References
 ----------
