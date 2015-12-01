@@ -13,6 +13,9 @@ that plugs with it:
 
 It also provide a script to run the experiment and reproduce the results.
 
+.. note:: You can find already built images and cache here:
+   http://simctn.gforge.inria.fr/
+
 Usage
 -----
 
