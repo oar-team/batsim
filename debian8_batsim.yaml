@@ -7,7 +7,7 @@
 #==============================================================================
 
 ---
-## Choose one of them :)
+## Choose one of them the following extends
 checkpoint: btrfs.yaml
 extend: default/chroot/debian8.yaml
 
@@ -16,12 +16,10 @@ extend: default/chroot/debian8.yaml
 #extend: default/qemu/debian8.yaml
 
 global:
-  # You can see the base template  to know the
-  # variables that you can override
   virtualbox_memory_size: 2048
-  # qemu_memory_size : 2048
-  appliance_formats: tar.gz qcow2
-  tar_compression_level: fast
+  qemu_memory_size : 2048
+  appliance_formats: tar.gz qcow2 vdi
+  appliance_tar_compression_level: fast
   btrfs_volume: "/"
   setup_packages: $$setup_packages git cmake build-essential e2fsprogs
   default_keyboard_layout: fr
@@ -96,25 +94,23 @@ setup:
           cp log4perl.conf.template log4perl.conf
   - oar_sched:
     - install dependencies:
-      - exec_in: apt-get -y --force-yes install python-setuptools 2>&1
+      - exec_in: apt-get -y --force-yes install python3-pip 2>&1
     - install_oar_lib:
       - exec_in: |
           cd $$simctn_dir
           git clone https://github.com/oar-team/oar-lib.git
       - exec_in: |
-          # FIXME: This install need a retry to work!
           cd $$simctn_dir/oar-lib
           git checkout 840ac5e
-          python setup.py install
+          pip3 install -e .
     - install_oar_kao:
       - exec_in: |
           cd $$simctn_dir
           git clone https://github.com/oar-team/oar-kao.git
       - exec_in: |
-          # FIXME: This install need a retry to work!
           cd $$simctn_dir/oar-kao
           git checkout ae82dce
-          python setup.py install
+          pip3 install -e .
   - import_experiment_material:
     - copy_platfom:
       - local2in:
@@ -135,8 +131,9 @@ setup:
         - $$kameleon_data_dir/swfToJsonConverter.py
         - $$simctn_dir/swfToJsonConverter.py
     - make_experiment_runnable:
-      - exec_in: apt-get -y --force-yes install python3 2>&1
+      - exec_in: pip3 install sortedcontainers
       - exec_in: chmod 755 $$simctn_dir/experiment.py
+      - exec_in: chmod 755 $$simctn_dir/swfToJsonConverter.py
 
 export:
   - "@base"

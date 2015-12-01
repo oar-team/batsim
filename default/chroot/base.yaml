@@ -25,6 +25,7 @@ global:
   default_locales: POSIX C en_US fr_FR de_DE
   default_lang: en_US.UTF-8
   default_timezone: UTC
+  appliance_tar_compression_level: "9"
 
   ## Initial rootfs archive built with kameleon
   ## See https://github.com/oar-team/kameleon-bootstrap-recipes.git
@@ -109,5 +110,5 @@ export:
   - save_appliance:
     - output_filename: $$appliance_filename
     - output_formats: $$appliance_formats
-    - tar_compression_level: "9"
+    - tar_compression_level: $$appliance_tar_compression_level
     - tar_excludes: $$appliance_tar_excludes

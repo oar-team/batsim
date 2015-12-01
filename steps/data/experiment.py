@@ -7,7 +7,7 @@ import csv
 import multiprocessing
 
 # Options that might be changed
-generate_json_files = False
+generate_json_files = True
 launch_experiments = True
 experiment_id = 18
 experiment_name = 'good_seeds'
@@ -161,22 +161,33 @@ def generateJsonFile(inputSWFFile, outputJsonFiles, compFactors, commFactors, nb
     compFactorsJ = ' '.join([str(x) for x in compFactors])
     commFactorsJ = ' '.join([str(x) for x in commFactors])
 
-    generator_command = "{} -cpu '{}' -com '{}' -prj {} -crs {} --randomizeCommunications 1 -mjh {} -jwf 1000 -fst 0 -pf {} -q --jobMinWidth {} --jobMaxWidth {} -- {} '{}'".format(generator_executable,
-                                                                                                                                                                                    compFactorsJ, commFactorsJ, nb_jobs, randomSeed, max_job_height, platform_size, jobMinWidth, jobMaxWidth, inputSWFFile, outputJsonFilesJ)
+    generator_command = (
+        "{} -cpu '{}' -com '{}' -prj {} -crs {} "
+        "--randomizeCommunications 1 -mjh {} -jwf 1000 -fst 0 "
+        "-pf {} -q --jobMinWidth {} --jobMaxWidth {} "
+        "-- {} '{}'").format(generator_executable,
+                             compFactorsJ,
+                             commFactorsJ,
+                             nb_jobs,
+                             randomSeed,
+                             max_job_height,
+                             platform_size,
+                             jobMinWidth,
+                             jobMaxWidth,
+                             inputSWFFile,
+                             outputJsonFilesJ)
+
     generator_command.replace('\xa0', ' ')
 
-    generator_args = str.split(generator_command, sep=' ')
-
     generator_process = subprocess.Popen(
-        generator_args, cwd=os.getcwd(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        generator_command, cwd=os.getcwd(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if generator_process.wait() != 0:
         out, err = generator_process.communicate()
         print('Failed to generate json files', outputJsonFiles)
         print(generator_command)
-        # print(generator_args)
         print('out = ', out)
         print('err = ', err)
-        # exit(1)
+        exit(1)
 
 # What should we run ?
 compFactors = [1e6]
