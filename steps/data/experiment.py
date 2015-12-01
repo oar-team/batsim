@@ -9,8 +9,8 @@ import multiprocessing
 # Options that might be changed
 generate_json_files = True
 launch_experiments = True
-experiment_id = 18
-experiment_name = 'good_seeds'
+experiment_id = 0
+experiment_name = 'test'
 leave_on_already_existing_experiment = False
 
 glob_batsim_directory = '/root/batsim/'
@@ -26,6 +26,19 @@ master_host_name = 'master_host0'
 
 input_swf_trace = 'CEA-Curie-2011-2.1-cln.swf'
 generator_executable = '/root/swfToJsonConverter.py'
+
+# What should we run ?
+compFactors = [1e6]
+#commFactors = [x for x in range(0,1000000000) if x%1e6==0]
+commFactors = [x * 1e7 for x in range(0, 40)]
+#commFactors = [0]
+jobs_to_use = [300]
+maximum_job_height = [16]
+variants_to_use = ['BEST_EFFORT_CONTIGUOUS',
+                   'CONTIGUOUS', 'BEST_EFFORT_LOCAL', 'LOCAL']
+#variants_to_use = ['BASIC']
+seeds_to_use = [x for x in range(0, 3)]
+#seeds_to_use = [0,1,2,4,17]
 
 # Let's create the result directory if needed, or leave if we may erase
 # something useful
@@ -179,28 +192,18 @@ def generateJsonFile(inputSWFFile, outputJsonFiles, compFactors, commFactors, nb
 
     generator_command.replace('\xa0', ' ')
 
+    generator_args = str.split(generator_command, sep=' ')
+
     generator_process = subprocess.Popen(
-        generator_command, cwd=os.getcwd(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        generator_command, shell=True, cwd=os.getcwd(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if generator_process.wait() != 0:
         out, err = generator_process.communicate()
         print('Failed to generate json files', outputJsonFiles)
         print(generator_command)
+        print("\n\n" + str(generator_args) + "\n\n")
         print('out = ', out)
         print('err = ', err)
-        exit(1)
-
-# What should we run ?
-compFactors = [1e6]
-#commFactors = [x for x in range(0,1000000000) if x%1e6==0]
-commFactors = [x * 1e7 for x in range(0, 40)]
-#commFactors = [0]
-jobs_to_use = [300]
-maximum_job_height = [16]
-variants_to_use = ['BEST_EFFORT_CONTIGUOUS',
-                   'CONTIGUOUS', 'BEST_EFFORT_LOCAL', 'LOCAL']
-#variants_to_use = ['BASIC']
-seeds_to_use = [x for x in range(0, 20)]
-#seeds_to_use = [0,1,2,4,17]
+        # exit(1)
 
 
 num_cores = multiprocessing.cpu_count()
@@ -255,6 +258,11 @@ if launch_experiments:
             instances_to_launch.append(
                 (json_file, absolute_json_file, variant))
 
+    # Use a pool of process for parallel compute of the results
+    pool = multiprocessing.Pool(num_cores)
+    results = []
     for t in instances_to_launch:
-        d = launchOneInstance(t)
-        writer.writerow(d)
+        results.append(pool.apply_async(launchOneInstance, [t]))
+
+    for value in results:
+        writer.writerow(value.get())
