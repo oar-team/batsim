@@ -25,7 +25,7 @@ global:
   default_keyboard_layout: fr
   default_timezone: Europe/Paris
   root_password: root
-  hostname: simctn2
+  hostname: simctn
   simctn_dir: /root
 
 
