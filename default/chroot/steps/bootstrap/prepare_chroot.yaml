@@ -13,7 +13,5 @@
   - on_checkpoint: skip
   - on_export_clean:
     - exec_local: |
-        mountpoint -q $$rootfs/dev/pts && \
-        mountpoint -q $$rootfs/dev && \
-        mountpoint -q $$rootfs/proc && \
-        mountpoint -q $$rootfs/sys && rm -rf $$rootfs || fail "It's unsafe to remove $$rootfs. Please check unmounted directories!"
+        ! grep -q $$rootfs /proc/mounts \
+        && rm -rf $$rootfs || fail "It's unsafe to remove $$rootfs. Please check unmounted directories!"
