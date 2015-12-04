@@ -41,9 +41,8 @@ You can find the generated images in ``build/debian8_batsim/``.
 If you want to use Docker, you can import and run the image using these
 commands::
 
-  docker import -m simctn build/debian8_batsim/debian8_batsim.tar.gz
-  # Here you get the image hash
-  docker run -ti <image_hash> bash
+  docker import build/debian8_batsim/debian8_batsim.tar.gz simctn
+  docker run -ti simctn bash
 
 Now you should be in the container. You can run the experiment like this::
 
