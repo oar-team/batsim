@@ -111,6 +111,23 @@ setup:
           cd $$simctn_dir/oar-kao
           git checkout ae82dce
           pip3 install -e .
+  - evalys:
+    - install dependencies:
+      - exec_in: |
+          apt-get -y --force-yes install \
+            python3-pip \
+            python3-pyqt4 \
+            python3-matplotlib \
+            python3-pandas 2>&1
+    - install_evalys:
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://github.com/oar-team/evalys.git
+      - exec_in: |
+          cd $$simctn_dir/evalys
+          # Not stable for now
+          #git checkout 840ac5e
+          pip3 install -e .
   - import_experiment_material:
     - copy_platfom:
       - local2in:
