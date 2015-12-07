@@ -34,17 +34,31 @@ You can now run Kameleon::
 
   kameleon build debian8_batsim.yaml
 
-If some error happen during the build try to retry (using ``r``)
-
 You can find the generated images in ``build/debian8_batsim/``.
+
+Run the image
+-------------
+
+You can use either VirtualBox or KVM or just a chroot to use this image
+directly from the exported images that you can find in
+``build/debian8_batsim/``.
+
+With Docker
+~~~~~~~~~~~
 
 If you want to use Docker, you can import and run the image using these
 commands::
 
   docker import build/debian8_batsim/debian8_batsim.tar.gz simctn
-  docker run -ti simctn bash
+  docker run -ti -e LANG=en_US.UTF-8 simctn bash
 
-Now you should be in the container. You can run the experiment like this::
+Now you should be in the container.
+
+Run the experiment
+------------------
+
+Login into the image. Default credential is **login: root** and **password:
+root**. Now you can run the experiment like this::
 
   cd /root
   ./experiment.py
