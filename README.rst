@@ -14,7 +14,7 @@ that plugs with it:
 It also provide a script to run the experiment and reproduce the results.
 
 .. note:: You can find already built images and cache here:
-   http://simctn.gforge.inria.fr/
+   http://simctn.gforge.inria.fr/ (maybe outdated)
 
 Usage
 -----
@@ -50,9 +50,25 @@ If you want to use Docker, you can import and run the image using these
 commands::
 
   docker import build/debian8_batsim/debian8_batsim.tar.gz simctn
-  docker run -ti -e LANG=en_US.UTF-8 simctn bash
+  docker run -ti -e LANG=en_US.UTF-8 -p 8888:8888 simctn bash
 
 Now you should be in the container.
+
+With Qemu/KVM
+~~~~~~~~~~~~~
+
+You can use virt-manager to have a nice GUI like VirtualBox or launch it by
+and with this command::
+
+  sudo qemu-system-x86_64 -m 1024 --enable-kvm \
+    -redir tcp:2222::22 \
+    -redir tcp:8888::8888 \
+    build/debian8_batsim/debian8_batsim.qcow2
+
+Then ssh into it::
+
+  ssh root@localhost -p2222
+  # password: root
 
 Run the experiment
 ------------------
@@ -65,6 +81,16 @@ root**. Now you can run the experiment like this::
 
 You can modify the experimentation parameters directly inside the
 ``experiment.py`` script.
+
+Results
+-------
+
+To check the results of the experiment you can use ipython notebook (now
+jupyther). To do so, run the server and connect to it via your local
+browser::
+
+  ipython3 notebook --ip 0.0.0.0
+
 
 References
 ----------

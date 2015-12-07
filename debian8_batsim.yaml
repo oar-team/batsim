@@ -118,7 +118,8 @@ setup:
             python3-pip \
             python3-pyqt4 \
             python3-matplotlib \
-            python3-pandas 2>&1
+            python3-pandas \
+            ipython3-notebook 2>&1
     - install_evalys:
       - exec_in: |
           cd $$simctn_dir
