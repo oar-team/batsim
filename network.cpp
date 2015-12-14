@@ -105,7 +105,7 @@ void UnixDomainSocket::send(const string & message)
     write(_client_socket, (void*)message.c_str(), message_size);
 }
 
-int main()
+/*int main()
 {
     UnixDomainSocket socket("/tmp/bouh");
     socket.accept_pending_connection();
@@ -124,7 +124,7 @@ int main()
     }
 
     return 0;
-}
+}*/
 
 int request_reply_scheduler_process(int argc, char *argv[])
 {
@@ -238,6 +238,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
                         xbt_assert(context->machines.exists(machineID), "Invalid static job allocation received ('%s'): the machine %d does not exist",
                                    allocation_string.c_str(), machineID);
                         alloc.machine_ids[i] = machineID;
+                        alloc.hosts[i] = context->machines[machineID]->host;
                     }
 
                     // Let us sort the allocation, to detect easily whether all machines are different or not
@@ -392,6 +393,9 @@ int uds_server_process(int argc, char *argv[])
                 nb_scheduled_jobs++;
                 xbt_assert(nb_scheduled_jobs <= nb_submitted_jobs);
 
+                ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
+                exec_args->context = context;
+                exec_args->allocation = allocation;
                 // TODO : launch the job.
                 //MSG_process_create("job " + to_string(job->id), launch_job, message, context->machines[allocation.machine_ids[0]]->host);
             }

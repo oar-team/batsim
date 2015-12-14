@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <map>
 
 #include <simgrid/msg.h>
 
@@ -69,7 +70,7 @@ public:
      * @param filename
      * @param logLaunchings If set to true, job launching time will be written in the trace. This option leads to larger trace files.
      */
-    PajeTracer(const std::string & filename, bool logLaunchings = false);
+    PajeTracer(const std::string & filename, bool _logLaunchings = false);
 
     /**
      * @brief PajeTracer destructor.
@@ -100,6 +101,10 @@ public:
      */
     void addJobLaunching(int jobID, const std::vector<int> & usedMachineIDs, double time);
 
+    void register_new_job(int jobID);
+    void set_machine_idle(int machineID, double time);
+    void set_machine_as_computing_job(int machineID, int jobID, double time);
+
     /**
      * @brief Adds a job run in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
@@ -125,7 +130,7 @@ public:
      * TODO UPDATE
      * @param time The simulation time at which the kill is done
      */
-    void addJobKill(int jobID, const std::vector<int> & usedMachineIDs, double time);
+    void addJobKill(int jobID, const std::vector<int> & usedMachineIDs, double time, bool associateKillToMachines = false);
 
     /**
      * @brief Adds a global utilization value of the system.
@@ -185,11 +190,12 @@ private:
     const char * launchingColor = "\"0.3 0.3 0.3\"";
     const char * utilizationColor = "\"0.0 0.5 0.0\"";
 
-    const bool logLaunchings;
+    const bool _logLaunchings;
 
-    WriteBuffer * wbuf = nullptr;
+    WriteBuffer * _wbuf = nullptr;
 
-    std::vector<std::string> colors;
+    std::map<int, std::string> _jobs;
+    std::vector<std::string> _colors;
 
     enum
     {

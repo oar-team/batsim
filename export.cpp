@@ -67,12 +67,12 @@ void WriteBuffer::flushBuffer()
 
 PajeTracer::PajeTracer(const std::string & filename,
                        bool logLaunchings) :
-    logLaunchings(logLaunchings)
+    _logLaunchings(logLaunchings)
 {
     generateColors(64);
     shuffleColors();
 
-    wbuf = new WriteBuffer(filename);
+    _wbuf = new WriteBuffer(filename);
 }
 
 PajeTracer::~PajeTracer()
@@ -80,10 +80,10 @@ PajeTracer::~PajeTracer()
     if (state != FINALIZED)
         fprintf(stderr, "Destruction of a PajeTracer object which has not been finalized. The corresponding trace file may be invalid.");
 
-    if (wbuf != nullptr)
+    if (_wbuf != nullptr)
     {
-        delete wbuf;
-        wbuf = nullptr;
+        delete _wbuf;
+        _wbuf = nullptr;
     }
 }
 
@@ -169,7 +169,7 @@ void PajeTracer::initialize(const vector<Machine> & machines, double time)
         DEFINE_STATE_TYPE, DEFINE_ENTITY_VALUE, SET_STATE,
         DEFINE_EVENT_TYPE, NEW_EVENT, DEFINE_VARIABLE_TYPE,
         SET_VARIABLE);
-    wbuf->appendText(buf);
+    _wbuf->appendText(buf);
 
     // Let's create our container types
     snprintf(buf, bufSize,
@@ -183,7 +183,7 @@ void PajeTracer::initialize(const vector<Machine> & machines, double time)
         DEFINE_CONTAINER_TYPE, rootType,      machineType,
         DEFINE_CONTAINER_TYPE,                schedulerType,
         DEFINE_CONTAINER_TYPE, schedulerType, killerType);
-    wbuf->appendText(buf);
+    _wbuf->appendText(buf);
 
     // Let's create our event types
     snprintf(buf, bufSize,
@@ -193,7 +193,7 @@ void PajeTracer::initialize(const vector<Machine> & machines, double time)
         "\n",
         DEFINE_EVENT_TYPE, killerType, killEventKiller,
         DEFINE_EVENT_TYPE, machineType, killEventMachine);
-    wbuf->appendText(buf);
+    _wbuf->appendText(buf);
 
     // Let's create our variable types
     snprintf(buf, bufSize,
@@ -201,13 +201,13 @@ void PajeTracer::initialize(const vector<Machine> & machines, double time)
         "%d %s %s \"Utilization\" %s\n"
         "\n",
         DEFINE_VARIABLE_TYPE, schedulerType, utilizationVarType, utilizationColor);
-    wbuf->appendText(buf);
+    _wbuf->appendText(buf);
 
     snprintf(buf, bufSize,
         "# Containers creation\n"
         "%d %lf %s %s \"Machines\" 0\n",
         CREATE_CONTAINER, time, rootType, root);
-    wbuf->appendText(buf);
+    _wbuf->appendText(buf);
 
     for (const Machine & m : machines)
     {
@@ -217,7 +217,7 @@ void PajeTracer::initialize(const vector<Machine> & machines, double time)
             CREATE_CONTAINER, time, machineType,
             machinePrefix, m.id,
             m.name.c_str(), root);
-        wbuf->appendText(buf);
+        _wbuf->appendText(buf);
     }
 
     snprintf(buf, bufSize,
@@ -226,7 +226,7 @@ void PajeTracer::initialize(const vector<Machine> & machines, double time)
         "\n",
         CREATE_CONTAINER, time, schedulerType, scheduler,
         CREATE_CONTAINER, time, killerType, killer, scheduler);
-    wbuf->appendText(buf);
+    _wbuf->appendText(buf);
 
     // Let's declare that machines have a state
     snprintf(buf, bufSize,
@@ -234,7 +234,7 @@ void PajeTracer::initialize(const vector<Machine> & machines, double time)
         "%d %s %s \"Machine state\"\n"
         "\n",
         DEFINE_STATE_TYPE, machineState, machineType);
-    wbuf->appendText(buf);
+    _wbuf->appendText(buf);
 
     // Let's declare some machine states
     snprintf(buf, bufSize,
@@ -245,7 +245,7 @@ void PajeTracer::initialize(const vector<Machine> & machines, double time)
         "# Begin of events\n",
         DEFINE_ENTITY_VALUE, mstateWaiting, machineState, waitingColor,
         DEFINE_ENTITY_VALUE, mstateLaunching, machineState, launchingColor);
-    wbuf->appendText(buf);
+    _wbuf->appendText(buf);
 
     // Let's set all the machines in waiting state
     for (const Machine & m : machines)
@@ -253,7 +253,7 @@ void PajeTracer::initialize(const vector<Machine> & machines, double time)
         snprintf(buf, bufSize,
             "%d %lf %s %s%d %s\n",
             SET_STATE, time, machineState, machinePrefix, m.id, mstateWaiting);
-        wbuf->appendText(buf);
+        _wbuf->appendText(buf);
     }
 
     state = INITIALIZED;
@@ -269,20 +269,20 @@ void PajeTracer::finalize(const vector<Machine> & machines, double time)
     snprintf(buf, bufSize,
         "\n"
         "# End of events, containers destruction\n");
-    wbuf->appendText(buf);
+    _wbuf->appendText(buf);
 
     for (const Machine & m : machines)
     {
         snprintf(buf, bufSize,
             "%d %lf %s%d %s\n",
             DESTROY_CONTAINER, time, machinePrefix, m.id, machineType);
-        wbuf->appendText(buf);
+        _wbuf->appendText(buf);
     }
 
     snprintf(buf, bufSize,
         "%d %lf %s %s\n",
             DESTROY_CONTAINER, time, root, rootType);
-    wbuf->appendText(buf);
+    _wbuf->appendText(buf);
 
     state = FINALIZED;
 }
@@ -294,13 +294,7 @@ void PajeTracer::addJobLaunching(int jobID, const std::vector<int> & usedMachine
     const int bufSize = 64;
     char buf[bufSize];
 
-    // Let's create a state value corresponding to this job
-    snprintf(buf, bufSize,
-        "%d %s%d %s \"%d\" %s\n",
-        DEFINE_ENTITY_VALUE, jobPrefix, jobID, machineState, jobID, colors[jobID % (int)colors.size()].c_str());
-    wbuf->appendText(buf);
-
-    if (logLaunchings)
+    if (_logLaunchings)
     {
         // Let's change the state of all the machines which launch the job
         for (const int & machineID : usedMachineIDs)
@@ -308,10 +302,51 @@ void PajeTracer::addJobLaunching(int jobID, const std::vector<int> & usedMachine
             snprintf(buf, bufSize,
                 "%d %lf %s %s%d %s\n",
                 SET_STATE, time, machineState, machinePrefix, machineID, mstateLaunching);
-            wbuf->appendText(buf);
+            _wbuf->appendText(buf);
         }
     }
+}
 
+void PajeTracer::register_new_job(int jobID)
+{
+    xbt_assert(_jobs.find(jobID) == _jobs.end(), "Cannot register new job %d: it already exists", jobID);
+    const int bufSize = 64;
+    char buf[bufSize];
+
+    // Let's create a state value corresponding to this job
+    snprintf(buf, bufSize,
+        "%d %s%d %s \"%d\" %s\n",
+        DEFINE_ENTITY_VALUE, jobPrefix, jobID, machineState, jobID, _colors[jobID % (int)_colors.size()].c_str());
+    _wbuf->appendText(buf);
+
+    _jobs[jobID] = jobPrefix + to_string(jobID);
+}
+
+void PajeTracer::set_machine_idle(int machineID, double time)
+{
+    const int bufSize = 64;
+    char buf[bufSize];
+    snprintf(buf, bufSize,
+        "%d %lf %s %s%d %s\n",
+        SET_STATE, time, machineState, machinePrefix, machineID, mstateWaiting);
+    _wbuf->appendText(buf);
+}
+
+void PajeTracer::set_machine_as_computing_job(int machineID, int jobID, double time)
+{
+    auto mit = _jobs.find(jobID);
+    if (mit == _jobs.end())
+    {
+        register_new_job(jobID);
+        mit = _jobs.find(jobID);
+    }
+
+    const int bufSize = 64;
+    char buf[bufSize];
+    snprintf(buf, bufSize,
+        "%d %lf %s %s%d %s\n",
+        SET_STATE, time, machineState, machinePrefix, machineID, mit->second.c_str());
+    _wbuf->appendText(buf);
 }
 
 void PajeTracer::addJobRunning(int jobID, const vector<int> & usedMachineIDs, double time)
@@ -327,7 +362,7 @@ void PajeTracer::addJobRunning(int jobID, const vector<int> & usedMachineIDs, do
         snprintf(buf, bufSize,
             "%d %lf %s %s%d %s%d\n",
             SET_STATE, time, machineState, machinePrefix, machineID, jobPrefix, jobID);
-        wbuf->appendText(buf);
+        _wbuf->appendText(buf);
     }
 }
 
@@ -345,11 +380,11 @@ void PajeTracer::addJobEnding(int jobID, const vector<int> & usedMachineIDs, dou
         snprintf(buf, bufSize,
             "%d %lf %s %s%d %s\n",
             SET_STATE, time, machineState, machinePrefix, machineID, mstateWaiting);
-        wbuf->appendText(buf);
+        _wbuf->appendText(buf);
     }
 }
 
-void PajeTracer::addJobKill(int jobID, const vector<int> & usedMachineIDs, double time)
+void PajeTracer::addJobKill(int jobID, const vector<int> & usedMachineIDs, double time, bool associateKillToMachines)
 {
     xbt_assert(state == INITIALIZED, "Bad addJobKill call: the PajeTracer object is not initialized or had been finalized");
 
@@ -360,15 +395,18 @@ void PajeTracer::addJobKill(int jobID, const vector<int> & usedMachineIDs, doubl
     snprintf(buf, bufSize,
         "%d %lf %s %s \"%d\"\n",
         NEW_EVENT, time, killEventKiller, killer, jobID);
-    wbuf->appendText(buf);
+    _wbuf->appendText(buf);
 
-    // Let's add a kill event associated with each machine
-    for (const int & machineID : usedMachineIDs)
+    if (associateKillToMachines)
     {
-        snprintf(buf, bufSize,
-            "%d %lf %s %s%d \"%d\"\n",
-            NEW_EVENT, time, killEventMachine, machinePrefix, machineID, jobID);
-        wbuf->appendText(buf);
+        // Let's add a kill event associated with each machine
+        for (const int & machineID : usedMachineIDs)
+        {
+            snprintf(buf, bufSize,
+                "%d %lf %s %s%d \"%d\"\n",
+                NEW_EVENT, time, killEventMachine, machinePrefix, machineID, jobID);
+            _wbuf->appendText(buf);
+        }
     }
 }
 
@@ -383,7 +421,7 @@ void PajeTracer::addGlobalUtilization(double utilization, double time)
     snprintf(buf, bufSize,
         "%d %lf %s %s %lf\n",
         SET_VARIABLE, time, utilizationVarType, scheduler, utilization);
-    wbuf->appendText(buf);
+    _wbuf->appendText(buf);
 }
 
 void PajeTracer::generateColors(int colorCount)
@@ -401,13 +439,13 @@ void PajeTracer::generateColors(int colorCount)
         hsvToRgb(h,s,v, r,g,b);
 
         snprintf(buf, bufSize, "\"%lf %lf %lf\"", r, g, b);
-        colors.push_back(buf);
+        _colors.push_back(buf);
     }
 }
 
 void PajeTracer::shuffleColors()
 {
-    random_shuffle(colors.begin(), colors.end());
+    random_shuffle(_colors.begin(), _colors.end());
 }
 
 void PajeTracer::hsvToRgb(double h, double s, double v, double & r, double & g, double & b)

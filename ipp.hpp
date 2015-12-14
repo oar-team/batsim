@@ -7,6 +7,8 @@
 #include <vector>
 #include <string>
 
+#include <simgrid/msg.h>
+
 struct BatsimContext;
 
 enum class IPMessageType
@@ -34,6 +36,7 @@ struct SchedulingAllocation
 {
     int job_id;
     std::vector<int> machine_ids;   //! The IDs of the machines on which the job should be allocated
+    std::vector<msg_host_t> hosts;         //! The corresponding SimGrid hosts
 };
 
 struct SchedulingAllocationMessage
@@ -59,6 +62,18 @@ struct ServerProcessArguments
     BatsimContext * context;
 };
 
+struct ExecuteJobProcessArguments
+{
+    BatsimContext * context;
+    SchedulingAllocation allocation;
+};
+
+struct KillerProcessArguments
+{
+    msg_task_t task; //! The task that will be cancelled if the walltime is reached
+    double walltime; //! The number of seconds to wait before cancelling the task
+} ;
+
 /**
  * @brief Sends a message from the given process to the given mailbox
  * @param[in] dst The destination mailbox
@@ -67,5 +82,6 @@ struct ServerProcessArguments
  * @param[in] data The data associated to the message
  */
 void send_message(const std::string & destination_mailbox, IPMessageType type, void * data = nullptr);
+void send_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
 
 std::string ipMessageTypeToString(IPMessageType type);

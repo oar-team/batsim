@@ -2,6 +2,8 @@
  * @file context.hpp The Batsim context
  */
 
+#pragma once
+
 #include "network.hpp"
 #include "machines.hpp"
 #include "jobs.hpp"
@@ -14,6 +16,7 @@ struct BatsimContext
     Machines machines;
     Jobs jobs;
     Profiles profiles;
+    PajeTracer tracer;
 
     long long microseconds_used_by_scheduler;
 };

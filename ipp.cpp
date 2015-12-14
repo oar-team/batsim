@@ -36,3 +36,9 @@ std::string ipMessageTypeToString(IPMessageType type)
 
     return type_to_string[type];
 }
+
+void send_message(const char *destination_mailbox, IPMessageType type, void *data)
+{
+    const string str = destination_mailbox;
+    send_message(str, type, data);
+}

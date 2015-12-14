@@ -7,6 +7,8 @@
 
 #include <simgrid/msg.h>
 
+class PajeTracer;
+
 enum class MachineState
 {
     SLEEPING,
@@ -34,6 +36,8 @@ public:
     void updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMachines);
     void updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMachines);
 
+    void setTracer(PajeTracer * tracer);
+
     const Machine * operator[](int machineID) const;
     Machine * operator[](int machineID);
 
@@ -41,6 +45,7 @@ public:
 
 private:
     std::vector<Machine *> _machines;
+    PajeTracer * _tracer = nullptr;
 };
 
 std::string machineStateToString(MachineState state);

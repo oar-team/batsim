@@ -4,6 +4,8 @@
 #include <iterator>
 #include <map>
 
+#include "export.hpp"
+
 using namespace std;
 
 Machines::Machines()
@@ -63,9 +65,16 @@ void Machines::updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMa
         Machine * machine = _machines[machineID];
         machine->state = MachineState::COMPUTING;
 
+        int previous_top_job = -1;
+        if (!machine->jobs_being_computed.empty())
+            previous_top_job = *machine->jobs_being_computed.begin();
+
         // cout << machine;
         machine->jobs_being_computed.insert(jobID);
         // cout << machine;
+
+        if (previous_top_job == -1 || previous_top_job != *machine->jobs_being_computed.begin())
+            _tracer->set_machine_as_computing_job(machine->id, *machine->jobs_being_computed.begin(), MSG_get_clock());
     }
 }
 
@@ -76,18 +85,31 @@ void Machines::updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMa
         Machine * machine = _machines[machineID];
         // cout << machine;
 
-        // Let's find where jobID is in the jobs_being_computed data structure
+        xbt_assert(!machine->jobs_being_computed.empty());
+        int previous_top_job = *machine->jobs_being_computed.begin();
+
+        // Let's erase jobID in the jobs_being_computed data structure
         int ret = machine->jobs_being_computed.erase(jobID);
         xbt_assert(ret == 1);
 
         if (machine->jobs_being_computed.empty())
         {
             machine->state = MachineState::IDLE;
+            _tracer->set_machine_idle(machine->id, MSG_get_clock());
             // todo: handle the Pajé trace in this file, not directly in batsim.c
+        }
+        else if (*machine->jobs_being_computed.begin() != previous_top_job)
+        {
+            _tracer->set_machine_as_computing_job(machine->id, *machine->jobs_being_computed.begin(), MSG_get_clock());
         }
 
         // cout << machine;
     }
+}
+
+void Machines::setTracer(PajeTracer *tracer)
+{
+    _tracer = tracer;
 }
 
 ostream & operator<<(ostream & out, const Machine & machine)
