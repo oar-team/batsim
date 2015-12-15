@@ -77,26 +77,45 @@ string UnixDomainSocket::receive()
 {
     string msg;
     int32_t message_size;
+    int nb_bytes_read = 0;
+    int ret;
 
-    // TODO: safer socket reads
+    /* Since messages can be split up to 1 byte messages, the following code
+       continues to read until 4 bytes are read. If one read returns a
+       non-strictly-positive value, we assume something wrong happened
+       and we can close the socket.
+    */
 
-    // Let's read the message size first
-    int ret = read(_client_socket, &message_size, 4);
-
-    if (ret != 4)
+    while (nb_bytes_read < 4)
     {
-        ::close(_client_socket);
-        _client_socket = -1;
-        throw std::runtime_error("Cannot read on socket. Closed by remote?");
+        ret = read(_client_socket, (void*)(((char*)&message_size)+nb_bytes_read), 4 - nb_bytes_read);
+
+        if (ret < 1)
+        {
+            ::close(_client_socket);
+            _client_socket = -1;
+            throw std::runtime_error("Cannot read on socket. Closed by remote?");
+        }
+        nb_bytes_read += ret;
     }
 
-    printf("ret = %d\n", ret);
     xbt_assert(message_size > 0, "Invalid message received (size=%d)", message_size);
     msg.resize(message_size);
+    XBT_INFO("message_size = %d", message_size);
 
-    // Then the message content
-    ret = read(_client_socket, (void*)msg.data(), message_size);
-    printf("ret = %d\n", ret);
+    // The message content is then read, following the same logic
+    nb_bytes_read = 0;
+    while (nb_bytes_read < message_size)
+    {
+        ret = read(_client_socket, (void*)(msg.data()+nb_bytes_read), message_size - nb_bytes_read);
+        if (ret < 1)
+        {
+            ::close(_client_socket);
+            _client_socket = -1;
+            throw std::runtime_error("Cannot read on socket. Closed by remote?");
+        }
+        nb_bytes_read += ret;
+    }
     XBT_CINFO(network, "Received '%s'", msg.c_str());
 
     return msg;
@@ -378,7 +397,6 @@ int uds_server_process(int argc, char *argv[])
                 ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
                 exec_args->context = context;
                 exec_args->allocation = allocation;
-                // TODO : launch the job.
                 string pname = "job" + to_string(job->id);
                 MSG_process_create(pname.c_str(), execute_job_process, (void*)exec_args, context->machines[allocation.machine_ids[0]]->host);
             }
