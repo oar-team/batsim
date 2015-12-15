@@ -4,9 +4,14 @@
 #include <iterator>
 #include <map>
 
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/join.hpp>
+
 #include "export.hpp"
 
 using namespace std;
+
+XBT_LOG_NEW_DEFAULT_CATEGORY(machines, "machines");
 
 Machines::Machines()
 {
@@ -64,6 +69,25 @@ Machine * Machines::operator[](int machineID)
 bool Machines::exists(int machineID) const
 {
     return machineID >= 0 && machineID < (int)_machines.size();
+}
+
+void Machines::displayDebug() const
+{
+    // Let us traverse machines to display some information about them
+    vector<string> machinesVector;
+    for (const Machine * m : _machines)
+    {
+        machinesVector.push_back(m->name + "(" + to_string(m->id) + ")");
+    }
+
+    // Let us create the string that will be sent to XBT_INFO
+    string s = "Machines debug information:\n";
+
+    s += "There are " + to_string(_machines.size()) + " machines.\n";
+    s += "Mobs : [" + boost::algorithm::join(machinesVector, ", ") + "]";
+
+    // Let us display the string which has been built
+    XBT_INFO("%s", s.c_str());
 }
 
 const std::vector<Machine *> &Machines::machines() const

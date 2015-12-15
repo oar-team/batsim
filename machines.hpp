@@ -42,6 +42,7 @@ public:
     Machine * operator[](int machineID);
 
     bool exists(int machineID) const;
+    void displayDebug() const;
 
     const std::vector<Machine *> & machines() const;
     const Machine * masterMachine() const;

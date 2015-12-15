@@ -142,6 +142,7 @@ int main(int argc, char * argv[])
     const Machine * masterMachine = context.machines.masterMachine();
     context.machines.setTracer(&context.tracer);
     context.tracer.initialize(&context, MSG_get_clock());
+    //context.machines.displayDebug();
 
     // Socket
     context.socket.create_socket(mainArgs.socketFilename);
