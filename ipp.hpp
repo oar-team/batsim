@@ -36,7 +36,7 @@ struct SchedulingAllocation
 {
     int job_id;
     std::vector<int> machine_ids;   //! The IDs of the machines on which the job should be allocated
-    std::vector<msg_host_t> hosts;         //! The corresponding SimGrid hosts
+    std::vector<msg_host_t> hosts;  //! The corresponding SimGrid hosts
 };
 
 struct SchedulingAllocationMessage

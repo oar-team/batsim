@@ -92,7 +92,10 @@ void Machines::updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMa
         // cout << machine;
 
         if (previous_top_job == -1 || previous_top_job != *machine->jobs_being_computed.begin())
+        {
+            xbt_assert(_tracer != nullptr, "Invalid Machines::updateMachinesOnJobRun call: setTracer has not been called");
             _tracer->set_machine_as_computing_job(machine->id, *machine->jobs_being_computed.begin(), MSG_get_clock());
+        }
     }
 }
 
@@ -113,10 +116,12 @@ void Machines::updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMa
         if (machine->jobs_being_computed.empty())
         {
             machine->state = MachineState::IDLE;
+            xbt_assert(_tracer != nullptr, "Invalid Machines::updateMachinesOnJobRun call: setTracer has not been called");
             _tracer->set_machine_idle(machine->id, MSG_get_clock());
         }
         else if (*machine->jobs_being_computed.begin() != previous_top_job)
         {
+            xbt_assert(_tracer != nullptr, "Invalid Machines::updateMachinesOnJobRun call: setTracer has not been called");
             _tracer->set_machine_as_computing_job(machine->id, *machine->jobs_being_computed.begin(), MSG_get_clock());
         }
 

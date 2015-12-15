@@ -9,6 +9,9 @@
 #include <streambuf>
 #include <algorithm>
 
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/join.hpp>
+
 #include <simgrid/msg.h>
 
 #include <rapidjson/document.h>
@@ -119,6 +122,7 @@ bool Jobs::exists(int job_id) const
 
 bool Jobs::containsSMPIJob() const
 {
+    xbt_assert(_profiles != nullptr, "Invalid Jobs::containsSMPIJob call: setProfiles had not been called yet");
     for (auto & mit : _jobs)
     {
         Job * job = mit.second;
@@ -126,6 +130,25 @@ bool Jobs::containsSMPIJob() const
             return true;
     }
     return false;
+}
+
+void Jobs::displayDebug() const
+{
+    // Let us traverse jobs to display some information about them
+    vector<string> jobsVector;
+    for (auto & mit : _jobs)
+    {
+        jobsVector.push_back(std::to_string(mit.second->id));
+    }
+
+    // Let us create the string that will be sent to XBT_INFO
+    string s = "Jobs debug information:\n";
+
+    s += "There are " + to_string(_jobs.size()) + " jobs.\n";
+    s += "Jobs : [" + boost::algorithm::join(jobsVector, ", ") + "]";
+
+    // Let us display the string which has been built
+    XBT_INFO("%s", s.c_str());
 }
 
 const std::map<int, Job* > &Jobs::jobs() const

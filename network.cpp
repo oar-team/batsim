@@ -14,6 +14,7 @@
 
 #include "context.hpp"
 #include "ipp.hpp"
+#include "jobs_execution.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(network, "network");
 
@@ -109,27 +110,6 @@ void UnixDomainSocket::send(const string & message)
     write(_client_socket, (void*)message.c_str(), message_size);
 }
 
-/*int main()
-{
-    UnixDomainSocket socket("/tmp/bouh");
-    socket.accept_pending_connection();
-
-    bool ok = true;
-    string s;
-    for (int i = 0; ok; ++i)
-    {
-        socket.send("Hello " + to_string(i));
-
-        s = socket.receive();
-        printf("Received : '%s'\n", s.c_str());
-
-        if (s.empty())
-            ok = false;
-    }
-
-    return 0;
-}*/
-
 int request_reply_scheduler_process(int argc, char *argv[])
 {
     (void) argc;
@@ -145,7 +125,6 @@ int request_reply_scheduler_process(int argc, char *argv[])
     XBT_INFO("Buffer received in REQ-REP: '%s'", sendBuf);
 
     context->socket.send(sendBuf);
-    free(sendBuf);
 
     auto start = chrono::steady_clock::now();
     string message_received = context->socket.receive();
@@ -288,9 +267,6 @@ int uds_server_process(int argc, char *argv[])
     ServerProcessArguments * args = (ServerProcessArguments *) MSG_process_get_data(MSG_process_self());
     BatsimContext * context = args->context;
 
-    msg_task_t task_received = NULL;
-    IPMessage * task_data;
-
     int nb_completed_jobs = 0;
     int nb_submitted_jobs = 0;
     int nb_scheduled_jobs = 0;
@@ -306,6 +282,8 @@ int uds_server_process(int argc, char *argv[])
            (nb_completed_jobs < nb_submitted_jobs) || !sched_ready)
     {
         // Let's wait a message from a node or the request-reply process...
+        msg_task_t task_received = NULL;
+        IPMessage * task_data;
         MSG_task_receive(&(task_received), "server");
         task_data = (IPMessage *) MSG_task_get_data(task_received);
 
@@ -377,8 +355,6 @@ int uds_server_process(int argc, char *argv[])
                 }
 
                 string submittedJobsString = boost::algorithm::join(submittedJobs, ", ");
-                // todo: transform submittedJobs to a string
-
 
                 XBT_INFO("The available jobs are [%s]", submittedJobsString.c_str());
             }
@@ -403,7 +379,8 @@ int uds_server_process(int argc, char *argv[])
                 exec_args->context = context;
                 exec_args->allocation = allocation;
                 // TODO : launch the job.
-                //MSG_process_create("job " + to_string(job->id), launch_job, message, context->machines[allocation.machine_ids[0]]->host);
+                string pname = "job" + to_string(job->id);
+                MSG_process_create(pname.c_str(), execute_job_process, (void*)exec_args, context->machines[allocation.machine_ids[0]]->host);
             }
 
             break;
@@ -415,8 +392,8 @@ int uds_server_process(int argc, char *argv[])
         }
         } // end of switch
 
-        MSG_task_destroy(task_received);
         delete task_data;
+        MSG_task_destroy(task_received);
 
         if (sched_ready && !send_buffer.empty())
         {

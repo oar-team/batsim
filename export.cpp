@@ -94,7 +94,7 @@ PajeTracer::~PajeTracer()
     }
 }
 
-void PajeTracer::initialize(const vector<Machine> & machines, double time)
+void PajeTracer::initialize(BatsimContext *context, double time)
 {
     xbt_assert(state == UNINITIALIZED, "Bad PajeTracer::initialize call: the object is not UNINITIALIZED");
 
@@ -216,14 +216,14 @@ void PajeTracer::initialize(const vector<Machine> & machines, double time)
              CREATE_CONTAINER, time, rootType, root);
     _wbuf->appendText(buf);
 
-    for (const Machine & m : machines)
+    for (const Machine * m : context->machines.machines())
     {
         // todo : clean machine name
         snprintf(buf, bufSize,
                  "%d %lf %s %s%d \"%s\" %s\n",
                  CREATE_CONTAINER, time, machineType,
-                 machinePrefix, m.id,
-                 m.name.c_str(), root);
+                 machinePrefix, m->id,
+                 m->name.c_str(), root);
         _wbuf->appendText(buf);
     }
 
@@ -255,18 +255,18 @@ void PajeTracer::initialize(const vector<Machine> & machines, double time)
     _wbuf->appendText(buf);
 
     // Let's set all the machines in waiting state
-    for (const Machine & m : machines)
+    for (const Machine * m : context->machines.machines())
     {
         snprintf(buf, bufSize,
                  "%d %lf %s %s%d %s\n",
-                 SET_STATE, time, machineState, machinePrefix, m.id, mstateWaiting);
+                 SET_STATE, time, machineState, machinePrefix, m->id, mstateWaiting);
         _wbuf->appendText(buf);
     }
 
     state = INITIALIZED;
 }
 
-void PajeTracer::finalize(const vector<Machine> & machines, double time)
+void PajeTracer::finalize(BatsimContext * context, double time)
 {
     xbt_assert(state == INITIALIZED, "Bad PajeTracer::finalize call: the object has not been initialized yet");
 
@@ -278,11 +278,11 @@ void PajeTracer::finalize(const vector<Machine> & machines, double time)
              "# End of events, containers destruction\n");
     _wbuf->appendText(buf);
 
-    for (const Machine & m : machines)
+    for (const Machine * m : context->machines.machines())
     {
         snprintf(buf, bufSize,
                  "%d %lf %s%d %s\n",
-                 DESTROY_CONTAINER, time, machinePrefix, m.id, machineType);
+                 DESTROY_CONTAINER, time, machinePrefix, m->id, machineType);
         _wbuf->appendText(buf);
     }
 

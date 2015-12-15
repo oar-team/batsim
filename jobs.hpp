@@ -49,6 +49,8 @@ public:
     bool exists(int job_id) const;
     bool containsSMPIJob() const;
 
+    void displayDebug() const;
+
     const std::map<int, Job*> & jobs() const;
 
 private:

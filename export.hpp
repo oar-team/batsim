@@ -84,17 +84,19 @@ public:
     /**
      * @brief Initializes a PajeTracer.
      * @details This function must be called once before adding job launchings, runnings or endings.
+     * TODO UPDATE
      * @param machines The machines
      */
-    void initialize(const std::vector<Machine> & machines, double time);
+    void initialize(BatsimContext * context, double time);
 
     /**
      * @brief Finalizes a PajeTracer.
      * @details This function must be called before the PajeTracer's object destruction.
      * @param machines The machines
+     * TODO UPDATE
      * @param time The simulation time at which the finalization is done
      */
-    void finalize(const std::vector<Machine> & machines, double time);
+    void finalize(BatsimContext * context, double time);
 
     /**
      * @brief Adds a job launch in the file trace.

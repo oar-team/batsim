@@ -128,6 +128,7 @@ int main(int argc, char * argv[])
     context.jobs.setProfiles(&context.profiles);
     context.tracer.setFilename(mainArgs.exportPrefix + "_schedule.trace");
     // TODO: check jobs & profile validity
+    //context.jobs.displayDebug();
 
     bool smpi_used = context.jobs.containsSMPIJob();
     if (!smpi_used)
@@ -139,6 +140,8 @@ int main(int argc, char * argv[])
     context.machines.createMachines(hosts, mainArgs.masterHostName);
     xbt_dynar_free(&hosts);
     const Machine * masterMachine = context.machines.masterMachine();
+    context.machines.setTracer(&context.tracer);
+    context.tracer.initialize(&context, MSG_get_clock());
 
     // Socket
     context.socket.create_socket(mainArgs.socketFilename);
@@ -156,6 +159,7 @@ int main(int argc, char * argv[])
     msg_error_t res = MSG_main();
 
     // Finalization
+    context.tracer.finalize(&context, MSG_get_clock());
     exportScheduleToCSV(mainArgs.exportPrefix + "_schedule.csv", MSG_get_clock(), &context);
 
     if (res == MSG_OK)
