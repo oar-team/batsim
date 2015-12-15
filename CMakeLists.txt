@@ -19,16 +19,16 @@ set(CMAKE_BUILD_TYPE Debug)
 #    message(STATUS "The compiler ${CMAKE_C_COMPILER} has no C11 nor C99 support. Please update your C compiler.")
 #endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -std=c++14")
 
-add_executable(batsim batsim.c job.c utils.c export.c machines.c)
-add_executable(batexec batexec.c job.c utils.c export.c)
+add_executable(batsim batsim.cpp export.cpp ipp.cpp job_submitter.cpp jobs.cpp jobs_execution.cpp machines.cpp network.cpp profiles.cpp workload.cpp)
+#add_executable(batexec batexec.c job.c utils.c export.c)
 
 ### Add definitions for compile
-target_link_libraries(batsim simgrid jansson m)
-target_link_libraries(batexec simgrid jansson m)
+target_link_libraries(batsim simgrid boost_system boost_filesystem)
+#target_link_libraries(batexec simgrid jansson m)
 
 ## Add intall target
 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim
-    ${CMAKE_CURRENT_BINARY_DIR}/batexec
+    #${CMAKE_CURRENT_BINARY_DIR}/batexec
     DESTINATION bin)

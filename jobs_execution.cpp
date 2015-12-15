@@ -157,7 +157,7 @@ int execute_profile(BatsimContext *context,
 
         for (int i = 0; i < data->repeat; i++)
         {
-            for (int j = 0; j < data->sequence.size(); j++)
+            for (unsigned int j = 0; j < data->sequence.size(); j++)
             {
                 if (execute_profile(context, data->sequence[j], allocation, remaining_time) == 0)
                     return 0;

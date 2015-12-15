@@ -15,8 +15,11 @@
 #include "machines.hpp"
 #include "network.hpp"
 #include "profiles.hpp"
+#include "workload.hpp"
 
 using namespace std;
+
+XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "batsim");
 
 /**
  * @brief The main function arguments (a.k.a. program arguments)
@@ -123,17 +126,23 @@ int main(int argc, char * argv[])
     MSG_init(&argc, argv);
 
     BatsimContext context;
-    context.jobs.load_from_json(mainArgs.workloadFilename);
-    context.profiles.load_from_json(mainArgs.workloadFilename);
+
+    load_json_workload(&context, mainArgs.workloadFilename);
     context.jobs.setProfiles(&context.profiles);
     context.tracer.setFilename(mainArgs.exportPrefix + "_schedule.trace");
-    // TODO: check jobs & profile validity
     //context.jobs.displayDebug();
 
+    XBT_INFO("Checking whether SMPI is used or not...");
     bool smpi_used = context.jobs.containsSMPIJob();
     if (!smpi_used)
+    {
+        XBT_INFO("SMPI will NOT be used.");
         MSG_config("host/model", "ptask_L07");
+    }
+    else
+        XBT_INFO("SMPI will be used.");
 
+    XBT_INFO("Creating the machines...");
     MSG_create_environment(mainArgs.platformFilename.c_str());
 
     xbt_dynar_t hosts = MSG_hosts_as_dynar();
@@ -142,20 +151,24 @@ int main(int argc, char * argv[])
     const Machine * masterMachine = context.machines.masterMachine();
     context.machines.setTracer(&context.tracer);
     context.tracer.initialize(&context, MSG_get_clock());
-    //context.machines.displayDebug();
+    XBT_INFO("Machines created successfully. There are %d computing machines.", context.machines.machines().size());
 
     // Socket
     context.socket.create_socket(mainArgs.socketFilename);
     context.socket.accept_pending_connection();
 
     // Main processes running
+    XBT_INFO("Creating jobs_submitter process...");
     JobSubmitterProcessArguments * submitterArgs = new JobSubmitterProcessArguments;
     submitterArgs->context = &context;
     MSG_process_create("jobs_submitter", job_submitter_process, (void*)submitterArgs, masterMachine->host);
+    XBT_INFO("The jobs_submitter process has been created.");
 
+    XBT_INFO("Creating the uds_server process...");
     ServerProcessArguments * serverArgs = new ServerProcessArguments;
     serverArgs->context = &context;
     MSG_process_create("server", uds_server_process, (void*)serverArgs, masterMachine->host);
+    XBT_INFO("The uds_server process has been created.");
 
     msg_error_t res = MSG_main();
 

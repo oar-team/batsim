@@ -27,23 +27,8 @@ Profiles::~Profiles()
     }
 }
 
-void Profiles::load_from_json(const string & filename)
+void Profiles::load_from_json(const Document &doc, const string & filename)
 {
-    // Let the file content be placed in a string
-    ifstream ifile(filename);
-    string content;
-
-    ifile.seekg(0, ios::end);
-    content.reserve(ifile.tellg());
-    ifile.seekg(0, ios::beg);
-
-    content.assign((std::istreambuf_iterator<char>(ifile)),
-                   std::istreambuf_iterator<char>());
-
-    // JSON document creation
-    Document doc;
-    doc.Parse(content.c_str());
-
     xbt_assert(doc.IsObject());
     xbt_assert(doc.HasMember("profiles"), "Invalid JSON file '%s': the 'profiles' object is missing", filename.c_str());
     const Value & profiles = doc["profiles"];
@@ -192,6 +177,11 @@ bool Profiles::exists(const std::string &profile_name) const
 {
     auto mit = _profiles.find(profile_name);
     return mit != _profiles.end();
+}
+
+const std::map<string, Profile *> Profiles::profiles() const
+{
+    return _profiles;
 }
 
 

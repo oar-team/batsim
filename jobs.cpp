@@ -41,23 +41,8 @@ void Jobs::setProfiles(Profiles *profiles)
     _profiles = profiles;
 }
 
-void Jobs::load_from_json(const std::string &filename)
+void Jobs::load_from_json(const Document &doc, const string &filename)
 {
-    // Let the file content be placed in a string
-    ifstream ifile(filename);
-    string content;
-
-    ifile.seekg(0, ios::end);
-    content.reserve(ifile.tellg());
-    ifile.seekg(0, ios::beg);
-
-    content.assign((std::istreambuf_iterator<char>(ifile)),
-                std::istreambuf_iterator<char>());
-
-    // JSON document creation
-    Document doc;
-    doc.Parse(content.c_str());
-
     xbt_assert(doc.IsObject());
     xbt_assert(doc.HasMember("jobs"), "Invalid JSON file '%s': the 'jobs' array is missing", filename.c_str());
     const Value & jobs = doc["jobs"];

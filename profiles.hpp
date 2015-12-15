@@ -4,6 +4,8 @@
 #include <map>
 #include <vector>
 
+#include <rapidjson/document.h>
+
 enum class ProfileType
 {
     DELAY,
@@ -59,12 +61,13 @@ public:
     Profiles();
     ~Profiles();
 
-    void load_from_json(const std::string & filename);
+    void load_from_json(const rapidjson::Document & doc, const std::string & filename);
 
     Profile * operator[](const std::string & profile_name);
     const Profile * operator[](const std::string & profile_name) const;
     bool exists(const std::string & profile_name) const;
 
+    const std::map<std::string, Profile *> profiles() const;
 
 private:
     std::map<std::string, Profile*> _profiles;

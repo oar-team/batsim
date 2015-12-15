@@ -7,6 +7,8 @@
 #include <map>
 #include <vector>
 
+#include <rapidjson/document.h>
+
 class Profiles;
 
 enum class JobState
@@ -42,7 +44,7 @@ public:
 
     void setProfiles(Profiles * profiles);
 
-    void load_from_json(const std::string & filename);
+    void load_from_json(const rapidjson::Document & doc, const std::string & filename);
 
     Job * operator[](int job_id);
     const Job * operator[](int job_id) const;

@@ -84,7 +84,7 @@ public:
     /**
      * @brief Initializes a PajeTracer.
      * @details This function must be called once before adding job launchings, runnings or endings.
-     * TODO UPDATE
+     * @param context The Batsim context
      * @param machines The machines
      */
     void initialize(BatsimContext * context, double time);
@@ -92,8 +92,7 @@ public:
     /**
      * @brief Finalizes a PajeTracer.
      * @details This function must be called before the PajeTracer's object destruction.
-     * @param machines The machines
-     * TODO UPDATE
+     * @param context The Batsim context
      * @param time The simulation time at which the finalization is done
      */
     void finalize(BatsimContext * context, double time);
@@ -101,8 +100,8 @@ public:
     /**
      * @brief Adds a job launch in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param job The job
-     * TODO UPDATE
+     * @param jobID The job unique number
+     * @param usedMachineIDs The machines which compute the job
      * @param time The simulation time at which the addition is done
      */
     void addJobLaunching(int jobID, const std::vector<int> & usedMachineIDs, double time);
@@ -114,8 +113,7 @@ public:
     /**
      * @brief Adds a job run in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param job The job
-     * TODO UPDATE
+     * @param jobID The job unique number
      * @param time The simulation time at which the addition is done
      */
     void addJobRunning(int jobID, const std::vector<int> & usedMachineIDs, double time);
@@ -123,18 +121,19 @@ public:
     /**
      * @brief Adds a job end in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param job The job
-     * TODO UPDATE
-     * @param time The simulation time at which the addition is done
+     * @param jobID The job unique number
+     * @param usedMachineIDs The machines which compute the job
+     * @param time The simulation time at which the kill is done
      */
     void addJobEnding(int jobID, const std::vector<int> & usedMachineIDs, double time);
 
     /**
      * @brief Adds a job kill in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param job The job that have been killed
-     * TODO UPDATE
+     * @param jobID The job unique number
+     * @param usedMachineIDs The machines which compute the job
      * @param time The simulation time at which the kill is done
+     * @param associateKillToMachines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
      */
     void addJobKill(int jobID, const std::vector<int> & usedMachineIDs, double time, bool associateKillToMachines = false);
 
@@ -185,7 +184,7 @@ private:
     const char * mstateWaiting = "w";
     const char * mstateLaunching = "l";
 
-    const char * varGlobalUtilization = "vgu";
+    //const char * varGlobalUtilization = "vgu";
 
     const char * root = "root";
     const char * scheduler = "sc";

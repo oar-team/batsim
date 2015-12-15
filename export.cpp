@@ -296,6 +296,7 @@ void PajeTracer::finalize(BatsimContext * context, double time)
 
 void PajeTracer::addJobLaunching(int jobID, const std::vector<int> & usedMachineIDs, double time)
 {
+    (void) jobID;
     xbt_assert(state == INITIALIZED, "Bad addJobLaunching call: the PajeTracer object is not initialized or had been finalized");
 
     const int bufSize = 64;
@@ -507,7 +508,7 @@ void PajeTracer::hsvToRgb(double h, double s, double v, double & r, double & g, 
 
 void exportJobsToCSV(const char *filename)
 {
-
+    (void) filename;
 }
 /* TODO
 void exportJobsToCSV(const char *filename)

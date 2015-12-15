@@ -48,6 +48,8 @@ UnixDomainSocket::~UnixDomainSocket()
 
 void UnixDomainSocket::create_socket(const string & filename)
 {
+    XBT_INFO("Creating UDS socket on '%s'", filename.c_str());
+
     _server_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     xbt_assert(_server_socket != -1, "Impossible to create socket");
 
