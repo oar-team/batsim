@@ -7,10 +7,13 @@
 #include <string>
 #include <fstream>
 #include <streambuf>
+#include <algorithm>
 
 #include <simgrid/msg.h>
 
 #include <rapidjson/document.h>
+
+#include "profiles.hpp"
 
 using namespace std;
 using namespace rapidjson;
@@ -28,6 +31,11 @@ Jobs::~Jobs()
     {
         delete mit.second;
     }
+}
+
+void Jobs::setProfiles(Profiles *profiles)
+{
+    _profiles = profiles;
 }
 
 void Jobs::load_from_json(const std::string &filename)
@@ -109,7 +117,23 @@ bool Jobs::exists(int job_id) const
     return it != _jobs.end();
 }
 
+bool Jobs::containsSMPIJob() const
+{
+    for (auto & mit : _jobs)
+    {
+        Job * job = mit.second;
+        if ((*_profiles)[job->profile]->type == ProfileType::SMPI)
+            return true;
+    }
+    return false;
+}
+
 const std::map<int, Job* > &Jobs::jobs() const
 {
     return _jobs;
+}
+
+bool job_comparator_subtime(const Job *a, const Job *b)
+{
+    return a->submission_time < b->submission_time;
 }

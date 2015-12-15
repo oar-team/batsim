@@ -50,7 +50,6 @@ struct IPMessage
     void * data;        //! The message data (can be NULL if type is in [SCHED_NOP, SUBMITTER_HELLO, SUBMITTER_BYE, SUBMITTER_READY]). Otherwise, it is either a JobSubmittedMessage*, a JobCompletedMessage* or a SchedulingAllocationMessage* according to type.
 };
 
-
 struct RequestReplyProcessArguments
 {
     BatsimContext * context;
@@ -73,6 +72,11 @@ struct KillerProcessArguments
     msg_task_t task; //! The task that will be cancelled if the walltime is reached
     double walltime; //! The number of seconds to wait before cancelling the task
 } ;
+
+struct JobSubmitterProcessArguments
+{
+    BatsimContext * context;
+};
 
 /**
  * @brief Sends a message from the given process to the given mailbox

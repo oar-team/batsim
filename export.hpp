@@ -11,6 +11,8 @@
 
 #include "machines.hpp"
 
+struct BatsimContext;
+
 class WriteBuffer
 {
 public:
@@ -56,7 +58,7 @@ void exportJobsToCSV(const char * filename);
  * @param filename The is the name of the output file used to write the CSV data.
  * @param microseconds_used_by_scheduler The number of seconds the scheduler had hand on execution flow
  */
-void exportScheduleToCSV(const char * filename, double scheduling_time);
+void exportScheduleToCSV(const std::string &filename, double scheduling_time, BatsimContext * context);
 
 
 /**
@@ -70,7 +72,9 @@ public:
      * @param filename
      * @param logLaunchings If set to true, job launching time will be written in the trace. This option leads to larger trace files.
      */
-    PajeTracer(const std::string & filename, bool _logLaunchings = false);
+    PajeTracer(bool _logLaunchings = false);
+
+    void setFilename(const std::string & filename);
 
     /**
      * @brief PajeTracer destructor.

@@ -7,6 +7,8 @@
 #include <map>
 #include <vector>
 
+class Profiles;
+
 enum class JobState
 {
      JOB_STATE_NOT_SUBMITTED          //!< The job exists but cannot be scheduled yet.
@@ -30,20 +32,26 @@ struct Job
     JobState state;
 };
 
+bool job_comparator_subtime(const Job * a, const Job * b);
+
 class Jobs
 {
 public:
     Jobs();
     ~Jobs();
 
+    void setProfiles(Profiles * profiles);
+
     void load_from_json(const std::string & filename);
 
     Job * operator[](int job_id);
     const Job * operator[](int job_id) const;
     bool exists(int job_id) const;
+    bool containsSMPIJob() const;
 
     const std::map<int, Job*> & jobs() const;
 
 private:
     std::map<int, Job*> _jobs;
+    Profiles * _profiles;
 };

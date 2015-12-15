@@ -20,12 +20,12 @@ Machines::~Machines()
     _machines.clear();
 }
 
-void Machines::createMachines(xbt_dynar_t hosts)
+void Machines::createMachines(xbt_dynar_t hosts, const string &masterHostName)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
 
     int nb_machines = xbt_dynar_length(hosts);
-    _machines.resize(nb_machines);
+    _machines.reserve(nb_machines);
 
     msg_host_t host;
     unsigned int i;
@@ -39,8 +39,16 @@ void Machines::createMachines(xbt_dynar_t hosts)
         machine->jobs_being_computed = {};
         machine->state = MachineState::IDLE;
 
-        _machines[i] = machine;
+        if (machine->name != masterHostName)
+            _machines.push_back(machine);
+        else
+        {
+            xbt_assert(_masterMachine == nullptr);
+            _masterMachine = machine;
+        }
     }
+
+    xbt_assert(_masterMachine != nullptr, "Cannot find the MasterHost '%s' in the platform file", masterHostName.c_str());
 }
 
 const Machine * Machines::operator[](int machineID) const
@@ -56,6 +64,16 @@ Machine * Machines::operator[](int machineID)
 bool Machines::exists(int machineID) const
 {
     return machineID >= 0 && machineID < (int)_machines.size();
+}
+
+const std::vector<Machine *> &Machines::machines() const
+{
+    return _machines;
+}
+
+const Machine *Machines::masterMachine() const
+{
+    return _masterMachine;
 }
 
 void Machines::updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMachines)
@@ -96,7 +114,6 @@ void Machines::updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMa
         {
             machine->state = MachineState::IDLE;
             _tracer->set_machine_idle(machine->id, MSG_get_clock());
-            // todo: handle the Pajé trace in this file, not directly in batsim.c
         }
         else if (*machine->jobs_being_computed.begin() != previous_top_job)
         {

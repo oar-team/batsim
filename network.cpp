@@ -66,14 +66,18 @@ void UnixDomainSocket::create_socket(const string & filename)
 
 void UnixDomainSocket::accept_pending_connection()
 {
+    XBT_INFO("Waiting for an incoming connection...");
     _client_socket = accept(_server_socket, NULL, NULL);
     xbt_assert(_client_socket != -1, "Impossible to accept on socket");
+    XBT_INFO("Connected!");
 }
 
 string UnixDomainSocket::receive()
 {
     string msg;
     int32_t message_size;
+
+    // TODO: safer socket reads
 
     // Let's read the message size first
     int ret = read(_client_socket, &message_size, 4);
@@ -137,7 +141,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
     char sendDateAsString[16];
     sprintf(sendDateAsString, "%f", MSG_get_clock());
 
-    char *sendBuf = (char*) MSG_process_get_data(MSG_process_self());
+    char *sendBuf = (char*) args->send_buffer.c_str();
     XBT_INFO("Buffer received in REQ-REP: '%s'", sendBuf);
 
     context->socket.send(sendBuf);
@@ -171,8 +175,9 @@ int request_reply_scheduler_process(int argc, char *argv[])
 
     double previousDate = atof(sendDateAsString);
 
-    for (const std::string & event_string : events)
+    for (unsigned int eventI = 1; eventI < events.size(); ++eventI)
     {
+        const std::string & event_string = events[eventI];
         // Let us split the event by ':'.
         vector<string> parts2;
         boost::split(parts2, event_string, boost::is_any_of(":"), boost::token_compress_on);
@@ -232,6 +237,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
                                allocation_string.c_str(), job->id, job->required_nb_res, allocation_machines.size());
 
                     alloc.machine_ids.resize(allocation_machines.size());
+                    alloc.hosts.resize(allocation_machines.size());
                     for (unsigned int i = 0; i < allocation_machines.size(); ++i)
                     {
                         int machineID = std::stoi(allocation_machines[i]);
@@ -299,11 +305,11 @@ int uds_server_process(int argc, char *argv[])
     while ((nb_submitters == 0) || (nb_submitters_finished < nb_submitters) ||
            (nb_completed_jobs < nb_submitted_jobs) || !sched_ready)
     {
-        // Let's wait a message from a node, a job submitter, the request-reply process...
+        // Let's wait a message from a node or the request-reply process...
         MSG_task_receive(&(task_received), "server");
         task_data = (IPMessage *) MSG_task_get_data(task_received);
 
-        XBT_INFO("Server receive Task/message type %s:", ipMessageTypeToString(task_data->type).c_str());
+        XBT_INFO("Server received a message of type %s:", ipMessageTypeToString(task_data->type).c_str());
 
         switch (task_data->type)
         {
@@ -417,8 +423,9 @@ int uds_server_process(int argc, char *argv[])
             RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
             req_rep_args->context = context;
             req_rep_args->send_buffer = "0:" + to_string(MSG_get_clock()) + send_buffer;
+            send_buffer.clear();
 
-            MSG_process_create("Scheduler REQ-REP", request_reply_scheduler_process, &req_rep_args, MSG_host_self());
+            MSG_process_create("Scheduler REQ-REP", request_reply_scheduler_process, (void*)req_rep_args, MSG_host_self());
             sched_ready = false;
         }
 

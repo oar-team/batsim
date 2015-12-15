@@ -17,7 +17,7 @@ def create_uds(uds_name):
             raise
 
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    
+
     # Bind the socket to the port
     print('Starting up on', uds_name)
     sock.bind(uds_name)
@@ -29,11 +29,11 @@ def create_uds(uds_name):
 
 def read_bat_msg(connection):
     lg_str = connection.recv(4)
-    
+
     if not lg_str:
         print("connection is closed by batsim core")
         exit(1)
-        
+
     lg = struct.unpack("i",lg_str)[0]
     msg = connection.recv(lg).decode()
     print('from batsim : %r' % msg)
@@ -41,7 +41,7 @@ def read_bat_msg(connection):
     data = sub_msgs[0].split(":")
     version = int(data[0])
     now = float(data[1])
-    
+
     print("version: ", version, " now: ", now)
 
     jobs_submitted = []
@@ -53,14 +53,14 @@ def read_bat_msg(connection):
         elif data[1] == 'C':
             new_jobs_completed.append(int(data[2]))
         else:
-            raise Exception("Unknow submessage type" + data[1] )  
+            raise Exception("Unknow submessage type" + data[1] )
 
     return (now, jobs_submitted, new_jobs_completed)
 
 def send_bat_msg(connection, now, jids_toLaunch, jobs):
     msg = "0:" + str(now) + "|"
     if jids_toLaunch:
-        msg +=  str(now) + ":J:" 
+        msg +=  str(now) + ":J:"
         for jid in jids_toLaunch:
             msg += str(jid) + "="
             for r in jobs[jid]:
@@ -68,7 +68,7 @@ def send_bat_msg(connection, now, jids_toLaunch, jobs):
             msg = msg[:-1] + ";" # replace last comma by semicolon separtor between jobs
         msg = msg[:-1] # remove last semicolon
 
-    else: #Do nothing        
+    else: #Do nothing
         msg +=  str(now) +":N"
 
     print(msg)
@@ -79,7 +79,7 @@ def send_bat_msg(connection, now, jids_toLaunch, jobs):
 def load_json_workload_profile(filename):
     wkp_file = open(filename)
     wkp = json.load(wkp_file)
-    return wkp["jobs"], wkp["nb_res"] 
+    return wkp["jobs"], wkp["nb_res"]
 
 
 
@@ -110,15 +110,20 @@ openJobs = set()
 availableResources = SortedSet(range(nb_res))
 previousAllocations = dict()
 
-## 
+##
 # uds creation and waiting for connection
 #
-sock = create_uds(server_address)
-print("waiting for a connection")
-connection, client_address = sock.accept()
-  
+sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+print('connecting to', server_address)
+try:
+    sock.connect(server_address)
+    print('connected')
+except socket.error:
+    print("socket error")
+    sys.exit(1)
+
 while True:
-    now_str, jobs_submitted, jobs_completed = read_bat_msg(connection)
+    now_str, jobs_submitted, jobs_completed = read_bat_msg(sock)
 
     for job in jobs_submitted:
         openJobs.add(job)
@@ -133,7 +138,7 @@ while True:
     print('openJobs = ', openJobs)
     print('available = ', availableResources)
     print('previous = ', previousAllocations)
-    
+
     # Iterating over a copy to be able to remove jobs from openJobs at traversal
     for job in set(openJobs):
         nb_res_req = jobs_res_req[job]
@@ -149,11 +154,11 @@ while True:
 
             openJobs.remove(job)
 
-    # update time 
+    # update time
     now = float(now_str) + sched_delay
 
     # send to uds
-    send_bat_msg(connection, now, scheduledJobs, jobs_res)
+    send_bat_msg(sock, now, scheduledJobs, jobs_res)
 
     print('openJobs = ', openJobs)
     print('available = ', availableResources)

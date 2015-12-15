@@ -32,7 +32,7 @@ class Machines
 public:
     Machines();
     ~Machines();
-    void createMachines(xbt_dynar_t hosts);
+    void createMachines(xbt_dynar_t hosts, const std::string & masterHostName);
     void updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMachines);
     void updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMachines);
 
@@ -43,8 +43,12 @@ public:
 
     bool exists(int machineID) const;
 
+    const std::vector<Machine *> & machines() const;
+    const Machine * masterMachine() const;
+
 private:
     std::vector<Machine *> _machines;
+    Machine * _masterMachine = nullptr;
     PajeTracer * _tracer = nullptr;
 };
 
