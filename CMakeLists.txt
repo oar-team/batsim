@@ -1,34 +1,48 @@
-#cmake_minimum_required(VERSION 2.8)
-#Do we really need of 3.0.2 version ?
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 2.8)
+#cmake_minimum_required(VERSION 3.0.2)
 
 project("Batsim")
 
-set(CMAKE_BUILD_TYPE Debug)
+# C++ standard
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Enable C11 or at least C99
-#include(CheckCCompilerFlag)
-#CHECK_C_COMPILER_FLAG("-std=c11" COMPILER_SUPPORTS_C11)
-#CHECK_C_COMPILER_FLAG("-std=c99" COMPILER_SUPPORTS_C99)
-#if(COMPILER_SUPPORTS_C11)
-#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
-#elseif(COMPILER_SUPPORTS_C99)
-#    message(STATUS "The compiler ${CMAKE_C_COMPILER} has no C11 support. Using C99 instead.")
-#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-#else()
-#    message(STATUS "The compiler ${CMAKE_C_COMPILER} has no C11 nor C99 support. Please update your C compiler.")
-#endif()
+# Dependencies
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -std=c++14")
+## SimGrid dependency
+find_package(SimGrid REQUIRED)
+include_directories(${SIMGRID_INCLUDE_DIR})
 
+## Boost dependency
+find_package(Boost REQUIRED COMPONENTS system filesystem)
+include_directories(${Boost_INCLUDE_DIR})
+
+## Rapidjson dependency
+find_package(rapidjson REQUIRED)
+include_directories(${RAPIDJSON_INCLUDE_DIRS})
+
+
+# Executables
 add_executable(batsim batsim.cpp export.cpp ipp.cpp job_submitter.cpp jobs.cpp jobs_execution.cpp machines.cpp network.cpp profiles.cpp workload.cpp)
 #add_executable(batexec batexec.c job.c utils.c export.c)
 
-### Add definitions for compile
-target_link_libraries(batsim simgrid boost_system boost_filesystem)
+# Libraries to link
+target_link_libraries(batsim ${SIMGRID_LIBRARIES} ${Boost_SYSTEM_LIBRARY_DEBUG} ${Boost_FILESYSTEM_LIBRARY_DEBUG})
 #target_link_libraries(batexec simgrid jansson m)
 
-## Add intall target
+
+# Installation
 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim
     #${CMAKE_CURRENT_BINARY_DIR}/batexec
     DESTINATION bin)
+
+
+# Extra compiler flags
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -Wextra -g")
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -Wextra -g")
+else()
+    message("Compiler is unknown, warnings will NOT be added to it")
+endif()

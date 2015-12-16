@@ -151,7 +151,7 @@ int main(int argc, char * argv[])
     const Machine * masterMachine = context.machines.masterMachine();
     context.machines.setTracer(&context.tracer);
     context.tracer.initialize(&context, MSG_get_clock());
-    XBT_INFO("Machines created successfully. There are %d computing machines.", context.machines.machines().size());
+    XBT_INFO("Machines created successfully. There are %lu computing machines.", context.machines.machines().size());
 
     // Socket
     context.socket.create_socket(mainArgs.socketFilename);
