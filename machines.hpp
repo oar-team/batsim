@@ -3,26 +3,40 @@
 #include <iostream>
 #include <vector>
 #include <set>
+#include <map>
 #include <string>
 
 #include <simgrid/msg.h>
 
+#include "pstate.hpp"
+
 class PajeTracer;
+struct BatsimContext;
 
 enum class MachineState
 {
     SLEEPING,
     IDLE,
     COMPUTING,
+    TRANSITING_FROM_SLEEPING_TO_COMPUTING,
+    TRANSITING_FROM_COMPUTING_TO_SLEEPING,
 };
 
 struct Machine
 {
+    ~Machine();
+
     int id;
     std::string name;
     msg_host_t host;
     MachineState state;
     std::set<int> jobs_being_computed;
+
+    std::map<int, PStateType> pstates;
+    std::map<int, SleepPState *> sleep_pstates;
+
+    bool has_pstate(int pstate) const;
+    void display_machine(bool is_energy_used) const;
 };
 
 std::ostream & operator<<(std::ostream & out, const Machine & machine);
@@ -32,7 +46,7 @@ class Machines
 public:
     Machines();
     ~Machines();
-    void createMachines(xbt_dynar_t hosts, const std::string & masterHostName);
+    void createMachines(xbt_dynar_t hosts, BatsimContext * context, const std::string & masterHostName);
     void updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMachines);
     void updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMachines);
 

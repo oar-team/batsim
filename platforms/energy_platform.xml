@@ -1,0 +1,90 @@
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
+<platform version="3">
+<AS id="AS0"  routing="Full">
+    <host id="master_host" power="100Mf">
+        <prop id="watt_per_state" value="100:200" />
+        <prop id="watt_off" value="10" />
+    </host>
+
+    <!-- The state 3 of Mercury is a sleep state.
+    When switching from a computing state to the state 3, passing by the virtual pstate 4 is mandatory to simulate the time and energy consumed by the switch off.
+    When switching from the state 3 to a computing state, passing by the virtual pstate 5 is mandatory to simulate the time and energy consumed by the switch on.
+     -->
+    <host id="Mercury" power="100.0Mf, 50.0Mf, 20.0Mf, 0.0Mf, 0.006666667f, 0.1429f" pstate="0" >
+        <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
+        <prop id="watt_off" value="10" />
+        <!-- The following property allows to bind a sleep state to its switch ON/off virtual pstates  -->
+        <prop id="sleep_pstates" value="3:4:5" />
+    </host>
+
+    <!-- Venus has two sleep states : 3 and 6. They share their virtual pstates. -->
+    <host id="Venus" power="100.0Mf, 50.0Mf, 20.0Mf, 0.0Mf, 0.006666667f, 0.1429f, 0.0Mf" pstate="0" >
+        <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
+        <prop id="watt_off" value="10" />
+        <!-- The following property allows to bind a sleep state to its switch ON/off virtual pstates  -->
+        <prop id="sleep_pstates" value="3:4:5, 6:4:5" />
+    </host>
+
+    <!-- Earth has two sleep states : 3 and 6. They don't have the same virtual pstates. -->
+    <host id="Earth" power="100.0Mf, 50.0Mf, 20.0Mf, 0.0Mf, 0.006666667f, 0.1429f, 0.0Mf, 0.006666667f, 0.1429f" pstate="0" >
+        <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
+        <prop id="watt_off" value="10" />
+        <prop id="sleep_pstates" value="3:4:5, 6:7:8" />
+    </host>
+
+    <!-- Mars has no sleep_pstate. In this case, an empty-value sleep_pstates property is valid. Not setting the sleep_pstates property at all is also valid. -->
+    <host id="Mars" power="100.0Mf, 50.0Mf, 20.0Mf, 0.0Mf, 0.006666667f, 0.1429f" pstate="0" >
+        <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
+        <prop id="watt_off" value="10" />
+    </host>
+
+    <link id="6" bandwidth="41.279125MBps" latency="59.904us"/>
+    <link id="3" bandwidth="34.285625MBps" latency="514.433us"/>
+    <link id="7" bandwidth="11.618875MBps" latency="189.98us"/>
+    <link id="9" bandwidth="7.20975MBps" latency="1.461517ms"/>
+    <link id="2" bandwidth="118.6825MBps" latency="136.931us"/>
+    <link id="8" bandwidth="8.158MBps" latency="270.544us"/>
+    <link id="1" bandwidth="34.285625MBps" latency="514.433us"/>
+    <link id="4" bandwidth="10.099625MBps" latency="479.78us"/>
+    <link id="0" bandwidth="41.279125MBps" latency="59.904us"/>
+    <link id="5" bandwidth="27.94625MBps" latency="278.066us"/>
+    <link id="loopback" bandwidth="498MBps" latency="15us" sharing_policy="FATPIPE"/>
+
+    <route src="master_host" dst="master_host"><link_ctn id="loopback"/></route>
+    <route src="Mercury" dst="Mercury"><link_ctn id="loopback"/></route>
+    <route src="Venus" dst="Venus"><link_ctn id="loopback"/></route>
+    <route src="Earth" dst="Earth"><link_ctn id="loopback"/></route>
+    <route src="Mars" dst="Mars"><link_ctn id="loopback"/></route>
+    <route src="master_host" dst="Mercury">
+        <link_ctn id="9"/>
+    </route>
+    <route src="master_host" dst="Venus">
+        <link_ctn id="4"/><link_ctn id="3"/><link_ctn id="2"/><link_ctn id="0"/><link_ctn id="1"/><link_ctn id="8"/>
+    </route>
+    <route src="master_host" dst="Earth">
+        <link_ctn id="4"/><link_ctn id="3"/><link_ctn id="5"/>
+    </route>
+    <route src="master_host" dst="Mars">
+        <link_ctn id="4"/><link_ctn id="3"/><link_ctn id="2"/><link_ctn id="0"/><link_ctn id="1"/><link_ctn id="6"/><link_ctn id="7"/>
+    </route>
+    <route src="Mercury" dst="Venus">
+        <link_ctn id="9"/><link_ctn id="4"/><link_ctn id="3"/><link_ctn id="2"/><link_ctn id="0"/><link_ctn id="1"/><link_ctn id="8"/>
+    </route>
+    <route src="Mercury" dst="Earth">
+        <link_ctn id="9"/><link_ctn id="4"/><link_ctn id="3"/><link_ctn id="5"/>
+    </route>
+    <route src="Mercury" dst="Mars">
+        <link_ctn id="9"/><link_ctn id="4"/><link_ctn id="3"/><link_ctn id="2"/><link_ctn id="0"/><link_ctn id="1"/><link_ctn id="6"/><link_ctn id="7"/>
+    </route>
+    <route src="Venus" dst="Earth">
+        <link_ctn id="8"/><link_ctn id="1"/><link_ctn id="0"/><link_ctn id="2"/><link_ctn id="5"/>
+    </route>
+    <route src="Venus" dst="Mars">
+        <link_ctn id="8"/><link_ctn id="6"/><link_ctn id="7"/>
+    </route>
+    <route src="Earth" dst="Mars">
+        <link_ctn id="5"/><link_ctn id="2"/><link_ctn id="0"/><link_ctn id="1"/><link_ctn id="6"/><link_ctn id="7"/>
+    </route>
+</AS>
+</platform>

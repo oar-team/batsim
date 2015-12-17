@@ -9,7 +9,8 @@ enum NetworkStamp : char
     JOB_REJECTION = 'R',
     NOP = 'N',
     STATIC_JOB_SUBMISSION = 'S',
-    STATIC_JOB_COMPLETION = 'C'
+    STATIC_JOB_COMPLETION = 'C',
+    PSTATE_SET = 'P'
 };
 
 class UnixDomainSocket

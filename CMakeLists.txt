@@ -24,7 +24,7 @@ include_directories(${RAPIDJSON_INCLUDE_DIRS})
 
 
 # Executables
-add_executable(batsim batsim.cpp export.cpp ipp.cpp job_submitter.cpp jobs.cpp jobs_execution.cpp machines.cpp network.cpp profiles.cpp workload.cpp)
+add_executable(batsim batsim.cpp export.cpp ipp.cpp job_submitter.cpp jobs.cpp jobs_execution.cpp machines.cpp network.cpp profiles.cpp pstate.cpp workload.cpp context.hpp export.hpp ipp.hpp job_submitter.hpp jobs.hpp jobs_execution.hpp machines.hpp network.hpp profiles.hpp pstate.hpp workload.hpp)
 #add_executable(batexec batexec.c job.c utils.c export.c)
 
 # Libraries to link

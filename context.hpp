@@ -18,5 +18,8 @@ struct BatsimContext
     Profiles profiles;
     PajeTracer tracer;
 
-    long long microseconds_used_by_scheduler;
+    long long microseconds_used_by_scheduler = 0;
+    bool energy_used = false;
+    std::string platform_filename;
+    std::string workload_filename;
 };

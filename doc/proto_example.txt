@@ -7,6 +7,8 @@ SEP2 = ':'
 'N' : NOP
 'S' : Job Submission
 'C' : Job Completion
+'P' : Ask for a machine pstate change
+'p' : Machine pstate changed
 
 	SCHEDULER -> SIMULATOR
 		0:15.000015|15.000015:J:1=1,2,0,3;2=3
@@ -28,3 +30,13 @@ SEP2 = ':'
 		0:35.001305|30.005125:C:2
 		0:40.001320|38.002565:C:3|40.000030:S:4
 		0:145.003855|145.003855:C:4
+
+
+Machine pstate change example.
+Sched asks that machine 2 switches to pstate 3
+
+	Scheduler -> Simulator
+		0:20|20:P:2=3
+
+	Simulator -> Scheduler
+		0:21|21:p:2=3

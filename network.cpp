@@ -103,7 +103,6 @@ string UnixDomainSocket::receive()
 
     xbt_assert(message_size > 0, "Invalid message received (size=%d)", message_size);
     msg.resize(message_size);
-    XBT_INFO("message_size = %d", message_size);
 
     // The message content is then read, following the same logic
     nb_bytes_read = 0;
@@ -166,6 +165,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
             The following stamp exist at the moment :
                 N : do nothing. Content : none.
                 J : allocation of a static job (described in the JSON file). Content : jobID1=mID1_1,mID1_2,...,mID1_n[;jobID2=MID2_1,...MID2_n[;...]]
+                P : changes the pstate of a machine. Content : mID=pstate
     */
 
     // Let us split the message by '|'.
@@ -198,6 +198,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
         {
             case NOP:
             {
+                xbt_assert(parts2.size() == 2, "Invalid event received ('%s'): NOP messages must be composed of 2 parts separated by ':'", event_string.c_str());
                 send_message("server", IPMessageType::SCHED_NOP);
             } break; // End of case received_stamp == NOP
             case STATIC_JOB_ALLOCATION:
@@ -260,7 +261,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
                         }
                     }
 
-                    xbt_assert(all_different, "Invalid static job allocation received ('%s') : all machines are not different", allocation_string.c_str());
+                    xbt_assert(all_different, "Invalid static job allocation received ('%s'): all machines are not different", allocation_string.c_str());
 
                     message->allocations.push_back(alloc);
                 }
@@ -268,6 +269,52 @@ int request_reply_scheduler_process(int argc, char *argv[])
                 send_message("server", IPMessageType::SCHED_ALLOCATION, (void*) message);
 
             } break; // End of case received_stamp == STATIC_JOB_ALLOCATION
+            case PSTATE_SET:
+            {
+                xbt_assert(parts2.size() == 3, "Invalid event received ('%s'): pstate modifications must be composed of 3 parts separated by ':'",
+                           event_string.c_str());
+                xbt_assert(context->energy_used, "A pstate modification message has been received alors energy is not used by Batsim."
+                           " You can switch energy ON by a Batsim command-line option.");
+
+                PStateModificationMessage * message = new PStateModificationMessage;
+
+                // Let the content part of the message splitted by "="
+                vector<string> parts3;
+                boost::split(parts3, parts2[2], boost::is_any_of("="), boost::token_compress_on);
+                xbt_assert(parts3.size() == 2, "Invalid event received ('%s'): invalid pstate modification message content ('%s'): it must be"
+                           " of type M=P where M is a machine number and P a pstate number of machine M", event_string.c_str(), parts2[2].c_str());
+
+                int machineID = std::stoi(parts3[0]);
+                int pstate = std::stoi(parts3[1]);
+
+                xbt_assert(context->machines.exists(machineID), "Invalid event received ('%s'): machine %d does not exist", event_string.c_str(), machineID);
+                Machine * machine = context->machines[machineID];
+                xbt_assert(machine->state == MachineState::IDLE, "Invalid event received ('%s'): machine %d's pstate can only be changed while the machine is idle, which is not the case now.", event_string.c_str(), machineID);
+                xbt_assert(context->machines[machineID]->has_pstate(pstate), "Invalid event received ('%s'): machine %d has no pstate %d", event_string.c_str(), machineID, pstate);
+
+                int current_pstate = MSG_host_get_pstate(machine->host);
+                xbt_assert(machine->has_pstate(current_pstate));
+
+                if (machine->pstates[current_pstate] == PStateType::COMPUTATION_PSTATE)
+                {
+                    xbt_assert(machine->pstates[pstate] == PStateType::COMPUTATION_PSTATE ||
+                               machine->pstates[pstate] == PStateType::SLEEP_PSTATE, "Invalid event received ('%s'): asked to switch machine %d ('%s') from"
+                               " pstate %d (a computation one) to pstate %d (not a computation pstate nor a sleep pstate), which is forbidden",
+                               event_string.c_str(), machineID, machine->name.c_str(), current_pstate, pstate);
+                }
+                else if (machine->pstates[current_pstate] == PStateType::SLEEP_PSTATE)
+                {
+                    xbt_assert(machine->pstates[pstate] == PStateType::COMPUTATION_PSTATE, "Invalid event received ('%s'): asked to switch machine %d ('%s') from"
+                               " pstate %d (a sleep pstate) to pstate %d (not a computation pstate), which is forbidden",
+                               event_string.c_str(), machineID, machine->name.c_str(), current_pstate, pstate);
+                }
+
+                message->machine = machineID;
+                message->new_pstate = pstate;
+
+                send_message("server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
+
+            } break; // End of case received_stamp == PSTATE_SET
             default:
             {
                 xbt_die("Invalid event received ('%s') : unhandled network stamp received ('%c')", event_string.c_str(), received_stamp);
@@ -316,14 +363,16 @@ int uds_server_process(int argc, char *argv[])
         {
             nb_submitters++;
             XBT_INFO("New submitter said hello. Number of polite submitters: %d", nb_submitters);
-            break;
-        } // end of case SUBMITTER_HELLO
+
+        } break; // end of case SUBMITTER_HELLO
+
         case IPMessageType::SUBMITTER_BYE:
         {
             nb_submitters_finished++;
             XBT_INFO("A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
-            break;
-        } // end of case SUBMITTER_BYE
+
+        } break; // end of case SUBMITTER_BYE
+
         case IPMessageType::JOB_COMPLETED:
         {
             xbt_assert(task_data->data != nullptr);
@@ -339,8 +388,8 @@ int uds_server_process(int argc, char *argv[])
             send_buffer += '|' + std::to_string(MSG_get_clock()) + ":C:" + std::to_string(job->id);
             XBT_INFO("Message to send to scheduler: %s", send_buffer.c_str());
 
-            break;
-        } // end of case JOB_COMPLETED
+        } break; // end of case JOB_COMPLETED
+
         case IPMessageType::JOB_SUBMITTED:
         {
             xbt_assert(task_data->data != nullptr);
@@ -354,8 +403,62 @@ int uds_server_process(int argc, char *argv[])
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":S:" + std::to_string(job->id);
             XBT_INFO("Message to send to scheduler: %s", send_buffer.c_str());
 
-            break;
-        } // end of case JOB_SUBMITTED
+        } break; // end of case JOB_SUBMITTED
+
+        case IPMessageType::PSTATE_MODIFICATION:
+        {
+            xbt_assert(task_data->data != nullptr);
+            PStateModificationMessage * message = (PStateModificationMessage *) task_data->data;
+
+            Machine * machine = context->machines[message->machine];
+            int curr_pstate = MSG_host_get_pstate(machine->host);
+
+            if (machine->pstates[curr_pstate] == PStateType::COMPUTATION_PSTATE)
+            {
+                if (machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE)
+                {
+                    MSG_host_set_pstate(machine->host, message->new_pstate);
+                    xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
+
+                    send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
+                                   std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
+                    XBT_INFO("Message to send to scheduler : '%s'", send_buffer.c_str());
+                }
+                else if (machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
+                {
+                    machine->state = MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING;
+                    SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
+                    args->context = context;
+                    args->message = new PStateModificationMessage;
+                    args->message->machine = message->machine;
+                    args->message->new_pstate = message->new_pstate;
+
+                    string pname = "switch ON " + to_string(message->machine);
+                    MSG_process_create(pname.c_str(), switch_on_machine_process, (void*)args, machine->host);
+                }
+                else
+                    XBT_ERROR("Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %d -> %d",
+                              machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
+            }
+            else if (machine->pstates[curr_pstate] == PStateType::SLEEP_PSTATE)
+            {
+                xbt_assert(machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE);
+
+                machine->state = MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING;
+                SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
+                args->context = context;
+                args->message = new PStateModificationMessage;
+                args->message->machine = message->machine;
+                args->message->new_pstate = message->new_pstate;
+
+                string pname = "switch OFF " + to_string(message->machine);
+                MSG_process_create(pname.c_str(), switch_off_machine_process, (void*)args, machine->host);
+            }
+            else
+                XBT_ERROR("Machine %d ('%s') has an invalid pstate : %d", machine->id, machine->name.c_str(), curr_pstate);
+
+        } break; // end of case PSTATE_MODIFICATION
+
         case IPMessageType::SCHED_NOP:
         {
             XBT_INFO("Nothing to do received.");
@@ -379,8 +482,9 @@ int uds_server_process(int argc, char *argv[])
 
                 XBT_INFO("The available jobs are [%s]", submittedJobsString.c_str());
             }
-            break;
-        }
+
+        } break; // end of case SCHED_NOP
+
         case IPMessageType::SCHED_ALLOCATION:
         {
             xbt_assert(task_data->data != nullptr);
@@ -403,13 +507,38 @@ int uds_server_process(int argc, char *argv[])
                 MSG_process_create(pname.c_str(), execute_job_process, (void*)exec_args, context->machines[allocation.machine_ids[0]]->host);
             }
 
-            break;
-        }
+        } break; // end of case SCHED_ALLOCATION
         case IPMessageType::SCHED_READY:
         {
             sched_ready = true;
-            break;
-        }
+
+        } break; // end of case SCHED_READY
+        case IPMessageType::SWITCHED_ON:
+        {
+            xbt_assert(task_data->data != nullptr);
+            PStateModificationMessage * message = (PStateModificationMessage *) task_data->data;
+
+            xbt_assert(context->machines.exists(message->machine));
+            Machine * machine = context->machines[message->machine];
+            xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
+
+            send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
+                           std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
+            XBT_INFO("Message to send to scheduler : '%s'", send_buffer.c_str());
+        } break; // end of case SWITCHED_ON
+        case IPMessageType::SWITCHED_OFF:
+        {
+            xbt_assert(task_data->data != nullptr);
+            PStateModificationMessage * message = (PStateModificationMessage *) task_data->data;
+
+            xbt_assert(context->machines.exists(message->machine));
+            Machine * machine = context->machines[message->machine];
+            xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
+
+            send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
+                           std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
+            XBT_INFO("Message to send to scheduler : '%s'", send_buffer.c_str());
+        } break; // end of case SWITCHED_ON
         } // end of switch
 
         delete task_data;

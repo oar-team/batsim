@@ -42,3 +42,54 @@ void send_message(const char *destination_mailbox, IPMessageType type, void *dat
     const string str = destination_mailbox;
     send_message(str, type, data);
 }
+
+IPMessage::~IPMessage()
+{
+    switch (type)
+    {
+        case IPMessageType::JOB_SUBMITTED:
+        {
+            JobSubmittedMessage * msg = (JobSubmittedMessage *) data;
+            delete msg;
+        } break;
+        case IPMessageType::JOB_COMPLETED:
+        {
+            JobCompletedMessage * msg = (JobCompletedMessage *) data;
+            delete msg;
+        } break;
+        case IPMessageType::PSTATE_MODIFICATION:
+        {
+            PStateModificationMessage * msg = (PStateModificationMessage *) data;
+            delete msg;
+        } break;
+        case IPMessageType::SCHED_ALLOCATION:
+        {
+            SchedulingAllocationMessage * msg = (SchedulingAllocationMessage *) data;
+            delete msg;
+        } break;
+        case IPMessageType::SCHED_NOP:
+        {
+        } break;
+        case IPMessageType::SCHED_READY:
+        {
+        } break;
+        case IPMessageType::SUBMITTER_HELLO:
+        {
+        } break;
+        case IPMessageType::SUBMITTER_BYE:
+        {
+        } break;
+        case IPMessageType::SWITCHED_ON:
+        {
+            PStateModificationMessage * msg = (PStateModificationMessage *) data;
+            delete msg;
+        } break;
+        case IPMessageType::SWITCHED_OFF:
+        {
+            PStateModificationMessage * msg = (PStateModificationMessage *) data;
+            delete msg;
+        } break;
+    }
+
+    data = nullptr;
+}

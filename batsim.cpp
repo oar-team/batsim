@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include <simgrid/msg.h>
+#include <simgrid/plugins.h>
 
 #include "context.hpp"
 #include "export.hpp"
@@ -34,6 +35,8 @@ struct MainArguments
     std::string masterHostName;     //! The name of the SimGrid host which runs scheduler processes and not user tasks
     std::string exportPrefix;       //! The filename prefix used to export simulation information
 
+    bool energy_used;               //! True if and only if the SimGrid energy plugin should be used.
+
     bool abort;                     //! A boolean value. If set to yet, the launching should be aborted for reason abortReason
     std::string abortReason;        //! Human readable reasons which explains why the launch should be aborted
 };
@@ -56,6 +59,9 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
         break;
     case 'm':
         mainArgs->masterHostName = arg;
+        break;
+    case 'p':
+        mainArgs->energy_used = true;
         break;
     case 's':
         mainArgs->socketFilename = arg;
@@ -100,10 +106,12 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
 
 int main(int argc, char * argv[])
 {
+    // TODO : boolean option to enable the energy plugin
     MainArguments mainArgs;
     mainArgs.socketFilename = "/tmp/bat_socket";
     mainArgs.masterHostName = "master_host";
     mainArgs.exportPrefix = "out";
+    mainArgs.energy_used = false;
     mainArgs.abort = false;
 
     struct argp_option options[] =
@@ -111,6 +119,7 @@ int main(int argc, char * argv[])
         {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename", 0},
         {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks", 0},
         {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output", 0},
+        {"energy-plugin", 'p', 0, 0, "Enables energy-aware experiments", 0},
         {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
     };
     struct argp argp = {options, parse_opt, "PLATFORM_FILE WORKLOAD_FILE", "A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.", 0, 0, 0};
@@ -122,10 +131,16 @@ int main(int argc, char * argv[])
         return 1;
     }
 
+    if (mainArgs.energy_used)
+        sg_energy_plugin_init();
+
     // Initialization
     MSG_init(&argc, argv);
 
     BatsimContext context;
+    context.platform_filename = mainArgs.platformFilename;
+    context.workload_filename = mainArgs.workloadFilename;
+    context.energy_used = mainArgs.energy_used;
 
     load_json_workload(&context, mainArgs.workloadFilename);
     context.jobs.setProfiles(&context.profiles);
@@ -146,7 +161,7 @@ int main(int argc, char * argv[])
     MSG_create_environment(mainArgs.platformFilename.c_str());
 
     xbt_dynar_t hosts = MSG_hosts_as_dynar();
-    context.machines.createMachines(hosts, mainArgs.masterHostName);
+    context.machines.createMachines(hosts, &context, mainArgs.masterHostName);
     xbt_dynar_free(&hosts);
     const Machine * masterMachine = context.machines.masterMachine();
     context.machines.setTracer(&context.tracer);
