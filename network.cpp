@@ -173,7 +173,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
     boost::split(events, message_received, boost::is_any_of("|"), boost::token_compress_on);
     xbt_assert(events.size() >= 2, "Invalid message received ('%s'): it should be composed of at least 2 parts separated by a '|'", message_received.c_str());
 
-    double previousDate = atof(sendDateAsString);
+    double previousDate = std::stod (sendDateAsString);
 
     for (unsigned int eventI = 1; eventI < events.size(); ++eventI)
     {
@@ -184,7 +184,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
         xbt_assert(parts2.size() >= 2, "Invalid event received ('%s'): it should be composed of at least 2 parts separated by a ':'", event_string.c_str());
         xbt_assert(parts2[1].size() == 1, "Invalid event received ('%s'): network stamp ('%s') should be of length 1", event_string.c_str(), parts2[1].c_str());
 
-        double date = std::stof(parts2[0]);
+        double date = std::stod(parts2[0]);
         NetworkStamp received_stamp = (NetworkStamp) parts2[1][0];
 
         xbt_assert(date >= previousDate, "Invalid event received ('%s'): its date (%lf) cannot be before the previous event date (%lf)",
