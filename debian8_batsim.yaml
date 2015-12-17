@@ -47,7 +47,7 @@ setup:
           git clone git://scm.gforge.inria.fr/simgrid/simgrid.git
       - exec_in: |
           cd $$simctn_dir/simgrid
-          git checkout 2b7c35f960b4
+          git checkout 8de23104635721196
           mkdir build
       - exec_in: |
           cd $$simctn_dir/simgrid/build
@@ -56,14 +56,25 @@ setup:
           make install
   - batsim_install:
     - install dependencies:
-      - exec_in: apt-get -y --force-yes install libjansson4 libjansson-dev 2>&1
+      - exec_in: |
+          apt-get -y --force-yes install \
+          libboost-filesystem-dev \
+          libboost-system-dev 2>&1
+      # Install rapidjson (not available in jessy)
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://github.com/miloyip/rapidjson.git
+      - exec_in: |
+          cd $$simctn_dir/rapidjson
+          git checkout 3d5848a
+          cp -a include/rapidjson /usr/include
     - do_it:
       - exec_in: |
           cd $$simctn_dir
           git clone https://scm.gforge.inria.fr/anonscm/git/batsim/batsim.git
       - exec_in: |
           cd $$simctn_dir/batsim
-          git checkout 58ed9ba504b2
+          git checkout 5a3ba6b
           mkdir build
       - exec_in: |
           cd $$simctn_dir/batsim/build
