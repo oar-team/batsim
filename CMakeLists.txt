@@ -42,7 +42,7 @@ INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -Wextra -g")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -Wextra -g")
+    set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -Wextra -g -std=c++11")
 else()
     message("Compiler is unknown, warnings will NOT be added to it")
 endif()
