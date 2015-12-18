@@ -189,12 +189,12 @@ MsgParallelProfileData::~MsgParallelProfileData()
 {
     if (cpu != nullptr)
     {
-        delete cpu;
+        delete[] cpu;
         cpu = nullptr;
     }
     if (com != nullptr)
     {
-        delete com;
+        delete[] com;
         com = nullptr;
     }
 }

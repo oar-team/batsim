@@ -54,8 +54,8 @@ int execute_profile(BatsimContext *context,
         MsgParallelHomogeneousProfileData * data = (MsgParallelHomogeneousProfileData *)profile->data;
 
         // These amounts are deallocated by SG
-        double * computation_amount = new double[nb_res];
-        double * communication_amount = new double[nb_res*nb_res];
+        double * computation_amount = xbt_new(double, nb_res);
+        double * communication_amount = xbt_new(double, nb_res*nb_res);
 
         double cpu = data->cpu;
         double com = data->com;
@@ -111,8 +111,8 @@ int execute_profile(BatsimContext *context,
         MsgParallelProfileData * data = (MsgParallelProfileData *)profile->data;
 
         // These amounts are deallocated by SG
-        double * computation_amount = new double[nb_res];
-        double * communication_amount = new double[nb_res*nb_res];
+        double * computation_amount = xbt_new(double, nb_res);
+        double * communication_amount = xbt_new(double, nb_res*nb_res);
 
         // Let us retrieve the matrices from the profile
         memcpy(computation_amount, data->cpu, sizeof(double) * nb_res);

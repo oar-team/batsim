@@ -25,6 +25,10 @@ Machines::~Machines()
     for (Machine * machine : _machines)
         delete machine;
     _machines.clear();
+
+    if (_masterMachine != nullptr)
+        delete _masterMachine;
+    _masterMachine = nullptr;
 }
 
 void Machines::createMachines(xbt_dynar_t hosts, BatsimContext *context, const string &masterHostName)
