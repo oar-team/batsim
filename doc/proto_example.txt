@@ -1,14 +1,46 @@
-MESSAGES DU PROTOCOLE
+PROTOCOL MESSAGES
+=================
+
+
+Grammar
+-------
 
 SEP  = '|'
 SEP2 = ':'
+
+PROTOCOL_VERSION:MSG_SUBMIT_TIME|EVENTS
+
+EVENTS : EVENT
+       : EVENT SEP EVENTS
+
+EVENT : EVENT_DATE SEP2 EVENT_TYPE SEP2 EVENT_ARG
+      : EVENT_DATE SEP2 EVENT_TYPE
+
+
+Event types
+-----------
+
 'J' : Job Allocation
+    Arg: Job_id=nodeid1,nodeid2,nodeid5; job_id=nodeid6...
 'R' : Job Rejection
+    Arg: Todo
 'N' : NOP
+    Arg: No arg!
 'S' : Job Submission
+    Arg: job_id
 'C' : Job Completion
+    Arg: job_id
 'P' : Ask for a machine pstate change
+    Arg: nodeid=pstateid
 'p' : Machine pstate changed
+    Arg: nodeid=pstateid
+
+
+
+
+Examples
+--------
+
 
 	SCHEDULER -> SIMULATOR
 		0:15.000015|15.000015:J:1=1,2,0,3;2=3
