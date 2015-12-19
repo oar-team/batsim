@@ -17,8 +17,11 @@ enum class IPMessageType
     ,JOB_COMPLETED      //!< Launcher/killer -> Server. The launcher tells the server a job has been completed.
     ,PSTATE_MODIFICATION//!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a pstate modification).
     ,SCHED_ALLOCATION   //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job allocation).
+    ,SCHED_REJECTION    //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job rejection).
     ,SCHED_NOP          //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a NOP message).
+    ,SCHED_NOP_ME_LATER //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a NOP_ME_LATTER message).
     ,SCHED_READY        //!< SchedulerHandler -> Server. The scheduler handler tells the server that the scheduler is ready (messages can be sent to it).
+    ,WAITING_DONE        //!< Waiter -> server. The waiter tells the server that the target time has been reached.
     ,SUBMITTER_HELLO    //!< Submitter -> Server. The submitter tells it starts submitting to the server.
     ,SUBMITTER_BYE      //!< Submitter -> Server. The submitter tells it stops submitting to the server.
     ,SWITCHED_ON        //!< SwitcherON -> Server. The switcherON process tells the server the machine pstate has been changed
@@ -31,6 +34,11 @@ struct JobSubmittedMessage
 };
 
 struct JobCompletedMessage
+{
+    int job_id; //! The job ID
+};
+
+struct JobRejectedMessage
 {
     int job_id; //! The job ID
 };
@@ -51,6 +59,11 @@ struct PStateModificationMessage
 {
     int machine;
     int new_pstate;
+};
+
+struct NOPMeLaterMessage
+{
+    double target_time;
 };
 
 struct IPMessage
@@ -92,6 +105,11 @@ struct SwitchPStateProcessArguments
 struct JobSubmitterProcessArguments
 {
     BatsimContext * context;
+};
+
+struct WaiterProcessArguments
+{
+    double target_time;
 };
 
 /**

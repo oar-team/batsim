@@ -13,3 +13,5 @@ int execute_profile(BatsimContext * context,
                     double * remaining_time);
 
 int execute_job_process(int argc, char *argv[]);
+
+int waiter_process(int argc, char *argv[]);

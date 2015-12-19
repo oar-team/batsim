@@ -67,6 +67,16 @@ IPMessage::~IPMessage()
             SchedulingAllocationMessage * msg = (SchedulingAllocationMessage *) data;
             delete msg;
         } break;
+        case IPMessageType::SCHED_REJECTION:
+        {
+            JobRejectedMessage * msg = (JobRejectedMessage *) data;
+            delete msg;
+        } break;
+        case IPMessageType::SCHED_NOP_ME_LATER:
+        {
+            NOPMeLaterMessage * msg = (NOPMeLaterMessage*) data;
+            delete msg;
+        } break;
         case IPMessageType::SCHED_NOP:
         {
         } break;
@@ -88,6 +98,9 @@ IPMessage::~IPMessage()
         {
             PStateModificationMessage * msg = (PStateModificationMessage *) data;
             delete msg;
+        } break;
+        case IPMessageType::WAITING_DONE:
+        {
         } break;
     }
 

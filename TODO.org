@@ -1,4 +1,6 @@
-* TODO energy
+* TODO test energy
+* TODO test job rejection
+* TODO test nop me later
 * TODO file I/O
 * TODO evolving/moldable/malleable job support
 * TODO VM
@@ -8,6 +10,9 @@
 * TODO shared nodes
 * TODO node sleep/wakeup
 
+* DONE job rejection
+* DONE allow the scheduler to ask when he wants to be NOPped
+* DONE energy
 * DONE smpi profile
 * DONE msg_par_homogenous profile
 * DONE job composed of sequence of profile [1, 5, 5]

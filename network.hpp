@@ -10,7 +10,10 @@ enum NetworkStamp : char
     NOP = 'N',
     STATIC_JOB_SUBMISSION = 'S',
     STATIC_JOB_COMPLETION = 'C',
-    PSTATE_SET = 'P'
+    PSTATE_SET = 'P',
+    NOP_ME_LATER = 'n',
+
+    PSTATE_HAS_BEEN_SET = 'p'
 };
 
 class UnixDomainSocket

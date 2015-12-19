@@ -201,6 +201,19 @@ int request_reply_scheduler_process(int argc, char *argv[])
                 xbt_assert(parts2.size() == 2, "Invalid event received ('%s'): NOP messages must be composed of 2 parts separated by ':'", event_string.c_str());
                 send_message("server", IPMessageType::SCHED_NOP);
             } break; // End of case received_stamp == NOP
+
+            case NOP_ME_LATER:
+            {
+                xbt_assert(parts2.size() == 3, "Invalid event received ('%s'): NOP_ME_LATER messages must be composed of 3 parts separated by ':'", event_string.c_str());
+
+                NOPMeLaterMessage * message = new NOPMeLaterMessage;
+                message->target_time = std::stod(parts2[2]);
+                if (message->target_time < MSG_get_clock())
+                    XBT_WARN("Event '%s' tells to wait until time %g but it is already reached", event_string.c_str(), message->target_time);
+
+                send_message("server", IPMessageType::SCHED_NOP_ME_LATER, (void*) message);
+            } break; // End of case received_stamp == NOP_ME_LATER
+
             case STATIC_JOB_ALLOCATION:
             {
                 xbt_assert(parts2.size() == 3, "Invalid event received ('%s'): static job allocations must be composed of 3 parts separated by ':'",
@@ -269,6 +282,27 @@ int request_reply_scheduler_process(int argc, char *argv[])
                 send_message("server", IPMessageType::SCHED_ALLOCATION, (void*) message);
 
             } break; // End of case received_stamp == STATIC_JOB_ALLOCATION
+
+            case JOB_REJECTION:
+            {
+                xbt_assert(parts2.size() == 3, "Invalid event received ('%s'): static job rejections must be composed of 3 parts separated by ':'",
+                           event_string.c_str());
+
+                // Let us create the message which will be sent to the server.
+                JobRejectedMessage * message = new JobRejectedMessage;
+                message->job_id = std::stoi(parts2[2]);
+
+                xbt_assert(context->jobs.exists(message->job_id), "Invalid event received ('%s'): job %d does not exist",
+                           event_string.c_str(), message->job_id);
+                Job * job = context->jobs[message->job_id];
+                xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED, "Invalid event received ('%s'): job %d cannot be"
+                          " rejected now. For being rejected, a job must be submitted and not allocated yet.",
+                           event_string.c_str(), job->id);
+
+                send_message("server", IPMessageType::SCHED_REJECTION, (void*) message);
+
+            } break; // End of case received_stamp == JOB_REJECTION
+
             case PSTATE_SET:
             {
                 xbt_assert(parts2.size() == 3, "Invalid event received ('%s'): pstate modifications must be composed of 3 parts separated by ':'",
@@ -315,6 +349,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
                 send_message("server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
 
             } break; // End of case received_stamp == PSTATE_SET
+
             default:
             {
                 xbt_die("Invalid event received ('%s') : unhandled network stamp received ('%c')", event_string.c_str(), received_stamp);
@@ -341,6 +376,7 @@ int uds_server_process(int argc, char *argv[])
     int nb_submitters = 0;
     int nb_submitters_finished = 0;
     int nb_running_jobs = 0;
+    const int protocol_version = 1;
     bool sched_ready = true;
 
     string send_buffer;
@@ -401,9 +437,33 @@ int uds_server_process(int argc, char *argv[])
 
             XBT_INFO("Job %d SUBMITTED. %d jobs submitted so far", job->id, nb_submitted_jobs);
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":S:" + std::to_string(job->id);
-            XBT_INFO("Message to send to scheduler: %s", send_buffer.c_str());
+            XBT_INFO("Message to send to scheduler: '%s'", send_buffer.c_str());
 
         } break; // end of case JOB_SUBMITTED
+
+        case IPMessageType::SCHED_REJECTION:
+        {
+            xbt_assert(task_data->data != nullptr);
+            JobRejectedMessage * message = (JobRejectedMessage *) task_data->data;
+
+            Job * job = context->jobs[message->job_id];
+            job->state = JobState::JOB_STATE_REJECTED;
+            nb_completed_jobs++;
+
+            XBT_INFO("Job %d has been rejected", job->id);
+        } break; // end of case SCHED_REJECTION
+
+        case IPMessageType::SCHED_NOP_ME_LATER:
+        {
+            xbt_assert(task_data->data != nullptr);
+            NOPMeLaterMessage * message = (NOPMeLaterMessage *) task_data->data;
+
+            WaiterProcessArguments * args = new WaiterProcessArguments;
+            args->target_time = message->target_time;
+
+            string pname = "waiter " + to_string(message->target_time);
+            MSG_process_create(pname.c_str(), waiter_process, (void*) args, context->machines.masterMachine()->host);
+        } break; // end of case SCHED_NOP_ME_LATER
 
         case IPMessageType::PSTATE_MODIFICATION:
         {
@@ -500,6 +560,24 @@ int uds_server_process(int argc, char *argv[])
                 nb_scheduled_jobs++;
                 xbt_assert(nb_scheduled_jobs <= nb_submitted_jobs);
 
+                if (context->energy_used)
+                {
+                    // Check that every machine is in a computation pstate
+                    for (const int & machineID : allocation.machine_ids)
+                    {
+                        Machine * machine = context->machines[machineID];
+                        int ps = MSG_host_get_pstate(machine->host);
+                        xbt_assert(machine->has_pstate(ps));
+                        xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
+                                   "Invalid job allocation: machine %d ('%s') is not in a computation pstate (ps=%d)",
+                                   machine->id, machine->name.c_str(), ps);
+                        xbt_assert(machine->state == MachineState::COMPUTING || machine->state == MachineState::IDLE,
+                                   "Invalid job allocation: machine %d ('%s') cannot compute jobs now (the machine is"
+                                   " neither computing nor being idle)", machine->id, machine->name.c_str());
+                    }
+
+                }
+
                 ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
                 exec_args->context = context;
                 exec_args->allocation = allocation;
@@ -508,11 +586,19 @@ int uds_server_process(int argc, char *argv[])
             }
 
         } break; // end of case SCHED_ALLOCATION
+
+        case IPMessageType::WAITING_DONE:
+        {
+            send_buffer += "|" + std::to_string(MSG_get_clock()) + ":N";
+            XBT_INFO("Message to send to scheduler: '%s'", send_buffer.c_str());
+        } break; // end of case WAITING_DONE
+
         case IPMessageType::SCHED_READY:
         {
             sched_ready = true;
 
         } break; // end of case SCHED_READY
+
         case IPMessageType::SWITCHED_ON:
         {
             xbt_assert(task_data->data != nullptr);
@@ -526,6 +612,7 @@ int uds_server_process(int argc, char *argv[])
                            std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
             XBT_INFO("Message to send to scheduler : '%s'", send_buffer.c_str());
         } break; // end of case SWITCHED_ON
+
         case IPMessageType::SWITCHED_OFF:
         {
             xbt_assert(task_data->data != nullptr);
@@ -548,7 +635,7 @@ int uds_server_process(int argc, char *argv[])
         {
             RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
             req_rep_args->context = context;
-            req_rep_args->send_buffer = "0:" + to_string(MSG_get_clock()) + send_buffer;
+            req_rep_args->send_buffer = to_string(protocol_version) + ":" + to_string(MSG_get_clock()) + send_buffer;
             send_buffer.clear();
 
             MSG_process_create("Scheduler REQ-REP", request_reply_scheduler_process, (void*)req_rep_args, MSG_host_self());

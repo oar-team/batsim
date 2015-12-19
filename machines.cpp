@@ -182,11 +182,13 @@ void Machines::createMachines(xbt_dynar_t hosts, BatsimContext *context, const s
 
 const Machine * Machines::operator[](int machineID) const
 {
+    xbt_assert(exists(machineID), "Cannot get machine %d: it does not exist", machineID);
     return _machines[machineID];
 }
 
 Machine * Machines::operator[](int machineID)
 {
+    xbt_assert(exists(machineID), "Cannot get machine %d: it does not exist", machineID);
     return _machines[machineID];
 }
 
@@ -235,9 +237,7 @@ void Machines::updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMa
         if (!machine->jobs_being_computed.empty())
             previous_top_job = *machine->jobs_being_computed.begin();
 
-        // cout << machine;
         machine->jobs_being_computed.insert(jobID);
-        // cout << machine;
 
         if (previous_top_job == -1 || previous_top_job != *machine->jobs_being_computed.begin())
         {
@@ -252,7 +252,6 @@ void Machines::updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMa
     for (int machineID : usedMachines)
     {
         Machine * machine = _machines[machineID];
-        // cout << machine;
 
         xbt_assert(!machine->jobs_being_computed.empty());
         int previous_top_job = *machine->jobs_being_computed.begin();
@@ -273,25 +272,12 @@ void Machines::updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMa
             _tracer->set_machine_as_computing_job(machine->id, *machine->jobs_being_computed.begin(), MSG_get_clock());
         }
 
-        // cout << machine;
     }
 }
 
 void Machines::setTracer(PajeTracer *tracer)
 {
     _tracer = tracer;
-}
-
-ostream & operator<<(ostream & out, const Machine & machine)
-{
-    out << "Machine " << machine.id << ", ";
-    out << "state = " << machineStateToString(machine.state) << ", ";
-    out << "jobs = [";
-    std::copy(machine.jobs_being_computed.begin(), machine.jobs_being_computed.end(),
-              std::ostream_iterator<char>(out, " "));
-    out << "]" << endl;
-
-    return out;
 }
 
 string machineStateToString(MachineState state)

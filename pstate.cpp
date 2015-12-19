@@ -45,6 +45,8 @@ int switch_on_machine_process(int argc, char *argv[])
              machine->id, machine->name.c_str(), pstate);
     MSG_host_set_pstate(machine->host, pstate);
 
+    machine->state = MachineState::IDLE;
+
     send_message("server", IPMessageType::SWITCHED_ON, (void *) args->message);
     delete args;
     return 0;
@@ -87,6 +89,8 @@ int switch_off_machine_process(int argc, char *argv[])
     XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to sleeping pstate %d",
              machine->id, machine->name.c_str(), pstate);
     MSG_host_set_pstate(machine->host, pstate);
+
+    machine->state = MachineState::SLEEPING;
 
     send_message("server", IPMessageType::SWITCHED_OFF, (void *) args->message);
     delete args;

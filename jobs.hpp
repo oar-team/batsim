@@ -18,6 +18,7 @@ enum class JobState
     ,JOB_STATE_RUNNING                //!< The job has been scheduled and is currently being processed.
     ,JOB_STATE_COMPLETED_SUCCESSFULLY //!< The job execution finished before its walltime.
     ,JOB_STATE_COMPLETED_KILLED       //!< The job execution time was longer than its walltime so the job had been killed.
+    ,JOB_STATE_REJECTED               //!< The job has been rejected by the scheduler.
 };
 
 struct Job

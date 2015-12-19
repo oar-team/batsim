@@ -258,3 +258,28 @@ int execute_job_process(int argc, char *argv[])
 
     return 0;
 }
+
+int waiter_process(int argc, char *argv[])
+{
+    (void) argc;
+    (void) argv;
+
+    WaiterProcessArguments * args = (WaiterProcessArguments *) MSG_process_get_data(MSG_process_self());
+
+    double curr_time = MSG_get_clock();
+
+    if (curr_time < args->target_time)
+    {
+        double time_to_wait = args->target_time - curr_time;
+        XBT_INFO("Sleeping %g seconds to reach time %g", time_to_wait, args->target_time);
+        MSG_process_sleep(time_to_wait);
+        XBT_INFO("Sleeping done");
+    }
+    else
+        XBT_INFO("Time %g is already reached, skipping sleep", args->target_time);
+
+    send_message("server", IPMessageType::WAITING_DONE);
+    delete args;
+
+    return 0;
+}

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <vector>
 #include <set>
 #include <map>
@@ -38,8 +37,6 @@ struct Machine
     bool has_pstate(int pstate) const;
     void display_machine(bool is_energy_used) const;
 };
-
-std::ostream & operator<<(std::ostream & out, const Machine & machine);
 
 class Machines
 {
