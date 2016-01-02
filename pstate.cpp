@@ -20,21 +20,26 @@ int switch_on_machine_process(int argc, char *argv[])
     xbt_assert(args->context->machines.exists(machineID));
     Machine * machine = args->context->machines[machineID];
 
-    xbt_assert(machine->host->id() == MSG_process_get_host(MSG_process_self())->id());
+    xbt_assert(machine->host == MSG_process_get_host(MSG_process_self()));
     xbt_assert(machine->state == MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING);
     xbt_assert(machine->jobs_being_computed.empty());
     xbt_assert(machine->has_pstate(pstate));
     xbt_assert(machine->pstates[pstate] == PStateType::COMPUTATION_PSTATE);
 
-    int on_ps = machine->sleep_pstates[pstate]->switch_on_virtual_pstate;
+    int current_pstate = MSG_host_get_pstate(machine->host);
+    int on_ps = machine->sleep_pstates[current_pstate]->switch_on_virtual_pstate;
 
     XBT_INFO("Switching machine %d ('%s') ON. Passing in virtual pstate %d to do so", machine->id,
              machine->name.c_str(), on_ps);
     MSG_host_set_pstate(machine->host, on_ps);
 
     msg_host_t host_list[1] = {machine->host};
-    double flop_amount[1] = {1};
-    double bytes_amount[1] = {0};
+//    double flop_amount[1] = {1};
+//    double bytes_amount[1] = {0};
+    double * flop_amount = xbt_new(double, 1);
+    double * bytes_amount = xbt_new(double, 1);
+    flop_amount[0] = 1;
+    bytes_amount[0] = 0;
 
     msg_task_t bootup = MSG_parallel_task_create("switch ON", 1, host_list, flop_amount, bytes_amount, NULL);
     XBT_INFO("Computing 1 flop to simulate time & energy cost of switch ON");
@@ -65,7 +70,7 @@ int switch_off_machine_process(int argc, char *argv[])
     xbt_assert(args->context->machines.exists(machineID));
     Machine * machine = args->context->machines[machineID];
 
-    xbt_assert(machine->host->id() == MSG_process_get_host(MSG_process_self())->id());
+    xbt_assert(machine->host == MSG_process_get_host(MSG_process_self()));
     xbt_assert(machine->state == MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING);
     xbt_assert(machine->jobs_being_computed.empty());
     xbt_assert(machine->has_pstate(pstate));
@@ -78,8 +83,12 @@ int switch_off_machine_process(int argc, char *argv[])
     MSG_host_set_pstate(machine->host, off_ps);
 
     msg_host_t host_list[1] = {machine->host};
-    double flop_amount[1] = {1};
-    double bytes_amount[1] = {0};
+//    double flop_amount[1] = {1};
+//    double bytes_amount[1] = {0};
+    double * flop_amount = xbt_new(double, 1);
+    double * bytes_amount = xbt_new(double, 1);
+    flop_amount[0] = 1;
+    bytes_amount[0] = 0;
 
     msg_task_t shutdown = MSG_parallel_task_create("switch OFF", 1, host_list, flop_amount, bytes_amount, NULL);
     XBT_INFO("Computing 1 flop to simulate time & energy cost of switch OFF");

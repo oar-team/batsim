@@ -39,12 +39,11 @@ void Machines::createMachines(xbt_dynar_t hosts, BatsimContext *context, const s
     _machines.reserve(nb_machines);
 
     msg_host_t host;
-    unsigned int i;
+    unsigned int i, id=0;
     xbt_dynar_foreach(hosts, i, host)
     {
         Machine * machine = new Machine;
 
-        machine->id = i;
         machine->name = MSG_host_get_name(host);
         machine->host = host;
         machine->jobs_being_computed = {};
@@ -173,10 +172,15 @@ void Machines::createMachines(xbt_dynar_t hosts, BatsimContext *context, const s
         }
 
         if (machine->name != masterHostName)
+        {
+            machine->id = id;
+            ++id;
             _machines.push_back(machine);
+        }
         else
         {
-            xbt_assert(_masterMachine == nullptr);
+            xbt_assert(_masterMachine == nullptr, "There are two master hosts...");
+            machine->id = -1;
             _masterMachine = machine;
         }
     }

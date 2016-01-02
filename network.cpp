@@ -308,8 +308,8 @@ int request_reply_scheduler_process(int argc, char *argv[])
             {
                 xbt_assert(parts2.size() == 3, "Invalid event received ('%s'): pstate modifications must be composed of 3 parts separated by ':'",
                            event_string.c_str());
-                xbt_assert(context->energy_used, "A pstate modification message has been received alors energy is not used by Batsim."
-                           " You can switch energy ON by a Batsim command-line option.");
+                xbt_assert(context->energy_used, "A pstate modification message has been received whereas energy is not currently used by Batsim."
+                           " You can use the energy plugin of Batsim via a command-line option, try --help to display those options.");
 
                 PStateModificationMessage * message = new PStateModificationMessage;
 
@@ -324,7 +324,9 @@ int request_reply_scheduler_process(int argc, char *argv[])
 
                 xbt_assert(context->machines.exists(machineID), "Invalid event received ('%s'): machine %d does not exist", event_string.c_str(), machineID);
                 Machine * machine = context->machines[machineID];
-                xbt_assert(machine->state == MachineState::IDLE, "Invalid event received ('%s'): machine %d's pstate can only be changed while the machine is idle, which is not the case now.", event_string.c_str(), machineID);
+                xbt_assert(machine->state == MachineState::IDLE || machine->state == MachineState::SLEEPING,
+                           "Invalid event received ('%s'): machine %d's pstate can only be changed while the"
+                           " machine is idle or sleeping, which is not the case now.", event_string.c_str(), machineID);
                 xbt_assert(context->machines[machineID]->has_pstate(pstate), "Invalid event received ('%s'): machine %d has no pstate %d", event_string.c_str(), machineID, pstate);
 
                 int current_pstate = MSG_host_get_pstate(machine->host);
@@ -495,7 +497,7 @@ int uds_server_process(int argc, char *argv[])
                     args->message->new_pstate = message->new_pstate;
 
                     string pname = "switch ON " + to_string(message->machine);
-                    MSG_process_create(pname.c_str(), switch_on_machine_process, (void*)args, machine->host);
+                    MSG_process_create(pname.c_str(), switch_off_machine_process, (void*)args, machine->host);
                 }
                 else
                     XBT_CERROR(server, "Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %d -> %d",
@@ -503,7 +505,9 @@ int uds_server_process(int argc, char *argv[])
             }
             else if (machine->pstates[curr_pstate] == PStateType::SLEEP_PSTATE)
             {
-                xbt_assert(machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE);
+                xbt_assert(machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE,
+                        "Switching from a sleep pstate to a non-computation pstate on machine %d ('%s') : %d -> %d, which is forbidden",
+                        machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
 
                 machine->state = MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING;
                 SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
@@ -513,7 +517,7 @@ int uds_server_process(int argc, char *argv[])
                 args->message->new_pstate = message->new_pstate;
 
                 string pname = "switch OFF " + to_string(message->machine);
-                MSG_process_create(pname.c_str(), switch_off_machine_process, (void*)args, machine->host);
+                MSG_process_create(pname.c_str(), switch_on_machine_process, (void*)args, machine->host);
             }
             else
                 XBT_CERROR(server, "Machine %d ('%s') has an invalid pstate : %d", machine->id, machine->name.c_str(), curr_pstate);
