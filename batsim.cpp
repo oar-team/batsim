@@ -36,6 +36,7 @@ struct MainArguments
     std::string exportPrefix;       //! The filename prefix used to export simulation information
 
     bool energy_used;               //! True if and only if the SimGrid energy plugin should be used.
+    bool quiet;                     //! True to disable any Batsim output
 
     bool abort;                     //! A boolean value. If set to yet, the launching should be aborted for reason abortReason
     std::string abortReason;        //! Human readable reasons which explains why the launch should be aborted
@@ -62,6 +63,9 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
         break;
     case 'p':
         mainArgs->energy_used = true;
+        break;
+    case 'q':
+        mainArgs->quiet = true;
         break;
     case 's':
         mainArgs->socketFilename = arg;
@@ -112,6 +116,7 @@ int main(int argc, char * argv[])
     mainArgs.masterHostName = "master_host";
     mainArgs.exportPrefix = "out";
     mainArgs.energy_used = false;
+    mainArgs.quiet = false;
     mainArgs.abort = false;
 
     struct argp_option options[] =
@@ -120,6 +125,7 @@ int main(int argc, char * argv[])
         {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks", 0},
         {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output", 0},
         {"energy-plugin", 'p', 0, 0, "Enables energy-aware experiments", 0},
+        {"quiet", 'q', 0, 0, "Disables any output", 0},
         {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
     };
     struct argp argp = {options, parse_opt, "PLATFORM_FILE WORKLOAD_FILE", "A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.", 0, 0, 0};
@@ -133,6 +139,20 @@ int main(int argc, char * argv[])
 
     if (mainArgs.energy_used)
         sg_energy_plugin_init();
+
+    if (mainArgs.quiet)
+    {
+        xbt_log_control_set("workload.thresh:error");
+        xbt_log_control_set("jobs.thresh:error");
+        xbt_log_control_set("batsim.thresh:error");
+        xbt_log_control_set("machines.thresh:error");
+        xbt_log_control_set("pstate.thresh:error");
+        xbt_log_control_set("jobs_execution.thresh:error");
+        xbt_log_control_set("export.thresh:error");
+        xbt_log_control_set("profiles.thresh:error");
+        xbt_log_control_set("network.thresh:error");
+        xbt_log_control_set("ipp.thresh:error");
+    }
 
     // Initialization
     MSG_init(&argc, argv);
