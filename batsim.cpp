@@ -7,6 +7,8 @@
 #include <simgrid/msg.h>
 #include <simgrid/plugins.h>
 
+#include <boost/algorithm/string/case_conv.hpp>
+
 #include "context.hpp"
 #include "export.hpp"
 #include "ipp.hpp"
@@ -22,6 +24,14 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "batsim");
 
+enum class VerbosityLevel
+{
+    QUIET,
+    NETWORK_ONLY,
+    INFORMATION,
+    DEBUG
+};
+
 /**
  * @brief The main function arguments (a.k.a. program arguments)
  */
@@ -36,7 +46,7 @@ struct MainArguments
     std::string exportPrefix;       //! The filename prefix used to export simulation information
 
     bool energy_used;               //! True if and only if the SimGrid energy plugin should be used.
-    bool quiet;                     //! True to disable any Batsim output
+    VerbosityLevel verbosity;       //! Sets the Batsim verbosity
 
     bool abort;                     //! A boolean value. If set to yet, the launching should be aborted for reason abortReason
     std::string abortReason;        //! Human readable reasons which explains why the launch should be aborted
@@ -64,8 +74,27 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
     case 'p':
         mainArgs->energy_used = true;
         break;
+    case 'v':
+    {
+        string sArg = arg;
+        boost::to_lower(sArg);
+        if (sArg == "quiet")
+            mainArgs->verbosity = VerbosityLevel::QUIET;
+        else if (sArg == "network-only")
+            mainArgs->verbosity = VerbosityLevel::NETWORK_ONLY;
+        else if (sArg == "information")
+            mainArgs->verbosity = VerbosityLevel::INFORMATION;
+        else if (sArg == "debug")
+            mainArgs->verbosity = VerbosityLevel::DEBUG;
+        else
+        {
+            mainArgs->abort = true;
+            mainArgs->abortReason += "\n  invalid VERBOSITY_LEVEL argument: '" + string(sArg) + "' is not in [quiet, network-only, information, debug].";
+        }
+        break;
+    }
     case 'q':
-        mainArgs->quiet = true;
+        mainArgs->verbosity = VerbosityLevel::QUIET;
         break;
     case 's':
         mainArgs->socketFilename = arg;
@@ -116,7 +145,7 @@ int main(int argc, char * argv[])
     mainArgs.masterHostName = "master_host";
     mainArgs.exportPrefix = "out";
     mainArgs.energy_used = false;
-    mainArgs.quiet = false;
+    mainArgs.verbosity = VerbosityLevel::INFORMATION;
     mainArgs.abort = false;
 
     struct argp_option options[] =
@@ -125,7 +154,8 @@ int main(int argc, char * argv[])
         {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks", 0},
         {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output", 0},
         {"energy-plugin", 'p', 0, 0, "Enables energy-aware experiments", 0},
-        {"quiet", 'q', 0, 0, "Disables any output", 0},
+        {"verbosity", 'v', "VERBOSITY_LEVEL", 0, "Sets the Batsim verbosity level. Available values are : quiet, network-only, information (default), debug.", 0},
+        {"quiet", 'q', 0, 0, "Shortcut for --verbosity=quiet", 0},
         {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
     };
     struct argp argp = {options, parse_opt, "PLATFORM_FILE WORKLOAD_FILE", "A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.", 0, 0, 0};
@@ -140,7 +170,12 @@ int main(int argc, char * argv[])
     if (mainArgs.energy_used)
         sg_energy_plugin_init();
 
-    if (mainArgs.quiet)
+    /*QUIET,
+    NETWORK_ONLY,
+    INFORMATION,
+    DEBUG */
+
+    if (mainArgs.verbosity == VerbosityLevel::QUIET || mainArgs.verbosity == VerbosityLevel::NETWORK_ONLY)
     {
         xbt_log_control_set("workload.thresh:error");
         xbt_log_control_set("jobs.thresh:error");
@@ -151,7 +186,27 @@ int main(int argc, char * argv[])
         xbt_log_control_set("export.thresh:error");
         xbt_log_control_set("profiles.thresh:error");
         xbt_log_control_set("network.thresh:error");
+        xbt_log_control_set("server.thresh:error");
         xbt_log_control_set("ipp.thresh:error");
+    }
+
+    if (mainArgs.verbosity == VerbosityLevel::NETWORK_ONLY)
+    {
+        xbt_log_control_set("network.thresh:info");
+    }
+    else if (mainArgs.verbosity == VerbosityLevel::DEBUG)
+    {
+        xbt_log_control_set("workload.thresh:debug");
+        xbt_log_control_set("jobs.thresh:debug");
+        xbt_log_control_set("batsim.thresh:debug");
+        xbt_log_control_set("machines.thresh:debug");
+        xbt_log_control_set("pstate.thresh:debug");
+        xbt_log_control_set("jobs_execution.thresh:debug");
+        xbt_log_control_set("export.thresh:debug");
+        xbt_log_control_set("profiles.thresh:debug");
+        xbt_log_control_set("network.thresh:debug");
+        xbt_log_control_set("server.thresh:debug");
+        xbt_log_control_set("ipp.thresh:debug");
     }
 
     // Initialization

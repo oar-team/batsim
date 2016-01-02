@@ -17,6 +17,7 @@
 #include "jobs_execution.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(network, "network");
+XBT_LOG_NEW_CATEGORY(server, "server");
 
 using namespace std;
 
@@ -48,7 +49,7 @@ UnixDomainSocket::~UnixDomainSocket()
 
 void UnixDomainSocket::create_socket(const string & filename)
 {
-    XBT_INFO("Creating UDS socket on '%s'", filename.c_str());
+    XBT_CINFO(network, "Creating UDS socket on '%s'", filename.c_str());
 
     _server_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     xbt_assert(_server_socket != -1, "Impossible to create socket");
@@ -69,10 +70,10 @@ void UnixDomainSocket::create_socket(const string & filename)
 
 void UnixDomainSocket::accept_pending_connection()
 {
-    XBT_INFO("Waiting for an incoming connection...");
+    XBT_CINFO(network, "Waiting for an incoming connection...");
     _client_socket = accept(_server_socket, NULL, NULL);
     xbt_assert(_client_socket != -1, "Impossible to accept on socket");
-    XBT_INFO("Connected!");
+    XBT_CINFO(network, "Connected!");
 }
 
 string UnixDomainSocket::receive()
@@ -142,7 +143,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
     sprintf(sendDateAsString, "%f", MSG_get_clock());
 
     char *sendBuf = (char*) args->send_buffer.c_str();
-    XBT_INFO("Buffer received in REQ-REP: '%s'", sendBuf);
+    XBT_CDEBUG(server, "Buffer received in REQ-REP: '%s'", sendBuf);
 
     context->socket.send(sendBuf);
 
@@ -391,21 +392,21 @@ int uds_server_process(int argc, char *argv[])
         MSG_task_receive(&(task_received), "server");
         task_data = (IPMessage *) MSG_task_get_data(task_received);
 
-        XBT_INFO("Server received a message of type %s:", ipMessageTypeToString(task_data->type).c_str());
+        XBT_CINFO(server, "Server received a message of type %s:", ipMessageTypeToString(task_data->type).c_str());
 
         switch (task_data->type)
         {
         case IPMessageType::SUBMITTER_HELLO:
         {
             nb_submitters++;
-            XBT_INFO("New submitter said hello. Number of polite submitters: %d", nb_submitters);
+            XBT_CINFO(server, "New submitter said hello. Number of polite submitters: %d", nb_submitters);
 
         } break; // end of case SUBMITTER_HELLO
 
         case IPMessageType::SUBMITTER_BYE:
         {
             nb_submitters_finished++;
-            XBT_INFO("A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
+            XBT_CINFO(server, "A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
 
         } break; // end of case SUBMITTER_BYE
 
@@ -419,10 +420,10 @@ int uds_server_process(int argc, char *argv[])
             nb_completed_jobs++;
             Job * job = context->jobs[message->job_id];
 
-            XBT_INFO("Job %d COMPLETED. %d jobs completed so far", job->id, nb_completed_jobs);
+            XBT_CINFO(server, "Job %d COMPLETED. %d jobs completed so far", job->id, nb_completed_jobs);
 
             send_buffer += '|' + std::to_string(MSG_get_clock()) + ":C:" + std::to_string(job->id);
-            XBT_INFO("Message to send to scheduler: %s", send_buffer.c_str());
+            XBT_CDEBUG(server, "Message to send to scheduler: %s", send_buffer.c_str());
 
         } break; // end of case JOB_COMPLETED
 
@@ -435,9 +436,9 @@ int uds_server_process(int argc, char *argv[])
             Job * job = context->jobs[message->job_id];
             job->state = JobState::JOB_STATE_SUBMITTED;
 
-            XBT_INFO("Job %d SUBMITTED. %d jobs submitted so far", job->id, nb_submitted_jobs);
+            XBT_CINFO(server, "Job %d SUBMITTED. %d jobs submitted so far", job->id, nb_submitted_jobs);
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":S:" + std::to_string(job->id);
-            XBT_INFO("Message to send to scheduler: '%s'", send_buffer.c_str());
+            XBT_CDEBUG(server, "Message to send to scheduler: '%s'", send_buffer.c_str());
 
         } break; // end of case JOB_SUBMITTED
 
@@ -450,7 +451,7 @@ int uds_server_process(int argc, char *argv[])
             job->state = JobState::JOB_STATE_REJECTED;
             nb_completed_jobs++;
 
-            XBT_INFO("Job %d has been rejected", job->id);
+            XBT_CINFO(server, "Job %d has been rejected", job->id);
         } break; // end of case SCHED_REJECTION
 
         case IPMessageType::SCHED_NOP_ME_LATER:
@@ -482,7 +483,7 @@ int uds_server_process(int argc, char *argv[])
 
                     send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
                                    std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
-                    XBT_INFO("Message to send to scheduler : '%s'", send_buffer.c_str());
+                    XBT_CDEBUG(server, "Message to send to scheduler : '%s'", send_buffer.c_str());
                 }
                 else if (machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
                 {
@@ -497,7 +498,7 @@ int uds_server_process(int argc, char *argv[])
                     MSG_process_create(pname.c_str(), switch_on_machine_process, (void*)args, machine->host);
                 }
                 else
-                    XBT_ERROR("Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %d -> %d",
+                    XBT_CERROR(server, "Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %d -> %d",
                               machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
             }
             else if (machine->pstates[curr_pstate] == PStateType::SLEEP_PSTATE)
@@ -515,20 +516,18 @@ int uds_server_process(int argc, char *argv[])
                 MSG_process_create(pname.c_str(), switch_off_machine_process, (void*)args, machine->host);
             }
             else
-                XBT_ERROR("Machine %d ('%s') has an invalid pstate : %d", machine->id, machine->name.c_str(), curr_pstate);
+                XBT_CERROR(server, "Machine %d ('%s') has an invalid pstate : %d", machine->id, machine->name.c_str(), curr_pstate);
 
         } break; // end of case PSTATE_MODIFICATION
 
         case IPMessageType::SCHED_NOP:
         {
-            XBT_INFO("Nothing to do received.");
+            XBT_CINFO(server, "Nothing to do received.");
             if (nb_running_jobs == 0 && nb_scheduled_jobs < nb_submitted_jobs)
             {
-                XBT_INFO("Nothing to do whereas no job is running and that they are jobs waiting to be scheduled... This might cause a deadlock!");
+                XBT_CINFO(server, "Nothing to do whereas no job is running and that they are jobs waiting to be scheduled... This might cause a deadlock!");
 
                 // Let us display the available jobs (to help the scheduler debugging)
-                string debugBuffer;
-
                 const std::map<int, Job *> & jobs = context->jobs.jobs();
                 vector<string> submittedJobs;
 
@@ -540,7 +539,7 @@ int uds_server_process(int argc, char *argv[])
 
                 string submittedJobsString = boost::algorithm::join(submittedJobs, ", ");
 
-                XBT_INFO("The available jobs are [%s]", submittedJobsString.c_str());
+                XBT_CINFO(server, "The available jobs are [%s]", submittedJobsString.c_str());
             }
 
         } break; // end of case SCHED_NOP
@@ -590,7 +589,7 @@ int uds_server_process(int argc, char *argv[])
         case IPMessageType::WAITING_DONE:
         {
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":N";
-            XBT_INFO("Message to send to scheduler: '%s'", send_buffer.c_str());
+            XBT_CDEBUG(server, "Message to send to scheduler: '%s'", send_buffer.c_str());
         } break; // end of case WAITING_DONE
 
         case IPMessageType::SCHED_READY:
@@ -610,7 +609,7 @@ int uds_server_process(int argc, char *argv[])
 
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
                            std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
-            XBT_INFO("Message to send to scheduler : '%s'", send_buffer.c_str());
+            XBT_CDEBUG(server, "Message to send to scheduler : '%s'", send_buffer.c_str());
         } break; // end of case SWITCHED_ON
 
         case IPMessageType::SWITCHED_OFF:
@@ -624,7 +623,7 @@ int uds_server_process(int argc, char *argv[])
 
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
                            std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
-            XBT_INFO("Message to send to scheduler : '%s'", send_buffer.c_str());
+            XBT_CDEBUG(server, "Message to send to scheduler : '%s'", send_buffer.c_str());
         } break; // end of case SWITCHED_ON
         } // end of switch
 
@@ -644,7 +643,7 @@ int uds_server_process(int argc, char *argv[])
 
     } // end of while
 
-    XBT_INFO("All jobs completed!");
+    XBT_CINFO(server, "All jobs completed!");
 
     delete args;
     return 0;
