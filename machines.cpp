@@ -65,7 +65,7 @@ void Machines::createMachines(xbt_dynar_t hosts, BatsimContext *context, const s
                 vector<string> sleep_pstate_triplets;
                 boost::split(sleep_pstate_triplets, sleep_states_str, boost::is_any_of(","), boost::token_compress_on);
 
-                for (const auto & triplet : sleep_pstate_triplets)
+                for (const string & triplet : sleep_pstate_triplets)
                 {
                     vector<string> pstates;
                     boost::split(pstates, triplet, boost::is_any_of(":"), boost::token_compress_on);
@@ -80,6 +80,10 @@ void Machines::createMachines(xbt_dynar_t hosts, BatsimContext *context, const s
                     bool conversion_succeeded = true;
                     try
                     {
+                        boost::trim(pstates[0]);
+                        boost::trim(pstates[1]);
+                        boost::trim(pstates[2]);
+
                         sleep_ps = boost::lexical_cast<unsigned int>(pstates[0]);
                         on_ps = boost::lexical_cast<unsigned int>(pstates[1]);
                         off_ps = boost::lexical_cast<unsigned int>(pstates[2]);

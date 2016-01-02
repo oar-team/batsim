@@ -588,7 +588,7 @@ void exportScheduleToCSV(const string &filename, double scheduling_time, BatsimC
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
 
-    f << "nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,makespan,max_turnaround_time,scheduling_time,jobs_execution_time_boundary_ratio\n";
+    f << "nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,makespan,max_turnaround_time,scheduling_time,jobs_execution_time_boundary_ratio,consumed_joules\n";
 
     int nb_jobs = 0;
     int nb_jobs_finished = 0;
@@ -629,11 +629,24 @@ void exportScheduleToCSV(const string &filename, double scheduling_time, BatsimC
         }
     }
 
+    long double total_consumed_energy = 0;
+
+    if (context->energy_used)
+    {
+        for (const Machine * m : context->machines.machines())
+        {
+            total_consumed_energy += MSG_host_get_consumed_energy(m->host);
+        }
+    }
+    else
+        total_consumed_energy = -1;
+
     char * buf;
-    int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf\n",
+    int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf,%Lg\n",
                        nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed,
                        (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time,
-                       scheduling_time, max_job_execution_time / min_job_execution_time);
+                       scheduling_time, max_job_execution_time / min_job_execution_time,
+                       total_consumed_energy);
     xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
     f << buf;
