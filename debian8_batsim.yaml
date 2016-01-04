@@ -93,10 +93,10 @@ setup:
     - get_it:
       - exec_in: |
           cd $$simctn_dir
-          git clone https://github.com/wagnerf42/batch-simulator.git
+          git clone https://github.com/mickours/batch-simulator.git
       - exec_in: |
           cd $$simctn_dir/batch-simulator
-          git checkout 170521bd1ec6
+          git checkout 6d8b113
           cd ProcessorRange
           perl Makefile.PL
           make

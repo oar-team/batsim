@@ -1,7 +1,7 @@
 # Install my dev tools to permit easy development inside the image
 
 - install_tools:
-  - exec_in: apt-get install -y zsh tmux vim ctags ranger git
+  - exec_in: apt-get install -y zsh tmux vim-nox ctags ranger git python-autopep8
 
 - configure_vim:
   - local2in:
