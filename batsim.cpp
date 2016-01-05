@@ -18,6 +18,7 @@
 #include "machines.hpp"
 #include "network.hpp"
 #include "profiles.hpp"
+#include "server.hpp"
 #include "workload.hpp"
 
 using namespace std;
@@ -59,7 +60,7 @@ struct MainArguments
  * @param[in, out] state The current argp_state
  * @return 0
  */
-static int parse_opt (int key, char *arg, struct argp_state *state)
+int parse_opt (int key, char *arg, struct argp_state *state)
 {
     MainArguments * mainArgs = (MainArguments *) state->input;
 
@@ -169,11 +170,6 @@ int main(int argc, char * argv[])
 
     if (mainArgs.energy_used)
         sg_energy_plugin_init();
-
-    /*QUIET,
-    NETWORK_ONLY,
-    INFORMATION,
-    DEBUG */
 
     if (mainArgs.verbosity == VerbosityLevel::QUIET || mainArgs.verbosity == VerbosityLevel::NETWORK_ONLY)
     {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ipp.hpp"
-#include "batsim.h"
 #include "context.hpp"
 
 int killer_process(int argc, char *argv[]);

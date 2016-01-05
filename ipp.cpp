@@ -1,7 +1,6 @@
 #include "ipp.hpp"
 
 #include <simgrid/msg.h>
-#include <map>
 
 using namespace std;
 
@@ -23,18 +22,52 @@ void send_message(const std::string & destination_mailbox, IPMessageType type, v
 
 std::string ipMessageTypeToString(IPMessageType type)
 {
-    static map<IPMessageType, string> type_to_string =
-    {
-        {IPMessageType::JOB_SUBMITTED, "JOB_SUBMITTED"},
-        {IPMessageType::JOB_COMPLETED, "JOB_COMPLETED"},
-        {IPMessageType::SCHED_ALLOCATION, "SCHED_ALLOCATION"},
-        {IPMessageType::SCHED_NOP, "SCHED_NOP"},
-        {IPMessageType::SCHED_READY, "SCHED_READY"},
-        {IPMessageType::SUBMITTER_HELLO, "SUBMITTER_HELLO"},
-        {IPMessageType::SUBMITTER_BYE, "SUBMITTER_BYE"},
-    };
+    string s;
 
-    return type_to_string[type];
+    switch(type)
+    {
+        case IPMessageType::JOB_SUBMITTED:
+            s = "JOB_SUBMITTED";
+            break;
+        case IPMessageType::JOB_COMPLETED:
+            s = "JOB_COMPLETED";
+            break;
+        case IPMessageType::PSTATE_MODIFICATION:
+            s = "PSTATE_MODIFICATION";
+            break;
+        case IPMessageType::SCHED_ALLOCATION:
+            s = "SCHED_ALLOCATION";
+            break;
+        case IPMessageType::SCHED_REJECTION:
+            s = "SCHED_REJECTION";
+            break;
+        case IPMessageType::SCHED_NOP:
+            s = "SCHED_NOP";
+            break;
+        case IPMessageType::SCHED_NOP_ME_LATER:
+            s = "SCHED_NOP_ME_LATER";
+            break;
+        case IPMessageType::SCHED_READY:
+            s = "SCHED_READY";
+            break;
+        case IPMessageType::WAITING_DONE:
+            s = "WAITING_DONE";
+            break;
+        case IPMessageType::SUBMITTER_HELLO:
+            s = "SUBMITTER_HELLO";
+            break;
+        case IPMessageType::SUBMITTER_BYE:
+            s = "SUBMITTER_BYE";
+            break;
+        case IPMessageType::SWITCHED_ON:
+            s = "SWITCHED_ON";
+            break;
+        case IPMessageType::SWITCHED_OFF:
+            s = "SWITCHED_OFF";
+            break;
+    }
+
+    return s;
 }
 
 void send_message(const char *destination_mailbox, IPMessageType type, void *data)

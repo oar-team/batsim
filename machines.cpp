@@ -1,15 +1,13 @@
 #include "machines.hpp"
 
 #include <algorithm>
-#include <iterator>
-#include <map>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include "export.hpp"
 #include "context.hpp"
+#include "export.hpp"
 
 using namespace std;
 
@@ -290,14 +288,28 @@ void Machines::setTracer(PajeTracer *tracer)
 
 string machineStateToString(MachineState state)
 {
-    static const std::map<MachineState,std::string> conv =
-    {
-        {MachineState::SLEEPING, "sleeping"},
-        {MachineState::IDLE, "idle"},
-        {MachineState::COMPUTING, "computing"}
-    };
+    string s;
 
-    return conv.at(state);
+    switch (state)
+    {
+    case MachineState::SLEEPING:
+        s = "sleeping";
+        break;
+    case MachineState::IDLE:
+        s = "idle";
+        break;
+    case MachineState::COMPUTING:
+        s = "computing";
+        break;
+    case MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING:
+        s = "sleeping->computing";
+        break;
+    case MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING:
+        s = "computing->sleeping";
+        break;
+    }
+
+    return s;
 }
 
 Machine::~Machine()

@@ -35,5 +35,4 @@ private:
     int _client_socket;
 };
 
-int uds_server_process(int argc, char *argv[]);
 int request_reply_scheduler_process(int argc, char *argv[]);
