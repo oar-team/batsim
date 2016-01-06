@@ -74,7 +74,7 @@ setup:
           git clone https://scm.gforge.inria.fr/anonscm/git/batsim/batsim.git
       - exec_in: |
           cd $$simctn_dir/batsim
-          git checkout feb4031e3351d
+          git checkout 47e598043
           mkdir build
       - exec_in: |
           cd $$simctn_dir/batsim/build
@@ -112,7 +112,7 @@ setup:
           git clone https://github.com/oar-team/oar-lib.git
       - exec_in: |
           cd $$simctn_dir/oar-lib
-          git checkout 840ac5e
+          git checkout a1a59f1e36
           pip3 install -e .
     - install_oar_kao:
       - exec_in: |
@@ -150,6 +150,8 @@ setup:
       - exec_in: chmod 755 $$simctn_dir/expe-batsim/swfToJsonConverter.py
   # import my personal dev tools
   - my_dev_tools
+  # set the dev git repository instead of the Read-Only ones
+  - set_dev_git_repo
 
 export:
   - "@base"
