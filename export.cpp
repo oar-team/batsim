@@ -506,82 +506,60 @@ void PajeTracer::hsvToRgb(double h, double s, double v, double & r, double & g, 
     }
 }
 
-void exportJobsToCSV(const char *filename)
+void exportJobsToCSV(const string &filename, BatsimContext *context)
 {
-    (void) filename;
-}
-/* TODO
-void exportJobsToCSV(const char *filename)
-{
-    FILE * f = fopen(filename, "w");
+    ofstream f(filename, ios_base::trunc);
+    xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
 
-    // jobID
-    // submit time
-    // number of processors
-    // rejected (0 or 1)
-    // wall time
-    // starting time
-    // execution time
-    // used processors (list of ranges)
+    // write headers
+    f << "jobID,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,allocated_processors\n";
 
-    if (f != NULL)
+    const auto & jobs = context->jobs.jobs();
+    for (const auto & mit : jobs)
     {
-        fputs("jobID,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,allocated_processors\n", f);
+        Job * job = mit.second;
 
-        if (jobs_dynar != NULL)
+        if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JobState::JOB_STATE_COMPLETED_KILLED)
         {
-            unsigned int i;
-            s_job_t * job;
             char * buf;
+            int success = job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
+            int ret = asprintf(&buf, "%d,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,", job->id,
+                     job->submission_time,
+                     job->required_nb_res,
+                     job->walltime,
+                     success,
+                     job->starting_time,
+                     job->runtime,
+                     job->starting_time + job->runtime, // finish_time
+                     job->starting_time - job->submission_time, // waiting_time
+                     job->starting_time + job->runtime - job->submission_time, // turnaround_time
+                     (job->starting_time + job->runtime - job->submission_time) / job->runtime // stretch
+                     );
+            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+            f << buf;
+            free(buf);
 
-            xbt_dynar_foreach(jobs_dynar, i, job)
+            if (job->required_nb_res > 0)
             {
-                if (job->state == JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JOB_STATE_COMPLETED_KILLED)
+                int ret = asprintf(&buf, "%d", job->allocation[0]);
+                xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+                f << buf;
+                free(buf);
+
+                for (int i = 1; i < job->required_nb_res; ++i)
                 {
-                    int success = job->state == JOB_STATE_COMPLETED_SUCCESSFULLY;
-                    int ret = asprintf(&buf, "%d,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,", job->id,
-                             job->submission_time,
-                             job->nb_res,
-                             job->walltime,
-                             success,
-                             job->startingTime,
-                             job->runtime,
-                             job->startingTime + job->runtime, // finish_time
-                             job->startingTime - job->submission_time, // waiting_time
-                             job->startingTime + job->runtime - job->submission_time, // turnaround_time
-                             (job->startingTime + job->runtime - job->submission_time) / job->runtime // stretch
-                             );
+                    ret = asprintf(&buf," %d", job->allocation[i]);
                     xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-                    fputs(buf, f);
+                    f << buf;
                     free(buf);
-
-                    if (job->nb_res > 0)
-                    {
-                        int ret = asprintf(&buf, "%d", job->alloc_ids[0]);
-                        xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-                        fputs(buf, f);
-                        free(buf);
-
-                        for (int i = 1; i < job->nb_res; ++i)
-                        {
-                            ret = asprintf(&buf," %d", job->alloc_ids[i]);
-                            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-                            fputs(buf, f);
-                            free(buf);
-                        }
-                    }
-
-                    fputs("\n", f);
                 }
             }
-        }
 
-        int err = fclose(f);
-        xbt_assert(err == 0, "Impossible to close file '%s'...", filename);
+            f << "\n";
+        }
     }
-    else
-        XBT_INFO("Impossible to write file '%s'", filename);
-}*/
+}
+
 
 void exportScheduleToCSV(const string &filename, double scheduling_time, BatsimContext *context)
 {
