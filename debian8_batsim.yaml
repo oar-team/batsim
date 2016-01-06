@@ -54,6 +54,36 @@ setup:
           cmake -DCMAKE_INSTALL_PREFIX=/usr/local/ -Denable_documentation=OFF ../
           make -j$(nproc)
           make install
+<<<<<<< HEAD
+=======
+  - batsim_install:
+    - install dependencies:
+      - exec_in: |
+          apt-get -y --force-yes install \
+          libboost-filesystem-dev \
+          libboost-system-dev 2>&1
+      # Install rapidjson (not available in jessy)
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://github.com/miloyip/rapidjson.git
+      - exec_in: |
+          cd $$simctn_dir/rapidjson
+          git checkout 3d5848a # v1.02
+          cp -a include/rapidjson /usr/include
+    - do_it:
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://scm.gforge.inria.fr/anonscm/git/batsim/batsim.git
+      - exec_in: |
+          cd $$simctn_dir/batsim
+          git checkout 47e598043
+          mkdir build
+      - exec_in: |
+          cd $$simctn_dir/batsim/build
+          cmake ..
+          make -j$(nproc)
+          make install
+>>>>>>> 2b55b72b9f27f488ccf82d4cefcf2789f7099772
   - fred_scheduler:
     - install dependencies:
       - exec_in: |
