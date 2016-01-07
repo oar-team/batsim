@@ -5,6 +5,7 @@
  - simgrid
    - without energy: rev 8de23104635721196 on git://scm.gforge.inria.fr/simgrid/simgrid.git
    - with energy: rev 685c03b7bc7bbc on https://github.com/mquinson/simgrid.git
+   - with energy & SimGrid process tracing: rev 79f2c630c9587d494cb1 on https://github.com/mquinson/simgrid.git
  - rapidjson
  - boost (system, filesystem)
  - C++11 compiler
@@ -44,11 +45,21 @@
  Batsim has its own set of options but it can also handle standard SimGrid ones.
  The end-of-options delimiter "--" must then be used to use SimGrid options.
 
-**** Quiet run
-  ./batsim [batsim_options...] -- PLATFORM WORKLOAD --log=batsim.thresh:critical --log=network.thresh:critical
-
-**** Display network information only
-  ./batsim [batsim_options...] -- PLATFORM WORKLAOD --log=batsim.thresh:critical
+**** Display Batsim options help
+ ./batsim PLATFORM WORKLOAD --help
 
 **** Display SimGrid options help
-  ./batsim -- PLATFORM WORKLOAD --help
+ ./batsim PLATFORM WORKLOAD -- --help
+
+**** Quiet run
+ ./batsim [batsim_options...] PLATFORM WORKLOAD -q
+
+**** Display network information only
+ ./batsim [batsim_options...] PLATFORM WORKLOAD -vnetwork-only
+
+**** Display debug information
+ ./batsim [batsim_options...] PLATFORM WORKLOAD -vdebug
+
+**** Generate SimGrid processes' trace (can be useful to visualize what happens)
+ ./batsim [batsim_options...] PLATFORM WORKLOAD -- --cfg=tracing:1 --cfg=tracing/msg/process:1
+
