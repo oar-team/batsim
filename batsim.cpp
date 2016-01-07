@@ -261,6 +261,7 @@ int main(int argc, char * argv[])
     // Finalization
     context.tracer.finalize(&context, MSG_get_clock());
     exportScheduleToCSV(mainArgs.exportPrefix + "_schedule.csv", MSG_get_clock(), &context);
+    exportJobsToCSV(mainArgs.exportPrefix + "_jobs.csv", &context);
 
     if (res == MSG_OK)
         return 0;

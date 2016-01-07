@@ -51,7 +51,7 @@ private:
  * @brief Exports the job execution to a CSV file.
  * @param filename This is the name of the output file used to write the CSV data.
  */
-void exportJobsToCSV(const char * filename);
+void exportJobsToCSV(const std::string &filename, BatsimContext * context);
 
 /**
  * @brief Compute and exports some schedule criteria to a CSV file.
