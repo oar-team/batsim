@@ -2,10 +2,7 @@
 * Installation
 
 ** Dependencies
- - simgrid
-   - without energy: rev 8de23104635721196 on git://scm.gforge.inria.fr/simgrid/simgrid.git
-   - with energy: rev 685c03b7bc7bbc on https://github.com/mquinson/simgrid.git
-   - with energy & SimGrid process tracing: rev 79f2c630c9587d494cb1 on https://github.com/mquinson/simgrid.git
+ - simgrid: rev 5b8393a87 on git://scm.gforge.inria.fr/simgrid/simgrid.gitsimgrid.git
  - rapidjson
  - boost (system, filesystem)
  - C++11 compiler
@@ -41,7 +38,7 @@ In a second terminal:
 
 - First install the required oar-3 libraries.
 
- : git clone https://github.com/oar-team/oar-lib.git 
+ : git clone https://github.com/oar-team/oar-lib.git
  : git clone https://github.com/oar-team/oar-kao.git
 
  : cd oar-lib
