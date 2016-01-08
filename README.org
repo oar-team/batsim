@@ -1,7 +1,7 @@
 
 * Installation
 
-** dependencies
+** Dependencies
  - simgrid
    - without energy: rev 8de23104635721196 on git://scm.gforge.inria.fr/simgrid/simgrid.git
    - with energy: rev 685c03b7bc7bbc on https://github.com/mquinson/simgrid.git
@@ -10,86 +10,35 @@
  - boost (system, filesystem)
  - C++11 compiler
 
-** first step: prepare Makefile
- mkdir build
- cd build
- cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" ../
-
-** second step
- make
-
-** usage
-*** test with fake scheduler
- # open 2 terminals
- # first terminal
- cd build
- ./batsim ../platforms/small_platform.xml ../workload_profiles/test_workload_profile.json
- # second terminal
- python filler_sched.py workload_profiles/test_workload_profile.json
-
-
-*** test with oar core scheduler
- # install
-
- git clone https://gforge.inria.fr/git/oar/oar-kao.git
- git clone https://gforge.inria.fr/git/oar/python-oar-lib.git
-
- cd python-oar-lib
- sudo python setup.py install
- cd oar-kao
- sudo python setup.py install
- cd oar_kao
- python batsim.py ../../batsim/workload_profiles/test_workload_profile.json
-
-*** display information control
- Batsim has its own set of options but it can also handle standard SimGrid ones.
- The end-of-options delimiter "--" must then be used to use SimGrid options.
-
-**** Display Batsim options help
- ./batsim PLATFORM WORKLOAD --help
-
-**** Display SimGrid options help
- ./batsim PLATFORM WORKLOAD -- --help
-
-**** Quiet run
- ./batsim [batsim_options...] PLATFORM WORKLOAD -q
-
-**** Display network information only
- ./batsim [batsim_options...] PLATFORM WORKLOAD -vnetwork-only
-
-**** Display debug information
- ./batsim [batsim_options...] PLATFORM WORKLOAD -vdebug
-
-**** Generate SimGrid processes' trace (can be useful to visualize what happens)
- ./batsim [batsim_options...] PLATFORM WORKLOAD -- --cfg=tracing:1 --cfg=tracing/msg/process:1
-
-=======
-** Dependencies
- - simgrid (revision 2b7c35f960b4 on git://scm.gforge.inria.fr/simgrid/simgrid.git)
- - Jansson: a C library for encoding, decoding and manipulating JSON data. 
-: apt-get install libjansson4
-: apt-get install libjansson-dev
-** First step: prepare Makefile
+** First step: generate Makefile via CMake
 : mkdir build
 : cd build
-: cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" ../
+: cmake -DCMAKE_BUILD_TYPE=Debug ..
 
-** Second step
+** Second step: make
 : make
 
 * Usages
-** Common part for all cases:
+** Common part for cases which do NOT need energy:
 In a terminal:
-: cd build 
-: ./batsim ../platforms/small_platform.xml ../workload_profiles/test_workload_profile.json
+: ./build/batsim platforms/small_platform.xml workload_profiles/test_workload_profile.json
 
 ** With fake scheduler
 In a second terminal:
 : python fake_sched_uds.py workload_profiles/test_workload_profile.json
 
+** With filler scheduler
+: python filler_sched.py workload_profiles/test_workload_profile.json
+
+** Energy experiments
+*** Batsim
+: ./build/batsim -p platforms/energy_platform_homogeneous.xml workload_profiles/test_workload_profile.json
+*** Scheduler
+: python fcfs_sleeper_sched.py workload_profiles/test_workload_profile.json
+
 ** With oar core scheduler
 In a second terminal:
- 
+
 - First install the required oar-3 libraries.
 
  : git clone https://github.com/oar-team/oar-lib.git 
@@ -107,15 +56,23 @@ In a second terminal:
 Refer to [[https://github.com/oar-team/oar-kao][oar-kao]] site or bataar.py -h for more to information.
 
 * Display information control
-
  Batsim has its own set of options but it can also handle standard SimGrid ones.
  The end-of-options delimiter "--" must then be used to use SimGrid options.
 
+** Display Batsim options/help
+ ./batsim PLATFORM WORKLOAD --help
+
+** Display SimGrid options/help
+ ./batsim PLATFORM WORKLOAD -- --help
+
 ** Quiet run
-  : ./batsim [batsim_options...] -- PLATFORM WORKLOAD --log=batsim.thresh:critical --log=network.thresh:critical
+ ./batsim [batsim_options...] PLATFORM WORKLOAD -q
 
 ** Display network information only
-  : ./batsim [batsim_options...] -- PLATFORM WORKLOAD --log=batsim.thresh:critical
+ ./batsim [batsim_options...] PLATFORM WORKLOAD -vnetwork-only
 
-** Display SimGrid options help
-  : ./batsim -- PLATFORM WORKLOAD --help
+** Display debug information
+ ./batsim [batsim_options...] PLATFORM WORKLOAD -vdebug
+
+** Generate SimGrid processes' trace (can be useful to visualize what happens)
+ ./batsim [batsim_options...] PLATFORM WORKLOAD -- --cfg=tracing:1 --cfg=tracing/msg/process:1
