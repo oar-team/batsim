@@ -261,12 +261,13 @@ int request_reply_scheduler_process(int argc, char *argv[])
                     }
 
                     // Let us sort the allocation, to detect easily whether all machines are different or not
-                    std::sort(alloc.machine_ids.begin(), alloc.machine_ids.end());
+                    vector<int> sorted_machine_ids = alloc.machine_ids;
+                    std::sort(sorted_machine_ids.begin(), sorted_machine_ids.end());
 
                     bool all_different = true;
-                    for (unsigned int i = 1; i < alloc.machine_ids.size(); ++i)
+                    for (unsigned int i = 1; i < sorted_machine_ids.size(); ++i)
                     {
-                        if (alloc.machine_ids[i-1] == alloc.machine_ids[i])
+                        if (sorted_machine_ids[i-1] == sorted_machine_ids[i])
                         {
                             all_different = false;
                             break;
