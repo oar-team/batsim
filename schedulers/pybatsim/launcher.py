@@ -5,6 +5,7 @@
 
 import sys
 from batsim.batsim import Batsim
+from batsim.validatingmachine import ValidatingMachine
 
 
 
@@ -43,6 +44,9 @@ def instanciate_scheduler(name):
 
 scheduler = instanciate_scheduler(scheduler_filename)
 
-bs = Batsim(json_filename, scheduler, verbose=999)
+#vm = None
+vm = ValidatingMachine
+
+bs = Batsim(json_filename, scheduler, validatingmachine=vm, verbose=999)
 
 bs.start()
