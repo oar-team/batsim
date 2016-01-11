@@ -36,6 +36,7 @@ struct Machine
 
     bool has_pstate(int pstate) const;
     void display_machine(bool is_energy_used) const;
+    std::string jobs_being_computed_as_string() const;
 };
 
 class Machines

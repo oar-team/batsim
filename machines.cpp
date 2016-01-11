@@ -375,3 +375,13 @@ void Machine::display_machine(bool is_energy_used) const
 
     XBT_INFO("%s", str.c_str());
 }
+
+string Machine::jobs_being_computed_as_string() const
+{
+    vector<string> jobs_strings;
+
+    for (auto & jobID : jobs_being_computed)
+        jobs_strings.push_back(to_string(jobID));
+
+    return boost::algorithm::join(jobs_strings, ", ");
+}

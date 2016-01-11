@@ -38,19 +38,20 @@ enum class VerbosityLevel
  */
 struct MainArguments
 {
-    std::string platformFilename;   //! The SimGrid platform filename
-    std::string workloadFilename;   //! The JSON workload filename
+    std::string platformFilename;                           //! The SimGrid platform filename
+    std::string workloadFilename;                           //! The JSON workload filename
 
-    std::string socketFilename;     //! The Unix Domain Socket filename
+    std::string socketFilename = "/tmp/bat_socket";         //! The Unix Domain Socket filename
 
-    std::string masterHostName;     //! The name of the SimGrid host which runs scheduler processes and not user tasks
-    std::string exportPrefix;       //! The filename prefix used to export simulation information
+    std::string masterHostName = "master_host";             //! The name of the SimGrid host which runs scheduler processes and not user tasks
+    std::string exportPrefix = "out";                       //! The filename prefix used to export simulation information
 
-    bool energy_used;               //! True if and only if the SimGrid energy plugin should be used.
-    VerbosityLevel verbosity;       //! Sets the Batsim verbosity
+    bool energy_used = false;                               //! True if and only if the SimGrid energy plugin should be used.
+    VerbosityLevel verbosity = VerbosityLevel::INFORMATION; //! Sets the Batsim verbosity
+    bool allow_space_sharing = false;                       //! Allows/forbids space sharing. Two jobs can run on the same machine if and only if space sharing is allowed.
 
-    bool abort;                     //! A boolean value. If set to yet, the launching should be aborted for reason abortReason
-    std::string abortReason;        //! Human readable reasons which explains why the launch should be aborted
+    bool abort = false;                                     //! A boolean value. If set to yet, the launching should be aborted for reason abortReason
+    std::string abortReason;                                //! Human readable reasons which explains why the launch should be aborted
 };
 
 /**
@@ -66,6 +67,9 @@ int parse_opt (int key, char *arg, struct argp_state *state)
 
     switch (key)
     {
+    case 'h':
+        mainArgs->allow_space_sharing = true;
+        break;
     case 'e':
         mainArgs->exportPrefix = arg;
         break;
@@ -90,7 +94,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
         else
         {
             mainArgs->abort = true;
-            mainArgs->abortReason += "\n  invalid VERBOSITY_LEVEL argument: '" + string(sArg) + "' is not in [quiet, network-only, information, debug].";
+            mainArgs->abortReason += "\n  invalid VERBOSITY_LEVEL argument: '" + string(sArg) + "' is not in {quiet, network-only, information, debug}.";
         }
         break;
     }
@@ -116,7 +120,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
             if (access(mainArgs->workloadFilename.c_str(), R_OK) == -1)
             {
                 mainArgs->abort = true;
-                mainArgs->abortReason += "\n invalid WORKLOAD_FILE argument: file '" + string(mainArgs->workloadFilename) + "' cannot be read";
+                mainArgs->abortReason += "\n  invalid WORKLOAD_FILE argument: file '" + string(mainArgs->workloadFilename) + "' cannot be read";
             }
             break;
         }
@@ -125,13 +129,8 @@ int parse_opt (int key, char *arg, struct argp_state *state)
         if (state->arg_num < 2)
         {
             mainArgs->abort = 1;
-            mainArgs->abortReason += "\n\tToo few arguments. Try the --help option to display usage information.";
+            mainArgs->abortReason += "\n  Too few arguments. Try the --help option to display usage information.";
         }
-        /*else if (state->arg_num > 2)
-        {
-            mainArgs->abort = 1;
-            strcat(mainArgs->abortReason, "\n\tToo many arguments.");
-        }*/
         break;
     }
 
@@ -140,23 +139,17 @@ int parse_opt (int key, char *arg, struct argp_state *state)
 
 int main(int argc, char * argv[])
 {
-    // TODO : boolean option to enable the energy plugin
     MainArguments mainArgs;
-    mainArgs.socketFilename = "/tmp/bat_socket";
-    mainArgs.masterHostName = "master_host";
-    mainArgs.exportPrefix = "out";
-    mainArgs.energy_used = false;
-    mainArgs.verbosity = VerbosityLevel::INFORMATION;
-    mainArgs.abort = false;
 
     struct argp_option options[] =
     {
-        {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename", 0},
-        {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks", 0},
         {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output", 0},
+        {"allow-space-sharing", 'h', 0, 0, "Allows space sharing: the same resource can compute several jobs at the same time", 0},
+        {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks", 0},
         {"energy-plugin", 'p', 0, 0, "Enables energy-aware experiments", 0},
-        {"verbosity", 'v', "VERBOSITY_LEVEL", 0, "Sets the Batsim verbosity level. Available values are : quiet, network-only, information (default), debug.", 0},
         {"quiet", 'q', 0, 0, "Shortcut for --verbosity=quiet", 0},
+        {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename", 0},
+        {"verbosity", 'v', "VERBOSITY_LEVEL", 0, "Sets the Batsim verbosity level. Available values are : quiet, network-only, information (default), debug.", 0},
         {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
     };
     struct argp argp = {options, parse_opt, "PLATFORM_FILE WORKLOAD_FILE", "A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.", 0, 0, 0};
@@ -212,6 +205,7 @@ int main(int argc, char * argv[])
     context.platform_filename = mainArgs.platformFilename;
     context.workload_filename = mainArgs.workloadFilename;
     context.energy_used = mainArgs.energy_used;
+    context.allow_space_sharing = mainArgs.allow_space_sharing;
 
     load_json_workload(&context, mainArgs.workloadFilename);
     context.jobs.setProfiles(&context.profiles);

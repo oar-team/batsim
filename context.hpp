@@ -19,7 +19,8 @@ struct BatsimContext
     PajeTracer tracer;
 
     long long microseconds_used_by_scheduler = 0;
-    bool energy_used = false;
+    bool energy_used;
+    bool allow_space_sharing;
     std::string platform_filename;
     std::string workload_filename;
 };

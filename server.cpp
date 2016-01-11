@@ -219,6 +219,19 @@ int uds_server_process(int argc, char *argv[])
                 nb_scheduled_jobs++;
                 xbt_assert(nb_scheduled_jobs <= nb_submitted_jobs);
 
+                if (!context->allow_space_sharing)
+                {
+                    for (const int & machineID : allocation.machine_ids)
+                    {
+                        const Machine * machine = context->machines[machineID];
+                        xbt_assert(machine->jobs_being_computed.empty(),
+                                   "Invalid job allocation: machine %d ('%s') is currently computing jobs (these ones:"
+                                   " {%s}) whereas space sharing is forbidden. Space sharing can be enabled via an option"
+                                   " (rerun with --help to display the available options)", machine->id, machine->name.c_str(),
+                                   machine->jobs_being_computed_as_string().c_str());
+                    }
+                }
+
                 if (context->energy_used)
                 {
                     // Check that every machine is in a computation pstate
