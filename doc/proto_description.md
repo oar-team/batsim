@@ -44,7 +44,9 @@ Each MSG_CONTENT follows this syntax:
 |        1+       |   P   | Sched->Batsim | MACHINE_ID=PSTATE        | Ask to change the pstate of a machine.
 |        1+       |   p   | Batsim->Sched | MACHINE_ID=PSTATE        | Tells the scheduler the pstate of a machine has changed.
 |        1+       |   R   | Sched->Batsim | JOB_ID                   | Job rejection: the scheduler tells that one (static) job will not be computed.
-|        1+       |   n   | Sched->Batim  | TIME                     | NOP me later: the scheduler asks to be awaken at simulation time TIME.
+|        1+       |   n   | Sched->Batsim | TIME                     | NOP me later: the scheduler asks to be awaken at simulation time TIME.
+|        1+       |   E   | Sched->Batsim | No content               | Ask Batsim to give the total consumed energy (from time 0 to now) in Joules. Works only in energy mode.
+|        1+       |   e   | Batsim->Sched | CONSUMED_ENERGY          | Batsim gives the total consumed energy (from time 0 to now) in Joules. Works only in energy mode.
 
 
 # Message Examples #

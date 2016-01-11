@@ -13,19 +13,20 @@ struct BatsimContext;
 
 enum class IPMessageType
 {
-    JOB_SUBMITTED       //!< Submitter -> Server. The submitter tells the server a new job has been submitted.
-    ,JOB_COMPLETED      //!< Launcher/killer -> Server. The launcher tells the server a job has been completed.
-    ,PSTATE_MODIFICATION//!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a pstate modification).
-    ,SCHED_ALLOCATION   //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job allocation).
-    ,SCHED_REJECTION    //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job rejection).
-    ,SCHED_NOP          //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a NOP message).
-    ,SCHED_NOP_ME_LATER //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a NOP_ME_LATTER message).
-    ,SCHED_READY        //!< SchedulerHandler -> Server. The scheduler handler tells the server that the scheduler is ready (messages can be sent to it).
-    ,WAITING_DONE        //!< Waiter -> server. The waiter tells the server that the target time has been reached.
-    ,SUBMITTER_HELLO    //!< Submitter -> Server. The submitter tells it starts submitting to the server.
-    ,SUBMITTER_BYE      //!< Submitter -> Server. The submitter tells it stops submitting to the server.
-    ,SWITCHED_ON        //!< SwitcherON -> Server. The switcherON process tells the server the machine pstate has been changed
-    ,SWITCHED_OFF       //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
+    JOB_SUBMITTED           //!< Submitter -> Server. The submitter tells the server a new job has been submitted.
+    ,JOB_COMPLETED          //!< Launcher/killer -> Server. The launcher tells the server a job has been completed.
+    ,PSTATE_MODIFICATION    //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a pstate modification).
+    ,SCHED_ALLOCATION       //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job allocation).
+    ,SCHED_REJECTION        //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job rejection).
+    ,SCHED_NOP              //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a NOP message).
+    ,SCHED_NOP_ME_LATER     //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a NOP_ME_LATTER message).
+    ,SCHED_TELL_ME_ENERGY   //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a TELL_ME_CONSUMED_ENERGY message).
+    ,SCHED_READY            //!< SchedulerHandler -> Server. The scheduler handler tells the server that the scheduler is ready (messages can be sent to it).
+    ,WAITING_DONE           //!< Waiter -> server. The waiter tells the server that the target time has been reached.
+    ,SUBMITTER_HELLO        //!< Submitter -> Server. The submitter tells it starts submitting to the server.
+    ,SUBMITTER_BYE          //!< Submitter -> Server. The submitter tells it stops submitting to the server.
+    ,SWITCHED_ON            //!< SwitcherON -> Server. The switcherON process tells the server the machine pstate has been changed
+    ,SWITCHED_OFF           //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
 };
 
 struct JobSubmittedMessage

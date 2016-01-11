@@ -58,6 +58,7 @@ public:
 
     const std::vector<Machine *> & machines() const;
     const Machine * masterMachine() const;
+    long double total_consumed_energy(BatsimContext * context) const;
 
 private:
     std::vector<Machine *> _machines;

@@ -226,8 +226,8 @@ int uds_server_process(int argc, char *argv[])
                         const Machine * machine = context->machines[machineID];
                         xbt_assert(machine->jobs_being_computed.empty(),
                                    "Invalid job allocation: machine %d ('%s') is currently computing jobs (these ones:"
-                                   " {%s}) whereas space sharing is forbidden. Space sharing can be enabled via an option"
-                                   " (rerun with --help to display the available options)", machine->id, machine->name.c_str(),
+                                   " {%s}) whereas space sharing is forbidden. Space sharing can be enabled via an option,"
+                                   " try --help to display the available options", machine->id, machine->name.c_str(),
                                    machine->jobs_being_computed_as_string().c_str());
                     }
                 }
@@ -262,7 +262,7 @@ int uds_server_process(int argc, char *argv[])
         case IPMessageType::WAITING_DONE:
         {
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":N";
-            XBT_DEBUG( "Message to send to scheduler: '%s'", send_buffer.c_str());
+            XBT_DEBUG("Message to send to scheduler: '%s'", send_buffer.c_str());
         } break; // end of case WAITING_DONE
 
         case IPMessageType::SCHED_READY:
@@ -282,7 +282,7 @@ int uds_server_process(int argc, char *argv[])
 
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
                            std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
-            XBT_DEBUG( "Message to send to scheduler : '%s'", send_buffer.c_str());
+            XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
 
             --nb_switching_machines;
         } break; // end of case SWITCHED_ON
@@ -298,10 +298,19 @@ int uds_server_process(int argc, char *argv[])
 
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
                            std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
-            XBT_DEBUG( "Message to send to scheduler : '%s'", send_buffer.c_str());
+            XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
 
             --nb_switching_machines;
         } break; // end of case SWITCHED_ON
+
+        case IPMessageType::SCHED_TELL_ME_ENERGY:
+        {
+            long double total_consumed_energy = context->machines.total_consumed_energy(context);
+
+            send_buffer += "|" + std::to_string(MSG_get_clock()) + ":e:" +
+                           std::to_string(total_consumed_energy);
+            XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
+        }
         } // end of switch
 
         delete task_data;

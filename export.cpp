@@ -607,17 +607,7 @@ void exportScheduleToCSV(const string &filename, double scheduling_time, BatsimC
         }
     }
 
-    long double total_consumed_energy = 0;
-
-    if (context->energy_used)
-    {
-        for (const Machine * m : context->machines.machines())
-        {
-            total_consumed_energy += MSG_host_get_consumed_energy(m->host);
-        }
-    }
-    else
-        total_consumed_energy = -1;
+    long double total_consumed_energy = context->machines.total_consumed_energy(context);
 
     char * buf;
     int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf,%Lg\n",

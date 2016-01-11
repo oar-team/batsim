@@ -232,6 +232,21 @@ const Machine *Machines::masterMachine() const
     return _masterMachine;
 }
 
+long double Machines::total_consumed_energy(BatsimContext *context) const
+{
+    long double total_consumed_energy = 0;
+
+    if (context->energy_used)
+    {
+        for (const Machine * m : _machines)
+            total_consumed_energy += MSG_host_get_consumed_energy(m->host);
+    }
+    else
+        total_consumed_energy = -1;
+
+    return total_consumed_energy;
+}
+
 void Machines::updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMachines)
 {
     for (int machineID : usedMachines)

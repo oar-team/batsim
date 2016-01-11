@@ -5,7 +5,7 @@ import socket
 import sys
 import os
 import json
-from random import sample
+import random
 from sortedcontainers import SortedSet
 from enum import Enum
 
@@ -65,6 +65,9 @@ def read_bat_msg(connection):
         elif data[1] == 'p':
             data2 = data[2].split('=')
             pstate_changed[int(data2[0])] = int(data2[1])
+        elif data[1] == 'e':
+            consumed_energy = float(data[2])
+            print("Consumed energy is " + str(consumed_energy) + " J")
         else:
             raise Exception("Unknow submessage type" + data[1] )
 
@@ -91,7 +94,10 @@ def send_bat_msg(connection, now, jids_toLaunch, jobs, pstates_to_change):
             msg += "|" + str(now) + ":P:" + part
 
     if not didSomething:
-        msg += "|" + str(now) +":N"
+        if random.choice([0,1]) == 0:
+            msg += "|" + str(now) +":N"
+        else:
+            msg += "|" + str(now) +":E"
 
     print(msg)
     lg = struct.pack("i",int(len(msg)))

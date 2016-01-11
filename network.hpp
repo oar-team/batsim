@@ -12,8 +12,10 @@ enum NetworkStamp : char
     STATIC_JOB_COMPLETION = 'C',
     PSTATE_SET = 'P',
     NOP_ME_LATER = 'n',
+    TELL_ME_CONSUMED_ENERGY = 'E',
 
-    PSTATE_HAS_BEEN_SET = 'p'
+    PSTATE_HAS_BEEN_SET = 'p',
+    CONSUMED_ENERGY = 'e'
 };
 
 class UnixDomainSocket

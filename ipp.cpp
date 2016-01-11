@@ -47,6 +47,9 @@ std::string ipMessageTypeToString(IPMessageType type)
         case IPMessageType::SCHED_NOP_ME_LATER:
             s = "SCHED_NOP_ME_LATER";
             break;
+        case IPMessageType::SCHED_TELL_ME_ENERGY:
+            s = "SCHED_TELL_ME_ENERGY";
+            break;
         case IPMessageType::SCHED_READY:
             s = "SCHED_READY";
             break;
@@ -111,6 +114,9 @@ IPMessage::~IPMessage()
             delete msg;
         } break;
         case IPMessageType::SCHED_NOP:
+        {
+        } break;
+        case IPMessageType::SCHED_TELL_ME_ENERGY:
         {
         } break;
         case IPMessageType::SCHED_READY:
