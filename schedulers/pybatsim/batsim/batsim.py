@@ -3,6 +3,7 @@
 import json
 import struct
 import socket
+import sys
 
 class Batsim(object):
 
@@ -40,14 +41,14 @@ class Batsim(object):
         return self._current_time
 
 
-    def start_job(self, jobid, res):
-        self._msgs_to_send.append( ( self.time(), "J:"+str(jobid)+"="+ ",".join([str(i) for i in res]) ) )
+    def start_job(self, job, res):
+        self._msgs_to_send.append( ( self.time(), "J:"+str(job.id)+"="+ ",".join([str(i) for i in res]) ) )
 
-    def start_jobs(self, jobids, res):
+    def start_jobs(self, jobs, res):
         msg = "J:"
-        for jid in jobids:
-            msg += str(jid) + "="
-            for r in res[jid]:
+        for j in jobs:
+            msg += str(j.id) + "="
+            for r in res[j.id]:
                 msg += str(r) + ","
             msg = msg[:-1] + ";" # replace last comma by semicolon separtor between jobs
         msg = msg[:-1] # remove last semicolon
@@ -90,9 +91,9 @@ class Batsim(object):
             if data[1] == 'N':
                 self.scheduler.onNOP()
             if data[1] == 'S':
-                self.scheduler.onJobSubmission(int(data[2]))
+                self.scheduler.onJobSubmission(self.jobs[int(data[2])])
             elif data[1] == 'C':
-                self.scheduler.onJobCompletion(int(data[2]))
+                self.scheduler.onJobCompletion(self.jobs[int(data[2])])
             elif data[1] == 'p':
                 opts = data[2].split('=')
                 self.scheduler.onMachinePStateChanged(int(opts[0]), int(opts[1]))

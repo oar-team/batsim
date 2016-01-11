@@ -36,12 +36,12 @@ class FillerSched(BatsimScheduler):
 
         # Iterating over a copy to be able to remove jobs from openJobs at traversal
         for job in set(self.openJobs):
-            nb_res_req = self.bs.jobs[job].requested_resources
+            nb_res_req = job.requested_resources
 
             if nb_res_req <= len(self.availableResources):
                 res = self.availableResources[:nb_res_req]
-                self.jobs_res[job] = res
-                self.previousAllocations[job] = res
+                self.jobs_res[job.id] = res
+                self.previousAllocations[job.id] = res
                 scheduledJobs.append(job)
 
                 for r in res:
@@ -66,7 +66,7 @@ class FillerSched(BatsimScheduler):
         self.scheduleJobs()
 
     def onJobCompletion(self, job):
-        for res in self.previousAllocations[job]:
+        for res in self.previousAllocations[job.id]:
             self.availableResources.add(res)
-        self.previousAllocations.pop(job)
+        self.previousAllocations.pop(job.id)
         self.scheduleJobs()
