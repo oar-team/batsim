@@ -5,13 +5,18 @@ import struct
 import socket
 import sys
 
+
+
 class Batsim(object):
 
-    def __init__(self, json_file, scheduler, server_address = '/tmp/bat_socket', verbose=0):
+    def __init__(self, json_file, scheduler, validatingmachine=None, server_address = '/tmp/bat_socket', verbose=0):
         self.server_address = server_address
         self.verbose = verbose
         
-        self.scheduler = scheduler
+        if validatingmachine is None:
+            self.scheduler = scheduler
+        else:
+            self.scheduler = validatingmachine(scheduler)
         
         #load json file
         self._load_json_workload_profile(json_file)
@@ -93,7 +98,9 @@ class Batsim(object):
             if data[1] == 'S':
                 self.scheduler.onJobSubmission(self.jobs[int(data[2])])
             elif data[1] == 'C':
-                self.scheduler.onJobCompletion(self.jobs[int(data[2])])
+                j = self.jobs[int(data[2])]
+                j.finish_time = float(data[0])
+                self.scheduler.onJobCompletion(j)
             elif data[1] == 'p':
                 opts = data[2].split('=')
                 self.scheduler.onMachinePStateChanged(int(opts[0]), int(opts[1]))
@@ -134,6 +141,7 @@ class Job(object):
         self.requested_time = walltime
         self.requested_resources = res
         self.profile = profile
+        self.finish_time = None#will be set on completion by batsim
 
 
 class BatsimScheduler(object):
