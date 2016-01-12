@@ -1,0 +1,27 @@
+{
+    "version": 0,
+    "command:": "",
+    "date": "Tue, 11 Mar 2015 9:44:30 +0100",
+    "description": "workload with profile file for test",
+
+    "nb_res": 4,
+    "jobs": [
+        {"id":1, "subtime":0, "walltime": 100,  "res": 1, "profile": "2"},
+        {"id":2, "subtime":1, "walltime": 10, "res": 4, "profile": "1"},
+        {"id":3, "subtime":1, "walltime": 10, "res": 1, "profile": "1"},
+        {"id":4, "subtime":2, "walltime": 10, "res": 1, "profile": "1"}
+    ],
+
+    "profiles": {
+        "1": {
+            "type": "msg_par_hg",
+            "cpu": 100e6,
+            "com": 10e6
+        },
+        "2": {
+            "type": "msg_par_hg",
+            "cpu": 1000e6,
+            "com": 100e6
+        }
+    }
+}
