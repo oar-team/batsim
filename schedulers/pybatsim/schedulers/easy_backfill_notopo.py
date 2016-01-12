@@ -1,6 +1,6 @@
 #/usr/bin/python3
 
-from batsim.batsim import BatsimScheduler, Batsim
+from batsim.batsim import BatsimScheduler
 from schedulers.common_pyss_adaptator import CpuSnapshot
 
 import sys
@@ -69,7 +69,7 @@ class EasyBackfillNotopo(BatsimScheduler):
             
             
             for job in scheduledJobs:
-                job.start_time = current_time
+                job.start_time = current_time#just to be sure
                 res = self.availableResources[:job.requested_resources]
                 self.jobs_res[job.id] = res
                 self.previousAllocations[job.id] = res
@@ -87,6 +87,7 @@ class EasyBackfillNotopo(BatsimScheduler):
             # Try to schedule the first job
             if self.cpu_snapshot.free_processors_available_at(current_time) >= self.unscheduled_jobs[0].requested_resources:
                 job = self.unscheduled_jobs.pop(0)
+                job.start_time = current_time
                 self.cpu_snapshot.assignJob(job, current_time)
                 tosched.append(job)
 
@@ -122,11 +123,13 @@ class EasyBackfillNotopo(BatsimScheduler):
             if job.requested_time > shadow_len:
                 if job.requested_resources <= extra_cpu:
                     result.append(job)
+                    job.start_time = current_time
                     self.cpu_snapshot.assignJob(job, current_time)
                     extra_cpu -= job.requested_resources
             else:
                 if job.requested_resources <= extra_cpu+nonextra_cpu:
                     result.append(job)
+                    job.start_time = current_time
                     self.cpu_snapshot.assignJob(job, current_time)
                     nonextra_cpu -= job.requested_resources
                     if nonextra_cpu < 0:
