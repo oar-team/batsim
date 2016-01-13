@@ -50,15 +50,24 @@ class Batsim(object):
         self._msgs_to_send.append( ( self.time(), "J:"+str(job.id)+"="+ ",".join([str(i) for i in res]) ) )
 
     def start_jobs(self, jobs, res):
-        msg = "J:"
-        for j in jobs:
-            msg += str(j.id) + "="
-            for r in res[j.id]:
-                msg += str(r) + ","
-            msg = msg[:-1] + ";" # replace last comma by semicolon separtor between jobs
-        msg = msg[:-1] # remove last semicolon
-        self._msgs_to_send.append( ( self.time(), msg ) )
+        if len(jobs) > 0:
+            msg = "J:"
+            for j in jobs:
+                msg += str(j.id) + "="
+                for r in res[j.id]:
+                    msg += str(r) + ","
+                msg = msg[:-1] + ";" # replace last comma by semicolon separtor between jobs
+            msg = msg[:-1] # remove last semicolon
+            self._msgs_to_send.append( ( self.time(), msg ) )
 
+    def request_consumed_energy(self):
+        self._msgs_to_send.append( ( self.time(), "E" ) )
+        
+    def change_pstates(self, pstates_to_change):
+        if len(pstates_to_change) > 0:
+            parts = [str(p) + "=" + str(pstates_to_change[p]) for p in pstates_to_change] # create machine=new_pstate string parts
+            for part in parts:
+                self._msgs_to_send.append( ( self.time(), "P:" + part ) )
 
     def do_next_event(self):
         self._read_bat_msg()
@@ -104,7 +113,10 @@ class Batsim(object):
             elif data[1] == 'p':
                 opts = data[2].split('=')
                 self.scheduler.onMachinePStateChanged(int(opts[0]), int(opts[1]))
-            elif data[1] == 'J' or data[1] == 'P':
+            elif data[1] == 'e':
+                consumed_energy = float(data[2])
+                self.scheduler.onReportEnergyConsumed(consumed_energy)
+            elif data[1] == 'J' or data[1] == 'P' or data[1] == 'E':
                 raise "Only the server can receive this kind of message"
             else:
                 raise Exception("Unknow submessage type " + data[1] )
@@ -114,7 +126,8 @@ class Batsim(object):
             #sort msgs by timestamp
             self._msgs_to_send = sorted(self._msgs_to_send, key=lambda m: m[0])
             for m in self._msgs_to_send:
-                msg += str(m[0])+":"+m[1]
+                msg += str(m[0])+":"+m[1]+"|"
+            msg = msg[:-1]#remove the last "|"
         else:
             msg +=  str(self.time()) +":N"
 
@@ -157,4 +170,6 @@ class BatsimScheduler(object):
     def onJobCompletion(self, job):
         raise "not implemented"
     def onMachinePStateChanged(self, nodeid, pstate):
+        raise "not implemented"
+    def onReportEnergyConsumed(self, consumed_energy):
         raise "not implemented"
