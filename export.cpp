@@ -512,7 +512,7 @@ void exportJobsToCSV(const string &filename, BatsimContext *context)
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
 
     // write headers
-    f << "jobID,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,allocated_processors\n";
+    f << "jobID,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,consumed_energy,allocated_processors\n";
 
     const auto & jobs = context->jobs.jobs();
     for (const auto & mit : jobs)
@@ -523,7 +523,8 @@ void exportJobsToCSV(const string &filename, BatsimContext *context)
         {
             char * buf;
             int success = job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
-            int ret = asprintf(&buf, "%d,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,", job->id,
+            int ret = asprintf(&buf, "%d,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
+                     job->id,
                      job->submission_time,
                      job->required_nb_res,
                      job->walltime,
@@ -533,11 +534,14 @@ void exportJobsToCSV(const string &filename, BatsimContext *context)
                      job->starting_time + job->runtime, // finish_time
                      job->starting_time - job->submission_time, // waiting_time
                      job->starting_time + job->runtime - job->submission_time, // turnaround_time
-                     (job->starting_time + job->runtime - job->submission_time) / job->runtime // stretch
+                     (job->starting_time + job->runtime - job->submission_time) / job->runtime, // stretch
+                     job->consumed_energy
                      );
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
             f << buf;
             free(buf);
+
+            // TODO: use boost::join for the following if
 
             if (job->required_nb_res > 0)
             {

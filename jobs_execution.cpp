@@ -227,6 +227,7 @@ int execute_job_process(int argc, char *argv[])
     (void) argc;
     (void) argv;
 
+    // Retrieving input parameters
     ExecuteJobProcessArguments * args = (ExecuteJobProcessArguments *) MSG_process_get_data(MSG_process_self());
 
     Job * job = args->context->jobs[args->allocation.job_id];
@@ -234,6 +235,19 @@ int execute_job_process(int argc, char *argv[])
     job->allocation = args->allocation.machine_ids;
     double remaining_time = job->walltime;
 
+    // If energy is enabled, let us compute the energy used by the machines before running the job
+    if (args->context->energy_used)
+    {
+        job->consumed_energy = 0;
+
+        for(const int & machine_id : job->allocation)
+        {
+            Machine * machine = args->context->machines[machine_id];
+            job->consumed_energy += MSG_host_get_consumed_energy(machine->host);
+        }
+    }
+
+    // Job computation
     args->context->machines.updateMachinesOnJobRun(job->id, args->allocation.machine_ids);
     if (execute_profile(args->context, job->profile, &args->allocation, &remaining_time) == 1)
     {
@@ -250,6 +264,23 @@ int execute_job_process(int argc, char *argv[])
     args->context->machines.updateMachinesOnJobEnd(job->id, args->allocation.machine_ids);
     job->runtime = MSG_get_clock() - job->starting_time;
 
+    // If energy is enabled, let us compute the energy used by the machines after running the job
+    if (args->context->energy_used)
+    {
+        long double consumed_energy_before = job->consumed_energy;
+        job->consumed_energy = 0;
+
+        for(const int & machine_id : job->allocation)
+        {
+            Machine * machine = args->context->machines[machine_id];
+            job->consumed_energy += MSG_host_get_consumed_energy(machine->host);
+        }
+
+        // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
+        job->consumed_energy = job->consumed_energy - consumed_energy_before;
+    }
+
+    // Let us tell the server that the job completed
     JobCompletedMessage * message = new JobCompletedMessage;
     message->job_id = job->id;
 

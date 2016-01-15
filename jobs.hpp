@@ -29,6 +29,8 @@ struct Job
     double walltime;
     int required_nb_res;
 
+    long double consumed_energy; //! The sum, for each machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
+
     double starting_time;
     double runtime;
     std::vector<int> allocation;
