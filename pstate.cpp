@@ -32,6 +32,7 @@ int switch_on_machine_process(int argc, char *argv[])
     XBT_INFO("Switching machine %d ('%s') ON. Passing in virtual pstate %d to do so", machine->id,
              machine->name.c_str(), on_ps);
     MSG_host_set_pstate(machine->host, on_ps);
+    args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, on_ps);
 
     msg_host_t host_list[1] = {machine->host};
 //    double flop_amount[1] = {1};
@@ -49,6 +50,7 @@ int switch_on_machine_process(int argc, char *argv[])
     XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to computing pstate %d",
              machine->id, machine->name.c_str(), pstate);
     MSG_host_set_pstate(machine->host, pstate);
+    args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, pstate);
 
     machine->state = MachineState::IDLE;
 
@@ -81,6 +83,7 @@ int switch_off_machine_process(int argc, char *argv[])
     XBT_INFO("Switching machine %d ('%s') OFF. Passing in virtual pstate %d to do so", machine->id,
              machine->name.c_str(), off_ps);
     MSG_host_set_pstate(machine->host, off_ps);
+    args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, off_ps);
 
     msg_host_t host_list[1] = {machine->host};
 //    double flop_amount[1] = {1};
@@ -98,6 +101,7 @@ int switch_off_machine_process(int argc, char *argv[])
     XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to sleeping pstate %d",
              machine->id, machine->name.c_str(), pstate);
     MSG_host_set_pstate(machine->host, pstate);
+    args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, pstate);
 
     machine->state = MachineState::SLEEPING;
 

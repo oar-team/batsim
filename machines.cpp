@@ -82,8 +82,8 @@ void Machines::createMachines(xbt_dynar_t hosts, BatsimContext *context, const s
                         boost::trim(pstates[2]);
 
                         sleep_ps = boost::lexical_cast<unsigned int>(pstates[0]);
-                        on_ps = boost::lexical_cast<unsigned int>(pstates[1]);
-                        off_ps = boost::lexical_cast<unsigned int>(pstates[2]);
+                        off_ps = boost::lexical_cast<unsigned int>(pstates[1]);
+                        on_ps = boost::lexical_cast<unsigned int>(pstates[2]);
                     }
                     catch(boost::bad_lexical_cast& e)
                     {

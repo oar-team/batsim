@@ -132,7 +132,10 @@ int uds_server_process(int argc, char *argv[])
             {
                 if (machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE)
                 {
+                    XBT_INFO("Switching machine %d ('%s') pstate : %d -> %d.", machine->id,
+                             machine->name.c_str(), curr_pstate, message->new_pstate);
                     MSG_host_set_pstate(machine->host, message->new_pstate);
+                    context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, message->new_pstate);
                     xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
 
                     send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +

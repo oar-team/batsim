@@ -223,3 +223,18 @@ private:
         SET_VARIABLE,
     };
 };
+
+
+
+class PStateChangeTracer
+{
+public:
+    PStateChangeTracer();
+    void setFilename(const std::string & filename);
+    ~PStateChangeTracer();
+
+    void add_pstate_change(double time, int machine_id, int pstate_after);
+
+private:
+    WriteBuffer * _wbuf = nullptr;
+};

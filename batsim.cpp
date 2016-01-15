@@ -209,7 +209,7 @@ int main(int argc, char * argv[])
 
     load_json_workload(&context, mainArgs.workloadFilename);
     context.jobs.setProfiles(&context.profiles);
-    context.tracer.setFilename(mainArgs.exportPrefix + "_schedule.trace");
+    context.paje_tracer.setFilename(mainArgs.exportPrefix + "_schedule.trace");
     //context.jobs.displayDebug();
 
     XBT_INFO("Checking whether SMPI is used or not...");
@@ -229,9 +229,16 @@ int main(int argc, char * argv[])
     context.machines.createMachines(hosts, &context, mainArgs.masterHostName);
     xbt_dynar_free(&hosts);
     const Machine * masterMachine = context.machines.masterMachine();
-    context.machines.setTracer(&context.tracer);
-    context.tracer.initialize(&context, MSG_get_clock());
+    context.machines.setTracer(&context.paje_tracer);
+    context.paje_tracer.initialize(&context, MSG_get_clock());
     XBT_INFO("Machines created successfully. There are %lu computing machines.", context.machines.machines().size());
+
+    if (context.energy_used)
+    {
+        context.pstate_tracer.setFilename(mainArgs.exportPrefix + "_pstate_changes.csv");
+        for (const Machine * machine : context.machines.machines())
+            context.pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, MSG_host_get_pstate(machine->host));
+    }
 
     // Socket
     context.socket.create_socket(mainArgs.socketFilename);
@@ -253,7 +260,7 @@ int main(int argc, char * argv[])
     msg_error_t res = MSG_main();
 
     // Finalization
-    context.tracer.finalize(&context, MSG_get_clock());
+    context.paje_tracer.finalize(&context, MSG_get_clock());
     exportScheduleToCSV(mainArgs.exportPrefix + "_schedule.csv", MSG_get_clock(), &context);
     exportJobsToCSV(mainArgs.exportPrefix + "_jobs.csv", &context);
 

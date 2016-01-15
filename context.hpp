@@ -16,7 +16,8 @@ struct BatsimContext
     Machines machines;
     Jobs jobs;
     Profiles profiles;
-    PajeTracer tracer;
+    PajeTracer paje_tracer;
+    PStateChangeTracer pstate_tracer;
 
     long long microseconds_used_by_scheduler = 0;
     bool energy_used;

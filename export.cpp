@@ -624,3 +624,34 @@ void exportScheduleToCSV(const string &filename, double scheduling_time, BatsimC
     f << buf;
     free(buf);
 }
+
+PStateChangeTracer::PStateChangeTracer()
+{
+
+}
+
+void PStateChangeTracer::setFilename(const string &filename)
+{
+    xbt_assert(_wbuf == nullptr, "Double call of PStateChangeTracer::setFilename");
+    _wbuf = new WriteBuffer(filename);
+
+    _wbuf->appendText("time,machine_id,new_pstate\n");
+}
+
+PStateChangeTracer::~PStateChangeTracer()
+{
+    if (_wbuf != nullptr)
+    {
+        delete _wbuf;
+        _wbuf = nullptr;
+    }
+}
+
+void PStateChangeTracer::add_pstate_change(double time, int machine_id, int pstate_after)
+{
+    const int bufSize = 64;
+    char buf[bufSize];
+
+    snprintf(buf, bufSize, "%lg,%d,%d\n", time, machine_id, pstate_after);
+    _wbuf->appendText(buf);
+}
