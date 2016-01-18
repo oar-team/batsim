@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 #include <simgrid/msg.h>
-#include <simgrid/plugins.h>
+#include <simgrid/plugins/energy.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
 

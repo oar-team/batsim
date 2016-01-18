@@ -6,6 +6,8 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <simgrid/plugins/energy.h>
+
 #include "context.hpp"
 #include "export.hpp"
 
@@ -42,7 +44,7 @@ void Machines::createMachines(xbt_dynar_t hosts, BatsimContext *context, const s
     {
         Machine * machine = new Machine;
 
-        machine->name = MSG_host_get_name(host);
+        machine->name = sg_host_get_name(host);
         machine->host = host;
         machine->jobs_being_computed = {};
         machine->state = MachineState::IDLE;
@@ -239,7 +241,7 @@ long double Machines::total_consumed_energy(BatsimContext *context) const
     if (context->energy_used)
     {
         for (const Machine * m : _machines)
-            total_consumed_energy += MSG_host_get_consumed_energy(m->host);
+            total_consumed_energy += sg_host_get_consumed_energy(m->host);
     }
     else
         total_consumed_energy = -1;

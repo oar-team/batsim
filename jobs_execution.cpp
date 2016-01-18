@@ -1,6 +1,8 @@
 #include "jobs_execution.hpp"
 #include "jobs.hpp"
 
+#include <simgrid/plugins/energy.h>
+
 #include <simgrid/msg.h>
 #include <smpi/smpi.h>
 
@@ -243,7 +245,7 @@ int execute_job_process(int argc, char *argv[])
         for(const int & machine_id : job->allocation)
         {
             Machine * machine = args->context->machines[machine_id];
-            job->consumed_energy += MSG_host_get_consumed_energy(machine->host);
+            job->consumed_energy += sg_host_get_consumed_energy(machine->host);
         }
     }
 
@@ -273,7 +275,7 @@ int execute_job_process(int argc, char *argv[])
         for(const int & machine_id : job->allocation)
         {
             Machine * machine = args->context->machines[machine_id];
-            job->consumed_energy += MSG_host_get_consumed_energy(machine->host);
+            job->consumed_energy += sg_host_get_consumed_energy(machine->host);
         }
 
         // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
