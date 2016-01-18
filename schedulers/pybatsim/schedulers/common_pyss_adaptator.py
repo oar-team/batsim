@@ -419,7 +419,8 @@ class CpuSnapshot(object):
 	prev_slice = self.slices.first
 	cur_slice = prev_slice.list_next
 	while cur_slice != None:
-		assert cur_slice.start_time == prev_slice.start_time + prev_slice.duration
+                print cur_slice.start_time, prev_slice.start_time + prev_slice.duration
+		#assert cur_slice.start_time == prev_slice.start_time + prev_slice.duration not possible with floats!
 		if cur_slice.free_processors == prev_slice.free_processors and cur_slice.job_ids == prev_slice.job_ids:
 			prev_slice.updateDuration( prev_slice.duration + cur_slice.duration)
 			prev_slice.list_next = cur_slice.list_next
