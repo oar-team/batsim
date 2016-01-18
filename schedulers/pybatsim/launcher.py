@@ -1,16 +1,26 @@
+#!/usr/bin/python
+# encoding: utf-8
+'''
+Run PyBatsim Sschedulers.
 
+Usage:
+    launcher.py <scheduler> <json_file> [-p] [-v]
+
+Options:
+    -h --help                                      Show this help message and exit.
+    -v --verbose                                   Be verbose.
+    -p --protect                                   Protect the scheduler using a validating machine.
+'''
 
 
 #filler_sched.py ../../workload_profiles/test_workload_profile.json
 
+from batsim.docopt import docopt
 import sys
 from batsim.batsim import Batsim
 from batsim.validatingmachine import ValidatingMachine
 
 
-
-scheduler_filename = sys.argv[1]
-json_filename = sys.argv[2]
 
 
 def module_to_class(module):
@@ -42,11 +52,24 @@ def instanciate_scheduler(name):
 
 
 
-scheduler = instanciate_scheduler(scheduler_filename)
+if __name__ == "__main__":
+    #Retrieve arguments
+    arguments = docopt(__doc__, version='1.0.0rc2')
+    if arguments['--verbose']:
+        verbose=999
+    else:
+        verbose=0
 
-#vm = None
-vm = ValidatingMachine
+    if arguments['--protect']:
+        vm = ValidatingMachine
+    else:
+        vm = None
 
-bs = Batsim(json_filename, scheduler, validatingmachine=vm, verbose=999)
+    scheduler_filename = arguments['<scheduler>']
+    json_filename = arguments['<json_file>']
 
-bs.start()
+    scheduler = instanciate_scheduler(scheduler_filename)
+
+    bs = Batsim(json_filename, scheduler, validatingmachine=vm, verbose=verbose)
+
+    bs.start()
