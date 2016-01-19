@@ -49,6 +49,7 @@ struct MainArguments
     bool energy_used = false;                               //! True if and only if the SimGrid energy plugin should be used.
     VerbosityLevel verbosity = VerbosityLevel::INFORMATION; //! Sets the Batsim verbosity
     bool allow_space_sharing = false;                       //! Allows/forbids space sharing. Two jobs can run on the same machine if and only if space sharing is allowed.
+    bool enable_simgrid_process_tracing = false;            //! If set to true, this options enables the tracing of SimGrid processes
 
     bool abort = false;                                     //! A boolean value. If set to yet, the launching should be aborted for reason abortReason
     std::string abortReason;                                //! Human readable reasons which explains why the launch should be aborted
@@ -104,6 +105,9 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     case 's':
         mainArgs->socketFilename = arg;
         break;
+    case 't':
+        mainArgs->enable_simgrid_process_tracing = true;
+        break;
     case ARGP_KEY_ARG:
         switch(state->arg_num)
         {
@@ -149,6 +153,7 @@ int main(int argc, char * argv[])
         {"energy-plugin", 'p', 0, 0, "Enables energy-aware experiments", 0},
         {"quiet", 'q', 0, 0, "Shortcut for --verbosity=quiet", 0},
         {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename", 0},
+        {"process-tracing", 't', 0, 0, "Enables SimGrid process tracing (shortcut for SimGrid options ----cfg=tracing:1 --cfg=tracing/msg/process:1)", 0},
         {"verbosity", 'v', "VERBOSITY_LEVEL", 0, "Sets the Batsim verbosity level. Available values are : quiet, network-only, information (default), debug.", 0},
         {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
     };
@@ -200,6 +205,16 @@ int main(int argc, char * argv[])
 
     // Initialization
     MSG_init(&argc, argv);
+
+    // Setting SimGrid configuration if the SimGrid process tracing is enabled
+    if (mainArgs.enable_simgrid_process_tracing)
+    {
+        string sg_trace_filename = mainArgs.exportPrefix + "_sg_processes.trace";
+
+        MSG_config("tracing", "1");
+        MSG_config("tracing/msg/process", "1");
+        MSG_config("tracing/filename", sg_trace_filename.c_str());
+    }
 
     BatsimContext context;
     context.platform_filename = mainArgs.platformFilename;

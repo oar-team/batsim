@@ -72,4 +72,4 @@ Refer to [[https://github.com/oar-team/oar-kao][oar-kao]] site or bataar.py -h f
  ./batsim [batsim_options...] PLATFORM WORKLOAD -vdebug
 
 ** Generate SimGrid processes' trace (can be useful to visualize what happens)
- ./batsim [batsim_options...] PLATFORM WORKLOAD -- --cfg=tracing:1 --cfg=tracing/msg/process:1
+ ./batsim [batsim_options...] PLATFORM WORKLOAD -t
