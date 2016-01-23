@@ -42,7 +42,7 @@ class Batsim(object):
         return self._current_time
 
     def consume_time(self, t):
-        self._current_time += t
+        self._current_time += float(t)
         return self._current_time
 
 
@@ -76,6 +76,8 @@ class Batsim(object):
         while True:
             self.do_next_event()
 
+    def _time_to_str(self,t):
+        return('%.*f' % (6, t))
 
     def _read_bat_msg(self):
         lg_str = self._connection.recv(4)
@@ -121,15 +123,15 @@ class Batsim(object):
             else:
                 raise Exception("Unknow submessage type " + data[1] )
         
-        msg = "0:" + str(self.last_msg_recv_time) + "|"
+        msg = "0:" + self._time_to_str(self.last_msg_recv_time) + "|"
         if len(self._msgs_to_send) > 0:
             #sort msgs by timestamp
             self._msgs_to_send = sorted(self._msgs_to_send, key=lambda m: m[0])
             for m in self._msgs_to_send:
-                msg += str(m[0])+":"+m[1]+"|"
+                msg += self._time_to_str(m[0])+":"+m[1]+"|"
             msg = msg[:-1]#remove the last "|"
         else:
-            msg +=  str(self.time()) +":N"
+            msg +=  self._time_to_str(self.time()) +":N"
 
         if self.verbose > 0: print("[BATSIM]:  to  batsim : %r" % msg)
         lg = struct.pack("i",int(len(msg)))
@@ -157,6 +159,10 @@ class Job(object):
         self.finish_time = None#will be set on completion by batsim
     def __repr__(self):
         return("<Job {0}; sub:{1} res:{2} wtime:{3} prof:{4}>".format(self.id, self.submit_time, self.requested_resources, self.requested_time, self.profile))
+    #def __eq__(self, other):
+        #return self.id == other.id
+    #def __ne__(self, other):
+        #return not self.__eq__(other)
 
 
 class BatsimScheduler(object):

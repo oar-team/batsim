@@ -7,7 +7,7 @@ import sys
 import os
 from random import sample
 from sortedcontainers import SortedSet
-from sortedcontainers import SortedList
+from sortedcontainers import SortedListWithKey
 import copy
 
 
@@ -76,7 +76,7 @@ class FressSpaceContainer(object):
                 self.remove(l)
             return alloc
     
-    def assignJob(self, l, job):
+    def assignJob(self, l, job, current_time):
         assert job.requested_resources <= l.res
         #we try to first alloc jobs on the side of the cluster to reduce fragmentation
         if l.prev is None:
@@ -91,7 +91,7 @@ class FressSpaceContainer(object):
         else:
             #alloc wherever (a good optimisation would be to alloc close to the job that finish close to the finish time of <job>)
             alloc = self._assignJobBeginning(l, job)
-
+        job.finish_time = job.requested_time + current_time
         job.alloc = alloc
         return alloc
 
@@ -149,9 +149,16 @@ class FressSpaceContainer(object):
         print "-------------------"
 
 
-
-
-
+    def insertNewFreeSpaceBefore(first_res, last_res, len, l):
+        newfs = FreeSpace(first_res, last_res, len, l.prev, l)
+        
+        if l.prev is None:
+            self.firstItem = newfs
+        else:
+            l.prev.nextt = newfs
+        l.prev = newfs
+        
+        return newfs
 
 
 
@@ -168,7 +175,7 @@ class EasyBackfill(BatsimScheduler):
     def onAfterBatsimInit(self):
         self.listFreeSpace = FressSpaceContainer(self.bs.nb_res)
 
-        self.listRunningJob = SortedList(key=lambda job: job.finish_time)
+        self.listRunningJob = SortedListWithKey(key=lambda job: job.finish_time)
         self.listWaitingJob = []
 
 
@@ -183,14 +190,23 @@ class EasyBackfill(BatsimScheduler):
         current_time = self.bs.time()
         
         self.listFreeSpace.unassignJob(job)
+        self._removeAjobFromRunningJob(job)
+        job.finish_time = current_time
         
         self._schedule_jobs(current_time)
 
-
+    def _removeAjobFromRunningJob(self, job):
+        #because we use "key", .remove does not work as intended
+        for (i,j) in zip(range(0, len(self.listRunningJob)), self.listRunningJob):
+            if j == job:
+                del self.listRunningJob[i]
+                return
+        raise "Job not found!"
+        
 
     def _schedule_jobs(self, current_time):
         
-        allocs = self.allocHeadOfList()
+        allocs = self.allocHeadOfList(current_time)
         
         if len(self.listWaitingJob) > 1:
             first_job = self.listWaitingJob.pop(0)
@@ -207,25 +223,25 @@ class EasyBackfill(BatsimScheduler):
             self.bs.start_jobs(scheduledJobs, res)
 
 
-    def allocJobWithoutTime(self, job):
+    def allocJobWithoutTime(self, job, current_time):
         for l in self.listFreeSpace.generator():
             if job.requested_resources <= l.res:
-                alloc = self.listFreeSpace.assignJob(l, job)
+                alloc = self.listFreeSpace.assignJob(l, job, current_time)
                 return alloc
         return None
 
-    def allocJobWithTime(self, job):
+    def allocJobWithTime(self, job, current_time):
         for l in self.listFreeSpace.generator():
             if job.requested_resources <= l.res and job.requested_time <= l.length:
-                alloc = self.listFreeSpace.assignJob(l, job)
+                alloc = self.listFreeSpace.assignJob(l, job, current_time)
                 return alloc
         return None
 
 
-    def allocHeadOfList(self):
+    def allocHeadOfList(self, current_time):
         allocs = []
         while len(self.listWaitingJob) > 0:
-            alloc = self.allocJobWithoutTime(self.listWaitingJob[0])
+            alloc = self.allocJobWithoutTime(self.listWaitingJob[0], current_time)
             if alloc is None:
                 break
             job = self.listWaitingJob.pop(0)
@@ -240,53 +256,89 @@ class EasyBackfill(BatsimScheduler):
         for j in self.listRunningJob:
             new_free_space_created_by_this_unallocation = listFreeSpaceTemp.unassignJob(j)
             if job.requested_resources <= new_free_space_created_by_this_unallocation.res:
-                alloc = listFreeSpaceTemp.assignJob(new_free_space_created_by_this_unallocation, job)
+                alloc = listFreeSpaceTemp.assignJob(new_free_space_created_by_this_unallocation, job, j.finish_time)
                 #we find a valid allocation
                 return (alloc, j.finish_time)
         #if we are it means that the job will never fit in the cluster!
         assert False
         return None
 
-    def allocBackFill(self, first_job, current_time):
+
+    def allocFutureJob(self, first_job_res, first_job_starttime, current_time):
+        """
+        Update self.listFreeSpace to insert (if needed) 2 virtual free space. These freespaces need to be removes afterwards
+        Example: 3 machine (A,B,C), 1 job running (1), the firstjob is 2
+        A|
+        B|     22
+        C|1111122
+        -'------------>
+        A FreeSpace (A,B, INFINITY) exists, we replace it with 2 FreeSpaces (A,A, INFINITY) and (A,B,first_job_starttime)
         
+        
+        TODO: here we can optimise the code. The free sapces that we are looking for are already been found in findAllocFuture(). BUT, in this function we find the FreeSpaces of listFreeSpaceTemp not self.listFreeSpace; so a link should be made betweend these 2 things.
+        """
+        first_virtual_space = None
+        first_shortened_space = None
+        second_virtual_space = None
+        second_shortened_space = None
+        for l in self.listFreeSpace.generator():
+            if l.first_res == first_job_res[0]:
+                assert first_virtual_space is None and first_shortened_space is None
+                
+                first_shortened_space = l
+                l.length = first_job_starttime-current_time
+                
+            elif l.first_res < first_job_res[0] and l.last_res >= first_job_res[0]:
+                #we transform this free space as 2 free spaces, the wider rectangle and the longest rectangle
+                assert first_virtual_space is None and first_shortened_space is None
+                
+                first_virtual_space = self.listFreeSpace.insertNewFreeSpaceBefore(l.first_res, first_job_res[0]-1, INFINITY, l)
+                
+                first_shortened_space = l
+                l.length = first_job_starttime-current_time
+            
+            if l.last_res == first_job_res[-1]:
+                assert second_virtual_space is None and second_shortened_space is None
+                
+                second_shortened_space = l
+                l.length = first_job_starttime-current_time
+            elif l.first_res <= first_job_res[-1] and l.last_res > first_job_res[-1]:
+                #we transform this free space as 2 free spaces, the wider rectangle and the longest rectangle
+                assert second_virtual_space is None and second_shortened_space is None
+                
+                second_virtual_space = self.listFreeSpace.insertNewFreeSpaceBefore(first_job_res[-1]+1, l.last_res, INFINITY, l)
+                
+                second_shortened_space = l
+                l.length = first_job_starttime-current_time
+                #no need to continue
+                break
+        return (first_virtual_space, first_shortened_space, second_virtual_space, second_shortened_space)
+        
+
+
+    def allocBackFill(self, first_job, current_time):
         
         allocs = []
         
+        (first_job_res, first_job_starttime) = self.findAllocFuture(first_job)
         
-        (res_alloc, time) = self.findAllocFuture(first_job)
-        
-        #self.listFreeSpace.assignFutureAlloc
-        #self.listFreeSpace is sort by resource id, the smallest first
-        #TODO: here we can optimise the code. The free sapces that we are looking for are already been found in findAllocFuture(). BUT, in this function we find the FreeSpaces of listFreeSpaceTemp not self.listFreeSpace; so a link should be made betweend these 2 things.
-        first_virtual_space = None
-        second_virtual_space = None
-        for l in self.listFreeSpace.generator():
-            if l.first_res < res_alloc[0] and l.last_res > res_alloc[0]:
-                #we transform this free space as 2 free spaces, the wider rectangle and the longest rectangle
-                assert first_virtual_space is None
-                first_virtual_space = FreeSpace(res = (l.first_res-res_alloc[0]), length=INFINITY)
-                j.insert_before(first_virtual_space)
-                j.length = time-current_time
-            if l.first_res < res_alloc[-1] and l.last_res > res_alloc[-1]:
-                #we transform this free space as 2 free spaces, the wider rectangle and the longest rectangle
-                assert second_virtual_space is None
-                second_virtual_space = FreeSpace(res = (l.first_res-res_alloc[0]), length=INFINITY)
-                j.insert_before(second_virtual_space)
-                j.length = time-current_time
-                break
+        (first_virtual_space, first_shortened_space, second_virtual_space, second_shortened_space) = self.allocFutureJob(first_job_res, first_job_starttime, current_time)
         
         for j in self.listWaitingJob:
-            alloc = self.allocJobWithTime(j)
+            alloc = self.allocJobWithTime(j, current_time)
             if alloc is not None:
                 allocs.append( (j, alloc) )
                 self.listWaitingJob.remove(j)
                 self.listRunningJob.add(j)
         
         if first_virtual_space is not None:
-            self.listFreeSpace.removeAndSetTheNextFreeSpaceToLengthInfinity(first_virtual_space)
-        
+            self.listFreeSpace.remove(first_virtual_space)
+        if first_shortened_space is not None:
+            first_shortened_space.length = INFINITY
         if second_virtual_space is not None:
-            self.listFreeSpace.removeAndSetTheNextFreeSpaceToLengthInfinity(second_virtual_space)
+            self.listFreeSpace.remove(second_virtual_space)
+        if second_shortened_space is not None:
+            second_shortened_space.length = INFINITY
         
         
         return allocs
