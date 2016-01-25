@@ -1,21 +1,21 @@
 <?xml version='1.0'?>
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
-
 <platform version="3">
-	<AS id="AS0" routing="Full">
-		<AS  id="my_cluster1"  routing="Cluster">
-			<cabinet id="cabinet1" prefix="bob00" suffix="" 
-				power="45Mf" bw="20MBps" lat="100us" radical="0-9"/>
-			<cabinet id="cabinet2" prefix="bob0" suffix="" 
-				power="45Mf" bw="20MBps" lat="100us" radical="10-99"/>
-			<cabinet id="cabinet3" prefix="bob" suffix="" 
-				power="45Mf" bw="20MBps" lat="100us" radical="100-511"/>
-			
-			<cabinet id="cabinet4" prefix="master_host" suffix="" 
-				power="45Mf" bw="20MBps" lat="100us" radical="0-0"/>
 
-			<router  id="router1"/>
-			<backbone id="backbone1" bandwidth="2.25GBps" latency="500us"/>
-		</AS>
-	</AS>
+<AS id="AS0" routing="Full">
+    <cluster id="my_cluster_1" prefix="a" suffix="" radical="0-511"
+        power="1Gf" bw="125MBps" lat="50us" bb_bw="2.25GBps"
+        bb_lat="500us" />
+
+    <cluster id="my_cluster_2" prefix="master_host" suffix="" radical="0-0"
+        power="1Gf" bw="125MBps" lat="50us" bb_bw="2.25GBps"
+        bb_lat="500us" />
+
+    <link id="backbone" bandwidth="1.25GBps" latency="500us" />
+
+    <ASroute src="my_cluster_1" dst="my_cluster_2" gw_src="amy_cluster_1_router"
+        gw_dst="master_hostmy_cluster_2_router">
+        <link_ctn id="backbone" />
+    </ASroute>
+</AS>
 </platform>
