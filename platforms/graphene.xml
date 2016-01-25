@@ -4,13 +4,11 @@
 
 
 <config id="General">
-  <prop id="workstation/model" value="compound"/>
+  <prop id="host/model" value="compound"/>
   <prop id="network/model" value="SMPI"/>
   <prop id="network/TCP_gamma" value="4194304"/>
   <prop id="network/sender_gap" value="0"/>
   <prop id="maxmin/precision" value="1e-9"/>
-  <prop id="smpi/async_small_thres" value="65536"/>
-  <prop id="smpi/send_is_detached_thres" value="327680"/>
 <!--  <prop id="smpi/os" value="1:8.75118726019245e-06:7.09598480584951e-10;1420:1.38989305424406e-05:2.18111838119125e-10;65536:0.000193970854779561:-4.82025737428887e-11;327680:0:0"/>-->
 <!--  <prop id="smpi/or" value="1:9.3069771137911e-06:7.92179414036391e-10;1420:1.43097562292319e-05:8.66975835499791e-10;10000:1.41659209904282e-05:1.00877300603447e-09;65536:0:0"/>-->
 <!--  <prop id="smpi/bw_factor" value="0:0.408465938;1420:0.913760459;65536:0.937794396"/>-->
