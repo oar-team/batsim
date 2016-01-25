@@ -45,6 +45,8 @@ class Batsim(object):
         self._current_time += float(t)
         return self._current_time
 
+    def wake_me_up_at(self, time):
+        self._msgs_to_send.append( ( self.time(), "n:"+str(time) ) )
 
     def start_job(self, job, res):
         self._msgs_to_send.append( ( self.time(), "J:"+str(job.id)+"="+ ",".join([str(i) for i in res]) ) )
