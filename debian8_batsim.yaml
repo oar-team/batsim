@@ -25,7 +25,7 @@ global:
   default_keyboard_layout: fr
   default_timezone: Europe/Paris
   root_password: root
-  hostname: simctn
+  hostname: batsim
   simctn_dir: /root
 
 
@@ -33,10 +33,17 @@ bootstrap:
   - "@base"
 
 setup:
+  #
+  # General configuration
+  #
   - "@base"
   - enable_root_login:
     - change_sshd_config:
       - exec_in: sed -i s/PermitRootLogin\ without-password/PermitRootLogin\ yes/ /etc/ssh/sshd_config
+
+  #
+  # Simulator and schedulers install
+  #
   - simgrid_install:
     - install dependencies:
       - exec_in: apt-get -y --force-yes install libboost-all-dev 2>&1
@@ -47,7 +54,7 @@ setup:
           git clone git://scm.gforge.inria.fr/simgrid/simgrid.git
       - exec_in: |
           cd $$simctn_dir/simgrid
-          git checkout 8de23104635721196
+          git checkout be8f70f
           mkdir build
       - exec_in: |
           cd $$simctn_dir/simgrid/build
@@ -115,13 +122,40 @@ setup:
           git clone https://scm.gforge.inria.fr/anonscm/git/batsim/batsim.git
       - exec_in: |
           cd $$simctn_dir/batsim
-          git checkout b897c31ca76f
+          git checkout 64497dd2de07
           mkdir build
       - exec_in: |
           cd $$simctn_dir/batsim/build
           cmake ..
           make -j$(nproc)
           make install
+  - SMPI_tracing:
+    - install_papi:
+      - exec_in: apt-get install -y papi-tools
+    - install_mini:
+      - exec_in: git clone git clone git://github.com/gmarkomanolis/mini.git
+      - TODO Debug this crap!
+    - install_NAS_bench:
+      - TODO: https://www.nas.nasa.gov/assets/npb/NPB3.3.1.tar.gz
+      - TODO: hack make.def for smpi
+
+  #
+  # Visualization tools
+  #
+  - VITE_install:
+    - get_sources:
+      - exec_in: |
+          cd $$simctn_dir
+          svn checkout svn://scm.gforge.inria.fr/svnroot/vite/
+    - install_it:
+      - exec_in: |
+          cd $$simctn_dir/vite/trunk
+          mkdir build
+          cd build
+          cmake ..
+          make -j$(nproc)
+          make install
+
   - evalys:
     - install dependencies:
       - exec_in: |
@@ -139,6 +173,10 @@ setup:
       - exec_in: |
           cd $$simctn_dir/evalys
           pip3 install -e .
+
+  #
+  # Experiment inputs and launch scripts
+  #
   - import_experiment_material:
     - install_expe_batsim:
       - exec_in: |
@@ -148,7 +186,12 @@ setup:
       - exec_in: pip3 install sortedcontainers docopt
       - exec_in: chmod 755 $$simctn_dir/expe-batsim/experiment.py
       - exec_in: chmod 755 $$simctn_dir/expe-batsim/swfToJsonConverter.py
-  # import my personal dev tools
+
+  #
+  # Personal customization
+  #
+
+  # Import my personal dev tools
   - my_dev_tools
   # set the dev git repository instead of the Read-Only ones
   - set_dev_git_repo
