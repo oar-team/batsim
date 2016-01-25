@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <fstream>
 
+#include <boost/algorithm/string/join.hpp>
+
 #include <stdlib.h>
 #include <xbt.h>
 #include <math.h>
@@ -84,7 +86,7 @@ void PajeTracer::setFilename(const string &filename)
 
 PajeTracer::~PajeTracer()
 {
-    if (state != FINALIZED)
+    if (state != FINALIZED && state != UNINITIALIZED)
         fprintf(stderr, "Destruction of a PajeTracer object which has not been finalized. The corresponding trace file may be invalid.\n");
 
     if (_wbuf != nullptr)
@@ -521,8 +523,10 @@ void exportJobsToCSV(const string &filename, BatsimContext *context)
 
         if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JobState::JOB_STATE_COMPLETED_KILLED)
         {
-            char * buf;
-            int success = job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
+            char * buf = nullptr;
+            int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
+            xbt_assert(job->runtime > 0);
+
             int ret = asprintf(&buf, "%d,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
                      job->id,
                      job->submission_time,
@@ -541,27 +545,22 @@ void exportJobsToCSV(const string &filename, BatsimContext *context)
             f << buf;
             free(buf);
 
-            // TODO: use boost::join for the following if
+            xbt_assert((int)job->allocation.size() == job->required_nb_res);
 
-            if (job->required_nb_res > 0)
-            {
-                int ret = asprintf(&buf, "%d", job->allocation[0]);
-                xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-                f << buf;
-                free(buf);
+            vector<string> machine_id_strings;
 
-                for (int i = 1; i < job->required_nb_res; ++i)
-                {
-                    ret = asprintf(&buf," %d", job->allocation[i]);
-                    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-                    f << buf;
-                    free(buf);
-                }
-            }
+            for (const int & machine_id : job->allocation)
+                machine_id_strings.push_back(to_string(machine_id));
+
+            f << boost::algorithm::join(machine_id_strings, " ");
+
+            // todo: use union of intervals instead
 
             f << "\n";
         }
     }
+
+    f.close();
 }
 
 

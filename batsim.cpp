@@ -50,6 +50,7 @@ struct MainArguments
     VerbosityLevel verbosity = VerbosityLevel::INFORMATION; //! Sets the Batsim verbosity
     bool allow_space_sharing = false;                       //! Allows/forbids space sharing. Two jobs can run on the same machine if and only if space sharing is allowed.
     bool enable_simgrid_process_tracing = false;            //! If set to true, this options enables the tracing of SimGrid processes
+    bool enable_schedule_tracing = true;                    //! If set to true, the schedule is exported to a Pajé trace file
 
     bool abort = false;                                     //! A boolean value. If set to yet, the launching should be aborted for reason abortReason
     std::string abortReason;                                //! Human readable reasons which explains why the launch should be aborted
@@ -108,6 +109,9 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     case 't':
         mainArgs->enable_simgrid_process_tracing = true;
         break;
+    case 'T':
+        mainArgs->enable_schedule_tracing = false;
+        break;
     case ARGP_KEY_ARG:
         switch(state->arg_num)
         {
@@ -154,6 +158,7 @@ int main(int argc, char * argv[])
         {"quiet", 'q', 0, 0, "Shortcut for --verbosity=quiet", 0},
         {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename", 0},
         {"process-tracing", 't', 0, 0, "Enables SimGrid process tracing (shortcut for SimGrid options ----cfg=tracing:1 --cfg=tracing/msg/process:1)", 0},
+        {"disable-schedule-tracing", 'T', 0, 0, "If set, disables the tracing of the schedule.", 0},
         {"verbosity", 'v', "VERBOSITY_LEVEL", 0, "Sets the Batsim verbosity level. Available values are : quiet, network-only, information (default), debug.", 0},
         {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
     };
@@ -221,11 +226,13 @@ int main(int argc, char * argv[])
     context.workload_filename = mainArgs.workloadFilename;
     context.energy_used = mainArgs.energy_used;
     context.allow_space_sharing = mainArgs.allow_space_sharing;
+    context.trace_schedule = mainArgs.enable_schedule_tracing;
 
     load_json_workload(&context, mainArgs.workloadFilename);
     context.jobs.setProfiles(&context.profiles);
-    context.paje_tracer.setFilename(mainArgs.exportPrefix + "_schedule.trace");
-    //context.jobs.displayDebug();
+
+    if (context.trace_schedule)
+        context.paje_tracer.setFilename(mainArgs.exportPrefix + "_schedule.trace");
 
     XBT_INFO("Checking whether SMPI is used or not...");
     bool smpi_used = context.jobs.containsSMPIJob();
@@ -244,8 +251,11 @@ int main(int argc, char * argv[])
     context.machines.createMachines(hosts, &context, mainArgs.masterHostName);
     xbt_dynar_free(&hosts);
     const Machine * masterMachine = context.machines.masterMachine();
-    context.machines.setTracer(&context.paje_tracer);
-    context.paje_tracer.initialize(&context, MSG_get_clock());
+    if (context.trace_schedule)
+    {
+        context.machines.setTracer(&context.paje_tracer);
+        context.paje_tracer.initialize(&context, MSG_get_clock());
+    }
     XBT_INFO("Machines created successfully. There are %lu computing machines.", context.machines.machines().size());
 
     if (context.energy_used)
@@ -275,7 +285,8 @@ int main(int argc, char * argv[])
     msg_error_t res = MSG_main();
 
     // Finalization
-    context.paje_tracer.finalize(&context, MSG_get_clock());
+    if (context.trace_schedule)
+        context.paje_tracer.finalize(&context, MSG_get_clock());
     exportScheduleToCSV(mainArgs.exportPrefix + "_schedule.csv", MSG_get_clock(), &context);
     exportJobsToCSV(mainArgs.exportPrefix + "_jobs.csv", &context);
 
