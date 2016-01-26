@@ -324,7 +324,7 @@ class EasyBackfill(BatsimScheduler):
             if alloc is not None:
                 allocs.append( (j, alloc) )
                 self.listWaitingJob.remove(j)
-                job.start_time = current_time
+                j.start_time = current_time
                 self.listRunningJob.add(j)
         
         if first_virtual_space is not None:
