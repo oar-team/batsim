@@ -59,7 +59,7 @@ class FressSpaceContainer(object):
             nextt.prev = prev
     
     def _assignJobBeginning(self, l, job):
-            alloc = range(l.first_res, l.first_res+job.requested_resources)
+            alloc = (l.first_res, l.first_res+job.requested_resources-1)
             l.first_res = l.first_res+job.requested_resources
             l.res = l.last_res-l.first_res+1
             assert l.res>=0
@@ -68,7 +68,7 @@ class FressSpaceContainer(object):
             return alloc
     
     def _assignJobEnding(self, l, job):
-            alloc = range(l.last_res-job.requested_resources+1, l.last_res+1)
+            alloc = (l.last_res-job.requested_resources+1, l.last_res)
             l.last_res = l.last_res-job.requested_resources
             l.res = l.last_res-l.first_res+1
             assert l.res>=0
@@ -149,7 +149,7 @@ class FressSpaceContainer(object):
         print "-------------------"
 
 
-    def insertNewFreeSpaceBefore(first_res, last_res, len, l):
+    def insertNewFreeSpaceBefore(self, first_res, last_res, len, l):
         newfs = FreeSpace(first_res, last_res, len, l.prev, l)
         
         if l.prev is None:
@@ -214,13 +214,7 @@ class EasyBackfill(BatsimScheduler):
             self.listWaitingJob.insert(0, first_job)
         
         if len(allocs) > 0:
-            res = {}
-            scheduledJobs = []
-            for (job, alloc) in allocs:
-                res[job.id] = alloc
-                job.start_time = current_time#just to be sure
-                scheduledJobs.append(job)
-            self.bs.start_jobs(scheduledJobs, res)
+            self.bs.start_jobs_continuous(allocs)
 
 
     def allocJobWithoutTime(self, job, current_time):
@@ -245,6 +239,7 @@ class EasyBackfill(BatsimScheduler):
             if alloc is None:
                 break
             job = self.listWaitingJob.pop(0)
+            job.start_time = current_time
             self.listRunningJob.add(job)
             allocs.append( (job, alloc) )
         return allocs
@@ -329,6 +324,7 @@ class EasyBackfill(BatsimScheduler):
             if alloc is not None:
                 allocs.append( (j, alloc) )
                 self.listWaitingJob.remove(j)
+                job.start_time = current_time
                 self.listRunningJob.add(j)
         
         if first_virtual_space is not None:

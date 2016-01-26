@@ -48,8 +48,19 @@ class Batsim(object):
     def wake_me_up_at(self, time):
         self._msgs_to_send.append( ( self.time(), "n:"+str(time) ) )
 
-    def start_job(self, job, res):
-        self._msgs_to_send.append( ( self.time(), "J:"+str(job.id)+"="+ ",".join([str(i) for i in res]) ) )
+    def start_jobs_continuous(self, allocs):
+        """
+        allocs should have the followinf format:
+        [ (job, (first res, last res)), (job, (first res, last res)), ...]
+        """
+        if len(allocs) > 0:
+            msg = "J:"
+            for (job, (first_res, last_res)) in allocs:
+                msg += str(job.id)+ "=" + str(first_res) + "-" + str(last_res)+ ";"
+            
+            msg = msg[:-1] # remove last semicolon
+            self._msgs_to_send.append( ( self.time(), msg ) )
+            
 
     def start_jobs(self, jobs, res):
         if len(jobs) > 0:
