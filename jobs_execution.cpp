@@ -232,9 +232,9 @@ int execute_job_process(int argc, char *argv[])
     // Retrieving input parameters
     ExecuteJobProcessArguments * args = (ExecuteJobProcessArguments *) MSG_process_get_data(MSG_process_self());
 
-    Job * job = args->context->jobs[args->allocation.job_id];
+    Job * job = args->context->jobs[args->allocation->job_id];
     job->starting_time = MSG_get_clock();
-    job->allocation = args->allocation.machine_ids;
+    job->allocation = args->allocation->machine_ids;
     double remaining_time = job->walltime;
 
     // If energy is enabled, let us compute the energy used by the machines before running the job
@@ -242,16 +242,17 @@ int execute_job_process(int argc, char *argv[])
     {
         job->consumed_energy = 0;
 
-        for(const int & machine_id : job->allocation)
+        for (auto it = job->allocation.elements_begin(); it != job->allocation.elements_end(); ++it)
         {
+            int machine_id = *it;
             Machine * machine = args->context->machines[machine_id];
             job->consumed_energy += sg_host_get_consumed_energy(machine->host);
         }
     }
 
     // Job computation
-    args->context->machines.updateMachinesOnJobRun(job->id, args->allocation.machine_ids);
-    if (execute_profile(args->context, job->profile, &args->allocation, &remaining_time) == 1)
+    args->context->machines.updateMachinesOnJobRun(job->id, args->allocation->machine_ids);
+    if (execute_profile(args->context, job->profile, args->allocation, &remaining_time) == 1)
     {
         XBT_INFO("Job %d finished in time", job->id);
         job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
@@ -261,10 +262,10 @@ int execute_job_process(int argc, char *argv[])
         XBT_INFO("Job %d had been killed (walltime %lf reached", job->id, job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
         if (args->context->trace_schedule)
-            args->context->paje_tracer.addJobKill(job->id, args->allocation.machine_ids, MSG_get_clock(), true);
+            args->context->paje_tracer.addJobKill(job->id, args->allocation->machine_ids, MSG_get_clock(), true);
     }
 
-    args->context->machines.updateMachinesOnJobEnd(job->id, args->allocation.machine_ids);
+    args->context->machines.updateMachinesOnJobEnd(job->id, args->allocation->machine_ids);
     job->runtime = MSG_get_clock() - job->starting_time;
 
     // If energy is enabled, let us compute the energy used by the machines after running the job
@@ -273,8 +274,10 @@ int execute_job_process(int argc, char *argv[])
         long double consumed_energy_before = job->consumed_energy;
         job->consumed_energy = 0;
 
-        for(const int & machine_id : job->allocation)
+
+        for (auto it = job->allocation.elements_begin(); it != job->allocation.elements_end(); ++it)
         {
+            int machine_id = *it;
             Machine * machine = args->context->machines[machine_id];
             job->consumed_energy += sg_host_get_consumed_energy(machine->host);
         }
@@ -288,6 +291,7 @@ int execute_job_process(int argc, char *argv[])
     message->job_id = job->id;
 
     send_message("server", IPMessageType::JOB_COMPLETED, (void*)message);
+    delete args->allocation;
     delete args;
 
     return 0;

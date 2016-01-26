@@ -228,53 +228,78 @@ int request_reply_scheduler_process(int argc, char *argv[])
                 for (const std::string & allocation_string : allocations)
                 {
                     // Each allocation is written in the form of jobID=machineID1,machineID2,...,machineIDn
+                    // Each machineIDk can either be a single machine or a closed interval machineIDa-machineIDb
                     vector<string> allocation_parts;
                     boost::split(allocation_parts, allocation_string, boost::is_any_of("="), boost::token_compress_on);
                     xbt_assert(allocation_parts.size() == 2, "Invalid static job allocation received ('%s'): it must be composed of two parts separated by a '='",
                                allocation_string.c_str());
 
-                    SchedulingAllocation alloc;
-                    alloc.job_id = std::stoi(allocation_parts[0]);
-                    xbt_assert(context->jobs.exists(alloc.job_id), "Invalid static job allocation received ('%s'): the job %d does not exist",
-                               allocation_string.c_str(), alloc.job_id);
-                    Job * job = context->jobs[alloc.job_id];
+                    SchedulingAllocation * alloc = new SchedulingAllocation;
+                    alloc->job_id = std::stoi(allocation_parts[0]);
+                    xbt_assert(context->jobs.exists(alloc->job_id), "Invalid static job allocation received ('%s'): the job %d does not exist",
+                               allocation_string.c_str(), alloc->job_id);
+                    Job * job = context->jobs[alloc->job_id];
                     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                                "Invalid static job allocation received ('%s') : the job %d state indicates it cannot be executed now",
                                allocation_string.c_str(), job->id);
 
-                    // In order to get the machines, let us do a final split by ','!
+                    // In order to get the machines, let us do a split by ','!
                     vector<string> allocation_machines;
                     boost::split(allocation_machines, allocation_parts[1], boost::is_any_of(","), boost::token_compress_on);
-                    xbt_assert((int)allocation_machines.size() == job->required_nb_res,
-                               "Invalid static job allocation received ('%s'): the job %d size is %d but %lu machines were allocated",
-                               allocation_string.c_str(), job->id, job->required_nb_res, allocation_machines.size());
 
-                    alloc.machine_ids.resize(allocation_machines.size());
-                    alloc.hosts.resize(allocation_machines.size());
+                    alloc->hosts.clear();
+                    alloc->hosts.reserve(alloc->machine_ids.size());
+                    alloc->machine_ids.clear();
                     for (unsigned int i = 0; i < allocation_machines.size(); ++i)
                     {
-                        int machineID = std::stoi(allocation_machines[i]);
-                        xbt_assert(context->machines.exists(machineID), "Invalid static job allocation received ('%s'): the machine %d does not exist",
-                                   allocation_string.c_str(), machineID);
-                        alloc.machine_ids[i] = machineID;
-                        alloc.hosts[i] = context->machines[machineID]->host;
-                    }
+                        // Since each machineIDk can either be a single machine or a closed interval, let's try to split on '-'
+                        vector<string> interval_parts;
+                        boost::split(interval_parts, allocation_machines[i], boost::is_any_of("-"), boost::token_compress_on);
+                        xbt_assert(interval_parts.size() >= 1 && interval_parts.size() <= 2,
+                                   "Invalid static job allocation received ('%s'): the MIDk '%s' should either be a single machine ID"
+                                   " (syntax: MID to represent the machine ID MID) or a closed interval (syntax: MIDa-MIDb to represent"
+                                   " the machine interval [MIDA,MIDb])", allocation_string.c_str(), allocation_machines[i].c_str());
 
-                    // Let us sort the allocation, to detect easily whether all machines are different or not
-                    vector<int> sorted_machine_ids = alloc.machine_ids;
-                    std::sort(sorted_machine_ids.begin(), sorted_machine_ids.end());
-
-                    bool all_different = true;
-                    for (unsigned int i = 1; i < sorted_machine_ids.size(); ++i)
-                    {
-                        if (sorted_machine_ids[i-1] == sorted_machine_ids[i])
+                        if (interval_parts.size() == 1)
                         {
-                            all_different = false;
-                            break;
+                            int machine_id = std::stoi(interval_parts[0]);
+                            xbt_assert(context->machines.exists(machine_id), "Invalid static job allocation received ('%s'): the machine %d does not exist",
+                                       allocation_string.c_str(), machine_id);
+                            alloc->machine_ids.insert(machine_id);
+                            alloc->hosts.push_back(context->machines[machine_id]->host);
+                            xbt_assert((int)alloc->hosts.size() <= job->required_nb_res,
+                                       "Invalid static job allocation received ('%s'): the job %d size is %d but at least %lu machines were allocated",
+                                       allocation_string.c_str(), job->id, job->required_nb_res, alloc->hosts.size());
+                        }
+                        else
+                        {
+                            int machineIDa = std::stoi(interval_parts[0]);
+                            int machineIDb = std::stoi(interval_parts[1]);
+
+                            xbt_assert(machineIDa <= machineIDb, "Invalid static job allocation received ('%s'): the MIDk '%s' is composed of two"
+                                      " parts (1:%d and 2:%d) but the first value must be lesser than or equal to the second one.", allocation_string.c_str(),
+                                      allocation_machines[i].c_str(), machineIDa, machineIDb);
+
+                            for (int machine_id = machineIDa; machine_id <= machineIDb; ++machine_id)
+                            {
+                                xbt_assert(context->machines.exists(machine_id), "Invalid static job allocation received ('%s'): the machine %d does not exist",
+                                           allocation_string.c_str(), machine_id);
+
+                                alloc->hosts.push_back(context->machines[machine_id]->host);
+                                xbt_assert((int)alloc->hosts.size() <= job->required_nb_res,
+                                           "Invalid static job allocation received ('%s'): the job %d size is %d but at least %lu machines were allocated",
+                                           allocation_string.c_str(), job->id, job->required_nb_res, alloc->hosts.size());
+                            }
+
+                            alloc->machine_ids.insert(MachineRange::Interval::closed(machineIDa, machineIDb));
                         }
                     }
 
-                    xbt_assert(all_different, "Invalid static job allocation received ('%s'): all machines are not different", allocation_string.c_str());
+                    // Let the number of allocated machines be checked
+                    xbt_assert((int)alloc->machine_ids.size() == job->required_nb_res,
+                               "Invalid static job allocation received ('%s'): the job %d size is %d but %u machines were allocated (%s)",
+                               allocation_string.c_str(), job->id, job->required_nb_res, alloc->machine_ids.size(),
+                               alloc->machine_ids.to_string_brackets().c_str());
 
                     message->allocations.push_back(alloc);
                 }

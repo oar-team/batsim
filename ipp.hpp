@@ -9,6 +9,8 @@
 
 #include <simgrid/msg.h>
 
+#include "machine_range.hpp"
+
 struct BatsimContext;
 
 enum class IPMessageType
@@ -47,13 +49,13 @@ struct JobRejectedMessage
 struct SchedulingAllocation
 {
     int job_id;
-    std::vector<int> machine_ids;   //! The IDs of the machines on which the job should be allocated
+    MachineRange machine_ids; //! The IDs of the machines on which the job should be allocated
     std::vector<msg_host_t> hosts;  //! The corresponding SimGrid hosts
 };
 
 struct SchedulingAllocationMessage
 {
-    std::vector<SchedulingAllocation> allocations;  //! Possibly several allocations
+    std::vector<SchedulingAllocation *> allocations;  //! Possibly several allocations
 };
 
 struct PStateModificationMessage
@@ -88,7 +90,7 @@ struct ServerProcessArguments
 struct ExecuteJobProcessArguments
 {
     BatsimContext * context;
-    SchedulingAllocation allocation;
+    SchedulingAllocation * allocation;
 };
 
 struct KillerProcessArguments

@@ -8,6 +8,7 @@
 #include <simgrid/msg.h>
 
 #include "pstate.hpp"
+#include "machine_range.hpp"
 
 class PajeTracer;
 struct BatsimContext;
@@ -45,8 +46,8 @@ public:
     Machines();
     ~Machines();
     void createMachines(xbt_dynar_t hosts, BatsimContext * context, const std::string & masterHostName);
-    void updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMachines);
-    void updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMachines);
+    void updateMachinesOnJobRun(int jobID, const MachineRange & usedMachines);
+    void updateMachinesOnJobEnd(int jobID, const MachineRange & usedMachines);
 
     void setTracer(PajeTracer * tracer);
 

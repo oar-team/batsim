@@ -101,6 +101,7 @@ IPMessage::~IPMessage()
         case IPMessageType::SCHED_ALLOCATION:
         {
             SchedulingAllocationMessage * msg = (SchedulingAllocationMessage *) data;
+            // The Allocations themselves are not memory-deallocated there but at the end of the job execution.
             delete msg;
         } break;
         case IPMessageType::SCHED_REJECTION:

@@ -135,7 +135,7 @@ public:
      * @param time The simulation time at which the kill is done
      * @param associateKillToMachines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
      */
-    void addJobKill(int jobID, const std::vector<int> & usedMachineIDs, double time, bool associateKillToMachines = false);
+    void addJobKill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines = false);
 
     /**
      * @brief Adds a global utilization value of the system.

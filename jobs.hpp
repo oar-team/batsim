@@ -9,6 +9,8 @@
 
 #include <rapidjson/document.h>
 
+#include "machine_range.hpp"
+
 class Profiles;
 
 enum class JobState
@@ -33,7 +35,7 @@ struct Job
 
     double starting_time;
     double runtime;
-    std::vector<int> allocation;
+    MachineRange allocation;
     JobState state;
 };
 

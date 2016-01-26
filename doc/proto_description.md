@@ -39,7 +39,7 @@ Each MSG_CONTENT follows this syntax:
 |---------------- |-------|-------------- |------------------------- |-------------
 |        0+       |   S   | Bastim->Sched | JOB_ID                   | Job submission: one (static) job is available and can now be allocated tor resources.
 |        0+       |   C   | Batsim->Sched | JOB_ID                   | Job completion: one (static) job finished its execution.
-|        0+       |   J   | Sched->Batsim | JID1=MID1,MID2,MIDn[;...]| Job allocation: tells to put job JID1 on machines MID1, ..., MIDn. Many jobs might be allocated in the same event.              |           |
+|        0+       |   J   | Sched->Batsim | JID1=MID1,MID2,MIDn[;...]| Job allocation: tells to put job JID1 on machines MID1, ..., MIDn. Many jobs might be allocated in the same event. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
 |        0+       |   N   | Both          | No content               | NOP: tells to do nothing / nothing happened.
 |        1+       |   P   | Sched->Batsim | MACHINE_ID=PSTATE        | Ask to change the pstate of a machine.
 |        1+       |   p   | Batsim->Sched | MACHINE_ID=PSTATE        | Tells the scheduler the pstate of a machine has changed.

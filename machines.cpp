@@ -249,11 +249,12 @@ long double Machines::total_consumed_energy(BatsimContext *context) const
     return total_consumed_energy;
 }
 
-void Machines::updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMachines)
+void Machines::updateMachinesOnJobRun(int jobID, const MachineRange & usedMachines)
 {
-    for (int machineID : usedMachines)
+    for (auto it = usedMachines.elements_begin(); it != usedMachines.elements_end(); ++it)
     {
-        Machine * machine = _machines[machineID];
+        int machine_id = *it;
+        Machine * machine = _machines[machine_id];
         machine->state = MachineState::COMPUTING;
 
         int previous_top_job = -1;
@@ -270,11 +271,12 @@ void Machines::updateMachinesOnJobRun(int jobID, const std::vector<int> & usedMa
     }
 }
 
-void Machines::updateMachinesOnJobEnd(int jobID, const std::vector<int> & usedMachines)
+void Machines::updateMachinesOnJobEnd(int jobID, const MachineRange & usedMachines)
 {
-    for (int machineID : usedMachines)
+    for (auto it = usedMachines.elements_begin(); it != usedMachines.elements_end(); ++it)
     {
-        Machine * machine = _machines[machineID];
+        int machine_id = *it;
+        Machine * machine = _machines[machine_id];
 
         xbt_assert(!machine->jobs_being_computed.empty());
         int previous_top_job = *machine->jobs_being_computed.begin();

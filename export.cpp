@@ -394,7 +394,7 @@ void PajeTracer::addJobEnding(int jobID, const vector<int> & usedMachineIDs, dou
     }
 }
 
-void PajeTracer::addJobKill(int jobID, const vector<int> & usedMachineIDs, double time, bool associateKillToMachines)
+void PajeTracer::addJobKill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines)
 {
     xbt_assert(state == INITIALIZED, "Bad addJobKill call: the PajeTracer object is not initialized or had been finalized");
 
@@ -410,11 +410,12 @@ void PajeTracer::addJobKill(int jobID, const vector<int> & usedMachineIDs, doubl
     if (associateKillToMachines)
     {
         // Let's add a kill event associated with each machine
-        for (const int & machineID : usedMachineIDs)
+        for (auto it = usedMachineIDs.elements_begin(); it != usedMachineIDs.elements_end(); ++it)
         {
+            int machine_id = *it;
             snprintf(buf, bufSize,
                      "%d %lf %s %s%d \"%d\"\n",
-                     NEW_EVENT, time, killEventMachine, machinePrefix, machineID, jobID);
+                     NEW_EVENT, time, killEventMachine, machinePrefix, machine_id, jobID);
             _wbuf->appendText(buf);
         }
     }
@@ -547,16 +548,7 @@ void exportJobsToCSV(const string &filename, BatsimContext *context)
 
             xbt_assert((int)job->allocation.size() == job->required_nb_res);
 
-            vector<string> machine_id_strings;
-
-            for (const int & machine_id : job->allocation)
-                machine_id_strings.push_back(to_string(machine_id));
-
-            f << boost::algorithm::join(machine_id_strings, " ");
-
-            // todo: use union of intervals instead
-
-            f << "\n";
+            f << job->allocation.to_string_hyphen() << "\n";
         }
     }
 

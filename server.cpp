@@ -212,9 +212,9 @@ int uds_server_process(int argc, char *argv[])
             xbt_assert(task_data->data != nullptr);
             SchedulingAllocationMessage * message = (SchedulingAllocationMessage *) task_data->data;
 
-            for (const auto & allocation : message->allocations)
+            for (SchedulingAllocation * allocation : message->allocations)
             {
-                Job * job = context->jobs[allocation.job_id];
+                Job * job = context->jobs[allocation->job_id];
                 job->state = JobState::JOB_STATE_RUNNING;
 
                 nb_running_jobs++;
@@ -224,9 +224,10 @@ int uds_server_process(int argc, char *argv[])
 
                 if (!context->allow_space_sharing)
                 {
-                    for (const int & machineID : allocation.machine_ids)
+                    for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
                     {
-                        const Machine * machine = context->machines[machineID];
+                        int machine_id = *machine_id_it;
+                        const Machine * machine = context->machines[machine_id];
                         xbt_assert(machine->jobs_being_computed.empty(),
                                    "Invalid job allocation: machine %d ('%s') is currently computing jobs (these ones:"
                                    " {%s}) whereas space sharing is forbidden. Space sharing can be enabled via an option,"
@@ -238,9 +239,10 @@ int uds_server_process(int argc, char *argv[])
                 if (context->energy_used)
                 {
                     // Check that every machine is in a computation pstate
-                    for (const int & machineID : allocation.machine_ids)
+                    for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
                     {
-                        Machine * machine = context->machines[machineID];
+                        int machine_id = *machine_id_it;
+                        Machine * machine = context->machines[machine_id];
                         int ps = MSG_host_get_pstate(machine->host);
                         xbt_assert(machine->has_pstate(ps));
                         xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
@@ -257,7 +259,7 @@ int uds_server_process(int argc, char *argv[])
                 exec_args->context = context;
                 exec_args->allocation = allocation;
                 string pname = "job" + to_string(job->id);
-                MSG_process_create(pname.c_str(), execute_job_process, (void*)exec_args, context->machines[allocation.machine_ids[0]]->host);
+                MSG_process_create(pname.c_str(), execute_job_process, (void*)exec_args, context->machines[allocation->machine_ids.first_element()]->host);
             }
 
         } break; // end of case SCHED_ALLOCATION
