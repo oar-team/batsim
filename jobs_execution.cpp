@@ -55,24 +55,29 @@ int execute_profile(BatsimContext *context,
     {
         MsgParallelHomogeneousProfileData * data = (MsgParallelHomogeneousProfileData *)profile->data;
 
-        // These amounts are deallocated by SG
-        double * computation_amount = xbt_new(double, nb_res);
-        double * communication_amount = xbt_new(double, nb_res*nb_res);
-
         double cpu = data->cpu;
         double com = data->com;
+
+        // These amounts are deallocated by SG
+        double * computation_amount = xbt_new(double, nb_res);
+        double * communication_amount = NULL;
+        if(com != 0.0)
+            communication_amount = xbt_new(double, nb_res*nb_res);
+
 
         // Let us fill the local computation and communication matrices
         int k = 0;
         for (int y = 0; y < nb_res; ++y)
         {
             computation_amount[y] = cpu;
-            for (int x = 0; x < nb_res; ++x)
-            {
-                if (x == y)
-                    communication_amount[k++] = 0;
-                else
-                    communication_amount[k++] = com;
+            if(communication_amount != NULL) {
+                for (int x = 0; x < nb_res; ++x)
+                {
+                    if (x == y)
+                        communication_amount[k++] = 0;
+                    else
+                        communication_amount[k++] = com;
+                }
             }
         }
 
