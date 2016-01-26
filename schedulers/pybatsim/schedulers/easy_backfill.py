@@ -86,7 +86,7 @@ class FressSpaceContainer(object):
         #then, we try to alloc near other job to reduce fragmentation
         elif l.first_res -1 == l.prev.last_res:
             alloc = self._assignJobBeginning(l, job)
-        elif l.last_res +1 == l.nextt.first.res:
+        elif l.last_res +1 == l.nextt.first_res:
             alloc = self._assignJobEnding(l, job)
         else:
             #alloc wherever (a good optimisation would be to alloc close to the job that finish close to the finish time of <job>)
