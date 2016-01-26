@@ -292,6 +292,7 @@ void PajeTracer::finalize(BatsimContext * context, double time)
              "%d %lf %s %s\n",
              DESTROY_CONTAINER, time, root, rootType);
     _wbuf->appendText(buf);
+    _wbuf->flushBuffer();
 
     state = FINALIZED;
 }

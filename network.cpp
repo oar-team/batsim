@@ -146,9 +146,27 @@ int request_reply_scheduler_process(int argc, char *argv[])
     context->socket.send(sendBuf);
 
     auto start = chrono::steady_clock::now();
-    string message_received = context->socket.receive();
-    auto end = chrono::steady_clock::now();
+    string message_received;
 
+    try
+    {
+         message_received = context->socket.receive();
+    }
+    catch(const std::runtime_error & error)
+    {
+        XBT_INFO("Runtime error received: %s", error.what());
+        XBT_INFO("Flushing output files...");
+
+        if (context->trace_schedule)
+            context->paje_tracer.finalize(context, MSG_get_clock());
+        exportScheduleToCSV(context->export_prefix + "_schedule.csv", MSG_get_clock(), context);
+        exportJobsToCSV(context->export_prefix + "_jobs.csv", context);
+
+        XBT_INFO("Output files flushed. Aborting execution now.");
+        throw runtime_error("Execution aborted (connection broken)");
+    }
+
+    auto end = chrono::steady_clock::now();
     long long elapsed_microseconds = chrono::duration <double, micro> (end - start).count();
     context->microseconds_used_by_scheduler += elapsed_microseconds;
 

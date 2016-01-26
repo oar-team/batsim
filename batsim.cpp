@@ -224,6 +224,7 @@ int main(int argc, char * argv[])
     BatsimContext context;
     context.platform_filename = mainArgs.platformFilename;
     context.workload_filename = mainArgs.workloadFilename;
+    context.export_prefix = mainArgs.exportPrefix;
     context.energy_used = mainArgs.energy_used;
     context.allow_space_sharing = mainArgs.allow_space_sharing;
     context.trace_schedule = mainArgs.enable_schedule_tracing;
@@ -294,6 +295,4 @@ int main(int argc, char * argv[])
         return 0;
     else
         return 1;
-
-    return 0;
 }

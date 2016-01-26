@@ -25,4 +25,5 @@ struct BatsimContext
     bool trace_schedule;
     std::string platform_filename;
     std::string workload_filename;
+    std::string export_prefix;
 };
