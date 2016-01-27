@@ -45,6 +45,8 @@ setup:
   # Simulator and schedulers install
   #
   - simgrid_install:
+    - prefix: /usr/local
+    - commit_hash: be8f70f
     - install dependencies:
       - exec_in: apt-get -y --force-yes install libboost-all-dev 2>&1
     - do_it:
@@ -54,11 +56,11 @@ setup:
           git clone git://scm.gforge.inria.fr/simgrid/simgrid.git
       - exec_in: |
           cd $$simctn_dir/simgrid
-          git checkout be8f70f
+          git checkout $$commit_hash
           mkdir build
       - exec_in: |
           cd $$simctn_dir/simgrid/build
-          cmake -DCMAKE_INSTALL_PREFIX=/usr/local/ -Denable_documentation=OFF ../
+          cmake -DCMAKE_INSTALL_PREFIX=$$prefix -Denable_documentation=OFF ../
           make -j$(nproc)
           make install
   - fred_scheduler:
@@ -129,15 +131,39 @@ setup:
           cmake ..
           make -j$(nproc)
           make install
+
   - SMPI_tracing:
-    - install_papi:
-      - exec_in: apt-get install -y papi-tools
-    - install_mini:
-      - exec_in: git clone git clone git://github.com/gmarkomanolis/mini.git
-      - TODO Debug this crap!
+    - Extrae:
+      # install dependencies
+      - exec_in: apt-get install -y openmpi
+      # get source and extract
+      - local2in:
+        - $$kameleon_data_dir/extrae-3.2.1.tar.bz2
+        - $$simctn_dir/extrae-3.2.1.tar.bz2
+      - exec_in: tar xf $$simctn_dir/extrae-3.2.1.tar.bz2
+      - exec_in: |
+            cd $$simctn_dir/extrae-3.2.1
+            MPICC=/usr/bin/mpicc ./configure --prefix=/usr \
+              --with-mpi=/usr/lib/openmpi/ \
+              --without-unwind \
+              --without-dyninst \
+              --without-papi \
+              --disable-openmp \
+              --with-mpi-headers=/usr/include/openmpi/ \
+              --with-mpi-libs=/usr/lib/openmpi
+            make
+            make install
+
     - install_NAS_bench:
-      - TODO: https://www.nas.nasa.gov/assets/npb/NPB3.3.1.tar.gz
-      - TODO: hack make.def for smpi
+      - download_file_in:
+        - https://www.nas.nasa.gov/assets/npb/NPB3.3.1.tar.gz
+        - $$simctn_dir/NPB3.3.1
+    - configure_make_def:
+      - exec_in: |
+          cd $$simctn_dir/NPB3.3.1
+          cp config/make.def{.template,}
+          sed -i 's/^MPIF77.*/MPIF77 = mpif77/' config/make.def
+          sed -i 's/^MPICC.*/MPICC = mpicc/' config/make.def
 
   #
   # Visualization tools
@@ -182,10 +208,11 @@ setup:
       - exec_in: |
           cd $$simctn_dir
           git clone https://scm.gforge.inria.fr/anonscm/git/expe-batsim/expe-batsim.git
-    - make_experiment_runnable:
+    - install_dependencies:
+      # For experiment.py
       - exec_in: pip3 install sortedcontainers docopt
-      - exec_in: chmod 755 $$simctn_dir/expe-batsim/experiment.py
-      - exec_in: chmod 755 $$simctn_dir/expe-batsim/swfToJsonConverter.py
+      # For prv2tit.pl
+      - exec_in: apt-get install -y libswitch-perl
 
   #
   # Personal customization
