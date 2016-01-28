@@ -136,6 +136,9 @@ void Profiles::load_from_json(const Document &doc, const string & filename)
             baseDir = baseDir.parent_path();
             xbt_assert(filesystem::exists(baseDir) && filesystem::is_directory(baseDir));
 
+            //XBT_DEBUG("baseDir = '%s'", baseDir.string().c_str());
+            //XBT_DEBUG("trace = '%s'", trace.c_str());
+
             filesystem::path tracePath(baseDir.string() + "/" + trace);
             xbt_assert(filesystem::exists(tracePath) && filesystem::is_regular_file(tracePath),
                        "Invalid JSON file '%s': profile '%s' has an invalid 'trace' field ('%s'), which lead to a non-existent file ('%s')",
@@ -148,8 +151,12 @@ void Profiles::load_from_json(const Document &doc, const string & filename)
             while (std::getline(traceFile, line))
             {
                 trim_right(line);
-                data->trace_filenames.push_back(string(tracePath.string() + "/" + line));
+                filesystem::path rank_trace_path(tracePath.parent_path().string() + "/" + line);
+                data->trace_filenames.push_back("./" + rank_trace_path.string());
             }
+
+            string filenames = boost::algorithm::join(data->trace_filenames, ", ");
+            XBT_DEBUG("Filenames of profile '%s': [%s]", key.GetString(), filenames.c_str());
 
             profile->data = data;
         }
