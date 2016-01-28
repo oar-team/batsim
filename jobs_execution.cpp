@@ -34,9 +34,8 @@ int killer_process(int argc, char *argv[])
 
 int smpi_replay_process(int argc, char *argv[])
 {
-    //just to verify given argv
-    /*for(int index = 0; index < argc; index++)
-        printf("The %d is %s\n",index,argv[index]);*/
+    for(int index = 0; index < argc; index++)
+        XBT_DEBUG("smpi_replay_process, arg %d = '%s'", index, argv[index]);
 
     smpi_replay_run(&argc, &argv);
     return 0;
@@ -220,6 +219,7 @@ int execute_profile(BatsimContext *context,
 
             MSG_process_create_with_arguments(str_pname, smpi_replay_process, NULL, allocation->hosts[i], 5, argv );
 
+            // todo: avoid memory leaks
             free(str_pname);
         }
     }
