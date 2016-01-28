@@ -27,8 +27,8 @@ class ValidatingMachine(BatsimScheduler):
         self.previousAllocations = dict()
         
         #intercept job start
-        self.bs_start_job = self.bs.start_job
-        self.bs.start_job = self.start_job
+        self.bs_start_jobs_continuous = self.bs.start_jobs_continuous
+        self.bs.start_jobs_continuous = self.start_jobs_continuous
         self.bs_start_jobs = self.bs.start_jobs
         self.bs.start_jobs = self.start_jobs
         
@@ -55,12 +55,13 @@ class ValidatingMachine(BatsimScheduler):
     def onMachinePStateChanged(self, nodeid, pstate):
         self.scheduler.onMachinePStateChanged(nodeid, pstate)
 
-    def start_job(self, job, res):
-        self.previousAllocations[job.id] = res
-        self.jobs_waiting.remove(job)
-        for r in res:
-            self.availableResources.remove(r)
-        self.bs_start_job(job, res)
+    def start_jobs_continuous(self, allocs):
+        for (job, (first_res, last_res)) in allocs:
+            self.previousAllocations[job.id] = range(first_res, last_res+1)
+            self.jobs_waiting.remove(job)
+            for r in range(first_res, last_res+1):
+                self.availableResources.remove(r)
+        self.bs_start_jobs_continuous(allocs)
         
     def start_jobs(self, jobs, res):
         for j in jobs:
