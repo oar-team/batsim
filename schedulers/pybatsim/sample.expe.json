@@ -1,0 +1,28 @@
+{
+    "platform":"../../platforms/energy_platform_homogeneous.xml",
+    "workload":"../../workload_profiles/test_bf.json",
+    
+    "output_dir":"SELF",
+    "_comment": "where all output files (stdins, stderrs, csvs...) will be outputed. if set to 'SELF' then output on the same dir as this option file.",
+    
+    "batsim": {
+    
+        "export":"out",
+        "_comment": "The export filename prefix used to generate simulation output",
+        
+        "energy-plugin": true,
+        "_comment": "Enables energy-aware experiments",
+        
+        "disable-schedule-tracing": true,
+        "_comment": "remove paje output",
+        
+        "verbosity": "information",
+        "_comment": "Sets the Batsim verbosity level. Available values are : quiet, network-only, information (default), debug."
+        
+        },
+    "scheduler":{
+        "name":"easy_backfill",
+        "verbosity":10,
+        "protection":true
+        }
+    }
