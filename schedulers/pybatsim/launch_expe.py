@@ -1,7 +1,7 @@
 
 # -*- coding: utf-8 -*-
 import subprocess
-import os, time, sys
+import os, time, sys, random
 import json
 
 
@@ -9,9 +9,11 @@ batsim_bin = "../../build/batsim"
 
 
 
+def socket_in_use(sock):
+    return sock in open('/proc/net/unix').read()
 
 def wait_for_batsim_to_open_connection(timeout=99999999999):
-    while timeout > 0 and '/tmp/bat_socket' not in open('/proc/net/unix').read():
+    while timeout > 0 and not socket_in_use('/tmp/bat_socket'):
         time.sleep(0.1)
         timeout -= 0.1
     return timeout > 0
@@ -70,6 +72,10 @@ def launch_expe(options):
     sched_stdout_file = open(options["output_dir"]+"/sched.stdout", "w")
     sched_stderr_file = open(options["output_dir"]+"/sched.stderr", "w")
     
+    #does an another batsim is in use?
+    sock = '/tmp/bat_socket_'+str(random.randint(0, 2147483647))
+    while socket_in_use(sock):
+        sock = '/tmp/bat_socket_'+str(random.randint(0, 2147483647))
     
     print "Starting batsim"
     batsim_exec = subprocess.Popen(batsim_cl, stdout=batsim_stdout_file, stderr=batsim_stderr_file, shell=False)
