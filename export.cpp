@@ -527,7 +527,7 @@ void exportJobsToCSV(const string &filename, BatsimContext *context)
         {
             char * buf = nullptr;
             int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
-            xbt_assert(job->runtime > 0);
+            xbt_assert(job->runtime >= 0);
 
             int ret = asprintf(&buf, "%d,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
                      job->id,
