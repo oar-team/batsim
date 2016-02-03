@@ -4,12 +4,13 @@
 Run PyBatsim Sschedulers.
 
 Usage:
-    launcher.py <scheduler> <json_file> [-p] [-v]
+    launcher.py <scheduler> <json_file> [-p] [-v] [-s <socket>]
 
 Options:
     -h --help                                      Show this help message and exit.
     -v --verbose                                   Be verbose.
     -p --protect                                   Protect the scheduler using a validating machine.
+    -s --socket=<socket>                               Socket to use [default: /tmp/bat_socket]
 '''
 
 
@@ -67,9 +68,10 @@ if __name__ == "__main__":
 
     scheduler_filename = arguments['<scheduler>']
     json_filename = arguments['<json_file>']
+    socket = arguments['--socket']
 
     scheduler = instanciate_scheduler(scheduler_filename)
 
-    bs = Batsim(json_filename, scheduler, validatingmachine=vm, verbose=verbose)
+    bs = Batsim(json_filename, scheduler, validatingmachine=vm, server_address=socket, verbose=verbose)
 
     bs.start()

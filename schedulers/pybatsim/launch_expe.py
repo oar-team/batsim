@@ -12,14 +12,14 @@ batsim_bin = "../../build/batsim"
 def socket_in_use(sock):
     return sock in open('/proc/net/unix').read()
 
-def wait_for_batsim_to_open_connection(timeout=99999999999):
-    while timeout > 0 and not socket_in_use('/tmp/bat_socket'):
+def wait_for_batsim_to_open_connection(sock, timeout=99999999999):
+    while timeout > 0 and not socket_in_use(sock):
         time.sleep(0.1)
         timeout -= 0.1
     return timeout > 0
 
 
-def prepare_batsim_cl(options):
+def prepare_batsim_cl(options, sock):
     batsim_cl = [options["batsim_bin"]]
 
     batsim_cl.append('-e')
@@ -33,6 +33,9 @@ def prepare_batsim_cl(options):
 
     batsim_cl.append('-v')
     batsim_cl.append(options["batsim"]["verbosity"])
+    
+    batsim_cl.append('-s')
+    batsim_cl.append(sock)
 
     batsim_cl.append(options["platform"])
     batsim_cl.append(options["workload"])
@@ -41,12 +44,15 @@ def prepare_batsim_cl(options):
 
 
 
-def prepare_pybatsim_cl(options):
+def prepare_pybatsim_cl(options, sock):
     sched_cl = ["python", "launcher.py"]
     
     sched_cl.append(options["scheduler"]["name"])
     
     sched_cl.append(options["workload"])
+    
+    sched_cl.append("-s")
+    sched_cl.append(sock)
 
     if options["scheduler"]["verbosity"] > 0:
         sched_cl.append('-v')
@@ -63,25 +69,25 @@ def launch_expe(options):
 
     if options["output_dir"] == "SELF":
         options["output_dir"] = os.path.dirname("./"+options["options_file"])
-
-    batsim_cl = prepare_batsim_cl(options)
-    batsim_stdout_file = open(options["output_dir"]+"/batsim.stdout", "w")
-    batsim_stderr_file = open(options["output_dir"]+"/batsim.stderr", "w")
-
-    sched_cl = prepare_pybatsim_cl(options)
-    sched_stdout_file = open(options["output_dir"]+"/sched.stdout", "w")
-    sched_stderr_file = open(options["output_dir"]+"/sched.stderr", "w")
     
     #does an another batsim is in use?
     sock = '/tmp/bat_socket_'+str(random.randint(0, 2147483647))
     while socket_in_use(sock):
         sock = '/tmp/bat_socket_'+str(random.randint(0, 2147483647))
+
+    batsim_cl = prepare_batsim_cl(options, sock)
+    batsim_stdout_file = open(options["output_dir"]+"/batsim.stdout", "w")
+    batsim_stderr_file = open(options["output_dir"]+"/batsim.stderr", "w")
+
+    sched_cl = prepare_pybatsim_cl(options, sock)
+    sched_stdout_file = open(options["output_dir"]+"/sched.stdout", "w")
+    sched_stderr_file = open(options["output_dir"]+"/sched.stderr", "w")
     
     print "Starting batsim"
     batsim_exec = subprocess.Popen(batsim_cl, stdout=batsim_stdout_file, stderr=batsim_stderr_file, shell=False)
 
     print "Waiting batsim initialization"
-    success = wait_for_batsim_to_open_connection(5)
+    success = wait_for_batsim_to_open_connection(sock, 5)
     if not success:
         assert False, "error on batsim"
         exit()
