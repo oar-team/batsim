@@ -549,7 +549,7 @@ void exportJobsToCSV(const string &filename, BatsimContext *context)
 
             xbt_assert((int)job->allocation.size() == job->required_nb_res);
 
-            f << job->allocation.to_string_hyphen() << "\n";
+            f << job->allocation.to_string_hyphen(" ") << "\n";
         }
     }
 
