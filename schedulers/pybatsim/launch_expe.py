@@ -3,6 +3,7 @@
 import subprocess
 import os, time, sys, random
 import json
+from datetime import timedelta
 
 
 batsim_bin = "../../build/batsim"
@@ -93,11 +94,14 @@ def launch_expe(options):
         exit()
 
     print "Starting scheduler"
+    time_start = time.time()
     sched_exec = subprocess.Popen(sched_cl, stdout=sched_stdout_file, stderr=sched_stderr_file, shell=False)
 
     print "Wait for the scheduler"
     sched_exec.wait()
+    time_ran = str(timedelta(seconds=time.time()-time_start))
     print "Scheduler return code: "+str(sched_exec.returncode)
+    print "Scheduler ran for: "+time_ran
     
     if sched_exec.returncode >= 2 and batsim_exec.poll() is None:
         print "Terminating batsim"
