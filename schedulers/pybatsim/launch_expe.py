@@ -85,7 +85,8 @@ def launch_expe(options, verbose=True):
     sched_stderr_file = open(options["output_dir"]+"/sched.stderr", "w")
     
     print "Starting batsim"
-    if verbose: print " ".join(batsim_cl+[">", batsim_stdout_file, "2>", batsim_stderr_file])
+    if verbose: print " ".join(batsim_cl+[">", str(batsim_stdout_file.name), "2>", str(batsim_stderr_file.name)])
+    exit()
     batsim_exec = subprocess.Popen(batsim_cl, stdout=batsim_stdout_file, stderr=batsim_stderr_file, shell=False)
 
     print "Waiting batsim initialization"
@@ -95,7 +96,7 @@ def launch_expe(options, verbose=True):
         exit()
 
     print "Starting scheduler"
-    if verbose: print " ".join(sched_cl+[">", sched_stdout_file, "2>", sched_stderr_file])
+    if verbose: print " ".join(sched_cl+[">", str(sched_stdout_file.name), "2>", str(sched_stderr_file.name)])
     time_start = time.time()
     sched_exec = subprocess.Popen(sched_cl, stdout=sched_stdout_file, stderr=sched_stderr_file, shell=False)
 
