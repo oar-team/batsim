@@ -64,7 +64,7 @@ def prepare_pybatsim_cl(options, sock):
 
 
 
-def launch_expe(options):
+def launch_expe(options, verbose=True):
 
     options["batsim_bin"] = batsim_bin
 
@@ -85,6 +85,7 @@ def launch_expe(options):
     sched_stderr_file = open(options["output_dir"]+"/sched.stderr", "w")
     
     print "Starting batsim"
+    if verbose: print " ".join(batsim_cl+[">", batsim_stdout_file, "2>", batsim_stderr_file)
     batsim_exec = subprocess.Popen(batsim_cl, stdout=batsim_stdout_file, stderr=batsim_stderr_file, shell=False)
 
     print "Waiting batsim initialization"
@@ -94,6 +95,7 @@ def launch_expe(options):
         exit()
 
     print "Starting scheduler"
+    if verbose: print " ".join(sched_cl+[">", sched_stdout_file, "2>", sched_stderr_file)
     time_start = time.time()
     sched_exec = subprocess.Popen(sched_cl, stdout=sched_stdout_file, stderr=sched_stderr_file, shell=False)
 
@@ -124,7 +126,8 @@ if __name__ == "__main__":
     options =  json.loads(open(options_file).read())
 
     options["options_file"] = options_file
-    launch_expe(options)
+    
+    launch_expe(options,verbose=True)
 
 
 
