@@ -86,7 +86,6 @@ def launch_expe(options, verbose=True):
     
     print "Starting batsim"
     if verbose: print " ".join(batsim_cl+[">", str(batsim_stdout_file.name), "2>", str(batsim_stderr_file.name)])
-    exit()
     batsim_exec = subprocess.Popen(batsim_cl, stdout=batsim_stdout_file, stderr=batsim_stderr_file, shell=False)
 
     print "Waiting batsim initialization"
