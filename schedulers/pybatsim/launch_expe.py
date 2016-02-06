@@ -46,7 +46,12 @@ def prepare_batsim_cl(options, sock):
 
 
 def prepare_pybatsim_cl(options, sock):
-    sched_cl = ["python", "launcher.py"]
+    interpreter = ["python"]
+    #interpreter = ["pypy", "-OOO"]
+    #interpreter = ["coverage", "run"]
+    
+    sched_cl = interpreter
+    sched_cl.append("launcher.py")
     
     sched_cl.append(options["scheduler"]["name"])
     

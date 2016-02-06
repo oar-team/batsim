@@ -32,6 +32,25 @@ class FreeSpace(object):
         self.length = len
         self.prev = p
         self.nextt = n
+    def __repr__(self):
+        if self.prev is None:
+            p = "|"
+        else:
+            p = "<"
+        if self.nextt is None:
+            n = "|"
+        else:
+            n = ">"
+        if hasattr(self, "linkedTo"):
+            link = "L"
+        else:
+            link = ""
+        if hasattr(self, "removed"):
+            delet = "NOTinLIST"
+        else:
+            delet = ""
+        return "<FreeSpace ["+str(self.first_res)+"-"+str(self.last_res)+"] "+str(self.length)+" "+p+link+n+" "+delet+" >"
+    
 
 class FressSpaceContainer(object):
     """
@@ -54,9 +73,12 @@ class FressSpaceContainer(object):
         if item == self.firstItem:
             self.firstItem = nextt
         else:
+            assert prev is not None, "The  self.firstItem ("+str(self.firstItem)+") should be set to "+str(item)+", but its not!"
             prev.nextt = nextt
         if nextt is not None:
             nextt.prev = prev
+        #if someone hold a direct refecence to item, it can knwo if this item have been removed from the list
+        item.removed = True
     
     def _assignJobBeginning(self, l, job):
             alloc = (l.first_res, l.first_res+job.requested_resources-1)
@@ -78,21 +100,22 @@ class FressSpaceContainer(object):
     
     def assignJob(self, l, job, current_time):
         assert job.requested_resources <= l.res
-        #we try to first alloc jobs on the side of the cluster to reduce fragmentation
-        if l.prev is None:
-            alloc = self._assignJobBeginning(l, job)
-        elif l.nextt is None:
-            alloc = self._assignJobEnding(l, job)
-        #then, we try to alloc near other job to reduce fragmentation
-        elif l.first_res -1 == l.prev.last_res:
-            alloc = self._assignJobBeginning(l, job)
-        elif l.last_res +1 == l.nextt.first_res:
-            alloc = self._assignJobEnding(l, job)
-        else:
-            #alloc wherever (a good optimisation would be to alloc close to the job that finish close to the finish time of <job>)
-            alloc = self._assignJobBeginning(l, job)
+        #TODO:here we can alloc close to job that will end as the same time as the current job
+        alloc = self._assignJobBeginning(l, job)
         job.finish_time = job.requested_time + current_time
         job.alloc = alloc
+        
+        #remove the resources of the linked FreeSpace (see allocFutureJob)
+        if hasattr(l, "linkedTo"):
+            if l.linkedTo.first_res >= alloc[1]:
+                l.linkedTo.first_res = alloc[1]+1
+            if  l.linkedTo.last_res <= alloc[0]:
+                l.linkedTo.last_res = alloc[0]-1
+            l.linkedTo.res = l.linkedTo.last_res-l.linkedTo.first_res+1
+            assert l.linkedTo.res>=0
+            if l.linkedTo.res == 0:
+                self.remove(l.linkedTo)
+        
         return alloc
 
     def _findSurroundingFreeSpaces(self, job):
@@ -142,16 +165,14 @@ class FressSpaceContainer(object):
         assert False
         
     def printme(self):
-        print self
         print "-------------------"
         for l in self.generator():
-            print "["+str(l.first_res)+"-"+str(l.last_res)+"] "+str(l.length)
+            print str(l)
         print "-------------------"
 
 
     def insertNewFreeSpaceBefore(self, first_res, last_res, len, l):
         newfs = FreeSpace(first_res, last_res, len, l.prev, l)
-        
         if l.prev is None:
             self.firstItem = newfs
         else:
@@ -269,6 +290,7 @@ class EasyBackfill(BatsimScheduler):
         -'------------>
         A FreeSpace (A,B, INFINITY) exists, we replace it with 2 FreeSpaces (A,A, INFINITY) and (A,B,first_job_starttime)
         
+        These 2 new FreeSpaces are "linked", in order to modify one freeSpace when the other is modified.
         
         TODO: here we can optimise the code. The free sapces that we are looking for are already been found in findAllocFuture(). BUT, in this function we find the FreeSpaces of listFreeSpaceTemp not self.listFreeSpace; so a link should be made betweend these 2 things.
         """
@@ -285,9 +307,13 @@ class EasyBackfill(BatsimScheduler):
                 
             elif l.first_res < first_job_res[0] and l.last_res >= first_job_res[0]:
                 #we transform this free space as 2 free spaces, the wider rectangle and the longest rectangle
+                assert False, "This should never happen, because we always schedule (first_job included) on the lowest resource id first"
                 assert first_virtual_space is None and first_shortened_space is None
                 
                 first_virtual_space = self.listFreeSpace.insertNewFreeSpaceBefore(l.first_res, first_job_res[0]-1, INFINITY, l)
+                
+                first_virtual_space.linkedTo = l
+                l.linkedTo = first_virtual_space
                 
                 first_shortened_space = l
                 l.length = first_job_starttime-current_time
@@ -303,6 +329,9 @@ class EasyBackfill(BatsimScheduler):
                 
                 second_virtual_space = self.listFreeSpace.insertNewFreeSpaceBefore(first_job_res[-1]+1, l.last_res, INFINITY, l)
                 
+                second_virtual_space.linkedTo = l
+                l.linkedTo = second_virtual_space
+                
                 second_shortened_space = l
                 l.length = first_job_starttime-current_time
                 #no need to continue
@@ -312,7 +341,6 @@ class EasyBackfill(BatsimScheduler):
 
 
     def allocBackFill(self, first_job, current_time):
-        
         allocs = []
         
         (first_job_res, first_job_starttime) = self.findAllocFuture(first_job)
@@ -328,14 +356,19 @@ class EasyBackfill(BatsimScheduler):
                 self.listRunningJob.add(j)
         
         if first_virtual_space is not None:
-            self.listFreeSpace.remove(first_virtual_space)
+            del first_virtual_space.linkedTo.linkedTo
+            del first_virtual_space.linkedTo
+            if not hasattr(first_virtual_space, "removed"):
+                self.listFreeSpace.remove(first_virtual_space)
         if first_shortened_space is not None:
             first_shortened_space.length = INFINITY
         if second_virtual_space is not None:
-            self.listFreeSpace.remove(second_virtual_space)
+            del second_virtual_space.linkedTo.linkedTo
+            del second_virtual_space.linkedTo
+            if not hasattr(second_virtual_space, "removed"):
+                self.listFreeSpace.remove(second_virtual_space)
         if second_shortened_space is not None:
             second_shortened_space.length = INFINITY
-        
         
         return allocs
 
