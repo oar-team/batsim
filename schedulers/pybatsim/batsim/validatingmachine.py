@@ -56,33 +56,11 @@ class ValidatingMachine(BatsimScheduler):
         self.scheduler.onMachinePStateChanged(nodeid, pstate)
 
     def start_jobs_continuous(self, allocs):
-        try:
-            for (job, (first_res, last_res)) in allocs:
-                self.previousAllocations[job.id] = range(first_res, last_res+1)
-                self.jobs_waiting.remove(job)
-                for r in range(first_res, last_res+1):
-                    self.availableResources.remove(r)
-        except:
-            print "------------------------------------------------"
-            print "ALLOCS: ", allocs
-            print "------------------------------------------------"
-            print "VM"
-            print "------------------------------------------------"
-            print "availableResources: ", self.availableResources
-            print "------------------------------------------------"
-            print "jobs_waiting:", self.jobs_waiting
-            print "------------------------------------------------"
-            print "previousAllocations.keys():", self.previousAllocations.keys()
-            print "------------------------------------------------"
-            print "SCHED"
-            print "------------------------------------------------"
-            self.scheduler.listFreeSpace.printme()
-            print "------------------------------------------------"
-            print "listRunningJob", self.scheduler.listRunningJob
-            print "------------------------------------------------"
-            print "listWaitingJob", self.scheduler.listWaitingJob
-            print "------------------------------------------------"
-            raise
+        for (job, (first_res, last_res)) in allocs:
+            self.previousAllocations[job.id] = range(first_res, last_res+1)
+            self.jobs_waiting.remove(job)
+            for r in range(first_res, last_res+1):
+                self.availableResources.remove(r)
         self.bs_start_jobs_continuous(allocs)
         
     def start_jobs(self, jobs, res):

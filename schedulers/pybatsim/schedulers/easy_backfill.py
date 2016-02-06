@@ -171,13 +171,13 @@ class FressSpaceContainer(object):
         print "-------------------"
 
 
-    def insertNewFreeSpaceBefore(self, first_res, last_res, len, l):
-        newfs = FreeSpace(first_res, last_res, len, l.prev, l)
-        if l.prev is None:
-            self.firstItem = newfs
-        else:
-            l.prev.nextt = newfs
-        l.prev = newfs
+    def insertNewFreeSpaceAfter(self, first_res, last_res, len, l):
+        newfs = FreeSpace(first_res, last_res, len, l, l.nextt)
+        
+        if l.nextt is not None:
+            l.nextt.prev = newfs
+        
+        l.nextt = newfs
         
         return newfs
 
@@ -310,7 +310,7 @@ class EasyBackfill(BatsimScheduler):
                 assert False, "This should never happen, because we always schedule (first_job included) on the lowest resource id first"
                 assert first_virtual_space is None and first_shortened_space is None
                 
-                first_virtual_space = self.listFreeSpace.insertNewFreeSpaceBefore(l.first_res, first_job_res[0]-1, INFINITY, l)
+                first_virtual_space = self.listFreeSpace.insertNewFreeSpaceAfter(l.first_res, first_job_res[0]-1, INFINITY, l)
                 
                 first_virtual_space.linkedTo = l
                 l.linkedTo = first_virtual_space
@@ -327,7 +327,7 @@ class EasyBackfill(BatsimScheduler):
                 #we transform this free space as 2 free spaces, the wider rectangle and the longest rectangle
                 assert second_virtual_space is None and second_shortened_space is None
                 
-                second_virtual_space = self.listFreeSpace.insertNewFreeSpaceBefore(first_job_res[-1]+1, l.last_res, INFINITY, l)
+                second_virtual_space = self.listFreeSpace.insertNewFreeSpaceAfter(first_job_res[-1]+1, l.last_res, INFINITY, l)
                 
                 second_virtual_space.linkedTo = l
                 l.linkedTo = second_virtual_space
