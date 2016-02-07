@@ -32,6 +32,7 @@ class FreeSpace(object):
         self.length = len
         self.prev = p
         self.nextt = n
+        self.allocSmallestResFirst = True
     def __repr__(self):
         if self.prev is None:
             p = "|"
@@ -49,7 +50,13 @@ class FreeSpace(object):
             delet = "NOTinLIST"
         else:
             delet = ""
-        return "<FreeSpace ["+str(self.first_res)+"-"+str(self.last_res)+"] "+str(self.length)+" "+p+link+n+" "+delet+" >"
+        if self.allocSmallestResFirst:
+            asrf1 = "*"
+            asrf2 = ""
+        else:
+            asrf1 = ""
+            asrf2 = "*"
+        return "<FreeSpace ["+str(self.first_res)+"-"+str(self.last_res)+"] "+str(self.length)+" "+asrf1+p+link+n+asrf2+" "+delet+" >"
     
 
 class FressSpaceContainer(object):
@@ -101,7 +108,10 @@ class FressSpaceContainer(object):
     def assignJob(self, l, job, current_time):
         assert job.requested_resources <= l.res
         #TODO:here we can alloc close to job that will end as the same time as the current job
-        alloc = self._assignJobBeginning(l, job)
+        if l.allocSmallestResFirst:
+            alloc = self._assignJobBeginning(l, job)
+        else:
+            alloc = self._assignJobEnding(l, job)
         job.finish_time = job.requested_time + current_time
         job.alloc = alloc
         
@@ -109,11 +119,11 @@ class FressSpaceContainer(object):
         if hasattr(l, "linkedTo"):
             if l.linkedTo.first_res >= alloc[1]:
                 l.linkedTo.first_res = alloc[1]+1
-            if  l.linkedTo.last_res <= alloc[0]:
+            if  l.linkedTo.last_res >= alloc[0]:
                 l.linkedTo.last_res = alloc[0]-1
             l.linkedTo.res = l.linkedTo.last_res-l.linkedTo.first_res+1
-            assert l.linkedTo.res>=0
-            if l.linkedTo.res == 0:
+            #assert l.linkedTo.res>=0
+            if l.linkedTo.res <= 0:
                 self.remove(l.linkedTo)
         
         return alloc
@@ -315,6 +325,8 @@ class EasyBackfill(BatsimScheduler):
                 first_virtual_space.linkedTo = l
                 l.linkedTo = first_virtual_space
                 
+                first_virtual_space.allocSmallestResFirst = False
+                
                 first_shortened_space = l
                 l.length = first_job_starttime-current_time
             
@@ -331,6 +343,9 @@ class EasyBackfill(BatsimScheduler):
                 
                 second_virtual_space.linkedTo = l
                 l.linkedTo = second_virtual_space
+                
+                second_virtual_space.allocSmallestResFirst = False
+                l.allocSmallestResFirst = False
                 
                 second_shortened_space = l
                 l.length = first_job_starttime-current_time
@@ -362,6 +377,7 @@ class EasyBackfill(BatsimScheduler):
                 self.listFreeSpace.remove(first_virtual_space)
         if first_shortened_space is not None:
             first_shortened_space.length = INFINITY
+            first_shortened_space.allocSmallestResFirst = True
         if second_virtual_space is not None:
             del second_virtual_space.linkedTo.linkedTo
             del second_virtual_space.linkedTo
@@ -369,6 +385,7 @@ class EasyBackfill(BatsimScheduler):
                 self.listFreeSpace.remove(second_virtual_space)
         if second_shortened_space is not None:
             second_shortened_space.length = INFINITY
+            second_shortened_space.allocSmallestResFirst = True
         
         return allocs
 
