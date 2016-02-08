@@ -1,0 +1,13 @@
+- expe_batsim_home: /root
+- install_dependencies:
+  # For python scripts
+  - exec_in: apt-get install -y python3-pip git
+  - exec_in: pip3 install sortedcontainers docopt
+  # For prv2tit.pl
+  - exec_in: apt-get install -y libswitch-perl
+
+- import_expe_batsim:
+  - exec_in: |
+      cd $$expe_batsim_home
+      git clone https://scm.gforge.inria.fr/anonscm/git/expe-batsim/expe-batsim.git
+

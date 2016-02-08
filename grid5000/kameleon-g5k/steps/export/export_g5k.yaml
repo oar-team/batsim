@@ -1,0 +1,71 @@
+# Generate a dsc file as used on grid'5000 by kaenv
+
+- dashes: "---" # kameleon eats my dash if I don't use this dirty hack :-(
+
+- save_as_tgz:
+  - check_cmd_local: guestfish
+  - check_cmd_local: gzip
+  - exec_local: echo "Exporting appliance to $$output.tgz"
+  - exec_local: mkdir -p $$kameleon_cwd/.mnt
+  - exec_local: LIBGUESTFS_CACHEDIR=$$kameleon_cwd guestmount --ro -i -a $$input $$kameleon_cwd/.mnt
+  - exec_local: LIBGUESTFS_CACHEDIR=$$kameleon_cwd tar -cf $$output.tgz --gzip --numeric-owner --selinux --acls --xattrs -C $$kameleon_cwd/.mnt .
+  - exec_local: LIBGUESTFS_CACHEDIR=$$kameleon_cwd guestunmount $$kameleon_cwd/.mnt
+  - exec_local: rmdir $$kameleon_cwd/.mnt
+
+- generate_dsc:
+  - exec_local: echo "Creating description file for kaenv in $$output.dsc"
+  - exec_local: |
+      # Remove c-states from non min environmnents
+      if [[ "x$${variant}" != "xxen" ]]; then
+      cat << EOF > $$output.dsc
+      $${dashes}
+      name: $${os_release}-x64-$$variant
+      version: $${image_version}
+      description: $(echo $$os_family|cut -c1|tr [a-z] [A-Z])$(echo $$os_family|cut -c2-) $(echo $$os_release|cut -c1|tr [a-z] [A-Z])$(echo $$os_release|cut -c2-) ($$variant)
+      author: support-staff@lists.grid5000.fr
+      visibility: public
+      destructive: false
+      os: linux
+      image:
+        file: $$g5k_tgz_path
+        kind: tar
+        compression: gzip
+      postinstalls:
+      - archive: $$g5k_postinst_path
+        compression: gzip
+        script: traitement.ash /rambin
+      boot:
+        kernel: /vmlinuz
+        initrd: /initrd.img
+      filesystem: ext4
+      partition_type: 131
+      multipart: false
+      EOF
+      else
+      cat << EOF > $$output.dsc
+      $${dashes}
+      name: $${os_release}-x64-$$variant
+      version: $${image_version}
+      description: $(echo $$os_family|cut -c1|tr [a-z] [A-Z])$(echo $$os_family|cut -c2-) $(echo $$os_release|cut -c1|tr [a-z] [A-Z])$(echo $$os_release|cut -c2-) ($$variant)
+      author: support-staff@lists.grid5000.fr
+      visibility: public
+      destructive: false
+      os: xen
+      image:
+        file: $$g5k_tgz_path
+        kind: tar
+        compression: gzip
+      postinstalls:
+      - archive: $$g5k_postinst_path
+        compression: gzip
+        script: traitement.ash /rambin
+      boot:
+        kernel: /vmlinuz
+        initrd: /initrd.img
+        hypervisor: /hypervisor
+        hypervisor_params: dom0_mem=1000000
+      filesystem: ext4
+      partition_type: 131
+      multipart: false
+      EOF
+      fi

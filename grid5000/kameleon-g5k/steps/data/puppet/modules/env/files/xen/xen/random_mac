@@ -1,0 +1,38 @@
+#!/bin/sh
+
+SITE_NAME=$(hostname | cut -d. -f2)
+
+# Code the 2nd byte of the IP in the mac address, in order to avoid conflicts
+# with g5k-subnets (see [[Virtual network interlink]])
+
+if   [ "x$SITE_NAME" = "xbordeaux"     ] ; then
+  SITE_HEX=83
+elif [ "x$SITE_NAME" = "xlille"        ] ; then
+  SITE_HEX=8b
+elif [ "x$SITE_NAME" = "xlyon"         ] ; then
+  SITE_HEX=8f
+elif [ "x$SITE_NAME" = "xnancy"        ] ; then
+  SITE_HEX=93
+elif [ "x$SITE_NAME" = "xrennes"       ] ; then
+  SITE_HEX=9f
+elif [ "x$SITE_NAME" = "xtoulouse"     ] ; then
+  SITE_HEX=a3
+elif [ "x$SITE_NAME" = "xsophia"       ] ; then
+  SITE_HEX=a7
+elif [ "x$SITE_NAME" = "xreims"        ] ; then
+  SITE_HEX=ab
+elif [ "x$SITE_NAME" = "xluxembourg"   ] ; then
+  SITE_HEX=af
+elif [ "x$SITE_NAME" = "xnantes"       ] ; then
+  SITE_HEX=b3
+elif [ "x$SITE_NAME" = "xgrenoble"     ] ; then
+  SITE_HEX=b7
+elif [ "x$SITE_NAME" = "xqualif"       ] ; then
+  SITE_HEX=ff
+else
+  # Orsay (or unknown site)
+  SITE_HEX=97
+fi
+
+MACADDR="00:16:3e:$SITE_HEX:$(dd if=/dev/urandom count=1 2>/dev/null | md5sum | sed 's/^\(..\)\(..\).*$/\1:\2/')"
+echo $MACADDR

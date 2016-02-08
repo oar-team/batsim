@@ -1,0 +1,27 @@
+#!/bin/sh
+
+NAME=xen-g5k
+RAND_MAC_CMD="/usr/local/bin/random_mac"
+
+XEN_DIR=/etc/xen
+DOMUS_CONF_FILES=`ls $XEN_DIR/*.cfg`
+
+test -f $RAND_MAC_CMD || exit 0
+test -d $XEN_DIR      || exit 0
+
+case "$1" in
+	start|reload|force-reload|restart)
+
+      for conf_file in $DOMUS_CONF_FILES; do
+        sed -i s/mac=[A-Za-z0-9:]*/mac=$($RAND_MAC_CMD)/g $conf_file
+      done
+
+	;;
+	stop)
+	;;
+	*)
+		echo "Usage: invoke-rc.d $NAME {start|stop|reload|force-reload|restart}"
+	;;
+esac
+
+exit 0

@@ -1,0 +1,9 @@
+[Unit]
+Description=Service that disable cstate (force cstate to 0) when runing.
+
+[Service]
+ExecStart=/usr/local/sbin/force_cstate_0.rb
+
+[Install]
+WantedBy=multi-user.target
+

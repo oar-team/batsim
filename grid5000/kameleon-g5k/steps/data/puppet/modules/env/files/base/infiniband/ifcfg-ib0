@@ -1,0 +1,6 @@
+DEVICE=ib0
+BOOTPROTO=static
+IPADDR=$(host -t A $(hostname -s)-ib0 | cut -d' ' -f4)
+NETMASK=255.255.240.0
+ONBOOT=yes
+

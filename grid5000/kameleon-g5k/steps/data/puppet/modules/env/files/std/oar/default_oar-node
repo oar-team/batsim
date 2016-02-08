@@ -1,0 +1,47 @@
+# OARSERVER: machine where we remotely run oarnodesetting
+OARREMOTE="frontend"
+
+# The paths to oarnodecheckquery and oarnodecheckrun (check your installation)
+OARNODECHECKQUERY=/usr/bin/oarnodecheckquery
+OARNODECHECKRUN=/usr/lib/oar/oarnodecheckrun
+# Home directory of user oar
+OARHOME=/var/lib/oar
+
+# retry settings
+MODSLEEP=20
+MINSLEEP=10
+MAXRETRY=180
+
+
+start_oar_node() {
+    test -n "$OARREMOTE" || exit 0
+    local retry=0
+    local sleep=0
+    local status=1
+    until [ $status -eq 0 ]; do
+      echo "oar-node: perform sanity checks"
+      $OARNODECHECKRUN
+      $OARNODECHECKQUERY
+      status=$?
+      [ $status -eq 0 ] && {
+        echo "oar-node: set the ressources of this node to Alive"
+        ssh -t -oStrictHostKeyChecking=no -oPasswordAuthentication=no -i $OARHOME/.ssh/oarnodesetting_ssh.key oar@$OARREMOTE -p 6667
+        status=$?
+      }
+      [ $status -ne 0 ] && {
+        if [ $((retry+=sleep)) -gt $MAXRETRY ]; then
+          echo "oar-node: FAILED"
+          return 1
+        fi
+        ((sleep = $RANDOM % $MODSLEEP + $MINSLEEP))
+        echo "oar-node: retrying in $sleep seconds..."
+        sleep $sleep
+      }
+    done
+    return 0
+}
+
+stop_oar_node() {
+    :
+}
+

@@ -1,0 +1,31 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# DESCRIPTION: Debian 8 (Jessie) base system built with virtualbox.
+#
+#==============================================================================
+---
+extend: debian7.yaml
+
+global:
+  # Distribution
+  release: jessie
+
+  bootstrap_packages: >
+    bsdutils ca-certificates locales man-db less libui-dialog-perl dialog
+    isc-dhcp-client ifupdown iptables iputils-ping iproute2 netbase net-tools
+    psmisc openssh-server acpid acpi-support-base sysvinit systemd systemd-sysv
+    linux-image-$$kernel_arch pciutils
+
+  setup_packages: >
+    sudo vim bash-completion curl resolvconf extlinux bzip2 dialog
+
+bootstrap:
+  - "@base"
+
+setup:
+  - "@base"
+
+export:
+  - "@base"

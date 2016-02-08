@@ -1,0 +1,23 @@
+## aliases
+# If not running interactively, don't do anything
+export USER=${USER:-"root"}
+export HOME=${HOME:-"/root"}
+export PATH=/usr/bin:/usr/sbin:/bin:/sbin:$PATH
+export LC_ALL=${LC_ALL:-"POSIX"}
+
+export DEBIAN_FRONTEND=noninteractive
+
+if [ -t 1 ] ; then
+export TERM=xterm
+# for fast typing
+alias h='history'
+alias g='git status'
+alias l='ls -lah'
+alias ll='ls -lh'
+alias la='ls -Ah'
+
+# for human readable output
+alias ls='ls -h'
+alias df='df -h'
+alias du='du -h'
+fi

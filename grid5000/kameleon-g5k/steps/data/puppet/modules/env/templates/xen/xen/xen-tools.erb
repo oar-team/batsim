@@ -1,0 +1,16 @@
+dir           = /opt/xen
+debootstrap   = 1   # installation method
+memory        = 128Mb    # Memory size
+swap          = 128Mb    # Swap size
+fs            = ext3     # use the EXT3 filesystem for the disk image.
+image         = sparse   # Specify sparse vs. full disk images.
+size          = 600Mb    # Disk image size. <%# This is set to the biggest possible image size (today, jessie) %>
+dist          = <%= @lsbdistcodename %>   # Default distribution to install. <%# Param for debootstrap. Default vm content is the same distrib than the host. %>
+kernel        = /vmlinuz
+initrd        = /initrd.img
+mirror        = http://ftp.fr.debian.org/debian/
+arch          = amd64
+ext3_options  = noatime,nodiratime,errors=remount-ro
+serial_device = hvc0   # Necessary to get access to the
+disk_device   = xvda     # domU through xm console command
+role          = udev

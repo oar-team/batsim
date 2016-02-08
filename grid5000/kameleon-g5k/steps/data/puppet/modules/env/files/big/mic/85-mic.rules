@@ -1,0 +1,2 @@
+# Installed by puppet
+KERNEL=="scif", SUBSYSTEM=="mic", MODE="666"

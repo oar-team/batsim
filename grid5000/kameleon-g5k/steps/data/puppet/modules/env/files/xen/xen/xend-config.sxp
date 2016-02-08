@@ -1,0 +1,5 @@
+(network-script network-bridge)
+(vif-script vif-bridge)
+(dom0-min-mem 196)
+(dom0-cpus 0)
+(vncpasswd '')

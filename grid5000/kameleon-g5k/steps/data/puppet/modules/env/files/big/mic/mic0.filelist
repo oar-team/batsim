@@ -1,0 +1,41 @@
+dir /etc/network 755 0 0
+file /etc/network/interfaces etc/network/interfaces 644 0 0
+file /etc/passwd etc/passwd 644 0 0
+file /etc/shadow etc/shadow 000 0 0
+dir /home 755 0 0
+dir /root 755 0 0
+dir /grid5000 755 0 0
+file /root/.profile root/.profile 644 0 0
+dir /home/micuser 755 400 400
+file /home/micuser/.profile home/micuser/.profile 644 400 400
+file /etc/group etc/group 644 0 0
+dir /root/.ssh 700 0 0
+file /root/.ssh/id_rsa.pub root/.ssh/id_rsa.pub 600 0 0
+file /root/.ssh/authorized_keys root/.ssh/authorized_keys 600 0 0
+file /root/.ssh/id_rsa root/.ssh/id_rsa 600 0 0
+file /etc/hostname etc/hostname 644 0 0
+file /etc/resolv.conf etc/resolv.conf 644 0 0
+file /etc/nsswitch.conf etc/nsswitch.conf 644 0 0
+dir /etc/ssh 755 0 0
+file /etc/ssh/ssh_host_key etc/ssh/ssh_host_key 600 0 0
+file /etc/ssh/ssh_host_key.pub etc/ssh/ssh_host_key.pub 644 0 0
+file /etc/ssh/ssh_host_rsa_key etc/ssh/ssh_host_rsa_key 600 0 0
+file /etc/ssh/ssh_host_rsa_key.pub etc/ssh/ssh_host_rsa_key.pub 644 0 0
+file /etc/ssh/ssh_host_dsa_key etc/ssh/ssh_host_dsa_key 600 0 0
+file /etc/ssh/ssh_host_dsa_key.pub etc/ssh/ssh_host_dsa_key.pub 644 0 0
+file /etc/ssh/ssh_host_ecdsa_key etc/ssh/ssh_host_ecdsa_key 600 0 0
+file /etc/ssh/ssh_host_ecdsa_key.pub etc/ssh/ssh_host_ecdsa_key.pub 644 0 0
+file /etc/localtime etc/localtime 644 0 0
+file /etc/fstab etc/fstab 644 0 0
+dir /etc/init.d 0755 0 0
+dir /etc/rc5.d 0755 0 0
+file /etc/init.d/timesync etc/init.d/timesync 0755 0 0
+slink /etc/rc5.d/S01timesync ../init.d/timesync 0755 0 0
+dir /etc/init.d 0755 0 0
+dir /etc/rc5.d 0755 0 0
+file /etc/init.d/sysonline etc/init.d/sysonline 0755 0 0
+slink /etc/rc5.d/S99sysonline ../init.d/sysonline 0755 0 0
+file /etc/init.d/pm etc/init.d/pm 0755 0 0
+slink /etc/rc5.d/S90pm ../init.d/pm 0755 0 0
+file /etc/hosts etc/hosts 644 0 0
+slink /opt/intel /grid5000/software/intel 0777 0 0

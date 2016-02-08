@@ -1,0 +1,2 @@
+nfs:/export/home	/home	nfs		rsize=8192,wsize=8192,nolock,intr	0	0
+nfs:/export/grid5000	/grid5000	nfs		rsize=8192,wsize=8192,nolock,intr	0	0

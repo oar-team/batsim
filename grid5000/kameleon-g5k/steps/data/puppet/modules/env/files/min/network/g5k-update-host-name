@@ -1,0 +1,22 @@
+#!/bin/sh
+
+if [ -n "$new_host_name" ]; then
+	if [ -n "$new_domain_name" ]; then
+		hostname="${new_host_name}.${new_domain_name}"
+	else
+		hostname="${new_host_name}"
+	fi
+
+	echo "$hostname" > /etc/hostname 2> /dev/null
+	hostname "$hostname"
+	echo "$hostname" > /etc/mailname 2> /dev/null
+fi
+
+globaldnsip="131.254.203.235"
+resolvconf="/etc/resolv.conf"
+cmd=$(grep -c $globaldnsip $resolvconf)
+
+/bin/sed -i '/^search/ {/ grid5000.fr/! s/.*/& grid5000.fr/}' $resolvconf
+[ "$cmd" == "0" ] && echo "nameserver $globaldnsip" >> $resolvconf
+
+exit 0

@@ -1,0 +1,20 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# DESCRIPTION: Recipe to build and install workload generation tools
+#
+#==============================================================================
+
+---
+extend: grid5000/kameleon-g5k/virtualbox/jessie-x64-min.yaml
+
+global:
+  context_out:
+    cmd: bash
+    workdir: /home/mmercier
+
+setup:
+  - extrae
+  - NAS_benchmark
+  - import_batsim_experiment_tools

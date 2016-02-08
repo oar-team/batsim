@@ -132,38 +132,11 @@ setup:
           make -j$(nproc)
           make install
 
-  - SMPI_tracing:
-    - Extrae:
-      # install dependencies
-      - exec_in: apt-get install -y openmpi
-      # get source and extract
-      - local2in:
-        - $$kameleon_data_dir/extrae-3.2.1.tar.bz2
-        - $$simctn_dir/extrae-3.2.1.tar.bz2
-      - exec_in: tar xf $$simctn_dir/extrae-3.2.1.tar.bz2
-      - exec_in: |
-            cd $$simctn_dir/extrae-3.2.1
-            MPICC=/usr/bin/mpicc ./configure --prefix=/usr \
-              --with-mpi=/usr/lib/openmpi/ \
-              --without-unwind \
-              --without-dyninst \
-              --without-papi \
-              --disable-openmp \
-              --with-mpi-headers=/usr/include/openmpi/ \
-              --with-mpi-libs=/usr/lib/openmpi
-            make
-            make install
+  - extrae:
+    - extrae_home: $$simctn_dir
 
-    - install_NAS_bench:
-      - download_file_in:
-        - https://www.nas.nasa.gov/assets/npb/NPB3.3.1.tar.gz
-        - $$simctn_dir/NPB3.3.1
-    - configure_make_def:
-      - exec_in: |
-          cd $$simctn_dir/NPB3.3.1
-          cp config/make.def{.template,}
-          sed -i 's/^MPIF77.*/MPIF77 = mpif77/' config/make.def
-          sed -i 's/^MPICC.*/MPICC = mpicc/' config/make.def
+  - NAS_benchmark:
+    - NAS_Home: $$simctn_dir
 
   #
   # Visualization tools
@@ -203,16 +176,8 @@ setup:
   #
   # Experiment inputs and launch scripts
   #
-  - import_experiment_material:
-    - install_expe_batsim:
-      - exec_in: |
-          cd $$simctn_dir
-          git clone https://scm.gforge.inria.fr/anonscm/git/expe-batsim/expe-batsim.git
-    - install_dependencies:
-      # For experiment.py
-      - exec_in: pip3 install sortedcontainers docopt
-      # For prv2tit.pl
-      - exec_in: apt-get install -y libswitch-perl
+  - import_batsim_experiment_tools:
+    - expe_batsim_home: $$simctn_dir
 
   #
   # Personal customization

@@ -1,0 +1,61 @@
+# Save Appliance from virtualbox
+
+- tar_out_opts: numericowner:true excludes:"./etc/fstab ./tmp/*"
+
+- save_as_ova:
+  - exec_local: rm -f $$output.ova
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --natpf1 delete guestssh
+  - exec_local: VBoxManage storageattach $$virtualbox_vmid --storagectl "IDE Controller" --port 1 --device 0 --type dvddrive --medium none
+  - exec_local: VBoxManage export $$virtualbox_vmid -o $$output.ova
+
+- save_as_vdi:
+  - check_cmd_local: qemu-img
+  - exec_local: echo "Exporting appliance to $$output.vdi..."
+  - exec_local: qemu-img convert -O vdi $$virtualbox_image_disk $$output.vdi
+  - rescue:
+    - exec_local: |
+        echo "Compact the vdi disk"
+        VBoxManage modifyhd $$output.vdi --compact 2>&1
+    - exec_local: |
+        echo "Cannot compact the vdi disk : VBoxManage is missing."
+  - exec_local: echo "Saved vdi appliance to $$output.vdi"
+
+- save_as_vmdk:
+  - check_cmd_local: qemu-img
+  - exec_local: echo "Exporting appliance to $$output.vmdk..."
+  - exec_local: qemu-img convert -O vmdk $$virtualbox_image_disk $$output.vmdk
+  - exec_local: echo "Saved vmdk appliance to $$output.vmdk"
+
+- save_as_tar_gz:
+  - check_cmd_local: guestfish
+  - check_cmd_local: gzip
+  - exec_local: echo "Exporting appliance to $$output.tar.gz..."
+  - exec_local: LIBGUESTFS_CACHEDIR=$$kameleon_cwd guestfish --ro -i tar-out -a $$virtualbox_image_disk / - $$tar_out_opts | gzip --best > $$output.tar.gz
+
+- save_as_tar_xz:
+  - check_cmd_local: guestfish
+  - check_cmd_local: xz
+  - exec_local: echo "Exporting appliance to $$output.tar.xz..."
+  - exec_local: LIBGUESTFS_CACHEDIR=$$kameleon_cwd guestfish --ro -i tar-out -a $$virtualbox_image_disk / - $$tar_out_opts | xz -9 -c - > $$output.tar.xz
+
+- save_as_tar_bz2:
+  - check_cmd_local: guestfish
+  - check_cmd_local: bzip2
+  - exec_local: echo "Exporting appliance to $$output.tar.bz2..."
+  - exec_local: LIBGUESTFS_CACHEDIR=$$kameleon_cwd guestfish --ro -i tar-out -a $$virtualbox_image_disk / - $$tar_out_opts | bzip2 --best > $$output.tar.bz2
+
+- save_as_raw:
+  - check_cmd_local: qemu-img
+  - exec_local: echo "Exporting appliance to $$output.raw..."
+  - exec_local: qemu-img convert -O raw $$virtualbox_image_disk $$output.raw
+  - exec_local: echo "Saved raw appliance to $$output.raw"
+
+- save_as_qcow2:
+  - check_cmd_local: qemu-img
+  - exec_local: echo "Exporting appliance to $$output.qcow2..."
+  - exec_local: qemu-img convert -c -O qcow2 $$virtualbox_image_disk $$output.qcow2
+
+- save_as_qed:
+  - check_cmd_local: qemu-img
+  - exec_local: echo "Exporting appliance to $$output.qed..."
+  - exec_local: qemu-img convert -O qed $$virtualbox_image_disk $$output.qed

@@ -1,0 +1,91 @@
+- reboot_timeout: 100
+
+- prepare_sshd:
+  - exec_out: mkdir -p $$rootfs/root/.ssh/
+  - local2out:
+    - $$kameleon_cwd/insecure_ssh_key.pub
+    - $$rootfs/root/.ssh/authorized_keys
+  - local2out:
+    - $$kameleon_cwd/insecure_ssh_key.pub
+    - $$rootfs/root/.ssh/authorized_keys_to_remove
+  - exec_out: chmod 0700 $$rootfs/root/.ssh
+  - exec_out: chmod 0600 -R $$rootfs/root/.ssh/*
+  - on_setup_clean:
+    - exec_in: grep -v -f /root/.ssh/authorized_keys_to_remove /root/.ssh/authorized_keys || true
+    - exec_in: rm -f /root/.ssh/authorized_keys_to_remove
+
+- mount_chroot:
+  - exec_out: mount -o bind /dev  $$rootfs/dev
+  - exec_out: mount -o bind /dev/pts $$rootfs/dev/pts
+  - exec_out: mount -t proc /proc  $$rootfs/proc
+  - exec_out: mount -t sysfs /sys  $$rootfs/sys
+
+- create_fstab:
+  - write_out:
+    - $$rootfs/etc/fstab
+    - |
+      # /etc/fstab: static file system information.
+      #
+      # <file system> <mount point>   <type>  <options>       <dump>  <pass>
+      UUID=`blkid -s UUID -o value $${disk_device}1` /               $$filesystem_type    errors=remount-ro  0       1
+
+- install_initial_bootloader:
+  - exec_out: mkdir -p $$rootfs/boot/extlinux
+  - exec_out: extlinux --install $$rootfs/boot/extlinux 2>&1
+  - exec_out: |
+      MBR_PATH=
+      PATHS=("/usr/share/syslinux/mbr.bin"
+             "/usr/lib/bios/syslinux/mbr.bin"
+             "/usr/lib/syslinux/bios/mbr.bin"
+             "/usr/lib/extlinux/mbr.bin"
+             "/usr/lib/syslinux/mbr.bin"
+             "/usr/lib/syslinux/mbr/mbr.bin"
+             "/usr/lib/EXTLINUX/mbr.bin")
+      for element in "${PATHS[@]}"
+      do
+        if [ -f "$element" ]; then
+          MBR_PATH="$element"
+          break
+        fi
+      done
+      if [ "$MBR_PATH" == "" ]; then
+        fail "unable to locate the extlinux mbr"
+      else
+        dd if="$MBR_PATH" of="$$disk_device" bs=440  2>&1
+      fi
+  - write_out:
+    - $$rootfs/boot/extlinux/extlinux.conf
+    - |
+      default linux
+      timeout 1
+      label linux
+      kernel ../`basename $$rootfs/boot/vmlinuz*`
+      append initrd=../`basename $$rootfs/boot/init*` root=UUID=`blkid -s UUID -o value $${disk_device}1` ro console=tty0 console=ttyS0,115200n8
+
+- umount_all:
+  - umount_out: $$rootfs/sys
+  - umount_out: $$rootfs/proc
+  - umount_out: $$rootfs/dev/pts
+  - umount_out: $$rootfs/dev
+  - umount_out: $$rootfs
+
+- switch_out2in:
+  - exec_local: echo "Rebooting virtualbox vm ($$virtualbox_vmid)"
+  - exec_local: VBoxManage controlvm $$virtualbox_vmid poweroff 2>&1
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --boot1 disk
+  - exec_local: VBoxManage modifyvm $$virtualbox_vmid --boot2 dvd
+  - exec_local: VBoxManage startvm  $$virtualbox_vmid --type headless 2>&1
+  - exec_local: |
+        SSH_AVAILABLE=0
+        TIMEOUT=$(( $(date +%s) + $$reboot_timeout ))
+        until timeout 2 ssh -q -F $$ssh_config_file -o ConnectTimeout=1 -o ConnectionAttempts=1  $${kameleon_recipe_name} -t true && SSH_AVAILABLE=1 || [ $(date +%s) -gt $TIMEOUT ];
+        do
+          echo -en "\rWaiting for SSH to become available for out_context...($(( TIMEOUT - $(date +%s) ))s)"
+          sleep 1
+        done
+        echo ""
+  - rescue:
+    - exec_local: test $SSH_AVAILABLE -eq 1
+    - breakpoint: Failed to connect to VM via SSH. Please verify the VM successfully booted by looking at the VirtualBox GUI.
+
+  - reload_context: out

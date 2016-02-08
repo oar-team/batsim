@@ -1,0 +1,191 @@
+#!/bin/bash
+# Copyright 2010-2013 Intel Corporation.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License, version 2,
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Disclaimer: The codes contained in these modules may be specific to
+# the Intel Software Development Platform codenamed Knights Ferry,
+# and the Intel product codenamed Knights Corner, and are not backward
+# compatible with other Intel products. Additionally, Intel will NOT
+# support the codes or instruction set in future products.
+#
+# Intel offers no warranty of any kind regarding the code. This code is
+# licensed on an "AS IS" basis and Intel is not obligated to provide
+# any support, assistance, installation, training, or other services
+# of any kind. Intel is also not obligated to provide any updates,
+# enhancements or extensions. Intel specifically disclaims any warranty
+# of merchantability, non-infringement, fitness for any particular
+# purpose, and any other warranty.
+#
+# Further, Intel disclaims all liability of any kind, including but
+# not limited to liability for infringement of any proprietary rights,
+# relating to the use of the code, even if Intel is notified of the
+# possibility of such liability. Except as expressly stated in an Intel
+# license agreement provided with this code and agreed upon with Intel,
+# no license, express or implied, by estoppel or otherwise, to any
+# intellectual property rights is granted herein.
+#
+# mpss	Start mpssd.
+#
+# chkconfig: 2345 95 05
+# description: start MPSS stack processing.
+#
+### BEGIN INIT INFO
+# Provides: mpss
+# Required-Start:
+# Required-Stop: iptables
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: MPSS stack control
+# Description: MPSS stack control
+### END INIT INFO
+
+exec=/usr/sbin/mpssd
+sysfs="/sys/class/mic"
+
+. /lib/lsb/init-functions
+
+start()
+{
+	[ -x $exec ] || exit 5
+
+	# add directory to standard library search path
+	if [ ! -f /etc/ld.so.conf.d/mic.conf ]; then 
+		echo "/usr/lib64/" > /etc/ld.so.conf.d/mic.conf
+		ldconfig
+	fi
+
+	# create ssh key for root
+	if [ ! -f /root/.ssh/id_rsa ]; then
+		ssh-keygen -t rsa -P "" -f /root/.ssh/id_rsa
+	fi	
+
+	# enable access to nfs for mic (not needed with bridge)
+#	iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -j MASQUERADE
+#	echo 1 >/proc/sys/net/ipv4/ip_forward 
+
+	# Ensure the driver is loaded
+	[ -d "$sysfs" ] || modprobe mic
+
+	echo -n $"Starting MPSS Stack: "
+
+        [ -d "/var/lock/subsys" ] || mkdir /var/lock/subsys
+	micctrl --initdefaults
+	start-stop-daemon --start --exec $exec
+
+	if [ "`ps -e | awk '{print $4}' | grep mpssd`" = "mpssd" ]; then
+		echo
+		micctrl -s
+		return 0
+	fi
+
+	micctrl -w 1> /dev/null
+	micctrl -s
+}
+
+stop()
+{
+	echo -n $"Shutting down MPSS Stack: "
+
+	WAITRET=0
+	MPSSD=`ps ax | grep /usr/sbin/mpssd | grep -v grep`
+
+	if [ "$MPSSD" = "" ]; then
+		echo
+		return 0;
+	fi
+
+	MPSSDPID=`echo $MPSSD | awk '{print $1}'`
+	kill -s QUIT $MPSSDPID > /dev/null 2>/dev/null
+	RETVAL=$?
+
+	if [ $RETVAL = 0 ]; then
+		while [ "`ps -e | awk '{print $4}' | grep mpssd`" = "mpssd" ]; do sleep 1; done
+		micctrl -w 1> /dev/null
+		WAITRET=$?
+		if [ $WAITRET = 9 ]; then
+			echo -n $"Shutting down MPSS Stack by force: "
+			micctrl -r 1> /dev/null
+			RETVAL=$?
+			if [ $RETVAL = 0 ]; then
+				micctrl -w 1> /dev/null
+				WAITRET=$?
+			fi
+		fi
+	fi
+
+}
+
+restart()
+{
+	stop
+	start
+}
+
+status()
+{
+	if [ "`ps -e | awk '{print $4}' | grep mpssd`" = "mpssd" ]; then
+                echo "mpss is running"
+		STOPPED=0
+        else
+                echo "mpss is stopped"
+		STOPPED=3
+        fi
+        return $STOPPED
+}
+
+unload()
+{
+	if [ ! -d "$sysfs" ]; then
+		return
+	fi
+
+	stop
+	RETVAL=$?
+
+	echo $"Removing MIC Module: "
+
+	if [ $RETVAL = 0 ]; then
+		sleep 1
+		modprobe -r mic
+		RETVAL=$?
+	fi
+
+	if [ $RETVAL -ne 0 ]; then
+		rc_failed 3
+	fi
+	echo
+	return $RETVAL
+}
+
+case $1 in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		restart
+		;;
+	status)
+		status
+		;;
+	unload)
+		unload
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|restart|status|unload}"
+esac
+

@@ -1,0 +1,3 @@
+# This file is intended to be completed by kameleon and contains the path of the postinstall used by kadeploy to deploy this image
+# If this file is changed (postinstall increment), the version of the image must be incremented as well.
+# To avoid any unfortunate forgetting, this path is stored in the tgz to change the tgz checksum.
