@@ -8,8 +8,8 @@ from random import sample
 from sortedcontainers import SortedSet
 
 class RandomSched(BatsimScheduler):
-    def __init__(self):
-        pass
+    def __init__(self, options):
+        self.options = options
 
     def onAfterBatsimInit(self):
         self.res = [x for x in range(self.bs.nb_res)]

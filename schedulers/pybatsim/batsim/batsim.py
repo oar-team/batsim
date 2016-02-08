@@ -179,6 +179,9 @@ class Job(object):
 
 
 class BatsimScheduler(object):
+    def __init__(self, options):
+        self.options = options
+
     def onAfterBatsimInit(self):
         #You now have access to self.bs and all other functions
         pass

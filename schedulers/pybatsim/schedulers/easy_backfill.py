@@ -200,8 +200,8 @@ class EasyBackfill(BatsimScheduler):
     An EASY backfill scheduler that schedule rectangles.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, options):
+        self.options = options
 
     def onAfterBatsimInit(self):
         self.listFreeSpace = FressSpaceContainer(self.bs.nb_res)
