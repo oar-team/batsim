@@ -248,14 +248,17 @@ class EasyBackfill(BatsimScheduler):
             self.bs.start_jobs_continuous(allocs)
 
 
-    def allocJobWithoutTime(self, job, current_time):
+    def allocJobFCFS(self, job, current_time):
         for l in self.listFreeSpace.generator():
             if job.requested_resources <= l.res:
                 alloc = self.listFreeSpace.assignJob(l, job, current_time)
                 return alloc
         return None
 
-    def allocJobWithTime(self, job, current_time):
+    def allocJobBackfill(self, job, current_time):
+        """
+        The same as algo as allocJobFCFS BUT we check for the length of the job because there can be a reservation (the "firstjob" of the backfilling).
+        """
         for l in self.listFreeSpace.generator():
             if job.requested_resources <= l.res and job.requested_time <= l.length:
                 alloc = self.listFreeSpace.assignJob(l, job, current_time)
@@ -266,7 +269,7 @@ class EasyBackfill(BatsimScheduler):
     def allocHeadOfList(self, current_time):
         allocs = []
         while len(self.listWaitingJob) > 0:
-            alloc = self.allocJobWithoutTime(self.listWaitingJob[0], current_time)
+            alloc = self.allocJobFCFS(self.listWaitingJob[0], current_time)
             if alloc is None:
                 break
             job = self.listWaitingJob.pop(0)
@@ -362,13 +365,16 @@ class EasyBackfill(BatsimScheduler):
         
         (first_virtual_space, first_shortened_space, second_virtual_space, second_shortened_space) = self.allocFutureJob(first_job_res, first_job_starttime, current_time)
         
+        jobsToRemove = []
         for j in self.listWaitingJob:
-            alloc = self.allocJobWithTime(j, current_time)
+            alloc = self.allocJobBackfill(j, current_time)
             if alloc is not None:
                 allocs.append( (j, alloc) )
-                self.listWaitingJob.remove(j)
                 j.start_time = current_time
+                jobsToRemove.append(j)
                 self.listRunningJob.add(j)
+        for j in jobsToRemove:
+            self.listWaitingJob.remove(j)
         
         if first_virtual_space is not None:
             del first_virtual_space.linkedTo.linkedTo

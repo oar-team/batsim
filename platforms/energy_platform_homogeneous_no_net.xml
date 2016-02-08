@@ -1,0 +1,71 @@
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
+<platform version="3">
+<AS id="AS0"  routing="Full">
+    <host id="master_host" power="100Mf">
+        <prop id="watt_per_state" value="100:200" />
+        <prop id="watt_off" value="10" />
+    </host>
+
+    <!-- The state 3 of Mercury is a sleep state.
+    When switching from a computing state to the state 3, passing by the virtual pstate 4 is mandatory to simulate the time and energy consumed by the switch off.
+    When switching from the state 3 to a computing state, passing by the virtual pstate 5 is mandatory to simulate the time and energy consumed by the switch on.
+     -->
+    <host id="host0" power="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
+        <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
+        <prop id="watt_off" value="10" />
+        <prop id="sleep_pstates" value="3:4:5" />
+    </host>
+
+    <host id="host1" power="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
+        <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
+        <prop id="watt_off" value="10" />
+        <prop id="sleep_pstates" value="3:4:5" />
+    </host>
+
+    <host id="host2" power="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
+        <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
+        <prop id="watt_off" value="10" />
+        <prop id="sleep_pstates" value="3:4:5" />
+    </host>
+
+    <host id="host3" power="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
+        <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
+        <prop id="watt_off" value="10" />
+        <prop id="sleep_pstates" value="3:4:5" />
+    </host>
+
+    <host id="host4" power="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
+        <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
+        <prop id="watt_off" value="10" />
+        <prop id="sleep_pstates" value="3:4:5" />
+    </host>
+
+    <host id="host5" power="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
+        <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
+        <prop id="watt_off" value="10" />
+        <prop id="sleep_pstates" value="3:4:5" />
+    </host>
+
+    <host id="host6" power="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
+        <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
+        <prop id="watt_off" value="10" />
+        <prop id="sleep_pstates" value="3:4:5" />
+    </host>
+
+
+    <router id="mainrouter"/>
+    
+    <link id="loopback" bandwidth="999999GBps" latency="0" sharing_policy="FATPIPE"/>
+
+    <route src="master_host" dst="mainrouter"><link_ctn id="loopback"/></route>
+    <route src="host0" dst="mainrouter"><link_ctn id="loopback"/></route>
+    <route src="host1" dst="mainrouter"><link_ctn id="loopback"/></route>
+    <route src="host2" dst="mainrouter"><link_ctn id="loopback"/></route>
+    <route src="host3" dst="mainrouter"><link_ctn id="loopback"/></route>
+    <route src="host4" dst="mainrouter"><link_ctn id="loopback"/></route>
+    <route src="host5" dst="mainrouter"><link_ctn id="loopback"/></route>
+    <route src="host6" dst="mainrouter"><link_ctn id="loopback"/></route>
+    
+</AS>
+</platform>
