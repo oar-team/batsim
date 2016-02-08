@@ -12,7 +12,7 @@ extend: grid5000/kameleon-g5k/virtualbox/jessie-x64-nfs.yaml
 global:
   virtualbox_memory_size: 2048
   g5k_home: /opt/
-  g5k_tgz_path: $$g5k_home/my_g5k_images/debian8_workload_generation.tgz
+  g5k_tgz_path: $$g5k_home/my_g5k_images/debian8_workload_generation_nfs.tgz
 
 bootstrap:
   - "@base"
