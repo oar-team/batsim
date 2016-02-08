@@ -59,6 +59,10 @@ def prepare_pybatsim_cl(options, sock):
     
     sched_cl.append("-s")
     sched_cl.append(sock)
+    
+    sched_cl.append("-o")
+    #no need to sanitize the json : each args are given as args in popen
+    sched_cl.append(json.dumps(options["scheduler"]["options"]))
 
     if options["scheduler"]["verbosity"] > 0:
         sched_cl.append('-v')
