@@ -113,6 +113,8 @@ int uds_server_process(int argc, char *argv[])
             xbt_assert(task_data->data != nullptr);
             NOPMeLaterMessage * message = (NOPMeLaterMessage *) task_data->data;
 
+            xbt_assert(message->target_time > MSG_get_clock(), "You asked to be awaken in the past! (you ask: %f, it is: %f)", message->target_time, MSG_get_clock());
+
             WaiterProcessArguments * args = new WaiterProcessArguments;
             args->target_time = message->target_time;
 
