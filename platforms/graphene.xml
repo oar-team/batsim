@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
-<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
-<platform version="3">
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+<platform version="4">
 
 
 <config id="General">
@@ -22,16 +22,16 @@
  
 <AS id="AS_graphene" routing="Full" >
   <cluster id="AS_sgraphene1" prefix="graphene-" suffix=".nancy.grid5000.fr"
-           radical="1-39" power="16.673E9" bw="1.25E8" lat="2.4E-5"
+           radical="1-39" speed="16.673E9" bw="1.25E8" lat="2.4E-5"
            sharing_policy="FULLDUPLEX" limiter_link="1.875E8" loopback_lat="1.5E-9" loopback_bw="6000000000"></cluster>
   <cluster id="AS_sgraphene2" prefix="graphene-" suffix=".nancy.grid5000.fr"
-           radical="40-74" power="16.673E9" bw="1.25E8" lat="2.4E-5"
+           radical="40-74" speed="16.673E9" bw="1.25E8" lat="2.4E-5"
            sharing_policy="FULLDUPLEX" limiter_link="1.875E8" loopback_lat="1.5E-9" loopback_bw="6000000000"></cluster>
   <cluster id="AS_sgraphene3" prefix="graphene-" suffix=".nancy.grid5000.fr"
-           radical="75-104" power="16.673E9" bw="1.25E8" lat="2.4E-5"
+           radical="75-104" speed="16.673E9" bw="1.25E8" lat="2.4E-5"
            sharing_policy="FULLDUPLEX" limiter_link="1.875E8" loopback_lat="1.5E-9" loopback_bw="6000000000"></cluster>
   <cluster id="AS_sgraphene4" prefix="graphene-" suffix=".nancy.grid5000.fr"
-           radical="105-144" power="16.673E9" bw="1.25E8" lat="2.4E-5"
+           radical="105-144" speed="16.673E9" bw="1.25E8" lat="2.4E-5"
            sharing_policy="FULLDUPLEX" limiter_link="1.875E8" loopback_lat="1.5E-9" loopback_bw="6000000000"></cluster>
 
   <link id="switch-backbone1" bandwidth="1162500000" latency="1.5E-6" sharing_policy="FULLDUPLEX"/>
@@ -174,4 +174,5 @@
  </AS>
 </platform>
 
-
+
+

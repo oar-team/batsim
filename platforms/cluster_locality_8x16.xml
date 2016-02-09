@@ -1,38 +1,38 @@
 <?xml version='1.0'?>
-<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
 
-<platform version="3">
+<platform version="4">
 	<AS id="AS0" routing="Full">
 		<AS  id="my_cluster1"  routing="Cluster">
 			<cabinet id="cabinet1" prefix="algol" suffix="" 
-				power="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
 
 			<cabinet id="cabinet1" prefix="boo" suffix="" 
-				power="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
 
 			<cabinet id="cabinet1" prefix="cobol" suffix="" 
-				power="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
 
 			<cabinet id="cabinet1" prefix="dart" suffix="" 
-				power="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
 
 			<cabinet id="cabinet1" prefix="erlang" suffix="" 
-				power="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
 
 			<cabinet id="cabinet1" prefix="forth" suffix="" 
-				power="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
 
 			<cabinet id="cabinet1" prefix="graphtalk" suffix="" 
-				power="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
 
 			<cabinet id="cabinet1" prefix="haxe" suffix="" 
-				power="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
 
 
 
 
 			<cabinet id="cabinet1" prefix="master_host" suffix="" 
-				power="3Gf" bw="56Gbps" lat="1us" radical="0-0"/>
+				speed="3Gf" bw="56Gbps" lat="1us" radical="0-0"/>
 
 			<router  id="router1"/>
 			<backbone id="backbone1" bandwidth="2.25GBps" latency="500us"/>
