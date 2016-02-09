@@ -2,7 +2,7 @@
 * Installation
 
 ** Dependencies
- - SimGrid revision be8f70f9dd5f57 on git://scm.gforge.inria.fr/simgrid/simgrid.git
+ - SimGrid revision 91c5630f94f6198e94487eac0277b858d5ed9ef2 on git://scm.gforge.inria.fr/simgrid/simgrid.git
  - rapidjson
  - boost (system, filesystem)
  - C++11 compiler

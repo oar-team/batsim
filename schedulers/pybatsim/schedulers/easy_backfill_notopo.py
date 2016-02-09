@@ -17,8 +17,8 @@ class EasyBackfillNotopo(BatsimScheduler):
     Adapted from the Pyss simulator.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, options):
+        self.options = options
 
     def onAfterBatsimInit(self):
         self.cpu_snapshot = CpuSnapshot(self.bs.nb_res, False)

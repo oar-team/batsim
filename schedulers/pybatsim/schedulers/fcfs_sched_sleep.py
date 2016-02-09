@@ -36,8 +36,8 @@ class State(Enum):
 
 class FcfsSchedSleep(BatsimScheduler):
 
-    def __init__(self):
-        pass
+    def __init__(self, options):
+        self.options = options
 
     def onAfterBatsimInit(self):
         self.nb_completed_jobs = 0

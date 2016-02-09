@@ -9,6 +9,10 @@ PyBatsim helps you developping your own scheduler in python!
 launcher.py         -> This is the main entry point to launch things
                        Ex: python launcher.py filler_sched ../../workload_profiles/test_workload_profile.json (a server should be started)
 
+launch_expe.py      -> Provide an easy way to launch a complete simulation.
+                       Just provide a file that looks like sample.expe.json to this script and it will launch batsim and the scheduler with the right options.
+
+sample.expe.json    -> See launch_expe.json
 
 batsim/
     batsim.py       -> this class helps you communicate with the batsim server
@@ -17,3 +21,4 @@ schedulers/         -> contains all the schedulers
                        Schedulers name should follow this convention:
                        foo_bar.py contains the FooBar classname which has as an ancestor BatsimScheduler
     filler_sched.py -> A kind of first fit without topology scheduler
+    easy_backfill   -> EASY backfilling where jobs are seen as rectangles

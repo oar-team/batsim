@@ -1,8 +1,8 @@
 <?xml version='1.0'?>
-<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
-<platform version="3">
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+<platform version="4">
 <AS id="AS0"  routing="Full">
-    <host id="master_host" power="100Mf">
+    <host id="master_host" speed="100Mf">
         <prop id="watt_per_state" value="100:200" />
         <prop id="watt_off" value="10" />
     </host>
@@ -11,7 +11,7 @@
     When switching from a computing state to the state 3, passing by the virtual pstate 4 is mandatory to simulate the time and energy consumed by the switch off.
     When switching from the state 3 to a computing state, passing by the virtual pstate 5 is mandatory to simulate the time and energy consumed by the switch on.
      -->
-    <host id="Mercury" power="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
+    <host id="Mercury" speed="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
         <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
         <prop id="watt_off" value="10" />
         <!-- The following property allows to bind a sleep state to its switch ON/off virtual pstates  -->
@@ -19,7 +19,7 @@
     </host>
 
     <!-- Venus has two sleep states : 3 and 6. They share their virtual pstates. -->
-    <host id="Venus" power="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f, 1e-9Mf" pstate="0" >
+    <host id="Venus" speed="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f, 1e-9Mf" pstate="0" >
         <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
         <prop id="watt_off" value="10" />
         <!-- The following property allows to bind a sleep state to its switch ON/off virtual pstates  -->
@@ -27,14 +27,14 @@
     </host>
 
     <!-- Earth has two sleep states : 3 and 6. They don't have the same virtual pstates. -->
-    <host id="Earth" power="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
+    <host id="Earth" speed="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
         <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
         <prop id="watt_off" value="10" />
         <prop id="sleep_pstates" value="3:4:5, 6:7:8" />
     </host>
 
     <!-- Mars has no sleep_pstate. In this case, an empty-value sleep_pstates property is valid. Not setting the sleep_pstates property at all is also valid. -->
-    <host id="Mars" power="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
+    <host id="Mars" speed="100.0Mf, 50.0Mf, 20.0Mf, 1e-9Mf, 0.006666667f, 0.1429f" pstate="0" >
         <prop id="watt_per_state" value="100.0:200.0, 93.0:170.0, 90.0:150.0, 10:10, 120:120, 110:110" />
         <prop id="watt_off" value="10" />
     </host>
