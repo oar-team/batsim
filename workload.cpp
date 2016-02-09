@@ -5,9 +5,12 @@
 
 #include <rapidjson/document.h>
 
+#include <smpi/smpi.h>
+
 #include "context.hpp"
 #include "jobs.hpp"
 #include "profiles.hpp"
+#include "jobs_execution.hpp"
 
 using namespace std;
 using namespace rapidjson;
@@ -79,4 +82,17 @@ void load_json_workload(BatsimContext *context, const std::string &filename)
     XBT_INFO("Checking workload validity...");
     check_worload_validity(context);
     XBT_INFO("Workload seems to be valid.");
+}
+
+void register_smpi_applications(BatsimContext *context)
+{
+    XBT_INFO("Registering SMPI applications...");
+    for (auto mit : context->jobs.jobs())
+    {
+        Job * job = mit.second;
+        string job_id_str = to_string(job->id);
+        XBT_INFO("Registering app. instance='%s', nb_process=%d", job_id_str.c_str(), job->required_nb_res);
+        SMPI_app_instance_register(job_id_str.c_str(), smpi_replay_process, job->required_nb_res);
+    }
+    XBT_INFO("SMPI applications have been registered");
 }

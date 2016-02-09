@@ -34,8 +34,8 @@ int killer_process(int argc, char *argv[])
 
 int smpi_replay_process(int argc, char *argv[])
 {
-    for(int index = 0; index < argc; index++)
-        XBT_DEBUG("smpi_replay_process, arg %d = '%s'", index, argv[index]);
+   /* for(int index = 0; index < argc; index++)
+        XBT_DEBUG("smpi_replay_process, arg %d = '%s'", index, argv[index]);*/
 
     smpi_replay_run(&argc, &argv);
     return 0;
@@ -214,7 +214,7 @@ int execute_profile(BatsimContext *context,
             argv[0] = xbt_strdup("1"); // Fonction_replay_label (can be ignored, for log only),
             argv[1] = str_instance_id; // Instance Id (application) job_id is used
             argv[2] = str_rank_id;     // Rank Id
-            argv[3] = (char*) data->trace_filenames[i].c_str();
+            argv[3] = xbt_strdup((char*) data->trace_filenames[i].c_str());
             argv[4] = xbt_strdup("0"); //
 
             MSG_process_create_with_arguments(str_pname, smpi_replay_process, NULL, allocation->hosts[i], 5, argv );
@@ -222,6 +222,7 @@ int execute_profile(BatsimContext *context,
             // todo: avoid memory leaks
             free(str_pname);
         }
+        return 1;
     }
     else
         xbt_die("Cannot execute job %d: the profile type '%s' is unknown", job->id, job->profile.c_str());

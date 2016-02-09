@@ -21,6 +21,7 @@ struct BatsimContext
 
     long long microseconds_used_by_scheduler = 0;
     bool energy_used;
+    bool smpi_used;
     bool allow_space_sharing;
     bool trace_schedule;
     std::string platform_filename;

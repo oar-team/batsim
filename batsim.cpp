@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include <simgrid/msg.h>
+#include <smpi/smpi.h>
 #include <simgrid/plugins/energy.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
@@ -232,18 +233,22 @@ int main(int argc, char * argv[])
     load_json_workload(&context, mainArgs.workloadFilename);
     context.jobs.setProfiles(&context.profiles);
 
-    if (context.trace_schedule)
-        context.paje_tracer.setFilename(mainArgs.exportPrefix + "_schedule.trace");
-
     XBT_INFO("Checking whether SMPI is used or not...");
-    bool smpi_used = context.jobs.containsSMPIJob();
-    if (!smpi_used)
+    context.smpi_used = context.jobs.containsSMPIJob();
+    if (!context.smpi_used)
     {
         XBT_INFO("SMPI will NOT be used.");
         MSG_config("host/model", "ptask_L07");
     }
     else
+    {
         XBT_INFO("SMPI will be used.");
+        register_smpi_applications(&context);
+        SMPI_init();
+    }
+
+    if (context.trace_schedule)
+        context.paje_tracer.setFilename(mainArgs.exportPrefix + "_schedule.trace");
 
     XBT_INFO("Creating the machines...");
     MSG_create_environment(mainArgs.platformFilename.c_str());
@@ -284,6 +289,9 @@ int main(int argc, char * argv[])
     XBT_INFO("The uds_server process has been created.");
 
     msg_error_t res = MSG_main();
+
+    if (context.smpi_used)
+        SMPI_finalize();
 
     // Finalization
     if (context.trace_schedule)
