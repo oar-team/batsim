@@ -67,6 +67,7 @@ class FressSpaceContainer(object):
     """
     def __init__(self, total_processors):
         self.firstItem = FreeSpace(0, total_processors-1, INFINITY, None, None)
+        self.free_processors = total_processors
 
     def generator(self):
         curit = self.firstItem
@@ -125,7 +126,9 @@ class FressSpaceContainer(object):
             #assert l.linkedTo.res>=0
             if l.linkedTo.res <= 0:
                 self.remove(l.linkedTo)
-        
+
+        self.free_processors -= job.requested_resources
+
         return alloc
 
     def _findSurroundingFreeSpaces(self, job):
@@ -138,6 +141,8 @@ class FressSpaceContainer(object):
         return (prev_fspc, None)
         
     def unassignJob(self, job):
+        self.free_processors += job.requested_resources
+        
         (l1, l2) = self._findSurroundingFreeSpaces(job)
         
         #merge with l1?

@@ -117,9 +117,9 @@ class Batsim(object):
             data = sub_msgs[i].split(':')
             if data[1] == 'R':
                 self.scheduler.onJobRejection()
-            if data[1] == 'N':
+            elif data[1] == 'N':
                 self.scheduler.onNOP()
-            if data[1] == 'S':
+            elif data[1] == 'S':
                 self.scheduler.onJobSubmission(self.jobs[int(data[2])])
             elif data[1] == 'C':
                 j = self.jobs[int(data[2])]
