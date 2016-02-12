@@ -2,176 +2,163 @@
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
 <platform version="4">
 
-
 <config id="General">
-  <prop id="host/model" value="compound"/>
-  <prop id="network/model" value="SMPI"/>
-  <prop id="network/TCP_gamma" value="4194304"/>
-  <prop id="network/sender_gap" value="0"/>
-  <prop id="maxmin/precision" value="1e-9"/>
+    <prop id="host/model" value="compound"/>
+    <prop id="network/model" value="SMPI"/>
+    <prop id="network/TCP_gamma" value="4194304"/>
+    <prop id="network/sender_gap" value="0"/>
+    <prop id="maxmin/precision" value="1e-9"/>
 <!--  <prop id="smpi/os" value="1:8.75118726019245e-06:7.09598480584951e-10;1420:1.38989305424406e-05:2.18111838119125e-10;65536:0.000193970854779561:-4.82025737428887e-11;327680:0:0"/>-->
 <!--  <prop id="smpi/or" value="1:9.3069771137911e-06:7.92179414036391e-10;1420:1.43097562292319e-05:8.66975835499791e-10;10000:1.41659209904282e-05:1.00877300603447e-09;65536:0:0"/>-->
 <!--  <prop id="smpi/bw_factor" value="0:0.408465938;1420:0.913760459;65536:0.937794396"/>-->
 <!--  <prop id="smpi/lat_factor" value="0:1.01;1420:4.02;65536:9.77"/>-->
 <!--  -->
- <prop id="smpi/os" value="0:8.9300920419081e-06:7.65438202550106e-10;1420:1.39684254077781e-05:2.97409403415968e-10;32768:1.54082820250394e-05:2.44104034252286e-10;65536:0.000237866424242424:0;327680:0:0"/>
- <prop id="smpi/or" value="0:8.14025462333494e-06:8.3958813204998e-10;1420:1.26995184134793e-05:9.09218191293861e-10;32768:3.09570602567453e-05:6.95645307772806e-10;65536:0:0;327680:0:0"/>
- <prop id="smpi/bw_factor" value="0:0.400976530736138;1420:0.913555534273577;32768:1.07831886657594;65536:0.956083935262915;327680:0.929867998857892"/>
- <prop id="smpi/lat_factor" value="0:1.35489260823384;1420:3.43725032107889;32768:5.72164710873587;65536:11.9885319715471;327680:9.65041953605594"/>  
+    <prop id="smpi/os" value="0:8.9300920419081e-06:7.65438202550106e-10;1420:1.39684254077781e-05:2.97409403415968e-10;32768:1.54082820250394e-05:2.44104034252286e-10;65536:0.000237866424242424:0;327680:0:0"/>
+    <prop id="smpi/or" value="0:8.14025462333494e-06:8.3958813204998e-10;1420:1.26995184134793e-05:9.09218191293861e-10;32768:3.09570602567453e-05:6.95645307772806e-10;65536:0:0;327680:0:0"/>
+    <prop id="smpi/bw_factor" value="0:0.400976530736138;1420:0.913555534273577;32768:1.07831886657594;65536:0.956083935262915;327680:0.929867998857892"/>
+    <prop id="smpi/lat_factor" value="0:1.35489260823384;1420:3.43725032107889;32768:5.72164710873587;65536:11.9885319715471;327680:9.65041953605594"/>
 </config>
- 
+
 <AS id="AS_graphene" routing="Full" >
-  <cluster id="AS_sgraphene1" prefix="graphene-" suffix=".nancy.grid5000.fr"
-           radical="1-39" speed="16.673E9" bw="1.25E8" lat="2.4E-5"
-           sharing_policy="FULLDUPLEX" limiter_link="1.875E8" loopback_lat="1.5E-9" loopback_bw="6000000000"></cluster>
-  <cluster id="AS_sgraphene2" prefix="graphene-" suffix=".nancy.grid5000.fr"
-           radical="40-74" speed="16.673E9" bw="1.25E8" lat="2.4E-5"
-           sharing_policy="FULLDUPLEX" limiter_link="1.875E8" loopback_lat="1.5E-9" loopback_bw="6000000000"></cluster>
-  <cluster id="AS_sgraphene3" prefix="graphene-" suffix=".nancy.grid5000.fr"
-           radical="75-104" speed="16.673E9" bw="1.25E8" lat="2.4E-5"
-           sharing_policy="FULLDUPLEX" limiter_link="1.875E8" loopback_lat="1.5E-9" loopback_bw="6000000000"></cluster>
-  <cluster id="AS_sgraphene4" prefix="graphene-" suffix=".nancy.grid5000.fr"
-           radical="105-144" speed="16.673E9" bw="1.25E8" lat="2.4E-5"
-           sharing_policy="FULLDUPLEX" limiter_link="1.875E8" loopback_lat="1.5E-9" loopback_bw="6000000000"></cluster>
+    <cluster id="AS_sgraphene1" prefix="graphene-" suffix=".nancy.grid5000.fr"
+             radical="1001-1039" speed="16.673E9flops" bw="1.25E8Bps" lat="2.4E-5s"
+             sharing_policy="FULLDUPLEX" limiter_link="1.875E8" loopback_lat="1.5E-9s" loopback_bw="6000000000Bps">
+    </cluster>
+    <cluster id="AS_sgraphene2" prefix="graphene-" suffix=".nancy.grid5000.fr"
+             radical="1040-1074" speed="16.673E9flops" bw="1.25E8Bps" lat="2.4E-5s"
+             sharing_policy="FULLDUPLEX" limiter_link="1.875E8" loopback_lat="1.5E-9s" loopback_bw="6000000000Bps">
+    </cluster>
+    <cluster id="AS_sgraphene3" prefix="graphene-" suffix=".nancy.grid5000.fr"
+             radical="1075-1104" speed="16.673E9flops" bw="1.25E8Bps" lat="2.4E-5s"
+             sharing_policy="FULLDUPLEX" limiter_link="1.875E8" loopback_lat="1.5E-9s" loopback_bw="6000000000Bps">
+    </cluster>
+    <cluster id="AS_sgraphene4" prefix="graphene-" suffix=".nancy.grid5000.fr"
+             radical="1105-1144" speed="16.673E9flops" bw="1.25E8Bps" lat="2.4E-5s"
+             sharing_policy="FULLDUPLEX" limiter_link="1.875E8" loopback_lat="1.5E-9s" loopback_bw="6000000000Bps">
+    </cluster>
 
-  <link id="switch-backbone1" bandwidth="1162500000" latency="1.5E-6" sharing_policy="FULLDUPLEX"/>
-  <link id="explicit-limiter1" bandwidth="1511250000" latency="0" sharing_policy="SHARED"/>
+    <link id="switch-backbone1" bandwidth="1162500000Bps" latency="1.5E-6s" sharing_policy="FULLDUPLEX"/>
+    <link id="explicit-limiter1" bandwidth="1511250000Bps" latency="0" sharing_policy="SHARED"/>
 
-  <link id="switch-backbone2" bandwidth="1162500000" latency="1.5E-6" sharing_policy="FULLDUPLEX"/>
-  <link id="explicit-limiter2" bandwidth="1511250000" latency="0" sharing_policy="SHARED"/>
+    <link id="switch-backbone2" bandwidth="1162500000Bps" latency="1.5E-6s" sharing_policy="FULLDUPLEX"/>
+    <link id="explicit-limiter2" bandwidth="1511250000Bps" latency="0" sharing_policy="SHARED"/>
 
-  <link id="switch-backbone3" bandwidth="1162500000" latency="1.5E-6" sharing_policy="FULLDUPLEX"/>
-  <link id="explicit-limiter3" bandwidth="1511250000" latency="0" sharing_policy="SHARED"/>
+    <link id="switch-backbone3" bandwidth="1162500000Bps" latency="1.5E-6s" sharing_policy="FULLDUPLEX"/>
+    <link id="explicit-limiter3" bandwidth="1511250000Bps" latency="0" sharing_policy="SHARED"/>
 
-  <link id="switch-backbone4" bandwidth="1162500000" latency="1.5E-6" sharing_policy="FULLDUPLEX"/>
-  <link id="explicit-limiter4" bandwidth="1511250000" latency="0" sharing_policy="SHARED"/>
+    <link id="switch-backbone4" bandwidth="1162500000Bps" latency="1.5E-6s" sharing_policy="FULLDUPLEX"/>
+    <link id="explicit-limiter4" bandwidth="1511250000Bps" latency="0" sharing_policy="SHARED"/>
 
 
-     <ASroute src="AS_sgraphene1" dst="AS_sgraphene2"
-         gw_src="graphene-AS_sgraphene1_router.nancy.grid5000.fr"
-         gw_dst="graphene-AS_sgraphene2_router.nancy.grid5000.fr"
-         symmetrical="NO"
-         >
-                <link_ctn id="switch-backbone1" direction="UP"/>
-                <link_ctn id="explicit-limiter1"/>
-                <link_ctn id="explicit-limiter2"/>
-                <link_ctn id="switch-backbone2" direction="DOWN"/>
-                
-     </ASroute>
-     <ASroute src="AS_sgraphene2" dst="AS_sgraphene1"
-         gw_src="graphene-AS_sgraphene2_router.nancy.grid5000.fr"
-         gw_dst="graphene-AS_sgraphene1_router.nancy.grid5000.fr"
-         symmetrical="NO"
-         >
-                <link_ctn id="switch-backbone2" direction="UP"/>
-                <link_ctn id="explicit-limiter2"/>
-                <link_ctn id="explicit-limiter1"/>
-                <link_ctn id="switch-backbone1" direction="DOWN"/>
-     </ASroute>
-     <ASroute src="AS_sgraphene2" dst="AS_sgraphene3"
-         gw_src="graphene-AS_sgraphene2_router.nancy.grid5000.fr"
-         gw_dst="graphene-AS_sgraphene3_router.nancy.grid5000.fr"
-          symmetrical="NO"
-         >
-                <link_ctn id="switch-backbone2" direction="UP"/>                
-                <link_ctn id="explicit-limiter2"/>
-                <link_ctn id="explicit-limiter3"/>
-                <link_ctn id="switch-backbone3" direction="DOWN"/>
-     </ASroute>
-     <ASroute src="AS_sgraphene1" dst="AS_sgraphene3"
-         gw_src="graphene-AS_sgraphene1_router.nancy.grid5000.fr"
-         gw_dst="graphene-AS_sgraphene3_router.nancy.grid5000.fr"
-         symmetrical="NO"         
-         >
-                <link_ctn id="switch-backbone1" direction="UP"/>
-                <link_ctn id="explicit-limiter1"/>
-                <link_ctn id="explicit-limiter3"/>
-                <link_ctn id="switch-backbone3" direction="DOWN"/>
-     </ASroute>
-          <ASroute src="AS_sgraphene3" dst="AS_sgraphene1"
-         gw_src="graphene-AS_sgraphene3_router.nancy.grid5000.fr"
-         gw_dst="graphene-AS_sgraphene1_router.nancy.grid5000.fr"
-         symmetrical="NO"         
-         >
-                <link_ctn id="switch-backbone3" direction="UP"/>
-                <link_ctn id="explicit-limiter3"/>
-                <link_ctn id="explicit-limiter1"/>
-                <link_ctn id="switch-backbone1" direction="DOWN"/>
-     </ASroute>
-     
-          <ASroute src="AS_sgraphene1" dst="AS_sgraphene4"
-         gw_src="graphene-AS_sgraphene1_router.nancy.grid5000.fr"
-         gw_dst="graphene-AS_sgraphene4_router.nancy.grid5000.fr"
-         symmetrical="NO"         
-         >
-                <link_ctn id="switch-backbone1" direction="UP"/>
-                <link_ctn id="explicit-limiter1"/>
-                <link_ctn id="explicit-limiter4"/>
-                <link_ctn id="switch-backbone4" direction="DOWN"/>
-     </ASroute>
-               <ASroute src="AS_sgraphene4" dst="AS_sgraphene1"
-         gw_src="graphene-AS_sgraphene4_router.nancy.grid5000.fr"
-         gw_dst="graphene-AS_sgraphene1_router.nancy.grid5000.fr"
-         symmetrical="NO"         
-         >
-                <link_ctn id="switch-backbone4" direction="UP"/>
-                <link_ctn id="explicit-limiter4"/>
-                <link_ctn id="explicit-limiter1"/>
-                <link_ctn id="switch-backbone1" direction="DOWN"/>
-     </ASroute>
-          <ASroute src="AS_sgraphene2" dst="AS_sgraphene4"
-         gw_src="graphene-AS_sgraphene2_router.nancy.grid5000.fr"
-         gw_dst="graphene-AS_sgraphene4_router.nancy.grid5000.fr"
-         symmetrical="NO"         
-         >
-                <link_ctn id="switch-backbone2" direction="UP"/>
-                <link_ctn id="explicit-limiter2"/>
-                <link_ctn id="explicit-limiter4"/>
-                <link_ctn id="switch-backbone4" direction="DOWN"/>
-     </ASroute>
-          <ASroute src="AS_sgraphene3" dst="AS_sgraphene4"
-         gw_src="graphene-AS_sgraphene3_router.nancy.grid5000.fr"
-         gw_dst="graphene-AS_sgraphene4_router.nancy.grid5000.fr"
-         symmetrical="NO"         
-         >
-                <link_ctn id="switch-backbone3" direction="UP"/>
-                <link_ctn id="explicit-limiter3"/>
-                <link_ctn id="explicit-limiter4"/>
-                <link_ctn id="switch-backbone4" direction="DOWN"/>
-     </ASroute>
-              <ASroute src="AS_sgraphene4" dst="AS_sgraphene3"
-         gw_src="graphene-AS_sgraphene4_router.nancy.grid5000.fr"
-         gw_dst="graphene-AS_sgraphene3_router.nancy.grid5000.fr"
-         symmetrical="NO"         
-         >
-                <link_ctn id="switch-backbone4" direction="UP"/>
-                <link_ctn id="explicit-limiter4"/>
-                <link_ctn id="explicit-limiter3"/>
-                <link_ctn id="switch-backbone3" direction="DOWN"/>
-     </ASroute>
-     
-               <ASroute src="AS_sgraphene3" dst="AS_sgraphene2"
-         gw_src="graphene-AS_sgraphene3_router.nancy.grid5000.fr"
-         gw_dst="graphene-AS_sgraphene2_router.nancy.grid5000.fr"
-         symmetrical="NO"         
-         >
-                <link_ctn id="switch-backbone3" direction="UP"/>
-                <link_ctn id="explicit-limiter3"/>
-                <link_ctn id="explicit-limiter2"/>
-                <link_ctn id="switch-backbone2" direction="DOWN"/>
-     </ASroute>
-     
-                    <ASroute src="AS_sgraphene4" dst="AS_sgraphene2"
-         gw_src="graphene-AS_sgraphene4_router.nancy.grid5000.fr"
-         gw_dst="graphene-AS_sgraphene2_router.nancy.grid5000.fr"
-         symmetrical="NO"         
-         >
-                <link_ctn id="switch-backbone4" direction="UP"/>
-                <link_ctn id="explicit-limiter4"/>
-                <link_ctn id="explicit-limiter2"/>
-                <link_ctn id="switch-backbone2" direction="DOWN"/>
-     </ASroute>
- </AS>
+    <ASroute src="AS_sgraphene1" dst="AS_sgraphene2"
+             gw_src="graphene-AS_sgraphene1_router.nancy.grid5000.fr"
+             gw_dst="graphene-AS_sgraphene2_router.nancy.grid5000.fr"
+             symmetrical="NO">
+        <link_ctn id="switch-backbone1" direction="UP"/>
+        <link_ctn id="explicit-limiter1"/>
+        <link_ctn id="explicit-limiter2"/>
+        <link_ctn id="switch-backbone2" direction="DOWN"/>
+    </ASroute>
+    <ASroute src="AS_sgraphene2" dst="AS_sgraphene1"
+             gw_src="graphene-AS_sgraphene2_router.nancy.grid5000.fr"
+             gw_dst="graphene-AS_sgraphene1_router.nancy.grid5000.fr"
+             symmetrical="NO">
+        <link_ctn id="switch-backbone2" direction="UP"/>
+        <link_ctn id="explicit-limiter2"/>
+        <link_ctn id="explicit-limiter1"/>
+        <link_ctn id="switch-backbone1" direction="DOWN"/>
+    </ASroute>
+    <ASroute src="AS_sgraphene2" dst="AS_sgraphene3"
+             gw_src="graphene-AS_sgraphene2_router.nancy.grid5000.fr"
+             gw_dst="graphene-AS_sgraphene3_router.nancy.grid5000.fr"
+             symmetrical="NO">
+        <link_ctn id="switch-backbone2" direction="UP"/>
+        <link_ctn id="explicit-limiter2"/>
+        <link_ctn id="explicit-limiter3"/>
+        <link_ctn id="switch-backbone3" direction="DOWN"/>
+    </ASroute>
+    <ASroute src="AS_sgraphene1" dst="AS_sgraphene3"
+              gw_src="graphene-AS_sgraphene1_router.nancy.grid5000.fr"
+              gw_dst="graphene-AS_sgraphene3_router.nancy.grid5000.fr"
+              symmetrical="NO">
+        <link_ctn id="switch-backbone1" direction="UP"/>
+        <link_ctn id="explicit-limiter1"/>
+        <link_ctn id="explicit-limiter3"/>
+        <link_ctn id="switch-backbone3" direction="DOWN"/>
+    </ASroute>
+    <ASroute src="AS_sgraphene3" dst="AS_sgraphene1"
+             gw_src="graphene-AS_sgraphene3_router.nancy.grid5000.fr"
+             gw_dst="graphene-AS_sgraphene1_router.nancy.grid5000.fr"
+             symmetrical="NO">
+        <link_ctn id="switch-backbone3" direction="UP"/>
+        <link_ctn id="explicit-limiter3"/>
+        <link_ctn id="explicit-limiter1"/>
+        <link_ctn id="switch-backbone1" direction="DOWN"/>
+    </ASroute>
+    <ASroute src="AS_sgraphene1" dst="AS_sgraphene4"
+             gw_src="graphene-AS_sgraphene1_router.nancy.grid5000.fr"
+             gw_dst="graphene-AS_sgraphene4_router.nancy.grid5000.fr"
+             symmetrical="NO">
+        <link_ctn id="switch-backbone1" direction="UP"/>
+        <link_ctn id="explicit-limiter1"/>
+        <link_ctn id="explicit-limiter4"/>
+        <link_ctn id="switch-backbone4" direction="DOWN"/>
+    </ASroute>
+    <ASroute src="AS_sgraphene4" dst="AS_sgraphene1"
+             gw_src="graphene-AS_sgraphene4_router.nancy.grid5000.fr"
+             gw_dst="graphene-AS_sgraphene1_router.nancy.grid5000.fr"
+             symmetrical="NO">
+        <link_ctn id="switch-backbone4" direction="UP"/>
+        <link_ctn id="explicit-limiter4"/>
+        <link_ctn id="explicit-limiter1"/>
+        <link_ctn id="switch-backbone1" direction="DOWN"/>
+    </ASroute>
+    <ASroute src="AS_sgraphene2" dst="AS_sgraphene4"
+             gw_src="graphene-AS_sgraphene2_router.nancy.grid5000.fr"
+             gw_dst="graphene-AS_sgraphene4_router.nancy.grid5000.fr"
+             symmetrical="NO">
+        <link_ctn id="switch-backbone2" direction="UP"/>
+        <link_ctn id="explicit-limiter2"/>
+        <link_ctn id="explicit-limiter4"/>
+        <link_ctn id="switch-backbone4" direction="DOWN"/>
+    </ASroute>
+    <ASroute src="AS_sgraphene3" dst="AS_sgraphene4"
+             gw_src="graphene-AS_sgraphene3_router.nancy.grid5000.fr"
+             gw_dst="graphene-AS_sgraphene4_router.nancy.grid5000.fr"
+             symmetrical="NO">
+        <link_ctn id="switch-backbone3" direction="UP"/>
+        <link_ctn id="explicit-limiter3"/>
+        <link_ctn id="explicit-limiter4"/>
+        <link_ctn id="switch-backbone4" direction="DOWN"/>
+    </ASroute>
+    <ASroute src="AS_sgraphene4" dst="AS_sgraphene3"
+             gw_src="graphene-AS_sgraphene4_router.nancy.grid5000.fr"
+             gw_dst="graphene-AS_sgraphene3_router.nancy.grid5000.fr"
+             symmetrical="NO">
+        <link_ctn id="switch-backbone4" direction="UP"/>
+        <link_ctn id="explicit-limiter4"/>
+        <link_ctn id="explicit-limiter3"/>
+        <link_ctn id="switch-backbone3" direction="DOWN"/>
+    </ASroute>
+    <ASroute src="AS_sgraphene3" dst="AS_sgraphene2"
+             gw_src="graphene-AS_sgraphene3_router.nancy.grid5000.fr"
+             gw_dst="graphene-AS_sgraphene2_router.nancy.grid5000.fr"
+             symmetrical="NO">
+        <link_ctn id="switch-backbone3" direction="UP"/>
+        <link_ctn id="explicit-limiter3"/>
+        <link_ctn id="explicit-limiter2"/>
+        <link_ctn id="switch-backbone2" direction="DOWN"/>
+    </ASroute>
+    <ASroute src="AS_sgraphene4" dst="AS_sgraphene2"
+             gw_src="graphene-AS_sgraphene4_router.nancy.grid5000.fr"
+             gw_dst="graphene-AS_sgraphene2_router.nancy.grid5000.fr"
+             symmetrical="NO">
+        <link_ctn id="switch-backbone4" direction="UP"/>
+        <link_ctn id="explicit-limiter4"/>
+        <link_ctn id="explicit-limiter2"/>
+        <link_ctn id="switch-backbone2" direction="DOWN"/>
+    </ASroute>
+</AS>
 </platform>
 
 
