@@ -18,11 +18,12 @@ Options:
 #filler_sched.py ../../workload_profiles/test_workload_profile.json
 
 from batsim.docopt import docopt
-import sys, json, string
+import sys, json, string, time
 from batsim.batsim import Batsim
 from batsim.validatingmachine import ValidatingMachine
 
 
+from datetime import timedelta
 
 
 def module_to_class(module):
@@ -73,8 +74,21 @@ if __name__ == "__main__":
     json_filename = arguments['<json_file>']
     socket = arguments['--socket']
 
+    print "Starting simulation..."
+    print "Workload:", json_filename
+    print "Scheduler:", scheduler_filename
+    print "Options:", options
+    time_start = time.time()
     scheduler = instanciate_scheduler(scheduler_filename, options=options)
 
     bs = Batsim(json_filename, scheduler, validatingmachine=vm, server_address=socket, verbose=verbose)
 
     bs.start()
+    time_ran = str(timedelta(seconds=time.time()-time_start))
+    print "Simulation ran for: "+time_ran
+    print "Job received:", bs.nb_jobs_recieved, ", scheduled:", bs.nb_jobs_scheduled, ", in the workload:", bs.nb_jobs_json
+    
+    if bs.nb_jobs_recieved != bs.nb_jobs_scheduled or bs.nb_jobs_scheduled != bs.nb_jobs_json:
+        sys.exit(1)
+    sys.exit(0)
+    

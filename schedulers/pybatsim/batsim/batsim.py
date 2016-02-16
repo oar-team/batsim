@@ -29,10 +29,14 @@ class Batsim(object):
             if self.verbose > 1: print('[BATSIM]: connected')
         except socket.error:
             print("[BATSIM]: socket error")
-            sys.exit(1)
+            raise
         
         #initialize some public attributes
         self.last_msg_recv_time = -1
+        
+        self.nb_jobs_recieved = 0
+        self.nb_jobs_scheduled = 0
+        self.nb_jobs_json = len(self.jobs)
         
         self.scheduler.bs = self
         self.scheduler.onAfterBatsimInit()
@@ -56,6 +60,7 @@ class Batsim(object):
         if len(allocs) > 0:
             msg = "J:"
             for (job, (first_res, last_res)) in allocs:
+                self.nb_jobs_scheduled += 1
                 msg += str(job.id)+ "=" + str(first_res) + "-" + str(last_res)+ ";"
             
             msg = msg[:-1] # remove last semicolon
@@ -66,6 +71,7 @@ class Batsim(object):
         if len(jobs) > 0:
             msg = "J:"
             for j in jobs:
+                self.nb_jobs_scheduled += 1
                 msg += str(j.id) + "="
                 for r in res[j.id]:
                     msg += str(r) + ","
@@ -83,11 +89,12 @@ class Batsim(object):
                 self._msgs_to_send.append( ( self.time(), "P:" + part ) )
 
     def do_next_event(self):
-        self._read_bat_msg()
+        return self._read_bat_msg()
 
     def start(self):
-        while True:
-            self.do_next_event()
+        cont = True
+        while cont:
+            cont = self.do_next_event()
 
     def _time_to_str(self,t):
         return('%.*f' % (6, t))
@@ -97,7 +104,7 @@ class Batsim(object):
 
         if not lg_str:
             print("[BATSIM]: connection is closed by batsim core")
-            exit(1)
+            return False
 
         lg = struct.unpack("i",lg_str)[0]
         msg = self._connection.recv(lg).decode()
@@ -121,6 +128,7 @@ class Batsim(object):
                 self.scheduler.onNOP()
             elif data[1] == 'S':
                 self.scheduler.onJobSubmission(self.jobs[int(data[2])])
+                self.nb_jobs_recieved += 1
             elif data[1] == 'C':
                 j = self.jobs[int(data[2])]
                 j.finish_time = float(data[0])
@@ -150,6 +158,7 @@ class Batsim(object):
         lg = struct.pack("i",int(len(msg)))
         self._connection.sendall(lg)
         self._connection.sendall(msg.encode())
+        return True
 
 
 
