@@ -7,13 +7,13 @@ class EasyEnergyBudget(EasyBackfill):
     def __init__(self, options):
         self.options = options
         
-        self.budget_total = 200*1*20+100*6*20 +200*5+330
-        self.budget_start = 10#the budget limitation start at this time included
-        self.budget_end = 30#the budget end just before this time
+        self.budget_total = options["budget_total"]
+        self.budget_start = options["budget_start"]#the budget limitation start at this time included
+        self.budget_end = options["budget_end"]#the budget end just before this time
         
-        self.allow_FCFS_jobs_to_use_budget_saved_measured = True
+        self.allow_FCFS_jobs_to_use_budget_saved_measured = options["allow_FCFS_jobs_to_use_budget_saved_measured"]
         
-        self.reduce_powercap_to_save_energy = True
+        self.reduce_powercap_to_save_energy = options["reduce_powercap_to_save_energy"]
         self.estimate_energy_jobs_to_save_energy = not self.reduce_powercap_to_save_energy
         
         
@@ -21,8 +21,8 @@ class EasyEnergyBudget(EasyBackfill):
         self.budget_reserved = 0
         self.listJobReservedEnergy = []
         
-        self.power_idle = 100
-        self.power_compute = 200
+        self.power_idle = options["power_idle"]
+        self.power_compute = options["power_compute"]
         
         self.powercap = self.budget_total/(self.budget_end-self.budget_start)
         
