@@ -18,7 +18,7 @@ Options:
 #filler_sched.py ../../workload_profiles/test_workload_profile.json
 
 from batsim.docopt import docopt
-import sys, json
+import sys, json, string
 from batsim.batsim import Batsim
 from batsim.validatingmachine import ValidatingMachine
 
@@ -27,9 +27,9 @@ from batsim.validatingmachine import ValidatingMachine
 
 def module_to_class(module):
     """
-    transform foo_bar.py to FooBar
+    transform fooBar to FooBar
     """
-    return ''.join(w.title() for w in str.split(module, "_"))
+    return string.upper(module[0])+module[1:]
 
 def filename_to_module(fn):
     return str(fn).split(".")[0]
