@@ -113,7 +113,7 @@ class FressSpaceContainer(object):
             alloc = self._assignJobBeginning(l, job)
         else:
             alloc = self._assignJobEnding(l, job)
-        job.finish_time = job.requested_time + current_time
+        job.estimate_finish_time = job.requested_time + current_time
         job.alloc = alloc
         
         #remove the resources of the linked FreeSpace (see allocFutureJob)
@@ -211,7 +211,7 @@ class EasyBackfill(BatsimScheduler):
     def onAfterBatsimInit(self):
         self.listFreeSpace = FressSpaceContainer(self.bs.nb_res)
 
-        self.listRunningJob = SortedListWithKey(key=lambda job: job.finish_time)
+        self.listRunningJob = SortedListWithKey(key=lambda job: job.estimate_finish_time)
         self.listWaitingJob = []
 
 
@@ -285,14 +285,14 @@ class EasyBackfill(BatsimScheduler):
 
 
     def findAllocFuture(self, job):
-        #rjobs = sort(self.listRunningJob, by=finish_time) automaticly done by SortedList
+        #rjobs = sort(self.listRunningJob, by=estimate_finish_time) automaticly done by SortedList
         listFreeSpaceTemp = copy.deepcopy(self.listFreeSpace)
         for j in self.listRunningJob:
             new_free_space_created_by_this_unallocation = listFreeSpaceTemp.unassignJob(j)
             if job.requested_resources <= new_free_space_created_by_this_unallocation.res:
-                alloc = listFreeSpaceTemp.assignJob(new_free_space_created_by_this_unallocation, job, j.finish_time)
+                alloc = listFreeSpaceTemp.assignJob(new_free_space_created_by_this_unallocation, job, j.estimate_finish_time)
                 #we find a valid allocation
-                return (alloc, j.finish_time)
+                return (alloc, j.estimate_finish_time)
         #if we are it means that the job will never fit in the cluster!
         assert False
         return None
@@ -363,13 +363,9 @@ class EasyBackfill(BatsimScheduler):
         
 
 
-    def allocBackFill(self, first_job, current_time):
+
+    def findBackfilledAllocs(self, current_time, first_job_starttime):
         allocs = []
-        
-        (first_job_res, first_job_starttime) = self.findAllocFuture(first_job)
-        
-        (first_virtual_space, first_shortened_space, second_virtual_space, second_shortened_space) = self.allocFutureJob(first_job_res, first_job_starttime, current_time)
-        
         jobsToRemove = []
         for j in self.listWaitingJob:
             alloc = self.allocJobBackfill(j, current_time)
@@ -378,8 +374,23 @@ class EasyBackfill(BatsimScheduler):
                 j.start_time = current_time
                 jobsToRemove.append(j)
                 self.listRunningJob.add(j)
+        
         for j in jobsToRemove:
             self.listWaitingJob.remove(j)
+        
+        return allocs
+
+
+
+
+    def allocBackFill(self, first_job, current_time):
+        
+        
+        (first_job_res, first_job_starttime) = self.findAllocFuture(first_job)
+        
+        (first_virtual_space, first_shortened_space, second_virtual_space, second_shortened_space) = self.allocFutureJob(first_job_res, first_job_starttime, current_time)
+        
+        allocs = self.findBackfilledAllocs(current_time, first_job_starttime)
         
         if first_virtual_space is not None:
             del first_virtual_space.linkedTo.linkedTo

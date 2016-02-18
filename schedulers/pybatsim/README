@@ -19,6 +19,6 @@ batsim/
 
 schedulers/         -> contains all the schedulers
                        Schedulers name should follow this convention:
-                       foo_bar.py contains the FooBar classname which has as an ancestor BatsimScheduler
-    filler_sched.py -> A kind of first fit without topology scheduler
-    easy_backfill   -> EASY backfilling where jobs are seen as rectangles
+                       fooBar.py contains the FooBar classname which has as an ancestor BatsimScheduler
+    fillerSched.py -> A kind of first fit without topology scheduler
+    easyBackfill   -> EASY backfilling where jobs are seen as rectangles

@@ -21,7 +21,7 @@
         
         },
     "scheduler":{
-        "name":"easy_backfill",
+        "name":"easyBackfill",
         "verbosity":10,
         "protection":true
         }

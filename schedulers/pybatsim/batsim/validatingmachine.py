@@ -55,6 +55,9 @@ class ValidatingMachine(BatsimScheduler):
     def onMachinePStateChanged(self, nodeid, pstate):
         self.scheduler.onMachinePStateChanged(nodeid, pstate)
 
+    def onReportEnergyConsumed(self, consumed_energy):
+        self.scheduler.onReportEnergyConsumed(consumed_energy)
+
     def start_jobs_continuous(self, allocs):
         for (job, (first_res, last_res)) in allocs:
             self.previousAllocations[job.id] = range(first_res, last_res+1)
