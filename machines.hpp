@@ -40,6 +40,8 @@ struct Machine
     std::string jobs_being_computed_as_string() const;
 };
 
+bool machine_comparator_name(const Machine * m1, const Machine * m2);
+
 class Machines
 {
 public:
@@ -48,6 +50,8 @@ public:
     void createMachines(xbt_dynar_t hosts, BatsimContext * context, const std::string & masterHostName);
     void updateMachinesOnJobRun(int jobID, const MachineRange & usedMachines);
     void updateMachinesOnJobEnd(int jobID, const MachineRange & usedMachines);
+
+    void sortMachinesByAscendingName();
 
     void setTracer(PajeTracer * tracer);
 
@@ -68,13 +72,3 @@ private:
 };
 
 std::string machineStateToString(MachineState state);
-
-// The array of machines
-extern int nb_machines;
-extern Machine* machines;
-
-void createMachines(xbt_dynar_t hosts);
-void freeMachines();
-
-void updateMachinesOnJobRun(int jobID, int nbUsedMachines, int * usedMachines);
-void updateMachinesOnJobEnd(int jobID, int nbUsedMachines, int * usedMachines);

@@ -186,6 +186,7 @@ void Machines::createMachines(xbt_dynar_t hosts, BatsimContext *context, const s
     }
 
     xbt_assert(_masterMachine != nullptr, "Cannot find the MasterHost '%s' in the platform file", masterHostName.c_str());
+    sortMachinesByAscendingName();
 }
 
 const Machine * Machines::operator[](int machineID) const
@@ -300,6 +301,14 @@ void Machines::updateMachinesOnJobEnd(int jobID, const MachineRange & usedMachin
     }
 }
 
+void Machines::sortMachinesByAscendingName()
+{
+    std::sort(_machines.begin(), _machines.end(), machine_comparator_name);
+
+    for (unsigned int i = 0; i < _machines.size(); ++i)
+        _machines[i]->id = i;
+}
+
 void Machines::setTracer(PajeTracer *tracer)
 {
     _tracer = tracer;
@@ -403,4 +412,9 @@ string Machine::jobs_being_computed_as_string() const
         jobs_strings.push_back(to_string(jobID));
 
     return boost::algorithm::join(jobs_strings, ", ");
+}
+
+bool machine_comparator_name(const Machine *m1, const Machine *m2)
+{
+    return m1->name < m2->name;
 }
