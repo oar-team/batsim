@@ -17,8 +17,8 @@ class EasyEnergyBudget(EasyBackfill):
         self.estimate_energy_jobs_to_save_energy = not self.reduce_powercap_to_save_energy
         
         
-        self.budget_saved_measured = 0
-        self.budget_reserved = 0
+        self.budget_saved_measured = 0.0
+        self.budget_reserved = 0.0
         self.listJobReservedEnergy = []
         
         self.power_idle = options["power_idle"]
@@ -32,6 +32,10 @@ class EasyEnergyBudget(EasyBackfill):
         self.monitoring_period = 5
         self.monitoring_last_value = None
         self.monitoring_last_value_time = None
+
+        if self.reduce_powercap_to_save_energy == self.estimate_energy_jobs_to_save_energy:
+            assert False, "can't activate reduce_powercap_to_save_energy and estimate_energy_jobs_to_save_energy"
+
 
         super(EasyEnergyBudget, self).__init__(options)
 
@@ -230,23 +234,26 @@ class EasyEnergyBudget(EasyBackfill):
         if not(current_time < self.budget_end and self.budget_start <= current_time):
             return super(EasyEnergyBudget, self).findBackfilledAllocs(current_time, first_job_starttime)
         
-        if self.reduce_powercap_to_save_energy:
+        elif self.reduce_powercap_to_save_energy:
             pc = self.powercap
             self.powercap -= self.budget_reserved/(first_job_starttime-current_time)
+            
+            ret = super(EasyEnergyBudget, self).findBackfilledAllocs(current_time, first_job_starttime)
+            
+            self.powercap = pc
+            return ret
         elif self.estimate_energy_jobs_to_save_energy:
+            self.allocJobBackfill_backup = self.allocJobBackfill
             self.allocJobBackfill = self.allocJobBackfillWithEnergyCap
             self.energycap = self.powercap*(first_job_starttime-current_time)- self.estimate_energy_running_jobs(current_time)-self.budget_reserved
             self.energycap_endtime = first_job_starttime
+            
+            ret = super(EasyEnergyBudget, self).findBackfilledAllocs(current_time, first_job_starttime)
+            
+            self.allocJobBackfill = self.allocJobBackfill_backup
+            return ret
         else:
             assert False, "can't activate reduce_powercap_to_save_energy and estimate_energy_jobs_to_save_energy"
-        
-        ret = super(EasyEnergyBudget, self).findBackfilledAllocs(current_time, first_job_starttime)
-    
-        if self.reduce_powercap_to_save_energy:
-            self.powercap = pc
-        return ret
-    
-    
     
     def allocBackFill(self, first_job, current_time):
         
