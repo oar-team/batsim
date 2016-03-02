@@ -29,7 +29,7 @@ class EasyEnergyBudget(EasyBackfill):
         self.already_asked_to_awaken_at_end_of_budget = False
         
         self.monitoring_regitered = False
-        self.monitoring_period = 5
+        self.monitoring_period = options["monitoring_period"]
         self.monitoring_last_value = None
         self.monitoring_last_value_time = None
 
