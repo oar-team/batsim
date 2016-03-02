@@ -231,7 +231,7 @@ class EasyEnergyBudget(EasyBackfill):
     def findBackfilledAllocs(self, current_time, first_job_starttime):
         
         #if not within the energy budget
-        if not(current_time < self.budget_end and self.budget_start <= current_time):
+        if not(self.allow_FCFS_jobs_to_use_budget_saved_measured) or not(current_time < self.budget_end and self.budget_start <= current_time):
             return super(EasyEnergyBudget, self).findBackfilledAllocs(current_time, first_job_starttime)
         
         elif self.reduce_powercap_to_save_energy:
