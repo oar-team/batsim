@@ -97,7 +97,7 @@ def launch_expe(options, verbose=True):
     batsim_exec = subprocess.Popen(batsim_cl, stdout=batsim_stdout_file, stderr=batsim_stderr_file, shell=False)
 
     print "Waiting batsim initialization"
-    success = wait_for_batsim_to_open_connection(sock, 5)
+    success = wait_for_batsim_to_open_connection(sock, 20)
     if not success:
         assert False, "error on batsim"
         exit()
