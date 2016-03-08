@@ -30,6 +30,7 @@ int uds_server_process(int argc, char *argv[])
     int nb_submitters_finished = 0;
     int nb_running_jobs = 0;
     int nb_switching_machines = 0;
+    int nb_waiters = 0;
     const int protocol_version = 1;
     bool sched_ready = true;
 
@@ -38,7 +39,7 @@ int uds_server_process(int argc, char *argv[])
     // it may avoid the SG deadlock...
     while ((nb_submitters == 0) || (nb_submitters_finished < nb_submitters) ||
            (nb_completed_jobs < nb_submitted_jobs) || (!sched_ready) ||
-           (nb_switching_machines > 0))
+           (nb_switching_machines > 0) || (nb_waiters > 0))
     {
         // Let's wait a message from a node or the request-reply process...
         msg_task_t task_received = NULL;
@@ -120,6 +121,7 @@ int uds_server_process(int argc, char *argv[])
 
             string pname = "waiter " + to_string(message->target_time);
             MSG_process_create(pname.c_str(), waiter_process, (void*) args, context->machines.masterMachine()->host);
+            ++nb_waiters;
         } break; // end of case SCHED_NOP_ME_LATER
 
         case IPMessageType::PSTATE_MODIFICATION:
@@ -270,6 +272,7 @@ int uds_server_process(int argc, char *argv[])
         {
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":N";
             XBT_DEBUG("Message to send to scheduler: '%s'", send_buffer.c_str());
+            --nb_waiters;
         } break; // end of case WAITING_DONE
 
         case IPMessageType::SCHED_READY:
