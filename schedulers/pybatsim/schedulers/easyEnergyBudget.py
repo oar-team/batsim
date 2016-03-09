@@ -68,7 +68,10 @@ class EasyEnergyBudget(EasyBackfill):
     def onJobSubmission(self, just_submitted_job):
         if not self.monitoring_regitered:
             self.monitoring_regitered = True
-            self.bs.wake_me_up_at(self.budget_start)
+            if self.budget_start != self.bs.time():
+                self.bs.wake_me_up_at(self.budget_start)
+            else:
+                self.onNOP()
 
         super(EasyEnergyBudget, self).onJobSubmission(just_submitted_job)
 
@@ -90,8 +93,8 @@ class EasyEnergyBudget(EasyBackfill):
         self.monitoring_last_value = consumed_energy
         self.monitoring_last_value_time = self.bs.time()
         
-        for j in self.listJobReservedEnergy:
-            assert j in self.listRunningJob
+        for job in self.listJobReservedEnergy:
+            assert job in self.listRunningJob
             if not hasattr(job, "last_power_monitoring"):
                 job.last_power_monitoring = job.start_time
             self.budget_reserved -= job.reserved_power*(self.bs.time()-job.last_power_monitoring)
@@ -123,7 +126,7 @@ class EasyEnergyBudget(EasyBackfill):
     def estimate_if_job_fit_in_energy(self, job, start_time, listFreeSpace=None, canUseBudgetLeft=False):
         """
         compute the power consumption of the cluster
-        if <job> is not Non,e then add the power consumption of this job as if it were running on the cluster.
+        if <job> is not None then add the power consumption of this job as if it were running on the cluster.
         """
         
         #if the job does not cross the budget interval
