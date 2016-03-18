@@ -60,7 +60,7 @@ class FreeSpace(object):
         return "<<FreeSpace ["+str(self.first_res)+"-"+str(self.last_res)+"] "+str(self.length)+" "+link+" \t"+asrf1+p+n+asrf2+" "+delet+"    >>"
     
 
-class FressSpaceContainer(object):
+class FreeSpaceContainer(object):
     """
     Developers, NEVER FORGET:
     - operations on the list can be done will iterating on it with the generator()
@@ -218,7 +218,7 @@ class EasyBackfill(BatsimScheduler):
         self.options = options
 
     def onAfterBatsimInit(self):
-        self.listFreeSpace = FressSpaceContainer(self.bs.nb_res)
+        self.listFreeSpace = FreeSpaceContainer(self.bs.nb_res)
 
         self.listRunningJob = SortedListWithKey(key=lambda job: job.estimate_finish_time)
         self.listWaitingJob = []
