@@ -180,7 +180,7 @@ class Job(object):
         self.profile = profile
         self.finish_time = None#will be set on completion by batsim
     def __repr__(self):
-        return("<Job {0}; sub:{1} res:{2} wtime:{3} prof:{4}>".format(self.id, self.submit_time, self.requested_resources, self.requested_time, self.profile))
+        return("<Job {0}; sub:{1} res:{2} reqtime:{3} prof:{4}>".format(self.id, self.submit_time, self.requested_resources, self.requested_time, self.profile))
     #def __eq__(self, other):
         #return self.id == other.id
     #def __ne__(self, other):
