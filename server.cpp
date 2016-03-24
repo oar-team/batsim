@@ -189,9 +189,9 @@ int uds_server_process(int argc, char *argv[])
         case IPMessageType::SCHED_NOP:
         {
             XBT_INFO("Nothing to do received.");
-            if (nb_running_jobs == 0 && nb_scheduled_jobs < nb_submitted_jobs && nb_switching_machines == 0)
+            if ((nb_running_jobs == 0) && (nb_scheduled_jobs < nb_submitted_jobs) && (nb_switching_machines == 0) && (nb_waiters == 0))
             {
-                XBT_INFO("Nothing to do received while nothing is currently happening (no job is running, no machine is switching state) and some jobs are waiting to be scheduled... This might cause a deadlock!");
+                XBT_INFO("Nothing to do received while nothing is currently happening (no job is running, no machine is switching state, no wake-up timer is active) and some jobs are waiting to be scheduled... This might cause a deadlock!");
 
                 // Let us display the available jobs (to help in the scheduler debugging)
                 const std::map<int, Job *> & jobs = context->jobs.jobs();
