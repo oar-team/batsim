@@ -1,1 +1,6 @@
 *.o
+*_jobs.csv
+*_schedule.csv
+*_schedule.trace
+*_pstate_changes.csv
+*.pyc
