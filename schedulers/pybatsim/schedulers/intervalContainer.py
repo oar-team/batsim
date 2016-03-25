@@ -1,5 +1,6 @@
 
 
+INFINITY = float('inf')
 
 class Interval(object):
     def __init__(self, begin, end, prev, next):
@@ -17,43 +18,55 @@ class IntervalContainer(object):
         self.first_item = None
     
     def addInterval(self, rmFrom, rmTo):
-        newInter = Interval(rmFrom,rmTo,None,None)
-        prevnextitem = None
+        if self.first_item is None:
+            self.first_item = Interval(rmFrom,rmTo,None,None)
+            return
+        
+        #find the first elm
+        item = None
         nextitem = self.first_item
         while not(nextitem is None):
-            if newInter.begin <= nextitem.begin:
+            if rmFrom < nextitem.begin:
                 break
-            prevnextitem = nextitem
+            item = nextitem
             nextitem = nextitem.next
-
-        if prevnextitem is None:
-            self.first_item = newInter
-            newInter.prev = None
-        else:
-            if prevnextitem.end+1 >= newInter.begin:
-                prevnextitem.end = max(prevnextitem.end, newInter.end)
-                newInter = prevnextitem
-            else:
-                newInter.prev = prevnextitem
-                prevnextitem.next = newInter
         
+        #if there is no intersections with exisiting intervals
+        newitem = item is None and (rmTo < nextitem.begin)
+        if not(item is None):
+            newitem = newitem or (item.end < rmFrom and nextitem is None) or \
+            (item.end < rmFrom and rmTo < nextitem.begin)
         
-        if nextitem is None:
-            newInter.next = None
-        else:
-            assert not(nextitem.next is not None and nextitem.next.begin-1 <= newInter.end), "NOT IMPLEMENTED"
-
-            if nextitem.begin-1 <= newInter.end:
-                nextitem.begin = newInter.begin
-                nextitem.end = max(nextitem.end, newInter.end)
-                nextitem.prev = newInter.prev
-                if not(nextitem.prev is None):
-                    nextitem.prev.next = nextitem
-                else:
-                    self.first_item = nextitem
+        if newitem:
+            i = Interval(rmFrom,rmTo,item,nextitem)
+            if not(item is None):
+                item.next = i
             else:
-                nextitem.prev = newInter
-                newInter.next = nextitem
+                self.first_item = i
+            if not(nextitem is None):
+                nextitem.prev = i
+            return
+        
+        if not(item is None) and rmFrom <= item.end:
+            first_intersection = item
+        else:
+            first_intersection = nextitem
+            nextitem.begin = rmFrom
+        
+        last_intersection = first_intersection
+        nextlast_intersection = first_intersection.next
+        while not(nextlast_intersection is None):
+            if rmTo < nextlast_intersection.begin:
+                break
+            last_intersection = nextlast_intersection
+            nextlast_intersection = nextlast_intersection.next
+        
+        first_intersection.end = max(last_intersection.end, rmTo)
+        first_intersection.next = nextlast_intersection
+        if not(nextlast_intersection is None):
+            nextlast_intersection.prev = first_intersection
+        
+        return
         
     def removeInterval(self, rmFrom, rmTo):
         """
@@ -159,7 +172,7 @@ if __name__ == '__main__':
     l = IntervalContainer()
     l.printme()
     print "---------------"
-    print l.difference(12, 24) == [(12, 24)]
+    #print l.difference(12, 24) == [(12, 24)]
     l.addInterval(10,20)
     l.addInterval(30,40)
     l.addInterval(50,60)
@@ -177,3 +190,12 @@ if __name__ == '__main__':
     l.removeInterval(10,20)
     l.printme()
     print "---------------"
+    l.addInterval(10,20)
+    
+    l.addInterval(50,110)
+    l.addInterval(35,45)
+    l.printme()
+    
+    
+    
+    

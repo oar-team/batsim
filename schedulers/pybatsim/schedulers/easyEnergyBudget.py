@@ -118,6 +118,7 @@ class EasyEnergyBudget(EasyBackfill):
             assert self.budget_reserved >= 0
             job.last_power_monitoring = self.bs.time()
         
+        self._schedule_jobs(self.bs.time())
         
         self.regiter_next_monitoring_event()
 
@@ -323,12 +324,7 @@ class EasyEnergyBudget(EasyBackfill):
 
 
     def findBackfilledAllocs(self, current_time, first_job_starttime):
-        
-        #if not within the energy budget
-        if not(self.allow_FCFS_jobs_to_use_budget_saved_measured) or not(current_time < self.budget_end and self.budget_start <= current_time):
-            return super(EasyEnergyBudget, self).findBackfilledAllocs(current_time, first_job_starttime)
-        
-        elif self.reduce_powercap_to_save_energy:
+        if self.reduce_powercap_to_save_energy:
             pc = self.powercap
             self.powercap -= self.budget_reserved/(first_job_starttime-current_time)
             
@@ -347,7 +343,7 @@ class EasyEnergyBudget(EasyBackfill):
             self.allocJobBackfill = self.allocJobBackfill_backup
             return ret
         else:
-            assert False, "can't activate reduce_powercap_to_save_energy and estimate_energy_jobs_to_save_energy"
+            return super(EasyEnergyBudget, self).findBackfilledAllocs(current_time, first_job_starttime)
     
     def allocBackFill(self, first_job, current_time):
         
