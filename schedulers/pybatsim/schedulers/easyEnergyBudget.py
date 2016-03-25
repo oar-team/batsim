@@ -118,6 +118,7 @@ class EasyEnergyBudget(EasyBackfill):
             assert self.budget_reserved >= 0
             job.last_power_monitoring = self.bs.time()
         
+        
         self.regiter_next_monitoring_event()
 
 
@@ -168,8 +169,8 @@ class EasyEnergyBudget(EasyBackfill):
         if self.opportunist_shutdown and (current_time < self.budget_end and self.budget_start <= current_time):
             pstates_to_change = {}
             for l in self.listFreeSpace.generator():
-                toshut = self.shutteddown_nodes.difference(l.first_res, l.last_res)
-                if not(toshut is None):
+                toshuts = self.shutteddown_nodes.difference(l.first_res, l.last_res)
+                for toshut in toshuts:
                     self.shutteddown_nodes.addInterval(l.first_res, l.last_res)
                     self.shuttingdown_nodes.addInterval(toshut[0], toshut[1])
                     for i in range(toshut[0], toshut[1]+1):
@@ -189,8 +190,8 @@ class EasyEnergyBudget(EasyBackfill):
                             for (rrs, rre) in rinter:
                                 for i in range(rrs, rre+1):
                                     self.to_switchon_on_switchoff.append(i)
-                            rdiff = self.shuttingdown_nodes.difference(istart, iend)
-                            if not(rdiff is None):
+                            rdiffs = self.shuttingdown_nodes.difference(istart, iend)
+                            for rdiff in rdiffs:
                                 (ristart, riend) = rdiff
                                 for i in range(ristart, riend+1):
                                     pstates_to_change[i] = self.pstate_switchon
@@ -201,7 +202,8 @@ class EasyEnergyBudget(EasyBackfill):
                     allocs.remove(a)
             
                 self.bs.change_pstates(pstates_to_change)
-            
+        
+        
         self.bs.start_jobs_continuous(allocs)
         
 

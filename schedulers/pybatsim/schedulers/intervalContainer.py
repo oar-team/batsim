@@ -117,29 +117,32 @@ class IntervalContainer(object):
     def difference(self, rmFrom, rmTo):
         """
         return the part of (rmFrom, rmTo) that is not in the container
-        TODO: return a listof differences
         """
         assert rmFrom <= rmTo
-        prevnextitem = None
-        nextitem = self.first_item
-        while not(nextitem is None):
-            if rmFrom <= nextitem.begin:
-                break
-            prevnextitem = nextitem
-            nextitem = nextitem.next
-
-        if not(prevnextitem is None):
-            assert rmFrom >= prevnextitem.begin, str(("notintersection across multiple intervals not supported", rmFrom, prevnextitem.begin))
-            rmFrom = max(rmFrom, prevnextitem.end+1)
-        if not(nextitem is None):
-            assert rmTo <= nextitem.end, str(("notintersection across multiple intervals not supported", rmTo, nextitem.end))
-            rmTo = min(rmTo, nextitem.begin-1)
-        
-        if rmTo < rmFrom:
-            return None
-        else:
-            return (rmFrom, rmTo)
-        
+        previtem = None
+        item = self.first_item
+        ret = []
+        while not(item is None):
+            if previtem is None and rmFrom < item.begin:
+                ret.append( (rmFrom, min(item.begin-1, rmTo)) )
+            elif previtem is None:
+                pass
+            elif rmTo <= previtem.end:
+                return ret
+            elif rmFrom < item.begin and item.begin <= rmTo:
+                ret.append( (max(rmFrom, previtem.end+1), item.begin-1) )
+            elif previtem.end < rmTo and rmTo < item.begin:
+                ret.append( (max(rmFrom, previtem.end+1), rmTo) )
+                return ret
+            
+            previtem = item
+            item = item.next
+        if previtem is None:#and item is None
+            return [(rmFrom, rmTo)]
+        if not(previtem is None) and previtem.end < rmTo:
+            ret.append( (max(previtem.end+1, rmFrom), rmTo) )
+            
+        return ret
 
 
 
@@ -156,11 +159,18 @@ if __name__ == '__main__':
     l = IntervalContainer()
     l.printme()
     print "---------------"
+    print l.difference(12, 24) == [(12, 24)]
     l.addInterval(10,20)
     l.addInterval(30,40)
     l.addInterval(50,60)
     l.printme()
-    print l.difference(15, 25)
+    print l.difference(0, 0) == [(0, 0)]
+    print l.difference(70, 80) == [(70, 80)]
+    print l.difference(15, 45) == [(21, 29), (41, 45)]
+    print l.difference(5, 65) == [(5, 9), (21, 29), (41, 49), (61, 65)]
+    print l.difference(10, 20) == []
+    print l.difference(20, 50) == [(21, 29), (41, 49)]
+
     print "---------------"
     print l.intersection(10,30)
     print l.intersection(100,300)
