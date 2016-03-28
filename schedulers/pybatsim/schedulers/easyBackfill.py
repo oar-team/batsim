@@ -123,7 +123,6 @@ class FreeSpaceContainer(object):
             if hasattr(l, "linkedTo"):
                 if  l.linkedTo.last_res >= alloc[0]:
                     l.linkedTo.last_res = alloc[0]-1
-        job.estimate_finish_time = job.requested_time + current_time
         job.alloc = alloc
         
         if hasattr(l, "linkedTo"):
@@ -288,6 +287,7 @@ class EasyBackfill(BatsimScheduler):
                 break
             job = self.listWaitingJob.pop(0)
             job.start_time = current_time
+            job.estimate_finish_time = job.requested_time + job.start_time
             self.listRunningJob.add(job)
             allocs.append( (job, alloc) )
         return allocs
@@ -381,6 +381,7 @@ class EasyBackfill(BatsimScheduler):
             if alloc is not None:
                 allocs.append( (j, alloc) )
                 j.start_time = current_time
+                j.estimate_finish_time = j.requested_time + j.start_time
                 jobsToRemove.append(j)
                 self.listRunningJob.add(j)
         

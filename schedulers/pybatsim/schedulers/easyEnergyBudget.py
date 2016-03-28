@@ -116,7 +116,7 @@ class EasyEnergyBudget(EasyBackfill):
                 if not hasattr(job, "last_power_monitoring"):
                     job.last_power_monitoring = job.start_time
                 self.budget_reserved -= job.reserved_power*(self.bs.time()-job.last_power_monitoring)
-                assert self.budget_reserved >= 0
+                assert self.budget_reserved >= 0, "self.budget_reserved >= 0 ("+str(self.budget_reserved)
                 job.last_power_monitoring = self.bs.time()
         
         self._schedule_jobs(self.bs.time())
