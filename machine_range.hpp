@@ -38,4 +38,7 @@ public:
     std::string to_string_brackets(const std::string & union_str = "∪", const std::string & opening_bracket = "[", const std::string & closing_bracket = "]", const std::string & sep = ",");
     std::string to_string_hyphen(const std::string & sep = ",", const std::string & joiner = "-");
     std::string to_string_elements(const std::string & sep = ",");
+
+public:
+    static MachineRange from_string_hyphen(const std::string & str, const std::string & sep = ",", const std::string & joiner = "-", const std::string & error_prefix = "Invalid machine range string");
 };

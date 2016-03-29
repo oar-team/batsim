@@ -60,13 +60,25 @@ struct SchedulingAllocationMessage
 
 struct PStateModificationMessage
 {
-    int machine;
-    int new_pstate;
+    MachineRange machine_ids; //! The IDs of the machines on which the pstate should be changed
+    int new_pstate; //! The pstate the machines should be put into
 };
 
 struct NOPMeLaterMessage
 {
     double target_time;
+};
+
+struct SwitchONMessage
+{
+    int machine_id;
+    int new_pstate;
+};
+
+struct SwitchOFFMessage
+{
+    int machine_id;
+    int new_pstate;
 };
 
 struct IPMessage
@@ -102,7 +114,8 @@ struct KillerProcessArguments
 struct SwitchPStateProcessArguments
 {
     BatsimContext * context;
-    PStateModificationMessage * message;
+    int machine_id;
+    int new_pstate;
 };
 
 struct JobSubmitterProcessArguments

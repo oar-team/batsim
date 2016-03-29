@@ -14,8 +14,8 @@ int switch_on_machine_process(int argc, char *argv[])
 
     SwitchPStateProcessArguments * args = (SwitchPStateProcessArguments *) MSG_process_get_data(MSG_process_self());
 
-    int machineID = args->message->machine;
-    int pstate = args->message->new_pstate;
+    int machineID = args->machine_id;
+    int pstate = args->new_pstate;
 
     xbt_assert(args->context->machines.exists(machineID));
     Machine * machine = args->context->machines[machineID];
@@ -54,7 +54,11 @@ int switch_on_machine_process(int argc, char *argv[])
 
     machine->state = MachineState::IDLE;
 
-    send_message("server", IPMessageType::SWITCHED_ON, (void *) args->message);
+    SwitchONMessage * msg = new SwitchONMessage;
+    msg->machine_id = args->machine_id;
+    msg->new_pstate = args->new_pstate;
+    send_message("server", IPMessageType::SWITCHED_ON, (void *) msg);
+
     delete args;
     return 0;
 }
@@ -66,8 +70,8 @@ int switch_off_machine_process(int argc, char *argv[])
 
     SwitchPStateProcessArguments * args = (SwitchPStateProcessArguments *) MSG_process_get_data(MSG_process_self());
 
-    int machineID = args->message->machine;
-    int pstate = args->message->new_pstate;
+    int machineID = args->machine_id;
+    int pstate = args->new_pstate;
 
     xbt_assert(args->context->machines.exists(machineID));
     Machine * machine = args->context->machines[machineID];
@@ -105,7 +109,11 @@ int switch_off_machine_process(int argc, char *argv[])
 
     machine->state = MachineState::SLEEPING;
 
-    send_message("server", IPMessageType::SWITCHED_OFF, (void *) args->message);
+    SwitchOFFMessage * msg = new SwitchOFFMessage;
+    msg->machine_id = args->machine_id;
+    msg->new_pstate = args->new_pstate;
+    send_message("server", IPMessageType::SWITCHED_OFF, (void *) msg);
+
     delete args;
     return 0;
 }

@@ -128,61 +128,63 @@ int uds_server_process(int argc, char *argv[])
             xbt_assert(task_data->data != nullptr);
             PStateModificationMessage * message = (PStateModificationMessage *) task_data->data;
 
-            Machine * machine = context->machines[message->machine];
-            int curr_pstate = MSG_host_get_pstate(machine->host);
-
-            if (machine->pstates[curr_pstate] == PStateType::COMPUTATION_PSTATE)
+            for (auto machine_it = message->machine_ids.elements_begin(); machine_it != message->machine_ids.elements_end(); ++machine_it)
             {
-                if (machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE)
-                {
-                    XBT_INFO("Switching machine %d ('%s') pstate : %d -> %d.", machine->id,
-                             machine->name.c_str(), curr_pstate, message->new_pstate);
-                    MSG_host_set_pstate(machine->host, message->new_pstate);
-                    context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, message->new_pstate);
-                    xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
+                const int machine_id = *machine_it;
+                Machine * machine = context->machines[machine_id];
+                int curr_pstate = MSG_host_get_pstate(machine->host);
 
-                    send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
-                                   std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
-                    XBT_DEBUG( "Message to send to scheduler : '%s'", send_buffer.c_str());
-                }
-                else if (machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
+                if (machine->pstates[curr_pstate] == PStateType::COMPUTATION_PSTATE)
                 {
-                    machine->state = MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING;
+                    if (machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE)
+                    {
+                        XBT_INFO("Switching machine %d ('%s') pstate : %d -> %d.", machine->id,
+                                 machine->name.c_str(), curr_pstate, message->new_pstate);
+                        MSG_host_set_pstate(machine->host, message->new_pstate);
+                        context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, message->new_pstate);
+                        xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
+
+                        send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
+                                       std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
+                        XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
+                    }
+                    else if (machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
+                    {
+                        machine->state = MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING;
+                        SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
+                        args->context = context;
+                        args->machine_id = machine_id;
+                        args->new_pstate = message->new_pstate;
+
+                        string pname = "switch ON " + to_string(machine_id);
+                        MSG_process_create(pname.c_str(), switch_off_machine_process, (void*)args, machine->host);
+
+                        ++nb_switching_machines;
+                    }
+                    else
+                        XBT_ERROR("Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %d -> %d",
+                                  machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
+                }
+                else if (machine->pstates[curr_pstate] == PStateType::SLEEP_PSTATE)
+                {
+                    xbt_assert(machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE,
+                            "Switching from a sleep pstate to a non-computation pstate on machine %d ('%s') : %d -> %d, which is forbidden",
+                            machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
+
+                    machine->state = MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING;
                     SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
                     args->context = context;
-                    args->message = new PStateModificationMessage;
-                    args->message->machine = message->machine;
-                    args->message->new_pstate = message->new_pstate;
+                    args->machine_id = machine_id;
+                    args->new_pstate = message->new_pstate;
 
-                    string pname = "switch ON " + to_string(message->machine);
-                    MSG_process_create(pname.c_str(), switch_off_machine_process, (void*)args, machine->host);
+                    string pname = "switch OFF " + to_string(machine_id);
+                    MSG_process_create(pname.c_str(), switch_on_machine_process, (void*)args, machine->host);
 
                     ++nb_switching_machines;
                 }
                 else
-                    XBT_ERROR("Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %d -> %d",
-                              machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
+                    XBT_ERROR("Machine %d ('%s') has an invalid pstate : %d", machine->id, machine->name.c_str(), curr_pstate);
             }
-            else if (machine->pstates[curr_pstate] == PStateType::SLEEP_PSTATE)
-            {
-                xbt_assert(machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE,
-                        "Switching from a sleep pstate to a non-computation pstate on machine %d ('%s') : %d -> %d, which is forbidden",
-                        machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
-
-                machine->state = MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING;
-                SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
-                args->context = context;
-                args->message = new PStateModificationMessage;
-                args->message->machine = message->machine;
-                args->message->new_pstate = message->new_pstate;
-
-                string pname = "switch OFF " + to_string(message->machine);
-                MSG_process_create(pname.c_str(), switch_on_machine_process, (void*)args, machine->host);
-
-                ++nb_switching_machines;
-            }
-            else
-                XBT_ERROR("Machine %d ('%s') has an invalid pstate : %d", machine->id, machine->name.c_str(), curr_pstate);
 
         } break; // end of case PSTATE_MODIFICATION
 
@@ -283,10 +285,10 @@ int uds_server_process(int argc, char *argv[])
         case IPMessageType::SWITCHED_ON:
         {
             xbt_assert(task_data->data != nullptr);
-            PStateModificationMessage * message = (PStateModificationMessage *) task_data->data;
+            SwitchONMessage * message = (SwitchONMessage *) task_data->data;
 
-            xbt_assert(context->machines.exists(message->machine));
-            Machine * machine = context->machines[message->machine];
+            xbt_assert(context->machines.exists(message->machine_id));
+            Machine * machine = context->machines[message->machine_id];
             xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
 
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
@@ -299,10 +301,10 @@ int uds_server_process(int argc, char *argv[])
         case IPMessageType::SWITCHED_OFF:
         {
             xbt_assert(task_data->data != nullptr);
-            PStateModificationMessage * message = (PStateModificationMessage *) task_data->data;
+            SwitchOFFMessage * message = (SwitchOFFMessage *) task_data->data;
 
-            xbt_assert(context->machines.exists(message->machine));
-            Machine * machine = context->machines[message->machine];
+            xbt_assert(context->machines.exists(message->machine_id));
+            Machine * machine = context->machines[message->machine_id];
             xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
 
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +

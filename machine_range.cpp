@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <simgrid/msg.h>
 
@@ -111,4 +111,43 @@ string MachineRange::to_string_elements(const string &sep)
         machine_id_strings.push_back(to_string(*it));
 
     return boost::algorithm::join(machine_id_strings, sep);
+}
+
+MachineRange MachineRange::from_string_hyphen(const string &str, const string &sep, const string &joiner, const string & error_prefix)
+{
+    MachineRange res;
+
+    // Let us do a split by sep to get all the parts
+    vector<string> parts;
+    boost::split(parts, str, boost::is_any_of(sep), boost::token_compress_on);
+
+    for (const string & part : parts)
+    {
+        // Since each machineIDk can either be a single machine or a closed interval, let's try to split on joiner
+        vector<string> interval_parts;
+        boost::split(interval_parts, part, boost::is_any_of(joiner), boost::token_compress_on);
+        xbt_assert(interval_parts.size() >= 1 && interval_parts.size() <= 2,
+                   "%s: the MIDk '%s' should either be a single machine ID"
+                   " (syntax: MID to represent the machine ID MID) or a closed interval (syntax: MIDa-MIDb to represent"
+                   " the machine interval [MIDA,MIDb])", error_prefix.c_str(), part.c_str());
+
+        if (interval_parts.size() == 1)
+        {
+            int machine_id = std::stoi(interval_parts[0]);
+            res.insert(machine_id);
+        }
+        else
+        {
+            int machineIDa = std::stoi(interval_parts[0]);
+            int machineIDb = std::stoi(interval_parts[1]);
+
+            xbt_assert(machineIDa <= machineIDb, "%s: the MIDk '%s' is composed of two"
+                      " parts (1:%d and 2:%d) but the first value must be lesser than or equal to the second one",
+                      error_prefix.c_str(), part.c_str(), machineIDa, machineIDb);
+
+            res.insert(MachineRange::Interval::closed(machineIDa, machineIDb));
+        }
+    }
+
+    return res;
 }

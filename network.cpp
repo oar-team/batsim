@@ -359,38 +359,44 @@ int request_reply_scheduler_process(int argc, char *argv[])
                 vector<string> parts3;
                 boost::split(parts3, parts2[2], boost::is_any_of("="), boost::token_compress_on);
                 xbt_assert(parts3.size() == 2, "Invalid event received ('%s'): invalid pstate modification message content ('%s'): it must be"
-                           " of type M=P where M is a machine number and P a pstate number of machine M", event_string.c_str(), parts2[2].c_str());
+                           " formated like M=P where M is a machine range (1,2,3,6,7 or 1-3,6-7 for example) and P a pstate number of machines M",
+                           event_string.c_str(), parts2[2].c_str());
 
-                int machineID = std::stoi(parts3[0]);
                 int pstate = std::stoi(parts3[1]);
 
-                xbt_assert(context->machines.exists(machineID), "Invalid event received ('%s'): machine %d does not exist", event_string.c_str(), machineID);
-                Machine * machine = context->machines[machineID];
-                xbt_assert(machine->state == MachineState::IDLE || machine->state == MachineState::SLEEPING,
-                           "Invalid event received ('%s'): machine %d's pstate can only be changed while the"
-                           " machine is idle or sleeping, which is not the case now.", event_string.c_str(), machineID);
-                xbt_assert(context->machines[machineID]->has_pstate(pstate), "Invalid event received ('%s'): machine %d has no pstate %d", event_string.c_str(), machineID, pstate);
+                string error_prefix = "Invalid pstate modification message content ('" + event_string + "')";
+                message->machine_ids = MachineRange::from_string_hyphen(parts3[0], ",", "-", error_prefix);
 
-                int current_pstate = MSG_host_get_pstate(machine->host);
-                xbt_assert(machine->has_pstate(current_pstate));
-
-                if (machine->pstates[current_pstate] == PStateType::COMPUTATION_PSTATE)
+                for (auto machine_it = message->machine_ids.elements_begin(); machine_it != message->machine_ids.elements_end(); ++machine_it)
                 {
-                    xbt_assert(machine->pstates[pstate] == PStateType::COMPUTATION_PSTATE ||
-                               machine->pstates[pstate] == PStateType::SLEEP_PSTATE, "Invalid event received ('%s'): asked to switch machine %d ('%s') from"
-                               " pstate %d (a computation one) to pstate %d (not a computation pstate nor a sleep pstate), which is forbidden",
-                               event_string.c_str(), machineID, machine->name.c_str(), current_pstate, pstate);
-                }
-                else if (machine->pstates[current_pstate] == PStateType::SLEEP_PSTATE)
-                {
-                    xbt_assert(machine->pstates[pstate] == PStateType::COMPUTATION_PSTATE, "Invalid event received ('%s'): asked to switch machine %d ('%s') from"
-                               " pstate %d (a sleep pstate) to pstate %d (not a computation pstate), which is forbidden",
-                               event_string.c_str(), machineID, machine->name.c_str(), current_pstate, pstate);
+                    int machine_id = *machine_it;
+                    xbt_assert(context->machines.exists(machine_id), "%s: the machine %d does not exist", error_prefix.c_str(), machine_id);
+
+                    Machine * machine = context->machines[machine_id];
+                    xbt_assert(machine->state == MachineState::IDLE || machine->state == MachineState::SLEEPING,
+                               "%s: machine %d's pstate can only be changed while the"
+                               " machine is idle or sleeping, which is not the case now", error_prefix.c_str(), machine_id);
+                    xbt_assert(machine->has_pstate(pstate), "%s: machine %d has no pstate %d", error_prefix.c_str(), machine_id, pstate);
+
+                    int current_pstate = MSG_host_get_pstate(machine->host);
+                    xbt_assert(machine->has_pstate(current_pstate));
+
+                    if (machine->pstates[current_pstate] == PStateType::COMPUTATION_PSTATE)
+                    {
+                        xbt_assert(machine->pstates[pstate] == PStateType::COMPUTATION_PSTATE ||
+                                   machine->pstates[pstate] == PStateType::SLEEP_PSTATE, "%s: asked to switch machine %d ('%s') from"
+                                   " pstate %d (a computation one) to pstate %d (not a computation pstate nor a sleep pstate), which is forbidden",
+                                   error_prefix.c_str(), machine_id, machine->name.c_str(), current_pstate, pstate);
+                    }
+                    else if (machine->pstates[current_pstate] == PStateType::SLEEP_PSTATE)
+                    {
+                        xbt_assert(machine->pstates[pstate] == PStateType::COMPUTATION_PSTATE, "%s: asked to switch machine %d ('%s') from"
+                                   " pstate %d (a sleep pstate) to pstate %d (not a computation pstate), which is forbidden",
+                                   error_prefix.c_str(), machine_id, machine->name.c_str(), current_pstate, pstate);
+                    }
                 }
 
-                message->machine = machineID;
                 message->new_pstate = pstate;
-
                 send_message("server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
 
             } break; // End of case received_stamp == PSTATE_SET
