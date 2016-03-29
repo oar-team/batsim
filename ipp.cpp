@@ -131,12 +131,12 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SWITCHED_ON:
         {
-            PStateModificationMessage * msg = (PStateModificationMessage *) data;
+            SwitchONMessage * msg = (SwitchONMessage *) data;
             delete msg;
         } break;
         case IPMessageType::SWITCHED_OFF:
         {
-            PStateModificationMessage * msg = (PStateModificationMessage *) data;
+            SwitchOFFMessage * msg = (SwitchOFFMessage *) data;
             delete msg;
         } break;
         case IPMessageType::WAITING_DONE:
