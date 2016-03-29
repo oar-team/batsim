@@ -77,8 +77,8 @@ void UnixDomainSocket::accept_pending_connection()
 string UnixDomainSocket::receive()
 {
     string msg;
-    int32_t message_size;
-    int nb_bytes_read = 0;
+    uint32_t message_size;
+    uint32_t nb_bytes_read = 0;
     int ret;
 
     /* Since messages can be split up to 1 byte messages, the following code
@@ -123,7 +123,7 @@ string UnixDomainSocket::receive()
 
 void UnixDomainSocket::send(const string & message)
 {
-    int32_t message_size = message.size();
+    uint32_t message_size = message.size();
     XBT_INFO("Sending '%s'", message.c_str());
     write(_client_socket, &message_size, 4);
     write(_client_socket, (void*)message.c_str(), message_size);
