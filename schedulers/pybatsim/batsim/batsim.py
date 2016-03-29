@@ -12,6 +12,7 @@ class Batsim(object):
     def __init__(self, json_file, scheduler, validatingmachine=None, server_address = '/tmp/bat_socket', verbose=0):
         self.server_address = server_address
         self.verbose = verbose
+        sys.setrecursionlimit(10000)
         
         if validatingmachine is None:
             self.scheduler = scheduler
