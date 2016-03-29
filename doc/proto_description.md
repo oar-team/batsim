@@ -41,8 +41,8 @@ Each MSG_CONTENT follows this syntax:
 |        0+       |   C   | Batsim->Sched | JOB_ID                   | Job completion: one (static) job finished its execution.
 |        0+       |   J   | Sched->Batsim | JID1=MID1,MID2,MIDn[;...]| Job allocation: tells to put job JID1 on machines MID1, ..., MIDn. Many jobs might be allocated in the same event. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
 |        0+       |   N   | Both          | No content               | NOP: tells to do nothing / nothing happened.
-|        1+       |   P   | Sched->Batsim | MACHINE_ID=PSTATE        | Ask to change the pstate of a machine.
-|        1+       |   p   | Batsim->Sched | MACHINE_ID=PSTATE        | Tells the scheduler the pstate of a machine has changed.
+|        1+       |   P   | Sched->Batsim | MID1,MID2,MIDn=PSTATE    | Ask to change the pstate of some machines. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
+|        1+       |   p   | Batsim->Sched | MID1,MID2,MIDn=PSTATE    | Tells the scheduler the pstate of a machine has changed. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb. There is one and only one 'p' message for each 'P' message.
 |        1+       |   R   | Sched->Batsim | JOB_ID                   | Job rejection: the scheduler tells that one (static) job will not be computed.
 |        1+       |   n   | Sched->Batsim | TIME                     | NOP me later: the scheduler asks to be awaken at simulation time TIME.
 |        1+       |   E   | Sched->Batsim | No content               | Ask Batsim to give the total consumed energy (from time 0 to now) in Joules. Works only in energy mode.
@@ -78,12 +78,12 @@ Each MSG_CONTENT follows this syntax:
 ## PState Modification Request ##
     Scheduler -> Batsim
     1:50|50:P:0=2
-    1:70|60:P:0=0|60:P:1=2|70:P:2=0
+    1:70|60:P:0-2=0
 
 ## PState Modification Acknowledgement ##
     Batsim -> Scheduler
     1:50.000001|50.000001:p:0=2
-    1:60.000001|60.000001:p:0=0|60.000001:p:1=2
+    1:60.000001|60.000001:p:0-2=0
 
 ## NOP Me Later ##
     Scheduler -> Batsim

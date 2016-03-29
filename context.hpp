@@ -9,6 +9,7 @@
 #include "jobs.hpp"
 #include "profiles.hpp"
 #include "export.hpp"
+#include "pstate.hpp"
 
 struct BatsimContext
 {
@@ -18,6 +19,7 @@ struct BatsimContext
     Profiles profiles;
     PajeTracer paje_tracer;
     PStateChangeTracer pstate_tracer;
+    CurrentSwitches current_switches;
 
     long long microseconds_used_by_scheduler = 0;
     bool energy_used;

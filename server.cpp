@@ -128,6 +128,8 @@ int uds_server_process(int argc, char *argv[])
             xbt_assert(task_data->data != nullptr);
             PStateModificationMessage * message = (PStateModificationMessage *) task_data->data;
 
+            context->current_switches.add_switch(message->machine_ids, message->new_pstate);
+
             for (auto machine_it = message->machine_ids.elements_begin(); machine_it != message->machine_ids.elements_end(); ++machine_it)
             {
                 const int machine_id = *machine_it;
@@ -291,9 +293,12 @@ int uds_server_process(int argc, char *argv[])
             Machine * machine = context->machines[message->machine_id];
             xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
 
-            send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
-                           std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
-            XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
+            string reply_message_content;
+            if (context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate, reply_message_content))
+            {
+                send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" + reply_message_content;
+                XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
+            }
 
             --nb_switching_machines;
         } break; // end of case SWITCHED_ON
@@ -307,9 +312,12 @@ int uds_server_process(int argc, char *argv[])
             Machine * machine = context->machines[message->machine_id];
             xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
 
-            send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" +
-                           std::to_string(machine->id) + "=" + std::to_string(message->new_pstate);
-            XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
+            string reply_message_content;
+            if (context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate, reply_message_content))
+            {
+                send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" + reply_message_content;
+                XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
+            }
 
             --nb_switching_machines;
         } break; // end of case SWITCHED_ON

@@ -5,6 +5,8 @@
 #include "ipp.hpp"
 #include "context.hpp"
 
+using namespace std;
+
 XBT_LOG_NEW_DEFAULT_CATEGORY(pstate, "pstate");
 
 int switch_on_machine_process(int argc, char *argv[])
@@ -116,4 +118,56 @@ int switch_off_machine_process(int argc, char *argv[])
 
     delete args;
     return 0;
+}
+
+void CurrentSwitches::add_switch(const MachineRange &machines, int target_pstate)
+{
+    Switch * s = new Switch;
+    s->switching_machines = machines;
+    s->target_pstate = target_pstate;
+    s->reply_message_content = machines.to_string_hyphen() + "=" + std::to_string(target_pstate);
+
+    if (_switches.count(target_pstate))
+    {
+        std::list<Switch *> & list = _switches[target_pstate];
+        list.push_back(s);
+    }
+    else
+    {
+        _switches[target_pstate] = {s};
+    }
+}
+
+bool CurrentSwitches::mark_switch_as_done(int machine_id, int target_pstate, string &reply_message_content)
+{
+    xbt_assert(_switches.count(target_pstate) == 1);
+
+    std::list<Switch*> & list = _switches[target_pstate];
+
+    for (auto it = list.begin(); it != list.end(); ++it)
+    {
+        Switch * s = *it;
+
+        if (s->switching_machines.contains(machine_id))
+        {
+            s->switching_machines.remove(machine_id);
+
+            // If all the machines of one request have been switched
+            if (s->switching_machines.size() == 0)
+            {
+                list.erase(it);
+                // If there is no longer switches corresponding to this pstate, the pstate:list is removed from the map
+                if (list.size() == 0)
+                    _switches.erase(target_pstate);
+
+                reply_message_content = s->reply_message_content;
+                delete s;
+                return true;
+            }
+            else
+                return false;
+        }
+    }
+
+    xbt_assert(false, "Invalid CurrentSwitches::mark_switch_as_done call: machine %d was not switching to pstate %d", machine_id, target_pstate);
 }

@@ -56,6 +56,12 @@ void MachineRange::clear()
     set.clear();
 }
 
+void MachineRange::insert(const MachineRange &range)
+{
+    for (auto it = range.intervals_begin(); it != range.intervals_end(); ++it)
+        set.insert(*it);
+}
+
 void MachineRange::insert(MachineRange::Interval interval)
 {
     set.insert(interval);
@@ -65,6 +71,58 @@ void MachineRange::insert(int value)
 {
     set.insert(value);
 }
+
+void MachineRange::remove(const MachineRange &range)
+{
+    set -= range.set;
+}
+
+void MachineRange::remove(MachineRange::Interval interval)
+{
+    set -= interval;
+}
+
+void MachineRange::remove(int value)
+{
+    set -= value;
+}
+
+MachineRange MachineRange::left(int nb_machines) const
+{
+    xbt_assert(set.size() >= (unsigned int)nb_machines,
+                     "Invalid MachineRange::left call: looking for %d machines in a set of size %lu",
+                     nb_machines, set.size());
+
+    // Let's find the value of the nth element
+    int nb_inserted = 0;
+    MachineRange res;
+
+    for (auto it = intervals_begin(); it != intervals_end(); ++it)
+    {
+        // The size of the current interval
+        int interval_size = it->upper() - it->lower();
+
+        // If the nth element is in the current interval
+        if (nb_inserted + interval_size >= nb_machines)
+        {
+            int nb_to_add = nb_machines - nb_inserted;
+            res.insert(Interval(it->lower(), it->lower() + nb_to_add));
+            nb_inserted += nb_to_add;
+            xbt_assert(res.size() == (unsigned int)nb_inserted, "Invalid MachineRange size : got %u, expected %d", res.size(), nb_inserted);
+            break;
+        }
+        else
+        {
+            res.insert(Interval(it->lower(), it->upper()));
+            nb_inserted += interval_size;
+            xbt_assert(res.size() == (unsigned int)nb_inserted, "Invalid MachineRange size : got %u, expected %d", res.size(), nb_inserted);
+        }
+    }
+
+    xbt_assert(res.size() == (unsigned int)nb_machines, "Invalid MachineRange size : got %u, expected %d", res.size(), nb_machines);
+    return res;
+}
+
 
 int MachineRange::first_element() const
 {
@@ -77,10 +135,15 @@ unsigned int MachineRange::size() const
     return set.size();
 }
 
+bool MachineRange::contains(int machine_id) const
+{
+    return boost::icl::contains(set, machine_id);
+}
+
 std::string MachineRange::to_string_brackets(const std::string & union_str,
                                              const std::string & opening_bracket,
                                              const std::string & closing_bracket,
-                                             const std::string & sep)
+                                             const std::string & sep) const
 {
     vector<string> machine_id_strings;
     for (auto it = intervals_begin(); it != intervals_end(); ++it)
@@ -92,7 +155,7 @@ std::string MachineRange::to_string_brackets(const std::string & union_str,
     return boost::algorithm::join(machine_id_strings, union_str);
 }
 
-std::string MachineRange::to_string_hyphen(const std::string &sep, const std::string &joiner)
+std::string MachineRange::to_string_hyphen(const std::string &sep, const std::string &joiner) const
 {
     vector<string> machine_id_strings;
     for (auto it = intervals_begin(); it != intervals_end(); ++it)
@@ -104,7 +167,7 @@ std::string MachineRange::to_string_hyphen(const std::string &sep, const std::st
     return boost::algorithm::join(machine_id_strings, sep);
 }
 
-string MachineRange::to_string_elements(const string &sep)
+string MachineRange::to_string_elements(const string &sep) const
 {
     vector<string> machine_id_strings;
     for (auto it = elements_begin(); it != elements_end(); ++it)
@@ -150,4 +213,35 @@ MachineRange MachineRange::from_string_hyphen(const string &str, const string &s
     }
 
     return res;
+}
+
+MachineRange &MachineRange::operator=(const MachineRange &other)
+{
+    set = other.set;
+    return *this;
+}
+
+MachineRange &MachineRange::operator=(const MachineRange::Interval &interval)
+{
+    set.clear();
+    xbt_assert(set.size() == 0);
+    set.insert(interval);
+    return *this;
+}
+
+bool MachineRange::operator==(const MachineRange &other)
+{
+    return set == other.set;
+}
+
+MachineRange & MachineRange::operator&=(const MachineRange &other)
+{
+    set &= other.set;
+    return *this;
+}
+
+MachineRange &MachineRange::operator-=(const MachineRange &other)
+{
+    set -= other.set;
+    return *this;
 }
