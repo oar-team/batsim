@@ -106,7 +106,7 @@ class Batsim(object):
             print("[BATSIM]: connection is closed by batsim core")
             return False
 
-        lg = struct.unpack("i",lg_str)[0]
+        lg = struct.unpack("I",lg_str)[0]
         msg = self._connection.recv(lg).decode()
         if self.verbose > 0: print('[BATSIM]: from batsim : %r' % msg)
         sub_msgs = msg.split('|')
