@@ -309,7 +309,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
                                            allocation_string.c_str(), job->id, job->required_nb_res, alloc->hosts.size());
                             }
 
-                            alloc->machine_ids.insert(MachineRange::Interval::closed(machineIDa, machineIDb));
+                            alloc->machine_ids.insert(MachineRange::ClosedInterval(machineIDa, machineIDb));
                         }
                     }
 

@@ -62,7 +62,7 @@ void MachineRange::insert(const MachineRange &range)
         set.insert(*it);
 }
 
-void MachineRange::insert(MachineRange::Interval interval)
+void MachineRange::insert(ClosedInterval interval)
 {
     set.insert(interval);
 }
@@ -77,7 +77,7 @@ void MachineRange::remove(const MachineRange &range)
     set -= range.set;
 }
 
-void MachineRange::remove(MachineRange::Interval interval)
+void MachineRange::remove(ClosedInterval interval)
 {
     set -= interval;
 }
@@ -86,43 +86,6 @@ void MachineRange::remove(int value)
 {
     set -= value;
 }
-
-MachineRange MachineRange::left(int nb_machines) const
-{
-    xbt_assert(set.size() >= (unsigned int)nb_machines,
-                     "Invalid MachineRange::left call: looking for %d machines in a set of size %lu",
-                     nb_machines, set.size());
-
-    // Let's find the value of the nth element
-    int nb_inserted = 0;
-    MachineRange res;
-
-    for (auto it = intervals_begin(); it != intervals_end(); ++it)
-    {
-        // The size of the current interval
-        int interval_size = it->upper() - it->lower();
-
-        // If the nth element is in the current interval
-        if (nb_inserted + interval_size >= nb_machines)
-        {
-            int nb_to_add = nb_machines - nb_inserted;
-            res.insert(Interval(it->lower(), it->lower() + nb_to_add));
-            nb_inserted += nb_to_add;
-            xbt_assert(res.size() == (unsigned int)nb_inserted, "Invalid MachineRange size : got %u, expected %d", res.size(), nb_inserted);
-            break;
-        }
-        else
-        {
-            res.insert(Interval(it->lower(), it->upper()));
-            nb_inserted += interval_size;
-            xbt_assert(res.size() == (unsigned int)nb_inserted, "Invalid MachineRange size : got %u, expected %d", res.size(), nb_inserted);
-        }
-    }
-
-    xbt_assert(res.size() == (unsigned int)nb_machines, "Invalid MachineRange size : got %u, expected %d", res.size(), nb_machines);
-    return res;
-}
-
 
 int MachineRange::first_element() const
 {
@@ -208,7 +171,7 @@ MachineRange MachineRange::from_string_hyphen(const string &str, const string &s
                       " parts (1:%d and 2:%d) but the first value must be lesser than or equal to the second one",
                       error_prefix.c_str(), part.c_str(), machineIDa, machineIDb);
 
-            res.insert(MachineRange::Interval::closed(machineIDa, machineIDb));
+            res.insert(MachineRange::ClosedInterval(machineIDa, machineIDb));
         }
     }
 
@@ -221,7 +184,7 @@ MachineRange &MachineRange::operator=(const MachineRange &other)
     return *this;
 }
 
-MachineRange &MachineRange::operator=(const MachineRange::Interval &interval)
+MachineRange &MachineRange::operator=(const MachineRange::ClosedInterval &interval)
 {
     set.clear();
     xbt_assert(set.size() == 0);
