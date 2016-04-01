@@ -1,11 +1,11 @@
 :date: 2015-12-01
 :author: Michael Mercier <michael_mercier@inria.fr>
 
-SimCtn
-======
+Batsim environment recipes
+==========================
 
-This is a Kameleon recipe for BatSim experiments. It provides a complete
-appliance with BatSim and SimGrid as simulator and with several scheduler
+This is a Kameleon recipe for Batsim experiments. It provides a complete
+appliance with Batsim and Simgrid as simulator and with several scheduler
 that plugs with it:
 
 * the Perl scheduler from F.Wagner and the OAR scheduler
@@ -114,7 +114,7 @@ for you.
 References
 ----------
 
-BatSim: https://gforge.inria.fr/projects/batsim/
-SimGrid: http://simgrid.gforge.inria.fr/
+Batsim: https://gforge.inria.fr/projects/batsim/
+Simgrid: http://simgrid.gforge.inria.fr/
 Perl Scheduler: https://github.com/wagnerf42/batch-simulator
 OAR: http://oar.imag.fr/
