@@ -95,6 +95,11 @@ class EasyEnergyBudget(EasyBackfill):
 
         super(EasyEnergyBudget, self).onJobSubmission(just_submitted_job)
 
+    def in_listRunningJob(self, job):
+        for j in listRunningJob:
+            if j.id == job.id:
+                return True
+        return False
 
 
     def onReportEnergyConsumed(self, consumed_energy):
@@ -112,7 +117,7 @@ class EasyEnergyBudget(EasyBackfill):
         self.monitoring_last_value_time = self.bs.time()
         
         for job in self.listJobReservedEnergy:
-            if job in self.listRunningJob:
+            if self.in_listRunningJob(job):
                 if not hasattr(job, "last_power_monitoring"):
                     job.last_power_monitoring = job.start_time
                 self.budget_reserved -= job.reserved_power*(self.bs.time()-job.last_power_monitoring)
