@@ -258,12 +258,21 @@ class EasyEnergyBudget(EasyBackfill):
         return False
 
 
+    def unreserve_energy_job(self, job):
+        if job in self.listJobReservedEnergy:
+            self.listJobReservedEnergy.remove(job)
+            energy_excess = job.reserved_power*job.reserved_power_len
+            self.budget_reserved -= energy_excess
+
 
     def allocJobFCFS(self, job, current_time):
         #overrinding parent method
         if not self.estimate_if_job_fit_in_energy(job, current_time, canUseBudgetLeft=self.allow_FCFS_jobs_to_use_budget_saved_measured):
             return None
         res = super(EasyEnergyBudget, self).allocJobFCFS(job, current_time)
+
+        if res is None:
+            self.unreserve_energy_job(job)
         return res
 
 
@@ -274,7 +283,12 @@ class EasyEnergyBudget(EasyBackfill):
         if not self.estimate_if_job_fit_in_energy(job, current_time):
             return None
         
-        return super(EasyEnergyBudget, self).allocJobBackfill(job, current_time)
+        res = super(EasyEnergyBudget, self).allocJobBackfill(job, current_time)
+        
+        if res is None:
+            self.unreserve_energy_job(job)
+        
+        return res
 
 
 
@@ -373,8 +387,7 @@ class EasyEnergyBudget(EasyBackfill):
         
         ret = super(EasyEnergyBudget, self).allocBackFill(first_job, current_time)
         
-        if first_job in self.listJobReservedEnergy:
-            #remove the energy reservation
-            self.budget_reserved -= first_job.reserved_power*first_job.reserved_power_len
-            self.listJobReservedEnergy.remove(first_job)
+        #remove the energy reservation
+        self.unreserve_energy_job(first_job)
+        
         return ret

@@ -30,13 +30,11 @@ class IntervalContainer(object):
                 break
             item = nextitem
             nextitem = nextitem.next
-        
         #if there is no intersections with exisiting intervals
-        newitem = item is None and (rmTo < nextitem.begin)
+        newitem = item is None and (rmTo < nextitem.begin-1)
         if not(item is None):
-            newitem = newitem or (item.end < rmFrom and nextitem is None) or \
-            (item.end < rmFrom and rmTo < nextitem.begin)
-        
+            newitem = newitem or (item.end+1 < rmFrom and nextitem is None) or \
+            (not(nextitem is None) and item.end+1 < rmFrom and rmTo < nextitem.begin-1)
         if newitem:
             i = Interval(rmFrom,rmTo,item,nextitem)
             if not(item is None):
@@ -46,8 +44,7 @@ class IntervalContainer(object):
             if not(nextitem is None):
                 nextitem.prev = i
             return
-        
-        if not(item is None) and rmFrom <= item.end:
+        if not(item is None) and rmFrom <= item.end+1:
             first_intersection = item
         else:
             first_intersection = nextitem
@@ -56,7 +53,7 @@ class IntervalContainer(object):
         last_intersection = first_intersection
         nextlast_intersection = first_intersection.next
         while not(nextlast_intersection is None):
-            if rmTo < nextlast_intersection.begin:
+            if rmTo < nextlast_intersection.begin-1:
                 break
             last_intersection = nextlast_intersection
             nextlast_intersection = nextlast_intersection.next
@@ -171,6 +168,17 @@ class IntervalContainer(object):
 if __name__ == '__main__':
     l = IntervalContainer()
     l.printme()
+    print "---------------"
+    l.addInterval(13,13)
+    l.addInterval(15,15)
+    l.addInterval(14,14)
+    print l.intersection(13,15) == [(13,15)]
+    l = IntervalContainer()
+    l.addInterval(14,14)
+    l.addInterval(13,13)
+    l.addInterval(15,15)
+    print l.intersection(13,15) == [(13,15)]
+    l = IntervalContainer()
     print "---------------"
     #print l.difference(12, 24) == [(12, 24)]
     l.addInterval(10,20)
