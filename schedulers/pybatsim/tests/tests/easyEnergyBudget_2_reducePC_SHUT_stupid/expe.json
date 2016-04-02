@@ -1,0 +1,31 @@
+{
+    "batsim": {
+        "verbosity": "quiet", 
+        "disable-schedule-tracing": true, 
+        "export": "out", 
+        "energy-plugin": true
+    }, 
+    "platform": "../../platforms/energy_platform_homogeneous_no_net.xml", 
+    "workload": "../../workload_profiles/stupid.json", 
+    "output_dir": "SELF", 
+    "scheduler": {
+        "name": "easyEnergyBudget", 
+        "verbosity": 10, 
+        "protection": true, 
+        "interpreter": "coverage", 
+        "options": {
+            "power_compute": 100.0, 
+            "power_idle": 30.0, 
+            "reduce_powercap_to_save_energy": true, 
+            "pstate_switchon": 0, 
+            "monitoring_period": 5, 
+            "allow_FCFS_jobs_to_use_budget_saved_measured": true, 
+            "pstate_switchoff": 1, 
+            "budget_total": 56000, 
+            "budget_end": 110, 
+            "opportunist_shutdown": true, 
+            "budget_start": 10
+        }, 
+        "name_expe": "easyEnergyBudget_2_reducePC_SHUT_stupid"
+    }
+}
