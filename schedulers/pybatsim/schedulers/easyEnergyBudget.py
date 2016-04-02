@@ -96,7 +96,7 @@ class EasyEnergyBudget(EasyBackfill):
         super(EasyEnergyBudget, self).onJobSubmission(just_submitted_job)
 
     def in_listRunningJob(self, job):
-        for j in listRunningJob:
+        for j in self.listRunningJob:
             if j.id == job.id:
                 return True
         return False
