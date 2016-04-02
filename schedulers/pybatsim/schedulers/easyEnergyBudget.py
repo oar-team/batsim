@@ -43,8 +43,8 @@ class EasyEnergyBudget(EasyBackfill):
             # listFreeSpace => self.shuttingdown_nodes and self.shutteddown_nodes => self.shutteddown_nodes => listFreeSpace
             self.shuttingdown_nodes = IntervalContainer()
             self.shutteddown_nodes = IntervalContainer()
-            self.to_switchon_on_switchoff = []
-            #when we want t ostart a job that use swithedoff nodes
+            self.to_switchon_on_switchoff = IntervalContainer()
+            #when we want to start a job that use swithedoff nodes
             #we first wake up nodes and then start the job
             # the waiting jobs are put there:
             self.waiting_allocs = []
@@ -134,25 +134,24 @@ class EasyEnergyBudget(EasyBackfill):
         if current_time >= self.budget_end:
             self._schedule_jobs(current_time)
 
-    def onMachinePStateChanged(self, nodeid, pstate):
+    def onMachinePStateChanged(self, nodes, pstate):
         if pstate == self.pstate_switchoff:
-            self.shuttingdown_nodes.removeInterval(nodeid, nodeid)
-            #self.shutteddown_nodes.addInterval(nodeid, nodeid) #does nothing
-            if nodeid in self.to_switchon_on_switchoff:
-                self.to_switchon_on_switchoff.remove(nodeid)
-                pstates_to_change = {}
-                pstates_to_change[nodeid] = self.pstate_switchon
+            self.shuttingdown_nodes.removeInterval(nodes[0], nodes[1])
+            #self.shutteddown_nodes.addInterval(nodes[0], nodes[1]) #does nothing
+            if len(self.to_switchon_on_switchoff.intersection(nodes[0], nodes[1])) != 0:
+                self.to_switchon_on_switchoff.removeInterval(nodes[0], nodes[1])
+                pstates_to_change = []
+                pstates_to_change.append( (self.pstate_switchon, (nodes[0], nodes[1])) )
                 self.bs.change_pstates(pstates_to_change)
             return
         elif pstate == self.pstate_switchon:
-            self.shutteddown_nodes.removeInterval(nodeid, nodeid)
+            self.shutteddown_nodes.removeInterval(nodes[0], nodes[1])
             allocs_to_start = []
             for (j, (s,e)) in self.waiting_allocs:
                 inter = self.shutteddown_nodes.intersection(s,e)
                 if len(inter) == 0:
                     #the job is already assign in the freespace structure
                     allocs_to_start.append((j, (s,e)))
-                    break #only one node have its pstate changed at a time
             for a in allocs_to_start:
                 self.waiting_allocs.remove(a)
             self.bs.start_jobs_continuous(allocs_to_start)
@@ -169,19 +168,18 @@ class EasyEnergyBudget(EasyBackfill):
         
         #switchoff idle resources
         if self.opportunist_shutdown and (current_time < self.budget_end and self.budget_start <= current_time):
-            pstates_to_change = {}
+            pstates_to_change = []
             for l in self.listFreeSpace.generator():
                 toshuts = self.shutteddown_nodes.difference(l.first_res, l.last_res)
                 for toshut in toshuts:
                     self.shutteddown_nodes.addInterval(l.first_res, l.last_res)
                     self.shuttingdown_nodes.addInterval(toshut[0], toshut[1])
-                    for i in range(toshut[0], toshut[1]+1):
-                        pstates_to_change[i] = self.pstate_switchoff
+                    pstates_to_change.append( (self.pstate_switchoff, (toshut[0], toshut[1])) )
             self.bs.change_pstates(pstates_to_change)
         if len(allocs) > 0:
             if self.opportunist_shutdown:
                 #if an alloc used shutted down nodes, first switch on them
-                pstates_to_change = {}
+                pstates_to_change = []
                 allocs_to_remove = []
                 for (j, (s,e)) in allocs:
                     intersects = self.shutteddown_nodes.intersection(s,e)
@@ -190,13 +188,10 @@ class EasyEnergyBudget(EasyBackfill):
                             #nodes that are currently switching to off will be switched to on later
                             rinter = self.shuttingdown_nodes.intersection(istart, iend)
                             for (rrs, rre) in rinter:
-                                for i in range(rrs, rre+1):
-                                    self.to_switchon_on_switchoff.append(i)
+                                self.to_switchon_on_switchoff.addInterval(rrs, rre)
                             rdiffs = self.shuttingdown_nodes.difference(istart, iend)
-                            for rdiff in rdiffs:
-                                (ristart, riend) = rdiff
-                                for i in range(ristart, riend+1):
-                                    pstates_to_change[i] = self.pstate_switchon
+                            for (ristart, riend) in rdiffs:
+                                pstates_to_change.append( (self.pstate_switchon, (ristart, riend)) )
                         #remove alloc
                         allocs_to_remove.append((j, (s,e)))
                         self.waiting_allocs.append((j, (s,e)))

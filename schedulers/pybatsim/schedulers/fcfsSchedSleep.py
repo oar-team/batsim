@@ -71,7 +71,7 @@ class FcfsSchedSleep(BatsimScheduler):
         print('switchingOFF_M = ', self.switching_OFF_machines)
 
         scheduled_jobs = []
-        pstates_to_change = {}
+        pstates_to_change = []
         loop = True
 
         # If there is a job to schedule
@@ -110,13 +110,13 @@ class FcfsSchedSleep(BatsimScheduler):
                                 self.sleeping_machines.remove(r)
                                 self.switching_ON_machines.add(r)
                                 self.machines_states[r] = State.SwitchingON.value
-                                pstates_to_change[r] = PState.ComputeFast.value
+                                pstates_to_change.append( (PState.ComputeFast.value, (r,r)) )
                 else: # The job cannot fit now because of other jobs
                     # Let us put all idle machines to sleep
                     for r in self.idle_machines:
                         self.switching_OFF_machines.add(r)
                         self.machines_states[r] = State.SwitchingOFF.value
-                        pstates_to_change[r] = PState.Sleep.value
+                        pstates_to_change.append( (PState.Sleep.value, (r,r)) )
                     self.idle_machines = SortedSet()
 
         # if there is nothing to do, let us put all idle machines to sleep
@@ -124,7 +124,7 @@ class FcfsSchedSleep(BatsimScheduler):
             for r in self.idle_machines:
                 self.switching_OFF_machines.add(r)
                 self.machines_states[r] = State.SwitchingOFF.value
-                pstates_to_change[r] = PState.Sleep.value
+                pstates_to_change.append( (PState.Sleep.value, (r,r)) )
             self.idle_machines = SortedSet()
 
         # update time
@@ -147,7 +147,8 @@ class FcfsSchedSleep(BatsimScheduler):
             self.machines_states[res] = State.Idle.value
         self.scheduleJobs()
 
-    def onMachinePStateChanged(self, machine, new_pstate):
+    def onMachinePStateChanged(self, machines, new_pstate):
+        machine = machines[0]
         if (new_pstate == PState.ComputeFast.value) or (new_pstate == PState.ComputeMedium.value) or (new_pstate == PState.ComputeSlow.value): # switched to a compute pstate
             if self.machines_states[machine] == State.SwitchingON.value:
                 self.switching_ON_machines.remove(machine)

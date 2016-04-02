@@ -84,8 +84,16 @@ class Batsim(object):
         self._msgs_to_send.append( ( self.time(), "E" ) )
         
     def change_pstates(self, pstates_to_change):
+        """
+        should be [ (new_pstate, (first_node, last_node)),  ...]
+        """
         if len(pstates_to_change) > 0:
-            parts = [str(p) + "=" + str(pstates_to_change[p]) for p in pstates_to_change] # create machine=new_pstate string parts
+            parts = []
+            for (new_pstate, (ps, pe)) in pstates_to_change:
+                if ps == pe:
+                    parts.append( str(ps) + "=" + str(new_pstate))
+                else:
+                    parts.append( str(ps)+"-"+str(pe) + "=" + str(new_pstate))
             for part in parts:
                 self._msgs_to_send.append( ( self.time(), "P:" + part ) )
 
@@ -136,7 +144,14 @@ class Batsim(object):
                 self.scheduler.onJobCompletion(j)
             elif data[1] == 'p':
                 opts = data[2].split('=')
-                self.scheduler.onMachinePStateChanged(int(opts[0]), int(opts[1]))
+                nodes = opts[0].split("-")
+                if len(nodes) == 1:
+                    nodeInterval = (int(nodes[0]), int(nodes[0]))
+                elif len(nodes) == 2:
+                    nodeInterval = (int(nodes[0]), int(nodes[1]))
+                else:
+                    raise False, "Not supported"
+                self.scheduler.onMachinePStateChanged(nodeInterval, int(opts[1]))
             elif data[1] == 'e':
                 consumed_energy = float(data[2])
                 self.scheduler.onReportEnergyConsumed(consumed_energy)
