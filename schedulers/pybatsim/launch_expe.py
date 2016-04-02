@@ -46,8 +46,11 @@ def prepare_batsim_cl(options, sock):
 
 def prepare_pybatsim_cl(options, sock):
     interpreter = ["python"]
-    #interpreter = ["pypy", "-OOO"]
-    #interpreter = ["coverage", "run"]
+    if 'interpreter' in options["scheduler"]:
+        if options["scheduler"]["interpreter"] == "coverage":
+            interpreter = ["coverage", "run", "-a"]
+        if options["scheduler"]["interpreter"] == "pypy":
+            interpreter = ["pypy", "-OOO"]
     
     sched_cl = interpreter
     sched_cl.append("launcher.py")
@@ -118,6 +121,8 @@ def launch_expe(options, verbose=True):
     batsim_exec.wait()
     print "Batsim return code: "+str(batsim_exec.returncode)
     
+    return abs(batsim_exec.returncode) + abs(sched_exec.returncode)
+    
     
     
 
@@ -132,7 +137,7 @@ if __name__ == "__main__":
 
     options["options_file"] = options_file
     
-    launch_expe(options,verbose=True)
+    exit(launch_expe(options,verbose=True))
 
 
 
