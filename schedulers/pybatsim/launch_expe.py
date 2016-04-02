@@ -48,7 +48,7 @@ def prepare_pybatsim_cl(options, sock):
     interpreter = ["python"]
     if 'interpreter' in options["scheduler"]:
         if options["scheduler"]["interpreter"] == "coverage":
-            interpreter = ["coverage", "run", "-a"]
+            interpreter = ["python", "-m", "coverage", "run", "-a"]
         if options["scheduler"]["interpreter"] == "pypy":
             interpreter = ["pypy", "-OOO"]
     
