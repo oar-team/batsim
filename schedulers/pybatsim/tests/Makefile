@@ -5,9 +5,13 @@ SIMULS_OUT := $(patsubst %,%/out_jobs.csv,$(EXPE_FOLDERS))
 
 all: simuls
 
-simuls: $(SIMULS_OUT)
+simuls: testIntervals $(SIMULS_OUT) coverage_html
+
+coverage_html: ../.coverage
 	cd ..; coverage html -d tests/coverage_html
 
+testIntervals:
+	cd ..; python -m coverage run -a schedulers/intervalContainer.py
 
 %/out_jobs.csv:
 	cd ..;python launch_expe.py tests/$*/expe.json

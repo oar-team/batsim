@@ -168,41 +168,69 @@ class IntervalContainer(object):
 if __name__ == '__main__':
     l = IntervalContainer()
     l.printme()
-    print "---------------"
+    #print "---------------"
     l.addInterval(13,13)
     l.addInterval(15,15)
     l.addInterval(14,14)
-    print l.intersection(13,15) == [(13,15)]
+    assert l.intersection(13,15) == [(13,15)]
+    l.removeInterval(14,14)
+    l.removeInterval(15,15)
+    l.removeInterval(13,13)
+    l.printme()
+    assert l.intersection(13,15) == []
     l = IntervalContainer()
     l.addInterval(14,14)
     l.addInterval(13,13)
     l.addInterval(15,15)
-    print l.intersection(13,15) == [(13,15)]
-    l = IntervalContainer()
-    print "---------------"
-    #print l.difference(12, 24) == [(12, 24)]
+    assert l.intersection(13,15) == [(13,15)]
+    l.removeInterval(0,100)
+    l.printme()
+    assert l.intersection(13,15) == []
+    #print "---------------"
+    l.addInterval(10,20)
+    l.addInterval(30,40)
+    l.addInterval(50,60)
+    l.removeInterval(15,55)
+    assert l.intersection(0,100) == [(10, 14), (56, 60)]
+    l.removeInterval(0,100)
+    
+    l.addInterval(10,40)
+    l.addInterval(50,60)
+    l.removeInterval(15,35)
+    assert l.intersection(0,100) == [(10, 14), (36, 40), (50, 60)]
+
+    l.removeInterval(0,100)
+    #print "---------------"
+    assert l.difference(12, 24) == [(12, 24)]
     l.addInterval(10,20)
     l.addInterval(30,40)
     l.addInterval(50,60)
     l.printme()
-    print l.difference(0, 0) == [(0, 0)]
-    print l.difference(70, 80) == [(70, 80)]
-    print l.difference(15, 45) == [(21, 29), (41, 45)]
-    print l.difference(5, 65) == [(5, 9), (21, 29), (41, 49), (61, 65)]
-    print l.difference(10, 20) == []
-    print l.difference(20, 50) == [(21, 29), (41, 49)]
+    assert l.difference(0, 0) == [(0, 0)]
+    assert l.difference(70, 80) == [(70, 80)]
+    assert l.difference(15, 45) == [(21, 29), (41, 45)]
+    assert l.difference(5, 65) == [(5, 9), (21, 29), (41, 49), (61, 65)]
+    assert l.difference(10, 20) == []
+    assert l.difference(20, 50) == [(21, 29), (41, 49)]
 
-    print "---------------"
-    print l.intersection(10,30)
-    print l.intersection(100,300)
+    #print "---------------"
+    #print l.intersection(0,100) 
+    assert l.intersection(0,100) == [(10, 20), (30, 40), (50, 60)]
+    assert l.intersection(10,30) == [(10, 20), (30, 30)]
+    assert l.intersection(20,30) == [(20, 20), (30, 30)]
+    assert l.intersection(100,300) == []
+    assert l.intersection(12,15) == [(12, 15)]
+    
     l.removeInterval(10,20)
-    l.printme()
-    print "---------------"
+    
+    #l.printme()
+    #print "---------------"
     l.addInterval(10,20)
     
     l.addInterval(50,110)
     l.addInterval(35,45)
-    l.printme()
+    assert l.intersection(0,30000) == [(10, 20), (30, 45), (50, 110)]
+
     
     
     
