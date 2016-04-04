@@ -1,0 +1,34 @@
+# Simgrid simulator installation from source
+#
+# You have to specify the desired "commit_hash" to be built.
+# Optionally you can specify the install prefix and the working directory.
+#
+# Usage example:
+# global:
+#   simgrid_commit: 20e851bd58a0b31
+# setup:
+# - simgrid_install:
+#   - commit_hash: $$simgrid_commit
+#   # Optional
+#   - install_prefix: /usr
+#   - work_dir: /tmp
+
+- work_dir: /root
+- install_prefix: /usr/local
+
+- install dependencies:
+  - exec_in: apt-get -y --force-yes install libboost-all-dev 2>&1
+- do_it:
+  - exec_in: |
+      mkdir -p $$work_dir
+      cd $$work_dir
+      git clone git://scm.gforge.inria.fr/simgrid/simgrid.git
+  - exec_in: |
+      cd $$work_dir/simgrid
+      git checkout $$commit_hash
+      mkdir build
+  - exec_in: |
+      cd $$work_dir/simgrid/build
+      cmake -DCMAKE_INSTALL_PREFIX=$$install_prefix -Denable_documentation=OFF ../
+      make -j$(nproc)
+      make install

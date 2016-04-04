@@ -8,19 +8,21 @@
 
 ---
 ## Choose one of them the following extends
-checkpoint: btrfs.yaml
-extend: default/chroot/debian8.yaml
 
-#extend: default/virtualbox/debian8.yaml
+# Checkpoint only with btrfs
+#checkpoint: btrfs.yaml
+#extend: default/chroot/debian8.yaml
+
+extend: default/virtualbox/debian8.yaml
 
 #extend: default/qemu/debian8.yaml
 
 global:
+  btrfs_volume: "/"
   virtualbox_memory_size: 2048
   qemu_memory_size : 2048
-  appliance_formats: tar.gz qcow2 vdi
+  appliance_formats: tar.gz
   appliance_tar_compression_level: fast
-  btrfs_volume: "/"
   setup_packages: git cmake build-essential e2fsprogs $$setup_packages
   default_keyboard_layout: fr
   default_timezone: Europe/Paris
@@ -30,6 +32,7 @@ global:
 
   simgrid_commit: 20e851bd58a0b31
   batsim_commit: cb114a9054e6
+  locality_sched_commit: 12df12a
   oar_commit: 2c7c4df
 
 
@@ -41,54 +44,15 @@ setup:
   # General configuration
   #
   - "@base"
-  - enable_root_login:
-    - change_sshd_config:
-      - exec_in: sed -i s/PermitRootLogin\ without-password/PermitRootLogin\ yes/ /etc/ssh/sshd_config
+  - enable_root_ssh_login
 
   #
   # Simulator and schedulers install
   #
   - simgrid_install:
-    - prefix: /usr/local
     - commit_hash: $$simgrid_commit
-    - install dependencies:
-      - exec_in: apt-get -y --force-yes install libboost-all-dev 2>&1
-    - do_it:
-      - exec_in: |
-          mkdir -p $$simctn_dir
-          cd $$simctn_dir
-          git clone git://scm.gforge.inria.fr/simgrid/simgrid.git
-      - exec_in: |
-          cd $$simctn_dir/simgrid
-          git checkout $$commit_hash
-          mkdir build
-      - exec_in: |
-          cd $$simctn_dir/simgrid/build
-          cmake -DCMAKE_INSTALL_PREFIX=$$prefix -Denable_documentation=OFF ../
-          make -j$(nproc)
-          make install
-  - fred_scheduler:
-    - install dependencies:
-      - exec_in: |
-          apt-get -y --force-yes install \
-          liblog-log4perl-perl \
-          libjson-perl \
-          liblist-moreutils-perl \
-          libfile-slurp-perl \
-          2>&1
-    - get_it:
-      - exec_in: |
-          cd $$simctn_dir
-          git clone https://github.com/wagnerf42/batch-simulator.git
-      - exec_in: |
-          cd $$simctn_dir/batch-simulator
-          git checkout 12df12a
-          cd ProcessorRange
-          perl Makefile.PL
-          make
-          make install
-          cd ..
-          cp log4perl.conf.template log4perl.conf
+  - locality_scheduler:
+    - commit_hash: $$locality_sched_commit
   - oar_sched:
     - install dependencies:
       - exec_in: apt-get -y --force-yes install python3-pip 2>&1
@@ -128,12 +92,6 @@ setup:
           make -j$(nproc)
           make install
 
-  - extrae:
-    - extrae_home: $$simctn_dir
-
-  - NAS_benchmark:
-    - NAS_Home: $$simctn_dir
-
   #
   # Visualization tools
   #
@@ -169,7 +127,7 @@ setup:
           git clone https://github.com/oar-team/evalys.git
       - exec_in: |
           cd $$simctn_dir/evalys
-          pip3 install -e .
+          pip3 install .
 
   # Evironement capture and sharing for runtime extraction
   #
@@ -184,9 +142,9 @@ setup:
   #
 
   # Import my personal dev tools
-  - my_dev_tools
+  #- my_dev_tools
   # set the dev git repository instead of the Read-Only ones
-  - set_dev_git_repo
+  #- set_dev_git_repo
 
 export:
   - "@base"

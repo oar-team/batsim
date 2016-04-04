@@ -1,0 +1,44 @@
+# Locality aware scheduler
+#
+# Was developped for this publication:
+# Lucarelli, Giorgio, Fernando Mendonca, Denis Trystram, and Frederic
+# Wagner. “Contiguity and Locality in Backfilling Scheduling.” In Cluster,
+# Cloud and Grid Computing (CCGrid), 2015 15th IEEE/ACM International
+# Symposium on, 586–95. IEEE, 2015.
+# http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7152524.
+#
+# You have to specify the desired "commit_hash" to be built.
+# Optionally you can specify the working directory.
+#
+# Usage example:
+# global:
+#   locality_sched_commit: 12df12a
+# setup:
+#   - commit_hash: $$locality_sched_commit
+#   # Optional
+#   - work_dir: /tmp
+
+- work_dir: /root
+
+- install dependencies:
+  - exec_in: |
+      apt-get -y --force-yes install \
+      liblog-log4perl-perl \
+      libjson-perl \
+      liblist-moreutils-perl \
+      libfile-slurp-perl \
+      2>&1
+- get_it:
+  - exec_in: |
+      mkdir -p $$work_dir
+      cd $$work_dir
+      git clone https://github.com/wagnerf42/batch-simulator.git
+  - exec_in: |
+      cd $$work_dir/batch-simulator
+      git checkout $$commit_hash
+      cd ProcessorRange
+      perl Makefile.PL
+      make
+      make install
+      cd ..
+      cp log4perl.conf.template log4perl.conf

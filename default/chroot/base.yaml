@@ -46,7 +46,7 @@ global:
   # Allowed formats are: tar.gz, tar.bz2, tar.xz, tar.lzo, qcow, qcow2, qed, vdi, raw, vmdk
   appliance_formats: qcow2 tar.gz
   appliance_filename: "$$kameleon_cwd/$${kameleon_recipe_name}"
-  appliance_tar_excludes: >
+  appliance_tar_excludes: >-
     ./etc/fstab ./root/.bash_history ./root/kameleon_workdir ./root/.ssh
     ./var/tmp/* ./tmp/* ./var/log/* ./dev/* ./proc/* ./run/*
     ./sys/*
@@ -78,7 +78,6 @@ global:
 # Bootstrap the new system and create the 'in_context'
 bootstrap:
   - enable_checkpoint
-  - download_kameleon_helpers
   - prepare_chroot
   - start_chroot
 
