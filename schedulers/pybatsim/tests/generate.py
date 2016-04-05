@@ -28,7 +28,7 @@ schedulers += [{
         "protection":True,
         "interpreter": "coverage",
         "options": {
-            "budget_total": 100*(7-b)*100+30*b*100,
+            "budget_total": 100*b*100+30*(7-b)*100,
             "budget_start": 10,
             "budget_end": 110,
             "allow_FCFS_jobs_to_use_budget_saved_measured": allow[0],
@@ -58,7 +58,7 @@ options = [{
         "export":"out",# The export filename prefix used to generate simulation output
         "energy-plugin": True,#        Enables energy-aware experiments
         "disable-schedule-tracing": True,#remove paje output
-        "verbosity": "quiet"  #Sets the Batsim verbosity level. Available values
+        "verbosity": "information"  #Sets the Batsim verbosity level. Available values
                                     # are : quiet, network-only, information (default), debug.
         },
     "scheduler": copy.deepcopy(s)

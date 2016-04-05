@@ -1,160 +1,25 @@
 
 
-INFINITY = float('inf')
+
 
 class Interval(object):
-    def __init__(self, begin, end, prev, next):
-        assert begin<=end
-        self.begin = begin
+    def __init__(self, start, end, state, prev, next):
+        assert start<=end
+        self.start = start
         self.end = end
+        self.state = state
         self.prev = prev
         self.next = next
     def __repr__(self):
-        return "<Interval ["+str(self.begin)+"-"+str(self.end)+"]>"
+        return "<Interval "+str(self.state)+" ["+str(self.start)+"-"+str(self.end)+"]>"
 
 
-class IntervalContainer(object):
-    def __init__(self):
-        self.first_item = None
-    
-    def addInterval(self, rmFrom, rmTo):
-        if self.first_item is None:
-            self.first_item = Interval(rmFrom,rmTo,None,None)
-            return
-        
-        #find the first elm
-        item = None
-        nextitem = self.first_item
-        while not(nextitem is None):
-            if rmFrom < nextitem.begin:
-                break
-            item = nextitem
-            nextitem = nextitem.next
-        #if there is no intersections with exisiting intervals
-        newitem = item is None and (rmTo < nextitem.begin-1)
-        if not(item is None):
-            newitem = newitem or (item.end+1 < rmFrom and nextitem is None) or \
-            (not(nextitem is None) and item.end+1 < rmFrom and rmTo < nextitem.begin-1)
-        if newitem:
-            i = Interval(rmFrom,rmTo,item,nextitem)
-            if not(item is None):
-                item.next = i
-            else:
-                self.first_item = i
-            if not(nextitem is None):
-                nextitem.prev = i
-            return
-        if not(item is None) and rmFrom <= item.end+1:
-            first_intersection = item
-        else:
-            first_intersection = nextitem
-            nextitem.begin = rmFrom
-        
-        last_intersection = first_intersection
-        nextlast_intersection = first_intersection.next
-        while not(nextlast_intersection is None):
-            if rmTo < nextlast_intersection.begin-1:
-                break
-            last_intersection = nextlast_intersection
-            nextlast_intersection = nextlast_intersection.next
-        
-        first_intersection.end = max(last_intersection.end, rmTo)
-        first_intersection.next = nextlast_intersection
-        if not(nextlast_intersection is None):
-            nextlast_intersection.prev = first_intersection
-        
-        return
-        
-    def removeInterval(self, rmFrom, rmTo):
-        """
-        remove from rmFrom to rmTo INCLUDED:
-        removing (5,7) in (1,10) will produce (1,4),(8,10)
-        """
-        assert rmFrom <= rmTo
-        item = self.first_item
-        while not(item is None):
-            if rmFrom <= item.begin and item.end <= rmTo:
-                #remove item
-                if item.prev is None:
-                    self.first_item = item.next
-                else:
-                    item.prev.next = item.next
-                if item.next is None:
-                    pass
-                else:
-                    item.next.prev = item.prev
-            elif  item.begin < rmFrom and rmTo < item.end:
-                #split item
-                newInter = Interval(rmTo+1, item.end, item, item.next)
-                if not(newInter.next is None):
-                    newInter.next.prev = newInter
-                item.next = newInter
-                item.end = rmFrom-1
-                return
-            elif rmFrom <= item.begin and item.begin <= rmTo:
-                item.begin = rmTo+1
-                return
-            elif rmFrom <= item.end and item.end <= rmTo:
-                item.end = rmFrom-1
-            
-            item = item.next
-    
-    
-    
-    def intersection(self, rmFrom, rmTo):
-        """
-        intersection from rmFrom to rmTo INCLUDED
-        """
-        assert rmFrom <= rmTo
-        item = self.first_item
-        ret = []
-        while not(item is None):
-            if rmFrom <= item.begin and item.end <= rmTo:
-                ret.append( (item.begin, item.end) )
-            elif  item.begin < rmFrom and rmTo < item.end:
-                ret.append( (rmFrom, rmTo) )
-                return ret
-            elif rmFrom <= item.begin and item.begin <= rmTo:
-                ret.append( (item.begin, rmTo) )
-                return ret
-            elif rmFrom <= item.end and item.end <= rmTo:
-                ret.append( (rmFrom, item.end) )
-            
-            item = item.next
-        return ret
-    
-    
-    def difference(self, rmFrom, rmTo):
-        """
-        return the part of (rmFrom, rmTo) that is not in the container
-        """
-        assert rmFrom <= rmTo
-        previtem = None
-        item = self.first_item
-        ret = []
-        while not(item is None):
-            if previtem is None and rmFrom < item.begin:
-                ret.append( (rmFrom, min(item.begin-1, rmTo)) )
-            elif previtem is None:
-                pass
-            elif rmTo <= previtem.end:
-                return ret
-            elif rmFrom < item.begin and item.begin <= rmTo:
-                ret.append( (max(rmFrom, previtem.end+1), item.begin-1) )
-            elif previtem.end < rmTo and rmTo < item.begin:
-                ret.append( (max(rmFrom, previtem.end+1), rmTo) )
-                return ret
-            
-            previtem = item
-            item = item.next
-        if previtem is None:#and item is None
-            return [(rmFrom, rmTo)]
-        if not(previtem is None) and previtem.end < rmTo:
-            ret.append( (max(previtem.end+1, rmFrom), rmTo) )
-            
-        return ret
-
-
+class IntervalOfStates(object):
+    def __init__(self, minn, maxx, startingState):
+        self.first_item = Interval(minn, maxx, startingState, None, None)
+        self.callbacks = {}
+        self.minn = minn
+        self.maxx = maxx
 
     def printme(self):
         item = self.first_item
@@ -162,76 +27,218 @@ class IntervalContainer(object):
             print item
             item = item.next
 
+    def registerCallback(self, fromState, toState, callback):
+        self.callbacks[(fromState, toState)] = callback
+
+
+    def callCallback(self, start, end, fromState, toState, optCallBack):
+        #print "()() callCallback [", start, "-", end, "] ", fromState, "=>", toState
+        try:
+            func =  self.callbacks[(fromState, toState)]
+        except KeyError:
+            return
+        func(optCallBack, start, end, fromState, toState)
+
+    def changeState(self, start, end, toState, optCallBack=None):
+        """
+        changeState from start to end to toState
+        callbacks are called after all the modifications
+        """
+        assert start>=self.minn
+        assert end<=self.maxx
+        
+        #print "==== changeState", start, end, toState
+        callbacks_to_call = []
+        #find first item
+        item = self.first_item
+        while not(item is None):
+            if start <= item.end:
+                break
+            item = item.next
+        #print "item", item
+        
+        if item.start == start and not(item.prev is None) and item.prev.state == toState:
+            item = item.prev
+        
+        if item.state == toState:
+            #print "grow existing item"
+            newInter = Interval(item.start, end, toState, item.prev, None)
+            prev_item = item.prev
+        elif item.start == start:
+            #print "change state, keep same inter"
+            newInter = Interval(item.start, end, toState, item.prev, None)
+            prev_item = item.prev
+        else:
+            #print "split item"
+            newInter = Interval(start, end, toState, item, None)
+            prev_item = item
+        
+        if prev_item is None:
+            item = item
+        else:
+            item = prev_item
+        while not(item is None):
+            if end == item.end and not(item.next is None) and item.next.state == toState:
+                #if the next item have the same state
+                # we will stop the search on the next item
+                # to then grow newInterval upto the next item
+                pass
+            elif end <= item.end:
+                break
+            s = max(item.start, start)
+            e = min(item.end, end)
+            if s <= e:
+                callbacks_to_call.append((s, e, item.state, toState, optCallBack))
+            
+            item = item.next
+        
+        #print "next item", item
+        if item.end == end:
+            #print "just delete it"
+            newInter.next = item.next
+            if not(item.next is None):
+                item.next.prev = newInter
+            nextInter = item.next
+        else:
+            if item.state == toState:
+                #print "grow"
+                newInter.end = item.end
+                newInter.next = item.next
+                if not(item.next is None):
+                    item.next.prev = newInter
+            else:
+                #print "split"
+                nextInter = Interval(end+1, item.end, item.state, newInter, item.next)
+                if not(item.next is None):
+                    item.next.prev = nextInter
+                
+                newInter.next = nextInter
+        
+        s = max(item.start, start)
+        e = min(item.end, end)
+        if s <= e:
+            callbacks_to_call.append((s, e, item.state,toState, optCallBack))
+        
+        
+        #insert new item in the list compeltly
+        if prev_item is None:
+            #print "prev_item is None"
+            self.first_item = newInter
+        else:
+            #print "update prev_item"
+            prev_item.next = newInter
+            prev_item.end = min(start-1, prev_item.end)
+        
+        #call all the callbacks
+        for (s,e,fst,tst,o) in callbacks_to_call:
+                self.callCallback(s,e,fst,tst,o)
+        
+
+
+    def contains(self, start, end, state):
+        #print "==== contains", start, end, state
+        item = self.first_item
+        while not(item is None):
+            if item.start <= start and end <= item.end and item.state == state:
+                return True
+            if start < item.start:
+                return False
+            item = item.next
+        return False
 
 
 
 if __name__ == '__main__':
-    l = IntervalContainer()
-    l.printme()
-    #print "---------------"
-    l.addInterval(13,13)
-    l.addInterval(15,15)
-    l.addInterval(14,14)
-    assert l.intersection(13,15) == [(13,15)]
-    l.removeInterval(14,14)
-    l.removeInterval(15,15)
-    l.removeInterval(13,13)
-    l.printme()
-    assert l.intersection(13,15) == []
-    l = IntervalContainer()
-    l.addInterval(14,14)
-    l.addInterval(13,13)
-    l.addInterval(15,15)
-    assert l.intersection(13,15) == [(13,15)]
-    l.removeInterval(0,100)
-    l.printme()
-    assert l.intersection(13,15) == []
-    #print "---------------"
-    l.addInterval(10,20)
-    l.addInterval(30,40)
-    l.addInterval(50,60)
-    l.removeInterval(15,55)
-    assert l.intersection(0,100) == [(10, 14), (56, 60)]
-    l.removeInterval(0,100)
     
-    l.addInterval(10,40)
-    l.addInterval(50,60)
-    l.removeInterval(15,35)
-    assert l.intersection(0,100) == [(10, 14), (36, 40), (50, 60)]
+    from enum import Enum
 
-    l.removeInterval(0,100)
-    #print "---------------"
-    assert l.difference(12, 24) == [(12, 24)]
-    l.addInterval(10,20)
-    l.addInterval(30,40)
-    l.addInterval(50,60)
-    l.printme()
-    assert l.difference(0, 0) == [(0, 0)]
-    assert l.difference(70, 80) == [(70, 80)]
-    assert l.difference(15, 45) == [(21, 29), (41, 45)]
-    assert l.difference(5, 65) == [(5, 9), (21, 29), (41, 49), (61, 65)]
-    assert l.difference(10, 20) == []
-    assert l.difference(20, 50) == [(21, 29), (41, 49)]
+    class State(Enum):
+        SwitchedON = 0
+        SwitchedOFF = 1
+        ToSwitchOnWhenSwitchedOFF = 2
+        SwitchingON = 3
+        SwitchingOFF = 4
 
-    #print "---------------"
-    #print l.intersection(0,100) 
-    assert l.intersection(0,100) == [(10, 20), (30, 40), (50, 60)]
-    assert l.intersection(10,30) == [(10, 20), (30, 30)]
-    assert l.intersection(20,30) == [(20, 20), (30, 30)]
-    assert l.intersection(100,300) == []
-    assert l.intersection(12,15) == [(12, 15)]
     
-    l.removeInterval(10,20)
+    expecting_state = []
+    def testcallback(opt, start, end, fromState, toState):
+        #print "()() callCallback [", start, "-", end, "] ", fromState, "=>", toState
+        s = expecting_state.pop(0)
+        assert s == (start, end, fromState, toState), "Expecting "+str(s)+" HAD "+str((start, end, fromState, toState))
+    
+    l = IntervalOfStates(0,100,State.SwitchedON)
+    
+    for i in State:
+        for j in State:
+            l.registerCallback(i, j, testcallback)
+    
+    #print "-----------------"
+    #l.printme()
+    #print "-----------------"
+    
+    
+    expecting_state.append((0, 0, State.SwitchedON, State.SwitchedOFF))
+    l.changeState(0, 0, State.SwitchedOFF)
+    
+    expecting_state.append((0, 0, State.SwitchedOFF, State.SwitchedON))
+    l.changeState(0, 0, State.SwitchedON)
+    
+    
+    expecting_state.append((100, 100, State.SwitchedON, State.SwitchedOFF))
+    l.changeState(100, 100, State.SwitchedOFF)
+    
+    expecting_state.append((100, 100, State.SwitchedOFF, State.SwitchedON))
+    l.changeState(100, 100, State.SwitchedON)
+    
+    
+    expecting_state.append((10, 50, State.SwitchedON, State.SwitchedOFF))
+    l.changeState(10, 50, State.SwitchedOFF)
+    expecting_state.append((45, 50, State.SwitchedOFF, State.SwitchingOFF))
+    expecting_state.append((51, 70, State.SwitchedON, State.SwitchingOFF))
+    l.changeState(45, 70, State.SwitchingOFF)
+    expecting_state.append((45, 70, State.SwitchingOFF, State.SwitchingON))
+    l.changeState(45, 70, State.SwitchingON)
+    
+    
+    
+    expecting_state.append((5, 9, State.SwitchedON, State.ToSwitchOnWhenSwitchedOFF))
+    expecting_state.append((10, 44, State.SwitchedOFF, State.ToSwitchOnWhenSwitchedOFF))
+    expecting_state.append((45, 70, State.SwitchingON, State.ToSwitchOnWhenSwitchedOFF))
+    expecting_state.append((71, 95, State.SwitchedON, State.ToSwitchOnWhenSwitchedOFF))
+    l.changeState(5, 95, State.ToSwitchOnWhenSwitchedOFF)
+    
+    
+    
+    expecting_state.append((5, 95, State.ToSwitchOnWhenSwitchedOFF, State.SwitchedON))
+    l.changeState(5, 95, State.SwitchedON)
+    
+    
+    
+    expecting_state.append((0, 100, State.SwitchedON, State.SwitchedON))
+    l.changeState(0, 100, State.SwitchedON)
+    
+    
+    expecting_state.append((10, 20, State.SwitchedON, State.ToSwitchOnWhenSwitchedOFF))
+    l.changeState(10, 20, State.ToSwitchOnWhenSwitchedOFF)
+    expecting_state.append((30, 40, State.SwitchedON, State.ToSwitchOnWhenSwitchedOFF))
+    l.changeState(30, 40, State.ToSwitchOnWhenSwitchedOFF)
+    
+    expecting_state.append((21, 29, State.SwitchedON, State.ToSwitchOnWhenSwitchedOFF))
+    l.changeState(21, 29, State.ToSwitchOnWhenSwitchedOFF)
+    
+    expecting_state.append((50, 60, State.SwitchedON, State.ToSwitchOnWhenSwitchedOFF))
+    l.changeState(50, 60, State.ToSwitchOnWhenSwitchedOFF)
+    
+    expecting_state.append((45, 49, State.SwitchedON, State.SwitchingON))
+    expecting_state.append((50, 55, State.ToSwitchOnWhenSwitchedOFF, State.SwitchingON))
+    l.changeState(45, 55, State.SwitchingON)
+    
+    
+    assert len(expecting_state) == 0
     
     #l.printme()
-    #print "---------------"
-    l.addInterval(10,20)
-    
-    l.addInterval(50,110)
-    l.addInterval(35,45)
-    assert l.intersection(0,30000) == [(10, 20), (30, 45), (50, 110)]
-
-    
-    
-    
+    assert l.contains(45,55,State.SwitchingON) == True
+    assert l.contains(42,42,State.SwitchedON) == True
+    assert l.contains(45,55,State.SwitchingOFF) == False
+    assert l.contains(30,70,State.SwitchingOFF) == False
     

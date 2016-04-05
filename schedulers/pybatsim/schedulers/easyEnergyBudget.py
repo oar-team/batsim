@@ -3,6 +3,14 @@
 from easyBackfill import *
 from intervalContainer import *
 
+from enum import Enum
+class State(Enum):
+    SwitchedON = 0
+    SwitchedOFF = 1
+    WantingToStartJob = 2
+    SwitchingON = 3
+    SwitchingOFF = 4
+
 
 class EasyEnergyBudget(EasyBackfill):
     def __init__(self, options):
@@ -37,18 +45,6 @@ class EasyEnergyBudget(EasyBackfill):
         self.opportunist_shutdown = options["opportunist_shutdown"]
         self.pstate_switchon = options["pstate_switchon"]
         self.pstate_switchoff = options["pstate_switchoff"]
-        if self.opportunist_shutdown:
-            #Node lifetime:
-            # listFreeSpace => "Computing" => listFreeSpace
-            # listFreeSpace => self.shuttingdown_nodes and self.shutteddown_nodes => self.shutteddown_nodes => listFreeSpace
-            self.shuttingdown_nodes = IntervalContainer()
-            self.shutteddown_nodes = IntervalContainer()
-            self.to_switchon_on_switchoff = IntervalContainer()
-            #when we want to start a job that use swithedoff nodes
-            #we first wake up nodes and then start the job
-            # the waiting jobs are put there:
-            self.waiting_allocs = []
-            
 
         if self.reduce_powercap_to_save_energy == self.estimate_energy_jobs_to_save_energy:
             assert False, "can't activate reduce_powercap_to_save_energy and estimate_energy_jobs_to_save_energy"
@@ -56,6 +52,40 @@ class EasyEnergyBudget(EasyBackfill):
 
         super(EasyEnergyBudget, self).__init__(options)
 
+
+
+    def onAfterBatsimInit(self):
+        super(EasyEnergyBudget, self).onAfterBatsimInit()
+        
+        
+        if self.opportunist_shutdown:
+            self.nodes_states = IntervalOfStates(0,self.bs.nb_res-1,State.SwitchedON)
+            for i in State:
+                for j in State:
+                    self.nodes_states.registerCallback(i, j, nodes_states_error)
+            
+            self.nodes_states.registerCallback(State.SwitchedON, State.SwitchingOFF, nodes_states_SwitchedON_SwitchingOFF)
+            self.nodes_states.registerCallback(State.SwitchingOFF, State.SwitchedOFF, nodes_states_SwitchingOFF_SwitchedOFF)
+            self.nodes_states.registerCallback(State.SwitchedOFF, State.SwitchingON, nodes_states_SwitchedOFF_SwitchingON)
+            self.nodes_states.registerCallback(State.SwitchingON, State.SwitchedON, nodes_states_SwitchingON_SwitchedON)
+            
+            
+            self.nodes_states.registerCallback(State.SwitchedON, State.WantingToStartJob, nodes_states_SwitchedON_WantingToStartJob)
+            self.nodes_states.registerCallback(State.SwitchingOFF, State.WantingToStartJob, nodes_states_SwitchingOFF_WantingToStartJob)
+            self.nodes_states.registerCallback(State.SwitchedOFF, State.WantingToStartJob, nodes_states_SwitchedOFF_WantingToStartJob)
+            self.nodes_states.registerCallback(State.SwitchingON, State.WantingToStartJob, nodes_states_SwitchingON_WantingToStartJob)
+            
+            self.nodes_states.registerCallback(State.WantingToStartJob, State.SwitchedON, nodes_states_WantingToStartJob_SwitchedON)
+            self.nodes_states.registerCallback(State.WantingToStartJob, State.SwitchedOFF, nodes_states_WantingToStartJob_SwitchedOFF)
+            
+            
+            self.nodes_states.registerCallback(State.SwitchedOFF, State.SwitchingOFF, nodes_states_undo_changement)
+            self.nodes_states.registerCallback(State.SwitchingOFF, State.SwitchingOFF, nodes_states_pass)
+            
+            #when we want to start a job that use non-switchedON nodes
+            #we first wake up nodes and then start the job
+            # the waiting jobs are put there:
+            self.waiting_allocs = {}
 
 
     def onJobCompletion(self, job):
@@ -117,12 +147,13 @@ class EasyEnergyBudget(EasyBackfill):
         self.monitoring_last_value_time = self.bs.time()
         
         for job in self.listJobReservedEnergy:
-            if self.in_listRunningJob(job):
-                if not hasattr(job, "last_power_monitoring"):
-                    job.last_power_monitoring = job.start_time
-                self.budget_reserved -= job.reserved_power*(self.bs.time()-job.last_power_monitoring)
-                assert self.budget_reserved >= 0, "self.budget_reserved >= 0 ("+str(self.budget_reserved)
-                job.last_power_monitoring = self.bs.time()
+            assert self.in_listRunningJob(job)
+            if not hasattr(job, "last_power_monitoring"):
+                stime = max(job.start_time, self.budget_start) 
+                job.last_power_monitoring = stime
+            self.budget_reserved -= job.reserved_power*(self.bs.time()-job.last_power_monitoring)
+            assert self.budget_reserved >= 0, "self.budget_reserved >= 0 ("+str(self.budget_reserved)
+            job.last_power_monitoring = self.bs.time()
         
         self._schedule_jobs(self.bs.time())
         
@@ -139,27 +170,14 @@ class EasyEnergyBudget(EasyBackfill):
         if current_time >= self.budget_end:
             self._schedule_jobs(current_time)
 
+
+
     def onMachinePStateChanged(self, nodes, pstate):
         if pstate == self.pstate_switchoff:
-            self.shuttingdown_nodes.removeInterval(nodes[0], nodes[1])
-            #self.shutteddown_nodes.addInterval(nodes[0], nodes[1]) #does nothing
-            if len(self.to_switchon_on_switchoff.intersection(nodes[0], nodes[1])) != 0:
-                self.to_switchon_on_switchoff.removeInterval(nodes[0], nodes[1])
-                pstates_to_change = []
-                pstates_to_change.append( (self.pstate_switchon, (nodes[0], nodes[1])) )
-                self.bs.change_pstates(pstates_to_change)
-            return
+            self.nodes_states.changeState(nodes[0], nodes[1], State.SwitchedOFF, self)
         elif pstate == self.pstate_switchon:
-            self.shutteddown_nodes.removeInterval(nodes[0], nodes[1])
-            allocs_to_start = []
-            for (j, (s,e)) in self.waiting_allocs:
-                inter = self.shutteddown_nodes.intersection(s,e)
-                if len(inter) == 0:
-                    #the job is already assign in the freespace structure
-                    allocs_to_start.append((j, (s,e)))
-            for a in allocs_to_start:
-                self.waiting_allocs.remove(a)
-            self.bs.start_jobs_continuous(allocs_to_start)
+            self.nodes_states.changeState(nodes[0], nodes[1], State.SwitchedON, self)
+
 
 
     def _schedule_jobs(self, current_time):
@@ -170,58 +188,57 @@ class EasyEnergyBudget(EasyBackfill):
             allocs += self.allocBackFill(first_job, current_time)
             self.listWaitingJob.insert(0, first_job)
         
-        
         #switchoff idle resources
         if self.opportunist_shutdown and (current_time < self.budget_end and self.budget_start <= current_time):
-            pstates_to_change = []
             for l in self.listFreeSpace.generator():
-                toshuts = self.shutteddown_nodes.difference(l.first_res, l.last_res)
-                for toshut in toshuts:
-                    self.shutteddown_nodes.addInterval(l.first_res, l.last_res)
-                    self.shuttingdown_nodes.addInterval(toshut[0], toshut[1])
-                    pstates_to_change.append( (self.pstate_switchoff, (toshut[0], toshut[1])) )
-            self.bs.change_pstates(pstates_to_change)
-        if len(allocs) > 0:
-            if self.opportunist_shutdown:
-                #if an alloc used shutted down nodes, first switch on them
-                pstates_to_change = []
-                allocs_to_remove = []
-                for (j, (s,e)) in allocs:
-                    intersects = self.shutteddown_nodes.intersection(s,e)
-                    if len(intersects) != 0:
-                        for (istart, iend) in intersects:
-                            #nodes that are currently switching to off will be switched to on later
-                            rinter = self.shuttingdown_nodes.intersection(istart, iend)
-                            for (rrs, rre) in rinter:
-                                self.to_switchon_on_switchoff.addInterval(rrs, rre)
-                            rdiffs = self.shuttingdown_nodes.difference(istart, iend)
-                            for (ristart, riend) in rdiffs:
-                                pstates_to_change.append( (self.pstate_switchon, (ristart, riend)) )
-                        #remove alloc
-                        allocs_to_remove.append((j, (s,e)))
-                        self.waiting_allocs.append((j, (s,e)))
-                for a in allocs_to_remove:
-                    allocs.remove(a)
-            
-                self.bs.change_pstates(pstates_to_change)
+                self.nodes_states.changeState(l.first_res, l.last_res, State.SwitchingOFF, self)
         
-        
-        self.bs.start_jobs_continuous(allocs)
-        
+        if self.opportunist_shutdown:
+            for (j, (s,e)) in allocs:
+                self.nodes_states.changeState(s, e, State.WantingToStartJob, (self, (j, (s,e))) )
+        else:
+            self.bs.start_jobs_continuous(allocs)
 
+
+    #TODO: this function is useless
+    #we already compute this value in findFutureAlloc
     def estimate_energy_running_jobs_and_idle_resources(self, current_time):
-        e = 0
-        unused_res = self.bs.nb_res
+        e = 0.0
         starttime = max(self.budget_start, current_time)
         for j in self.listRunningJob:
             endtime = min(j.estimate_finish_time, self.budget_end)
+            if endtime<starttime:
+                continue
             e += j.requested_resources*self.power_compute*(endtime-starttime)
             e += j.requested_resources*self.power_idle*(endtime-self.budget_end)
-            unused_res -= j.requested_resources
         e += self.power_idle*(self.budget_end-starttime)
         return e
 
-    def estimate_if_job_fit_in_energy(self, job, start_time, listFreeSpace=None, canUseBudgetLeft=False):
+
+    def power_consumed(self, listFreeSpace, addUsedProc=0.0):
+        free_procs = listFreeSpace.free_processors - addUsedProc
+        
+        used_procs = self.bs.nb_res - free_procs
+        
+        power = used_procs*self.power_compute + free_procs*self.power_idle
+        
+        return power
+
+
+    def virtual_energy_excess(self, start, end, power):
+        
+        stime = max(start, self.budget_start)
+        etime = min(self.budget_end, end)
+        if stime>=etime:
+            #we are outside energy budget
+            return (0.0, 0.0)
+        energy_excess = (power-self.powercap)*(etime-stime)
+        
+        return (energy_excess, (etime-stime))
+        
+
+
+    def estimate_if_job_fit_in_energy(self, job, start_time, listFreeSpace=None, canUseBudgetLeft=False, budgetVirtualySavedAtStartTime=0.0):
         """
         compute the power consumption of the cluster
         if <job> is not None then add the power consumption of this job as if it were running on the cluster.
@@ -233,11 +250,7 @@ class EasyEnergyBudget(EasyBackfill):
         if listFreeSpace is None:
             listFreeSpace = self.listFreeSpace
         
-        free_procs = listFreeSpace.free_processors - job.requested_resources
-        
-        used_procs = self.bs.nb_res - free_procs
-        
-        power = used_procs*self.power_compute + free_procs*self.power_idle
+        power = self.power_consumed(listFreeSpace, job.requested_resources)
         
         pc = (power <= self.powercap)
         if pc:
@@ -245,15 +258,12 @@ class EasyEnergyBudget(EasyBackfill):
         if not canUseBudgetLeft:
             return pc
         
-        stime = max(start_time, self.budget_start)
-        etime = min(self.budget_end, start_time+job.requested_time)
-        energy_excess = (power-self.powercap)*(etime-stime)
-        if energy_excess <= self.budget_saved_measured-self.budget_reserved:
+        (energy_excess, energy_excess_len) = self.virtual_energy_excess(start_time, start_time+job.requested_time, power)
+        if energy_excess <= budgetVirtualySavedAtStartTime+ self.budget_saved_measured-self.budget_reserved:
             self.budget_reserved += energy_excess
             job.reserved_power = (power-self.powercap)
-            job.reserved_power_len = (etime-stime)
+            job.reserved_power_len = energy_excess_len
             self.listJobReservedEnergy.append(job)
-            job.last_power_monitoring = stime
             return True
         return False
 
@@ -270,7 +280,6 @@ class EasyEnergyBudget(EasyBackfill):
         if not self.estimate_if_job_fit_in_energy(job, current_time, canUseBudgetLeft=self.allow_FCFS_jobs_to_use_budget_saved_measured):
             return None
         res = super(EasyEnergyBudget, self).allocJobFCFS(job, current_time)
-
         if res is None:
             self.unreserve_energy_job(job)
         return res
@@ -309,19 +318,25 @@ class EasyEnergyBudget(EasyBackfill):
             #return (alloc, self.budget_end)
 
         previous_current_time = self.bs.time()
+        budgetVirtualySaved = 0.0
         for j in self.listRunningJob:
+            if self.allow_FCFS_jobs_to_use_budget_saved_measured:
+                power_consumed_until_end_of_j = self.power_consumed(listFreeSpaceTemp)
+            
             new_free_space_created_by_this_unallocation = listFreeSpaceTemp.unassignJob(j)
+            
+            if self.allow_FCFS_jobs_to_use_budget_saved_measured:
+                (energy, dontcare) = self.virtual_energy_excess(previous_current_time, j.estimate_finish_time, power_consumed_until_end_of_j)
+                budgetVirtualySaved += energy
 
             fit_in_procs = job.requested_resources <= new_free_space_created_by_this_unallocation.res
-            
-            fit_in_energy = self.estimate_if_job_fit_in_energy(job, j.estimate_finish_time, listFreeSpaceTemp, canUseBudgetLeft=self.allow_FCFS_jobs_to_use_budget_saved_measured)
-
-            if fit_in_procs and fit_in_energy:
-                alloc = listFreeSpaceTemp.assignJob(new_free_space_created_by_this_unallocation, job, j.estimate_finish_time)
-                #we find a valid allocation
-                if j.estimate_finish_time <= self.bs.time():
-                    continue
-                return (alloc, j.estimate_finish_time)
+            if fit_in_procs:
+                fit_in_energy = self.estimate_if_job_fit_in_energy(job, j.estimate_finish_time, listFreeSpaceTemp, canUseBudgetLeft=self.allow_FCFS_jobs_to_use_budget_saved_measured, budgetVirtualySavedAtStartTime=budgetVirtualySaved)
+                if fit_in_energy:
+                    alloc = listFreeSpaceTemp.assignJob(new_free_space_created_by_this_unallocation, job, j.estimate_finish_time)
+                    #we find a valid allocation
+                    assert j.estimate_finish_time > self.bs.time()
+                    return (alloc, j.estimate_finish_time)
             
             previous_current_time = j.estimate_finish_time
         
@@ -381,7 +396,7 @@ class EasyEnergyBudget(EasyBackfill):
             self.allocJobBackfill = self.allocJobBackfill_backup
             return ret
         else:
-            return super(EasyEnergyBudget, self).findBackfilledAllocs(current_time, first_job_starttime)
+            assert False, "Impossible to get there"
     
     def allocBackFill(self, first_job, current_time):
         
@@ -391,3 +406,87 @@ class EasyEnergyBudget(EasyBackfill):
         self.unreserve_energy_job(first_job)
         
         return ret
+
+
+    def add_alloc_to_waiting_allocs(self, alloc):
+        if not(alloc is None):
+            self.waiting_allocs[alloc[0]] = alloc[1]
+
+def nodes_states_error(self, start, end, fromState, toState):
+    assert False, "Unpossible transition: ["+str(start)+"-"+str(end)+"] "+str(fromState)+" => "+str(toState)
+def nodes_states_pass(self, start, end, fromState, toState):
+    pass
+
+def nodes_states_undo_changement(self, start, end, fromState, toState):
+    self.nodes_states.changeState(start, end, fromState, self)
+
+
+def nodes_states_SwitchedON_SwitchingOFF(self, start, end, fromState, toState):
+    #send pstate change
+    pstates_to_change = [(self.pstate_switchoff, (start, end))]
+    self.bs.change_pstates(pstates_to_change)
+
+def nodes_states_SwitchingOFF_SwitchedOFF(self, start, end, fromState, toState):
+        pass
+
+def nodes_states_SwitchedOFF_SwitchingON(self, start, end, fromState, toState):
+        #send pstate
+        pstates_to_change = [(self.pstate_switchon, (start, end))]
+        self.bs.change_pstates(pstates_to_change)
+
+def nodes_states_SwitchingON_SwitchedON(self, start, end, fromState, toState):
+        pass
+
+
+
+def nodes_states_SwitchedON_WantingToStartJob((self, alloc), start, end, fromState, toState):
+        #wait job
+        self.add_alloc_to_waiting_allocs(alloc)
+        #changeState to SwitchedON
+        self.nodes_states.changeState(start, end, State.SwitchedON, self)
+
+def nodes_states_SwitchingOFF_WantingToStartJob((self, alloc), start, end, fromState, toState):
+        #wait job
+        self.add_alloc_to_waiting_allocs(alloc)
+
+def nodes_states_SwitchedOFF_WantingToStartJob((self, alloc), start, end, fromState, toState):
+        #send ON
+        pstates_to_change = [(self.pstate_switchon, (start, end))]
+        self.bs.change_pstates(pstates_to_change)
+        #wait job
+        self.add_alloc_to_waiting_allocs(alloc)
+
+def nodes_states_SwitchingON_WantingToStartJob((self, alloc), start, end, fromState, toState):
+        #wait job
+        self.add_alloc_to_waiting_allocs(alloc)
+
+
+def nodes_states_WantingToStartJob_SwitchedON(self, start, end, fromState, toState):
+        #start waiting jobs
+        allocs_to_start = []
+        for j, (s,e) in self.waiting_allocs.iteritems():
+            if s > end or e < start:
+                continue
+            #the first part of the "or" is an optimisation
+            if (start <= s and e <= end) or self.nodes_states.contains(s, e, State.SwitchedON):
+                allocs_to_start.append((j, (s,e)))
+                #the job is already assign in the freespace structure
+                #we need to resort it in listRunningJob
+                self.listRunningJob.remove(j)
+                #update ending time
+                j.start_time = self.bs.time()
+                j.estimate_finish_time = j.requested_time + j.start_time
+                self.listRunningJob.add(j)
+        for a in allocs_to_start:
+            del self.waiting_allocs[a[0]]
+        self.bs.start_jobs_continuous(allocs_to_start)
+
+
+def nodes_states_WantingToStartJob_SwitchedOFF(self, start, end, fromState, toState):
+        #changeState to WantingToStartJob (self, None)
+        self.nodes_states.changeState(start, end, State.WantingToStartJob, (self, None))
+
+
+
+
+
