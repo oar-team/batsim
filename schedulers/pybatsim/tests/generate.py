@@ -43,6 +43,28 @@ schedulers += [{
         } for b in budgets for allow in [(True, False), (True, True), (False, True)] for shut in [True,False]]
 
 
+budgets = [2, 0.5]
+
+schedulers += [{
+        "name_expe": "easyEnergyBudget_"+str(b)+"on1000_"+name_allow[allow]+"_"+name_shut[shut],
+        "name":"easyEnergyBudget",
+        "verbosity":10,
+        "protection":True,
+        "interpreter": "coverage",
+        "options": {
+            "budget_total": 100*b*100+30*(7-b)*100,
+            "budget_start": 10,
+            "budget_end": 1010,
+            "allow_FCFS_jobs_to_use_budget_saved_measured": allow[0],
+            "reduce_powercap_to_save_energy": allow[1],
+            "monitoring_period":5,
+            "power_idle": 30.0,
+            "power_compute": 100.0,
+            "opportunist_shutdown": shut,
+            "pstate_switchon": 0,
+            "pstate_switchoff": 1
+            }
+        } for b in budgets for allow in [(True, False), (True, True), (False, True)] for shut in [True,False]]
 
 
 

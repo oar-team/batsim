@@ -49,8 +49,12 @@ def prepare_pybatsim_cl(options, sock):
     if 'interpreter' in options["scheduler"]:
         if options["scheduler"]["interpreter"] == "coverage":
             interpreter = ["python", "-m", "coverage", "run", "-a"]
-        if options["scheduler"]["interpreter"] == "pypy":
+        elif options["scheduler"]["interpreter"] == "pypy":
             interpreter = ["pypy", "-OOO"]
+        elif options["scheduler"]["interpreter"] == "profile":
+            interpreter = ["python", "-m", "cProfile", "-o", "simul.cprof"]
+        else:
+            assert False, "Unknwon interpreter"
     
     sched_cl = interpreter
     sched_cl.append("launcher.py")
