@@ -16,16 +16,16 @@
         "options": {
             "power_compute": 100.0, 
             "power_idle": 30.0, 
-            "reduce_powercap_to_save_energy": true, 
+            "reduce_powercap_to_save_energy": false, 
             "pstate_switchon": 0, 
             "monitoring_period": 5, 
             "allow_FCFS_jobs_to_use_budget_saved_measured": true, 
             "pstate_switchoff": 1, 
-            "budget_total": 35000, 
+            "budget_total": 216300, 
             "budget_end": 1010, 
             "opportunist_shutdown": true, 
             "budget_start": 10
         }, 
-        "name_expe": "easyEnergyBudget_2on1000_reducePC_SHUT_stupid"
+        "name_expe": "easyEnergyBudget_216300on1000_energyBud_SHUT_stupid"
     }
 }

@@ -21,11 +21,11 @@
             "monitoring_period": 5, 
             "allow_FCFS_jobs_to_use_budget_saved_measured": false, 
             "pstate_switchoff": 1, 
-            "budget_total": 24500.0, 
+            "budget_total": 210000, 
             "budget_end": 1010, 
-            "opportunist_shutdown": true, 
+            "opportunist_shutdown": false, 
             "budget_start": 10
         }, 
-        "name_expe": "easyEnergyBudget_0.5on1000_PC_SHUT_stupid"
+        "name_expe": "easyEnergyBudget_210000on1000_PC_IDLE_stupid"
     }
 }

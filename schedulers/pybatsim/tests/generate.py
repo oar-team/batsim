@@ -43,7 +43,7 @@ schedulers += [{
         } for b in budgets for allow in [(True, False), (True, True), (False, True)] for shut in [True,False]]
 
 
-budgets = [2, 0.5]
+budgets = [1000*7*30+30*3*70, 1000*7*30]
 
 schedulers += [{
         "name_expe": "easyEnergyBudget_"+str(b)+"on1000_"+name_allow[allow]+"_"+name_shut[shut],
@@ -52,7 +52,7 @@ schedulers += [{
         "protection":True,
         "interpreter": "coverage",
         "options": {
-            "budget_total": 100*b*100+30*(7-b)*100,
+            "budget_total": b,
             "budget_start": 10,
             "budget_end": 1010,
             "allow_FCFS_jobs_to_use_budget_saved_measured": allow[0],

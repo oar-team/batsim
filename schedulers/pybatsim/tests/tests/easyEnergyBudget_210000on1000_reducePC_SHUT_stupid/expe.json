@@ -19,13 +19,13 @@
             "reduce_powercap_to_save_energy": true, 
             "pstate_switchon": 0, 
             "monitoring_period": 5, 
-            "allow_FCFS_jobs_to_use_budget_saved_measured": false, 
+            "allow_FCFS_jobs_to_use_budget_saved_measured": true, 
             "pstate_switchoff": 1, 
-            "budget_total": 24500.0, 
+            "budget_total": 210000, 
             "budget_end": 1010, 
-            "opportunist_shutdown": false, 
+            "opportunist_shutdown": true, 
             "budget_start": 10
         }, 
-        "name_expe": "easyEnergyBudget_0.5on1000_PC_IDLE_stupid"
+        "name_expe": "easyEnergyBudget_210000on1000_reducePC_SHUT_stupid"
     }
 }
