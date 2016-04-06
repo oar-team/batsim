@@ -2,6 +2,7 @@
 
 from easyBackfill import *
 from intervalContainer import *
+import math
 
 from enum import Enum
 class State(Enum):
@@ -16,9 +17,9 @@ class EasyEnergyBudget(EasyBackfill):
     def __init__(self, options):
         self.options = options
         
-        self.budget_total = options["budget_total"]
-        self.budget_start = options["budget_start"]#the budget limitation start at this time included
-        self.budget_end = options["budget_end"]#the budget end just before this time
+        self.budget_total = float(options["budget_total"])
+        self.budget_start = float(options["budget_start"])#the budget limitation start at this time included
+        self.budget_end = float(options["budget_end"])#the budget end just before this time
         
         self.allow_FCFS_jobs_to_use_budget_saved_measured = options["allow_FCFS_jobs_to_use_budget_saved_measured"]
         
@@ -30,8 +31,8 @@ class EasyEnergyBudget(EasyBackfill):
         self.budget_reserved = 0.0
         self.listJobReservedEnergy = []
         
-        self.power_idle = options["power_idle"]
-        self.power_compute = options["power_compute"]
+        self.power_idle = float(options["power_idle"])
+        self.power_compute = float(options["power_compute"])
         
         self.powercap = self.budget_total/(self.budget_end-self.budget_start)
         
@@ -90,13 +91,22 @@ class EasyEnergyBudget(EasyBackfill):
 
     def onJobCompletion(self, job):
         try:
+            assert self.budget_reserved >= 0.0, str(self.budget_reserved)+" >= 0.0 "
             self.listJobReservedEnergy.remove(job)
-            stime = max(job.start_time, self.budget_start)
             etime = min(self.budget_end, job.start_time+job.requested_time)
             if not hasattr(job, "last_power_monitoring"):
+                stime = max(job.start_time, self.budget_start)
                 job.last_power_monitoring = stime
-            self.budget_reserved -= job.reserved_power*(etime - job.last_power_monitoring)
-            assert self.budget_reserved >= 0
+            
+            
+            if job.start_time >= self.budget_end:
+                #due to the shutdown, some job can start after budget_end
+                #and be in the reservation list.
+                 self.budget_reserved -= job.reserved_power*job.reserved_power_len
+            else:
+                assert etime >= job.last_power_monitoring, str(etime)+" >= "+str(job.last_power_monitoring)
+                self.budget_reserved -= job.reserved_power*(etime - job.last_power_monitoring)
+            assert self.budget_reserved >= 0.0, str(self.budget_reserved)+" >= 0.0 "+str(job)
             #assert sum([j.reserved_power*(min(self.budget_end, j.start_time+j.requested_time) - j.last_power_monitoring) for j in self.listJobReservedEnergy]) == self.budget_reserved
         except ValueError:
             pass
@@ -139,6 +149,7 @@ class EasyEnergyBudget(EasyBackfill):
             self.monitoring_last_value_time = self.bs.time()
         
         delta_consumed_energy = consumed_energy - self.monitoring_last_value
+        assert delta_consumed_energy >= 0
         maximum_energy_consamble = (self.bs.time()-self.monitoring_last_value_time)*self.powercap
         self.budget_saved_measured += maximum_energy_consamble - delta_consumed_energy
         
@@ -151,9 +162,11 @@ class EasyEnergyBudget(EasyBackfill):
             if not hasattr(job, "last_power_monitoring"):
                 stime = max(job.start_time, self.budget_start) 
                 job.last_power_monitoring = stime
-            self.budget_reserved -= job.reserved_power*(self.bs.time()-job.last_power_monitoring)
+            etime = min(self.budget_end, self.bs.time())
+            assert etime >= job.last_power_monitoring
+            self.budget_reserved -= job.reserved_power*(etime-job.last_power_monitoring)
             assert self.budget_reserved >= 0, "self.budget_reserved >= 0 ("+str(self.budget_reserved)
-            job.last_power_monitoring = self.bs.time()
+            job.last_power_monitoring = etime
         
         self._schedule_jobs(self.bs.time())
         
@@ -215,10 +228,11 @@ class EasyEnergyBudget(EasyBackfill):
         return e
 
 
-    def power_consumed(self, listFreeSpace, addUsedProc=0.0):
-        free_procs = listFreeSpace.free_processors - addUsedProc
-        
-        used_procs = self.bs.nb_res - free_procs
+    def power_consumed(self, listFreeSpace, addUsedProc=0):
+        free_procs = float(listFreeSpace.free_processors - addUsedProc)
+        assert free_procs >= 0.0, str(addUsedProc)+" / "+str(listFreeSpace.free_processors)
+        used_procs = float(self.bs.nb_res - free_procs)
+        assert used_procs >= 0.0
         
         power = used_procs*self.power_compute + free_procs*self.power_idle
         
@@ -232,9 +246,8 @@ class EasyEnergyBudget(EasyBackfill):
         if stime>=etime:
             #we are outside energy budget
             return (0.0, 0.0)
-        energy_excess = (power-self.powercap)*(etime-stime)
-        
-        return (energy_excess, (etime-stime))
+        energy_excess = (power-self.powercap)*float(etime-stime)
+        return (energy_excess, float(etime-stime))
         
 
 
@@ -242,13 +255,19 @@ class EasyEnergyBudget(EasyBackfill):
         """
         compute the power consumption of the cluster
         if <job> is not None then add the power consumption of this job as if it were running on the cluster.
+        
+        WARNING: if the job fit, it do the enerrgy reservation!!!!!!!
         """
+        #print "==== estimate_if_job_fit_in_energy", job, start_time, canUseBudgetLeft, budgetVirtualySavedAtStartTime
         #if the job does not cross the budget interval
         if not(start_time < self.budget_end and self.budget_start <= start_time+job.requested_time):
             return True
         
         if listFreeSpace is None:
             listFreeSpace = self.listFreeSpace
+        
+        if listFreeSpace.free_processors < job.requested_resources:
+            return False
         
         power = self.power_consumed(listFreeSpace, job.requested_resources)
         
@@ -273,6 +292,7 @@ class EasyEnergyBudget(EasyBackfill):
             self.listJobReservedEnergy.remove(job)
             energy_excess = job.reserved_power*job.reserved_power_len
             self.budget_reserved -= energy_excess
+            assert self.budget_reserved >= 0, str(job)+"  "+str(self.budget_reserved)+"  "+str(energy_excess)
 
 
     def allocJobFCFS(self, job, current_time):
@@ -304,7 +324,7 @@ class EasyEnergyBudget(EasyBackfill):
     def findAllocFuture(self, job):
         #overrinding parent method
 
-        listFreeSpaceTemp = copy.deepcopy(self.listFreeSpace)
+        listFreeSpaceTemp = self.listFreeSpace.copy()
         
         if len(self.listRunningJob) == 0:
             #this condition happen if the powercap is so low that no job can be started now (perhaps some jobs will be backfilled, but we do not it yet)
@@ -312,18 +332,18 @@ class EasyEnergyBudget(EasyBackfill):
             if (self.bs.time() < self.budget_end) and not self.already_asked_to_awaken_at_end_of_budget:
                 self.already_asked_to_awaken_at_end_of_budget = True
                 self.bs.wake_me_up_at(self.budget_end)
-            new_free_space_created_by_this_unallocation = listFreeSpaceTemp.firstItem
-            #alloc = listFreeSpaceTemp.assignJob(listFreeSpaceTemp.firstItem, job, self.budget_end)
-            #we find a valid allocation
-            #return (alloc, self.budget_end)
 
         previous_current_time = self.bs.time()
         budgetVirtualySaved = 0.0
+        first_time_fit_in_proc = self.bs.time()
         for j in self.listRunningJob:
             if self.allow_FCFS_jobs_to_use_budget_saved_measured:
                 power_consumed_until_end_of_j = self.power_consumed(listFreeSpaceTemp)
             
             new_free_space_created_by_this_unallocation = listFreeSpaceTemp.unassignJob(j)
+            
+            
+            assert j.estimate_finish_time >= previous_current_time, str(j.estimate_finish_time)+" >= "+str(previous_current_time)
             
             if self.allow_FCFS_jobs_to_use_budget_saved_measured:
                 (energy, dontcare) = self.virtual_energy_excess(previous_current_time, j.estimate_finish_time, power_consumed_until_end_of_j)
@@ -331,34 +351,91 @@ class EasyEnergyBudget(EasyBackfill):
 
             fit_in_procs = job.requested_resources <= new_free_space_created_by_this_unallocation.res
             if fit_in_procs:
+                if first_time_fit_in_proc == self.bs.time():
+                    first_time_fit_in_proc = j.estimate_finish_time
                 fit_in_energy = self.estimate_if_job_fit_in_energy(job, j.estimate_finish_time, listFreeSpaceTemp, canUseBudgetLeft=self.allow_FCFS_jobs_to_use_budget_saved_measured, budgetVirtualySavedAtStartTime=budgetVirtualySaved)
                 if fit_in_energy:
                     alloc = listFreeSpaceTemp.assignJob(new_free_space_created_by_this_unallocation, job, j.estimate_finish_time)
                     #we find a valid allocation
-                    assert j.estimate_finish_time > self.bs.time()
                     return (alloc, j.estimate_finish_time)
             
             previous_current_time = j.estimate_finish_time
         
         #We can be here only if the current job does not fit in energy
+        assert listFreeSpaceTemp.firstItem.nextt is None
         if not self.allow_FCFS_jobs_to_use_budget_saved_measured:
-            alloc = listFreeSpaceTemp.assignJob(listFreeSpaceTemp.firstItem, job, self.budget_end)
-            return (alloc, self.budget_end)
+            alloc = listFreeSpaceTemp.assignJob(listFreeSpaceTemp.firstItem, job, max(self.budget_end, first_time_fit_in_proc))
+            return (alloc, max(self.budget_end, first_time_fit_in_proc))
 
+        
+        #we know that the job fit in proc from first_time_fit_in_proc
+        #we know that the job does not fit in energy up to previous_current_time
+        assert previous_current_time <= self.budget_end
+        assert first_time_fit_in_proc <= previous_current_time
+        
+        #we have to find the first time that the job fit in energy
+        
+        #we have 2 cases, either the job end before budget_end, or after
+        #let's determine in which case we are by looking at if we can start the job if it end just before budget_end
+        start_job_before_end_budget = self.budget_end - job.requested_time
+        power_idle_save = self.powercap - float(self.bs.nb_res) * self.power_idle
+        
+        can_start = True
+        if start_job_before_end_budget < previous_current_time:
+            can_start = False
+        else:
+            can_start = self.estimate_if_job_fit_in_energy(
+                            job, start_job_before_end_budget,
+                            listFreeSpaceTemp,
+                            canUseBudgetLeft=self.allow_FCFS_jobs_to_use_budget_saved_measured,
+                            budgetVirtualySavedAtStartTime=
+                                (budgetVirtualySaved+power_idle_save*(start_job_before_end_budget-previous_current_time)))
+            if can_start:
+                self.unreserve_energy_job(job)
+        
+        budget_already_saved = budgetVirtualySaved + self.budget_saved_measured-self.budget_reserved
+
+        minstart = max(previous_current_time, self.budget_start)
+        
+        power = self.power_consumed(listFreeSpaceTemp, job.requested_resources)
+        
+        if can_start:#job will end before budget_end
+            assert power_idle_save > 0.0, str(power_idle_save)
+            (energy_excess, dontcare) = self.virtual_energy_excess(start_job_before_end_budget, start_job_before_end_budget+job.requested_time, power)
             
-        pjob = job.requested_resources*self.power_compute + (self.bs.nb_res - job.requested_resources) * self.power_idle
-        pc = (self.powercap + (self.budget_saved_measured + self.budget_reserved)/(self.budget_end - self.bs.time()) )
-        energy_excess = ( pjob - pc )* job.requested_time
-        stime = energy_excess / (self.power_compute-self.power_idle)
-        stime = min(stime + max(self.budget_start, self.bs.time()) , self.budget_end)
-        if stime <= self.bs.time():
-            stime = previous_current_time
-        if stime <= self.bs.time():
-            stime = self.bs.time()+1
-        alloc = listFreeSpaceTemp.assignJob(new_free_space_created_by_this_unallocation, job, stime)
-        #we find a valid allocation
-        return (alloc, stime)
-    
+            assert energy_excess > budget_already_saved
+            # t* power_idle_save == (energy_excess - budget_already_saved)
+            t = (energy_excess - budget_already_saved) / power_idle_save
+            
+            start_job = math.ceil(t + minstart)#the ceil remove float problems
+            
+            budgetVirtualySaved += t*power_idle_save
+            
+            assert start_job <= start_job_before_end_budget,  str(start_job)+" <= "+str(start_job_before_end_budget)+" // "+str(self.bs.time())
+            
+        else: #job will end after budget_end
+            minstart = max(previous_current_time, self.budget_start)
+            #in this case energy_excess = (power-self.powercap)*((self.budget_end-previous_current_time)-t)
+            #we want: t * power_idle_save == (power-self.powercap)*((self.budget_end-previous_current_time)-t) - budget_already_saved
+            t = ( (power-self.powercap)*(self.budget_end-minstart) - budget_already_saved ) / ( power_idle_save+(power-self.powercap) )
+            
+            start_job = math.ceil(t + minstart)#the ceil remove float problems
+            
+            budgetVirtualySaved += t*power_idle_save
+            
+            if start_job > self.budget_end:
+                assert budget_already_saved < 0.0 or power_idle_save < 0.0, str(budget_already_saved)+" // "+str(start_job)+" // "+str(self.budget_end)
+                start_job = self.budget_end
+            
+        #this test is not only an assert: it also makes the energy reservation for the job.
+        if not(self.estimate_if_job_fit_in_energy(job, start_job, listFreeSpaceTemp, canUseBudgetLeft=self.allow_FCFS_jobs_to_use_budget_saved_measured, budgetVirtualySavedAtStartTime=budgetVirtualySaved)):
+            assert False
+            return None
+        
+        
+        alloc = listFreeSpaceTemp.assignJob(listFreeSpaceTemp.firstItem, job, start_job)
+        assert start_job > self.bs.time()
+        return (alloc, start_job)
 
 
     def allocJobBackfillWithEnergyCap(self, job, current_time):
@@ -410,7 +487,11 @@ class EasyEnergyBudget(EasyBackfill):
 
     def add_alloc_to_waiting_allocs(self, alloc):
         if not(alloc is None):
-            self.waiting_allocs[alloc[0]] = alloc[1]
+            job = alloc[0]
+            if not(job in self.waiting_allocs) and hasattr(job, "reserved_power"):
+                job.reserved_power_real = job.reserved_power
+                job.reserved_power = 0.0
+            self.waiting_allocs[job] = alloc[1]
 
 def nodes_states_error(self, start, end, fromState, toState):
     assert False, "Unpossible transition: ["+str(start)+"-"+str(end)+"] "+str(fromState)+" => "+str(toState)
@@ -477,6 +558,10 @@ def nodes_states_WantingToStartJob_SwitchedON(self, start, end, fromState, toSta
                 j.start_time = self.bs.time()
                 j.estimate_finish_time = j.requested_time + j.start_time
                 self.listRunningJob.add(j)
+                if hasattr(j, "reserved_power_real"):
+                    j.reserved_power = j.reserved_power_real
+                    if hasattr(j, "last_power_monitoring"):
+                        del j.last_power_monitoring
         for a in allocs_to_start:
             del self.waiting_allocs[a[0]]
         self.bs.start_jobs_continuous(allocs_to_start)

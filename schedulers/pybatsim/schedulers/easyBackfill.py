@@ -8,7 +8,6 @@ import os
 from random import sample
 from sortedcontainers import SortedSet
 from sortedcontainers import SortedListWithKey
-import copy
 
 
 """
@@ -59,6 +58,14 @@ class FreeSpace(object):
             asrf2 = "*"
         return "<<FreeSpace ["+str(self.first_res)+"-"+str(self.last_res)+"] "+str(self.length)+" "+link+" \t"+asrf1+p+n+asrf2+" "+delet+"    >>"
     
+    def copy(self):
+        n = FreeSpace(self.first_res, self.last_res,  self.length, self.prev, self.nextt)
+        n.allocSmallestResFirst = self.allocSmallestResFirst
+        if hasattr(self, "linkedTo"):
+            n.linkedTo = self.linkedTo
+        if hasattr(self, "removed"):
+            n.removed = self.removed
+        return n
 
 class FreeSpaceContainer(object):
     """
@@ -204,6 +211,22 @@ class FreeSpaceContainer(object):
         
         return newfs
 
+    def copy(self):
+        n = FreeSpaceContainer(42)
+        n.free_processors = self.free_processors
+        
+        if self.firstItem is None:
+            n.firstItem = None
+        else:
+            curit = self.firstItem.copy()
+            fi = curit
+            while not(curit.nextt is None):
+                curit.nextt = curit.nextt.copy()
+                curit.nextt.prev = curit
+                curit = curit.nextt
+            n.firstItem = fi
+        return n
+
 
 
 
@@ -295,7 +318,7 @@ class EasyBackfill(BatsimScheduler):
 
     def findAllocFuture(self, job):
         #rjobs = sort(self.listRunningJob, by=estimate_finish_time) automaticly done by SortedList
-        listFreeSpaceTemp = copy.deepcopy(self.listFreeSpace)
+        listFreeSpaceTemp = self.listFreeSpace.copy()
         for j in self.listRunningJob:
             new_free_space_created_by_this_unallocation = listFreeSpaceTemp.unassignJob(j)
             if job.requested_resources <= new_free_space_created_by_this_unallocation.res:
