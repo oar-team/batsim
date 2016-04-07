@@ -22,37 +22,37 @@
      -->
 
 
-    <host id="host0" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.333333f, 0.5f" pstate="0" >
+    <host id="host0" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
         <prop id="watt_per_state" value="30.0:100.0, 9.75:9.75, 200.996721311:200.996721311, 425.1743849:425.1743849" />
         <prop id="watt_off" value="42" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
-    <host id="host1" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.333333f, 0.5f" pstate="0" >
+    <host id="host1" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
         <prop id="watt_per_state" value="30.0:100.0, 9.75:9.75, 200.996721311:200.996721311, 425.1743849:425.1743849" />
         <prop id="watt_off" value="42" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
-    <host id="host2" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.333333f, 0.5f" pstate="0" >
+    <host id="host2" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
         <prop id="watt_per_state" value="30.0:100.0, 9.75:9.75, 200.996721311:200.996721311, 425.1743849:425.1743849" />
         <prop id="watt_off" value="42" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
-    <host id="host3" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.333333f, 0.5f" pstate="0" >
+    <host id="host3" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
         <prop id="watt_per_state" value="30.0:100.0, 9.75:9.75, 200.996721311:200.996721311, 425.1743849:425.1743849" />
         <prop id="watt_off" value="42" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
-    <host id="host4" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.333333f, 0.5f" pstate="0" >
+    <host id="host4" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
         <prop id="watt_per_state" value="30.0:100.0, 9.75:9.75, 200.996721311:200.996721311, 425.1743849:425.1743849" />
         <prop id="watt_off" value="42" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
-    <host id="host5" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.333333f, 0.5f" pstate="0" >
+    <host id="host5" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
         <prop id="watt_per_state" value="30.0:100.0, 9.75:9.75, 200.996721311:200.996721311, 425.1743849:425.1743849" />
         <prop id="watt_off" value="42" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
-    <host id="host6" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.333333f, 0.5f" pstate="0" >
+    <host id="host6" coordinates="0 0 0" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
         <prop id="watt_per_state" value="30.0:100.0, 9.75:9.75, 200.996721311:200.996721311, 425.1743849:425.1743849" />
         <prop id="watt_off" value="42" />
         <prop id="sleep_pstates" value="1:2:3" />
