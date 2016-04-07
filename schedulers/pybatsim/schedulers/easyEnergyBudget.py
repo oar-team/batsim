@@ -48,6 +48,7 @@ class EasyEnergyBudget(EasyBackfill):
         self.opportunist_shutdown = options["opportunist_shutdown"]
         self.pstate_switchon = options["pstate_switchon"]
         self.pstate_switchoff = options["pstate_switchoff"]
+        self.min_time_to_switchonoff = float(options["timeto_switchoff"]) + float(options["timeto_switchon"])
 
         if self.reduce_powercap_to_save_energy == self.estimate_energy_jobs_to_save_energy:
             assert False, "can't activate reduce_powercap_to_save_energy and estimate_energy_jobs_to_save_energy"
@@ -224,18 +225,18 @@ class EasyEnergyBudget(EasyBackfill):
         #we have to be sure about the following condition for the rest of this function
         if listFreeSpace.free_processors < job.requested_resources:
             return False
-        
+
         power = self.power_consumed(listFreeSpace, job.requested_resources)
-        
-        pc = (power <= self.powercap)
-        if pc:
-            return True
-        if not canUseBudgetLeft:
-            return pc
+        if not self.estimate_energy_jobs_to_save_energy:
+            pc = (power <= self.powercap)
+            if pc:
+                return True
+            if not canUseBudgetLeft:
+                return pc
         
         energy_excess = self.virtual_energy_excess(start_time, start_time+job.requested_time, power)
-        a = budgetVirtualySavedAtStartTime+ self.budget_saved_measured-self.budget_reserved
-        if energy_excess <= a:
+        budget_available = budgetVirtualySavedAtStartTime+ self.budget_saved_measured-self.budget_reserved
+        if energy_excess <= budget_available:
             if makeEnergyReservation:
                 self.budget_reserved += energy_excess
             return True
@@ -298,7 +299,7 @@ class EasyEnergyBudget(EasyBackfill):
                 if first_time_fit_in_proc == self.bs.time():
                     first_time_fit_in_proc = j.estimate_finish_time
                 fit_in_energy = self.estimate_if_job_fit_in_energy(job, j.estimate_finish_time, listFreeSpaceTemp, canUseBudgetLeft=self.allow_FCFS_jobs_to_use_budget_saved_measured,
-                makeEnergyReservation=self.estimate_energy_jobs_to_save_energy, budgetVirtualySavedAtStartTime=budgetVirtualySaved)
+                makeEnergyReservation=self.allow_FCFS_jobs_to_use_budget_saved_measured, budgetVirtualySavedAtStartTime=budgetVirtualySaved)
                 if fit_in_energy:
                     alloc = listFreeSpaceTemp.assignJob(new_free_space_created_by_this_unallocation, job, j.estimate_finish_time)
                     #we find a valid allocation
@@ -379,7 +380,7 @@ class EasyEnergyBudget(EasyBackfill):
         if not(self.estimate_if_job_fit_in_energy(
                         job, start_job, listFreeSpaceTemp,
                         canUseBudgetLeft=self.allow_FCFS_jobs_to_use_budget_saved_measured,
-                        makeEnergyReservation=self.estimate_energy_jobs_to_save_energy,
+                        makeEnergyReservation=self.allow_FCFS_jobs_to_use_budget_saved_measured,
                         budgetVirtualySavedAtStartTime=budgetVirtualySaved)):
             assert False
             return None
@@ -400,6 +401,9 @@ class EasyEnergyBudget(EasyBackfill):
             
             ret = super(EasyEnergyBudget, self).findBackfilledAllocs(current_time, first_job_starttime)
             
+            #remove energy reservation(s)
+            self.budget_reserved = 0.0
+            
             self.powercap = pc
             return ret
 
@@ -414,21 +418,21 @@ class EasyEnergyBudget(EasyBackfill):
 
         else:
             assert False, "Impossible to get there"
-    
-    def allocBackFill(self, first_job, current_time):
-        
-        ret = super(EasyEnergyBudget, self).allocBackFill(first_job, current_time)
 
-        return ret
-
+    def job_update_estimate_finish_time(self, job, new_estimate):
+            #we need to re-sort it in listRunningJob
+            self.listRunningJob.remove(job)
+            #update ending time
+            job.estimate_finish_time = new_estimate
+            self.listRunningJob.add(job)
+            
 
     def add_alloc_to_waiting_allocs(self, alloc):
         if not(alloc is None):
             job = alloc[0]
-            if not(job in self.waiting_allocs) and hasattr(job, "reserved_power"):
-                job.reserved_power_real = job.reserved_power
-                job.reserved_power = 0.0
+            self.min_time_to_switchonoff
             self.waiting_allocs[job] = alloc[1]
+            self.job_update_estimate_finish_time(job, job.estimate_finish_time+self.min_time_to_switchonoff)
 
 def nodes_states_error(self, start, end, fromState, toState):
     assert False, "Unpossible transition: ["+str(start)+"-"+str(end)+"] "+str(fromState)+" => "+str(toState)
@@ -489,16 +493,8 @@ def nodes_states_WantingToStartJob_SwitchedON(self, start, end, fromState, toSta
             if (start <= s and e <= end) or self.nodes_states.contains(s, e, State.SwitchedON):
                 allocs_to_start.append((j, (s,e)))
                 #the job is already assign in the freespace structure
-                #we need to resort it in listRunningJob
-                self.listRunningJob.remove(j)
-                #update ending time
                 j.start_time = self.bs.time()
-                j.estimate_finish_time = j.requested_time + j.start_time
-                self.listRunningJob.add(j)
-                if hasattr(j, "reserved_power_real"):
-                    j.reserved_power = j.reserved_power_real
-                    if hasattr(j, "last_power_monitoring"):
-                        del j.last_power_monitoring
+                self.job_update_estimate_finish_time(j, j.requested_time + j.start_time)
         for a in allocs_to_start:
             del self.waiting_allocs[a[0]]
         self.bs.start_jobs_continuous(allocs_to_start)

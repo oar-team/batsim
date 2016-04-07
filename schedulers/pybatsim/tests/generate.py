@@ -38,7 +38,9 @@ schedulers += [{
             "power_compute": 100.0,
             "opportunist_shutdown": shut,
             "pstate_switchon": 0,
-            "pstate_switchoff": 1
+            "pstate_switchoff": 1,
+            "timeto_switchoff": 5,
+            "timeto_switchon": 25
             }
         } for b in budgets for allow in [(True, False), (True, True), (False, True)] for shut in [True,False]]
 
@@ -62,7 +64,9 @@ schedulers += [{
             "power_compute": 100.0,
             "opportunist_shutdown": shut,
             "pstate_switchon": 0,
-            "pstate_switchoff": 1
+            "pstate_switchoff": 1,
+            "timeto_switchoff": 5,
+            "timeto_switchon": 25
             }
         } for b in budgets for allow in [(True, False), (True, True), (False, True)] for shut in [True,False]]
 

@@ -15,6 +15,7 @@
         "interpreter": "coverage", 
         "options": {
             "power_compute": 100.0, 
+            "timeto_switchoff": 5, 
             "power_idle": 30.0, 
             "reduce_powercap_to_save_energy": false, 
             "pstate_switchon": 0, 
@@ -24,7 +25,8 @@
             "budget_total": 210000, 
             "budget_end": 1010, 
             "opportunist_shutdown": true, 
-            "budget_start": 10
+            "budget_start": 10, 
+            "timeto_switchon": 25
         }, 
         "name_expe": "easyEnergyBudget_210000on1000_energyBud_SHUT_stupid"
     }
