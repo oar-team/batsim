@@ -3,7 +3,7 @@
 import json
 import struct
 import socket
-import sys
+import sys, re
 
 
 
@@ -96,6 +96,29 @@ class Batsim(object):
                     parts.append( str(ps)+"-"+str(pe) + "=" + str(new_pstate))
             for part in parts:
                 self._msgs_to_send.append( ( self.time(), "P:" + part ) )
+
+    def change_pstate_merge(self, new_pstate, first_node, last_node):
+        """
+        if the previous call of change_pstate_merge had the same new_pstate and old.last_node+1 == new.first_node,
+        then we merge the requests.
+        """
+        part = None
+        if len(self._msgs_to_send)>0:
+            last_msg = self._msgs_to_send[-1]
+            if last_msg[0] == self.time():
+                resInter = re.split("P:([0-9]+)-([0-9]+)=([0-9]+)", last_msg[1])
+                resUniq = re.split("P:([0-9]+)=([0-9]+)", last_msg[1])
+                if len(resInter) == 5 and int(resInter[3]) == new_pstate and int(resInter[2])+1 == first_node:
+                    self._msgs_to_send.pop(-1)
+                    part = str(resInter[1])+"-"+str(last_node) + "=" + str(new_pstate)
+                elif len(resUniq) == 4 and int(resUniq[2]) == new_pstate and int(resUniq[1])+1 == first_node:
+                    self._msgs_to_send.pop(-1)
+                    part = str(resUniq[1])+"-"+str(last_node) + "=" + str(new_pstate)
+        if part is None:
+            part = str(first_node)+"-"+str(last_node) + "=" + str(new_pstate)
+        
+        self._msgs_to_send.append( ( self.time(), "P:" + part ) )
+
 
     def do_next_event(self):
         return self._read_bat_msg()
