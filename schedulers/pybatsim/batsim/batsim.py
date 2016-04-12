@@ -117,7 +117,7 @@ class Batsim(object):
 
         lg = struct.unpack("I",lg_str)[0]
         msg = self._connection.recv(lg).decode()
-        if self.verbose > 0: print('[BATSIM]: from batsim : %r' % msg)
+        if self.verbose > 0: print('[BATSIM]: from batsim (%r) : %r' % (lg, msg))
         sub_msgs = msg.split('|')
         data = sub_msgs[0].split(":")
         version = int(data[0])

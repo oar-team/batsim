@@ -25,7 +25,6 @@ INFINITY = float('inf')
 
 class FreeSpace(object):
     def __init__(self, first_res, last_res, len, p, n):
-        assert first_res <= last_res
         self.first_res = first_res
         self.last_res = last_res
         self.res = last_res-first_res+1
@@ -33,6 +32,7 @@ class FreeSpace(object):
         self.prev = p
         self.nextt = n
         self.allocSmallestResFirst = True
+        assert first_res <= last_res, str(self)
     def __repr__(self):
         if self.prev is None:
             p = "|"
@@ -166,6 +166,7 @@ class FreeSpaceContainer(object):
                 l1.nextt.prev = l1
             l1.last_res = l2.last_res
             l1.res = l1.last_res-l1.first_res+1
+            assert l1.first_res <= l1.last_res, str(l1)+" // "+str(job)
             return l1
         elif mergel1:
             #increase l1 size
@@ -173,6 +174,7 @@ class FreeSpaceContainer(object):
             l1.res = l1.last_res-l1.first_res+1
             #we will alloc jobs close to where the last job were scheduled
             l1.allocSmallestResFirst = False
+            assert l1.first_res <= l1.last_res, str(l1)+" // "+str(job)
             return l1
         elif mergel2:
             #increase l2 size
@@ -180,6 +182,7 @@ class FreeSpaceContainer(object):
             l2.res = l2.last_res-l2.first_res+1
             #we will alloc jobs close to where the last job were scheduled
             l2.allocSmallestResFirst = True
+            assert l2.first_res <= l2.last_res, str(l2)+" // "+str(job)
             return l2
         else:
             #create a new freespace
@@ -191,6 +194,7 @@ class FreeSpaceContainer(object):
                 l1.nextt = lnew
             if l2 is not None:
                 l2.prev = lnew
+
             return lnew
         assert False
         
@@ -223,6 +227,8 @@ class FreeSpaceContainer(object):
             while not(curit.nextt is None):
                 curit.nextt = curit.nextt.copy()
                 curit.nextt.prev = curit
+                #this assert forbid to copy a FreeSpaceContainer that has done the backfill reservation
+                assert curit.last_res < curit.nextt.first_res, str(curit)+" // "+str(curit.nextt)
                 curit = curit.nextt
             n.firstItem = fi
         return n
