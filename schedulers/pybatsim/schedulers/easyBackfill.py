@@ -43,7 +43,7 @@ class FreeSpace(object):
         else:
             n = ">"
         if hasattr(self, "linkedTo"):
-            link = "L"
+            link = "L("+str(self.linkedTo)+")"
         else:
             link = ""
         if hasattr(self, "removed"):
@@ -87,9 +87,8 @@ class FreeSpaceContainer(object):
         prev = item.prev
         nextt = item.nextt
         if (item.first_res == 27825 and item.last_res == 27952) or (item.first_res == 27953 and item.last_res == 27952):
-            print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> REMOVE", item, prev, nextt
-            if nextt.last_res == 30545:
-                assert False, "NOOOOOOOOO"
+            print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> REMOVE", item
+            self.printme()
         if item == self.firstItem:
             self.firstItem = nextt
         else:
@@ -99,6 +98,10 @@ class FreeSpaceContainer(object):
             nextt.prev = prev
         #if someone hold a direct refecence to item, it can knwo if this item have been removed from the list
         item.removed = True
+        if (item.first_res == 27825 and item.last_res == 27952) or (item.first_res == 27953 and item.last_res == 27952):
+            print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> REMOVE END", item
+            self.printme()
+            assert False, "NOOOOOOOOO"
     
     def _assignJobBeginning(self, l, job):
             alloc = (l.first_res, l.first_res+job.requested_resources-1)
