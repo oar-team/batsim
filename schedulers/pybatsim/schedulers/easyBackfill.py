@@ -43,7 +43,7 @@ class FreeSpace(object):
         else:
             n = ">"
         if hasattr(self, "linkedTo"):
-            link = "L("+str(self.linkedTo)+")"
+            link = "L("+str(self.linkedTo.first_res)+"-"+str(self.linkedTo.last_res)+")"
         else:
             link = ""
         if hasattr(self, "removed"):
