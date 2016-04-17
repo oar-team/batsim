@@ -86,6 +86,10 @@ class FreeSpaceContainer(object):
     def remove(self, item):
         prev = item.prev
         nextt = item.nextt
+        if (item.first_res == 27825 and item.last_res == 27952) or (item.first_res == 27953 and item.last_res == 27952):
+            print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> REMOVE", item, prev, nextt
+            if nextt.last_res == 30545:
+                assert False, "NOOOOOOOOO"
         if item == self.firstItem:
             self.firstItem = nextt
         else:
