@@ -93,7 +93,25 @@ class EasyEnergyBudget(EasyBackfill):
 
 
     def onJobCompletion(self, job):
+        if self.bs.time() >= 79234.0:
+            print "========= COMPLETED: ", job
+            print "========= listFreeSpace"
+            self.listFreeSpace.printme()
+            print "========= listWaitingJob"
+            print self.listWaitingJob
+            print "========= listRunningJob"
+            print self.listRunningJob
+            
+            
         super(EasyEnergyBudget, self).onJobCompletion(job)
+        if self.bs.time() >= 79234.0:
+            print "========= AFTER ", job
+            print "========= listFreeSpace"
+            self.listFreeSpace.printme()
+            print "========= listWaitingJob"
+            print self.listWaitingJob
+            print "========= listRunningJob"
+            print self.listRunningJob
 
 
 
@@ -108,6 +126,15 @@ class EasyEnergyBudget(EasyBackfill):
 
 
     def onJobSubmission(self, just_submitted_job):
+        if self.bs.time() >= 79234.0:
+            print "========= onJobSubmission: ", just_submitted_job
+            print "========= listFreeSpace"
+            self.listFreeSpace.printme()
+            print "========= listWaitingJob"
+            print self.listWaitingJob
+            print "========= listRunningJob"
+            print self.listRunningJob
+        
         if not self.monitoring_regitered:
             self.monitoring_regitered = True
             if self.budget_start != self.bs.time():
@@ -116,6 +143,14 @@ class EasyEnergyBudget(EasyBackfill):
                 self.onNOP()
 
         super(EasyEnergyBudget, self).onJobSubmission(just_submitted_job)
+        if self.bs.time() >= 79234.0:
+            print "========= AFTER ", just_submitted_job
+            print "========= listFreeSpace"
+            self.listFreeSpace.printme()
+            print "========= listWaitingJob"
+            print self.listWaitingJob
+            print "========= listRunningJob"
+            print self.listRunningJob
 
     def in_listRunningJob(self, job):
         for j in self.listRunningJob:
