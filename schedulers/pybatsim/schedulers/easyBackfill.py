@@ -86,9 +86,6 @@ class FreeSpaceContainer(object):
     def remove(self, item):
         prev = item.prev
         nextt = item.nextt
-        if (item.first_res == 27825 and item.last_res == 27952) or (item.first_res == 27953 and item.last_res == 27952):
-            print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> REMOVE", item
-            self.printme()
         if item == self.firstItem:
             self.firstItem = nextt
         else:
@@ -98,10 +95,6 @@ class FreeSpaceContainer(object):
             nextt.prev = prev
         #if someone hold a direct refecence to item, it can knwo if this item have been removed from the list
         item.removed = True
-        if (item.first_res == 27825 and item.last_res == 27952) or (item.first_res == 27953 and item.last_res == 27952):
-            print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> REMOVE END", item
-            self.printme()
-            assert False, "NOOOOOOOOO"
     
     def _assignJobBeginning(self, l, job):
             alloc = (l.first_res, l.first_res+job.requested_resources-1)
@@ -139,7 +132,7 @@ class FreeSpaceContainer(object):
                     l.linkedTo.last_res = alloc[0]-1
         job.alloc = alloc
         
-        if hasattr(l, "linkedTo"):
+        if hasattr(l, "linkedTo") and not hasattr(l.linkedTo, "removed"):
             l.linkedTo.res = l.linkedTo.last_res-l.linkedTo.first_res+1
             #assert l.linkedTo.res>=0
             if l.linkedTo.res <= 0:
@@ -454,7 +447,7 @@ class EasyBackfill(BatsimScheduler):
         if second_shortened_space is not None:
             second_shortened_space.length = INFINITY
             second_shortened_space.allocSmallestResFirst = True
-        
+            
         return allocs
 
     def assert_listFreeSpace_listRunningJob(self):
