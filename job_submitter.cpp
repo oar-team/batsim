@@ -1,3 +1,8 @@
+/**
+ * @file job_submitter.hpp
+ * @brief Job submitter
+ */
+
 #include "job_submitter.hpp"
 
 #include <vector>

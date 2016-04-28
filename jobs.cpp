@@ -1,5 +1,6 @@
 /**
  * @file jobs.cpp
+ * @brief Contains job-related structures
  */
 
 #include "jobs.hpp"

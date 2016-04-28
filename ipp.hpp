@@ -1,8 +1,9 @@
-#pragma once
-
 /**
- * @file ipp.hpp Inter-Process Protocol
+ * @file ipp.hpp
+ * @brief Inter-Process Protocol
  */
+
+#pragma once
 
 #include <vector>
 #include <string>
@@ -13,6 +14,9 @@
 
 struct BatsimContext;
 
+/**
+ * @brief Stores the different types of inter-process messages
+ */
 enum class IPMessageType
 {
     JOB_SUBMITTED           //!< Submitter -> Server. The submitter tells the server a new job has been submitted.
@@ -31,56 +35,86 @@ enum class IPMessageType
     ,SWITCHED_OFF           //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
 };
 
+/**
+ * @brief The content of the JobSubmitted message
+ */
 struct JobSubmittedMessage
 {
     int job_id; //! The job ID
 };
 
+/**
+ * @brief The content of the JobCompleted message
+ */
 struct JobCompletedMessage
 {
     int job_id; //! The job ID
 };
 
+/**
+ * @brief The content of the JobRejected message
+ */
 struct JobRejectedMessage
 {
     int job_id; //! The job ID
 };
 
+/**
+ * @brief A subpart of the SchedulingAllocation message
+ */
 struct SchedulingAllocation
 {
-    int job_id;
+    int job_id; //! The job unique number
     MachineRange machine_ids; //! The IDs of the machines on which the job should be allocated
     std::vector<msg_host_t> hosts;  //! The corresponding SimGrid hosts
 };
 
+/**
+ * @brief The content of the JobSubmitted message
+ */
 struct SchedulingAllocationMessage
 {
     std::vector<SchedulingAllocation *> allocations;  //! Possibly several allocations
 };
 
+/**
+ * @brief The content of the PstateModification message
+ */
 struct PStateModificationMessage
 {
     MachineRange machine_ids; //! The IDs of the machines on which the pstate should be changed
     int new_pstate; //! The pstate the machines should be put into
 };
 
+/**
+ * @brief The content of the NOPMeLater message
+ */
 struct NOPMeLaterMessage
 {
     double target_time;
 };
 
+/**
+ * @brief The content of the SwitchON message
+ */
 struct SwitchONMessage
 {
     int machine_id;
     int new_pstate;
 };
 
+/**
+ * @brief The content of the SwitchOFF message
+ */
 struct SwitchOFFMessage
 {
     int machine_id;
     int new_pstate;
 };
 
+/**
+ * @brief The base struct sent in inter-process messages
+ */
 struct IPMessage
 {
     ~IPMessage();
@@ -88,29 +122,44 @@ struct IPMessage
     void * data;        //! The message data (can be NULL if type is in [SCHED_NOP, SUBMITTER_HELLO, SUBMITTER_BYE, SUBMITTER_READY]). Otherwise, it is either a JobSubmittedMessage*, a JobCompletedMessage* or a SchedulingAllocationMessage* according to type.
 };
 
+/**
+ * @brief The arguments of the request_reply_scheduler_process process
+ */
 struct RequestReplyProcessArguments
 {
     BatsimContext * context;
     std::string send_buffer;
 };
 
+/**
+ * @brief The arguments of the uds_server_process process
+ */
 struct ServerProcessArguments
 {
     BatsimContext * context;
 };
 
+/**
+ * @brief The arguments of the execute_job_process process
+ */
 struct ExecuteJobProcessArguments
 {
     BatsimContext * context;
     SchedulingAllocation * allocation;
 };
 
+/**
+ * @brief The arguments of the killer_process process
+ */
 struct KillerProcessArguments
 {
     msg_task_t task; //! The task that will be cancelled if the walltime is reached
     double walltime; //! The number of seconds to wait before cancelling the task
 };
 
+/**
+ * @brief The arguments of the switch_on_machine_process and switch_off_machine_process processes
+ */
 struct SwitchPStateProcessArguments
 {
     BatsimContext * context;
@@ -118,11 +167,17 @@ struct SwitchPStateProcessArguments
     int new_pstate;
 };
 
+/**
+ * @brief The arguments of the job_submitter_process process
+ */
 struct JobSubmitterProcessArguments
 {
     BatsimContext * context;
 };
 
+/**
+ * @brief The arguments of the waiter_process process
+ */
 struct WaiterProcessArguments
 {
     double target_time;
@@ -136,6 +191,19 @@ struct WaiterProcessArguments
  * @param[in] data The data associated to the message
  */
 void send_message(const std::string & destination_mailbox, IPMessageType type, void * data = nullptr);
+
+/**
+ * @brief Sends a message from the given process to the given mailbox
+ * @param[in] dst The destination mailbox
+ * @param[in] type The type of message to send
+ * @param[in] job_id The job the message is about
+ * @param[in] data The data associated to the message
+ */
 void send_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
 
+/**
+ * @brief Transforms a IPMessageType into a std::string
+ * @param[in] type The IPMessageType
+ * @return The std::string corresponding to the type
+ */
 std::string ipMessageTypeToString(IPMessageType type);

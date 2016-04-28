@@ -1,3 +1,8 @@
+/**
+ * @file machines.cpp
+ * @brief Contains machine-related classes
+ */
+
 #include "machines.hpp"
 
 #include <algorithm>
@@ -31,7 +36,7 @@ Machines::~Machines()
     _masterMachine = nullptr;
 }
 
-void Machines::createMachines(xbt_dynar_t hosts, BatsimContext *context, const string &masterHostName)
+void Machines::createMachines(xbt_dynar_t hosts, const BatsimContext *context, const string &masterHostName)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
 
@@ -235,7 +240,7 @@ const Machine *Machines::masterMachine() const
     return _masterMachine;
 }
 
-long double Machines::total_consumed_energy(BatsimContext *context) const
+long double Machines::total_consumed_energy(const BatsimContext *context) const
 {
     long double total_consumed_energy = 0;
 

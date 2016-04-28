@@ -1,3 +1,8 @@
+/**
+ * @file ipp.cpp
+ * @brief Inter-Process Protocol
+ */
+
 #include "ipp.hpp"
 
 #include <simgrid/msg.h>

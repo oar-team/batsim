@@ -1,3 +1,9 @@
+/**
+ * @file export.hpp
+ * @brief Batsim's export classes and functions
+ * @details Contains the classes and functions which are related to Batsim's exports.
+ */
+
 #pragma once
 
 #include <stdio.h>
@@ -13,6 +19,9 @@
 
 struct BatsimContext;
 
+/**
+ * @brief Buffered-write output file
+ */
 class WriteBuffer
 {
 public:
@@ -106,8 +115,25 @@ public:
      */
     void addJobLaunching(int jobID, const std::vector<int> & usedMachineIDs, double time);
 
+    /**
+     * @brief Created a job in the Pajé output file
+     * @param jobID The job unique number
+     */
     void register_new_job(int jobID);
+
+    /**
+     * @brief Sets a machine in the idle state
+     * @param machineID The unique machine number
+     * @param time The time at which the machine should be marked as idle
+     */
     void set_machine_idle(int machineID, double time);
+
+    /**
+     * @brief Sets a machine in the computing state
+     * @param machineID The unique machine number
+     * @param jobID The unique job number that the machine computes
+     * @param time The time at which the machine should be marked as computing the job
+     */
     void set_machine_as_computing_job(int machineID, int jobID, double time);
 
     /**
@@ -225,14 +251,34 @@ private:
 };
 
 
-
+/**
+ * @brief Traces how power states are changed over time
+ */
 class PStateChangeTracer
 {
 public:
+    /**
+     * @brief Constructs a PStateChangeTracer
+     */
     PStateChangeTracer();
+
+    /**
+     * @brief Sets the output filename of the tracer
+     * @param filename The name of the output file of the tracer
+     */
     void setFilename(const std::string & filename);
+
+    /**
+     * @brief Destroys a PStateChangeTracer
+     */
     ~PStateChangeTracer();
 
+    /**
+     * @brief Adds a power state change in the tracer
+     * @param time The time at which the change occurs
+     * @param machine_id The unique machine number
+     * @param pstate_after The power state the machine will be in after the given time
+     */
     void add_pstate_change(double time, int machine_id, int pstate_after);
 
 private:

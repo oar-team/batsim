@@ -1,3 +1,9 @@
+/**
+ * @file export.cpp
+ * @brief Batsim's export classes and functions
+ * @details Contains the classes and functions which are related to Batsim's exports.
+ */
+
 #include "export.hpp"
 
 #include <algorithm>

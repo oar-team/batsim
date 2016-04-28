@@ -1,3 +1,8 @@
+/**
+ * @file jobs_execution.cpp
+ * @brief Contains functions related to the execution of the jobs
+ */
+
 #include "jobs_execution.hpp"
 #include "jobs.hpp"
 
@@ -43,7 +48,7 @@ int smpi_replay_process(int argc, char *argv[])
 
 int execute_profile(BatsimContext *context,
                     const string & profile_name,
-                    SchedulingAllocation *allocation,
+                    const SchedulingAllocation * allocation,
                     double *remaining_time)
 {
     Job * job = context->jobs[allocation->job_id];

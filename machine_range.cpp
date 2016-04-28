@@ -6,6 +6,7 @@
 
 #include <simgrid/msg.h>
 
+
 XBT_LOG_NEW_DEFAULT_CATEGORY(machine_range, "machine_range");
 
 using namespace std;
@@ -54,6 +55,7 @@ MachineRange::Set::const_iterator MachineRange::intervals_end() const
 void MachineRange::clear()
 {
     set.clear();
+    xbt_assert(size() == 0);
 }
 
 void MachineRange::insert(const MachineRange &range)
