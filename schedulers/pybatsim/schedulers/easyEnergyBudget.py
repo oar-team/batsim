@@ -108,6 +108,7 @@ class EasyEnergyBudget(EasyBackfill):
 
 
     def onJobSubmission(self, just_submitted_job):
+        
         if not self.monitoring_regitered:
             self.monitoring_regitered = True
             if self.budget_start != self.bs.time():
@@ -445,16 +446,14 @@ def nodes_states_undo_changement(self, start, end, fromState, toState):
 
 def nodes_states_SwitchedON_SwitchingOFF(self, start, end, fromState, toState):
     #send pstate change
-    pstates_to_change = [(self.pstate_switchoff, (start, end))]
-    self.bs.change_pstates(pstates_to_change)
+    self.bs.change_pstate_merge(self.pstate_switchoff, start, end)
 
 def nodes_states_SwitchingOFF_SwitchedOFF(self, start, end, fromState, toState):
         pass
 
 def nodes_states_SwitchedOFF_SwitchingON(self, start, end, fromState, toState):
         #send pstate
-        pstates_to_change = [(self.pstate_switchon, (start, end))]
-        self.bs.change_pstates(pstates_to_change)
+        self.bs.change_pstate_merge(self.pstate_switchon, start, end)
 
 def nodes_states_SwitchingON_SwitchedON(self, start, end, fromState, toState):
         pass
@@ -473,8 +472,7 @@ def nodes_states_SwitchingOFF_WantingToStartJob((self, alloc), start, end, fromS
 
 def nodes_states_SwitchedOFF_WantingToStartJob((self, alloc), start, end, fromState, toState):
         #send ON
-        pstates_to_change = [(self.pstate_switchon, (start, end))]
-        self.bs.change_pstates(pstates_to_change)
+        self.bs.change_pstate_merge(self.pstate_switchon, start, end)
         #wait job
         self.add_alloc_to_waiting_allocs(alloc)
 
