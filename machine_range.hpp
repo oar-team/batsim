@@ -211,5 +211,5 @@ public:
     static MachineRange from_string_hyphen(const std::string & str, const std::string & sep = ",", const std::string & joiner = "-", const std::string & error_prefix = "Invalid machine range string");
 
 private:
-    Set set; //! The internal set of machines
+    Set set; //!< The internal set of machines
 };

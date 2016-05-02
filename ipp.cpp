@@ -1,6 +1,6 @@
 /**
  * @file ipp.cpp
- * @brief Inter-Process Protocol
+ * @brief Inter-Process Protocol (within Batsim, not with the Decision real process)
  */
 
 #include "ipp.hpp"
@@ -9,7 +9,7 @@
 
 using namespace std;
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(ipp, "ipp");
+XBT_LOG_NEW_DEFAULT_CATEGORY(ipp, "ipp"); //!< Logging
 
 void send_message(const std::string & destination_mailbox, IPMessageType type, void * data)
 {

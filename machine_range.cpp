@@ -1,3 +1,8 @@
+/**
+ * @file machine_range.cpp
+ * @brief Contains the class which handles set of machines
+ */
+
 #include "machine_range.hpp"
 
 #include <vector>
@@ -7,7 +12,7 @@
 #include <simgrid/msg.h>
 
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(machine_range, "machine_range");
+XBT_LOG_NEW_DEFAULT_CATEGORY(machine_range, "machine_range"); //!< Logging
 
 using namespace std;
 

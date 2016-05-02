@@ -18,7 +18,7 @@
 
 using namespace std;
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(machines, "machines");
+XBT_LOG_NEW_DEFAULT_CATEGORY(machines, "machines"); //!< Logging
 
 Machines::Machines()
 {

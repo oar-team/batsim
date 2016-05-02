@@ -1,6 +1,6 @@
 /**
  * @file ipp.hpp
- * @brief Inter-Process Protocol
+ * @brief Inter-Process Protocol (within Batsim, not with the Decision real process)
  */
 
 #pragma once
@@ -40,7 +40,7 @@ enum class IPMessageType
  */
 struct JobSubmittedMessage
 {
-    int job_id; //! The job ID
+    int job_id; //!< The job ID
 };
 
 /**
@@ -48,7 +48,7 @@ struct JobSubmittedMessage
  */
 struct JobCompletedMessage
 {
-    int job_id; //! The job ID
+    int job_id; //!< The job ID
 };
 
 /**
@@ -56,7 +56,7 @@ struct JobCompletedMessage
  */
 struct JobRejectedMessage
 {
-    int job_id; //! The job ID
+    int job_id; //!< The job ID
 };
 
 /**
@@ -64,9 +64,9 @@ struct JobRejectedMessage
  */
 struct SchedulingAllocation
 {
-    int job_id; //! The job unique number
-    MachineRange machine_ids; //! The IDs of the machines on which the job should be allocated
-    std::vector<msg_host_t> hosts;  //! The corresponding SimGrid hosts
+    int job_id; //!< The job unique number
+    MachineRange machine_ids; //!< The IDs of the machines on which the job should be allocated
+    std::vector<msg_host_t> hosts;  //!< The corresponding SimGrid hosts
 };
 
 /**
@@ -74,7 +74,7 @@ struct SchedulingAllocation
  */
 struct SchedulingAllocationMessage
 {
-    std::vector<SchedulingAllocation *> allocations;  //! Possibly several allocations
+    std::vector<SchedulingAllocation *> allocations;  //!< Possibly several allocations
 };
 
 /**
@@ -82,8 +82,8 @@ struct SchedulingAllocationMessage
  */
 struct PStateModificationMessage
 {
-    MachineRange machine_ids; //! The IDs of the machines on which the pstate should be changed
-    int new_pstate; //! The power state into which the machines should be put
+    MachineRange machine_ids; //!< The IDs of the machines on which the pstate should be changed
+    int new_pstate; //!< The power state into which the machines should be put
 };
 
 /**
@@ -91,7 +91,7 @@ struct PStateModificationMessage
  */
 struct NOPMeLaterMessage
 {
-    double target_time;
+    double target_time; //!< The time at which Batsim should send a NOP message to the decision real process
 };
 
 /**
@@ -99,8 +99,8 @@ struct NOPMeLaterMessage
  */
 struct SwitchONMessage
 {
-    int machine_id;
-    int new_pstate;
+    int machine_id; //!< The unique number of the machine which should be switched ON
+    int new_pstate; //!< The power state the machine should be put into
 };
 
 /**
@@ -108,8 +108,8 @@ struct SwitchONMessage
  */
 struct SwitchOFFMessage
 {
-    int machine_id;
-    int new_pstate;
+    int machine_id; //!< The unique number of the machine which should be switched OFF
+    int new_pstate; //!< The power state the machine should be put into
 };
 
 /**
@@ -117,9 +117,13 @@ struct SwitchOFFMessage
  */
 struct IPMessage
 {
+    /**
+     * @brief Destroys a IPMessage
+     * @details This method deletes the message data according to its type
+     */
     ~IPMessage();
-    IPMessageType type; //! The message type
-    void * data;        //! The message data (can be NULL if type is in [SCHED_NOP, SUBMITTER_HELLO, SUBMITTER_BYE, SUBMITTER_READY]). Otherwise, it is either a JobSubmittedMessage*, a JobCompletedMessage* or a SchedulingAllocationMessage* according to type.
+    IPMessageType type; //!< The message type
+    void * data;        //!< The message data (can be NULL if type is in [SCHED_NOP, SUBMITTER_HELLO, SUBMITTER_BYE, SUBMITTER_READY]). Otherwise, it is either a JobSubmittedMessage*, a JobCompletedMessage* or a SchedulingAllocationMessage* according to type.
 };
 
 /**
@@ -127,8 +131,8 @@ struct IPMessage
  */
 struct RequestReplyProcessArguments
 {
-    BatsimContext * context;
-    std::string send_buffer;
+    BatsimContext * context;    //!< The BatsimContext
+    std::string send_buffer;    //!< The message to send to the Decision real process
 };
 
 /**
@@ -136,7 +140,7 @@ struct RequestReplyProcessArguments
  */
 struct ServerProcessArguments
 {
-    BatsimContext * context;
+    BatsimContext * context;    //!< The BatsimContext
 };
 
 /**
@@ -144,8 +148,8 @@ struct ServerProcessArguments
  */
 struct ExecuteJobProcessArguments
 {
-    BatsimContext * context;
-    SchedulingAllocation * allocation;
+    BatsimContext * context;            //!< The BatsimContext
+    SchedulingAllocation * allocation;  //!< The SchedulingAllocation
 };
 
 /**
@@ -153,8 +157,8 @@ struct ExecuteJobProcessArguments
  */
 struct KillerProcessArguments
 {
-    msg_task_t task; //! The task that will be cancelled if the walltime is reached
-    double walltime; //! The number of seconds to wait before cancelling the task
+    msg_task_t task; //!< The task that will be cancelled if the walltime is reached
+    double walltime; //!< The number of seconds to wait before cancelling the task
 };
 
 /**
@@ -162,9 +166,9 @@ struct KillerProcessArguments
  */
 struct SwitchPStateProcessArguments
 {
-    BatsimContext * context;
-    int machine_id;
-    int new_pstate;
+    BatsimContext * context;    //!< The BatsimContext
+    int machine_id;             //!< The unique number of the machine whose power state should be switched
+    int new_pstate;             //!< The power state into which the machine should be put
 };
 
 /**
@@ -172,7 +176,7 @@ struct SwitchPStateProcessArguments
  */
 struct JobSubmitterProcessArguments
 {
-    BatsimContext * context;
+    BatsimContext * context;    //!< The BatsimContext
 };
 
 /**
@@ -180,7 +184,7 @@ struct JobSubmitterProcessArguments
  */
 struct WaiterProcessArguments
 {
-    double target_time;
+    double target_time; //!< The time at which the waiter should stop waiting
 };
 
 /**

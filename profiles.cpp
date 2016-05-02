@@ -1,6 +1,6 @@
 /**
  * @file profiles.cpp
- * Contains profile-related structures and classes
+ * @brief Contains profile-related structures and classes
  */
 
 #include "profiles.hpp"
@@ -17,7 +17,7 @@ using namespace std;
 using namespace rapidjson;
 using namespace boost;
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(profiles, "profiles");
+XBT_LOG_NEW_DEFAULT_CATEGORY(profiles, "profiles"); //!< Logging
 
 Profiles::Profiles()
 {

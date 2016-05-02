@@ -20,7 +20,7 @@
 
 using namespace std;
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(export, "export");
+XBT_LOG_NEW_DEFAULT_CATEGORY(export, "export"); //!< Logging
 
 WriteBuffer::WriteBuffer(const std::string & filename, int bufferSize)
     : bufferSize(bufferSize)
@@ -481,7 +481,8 @@ void PajeTracer::hsvToRgb(double h, double s, double v, double & r, double & g, 
     }
 }
 
-void exportJobsToCSV(const string &filename, const BatsimContext *context)
+
+void exportJobsToCSV(const std::string &filename, const BatsimContext *context)
 {
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
@@ -528,7 +529,7 @@ void exportJobsToCSV(const string &filename, const BatsimContext *context)
 }
 
 
-void exportScheduleToCSV(const string &filename, double scheduling_time, const BatsimContext *context)
+void exportScheduleToCSV(const std::string &filename, double scheduling_time, const BatsimContext *context)
 {
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());

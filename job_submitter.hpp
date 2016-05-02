@@ -1,6 +1,6 @@
 /**
  * @file job_submitter.hpp
- * @brief Job submitter
+ * @brief Contains functions related to job submission
  */
 
 #pragma once

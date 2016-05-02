@@ -50,10 +50,10 @@ public:
     void flushBuffer();
 
 private:
-    std::ofstream f;        //! The file stream on which the buffer is outputted
-    const int bufferSize;   //! The buffer maximum size
-    char * buffer = nullptr;//! The buffer
-    int bufferPos = 0;      //! The current position of the buffer (previous positions are already written)
+    std::ofstream f;            //!< The file stream on which the buffer is outputted
+    const int bufferSize;       //!< The buffer maximum size
+    char * buffer = nullptr;    //!< The buffer
+    int bufferPos = 0;          //!< The current position of the buffer (previous positions are already written)
 };
 
 /**
@@ -214,37 +214,35 @@ private:
     void shuffleColors();
 
 private:
-    const char * rootType = "root_ct";
-    const char * machineType = "machine_ct";
-    const char * machineState = "machine_state";
-    const char * schedulerType = "scheduler_ct";
-    const char * killerType = "killer_ct";
-    const char * killEventKiller = "kk";
-    const char * killEventMachine = "km";
-    const char * utilizationVarType = "vu_vt";
+    const char * rootType = "root_ct";                  //!< The root type output name
+    const char * machineType = "machine_ct";            //!< The machine type output name
+    const char * machineState = "machine_state";        //!< The machine state output name
+    const char * schedulerType = "scheduler_ct";        //!< The scheduler type output name
+    const char * killerType = "killer_ct";              //!< The killer type output name
+    const char * killEventKiller = "kk";                //!< The kill event (on the Killer) output name
+    const char * killEventMachine = "km";               //!< The kill event (on machines) output name
+    const char * utilizationVarType = "vu_vt";          //!< The utilization variable type output name
 
-    const char * mstateWaiting = "w";
-    const char * mstateLaunching = "l";
+    const char * mstateWaiting = "w";                   //!< The waiting state output name
+    const char * mstateLaunching = "l";                 //!< The launching state output name
 
-    //const char * varGlobalUtilization = "vgu";
+    const char * root = "root";                         //!< The Pajé root output name
+    const char * scheduler = "sc";                      //!< The scheduler output name
+    const char * killer = "k";                          //!< The killer output name
+    const char * machinePrefix = "m";                   //!< The machine output prefix
+    const char * jobPrefix = "j";                       //!< The job output prefix
+    const char * waitingColor= "\"0.0 0.0 0.0\"";       //!< The color used for idle machines
+    const char * launchingColor = "\"0.3 0.3 0.3\"";    //!< The color used for machines launching a job
+    const char * utilizationColor = "\"0.0 0.5 0.0\"";  //!< The color used for the utilization graph
 
-    const char * root = "root";
-    const char * scheduler = "sc";
-    const char * killer = "k";
-    const char * machinePrefix = "m";
-    const char * jobPrefix = "j";
-    const char * waitingColor= "\"0.0 0.0 0.0\"";
-    const char * launchingColor = "\"0.3 0.3 0.3\"";
-    const char * utilizationColor = "\"0.0 0.5 0.0\"";
+    const bool _logLaunchings; //!< If set to true, job launchings should be outputted (in addition to starting decisions)
 
-    const bool _logLaunchings;
+    WriteBuffer * _wbuf = nullptr;  //!< The buffer class used to handle the output file
 
-    WriteBuffer * _wbuf = nullptr;
+    std::map<int, std::string> _jobs; //!< Maps job numbers to their Pajé representation
+    std::vector<std::string> _colors; //!< Strings associated with colors, used for the jobs
 
-    std::map<int, std::string> _jobs;
-    std::vector<std::string> _colors;
-
-    PajeTracerState state = UNINITIALIZED;
+    PajeTracerState state = UNINITIALIZED; //!< The state of the PajeTracer
 };
 
 
@@ -279,5 +277,5 @@ public:
     void add_pstate_change(double time, int machine_id, int pstate_after);
 
 private:
-    WriteBuffer * _wbuf = nullptr;
+    WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
 };

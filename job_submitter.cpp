@@ -1,6 +1,6 @@
 /**
- * @file job_submitter.hpp
- * @brief Job submitter
+ * @file job_submitter.cpp
+ * @brief Contains functions related to job submission
  */
 
 #include "job_submitter.hpp"

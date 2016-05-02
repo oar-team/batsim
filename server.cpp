@@ -1,3 +1,8 @@
+/**
+ * @file server.cpp
+ * @brief Contains functions related to the general orchestration of the simulation
+ */
+
 #include "server.hpp"
 
 #include <string>
@@ -11,7 +16,7 @@
 #include "network.hpp"
 #include "jobs_execution.hpp"
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(server, "server");
+XBT_LOG_NEW_DEFAULT_CATEGORY(server, "server"); //!< Logging
 
 using namespace std;
 

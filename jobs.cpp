@@ -22,7 +22,7 @@
 using namespace std;
 using namespace rapidjson;
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(jobs, "jobs");
+XBT_LOG_NEW_DEFAULT_CATEGORY(jobs, "jobs"); //!< Logging
 
 Jobs::Jobs()
 {

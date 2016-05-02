@@ -1,3 +1,8 @@
+/**
+ * @file batsim.cpp
+ * @brief Batsim's entry point
+ */
+
 #include <string>
 
 #include <stdio.h>
@@ -24,14 +29,17 @@
 
 using namespace std;
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "batsim");
+XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "batsim"); //!< Logging
 
+/**
+ * @brief Batsim verbosity level
+ */
 enum class VerbosityLevel
 {
-    QUIET,
-    NETWORK_ONLY,
-    INFORMATION,
-    DEBUG
+    QUIET           //!< Almost nothing should be displayed
+    ,NETWORK_ONLY   //!< Only network messages should be displayed
+    ,INFORMATION    //!< Informations should be displayed (default)
+    ,DEBUG          //!< Debug informations should be displayed too
 };
 
 /**
@@ -39,22 +47,22 @@ enum class VerbosityLevel
  */
 struct MainArguments
 {
-    std::string platformFilename;                           //! The SimGrid platform filename
-    std::string workloadFilename;                           //! The JSON workload filename
+    std::string platformFilename;                           //!< The SimGrid platform filename
+    std::string workloadFilename;                           //!< The JSON workload filename
 
-    std::string socketFilename = "/tmp/bat_socket";         //! The Unix Domain Socket filename
+    std::string socketFilename = "/tmp/bat_socket";         //!< The Unix Domain Socket filename
 
-    std::string masterHostName = "master_host";             //! The name of the SimGrid host which runs scheduler processes and not user tasks
-    std::string exportPrefix = "out";                       //! The filename prefix used to export simulation information
+    std::string masterHostName = "master_host";             //!< The name of the SimGrid host which runs scheduler processes and not user tasks
+    std::string exportPrefix = "out";                       //!< The filename prefix used to export simulation information
 
-    bool energy_used = false;                               //! True if and only if the SimGrid energy plugin should be used.
-    VerbosityLevel verbosity = VerbosityLevel::INFORMATION; //! Sets the Batsim verbosity
-    bool allow_space_sharing = false;                       //! Allows/forbids space sharing. Two jobs can run on the same machine if and only if space sharing is allowed.
-    bool enable_simgrid_process_tracing = false;            //! If set to true, this options enables the tracing of SimGrid processes
-    bool enable_schedule_tracing = true;                    //! If set to true, the schedule is exported to a Pajé trace file
+    bool energy_used = false;                               //!< True if and only if the SimGrid energy plugin should be used.
+    VerbosityLevel verbosity = VerbosityLevel::INFORMATION; //!< Sets the Batsim verbosity
+    bool allow_space_sharing = false;                       //!< Allows/forbids space sharing. Two jobs can run on the same machine if and only if space sharing is allowed.
+    bool enable_simgrid_process_tracing = false;            //!< If set to true, this options enables the tracing of SimGrid processes
+    bool enable_schedule_tracing = true;                    //!< If set to true, the schedule is exported to a Pajé trace file
 
-    bool abort = false;                                     //! A boolean value. If set to yet, the launching should be aborted for reason abortReason
-    std::string abortReason;                                //! Human readable reasons which explains why the launch should be aborted
+    bool abort = false;                                     //!< A boolean value. If set to yet, the launching should be aborted for reason abortReason
+    std::string abortReason;                                //!< Human readable reasons which explains why the launch should be aborted
 };
 
 /**
@@ -146,6 +154,12 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     return 0;
 }
 
+/**
+ * @brief Main function
+ * @param[in] argc The number of arguments
+ * @param[in] argv The arguments' values
+ * @return 0 on success, something else otherwise
+ */
 int main(int argc, char * argv[])
 {
     MainArguments mainArgs;

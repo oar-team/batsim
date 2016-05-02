@@ -20,7 +20,7 @@
 using namespace std;
 using namespace rapidjson;
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(workload, "workload");
+XBT_LOG_NEW_DEFAULT_CATEGORY(workload, "workload"); //!< Logging
 
 void check_worload_validity(const BatsimContext *context)
 {

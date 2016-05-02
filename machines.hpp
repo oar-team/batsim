@@ -40,14 +40,14 @@ struct Machine
      */
     ~Machine();
 
-    int id; //! The machine unique number
-    std::string name; //! The machine name
-    msg_host_t host; //! The SimGrid host corresponding to the machine
-    MachineState state; //! The current state of the Machine
-    std::set<int> jobs_being_computed; //! The set of jobs being computed on the Machine
+    int id; //!< The machine unique number
+    std::string name; //!< The machine name
+    msg_host_t host; //!< The SimGrid host corresponding to the machine
+    MachineState state; //!< The current state of the Machine
+    std::set<int> jobs_being_computed; //!< The set of jobs being computed on the Machine
 
-    std::map<int, PStateType> pstates; //! Maps power state number to their power state type
-    std::map<int, SleepPState *> sleep_pstates; //! Maps sleep power state numbers to their SleepPState
+    std::map<int, PStateType> pstates; //!< Maps power state number to their power state type
+    std::map<int, SleepPState *> sleep_pstates; //!< Maps sleep power state numbers to their SleepPState
 
     /**
      * @brief Returns whether the Machine has the given power state
@@ -174,9 +174,9 @@ public:
     long double total_consumed_energy(const BatsimContext * context) const;
 
 private:
-    std::vector<Machine *> _machines; //! The vector of computing machines
-    Machine * _masterMachine = nullptr; //! The Master host
-    PajeTracer * _tracer = nullptr; //! The PajeTracer
+    std::vector<Machine *> _machines; //!< The vector of computing machines
+    Machine * _masterMachine = nullptr; //!< The Master host
+    PajeTracer * _tracer = nullptr; //!< The PajeTracer
 };
 
 /**

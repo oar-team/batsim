@@ -1,6 +1,6 @@
 /**
  * @file profiles.hpp
- * Contains profile-related structures and classes
+ * @brief Contains profile-related structures and classes
  */
 
 #pragma once
@@ -33,8 +33,8 @@ struct Profile
      */
     ~Profile();
 
-    ProfileType type; //! The type of the profile
-    void * data; //! The associated data
+    ProfileType type; //!< The type of the profile
+    void * data; //!< The associated data
 };
 
 /**
@@ -48,9 +48,9 @@ struct MsgParallelProfileData
      */
     ~MsgParallelProfileData();
 
-    int nb_res;             //! The number of resources
-    double * cpu = nullptr; //! The computation vector
-    double * com = nullptr; //! The communication matrix
+    int nb_res;             //!< The number of resources
+    double * cpu = nullptr; //!< The computation vector
+    double * com = nullptr; //!< The communication matrix
 };
 
 /**
@@ -58,8 +58,8 @@ struct MsgParallelProfileData
  */
 struct MsgParallelHomogeneousProfileData
 {
-    double cpu; //! The computation amount on each node
-    double com; //! The communication amount between each pair of nodes
+    double cpu; //!< The computation amount on each node
+    double com; //!< The communication amount between each pair of nodes
 };
 
 /**
@@ -67,7 +67,7 @@ struct MsgParallelHomogeneousProfileData
  */
 struct DelayProfileData
 {
-    double delay; //! The time amount, in seconds, that the job is supposed to take
+    double delay; //!< The time amount, in seconds, that the job is supposed to take
 };
 
 /**
@@ -75,7 +75,7 @@ struct DelayProfileData
  */
 struct SmpiProfileData
 {
-    std::vector<std::string> trace_filenames; //! all defined tracefiles
+    std::vector<std::string> trace_filenames; //!< all defined tracefiles
 };
 
 /**
@@ -83,8 +83,8 @@ struct SmpiProfileData
  */
 struct SequenceProfileData
 {
-    int repeat;  //! The number of times the sequence must be repeated
-    std::vector<std::string> sequence; //! The sequence of profile names, executed in this order
+    int repeat;  //!< The number of times the sequence must be repeated
+    std::vector<std::string> sequence; //!< The sequence of profile names, executed in this order
 };
 
 /**
@@ -139,5 +139,5 @@ public:
     const std::map<std::string, Profile *> profiles() const;
 
 private:
-    std::map<std::string, Profile*> _profiles; //! Stores all the profiles, indexed by their names
+    std::map<std::string, Profile*> _profiles; //!< Stores all the profiles, indexed by their names
 };

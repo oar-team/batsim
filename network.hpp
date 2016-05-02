@@ -77,8 +77,8 @@ public:
     void send(const std::string & message);
 
 private:
-    int _server_socket = -1; //! The server-side socket
-    int _client_socket = -1; //! The client-side socket
+    int _server_socket = -1; //!< The server-side socket
+    int _client_socket = -1; //!< The client-side socket
 };
 
 /**

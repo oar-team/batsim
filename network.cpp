@@ -20,7 +20,7 @@
 #include "context.hpp"
 #include "ipp.hpp"
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(network, "network");
+XBT_LOG_NEW_DEFAULT_CATEGORY(network, "network"); //!< Logging
 
 using namespace std;
 

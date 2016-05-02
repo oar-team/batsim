@@ -11,7 +11,7 @@
 #include <simgrid/msg.h>
 #include <smpi/smpi.h>
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(jobs_execution, "jobs_execution");
+XBT_LOG_NEW_DEFAULT_CATEGORY(jobs_execution, "jobs_execution"); //!< Logging
 
 using namespace std;
 
@@ -47,7 +47,7 @@ int smpi_replay_process(int argc, char *argv[])
 }
 
 int execute_profile(BatsimContext *context,
-                    const string & profile_name,
+                    const std::string & profile_name,
                     const SchedulingAllocation * allocation,
                     double *remaining_time)
 {

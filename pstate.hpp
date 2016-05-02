@@ -68,7 +68,7 @@ public:
     bool mark_switch_as_done(int machine_id, int target_pstate, std::string & reply_message_content);
 
 private:
-    std::map<int, std::list<Switch *>> _switches; //! Contains all current switches
+    std::map<int, std::list<Switch *>> _switches; //!< Contains all current switches
 };
 
 /**

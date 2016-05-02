@@ -12,7 +12,7 @@
 
 using namespace std;
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(pstate, "pstate");
+XBT_LOG_NEW_DEFAULT_CATEGORY(pstate, "pstate"); //!< Logging
 
 int switch_on_machine_process(int argc, char *argv[])
 {
