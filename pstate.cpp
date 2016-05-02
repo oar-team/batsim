@@ -1,3 +1,8 @@
+/**
+ * @file pstate.cpp
+ * @brief Contains structures, classes and functions related to power states
+ */
+
 #include "pstate.hpp"
 
 #include <simgrid/msg.h>

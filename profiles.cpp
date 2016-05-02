@@ -1,3 +1,8 @@
+/**
+ * @file profiles.cpp
+ * Contains profile-related structures and classes
+ */
+
 #include "profiles.hpp"
 
 #include <fstream>

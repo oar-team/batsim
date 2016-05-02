@@ -27,8 +27,8 @@ class WriteBuffer
 public:
     /**
      * @brief Builds a WriteBuffer
-     * @param filename The file that will be written
-     * @param bufferSize The size of the buffer (in bytes).
+     * @param[in] filename The file that will be written
+     * @param[in] bufferSize The size of the buffer (in bytes).
      */
     WriteBuffer(const std::string & filename, int bufferSize = 64*1024);
 
@@ -40,7 +40,7 @@ public:
 
     /**
      * @brief Appends a text at the end of the buffer. If the buffer is full, it is automatically flushed into the disk.
-     * @param text The text to append
+     * @param[in] text The text to append
      */
     void appendText(const char * text);
 
@@ -57,17 +57,19 @@ private:
 };
 
 /**
- * @brief Exports the job execution to a CSV file.
- * @param filename This is the name of the output file used to write the CSV data.
+ * @brief Exports the job execution to a CSV file
+ * @param[in] filename The name of the output file used to write the CSV data
+ * @param[in] context The BatsimContext
  */
-void exportJobsToCSV(const std::string &filename, BatsimContext * context);
+void exportJobsToCSV(const std::string &filename, const BatsimContext * context);
 
 /**
- * @brief Compute and exports some schedule criteria to a CSV file.
- * @param filename The is the name of the output file used to write the CSV data.
- * @param microseconds_used_by_scheduler The number of seconds the scheduler had hand on execution flow
+ * @brief Compute and exports some schedule criteria to a CSV file
+ * @param[in] filename The name of the output file used to write the CSV data
+ * @param[in] scheduling_time The number of seconds the scheduler had hand on execution flow
+ * @param[in] context The BatsimContext
  */
-void exportScheduleToCSV(const std::string &filename, double scheduling_time, BatsimContext * context);
+void exportScheduleToCSV(const std::string &filename, double scheduling_time, const BatsimContext * context);
 
 
 /**
@@ -75,14 +77,45 @@ void exportScheduleToCSV(const std::string &filename, double scheduling_time, Ba
  */
 class PajeTracer
 {
+private:
+    /**
+     * @brief Enumerates the different states of a PajeTracer
+     */
+    enum PajeTracerState
+    {
+        UNINITIALIZED   //!< The PajeTracer has not been initialized yet
+        ,INITIALIZED    //!< The PajeTracer has been initialized
+        ,FINALIZED      //!< The PajeTracer has been finalized
+    };
+
+    /**
+     * @brief Enumerates the constants used in the output of the Paje trace
+     */
+    enum PajeTracerOutputConstants
+    {
+        DEFINE_CONTAINER_TYPE = 1   //!< Defines a container type
+        ,CREATE_CONTAINER           //!< Creates a container
+        ,DESTROY_CONTAINER          //!< Destroys a container
+        ,DEFINE_STATE_TYPE          //!< Defines a state type
+        ,DEFINE_ENTITY_VALUE        //!< Defines an entity value
+        ,SET_STATE                  //!< Sets a state
+        ,DEFINE_EVENT_TYPE          //!< Defines an event type
+        ,NEW_EVENT                  //!< Tells an event occured
+        ,DEFINE_VARIABLE_TYPE       //!< Defines a variable type
+        ,SET_VARIABLE               //!< Sets a variable
+    };
+
 public:
     /**
-     * @brief Builds a PajeTracer.
-     * @param filename
-     * @param logLaunchings If set to true, job launching time will be written in the trace. This option leads to larger trace files.
+     * @brief Builds a PajeTracer
+     * @param[in] logLaunchings If set to true, job launching time will be written in the trace. This option leads to larger trace files
      */
-    PajeTracer(bool _logLaunchings = false);
+    PajeTracer(bool logLaunchings = false);
 
+    /**
+     * @brief Sets the filename of a PajeTracer
+     * @param[in] filename The name of the output file
+     */
     void setFilename(const std::string & filename);
 
     /**
@@ -93,81 +126,64 @@ public:
     /**
      * @brief Initializes a PajeTracer.
      * @details This function must be called once before adding job launchings, runnings or endings.
-     * @param context The Batsim context
-     * @param machines The machines
+     * @param[in] context The BatsimContext
+     * @param[in] time The beginning time
      */
-    void initialize(BatsimContext * context, double time);
+    void initialize(const BatsimContext * context, double time);
 
     /**
      * @brief Finalizes a PajeTracer.
      * @details This function must be called before the PajeTracer's object destruction.
-     * @param context The Batsim context
-     * @param time The simulation time at which the finalization is done
+     * @param[in] context The BatsimContext
+     * @param[in] time The simulation time at which the finalization is done
      */
-    void finalize(BatsimContext * context, double time);
+    void finalize(const BatsimContext * context, double time);
 
     /**
      * @brief Adds a job launch in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param jobID The job unique number
-     * @param usedMachineIDs The machines which compute the job
-     * @param time The simulation time at which the addition is done
+     * @param[in] jobID The job unique number
+     * @param[in] usedMachineIDs The machines which compute the job
+     * @param[in] time The simulation time at which the addition is done
      */
     void addJobLaunching(int jobID, const std::vector<int> & usedMachineIDs, double time);
 
     /**
-     * @brief Created a job in the Pajé output file
-     * @param jobID The job unique number
+     * @brief Creates a job in the Pajé output file
+     * @param[in] jobID The job unique number
      */
     void register_new_job(int jobID);
 
     /**
      * @brief Sets a machine in the idle state
-     * @param machineID The unique machine number
-     * @param time The time at which the machine should be marked as idle
+     * @param[in] machineID The unique machine number
+     * @param[in] time The time at which the machine should be marked as idle
      */
     void set_machine_idle(int machineID, double time);
 
     /**
      * @brief Sets a machine in the computing state
-     * @param machineID The unique machine number
-     * @param jobID The unique job number that the machine computes
-     * @param time The time at which the machine should be marked as computing the job
+     * @param[in] machineID The unique machine number
+     * @param[in] jobID The unique job number that the machine computes
+     * @param[in] time The time at which the machine should be marked as computing the job
      */
     void set_machine_as_computing_job(int machineID, int jobID, double time);
 
     /**
-     * @brief Adds a job run in the file trace.
-     * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param jobID The job unique number
-     * @param time The simulation time at which the addition is done
-     */
-    void addJobRunning(int jobID, const std::vector<int> & usedMachineIDs, double time);
-
-    /**
-     * @brief Adds a job end in the file trace.
-     * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param jobID The job unique number
-     * @param usedMachineIDs The machines which compute the job
-     * @param time The simulation time at which the kill is done
-     */
-    void addJobEnding(int jobID, const std::vector<int> & usedMachineIDs, double time);
-
-    /**
      * @brief Adds a job kill in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param jobID The job unique number
-     * @param usedMachineIDs The machines which compute the job
-     * @param time The simulation time at which the kill is done
-     * @param associateKillToMachines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
+     * @param[in] jobID The job unique number
+     * @param[in] usedMachineIDs The machines which compute the job
+     * @param[in] time The simulation time at which the kill is done
+     * @param[in] associateKillToMachines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
      */
     void addJobKill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines = false);
 
     /**
      * @brief Adds a global utilization value of the system.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param utilization The global utilization of the system.
-     * @param time The simulation time at which the system has this utilization value
+     * @param[in] utilization The global utilization of the system.
+     * @param[in] time The simulation time at which the system has this utilization value
      */
     void addGlobalUtilization(double utilization, double time);
 
@@ -188,7 +204,7 @@ private:
     /**
      * @brief Generate colors
      * @details The colors are fairly shared in the Hue color spectrum.
-     * @param colorCount colorCount
+     * @param[in] colorCount colorCount
      */
     void generateColors(int colorCount = 8);
 
@@ -228,26 +244,7 @@ private:
     std::map<int, std::string> _jobs;
     std::vector<std::string> _colors;
 
-    enum
-    {
-        UNINITIALIZED,
-        INITIALIZED,
-        FINALIZED
-    } state = UNINITIALIZED;
-
-    enum
-    {
-        DEFINE_CONTAINER_TYPE = 1,
-        CREATE_CONTAINER,
-        DESTROY_CONTAINER,
-        DEFINE_STATE_TYPE,
-        DEFINE_ENTITY_VALUE,
-        SET_STATE,
-        DEFINE_EVENT_TYPE,
-        NEW_EVENT,
-        DEFINE_VARIABLE_TYPE,
-        SET_VARIABLE,
-    };
+    PajeTracerState state = UNINITIALIZED;
 };
 
 

@@ -1,3 +1,8 @@
+/**
+ * @file network.cpp
+ * @brief Contains network-related classes and functions
+ */
+
 #include "network.hpp"
 
 #include <sys/socket.h>
@@ -21,28 +26,16 @@ using namespace std;
 
 UnixDomainSocket::UnixDomainSocket()
 {
-    _server_socket = -1;
-    _client_socket = -1;
 }
 
-UnixDomainSocket::UnixDomainSocket(const string & filename) : UnixDomainSocket()
+UnixDomainSocket::UnixDomainSocket(const std::string & filename) : UnixDomainSocket()
 {
     create_socket(filename);
 }
 
 UnixDomainSocket::~UnixDomainSocket()
 {
-    if (_client_socket != -1)
-    {
-        ::close(_client_socket);
-        _client_socket = -1;
-    }
-
-    if (_server_socket != -1)
-    {
-        ::close(_server_socket);
-        _server_socket = -1;
-    }
+    close();
 }
 
 void UnixDomainSocket::create_socket(const string & filename)
@@ -74,8 +67,25 @@ void UnixDomainSocket::accept_pending_connection()
     XBT_INFO("Connected!");
 }
 
+void UnixDomainSocket::close()
+{
+    if (_client_socket != -1)
+    {
+        ::close(_client_socket);
+        _client_socket = -1;
+    }
+
+    if (_server_socket != -1)
+    {
+        ::close(_server_socket);
+        _server_socket = -1;
+    }
+}
+
 string UnixDomainSocket::receive()
 {
+    xbt_assert(_client_socket != -1, "Bad UnixDomainSocket::receive call: the client socket does not exist");
+
     string msg;
     uint32_t message_size;
     uint32_t nb_bytes_read = 0;
@@ -123,6 +133,8 @@ string UnixDomainSocket::receive()
 
 void UnixDomainSocket::send(const string & message)
 {
+    xbt_assert(_client_socket != -1, "Bad UnixDomainSocket::send call: the client socket does not exist");
+
     uint32_t message_size = message.size();
     XBT_INFO("Sending '%s'", message.c_str());
     write(_client_socket, &message_size, 4);

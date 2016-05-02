@@ -1,3 +1,8 @@
+/**
+ * @file workload.cpp
+ * @brief Contains workload-related functions
+ */
+
 #include "workload.hpp"
 
 #include <fstream>
@@ -17,7 +22,7 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(workload, "workload");
 
-void check_worload_validity(BatsimContext *context)
+void check_worload_validity(const BatsimContext *context)
 {
     // Let's check that every SEQUENCE-typed profile points to existing profiles
     for (auto mit : context->profiles.profiles())
@@ -40,7 +45,7 @@ void check_worload_validity(BatsimContext *context)
         Job * job = mit.second;
         xbt_assert(context->profiles.exists(job->profile), "Invalid job %d: the associated profile '%s' does not exist", job->id, job->profile.c_str());
 
-        Profile * profile = context->profiles[job->profile];
+        const Profile * profile = context->profiles[job->profile];
         if (profile->type == ProfileType::MSG_PARALLEL)
         {
             MsgParallelProfileData * data = (MsgParallelProfileData *) profile->data;
@@ -84,7 +89,7 @@ void load_json_workload(BatsimContext *context, const std::string &filename)
     XBT_INFO("Workload seems to be valid.");
 }
 
-void register_smpi_applications(BatsimContext *context)
+void register_smpi_applications(const BatsimContext *context)
 {
     XBT_INFO("Registering SMPI applications...");
     for (auto mit : context->jobs.jobs())

@@ -168,7 +168,7 @@ public:
 
     /**
      * @brief Computes and returns the total consumed energy of all the computing machines
-     * @param[in] The Batsim context
+     * @param[in] context The Batsim context
      * @return The total consumed energy of all the computing machines
      */
     long double total_consumed_energy(const BatsimContext * context) const;

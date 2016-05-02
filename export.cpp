@@ -102,7 +102,7 @@ PajeTracer::~PajeTracer()
     }
 }
 
-void PajeTracer::initialize(BatsimContext *context, double time)
+void PajeTracer::initialize(const BatsimContext *context, double time)
 {
     xbt_assert(state == UNINITIALIZED, "Bad PajeTracer::initialize call: the object is not UNINITIALIZED");
 
@@ -274,7 +274,7 @@ void PajeTracer::initialize(BatsimContext *context, double time)
     state = INITIALIZED;
 }
 
-void PajeTracer::finalize(BatsimContext * context, double time)
+void PajeTracer::finalize(const BatsimContext * context, double time)
 {
     xbt_assert(state == INITIALIZED, "Bad PajeTracer::finalize call: the object has not been initialized yet");
 
@@ -364,41 +364,6 @@ void PajeTracer::set_machine_as_computing_job(int machineID, int jobID, double t
              "%d %lf %s %s%d %s\n",
              SET_STATE, time, machineState, machinePrefix, machineID, mit->second.c_str());
     _wbuf->appendText(buf);
-}
-
-void PajeTracer::addJobRunning(int jobID, const vector<int> & usedMachineIDs, double time)
-{
-    xbt_assert(state == INITIALIZED, "Bad addJobLaunching call: the PajeTracer object is not initialized or had been finalized");
-
-    const int bufSize = 64;
-    char buf[bufSize];
-
-    // Let's change the state of all the machines which run the job
-    for (const int & machineID : usedMachineIDs)
-    {
-        snprintf(buf, bufSize,
-                 "%d %lf %s %s%d %s%d\n",
-                 SET_STATE, time, machineState, machinePrefix, machineID, jobPrefix, jobID);
-        _wbuf->appendText(buf);
-    }
-}
-
-void PajeTracer::addJobEnding(int jobID, const vector<int> & usedMachineIDs, double time)
-{
-    xbt_assert(state == INITIALIZED, "Bad addJobLaunching call: the PajeTracer object is not initialized or had been finalized");
-    (void) jobID;
-
-    const int bufSize = 64;
-    char buf[bufSize];
-
-    // Let's change the state of all the machines which run the job
-    for (const int & machineID : usedMachineIDs)
-    {
-        snprintf(buf, bufSize,
-                 "%d %lf %s %s%d %s\n",
-                 SET_STATE, time, machineState, machinePrefix, machineID, mstateWaiting);
-        _wbuf->appendText(buf);
-    }
 }
 
 void PajeTracer::addJobKill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines)
@@ -516,7 +481,7 @@ void PajeTracer::hsvToRgb(double h, double s, double v, double & r, double & g, 
     }
 }
 
-void exportJobsToCSV(const string &filename, BatsimContext *context)
+void exportJobsToCSV(const string &filename, const BatsimContext *context)
 {
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
@@ -563,7 +528,7 @@ void exportJobsToCSV(const string &filename, BatsimContext *context)
 }
 
 
-void exportScheduleToCSV(const string &filename, double scheduling_time, BatsimContext *context)
+void exportScheduleToCSV(const string &filename, double scheduling_time, const BatsimContext *context)
 {
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());

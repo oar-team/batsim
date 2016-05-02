@@ -1,9 +1,29 @@
+/**
+ * @file workload.hpp
+ * @brief Contains workload-related functions
+ */
+
 #pragma once
 
 #include <string>
 
 struct BatsimContext;
 
-void check_worload_validity(BatsimContext * context);
+/**
+ * @brief Checks whether a workload is valid
+ * @param[in] context The BatsimContext
+ */
+void check_worload_validity(const BatsimContext * context);
+
+/**
+ * @brief Loads a workload from a JSON file
+ * @param[in,out] context The BatsimContext
+ * @param[in] json_filename The name of the JSON workload file
+ */
 void load_json_workload(BatsimContext * context, const std::string & json_filename);
-void register_smpi_applications(BatsimContext * context);
+
+/**
+ * @brief Used to simulate SMPI jobs
+ * @param[in] context The BatsimContext
+ */
+void register_smpi_applications(const BatsimContext * context);

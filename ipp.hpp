@@ -83,7 +83,7 @@ struct SchedulingAllocationMessage
 struct PStateModificationMessage
 {
     MachineRange machine_ids; //! The IDs of the machines on which the pstate should be changed
-    int new_pstate; //! The pstate the machines should be put into
+    int new_pstate; //! The power state into which the machines should be put
 };
 
 /**
@@ -185,18 +185,16 @@ struct WaiterProcessArguments
 
 /**
  * @brief Sends a message from the given process to the given mailbox
- * @param[in] dst The destination mailbox
+ * @param[in] destination_mailbox The destination mailbox
  * @param[in] type The type of message to send
- * @param[in] job_id The job the message is about
  * @param[in] data The data associated to the message
  */
 void send_message(const std::string & destination_mailbox, IPMessageType type, void * data = nullptr);
 
 /**
  * @brief Sends a message from the given process to the given mailbox
- * @param[in] dst The destination mailbox
+ * @param[in] destination_mailbox The destination mailbox
  * @param[in] type The type of message to send
- * @param[in] job_id The job the message is about
  * @param[in] data The data associated to the message
  */
 void send_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
