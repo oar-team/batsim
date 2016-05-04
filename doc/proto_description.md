@@ -11,27 +11,30 @@ Batsim then listens for 1 client socket and accepts its connection.
 
 The used protocol is a simple synchronous semi-textual protocol. Its behaviour may be summarized
 by a request-reply protocol. When Batsim needs a scheduling decision, the following events occur:
-    1. Batsim stops the simulation.
-    2. Batsim sends a request to the scheduler.
-    3. Batsim waits for a reply from the scheduler.
-    4. Batsim receives and reads the reply.
-    5. Batsim resumes the simulation.
+
+1. Batsim stops the simulation.
+2. Batsim sends a request to the scheduler.
+3. Batsim waits for a reply from the scheduler.
+4. Batsim receives and reads the reply.
+5. Batsim resumes the simulation.
 
 # Message Composition #
 
 All messages sent in this protocol are assumed to have the format MSG_SIZE MSG_CONTENT where:
-    - MSG_SIZE is a 32-bit native-endianness unsigned integer, which stores the number of bytes of the MSG_CONTENT part.
-    - MSG_CONTENT is the real message content. It is a (non null-terminated) string: a sequence of bytes interpreted as characters thanks to the ASCII table.
+- MSG_SIZE is a 32-bit native-endianness unsigned integer, which stores the number of bytes of the MSG_CONTENT part.
+- MSG_CONTENT is the real message content. It is a (non null-terminated) string: a sequence of bytes interpreted as characters thanks to the ASCII table.
 
 Each MSG_CONTENT follows this syntax:
-{PROTO_VERSION}:{TIME_MSG}|{TIME_EVENT1}:{STAMP1}[:{STAMP_DEPENDENT_CONTENT1}][|{TIME_EVENT2}:{STAMP2}[:{STAMP_DEPENDENT_CONTENT2}][...]] with :
-    - PROTO_VERSION is the protocol version used in the message
-    - TIME_MSG is the simulation time at which the message has been sent by the scheduler
-    - TIME_EVENT1, TIME_EVENT2, ... TIME_EVENTn are the simulation time at which the event n was supposed to be sent to the scheduler. These values must be before the corresponding TIME_MSG time. Furthermore, all events must be in chronological order.
-    - STAMP1, STAMP2, ... STAMPn are the stamp of each event: it allows to know what event type should be parsed. They are 1-character long.
-    - STAMP_DEPENDENT_CONTENT1, STAMP_DEPENDENT_CONTENT2, ... STAMP_DEPENDENT_CONTENTn stores additional information about the event. For example, when a job is completed, this field stores
-    the job ID of the job which just completed. This part is not mandatory, it depends on the used
-    stamp.
+```
+{PROTO_VERSION}:{TIME_MSG}|{TIME_EVENT1}:{STAMP1}[:{STAMP_DEPENDENT_CONTENT1}][|{TIME_EVENT2}:{STAMP2}[:{STAMP_DEPENDENT_CONTENT2}][...]]
+```
+with :
+- PROTO_VERSION is the protocol version used in the message
+- TIME_MSG is the simulation time at which the message has been sent by the scheduler
+- TIME_EVENT1, TIME_EVENT2, ... TIME_EVENTn are the simulation time at which the event n was supposed to be sent to the scheduler. These values must be before the corresponding TIME_MSG time. Furthermore, all events must be in chronological order.
+- STAMP1, STAMP2, ... STAMPn are the stamp of each event: it allows to know what event type should be parsed. They are 1-character long.
+- STAMP_DEPENDENT_CONTENT1, STAMP_DEPENDENT_CONTENT2, ... STAMP_DEPENDENT_CONTENTn stores additional information about the event. For example, when a job is completed, this field stores
+the job ID of the job which just completed. This part is not mandatory, it depends on the used stamp.
 
 # Message Stamps #
 
