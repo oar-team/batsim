@@ -4,6 +4,14 @@ Batsim is a Batch Scheduler Simulator. A Batch scheduler AKA Resources and jobs 
 
 This simulator is made to plug any event based scheduler algorithm to a simulated distributed platform managed by a simulated RJMS. Thus, it permit to compare decission algorithms comming from production and academics worlds.
 
+Here is an overview of how Batsim work compared with real execution.
+#+CAPTION: Batsim vs. real 
+[[./doc/batsim_overview.pdf]]
+
+For a better comprehension of what is Batsim and why it is interesting see the following presentation that was made for JSSPP 2016 IPDPS workshop:
+
+[[./publications/Batsim_JSSPP_2016.pdf]]
+
 ** Installation
 
 *** Dependencies
