@@ -529,7 +529,7 @@ void exportJobsToCSV(const std::string &filename, const BatsimContext *context)
 }
 
 
-void exportScheduleToCSV(const std::string &filename, double scheduling_time, const BatsimContext *context)
+void exportScheduleToCSV(const std::string &filename, const BatsimContext *context)
 {
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
@@ -544,6 +544,8 @@ void exportScheduleToCSV(const std::string &filename, double scheduling_time, co
     double max_turnaround_time = 0;
     double min_job_execution_time = DBL_MAX;
     double max_job_execution_time = DBL_MIN;
+
+    long double seconds_used_by_scheduler = context->microseconds_used_by_scheduler / (long double)1e6;
 
     const auto & jobs = context->jobs.jobs();
     for (const auto & mit : jobs)
@@ -575,13 +577,16 @@ void exportScheduleToCSV(const std::string &filename, double scheduling_time, co
         }
     }
 
+    XBT_INFO("Makespan=%lf, scheduling_time=%Lf", makespan, seconds_used_by_scheduler);
+
     long double total_consumed_energy = context->machines.total_consumed_energy(context);
 
     char * buf;
-    int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf,%Lg\n",
+    int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%Lf,%lf,%Lg\n",
                        nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed,
                        (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time,
-                       scheduling_time, max_job_execution_time / min_job_execution_time,
+                       seconds_used_by_scheduler,
+                       max_job_execution_time / min_job_execution_time,
                        total_consumed_energy);
     xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 

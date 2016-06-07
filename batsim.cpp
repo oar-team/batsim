@@ -310,7 +310,7 @@ int main(int argc, char * argv[])
     // Finalization
     if (context.trace_schedule)
         context.paje_tracer.finalize(&context, MSG_get_clock());
-    exportScheduleToCSV(mainArgs.exportPrefix + "_schedule.csv", MSG_get_clock(), &context);
+    exportScheduleToCSV(mainArgs.exportPrefix + "_schedule.csv", &context);
     exportJobsToCSV(mainArgs.exportPrefix + "_jobs.csv", &context);
 
     if (res == MSG_OK)

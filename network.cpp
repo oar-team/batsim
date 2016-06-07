@@ -171,7 +171,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
 
         if (context->trace_schedule)
             context->paje_tracer.finalize(context, MSG_get_clock());
-        exportScheduleToCSV(context->export_prefix + "_schedule.csv", MSG_get_clock(), context);
+        exportScheduleToCSV(context->export_prefix + "_schedule.csv", context);
         exportJobsToCSV(context->export_prefix + "_jobs.csv", context);
 
         XBT_INFO("Output files flushed. Aborting execution now.");

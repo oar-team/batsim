@@ -66,10 +66,9 @@ void exportJobsToCSV(const std::string &filename, const BatsimContext * context)
 /**
  * @brief Compute and exports some schedule criteria to a CSV file
  * @param[in] filename The name of the output file used to write the CSV data
- * @param[in] scheduling_time The number of seconds the scheduler had hand on execution flow
  * @param[in] context The BatsimContext
  */
-void exportScheduleToCSV(const std::string &filename, double scheduling_time, const BatsimContext * context);
+void exportScheduleToCSV(const std::string &filename, const BatsimContext * context);
 
 
 /**
