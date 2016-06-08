@@ -6,7 +6,7 @@ This simulator is made to plug any event based scheduler algorithm to a simulate
 
 Here is an overview of how Batsim work compared with real execution.
 #+CAPTION: Batsim vs. real 
-[[./doc/batsim_overview.pdf]]
+[[./doc/batsim_overview.png]]
 
 For a better comprehension of what is Batsim and why it is interesting see the following presentation that was made for JSSPP 2016 IPDPS workshop:
 
