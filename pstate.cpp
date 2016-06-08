@@ -39,7 +39,7 @@ int switch_on_machine_process(int argc, char *argv[])
     XBT_INFO("Switching machine %d ('%s') ON. Passing in virtual pstate %d to do so", machine->id,
              machine->name.c_str(), on_ps);
     MSG_host_set_pstate(machine->host, on_ps);
-    args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, on_ps);
+    //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, on_ps);
 
     msg_host_t host_list[1] = {machine->host};
 //    double flop_amount[1] = {1};
@@ -57,7 +57,7 @@ int switch_on_machine_process(int argc, char *argv[])
     XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to computing pstate %d",
              machine->id, machine->name.c_str(), pstate);
     MSG_host_set_pstate(machine->host, pstate);
-    args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, pstate);
+    //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, pstate);
 
     machine->state = MachineState::IDLE;
 
@@ -94,7 +94,7 @@ int switch_off_machine_process(int argc, char *argv[])
     XBT_INFO("Switching machine %d ('%s') OFF. Passing in virtual pstate %d to do so", machine->id,
              machine->name.c_str(), off_ps);
     MSG_host_set_pstate(machine->host, off_ps);
-    args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, off_ps);
+    //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, off_ps);
 
     msg_host_t host_list[1] = {machine->host};
 //    double flop_amount[1] = {1};
@@ -112,7 +112,7 @@ int switch_off_machine_process(int argc, char *argv[])
     XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to sleeping pstate %d",
              machine->id, machine->name.c_str(), pstate);
     MSG_host_set_pstate(machine->host, pstate);
-    args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, pstate);
+    //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, pstate);
 
     machine->state = MachineState::SLEEPING;
 
@@ -128,6 +128,7 @@ int switch_off_machine_process(int argc, char *argv[])
 void CurrentSwitches::add_switch(const MachineRange &machines, int target_pstate)
 {
     Switch * s = new Switch;
+    s->all_machines = machines;
     s->switching_machines = machines;
     s->target_pstate = target_pstate;
     s->reply_message_content = machines.to_string_hyphen() + "=" + std::to_string(target_pstate);
@@ -143,7 +144,10 @@ void CurrentSwitches::add_switch(const MachineRange &machines, int target_pstate
     }
 }
 
-bool CurrentSwitches::mark_switch_as_done(int machine_id, int target_pstate, string &reply_message_content)
+bool CurrentSwitches::mark_switch_as_done(int machine_id,
+                                          int target_pstate,
+                                          string &reply_message_content,
+                                          BatsimContext * context)
 {
     xbt_assert(_switches.count(target_pstate) == 1);
 
@@ -166,6 +170,8 @@ bool CurrentSwitches::mark_switch_as_done(int machine_id, int target_pstate, str
                     _switches.erase(target_pstate);
 
                 reply_message_content = s->reply_message_content;
+                context->pstate_tracer.add_pstate_change(MSG_get_clock(), s->all_machines, s->target_pstate);
+
                 delete s;
                 return true;
             }

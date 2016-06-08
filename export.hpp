@@ -270,10 +270,10 @@ public:
     /**
      * @brief Adds a power state change in the tracer
      * @param time The time at which the change occurs
-     * @param machine_id The unique machine number
+     * @param machines The machines whose state has been changed
      * @param pstate_after The power state the machine will be in after the given time
      */
-    void add_pstate_change(double time, int machine_id, int pstate_after);
+    void add_pstate_change(double time, MachineRange machines, int pstate_after);
 
 private:
     WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file

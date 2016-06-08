@@ -281,8 +281,29 @@ int main(int argc, char * argv[])
     if (context.energy_used)
     {
         context.pstate_tracer.setFilename(mainArgs.exportPrefix + "_pstate_changes.csv");
+
+        std::map<int, MachineRange> pstate_to_machine_set;
         for (const Machine * machine : context.machines.machines())
-            context.pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, MSG_host_get_pstate(machine->host));
+        {
+            int machine_id = machine->id;
+            int pstate = MSG_host_get_pstate(machine->host);
+
+            if (pstate_to_machine_set.count(pstate) == 0)
+            {
+                MachineRange range;
+                range.insert(machine_id);
+                pstate_to_machine_set[pstate] = range;
+            }
+            else
+                pstate_to_machine_set[pstate].insert(machine_id);
+        }
+
+        for (auto mit : pstate_to_machine_set)
+        {
+            int pstate = mit.first;
+            MachineRange & range = mit.second;
+            context.pstate_tracer.add_pstate_change(MSG_get_clock(), range, pstate);
+        }
     }
 
     // Socket

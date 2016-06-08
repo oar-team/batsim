@@ -9,6 +9,8 @@
 #include <list>
 #include <string>
 
+struct BatsimContext;
+
 #include "machine_range.hpp"
 
 struct Machine;
@@ -46,6 +48,7 @@ public:
     struct Switch
     {
         int target_pstate;                  //!< The power state the machines must switch to
+        MachineRange all_machines;          //!< The machines considered by this state switch
         MachineRange switching_machines;    //!< The machines which are still switching to target_pstate
         std::string reply_message_content;  //!< The reply message (part of what will be acknowledged to the Decision real process) associated with this switch
     };
@@ -63,9 +66,13 @@ public:
      * @param[in] machine_id The unique number of the machine that just switched power state
      * @param[in] target_pstate The number of the power state into the machine just switched
      * @param[out] reply_message_content If true is returned, this argument will be set to the reply submessage associated with the switch the machine was doing
+     * @param[in,out] context The Batsim context, which may be used to logging purpose
      * @return true if the machine was the last remaining one of the switch, false otherwise
      */
-    bool mark_switch_as_done(int machine_id, int target_pstate, std::string & reply_message_content);
+    bool mark_switch_as_done(int machine_id,
+                             int target_pstate,
+                             std::string & reply_message_content,
+                             BatsimContext * context);
 
 private:
     std::map<int, std::list<Switch *>> _switches; //!< Contains all current switches

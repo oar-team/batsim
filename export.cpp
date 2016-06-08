@@ -616,11 +616,12 @@ PStateChangeTracer::~PStateChangeTracer()
     }
 }
 
-void PStateChangeTracer::add_pstate_change(double time, int machine_id, int pstate_after)
+void PStateChangeTracer::add_pstate_change(double time, MachineRange machines, int pstate_after)
 {
     const int bufSize = 64;
     char buf[bufSize];
 
-    snprintf(buf, bufSize, "%lg,%d,%d\n", time, machine_id, pstate_after);
+    snprintf(buf, bufSize, "%lg,%s,%d\n",
+             time, machines.to_string_hyphen(" ", "-").c_str(), pstate_after);
     _wbuf->appendText(buf);
 }
