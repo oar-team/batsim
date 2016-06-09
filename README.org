@@ -12,6 +12,18 @@ For a better comprehension of what is Batsim and why it is interesting see the f
 
 [[./publications/Batsim_JSSPP_2016.pdf]]
 
+** Results visualisation
+
+Batsim outpus files can be visualise using external tools:
+- [[https://github.com/oar-team/evalys][Evalys]] can be used to visualise Gantt chart from the Batsim job.csv files and SWF files
+- [[http://vite.gforge.inria.fr/][Vite]] for the Pajé traces
+
+** Write your own scheduler (or adapt an existing one)
+
+As Batsim is using a text-based protocol your scheduler have to implement this protocole: For more detail on the protocole, see [[./doc/proto_description.md][protocol description]].
+
+A good starting point is Pybatsim which helps you to easily implement your scheduling policy in Python. See [[./schedulers/pybatsim/][pybatsim folder]] for more details.
+
 ** Installation
 
 *** Dependencies
@@ -61,30 +73,25 @@ In a second terminal:
 
 Refer to [[https://github.com/oar-team/oar3][oar3]] site or bataar.py -h for more to information.
 
-** Write your own scheduler (or adapt an existing one)
-
-As Batsim is using a text-based protocol your scheduler have to implement this protocole: For more detail on the protocole, see [[./doc/proto_description.md][protocol description]].
-
-A good starting point is Pybatsim which helps you to easily implement your scheduling policy in Python. See [[./schedulers/pybatsim/][pybatsim folder]] for more details.
-
 ** Display information control
  Batsim has its own set of options but it can also handle standard SimGrid ones.
  The end-of-options delimiter "--" must then be used to use SimGrid options.
 
-*** Display Batsim options/help
- ./batsim PLATFORM WORKLOAD --help
+ : # Display Batsim options/help
+ : batsim PLATFORM WORKLOAD --help
+ 
+ : # Display SimGrid options/help
+ : batsim PLATFORM WORKLOAD -- --help
+ 
+ : # Quiet run
+ : batsim [batsim_options...] PLATFORM WORKLOAD -q
+ 
+ : # Display network information only
+ : batsim [batsim_options...] PLATFORM WORKLOAD -vnetwork-only
+ 
+ : # Display debug information
+ : batsim [batsim_options...] PLATFORM WORKLOAD -vdebug
+ 
+ : # Generate SimGrid processes' trace (can be useful to visualize what happens)
+ : batsim [batsim_options...] PLATFORM WORKLOAD -t
 
-*** Display SimGrid options/help
- ./batsim PLATFORM WORKLOAD -- --help
-
-*** Quiet run
- ./batsim [batsim_options...] PLATFORM WORKLOAD -q
-
-*** Display network information only
- ./batsim [batsim_options...] PLATFORM WORKLOAD -vnetwork-only
-
-*** Display debug information
- ./batsim [batsim_options...] PLATFORM WORKLOAD -vdebug
-
-*** Generate SimGrid processes' trace (can be useful to visualize what happens)
- ./batsim [batsim_options...] PLATFORM WORKLOAD -t
