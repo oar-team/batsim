@@ -1,13 +1,12 @@
-* TODO test energy
 * TODO test job rejection
-* TODO test nop me later
+* TODO test shared nodes
+
 * TODO file I/O
 * TODO evolving/moldable/malleable job support
 * TODO VM
 * TODO support for job creation during simulation
 * TODO suspend/resume commands
 * TODO kill job command
-* TODO shared nodes
 * TODO node sleep/wakeup
 
 * DONE job rejection
