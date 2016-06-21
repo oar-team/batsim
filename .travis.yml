@@ -8,13 +8,18 @@ addons:
 
 sudo: required
 dist: trusty
+
+before_install:
+  - export BATSIM_BASE_DIR=$(pwd)
+
 install:
+  - cd ${BATSIM_BASE_DIR}
   - git clone https://mpoquet@github.com/oar-team/simgrid-batsim.git -b batsim-compatible --depth 1 simgrid-batsim
   - cd simgrid-batsim
   - mkdir build
   - cd build
   - cmake .. -Denable_documentation=OFF
-  - make -j 4
+  - make -j $(nproc)
   - sudo make install
 
 # Enable C++ support
@@ -23,10 +28,12 @@ language: cpp
 # Compiler selection
 compiler:
   - clang
-  - gcc
 
 # Build steps
 script:
+  - cd ${BATSIM_BASE_DIR}
   - mkdir build
   - cd build
-  - cmake .. && make
+  - cmake ..
+  - make -j $(nproc)
+  - cd ..
