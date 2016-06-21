@@ -22,9 +22,13 @@ include_directories(${Boost_INCLUDE_DIR})
 find_package(rapidjson REQUIRED)
 include_directories(${RAPIDJSON_INCLUDE_DIRS})
 
+# Finding source files
+file(GLOB batsim_SRC
+    "src/*.hpp"
+    "src/*.cpp")
 
 # Executables
-add_executable(batsim batsim.cpp export.cpp ipp.cpp job_submitter.cpp jobs.cpp jobs_execution.cpp machine_range.cpp machines.cpp network.cpp profiles.cpp pstate.cpp server.cpp workload.cpp context.hpp export.hpp ipp.hpp job_submitter.hpp jobs.hpp jobs_execution.hpp machine_range.hpp machines.hpp network.hpp profiles.hpp pstate.hpp server.hpp workload.hpp)
+add_executable(batsim ${batsim_SRC})
 #add_executable(batexec batexec.c job.c utils.c export.c)
 
 # Libraries to link
@@ -40,9 +44,9 @@ INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim
 
 # Extra compiler flags
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -Wextra -g")
+    set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -Wextra")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -Wextra -g -std=c++11")
+    set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -Wextra")
 else()
     message("Compiler is unknown, warnings will NOT be added to it")
 endif()
