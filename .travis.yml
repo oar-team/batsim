@@ -2,6 +2,7 @@
 addons:
   apt:
     packages:
+      - cmake
       - libboost-dev
       - libboost-all-dev
 
