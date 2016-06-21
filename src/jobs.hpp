@@ -49,7 +49,6 @@ struct Job
 /**
  * @brief Compares job thanks to their submission times
  * @param[in] a The first job
- * @param[in] b The second job
  * @return True if and only if the first job's submission time is lower than the second job's submission time
  */
 bool job_comparator_subtime(const Job * a, const Job * b);

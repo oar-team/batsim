@@ -5,15 +5,19 @@ addons:
       - cmake
       - libboost-dev
       - libboost-all-dev
+      - doxygen
+      - graphviz
 
 sudo: required
 dist: trusty
 
 before_install:
   - export BATSIM_BASE_DIR=$(pwd)
+  - echo ${doc-ssh-private-key} > ${HOME}/.ssh/doc_rsa
+  - echo ${doc-ssh-public-key} > ${HOME}/.ssh/doc_rsa.pub
 
 install:
-  - cd ${BATSIM_BASE_DIR}
+  - cd ${BATSIM_BASE_DIR} # Install SimGrid
   - git clone https://mpoquet@github.com/oar-team/simgrid-batsim.git -b batsim-compatible --depth 1 simgrid-batsim
   - cd simgrid-batsim
   - mkdir build
@@ -22,7 +26,7 @@ install:
   - make -j $(nproc)
   - sudo make install
 
-  - cd ${BATSIM_BASE_DIR}
+  - cd ${BATSIM_BASE_DIR} # Install rapidjson
   - git clone https://github.com/miloyip/rapidjson.git
   - cd rapidjson
   - git checkout 3d5848a # v1.02
@@ -37,9 +41,16 @@ compiler:
 
 # Build steps
 script:
-  - cd ${BATSIM_BASE_DIR}
+  - cd ${BATSIM_BASE_DIR} # Compile Batsim
   - mkdir build
   - cd build
   - cmake ..
   - make -j $(nproc)
-  - cd ..
+
+  - cd ${BATSIM_BASE_DIR}/doc # Doxygen documentation
+  - doxygen
+  - [ $(wc -c doxygen_warning_errors.log | cut -d ' ' -f1) -eq 0 ] # Stops travis on warn/err
+
+after_success:
+  - cd ${BATSIM_BASE_DIR}/doc
+  - rsync -rlgoDvz doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
