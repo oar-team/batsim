@@ -17,10 +17,11 @@ dist: trusty
 before_install:
   - export BATSIM_BASE_DIR=$(pwd)
 
-  - cd travis
+  - cd travis # SSH setup for sharing the doxygen documentation
   - openssl aes-256-cbc -k "$ssh_key_password" -in travisci_rsa.enc -out travisci_rsa -d
   - chmod 0600 travisci_rsa
   - cp travisci_rsa ~/.ssh/id_rsa
+  - ssh-keyscan scm.gforge.inria.fr >> ~/.ssh/known_hosts
 
 install:
   - cd ${BATSIM_BASE_DIR} # Install SimGrid
