@@ -13,9 +13,10 @@ dist: trusty
 
 before_install:
   - export BATSIM_BASE_DIR=$(pwd)
-  - echo ${doc-ssh-private-key} > ${HOME}/.ssh/doc_rsa
-  - echo ${doc-ssh-public-key} > ${HOME}/.ssh/doc_rsa.pub
-  - ssh-keyscan scm.gforge.inria.fr >> ~/.ssh/known_hosts
+
+  - openssl aes-256-cbc -K $encrypted_3cfa041ed9d5_key -iv $encrypted_3cfa041ed9d5_iv -in travis/travisci_rsa.enc -out travis/travisci_rsa -d
+  - chmod 0600 travis/travisci_rsa
+  - cp travis/travisci_rsa ~/.ssh/id_rsa
 
 install:
   - cd ${BATSIM_BASE_DIR} # Install SimGrid
