@@ -22,6 +22,12 @@ install:
   - make -j $(nproc)
   - sudo make install
 
+  - cd ${BATSIM_BASE_DIR}
+  - git clone https://github.com/miloyip/rapidjson.git
+  - cd rapidjson
+  - git checkout 3d5848a # v1.02
+  - sudo cp -a include/rapidjson /usr/include
+
 # Enable C++ support
 language: cpp
 
