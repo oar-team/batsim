@@ -4,6 +4,6 @@
 *_schedule.trace
 *_pstate_changes.csv
 *.pyc
-doc/doxygen_warning_errors.log
+doc/doxygen_warnings.log
 doc/doxygen_doc
 build

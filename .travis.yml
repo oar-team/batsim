@@ -49,7 +49,8 @@ script:
 
   - cd ${BATSIM_BASE_DIR}/doc # Doxygen documentation
   - doxygen
-  - [ $(wc -c doxygen_warning_errors.log | cut -d ' ' -f1) -eq 0 ] # Stops travis on warn/err
+  - cat doxygen_warnings.log
+  - [ $(wc -c doxygen_warnings.log | cut -d ' ' -f1) -eq 0 ] # Stops travis on warn/err
 
 after_success:
   - cd ${BATSIM_BASE_DIR}/doc
