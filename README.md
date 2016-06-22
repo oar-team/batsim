@@ -15,6 +15,16 @@ For a better comprehension of what is Batsim and why it is interesting see the f
 
 Batsim internal documentation can be found [there](http://batsim.gforge.inria.fr/).
 
+Build status
+------------
+
+| [Linux (Ubuntu 14.04)][linux-link] |
+| :--------------------------------: |
+| ![linux-badge]                     |
+
+[linux-badge]: https://travis-ci.org/oar-team/batsim.svg?branch=master "Travis build status"
+[linux-link]:  https://travis-ci.org/oar-team/batsim "Travis build status"
+
 Tools and visualisation
 ------------------------
 

@@ -154,6 +154,8 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     return 0;
 }
 
+It's just some words to make the build fail, in order to test Travis's notification system.
+
 /**
  * @brief Main function
  * @param[in] argc The number of arguments
