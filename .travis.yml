@@ -14,12 +14,14 @@ dist: trusty
 before_install:
   - export BATSIM_BASE_DIR=$(pwd)
 
+  # SSH setup in order to publish doxygen documentation on the Inria gforge
   - openssl aes-256-cbc -K $encrypted_3cfa041ed9d5_key -iv $encrypted_3cfa041ed9d5_iv -in travisci_rsa.enc -out config/travisci_rsa -d
   - chmod 0600 travisci_rsa
   - cp travisci_rsa ~/.ssh/id_rsa
 
 install:
-  - cd ${BATSIM_BASE_DIR} # Install SimGrid
+  # Install SimGrid
+  - cd ${BATSIM_BASE_DIR}
   - git clone https://mpoquet@github.com/oar-team/simgrid-batsim.git -b batsim-compatible --depth 1 simgrid-batsim
   - cd simgrid-batsim
   - mkdir build
@@ -28,7 +30,8 @@ install:
   - make -j $(nproc)
   - sudo make install
 
-  - cd ${BATSIM_BASE_DIR} # Install rapidjson
+  # Install rapidjson
+  - cd ${BATSIM_BASE_DIR}
   - git clone https://github.com/miloyip/rapidjson.git
   - cd rapidjson
   - git checkout 3d5848a # v1.02
@@ -43,14 +46,16 @@ compiler:
 
 # Build steps
 script:
+  # Compile Batsim
   - cd ${BATSIM_BASE_DIR} # Compile Batsim
   - mkdir build
   - cd build
   - cmake ..
   - make -j $(nproc)
 
-  - cd ${BATSIM_BASE_DIR}/doc # Doxygen documentation
+  # Doxygen, warning check then publication on the Inria gforge
+  - cd ${BATSIM_BASE_DIR}/doc
   - doxygen
   - cat doxygen_warnings.log
-  - eval "[ $(wc -c doxygen_warnings.log | cut -d ' ' -f1) -eq 0 ]" # Stops travis on doxygen warnings
-  - rsync -rlgoDvz doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
+  - eval "[ $(wc -c doxygen_warnings.log | cut -d ' ' -f1) -eq 0 ]" # Fails on warnings -> travis stops
+  - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
