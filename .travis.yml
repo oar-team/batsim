@@ -13,6 +13,8 @@ env:
 
 notifications:
   email:
+    recipients:
+      - millian.poquet@gmail.com
     on_success: change
     on_failure: always
 
