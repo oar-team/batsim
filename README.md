@@ -13,6 +13,8 @@ For a better comprehension of what is Batsim and why it is interesting see the f
 
 [./publications/Batsim\_JSSPP\_2016.pdf]
 
+Batsim internal documentation can be found [there](http://batsim.gforge.inria.fr/).
+
 Tools and visualisation
 ------------------------
 
@@ -21,7 +23,7 @@ Batsim outpus files can be visualise using external tools:
 -   [Evalys] can be used to visualise Gantt chart from the Batsim job.csv files and SWF files
 -   [Vite] for the Pajé traces
 
-Also, some additional tools can be found in [tools](./tools) folder for SWF conversion for example. 
+Also, some additional tools can be found in [tools](./tools) folder for SWF conversion for example.
 
 Write your own scheduler (or adapt an existing one)
 ---------------------------------------------------
