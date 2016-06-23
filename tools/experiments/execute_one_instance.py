@@ -1,34 +1,74 @@
 #!/usr/bin/python2
 
 import argparse
-import json
+import yaml
 import os
-import execo
+from execo import *
+
+def write_string_into_file(string, filename):
+    f = open(filename, 'w')
+    f.write(string)
+    f.close()
+
+def create_dir_if_not_exists(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 class InstanceExecutionData:
-    def __init__(self, batsim_process, sched_process):
+    def __init__(self, batsim_process, sched_process, timeout, output_directory):
         self.batsim_process = batsim_process
         self.sched_process = sched_process
+        self.timeout = timeout
+        self.output_directory = output_directory
 
-class BatsimLifecycleHandler(execo.process.ProcessLifecycleHandler):
-    def __init__(self):
-        pass
-    def set_execution_data(execution_data)
+class BatsimLifecycleHandler(ProcessLifecycleHandler):
+    def set_execution_data(self, execution_data):
         self.execution_data = execution_data
-    def end(self, process):
-        if not process.finished_ok:
-            if self.execution_data.sched_process.running:
-                self.execution_data.sched_process.kill(auto_force_kill_timeout = 1)
+    def start(self, process):
+        logger.info("Batsim started")
 
-class SchedLifecycleHandler(execo.process.ProcessLifecycleHandler):
-    def __init__(self):
-        pass
-    def set_execution_data(execution_data)
-        self.execution_data = execution_data
+        # Wait for Batsim to create the socket
+        wait_for_batsim_to_open_connection(self.execution_data,
+                                           timeout = self.execution_data.timeout)
+        # Launches the scheduler
+        self.execution_data.sched_process.start()
+
     def end(self, process):
+        # Let's write stdout and stderr to files
+        write_string_into_file(process.stdout, '{output_dir}/batsim.stdout'.format(
+                                output_dir = self.execution_data.output_directory))
+        write_string_into_file(process.stderr, '{output_dir}/batsim.stderr'.format(
+                                output_dir = self.execution_data.output_directory))
+
+        # Let's check whether the process was successful
         if not process.finished_ok:
+            logger.error("Batsim ended unsuccessfully")
             if self.execution_data.sched_process.running:
+                logger.warning("Killing Sched")
                 self.execution_data.sched_process.kill(auto_force_kill_timeout = 1)
+        else:
+            logger.info("Batsim ended successfully")
+
+class SchedLifecycleHandler(ProcessLifecycleHandler):
+    def set_execution_data(self, execution_data):
+        self.execution_data = execution_data
+    def start(self, process):
+        logger.info("Sched started")
+    def end(self, process):
+        # Let's write stdout and stderr to files
+        write_string_into_file(process.stdout, '{output_dir}/sched.stdout'.format(
+                                output_dir = self.execution_data.output_directory))
+        write_string_into_file(process.stderr, '{output_dir}/sched.stderr'.format(
+                                output_dir = self.execution_data.output_directory))
+
+        # Let's check whether the process was successful
+        if not process.finished_ok:
+            logger.error("Sched ended unsuccessfully")
+            if self.execution_data.sched_process.running:
+                logger.warning("Killing Batsim")
+                self.execution_data.sched_process.kill(auto_force_kill_timeout = 1)
+        else:
+            logger.info("Sched ended successfully")
 
 def evaluate_variables_in_string(string,
                                  variables):
@@ -57,34 +97,48 @@ def wait_for_batsim_to_open_connection(execution_data,
         time.sleep(seconds_to_sleep)
         remaining_time -= seconds_to_sleep
 
-    return remainig_time > 0
+    return remaining_time > 0
 
 def execute_one_instance(working_directory,
+                         output_directory,
                          batsim_command,
                          sched_command,
                          variables,
                          timeout = None):
+    # Let's evaluate variables within Batsim and Sched' commands
     batsim_command_eval = evaluate_variables_in_string(batsim_command, variables)
     sched_command_eval = evaluate_variables_in_string(sched_command, variables)
 
+    logger.info('Batsim command: "{}"'.format(batsim_command_eval))
+    logger.info('Sched command: "{}"'.format(sched_command_eval))
+
+    # Let's create the output directory if it does not exist
+    create_dir_if_not_exists(output_directory)
+
+    # Let's create lifecycle handlers, which will manage what to do on process's events
     batsim_lifecycle_handler = BatsimLifecycleHandler()
     sched_lifecycle_handler = SchedLifecycleHandler()
 
-    batsim_process = execo.process.Process(batsim_command_eval,
+    # Let's create the execo processes
+    batsim_process = Process(batsim_command_eval,
                                            kill_subprocesses=True,
                                            name="batsim_process",
                                            cwd = working_directory,
                                            timeout = timeout,
-                                           lifecycle_handlers = batsim_lifecycle_handler)
+                                           lifecycle_handlers = [batsim_lifecycle_handler])
 
-    sched_process = execo.process.Process(sched_command_eval,
+    sched_process = Process(sched_command_eval,
                                           kill_subprocesses=True,
                                           name="sched_process",
                                           cwd = working_directory,
                                           timeout = timeout,
-                                          lifecycle_handlers = sched_lifecycle_handler)
+                                          lifecycle_handlers = [sched_lifecycle_handler])
 
-    execution_data = InstanceExecutionData(batsim_process, sched_process)
+    # Let's create a shared execution data, which will be given to LC handlers
+    execution_data = InstanceExecutionData(batsim_process = batsim_process,
+                                           sched_process = sched_process,
+                                           timeout = timeout,
+                                           output_directory = output_directory)
 
     batsim_lifecycle_handler.set_execution_data(execution_data)
     sched_lifecycle_handler.set_execution_data(execution_data)
@@ -92,67 +146,93 @@ def execute_one_instance(working_directory,
     # Batsim starts
     batsim_process.start()
 
-    # Wait for Batsim to create the socket
-    wait_for_batsim_to_open_connection(execution_data, timeout = timeout)
+    # Wait for processes' termination
+    batsim_process.wait()
+    sched_process.wait()
 
-    # If Batsim did not crash, let the scheduler be run
-    if batsim_process.running:
-        sched_process.start()
-
-        # Both processes are executed, let's wait for their termination.
-        # Thanks to LifecycleHandlers, if any processes stops without being
-        # successful, the other process would be killed to avoid reaching
-        # timeout
-        batsim_process.wait()
-        sched_process.wait()
-
-        TODO: handle execution output
-        TODO: leave the script with a non-zero error code on failure
+    success = (batsim_process.finished_ok and sched_process.finished_ok)
+    return success
 
 def main():
+    script_description = '''
+Lauches one Batsim instance.
+An instance can be represented by a tuple (platform, workload, algorithm).
+It is described in a YAML file, which is the parameter of this script.
+
+Examples of such input files can be found in the subdirectory instance_examples.
+'''
+
+
     # Program parameters parsing
-    p = argparse.ArgumentParser(description = 'Launches one Batsim instance. '
-                                'One instance is defined by a workload, '
-                                'a platform and a scheduling algorithm')
+    p = argparse.ArgumentParser(description = script_description)
 
-    p.add_argument('instance_description_json_filename',
+    p.add_argument('instance_description_filename',
                    type = str,
-                   help = 'The name of the JSON file which describes the instance')
+                   help = 'The name of the YAML file which describes the instance. '
+                          'Beware, this argument is not subjected to the working '
+                          'directory parameter.')
 
-    p.add_argument("-v", "--verbose",
-                   help = "increase output verbosity",
-                   action = "store_true")
+    p.add_argument('-wd', '--working_directory',
+                   type = str,
+                   default = None,
+                   help = 'If set, the instance will be executed in the given '
+                          'directory. This value has higher priority than the '
+                          'one that might be given in the description file. '
+                          'If unset, the script working directory is used instead')
+
+    p.add_argument('-od', '--output_directory',
+                   type = str,
+                   default = None,
+                   help = 'If set, the outputs of the current script will be '
+                          'put into the given directory. This value has higher '
+                          'priority than the one that might be given in the '
+                          'description file. If a value is set, it might be '
+                          'either absolute or relative to the working directory. '
+                          ' If unset, the working directory is used instead')
 
     args = p.parse_args()
 
     # Let's read the JSON file content to get the real parameters
 
-    json_file = open(args.instance_description_json_filename, 'r')
-    json_data = json.load(json_file,
-                          object_pairs_hook = OrderedDict)
+    desc_file = open(args.instance_description_filename, 'r')
+    desc_data = yaml.load(desc_file)
 
     working_directory = os.getcwd()
+    output_directory = os.getcwd()
     commands_before_execution = []
     commands_after_execution = []
     variables = {}
     timeout = None
 
-    assert('batsim_command' in json_data)
-    assert('sched_command' in json_data)
+    assert('batsim_command' in desc_data)
+    assert('sched_command' in desc_data)
 
-    batsim_command = str(json_data['batsim_command'])
-    sched_command = str(json_data['sched_command'])
+    batsim_command = str(desc_data['batsim_command'])
+    sched_command = str(desc_data['sched_command'])
 
-    if 'working_directory' in json_data:
-        working_directory = str(json_data['working_directory'])
-    if 'commands_before_execution' in json_data:
-        commands_before_execution = [str(command) for command in json_data['commands_before_execution']]
-    if 'commands_after_execution' in json_data:
-        commands_after_execution = [str(command) for command in json_data['commands_after_execution']]
-    if 'variables' in json_data:
-        variables = dict(json_data['variables'])
-    if 'timeout' in json_data:
-        timeout = float(json_data['timeout'])
+    if 'working_directory' in desc_data:
+        working_directory = str(desc_data['working_directory'])
+    if 'output_directory' in desc_data:
+        output_directory = str(desc_data['output_directory'])
+    if 'commands_before_execution' in desc_data:
+        commands_before_execution = [str(command) for command in desc_data['commands_before_execution']]
+    if 'commands_after_execution' in desc_data:
+        commands_after_execution = [str(command) for command in desc_data['commands_after_execution']]
+    if 'variables' in desc_data:
+        variables = dict(desc_data['variables'])
+    if 'timeout' in desc_data:
+        timeout = float(desc_data['timeout'])
+
+    if args.working_directory:
+        working_directory = args.working_directory
+
+    if args.output_directory:
+        output_directory = args.output_directory
+
+    os.chdir(working_directory)
+
+    logger.info('Working directory: {wd}'.format(wd = os.getcwd()))
+    logger.info('Output directory: {od}'.format(od = output_directory))
 
     # Let the execution be started
     # Commands before instance execution
@@ -163,6 +243,7 @@ def main():
 
     # Instance execution
     execute_one_instance(working_directory = working_directory,
+                         output_directory = output_directory,
                          batsim_command = batsim_command,
                          sched_command = sched_command,
                          variables = variables,

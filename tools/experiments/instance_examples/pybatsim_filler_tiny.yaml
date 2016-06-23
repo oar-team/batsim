@@ -1,0 +1,9 @@
+# This script should be called from Batsim's root directory
+
+variables:
+  platform: platforms/small_platform.xml
+  workload: workload_profiles/test_workload_profile.json
+  pybatsim_algo: fillerSched
+
+batsim_command: batsim ${platform} ${workload}
+sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload}
