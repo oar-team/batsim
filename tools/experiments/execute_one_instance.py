@@ -3,6 +3,7 @@
 import argparse
 import yaml
 import os
+import sys
 from execo import *
 
 def write_string_into_file(string, filename):
@@ -83,7 +84,7 @@ def evaluate_variables_in_string(string,
 def execute_command(working_directory,
                     command,
                     variables):
-    pass
+    return true
 
 def socket_in_use(sock):
     return sock in open('/proc/net/unix').read()
@@ -237,23 +238,29 @@ Examples of such input files can be found in the subdirectory instance_examples.
     # Let the execution be started
     # Commands before instance execution
     for command in commands_before_execution:
-        execute_command(working_directory = working_directory,
-                        command = command,
-                        variables = variables)
+        if not execute_command(working_directory = working_directory,
+                               command = command,
+                               variables = variables):
+            sys.exit(1)
 
     # Instance execution
-    execute_one_instance(working_directory = working_directory,
-                         output_directory = output_directory,
-                         batsim_command = batsim_command,
-                         sched_command = sched_command,
-                         variables = variables,
-                         timeout = timeout)
+    if not execute_one_instance(working_directory = working_directory,
+                                output_directory = output_directory,
+                                batsim_command = batsim_command,
+                                sched_command = sched_command,
+                                variables = variables,
+                                timeout = timeout):
+        sys.exit(2)
 
     # Commands after instance execution
     for command in commands_after_execution:
-        execute_command(working_directory = working_directory,
-                        command = command,
-                        variables = variables)
+        if not execute_command(working_directory = working_directory,
+                               command = command,
+                               variables = variables):
+            sys.exit(3)
+
+    # Everything went succesfully, let's return 0
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()
