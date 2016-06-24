@@ -53,16 +53,16 @@ install:
   ####################
   # Python libraries #
   ####################
-  - sudo pip install --upgrade pip
+  - sudo -H pip install --upgrade pip
   # Install Execo (used in the test script)
   - cd ${BATSIM_BASE_DIR}
   - git clone https://github.com/mickours/execo.git
   - cd execo
   - git checkout 725fddc # cwd support
-  - sudo pip install -U -e .
+  - sudo -H pip install -U -e .
 
   # Install sortedcontainers (used in some schedulers, used by the tests)
-  - sudo pip install sortedcontainers
+  - sudo -H pip install sortedcontainers
 
 # Enable C++ support
 language: cpp
