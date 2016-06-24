@@ -1,4 +1,4 @@
-#/usr/bin/python3
+#/usr/bin/python2
 
 from batsim.batsim import BatsimScheduler
 from schedulers.common_pyss_adaptator import CpuSnapshot

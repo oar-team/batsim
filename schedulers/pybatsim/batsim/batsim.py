@@ -1,11 +1,9 @@
-#/usr/bin/python3
+#/usr/bin/python2
 
 import json
 import struct
 import socket
 import sys, re
-
-
 
 class Batsim(object):
 
@@ -13,15 +11,15 @@ class Batsim(object):
         self.server_address = server_address
         self.verbose = verbose
         sys.setrecursionlimit(10000)
-        
+
         if validatingmachine is None:
             self.scheduler = scheduler
         else:
             self.scheduler = validatingmachine(scheduler)
-        
+
         #load json file
         self._load_json_workload_profile(json_file)
-        
+
         #open connection
         self._connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         print("[BATSIM]: connecting to %r" % server_address)
@@ -31,14 +29,14 @@ class Batsim(object):
         except socket.error:
             print("[BATSIM]: socket error")
             raise
-        
+
         #initialize some public attributes
         self.last_msg_recv_time = -1
-        
+
         self.nb_jobs_recieved = 0
         self.nb_jobs_scheduled = 0
         self.nb_jobs_json = len(self.jobs)
-        
+
         self.scheduler.bs = self
         self.scheduler.onAfterBatsimInit()
 
@@ -63,10 +61,9 @@ class Batsim(object):
             for (job, (first_res, last_res)) in allocs:
                 self.nb_jobs_scheduled += 1
                 msg += str(job.id)+ "=" + str(first_res) + "-" + str(last_res)+ ";"
-            
+
             msg = msg[:-1] # remove last semicolon
             self._msgs_to_send.append( ( self.time(), msg ) )
-            
 
     def start_jobs(self, jobs, res):
         if len(jobs) > 0:
@@ -82,7 +79,7 @@ class Batsim(object):
 
     def request_consumed_energy(self):
         self._msgs_to_send.append( ( self.time(), "E" ) )
-        
+
     def change_pstates(self, pstates_to_change):
         """
         should be [ (new_pstate, (first_node, last_node)),  ...]
@@ -116,7 +113,7 @@ class Batsim(object):
                     part = str(resUniq[1])+"-"+str(last_node) + "=" + str(new_pstate)
         if part is None:
             part = str(first_node)+"-"+str(last_node) + "=" + str(new_pstate)
-        
+
         self._msgs_to_send.append( ( self.time(), "P:" + part ) )
 
 
@@ -148,7 +145,7 @@ class Batsim(object):
         self._current_time = float(data[1])
 
         if self.verbose > 1: print("[BATSIM]: version: %r  now: %r" % (version, self.time()))
-        
+
         # [ (timestamp, txtDATA), ...]
         self._msgs_to_send = []
 
@@ -182,7 +179,7 @@ class Batsim(object):
                 raise "Only the server can receive this kind of message"
             else:
                 raise Exception("Unknow submessage type " + data[1] )
-        
+
         msg = "0:" + self._time_to_str(self.last_msg_recv_time) + "|"
         if len(self._msgs_to_send) > 0:
             #sort msgs by timestamp
@@ -204,7 +201,7 @@ class Batsim(object):
     def _load_json_workload_profile(self, filename):
         wkp_file = open(filename)
         wkp = json.load(wkp_file)
-        
+
         self.nb_res = wkp["nb_res"]
         self.jobs = {j["id"]: Job(j["id"], j["subtime"], j["walltime"], j["res"], j["profile"]) for j in wkp["jobs"]}
         #TODO: profiles

@@ -1,4 +1,4 @@
-#/usr/bin/python3
+#/usr/bin/python2
 
 from batsim.batsim import BatsimScheduler, Batsim
 
