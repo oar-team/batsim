@@ -7,6 +7,7 @@ addons:
       - libboost-all-dev
       - doxygen
       - graphviz
+      - python-pip
 env:
   global:
     secure: "ayxHlRpg3qX84ZkiLVd5s78/woUyNET99uNFviUzdDiQ9iUoaudYuu9uG9zi0RVfY0QRqESNwt8UPKTpM19M2HUqOoCYX4n865qhVkjMr2yRjK9u+HtdKZnoDRbT3o/ogSGxkctqMJmSQcgg8UdowwlAIEktIGMwk6dsAt4yYfLWABsLRulNr9SRUkTE6eNdheQaBpdD7BgIwzkEJ5cHFrd8Z9s+yRdX2RG2uXjQ3JmxdfVS2w4sboSurCQyjhbZ198Pt0/gTToinxD/BxR4rS/xyHy1o4JRbeuY103iOqGXqL1ZmoapTEA0dJ4/S51qC+xFj2KbOj555mTFG/ubWKA3FG6lezYsWlwTFPJgCQPmMu4B3dW+8ASri9aDtFs9Zt7Ul6VcE/znu/PVUPgAZTvAntb9ZYn7LK801nhIc4AAJ5mAxr1qVhtJ05QxuC6vU4c4F8mhi4YlaMDQTk4/5U0I1btn1rR7sgz9yiiEvBBV6Dha7UrDOOqoN6eXL9KE5atUcsuN/kieejj46KmLzJcl4eoElxyb2pJj+LCLzwqoAjs/BLzNWGX1fLWO2xHUPB3tDP5m3PKp9aPv55KRXp/3H3wCHH9GxIzzA1oBX3Gb5GzoW3X1CInpeaNoqs6UqYuzUozl3068o4gdCypigh0OYDwpGzQXrWOhKMP8rdM="
@@ -49,6 +50,13 @@ install:
   - git checkout 3d5848a # v1.02
   - sudo cp -a include/rapidjson /usr/include
 
+  # Install Execo
+  - cd ${BATSIM_BASE_DIR}
+  - git clone https://github.com/mickours/execo.git
+  - cd execo
+  - git checkout 725fddc # cwd support
+  - sudo pip install -U -e .
+
 # Enable C++ support
 language: cpp
 
@@ -71,3 +79,15 @@ script:
   - cat doxygen_warnings.log
   - eval "[ $(wc -c doxygen_warnings.log | cut -d ' ' -f1) -eq 0 ]" # Fails on warnings -> travis stops
   - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
+
+  #########
+  # Tests #
+  #########
+
+  # Test: simple, no energy
+  - cd ${BATSIM_BASE_DIR}
+  - ./tools/experiments/execute_instances.py test/test_no_energy.yaml -bwd . -bod test/out/no_energy
+
+  # Test: space-sharing
+  - cd ${BATSIM_BASE_DIR}
+  - ./tools/experiments/execute_instances.py test/test_space_sharing.yaml -bwd . -bod test/out/space_sharing

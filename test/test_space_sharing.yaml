@@ -1,0 +1,35 @@
+# This script should be called from Batsim's root directory
+
+# If needed, the working directory of this script can be specified within this file
+#base_working_directory: ~/proj/batsim
+
+# If needed, the output directory of this script can be specified within this file
+#base_output_directory: ~/proj/batsim/results
+
+implicit_instances:
+  implicit:
+    sweep:
+      platform :
+        -
+          - smallPF
+          - platforms/energy_platform_homogeneous_no_net_128.xml
+      random_seed:
+        - 0
+        - 1
+        - 2
+        - 3
+      workload :
+        -
+          - tiny
+          - workload_profiles/test_workload_profile.json
+        -
+          - medium
+          - workload_profiles/batsim_paper_workload_example.json
+      pybatsim_algo:
+        - randomSched
+    generic_instance:
+      timeout: 20
+      working_directory: ${base_working_directory}
+      output_directory: ${base_output_directory}/results/${pybatsim_algo}_@0{workload}
+      batsim_command: batsim @1{platform} @1{workload} -h -e ${output_directory}/out
+      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} @1{workload}
