@@ -54,7 +54,7 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
                                 output_dir = self.execution_data.output_directory))
 
         # Let's check whether the process was successful
-        if not process.finished_ok:
+        if not process.finished_ok or process.timeouted:
             self.execution_data.failure = True
             logger.error("Batsim ended unsuccessfully")
             if self.execution_data.sched_process.running:
@@ -78,8 +78,8 @@ class SchedLifecycleHandler(ProcessLifecycleHandler):
                                 output_dir = self.execution_data.output_directory))
 
         # Let's check whether the process was successful
-        if not process.finished_ok:
-            self.failure = True
+        if not process.finished_ok or process.timeouted:
+            self.execution_data.failure = True
             logger.error("Sched ended unsuccessfully")
             if self.execution_data.batsim_process.running:
                 logger.warning("Killing Batsim")
@@ -104,7 +104,7 @@ def evaluate_variables_in_string(string,
                 res = res.replace(arobase_var_brackets, var_val[list_i])
                 #print('after =1,  type(res)=', type(res))
                 #print('after =1,  type(res)=', type(res))
-        else:
+        elif not isinstance(var_val, int) and not isinstance(var_val, float):
             dollar_var_brackets = '${' + var_name + '}'
             #print('{} -> {}'.format(dollar_var_brackets, var_val))
             #print('before =2, type(res)=', type(res))
@@ -206,7 +206,10 @@ def execute_one_instance(working_directory,
     while (execution_data.nb_finished < execution_data.nb_started):
         sleep(0.2)
 
-    success = not execution_data.failure
+    if execution_data != None:
+        success = not execution_data.failure
+    else:
+        success = True
     return success
 
 def main():
