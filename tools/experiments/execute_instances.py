@@ -4,17 +4,274 @@ import argparse
 import yaml
 import os
 import sys
+import hashlib
 from execo import *
 from execo_engine import *
-import execute_one_instance
+from execute_one_instance import *
+
+def get_script_path():
+    return os.path.dirname(os.path.realpath(sys.argv[0]))
+
+class WorkersSharedData:
+    def __init__(self,
+                 sweeper,
+                 implicit_instances,
+                 explicit_instances,
+                 nb_workers_finished,
+                 base_working_directory,
+                 base_output_directory,
+                 base_variables):
+        self.sweeper = sweeper
+        self.implicit_instances = implicit_instances
+        self.explicit_instances = explicit_instances
+        self.nb_workers_finished = nb_workers_finished
+        self.base_working_directory = base_working_directory
+        self.base_output_directory = base_output_directory
+        self.base_variables = base_variables
 
 class WorkerLifeCycleHandler(ProcessLifecycleHandler):
-    def __init__(self, hosts, instances):
-        self.hosts = hosts
-        self.instances
-        self.available_hosts = hosts
-        self.process_map = {}
+    def __init__(self,
+                 hostname,
+                 local_rank,
+                 data):
+        self.hostname = hostname
+        self.host = Host(address = hostname)
+        self.local_rank = local_rank
+        self.data = data
+        self.comb = None
+        self.comb_basename = None
 
+    def execute_next_instance(self):
+        assert(self.comb == None)
+        if self.data.sweeper.get_remaining() > 0:
+            # Let's get the next instance to compute
+            self.comb = self.data.sweeper.get_next()
+            logger.info('Worker ({hostname}, {local_rank}) got comb {comb}'.format(
+                    hostname = self.hostname,
+                    local_rank = self.local_rank,
+                    comb = self.comb))
+
+            if self.comb != None:
+                (desc_filename, combname, command) = prepare_instance(
+                    comb = self.comb,
+                    explicit_instances = self.data.explicit_instances,
+                    implicit_instances = self.data.implicit_instances,
+                    base_working_directory = self.data.base_working_directory,
+                    base_output_directory = self.data.base_output_directory,
+                    base_variables = self.data.base_variables)
+                self.combname = combname
+                self._launch_process(instance_command = command)
+            else:
+                logger.info('Worker ({hostname}, {local_rank}) finished'.format(
+                    hostname = self.hostname,
+                    local_rank = self.local_rank))
+                self.data.nb_workers_finished += 1
+        else:
+            # If there is no more work to do, this worker stops
+            logger.info('Worker ({hostname}, {local_rank}) finished'.format(
+                    hostname = self.hostname,
+                    local_rank = self.local_rank))
+            self.data.nb_workers_finished += 1
+
+    def _launch_process(self,
+                        instance_command):
+        assert(self.comb != None)
+        # Logging
+        logger.info('Worker ({hostname}, {local_rank}) launches command {cmd}'.format(
+                    hostname = self.hostname,
+                    local_rank = self.local_rank,
+                    cmd = instance_command))
+
+        # Launching the process
+        if self.hostname == 'localhost':
+            process = Process(cmd = instance_command,
+                              kill_subprocesses = True,
+                              cwd = self.data.base_working_directory,
+                              lifecycle_handlers = [self])
+            process.start()
+        else:
+            process = SshProcess(cmd = instance_command,
+                                 host = self.host,
+                                 kill_subprocesses = True,
+                                 cwd = self.data.base_working_directory,
+                                 lifecycle_handlers = [self])
+            process.start()
+
+    def end(self, process):
+        assert(self.comb != None)
+
+        # Let's log the process's output
+        create_dir_if_not_exists('{base_output_dir}/instances/output/'.format(
+                                    base_output_dir = self.data.base_output_directory))
+
+        write_string_into_file(process.stdout,
+                               '{base_output_dir}/instances/output/{combname}.stdout'.format(
+                                base_output_dir = self.data.base_output_directory,
+                                combname = self.combname))
+        write_string_into_file(process.stderr,
+                               '{base_output_dir}/instances/output/{combname}.stderr'.format(
+                                base_output_dir = self.data.base_output_directory,
+                                combname = self.combname))
+
+        # Let's mark whether the computation was successful
+        if process.finished_ok:
+            self.data.sweeper.done(self.comb)
+            # Logging
+            logger.info('Worker ({hostname}, {local_rank}) finished comb {comb} '
+                        'successfully'.format(
+                            hostname = self.hostname,
+                            local_rank = self.local_rank,
+                            comb = self.comb))
+        else:
+            logger.warning('Worker ({hostname}, {local_rank}) finished comb '
+                           '{comb} unsuccessfully'.format(
+                            hostname = self.hostname,
+                            local_rank = self.local_rank,
+                            comb = self.comb))
+            self.data.sweeper.skip(self.comb)
+
+        # Let's clear current instance variables
+        self.comb = None
+        self.combname = None
+
+        self.execute_next_instance()
+
+def prepare_instance(comb,
+                     explicit_instances,
+                     implicit_instances,
+                     base_working_directory,
+                     base_output_directory,
+                     base_variables):
+    if comb['explicit']:
+        return prepare_explicit_instance(explicit_instances = explicit_instances,
+                                         instance_id = comb['instance_id'],
+                                         base_output_directory = base_output_directory,
+                                         base_variables = base_variables)
+    else:
+        return prepare_implicit_instance(implicit_instances = implicit_instances,
+                                         comb = comb,
+                                         base_output_directory = base_output_directory,
+                                         base_variables = base_variables)
+
+def prepare_implicit_instance(implicit_instances,
+                              comb,
+                              base_output_directory,
+                              base_variables):
+    # Let's retrieve instance
+    instance = implicit_instances[comb['instance_name']]
+    generic_instance = instance['generic_instance']
+    sweep = instance['sweep']
+
+    # Let's copy it
+    instance = generic_instance.copy()
+
+    # Let's use base_variables into some fields of the instance
+    for var_name in ['working_directory', 'output_directory', 'name']:
+        if var_name in instance:
+            val = evaluate_variables_in_string(instance[var_name],
+                                               base_variables)
+            instance[var_name] = val
+
+    # Let's handle the variables
+    if not 'variables' in instance:
+        instance['variables'] = {}
+
+    # Let's add sweep variables into the variable map
+    for var_name in sweep:
+        assert(var_name in comb)
+        var_val = comb[var_name]
+        if isinstance(var_val, tuple):
+            instance['variables'][var_name] = list(var_val)
+        else:
+            instance['variables'][var_name] = var_val
+
+    # Let's use base_variables into the variables of the instance
+    for var_name in instance['variables']:
+        var_val = instance['variables'][var_name]
+        if isinstance(var_val, str):
+            new_val = evaluate_variables_in_string(var_val, base_variables)
+            instance['variables'][var_name] = new_val
+        elif isinstance(var_val, list):
+            for item_i in range(len(var_val)):
+                new_val = evaluate_variables_in_string(var_val[item_i], base_variables)
+                var_val[item_i] = new_val
+            instance['variables'][var_name] = var_val
+
+    # Let's add the base_variables into the instance's variables
+    instance['variables'].update(base_variables)
+
+    # Let's generate a combname
+    combname = 'implicit'
+    combname_suffix = ''
+
+    for var in sweep:
+        val = comb[var]
+        val_to_use = val
+        if isinstance(val, tuple):
+            val_to_use = val[0]
+        combname_suffix += '__{var}={val}'.format(var = var,
+                                                  val = val_to_use)
+
+    combname += combname_suffix
+
+    # Let's write a YAML description file corresponding to the instance
+    desc_dir = '{out}/instances'.format(out = base_output_directory)
+    desc_filename = '{dir}/{combname}.yaml'.format(dir = desc_dir,
+                                                   combname = combname)
+
+    create_dir_if_not_exists('{out}/instances'.format(out = base_output_directory))
+    yaml_content = yaml.dump(instance, default_flow_style = False)
+
+    write_string_into_file(yaml_content, desc_filename)
+
+    # Let's prepare the launch command
+    instance_command = '{exec_script} {desc_filename}'.format(
+                            exec_script = execute_one_instance_script,
+                            desc_filename = desc_filename)
+    return (desc_filename, combname, instance_command)
+
+def prepare_explicit_instance(explicit_instances,
+                              instance_id,
+                              base_output_directory,
+                              base_variables):
+    # Let's retrieve the instance
+    instance = explicit_instances[instance_id]
+
+    # Let's use base_variables into some fields of the instance
+    for var_name in ['working_directory', 'output_directory', 'name']:
+        if var_name in instance:
+            val = evaluate_variables_in_string(instance[var_name],
+                                               base_variables)
+            instance[var_name] = val
+
+    # Let's handle the variables
+    if not 'variables' in instance:
+        instance['variables'] = {}
+
+    # Let's use base_variables into the variables of the instance
+    for var_name in instance['variables']:
+        var_val = instance['variables'][var_name]
+        new_val = evaluate_variables_in_string(var_val, base_variables)
+        instance['variables'][var_name] = new_val
+
+    # Let's add the base_variables into the instance's variables
+    instance['variables'].update(base_variables)
+
+    # Let's write a YAML description file corresponding to the instance
+    desc_dir = '{out}/instances'.format(out = base_output_directory)
+    combname = 'explicit_{id}'.format(id = instance_id)
+    desc_filename = '{dir}/{combname}.yaml'.format(dir = desc_dir,
+                                                   combname = combname)
+
+    create_dir_if_not_exists('{out}/instances'.format(out = base_output_directory))
+    write_string_into_file(yaml.dump(instance, default_flow_style=False),
+                           desc_filename)
+
+    # Let's prepare the launch command
+    instance_command = '{exec_script} {desc_filename}'.format(
+                            exec_script = execute_one_instance_script,
+                            desc_filename = desc_filename)
+    return (desc_filename, combname, instance_command)
 
 def retrieve_hostlist_from_mpi_hostfile(hostfile):
     hosts = set()
@@ -45,7 +302,19 @@ def generate_instances_combs(explicit_instances,
         for implicit_instance_name in implicit_instances:
             implicit_instance = implicit_instances[implicit_instance_name]
             if 'sweep' in implicit_instance:
-                sweep_var = implicit_instance['sweep']
+                sweep_var = implicit_instance['sweep'].copy()
+                # Let's transform lists into tuples (we need hashable objects to call sweep later)
+                #print("before", sweep_var)
+                for sweep_var_key in sweep_var:
+                    sweep_var_value = sweep_var[sweep_var_key]
+                    #print("sweep_var_value=",sweep_var_value)
+                    for list_i in range(len(sweep_var_value)):
+                        if isinstance(sweep_var_value[list_i], list):
+                            #print('LIST !!!')
+                            sweep_var_value[list_i] = tuple(sweep_var_value[list_i])
+                    #print('\n')
+                #print("after", sweep_var)
+                #print('\n')
                 sweep_var['explicit'] = [False]
                 sweep_var['instance_name'] = [implicit_instance_name]
                 implicit_instances_comb = implicit_instances_comb + sweep(sweep_var)
@@ -57,20 +326,59 @@ def execute_instances(base_working_directory,
                       base_variables,
                       host_list,
                       implicit_instances,
-                      explicit_instances):
+                      explicit_instances,
+                      nb_workers_per_host):
     # Let's generate all instances that should be executed
     combs = generate_instances_combs(implicit_instances = implicit_instances,
                                      explicit_instances = explicit_instances)
-    print(combs)
     sweeper = ParamSweeper('{out}/sweeper'.format(out = base_output_directory),
                            combs)
 
-    return True
+    # Debug : let's mark all inprogress values as todo
+    for comb in sweeper.get_inprogress():
+        sweeper.cancel(comb)
 
-    '''
-    TODO : iterate over instances with nthread = nhosts
-    TODO : create temp files to run execute_one_instance.py
-    TODO : launch (ssh)processes to run execute_one_instance.py'''
+    # Let's create data shared by all workers
+    worker_shared_data = WorkersSharedData(sweeper = sweeper,
+                                           implicit_instances = implicit_instances,
+                                           explicit_instances = explicit_instances,
+                                           nb_workers_finished = 0,
+                                           base_working_directory = base_working_directory,
+                                           base_output_directory = base_output_directory,
+                                           base_variables = base_variables)
+
+    # Let's create all workers
+    nb_workers = min(len(combs), len(host_list) * nb_workers_per_host)
+    workers = []
+    assert(nb_workers > 0)
+
+    for local_rank in range(nb_workers_per_host):
+        if len(workers) >= nb_workers:
+            break
+        for hostname in host_list:
+            if len(workers) >= nb_workers:
+                break
+            worker = WorkerLifeCycleHandler(hostname = hostname,
+                                            local_rank = local_rank,
+                                            data = worker_shared_data)
+            workers.append(worker)
+
+    assert(len(workers) == nb_workers)
+
+    # Let's start an instance on each worker
+    for worker in workers:
+        worker.execute_next_instance()
+
+    # Let's wait for the completion of all workers
+    while worker_shared_data.nb_workers_finished < nb_workers:
+        sleep(1)
+
+    # Let's check that all instances have been executed successfully
+    success = len(sweeper.get_skipped()) == 0
+    logger.info('{} instances have been executed successfully'.format(len(sweeper.get_done())))
+    if not success:
+        logger.warning('{} instances have been skipped'.format(len(sweeper.get_skipped())))
+    return success
 
 def main():
     script_description = '''
@@ -96,6 +404,12 @@ can be found in the instances_examples subdirectory.
                    type = str,
                    help = 'If given, the set of available hosts is retrieved '
                           'the given MPI hostfile')
+
+    p.add_argument('--nb_workers_per_host',
+                   type = int,
+                   default = 1,
+                   help = 'Sets the number of workers that should be allocated '
+                          'to each host.')
 
     p.add_argument('-bwd', '--base_working_directory',
                    type = str,
@@ -128,6 +442,9 @@ can be found in the instances_examples subdirectory.
                           'executions will be executed.')
 
     args = p.parse_args()
+
+    # Some basic checks
+    assert(args.nb_workers_per_host >= 1)
 
     # Let's read the YAML file content to get the real parameters
     desc_file = open(args.instances_description_filename, 'r')
@@ -197,7 +514,8 @@ can be found in the instances_examples subdirectory.
                                  base_variables = base_variables,
                                  host_list = host_list,
                                  implicit_instances = implicit_instances,
-                                 explicit_instances = explicit_instances):
+                                 explicit_instances = explicit_instances,
+                                 nb_workers_per_host = args.nb_workers_per_host):
             sys.exit(2)
 
     # Commands after instance execution
@@ -211,4 +529,7 @@ can be found in the instances_examples subdirectory.
     sys.exit(0)
 
 if __name__ == '__main__':
+    execute_one_instance_script = '{script_dir}/execute_one_instance.py'.format(
+                                    script_dir = get_script_path())
+    assert(os.path.isfile(execute_one_instance_script))
     main()

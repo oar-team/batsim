@@ -10,17 +10,23 @@ implicit_instances:
   implicit:
     sweep:
       platform :
-        - platforms/energy_platform_homogeneous_no_net_128.xml
+        -
+          - smallPF
+          - platforms/energy_platform_homogeneous_no_net_128.xml
       workload :
-        - workload_profiles/test_workload_profile.json
-        - workload_profiles/batsim_paper_workload_example.json
+        -
+          - tiny
+          - workload_profiles/test_workload_profile.json
+        -
+          - medium
+          - workload_profiles/batsim_paper_workload_example.json
       pybatsim_algo:
         - fillerSched
     generic_instance:
       working_directory: ${base_working_directory}
-      output_directory: ${base_output_directory}/results/${pybatsim_algo}_${workload}
-      batsim_command: batsim ${platform} ${workload} -e {output_directory}/out
-      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload}
+      output_directory: ${base_output_directory}/results/${pybatsim_algo}_@0{workload}
+      batsim_command: batsim @1{platform} @1{workload} -e ${output_directory}/out
+      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} @1{workload}
 
 explicit_instances:
   - name : pyfiller tiny small platform
@@ -30,5 +36,5 @@ explicit_instances:
       workload: workload_profiles/test_workload_profile.json
       pybatsim_algo: fillerSched
 
-    batsim_command: batsim ${platform} ${workload} -e {output_directory}/out
+    batsim_command: batsim ${platform} ${workload} -e ${output_directory}/out
     sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload}
