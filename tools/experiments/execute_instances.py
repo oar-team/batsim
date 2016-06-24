@@ -43,7 +43,7 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
 
     def execute_next_instance(self):
         assert(self.comb == None)
-        if self.data.sweeper.get_remaining() > 0:
+        if len(self.data.sweeper.get_remaining()) > 0:
             # Let's get the next instance to compute
             self.comb = self.data.sweeper.get_next()
             logger.info('Worker ({hostname}, {local_rank}) got comb {comb}'.format(
