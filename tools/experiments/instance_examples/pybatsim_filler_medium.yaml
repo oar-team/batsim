@@ -4,11 +4,10 @@
 #working_directory: ~/proj/batsim
 
 # If needed, the output directory can be specified within this file
-#output_directory: /tmp/pyfiller/tiny
-
+#output_directory: /tmp/pyfiller/medium
 variables:
-  platform: platforms/small_platform.xml
-  workload: workload_profiles/test_workload_profile.json
+  platform: platforms/energy_platform_homogeneous_no_net_128.xml
+  workload: workload_profiles/batsim_paper_workload_example.json
   pybatsim_algo: fillerSched
 # Some variables are automatically added into this dictionary:
 #   - working_directory

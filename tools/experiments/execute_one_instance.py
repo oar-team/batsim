@@ -65,9 +65,9 @@ class SchedLifecycleHandler(ProcessLifecycleHandler):
         # Let's check whether the process was successful
         if not process.finished_ok:
             logger.error("Sched ended unsuccessfully")
-            if self.execution_data.sched_process.running:
+            if self.execution_data.batsim_process.running:
                 logger.warning("Killing Batsim")
-                self.execution_data.sched_process.kill(auto_force_kill_timeout = 1)
+                self.execution_data.batsim_process.kill(auto_force_kill_timeout = 1)
         else:
             logger.info("Sched ended successfully")
 
@@ -94,7 +94,7 @@ def wait_for_batsim_to_open_connection(execution_data,
                                        timeout=60,
                                        seconds_to_sleep=0.1):
     remaining_time = timeout
-    while remaining_time > 0 and not socket_in_use(sock) and not execution_data.batsim_process.ended:
+    while remaining_time > 0 and not socket_in_use(sock) and execution_data.batsim_process.running:
         time.sleep(seconds_to_sleep)
         remaining_time -= seconds_to_sleep
 
@@ -193,8 +193,7 @@ Examples of such input files can be found in the subdirectory instance_examples.
 
     args = p.parse_args()
 
-    # Let's read the JSON file content to get the real parameters
-
+    # Let's read the YAML file content to get the real parameters
     desc_file = open(args.instance_description_filename, 'r')
     desc_data = yaml.load(desc_file)
 
@@ -234,6 +233,10 @@ Examples of such input files can be found in the subdirectory instance_examples.
 
     logger.info('Working directory: {wd}'.format(wd = os.getcwd()))
     logger.info('Output directory: {od}'.format(od = output_directory))
+
+    # Let's add some variables
+    variables['working_directory'] = working_directory
+    variables['output_directory'] = output_directory
 
     # Let the execution be started
     # Commands before instance execution

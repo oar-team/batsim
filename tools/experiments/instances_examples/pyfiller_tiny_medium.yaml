@@ -1,0 +1,28 @@
+# This script should be called from Batsim's root directory
+
+# If needed, the working directory of this script can be specified within this file
+#base_working_directory: ~/proj/batsim
+
+# If needed, the output directory of this script can be specified within this file
+#base_output_directory: ~/proj/batsim/results
+
+explicit_instances:
+  - name: pyfiller tiny
+    output_directory: ${base_output_directory}/results/pyfiller/tiny
+    variables:
+      platform: platforms/small_platform.xml
+      workload: workload_profiles/test_workload_profile.json
+      pybatsim_algo: fillerSched
+
+    batsim_command: batsim ${platform} ${workload} -e {output_directory}/out
+    sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload}
+
+  - name: pyfiller_medium
+    output_directory: ${base_output_directory}/results/pyfiller/medium
+    variables:
+      platform: platforms/energy_platform_homogeneous_no_net_128.xml
+      workload: workload_profiles/batsim_paper_workload_example.json
+      pybatsim_algo: fillerSched
+
+    batsim_command: batsim ${platform} ${workload} -e ${base_output_directory}/results/pyfiller/medium/out
+    sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload}
