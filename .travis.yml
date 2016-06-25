@@ -55,7 +55,7 @@ install:
   ####################
   - sudo -H pip install --upgrade pip
   - pip --version
-  - python2 --verrsion
+  - python2 --version
   # Install Execo (used in the test script)
   - cd ${BATSIM_BASE_DIR}
   - git clone https://github.com/mickours/execo.git
