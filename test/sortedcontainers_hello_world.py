@@ -1,6 +1,20 @@
 #!/usr/bin/python2
 
+#####################
+# Debug information #
+#####################
+
 import random
+import sys
+
+print(sys.version)
+help('modules')
+help('modules sortedcontainers')
+
+###############
+# Real script #
+###############
+
 from sortedcontainers import SortedSet
 
 # SortedSet creation
