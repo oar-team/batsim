@@ -166,14 +166,14 @@ int main(int argc, char * argv[])
 
     struct argp_option options[] =
     {
-        {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output", 0},
+        {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output. Default value: 'out'", 0},
         {"allow-space-sharing", 'h', 0, 0, "Allows space sharing: the same resource can compute several jobs at the same time", 0},
-        {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks", 0},
+        {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks. Default value: 'master_host'", 0},
         {"energy-plugin", 'p', 0, 0, "Enables energy-aware experiments", 0},
         {"quiet", 'q', 0, 0, "Shortcut for --verbosity=quiet", 0},
-        {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename", 0},
+        {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename. Default value: '/tmp/bat_socket'", 0},
         {"process-tracing", 't', 0, 0, "Enables SimGrid process tracing (shortcut for SimGrid options ----cfg=tracing:1 --cfg=tracing/msg/process:1)", 0},
-        {"disable-schedule-tracing", 'T', 0, 0, "If set, disables the tracing of the schedule.", 0},
+        {"disable-schedule-tracing", 'T', 0, 0, "If set, the tracing of the schedule is disabled (the output file _schedule.trace will not be exported)", 0},
         {"verbosity", 'v', "VERBOSITY_LEVEL", 0, "Sets the Batsim verbosity level. Available values are : quiet, network-only, information (default), debug.", 0},
         {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
     };
