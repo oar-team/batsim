@@ -36,7 +36,7 @@ Machines::~Machines()
     _masterMachine = nullptr;
 }
 
-void Machines::createMachines(xbt_dynar_t hosts, const BatsimContext *context, const string &masterHostName)
+void Machines::createMachines(xbt_dynar_t hosts, const BatsimContext *context, const string &masterHostName, int limit_machine_count)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
 
@@ -192,6 +192,25 @@ void Machines::createMachines(xbt_dynar_t hosts, const BatsimContext *context, c
 
     xbt_assert(_masterMachine != nullptr, "Cannot find the MasterHost '%s' in the platform file", masterHostName.c_str());
     sortMachinesByAscendingName();
+
+    // Let's limit the number of machines
+    if (limit_machine_count != -1)
+    {
+        int nb_machines_without_limitation = (int)_machines.size();
+        xbt_assert(limit_machine_count > 0);
+        xbt_assert(limit_machine_count <= nb_machines_without_limitation,
+                   "Impossible to compute on M=%d machines: "
+                   "only %d machines are described in the PLATFORM_FILE.",
+                   limit_machine_count,
+                   nb_machines_without_limitation);
+
+        for (int machine_id = limit_machine_count; machine_id < nb_machines_without_limitation; ++machine_id)
+        {
+            delete _machines[machine_id];
+        }
+
+        _machines.resize(limit_machine_count);
+    }
 }
 
 const Machine * Machines::operator[](int machineID) const

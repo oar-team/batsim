@@ -55,6 +55,8 @@ struct MainArguments
     std::string masterHostName = "master_host";             //!< The name of the SimGrid host which runs scheduler processes and not user tasks
     std::string exportPrefix = "out";                       //!< The filename prefix used to export simulation information
 
+    int limit_machines_count = -1;                          //!< The number of machines to use to compute jobs. -1 : no limit. >= 1 : the number of computation machines
+
     bool energy_used = false;                               //!< True if and only if the SimGrid energy plugin should be used.
     VerbosityLevel verbosity = VerbosityLevel::INFORMATION; //!< Sets the Batsim verbosity
     bool allow_space_sharing = false;                       //!< Allows/forbids space sharing. Two jobs can run on the same machine if and only if space sharing is allowed.
@@ -84,6 +86,19 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     case 'e':
         mainArgs->exportPrefix = arg;
         break;
+    case 'l':
+    {
+        int ivalue = stoi(arg);
+
+        if ((ivalue < -1) || (ivalue == 0))
+        {
+            mainArgs->abort = true;
+            mainArgs->abortReason += "\n  invalid M positional argument (" + to_string(ivalue) + "): it should either be -1 or a strictly positive value";
+        }
+
+        mainArgs->limit_machines_count = ivalue;
+        break;
+    }
     case 'm':
         mainArgs->masterHostName = arg;
         break;
@@ -145,7 +160,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     case ARGP_KEY_END:
         if (state->arg_num < 2)
         {
-            mainArgs->abort = 1;
+            mainArgs->abort = true;
             mainArgs->abortReason += "\n  Too few arguments. Try the --help option to display usage information.";
         }
         break;
@@ -168,6 +183,7 @@ int main(int argc, char * argv[])
     {
         {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output. Default value: 'out'", 0},
         {"allow-space-sharing", 'h', 0, 0, "Allows space sharing: the same resource can compute several jobs at the same time", 0},
+        {"limit-machine-count", 'l', "M", 0, "Allows to limit the number of computing machines to use. If M == -1 (default), all the machines described in PLATFORM_FILE are used (but the master_host). If M >= 1, only the first M machines will be used to comupte jobs.", 0},
         {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks. Default value: 'master_host'", 0},
         {"energy-plugin", 'p', 0, 0, "Enables energy-aware experiments", 0},
         {"quiet", 'q', 0, 0, "Shortcut for --verbosity=quiet", 0},
@@ -268,7 +284,7 @@ int main(int argc, char * argv[])
     MSG_create_environment(mainArgs.platformFilename.c_str());
 
     xbt_dynar_t hosts = MSG_hosts_as_dynar();
-    context.machines.createMachines(hosts, &context, mainArgs.masterHostName);
+    context.machines.createMachines(hosts, &context, mainArgs.masterHostName, mainArgs.limit_machines_count);
     xbt_dynar_free(&hosts);
     const Machine * masterMachine = context.machines.masterMachine();
     if (context.trace_schedule)

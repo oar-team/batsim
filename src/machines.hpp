@@ -98,8 +98,9 @@ public:
      * @param[in] hosts The SimGrid hosts
      * @param[in] context The Batsim Context
      * @param[in] masterHostName The name of the host which should be used as the Master host
+     * @param[in] limit_machine_count If set to -1, all the machines are used. If set to a strictly positive number N, only the first machines N will be used to compute jobs
      */
-    void createMachines(xbt_dynar_t hosts, const BatsimContext * context, const std::string & masterHostName);
+    void createMachines(xbt_dynar_t hosts, const BatsimContext * context, const std::string & masterHostName, int limit_machine_count = -1);
 
     /**
      * @brief Must be called when a job is executed on some machines
