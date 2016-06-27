@@ -104,3 +104,7 @@ script:
   # Test: space-sharing
   - cd ${BATSIM_BASE_DIR}
   - ./tools/experiments/execute_instances.py test/test_space_sharing.yaml -bwd . -bod test/out/space_sharing
+
+  # Test: energy
+  - cd ${BATSIM_BASE_DIR}
+  - ./tools/experiments/execute_instances.py test/test_energy.yaml -bwd . -bod test/out/energy
