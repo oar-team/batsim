@@ -64,7 +64,7 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
                                               timeout = self.execution_data.timeout,
                                               sock = self.execution_data.batsim_socket):
             # Launches the scheduler
-            logger.info("Batsim's socket is opened")
+            logger.info("Batsim's socket {} is now opened".format(self.execution_data.batsim_socket))
             self.execution_data.sched_process.start()
         else:
             self.execution_data.failure = True
@@ -177,7 +177,7 @@ def wait_for_batsim_to_open_connection(execution_data,
         time.sleep(seconds_to_sleep)
         remaining_time -= seconds_to_sleep
 
-    return remaining_time > 0
+    return socket_in_use(sock)
 
 def wait_for_batsim_socket_to_be_usable(sock = '/tmp/bat_socket',
                                         timeout = 60,
