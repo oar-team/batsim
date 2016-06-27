@@ -61,10 +61,10 @@ install:
   - git clone https://github.com/mickours/execo.git
   - cd execo
   - git checkout 725fddc # cwd support
-  - sudo -H pip install -U -e .
+  - pip install --user -U -e .
 
   # Install sortedcontainers (used in some schedulers, used by the tests)
-  - sudo -H pip install sortedcontainers
+  - pip install --user -U sortedcontainers
 
 # Enable C++ support
 language: cpp
