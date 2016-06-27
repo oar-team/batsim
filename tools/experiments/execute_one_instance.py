@@ -5,11 +5,33 @@ import yaml
 import os
 import sys
 import time
+import shlex
 from execo import *
 
 def find_socket_from_batsim_command(batsim_command):
-    return '/tmp/bat_socket'
-    # TODO: hack command
+    split_command = shlex.split(batsim_command)
+    logger.info("split_command = {}".format(split_command))
+
+    batparser = argparse.ArgumentParser(prog = split_command[0],
+                                        description = 'Batsim command parser',
+                                        add_help = False)
+
+    batparser.add_argument("platform")
+    batparser.add_argument("workload")
+
+    batparser.add_argument("-e", "--export", default="out")
+    batparser.add_argument("-h", "--allow-space-sharing", action='store_true')
+    batparser.add_argument("-m", "--master-host", default="master_host")
+    batparser.add_argument("-p", "--energy-plugin", action='store_true')
+    batparser.add_argument("-q", "--quiet", action='store_true')
+    batparser.add_argument("-s", "--socket", default="/tmp/bat_socket")
+    batparser.add_argument("-t", "--process-tracing", action='store_true')
+    batparser.add_argument("-T", "--disable-schedule-tracing", action='store_true')
+    batparser.add_argument("-v", "--verbosity", default="information")
+
+    batargs = batparser.parse_args(split_command[1:])
+
+    return batargs.socket
 
 def write_string_into_file(string, filename):
     f = open(filename, 'w')
@@ -47,6 +69,7 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
         self.execution_data.nb_started += 1
 
     def end(self, process):
+        logger.debug('process : {}'.format(id(process)))
         # Let's write stdout and stderr to files
         write_string_into_file(process.stdout, '{output_dir}/batsim.stdout'.format(
                                 output_dir = self.execution_data.output_directory))
@@ -54,9 +77,17 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
                                 output_dir = self.execution_data.output_directory))
 
         # Let's check whether the process was successful
-        if not process.finished_ok or process.timeouted:
+        if (process.exit_code != 0) or process.timeouted or process.killed:
             self.execution_data.failure = True
-            logger.error("Batsim ended unsuccessfully")
+
+            if process.killed:
+                logger.error("Batsim ended unsucessfully (killed)")
+            elif process.timeouted:
+                logger.error("Batsim ended unsucessfully (reached timeout)")
+            elif process.exit_code != 0:
+                logger.error("Batsim ended unsucessfully (exit_code = {})".format(process.exit_code))
+            else:
+                logger.error("Batsim ended unsucessfully (unknown reason)")
             if self.execution_data.sched_process.running:
                 logger.warning("Killing Sched")
                 self.execution_data.sched_process.kill(auto_force_kill_timeout = 1)
@@ -78,9 +109,18 @@ class SchedLifecycleHandler(ProcessLifecycleHandler):
                                 output_dir = self.execution_data.output_directory))
 
         # Let's check whether the process was successful
-        if not process.finished_ok or process.timeouted:
+        if (process.exit_code != 0) or process.timeouted or process.killed:
             self.execution_data.failure = True
-            logger.error("Sched ended unsuccessfully")
+
+            if process.killed:
+                logger.error("Sched ended unsucessfully (killed)")
+            elif process.timeouted:
+                logger.error("Sched ended unsucessfully (reached timeout)")
+            elif process.exit_code != 0:
+                logger.error("Sched ended unsucessfully (exit_code = {})".format(process.exit_code))
+            else:
+                logger.error("Sched ended unsucessfully (unknown reason)")
+
             if self.execution_data.batsim_process.running:
                 logger.warning("Killing Batsim")
                 self.execution_data.batsim_process.kill(auto_force_kill_timeout = 1)
@@ -210,6 +250,8 @@ def execute_one_instance(working_directory,
         success = not execution_data.failure
     else:
         success = True
+
+    logger.debug('batsim process : {}'.format(id(batsim_process)))
     return success
 
 def main():
