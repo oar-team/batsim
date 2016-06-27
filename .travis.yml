@@ -53,9 +53,9 @@ install:
   ####################
   # Python libraries #
   ####################
+  # Upgrade pip
   - pip install --user --upgrade pip
-  - pip --version
-  - python2 --version
+
   # Install Execo (used in the test script)
   - cd ${BATSIM_BASE_DIR}
   - git clone https://github.com/mickours/execo.git
@@ -75,7 +75,9 @@ compiler:
 
 # Build steps
 script:
-  # Compile Batsim
+  ################
+  # Build Batsim #
+  ################
   - cd ${BATSIM_BASE_DIR}
   - mkdir build
   - cd build
@@ -83,7 +85,9 @@ script:
   - make -j $(nproc)
   - sudo make install
 
-  # Doxygen, warning check then publication on the Inria gforge
+  #########################
+  # Doxygen documentation #
+  #########################
   - cd ${BATSIM_BASE_DIR}/doc
   - doxygen
   - cat doxygen_warnings.log
@@ -93,11 +97,6 @@ script:
   #########
   # Tests #
   #########
-
-  # Sortedcontainers hello world to check installation
-  - cd ${BATSIM_BASE_DIR}
-  - python2 test/sortedcontainers_hello_world.py
-
   # Test: simple, no energy
   - cd ${BATSIM_BASE_DIR}
   - ./tools/experiments/execute_instances.py test/test_no_energy.yaml -bwd . -bod test/out/no_energy
