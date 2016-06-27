@@ -259,6 +259,9 @@ int execute_job_process(int argc, char *argv[])
             Machine * machine = args->context->machines[machine_id];
             job->consumed_energy += sg_host_get_consumed_energy(machine->host);
         }
+
+        // Let's trace the consumed energy
+        args->context->energy_tracer.add_job_start(MSG_get_clock(), job->id);
     }
 
     // Job computation
@@ -295,6 +298,9 @@ int execute_job_process(int argc, char *argv[])
 
         // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
         job->consumed_energy = job->consumed_energy - consumed_energy_before;
+
+        // Let's trace the consumed energy
+        args->context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
     }
 
     // Let us tell the server that the job completed

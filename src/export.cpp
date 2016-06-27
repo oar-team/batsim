@@ -621,7 +621,70 @@ void PStateChangeTracer::add_pstate_change(double time, MachineRange machines, i
     const int bufSize = 64;
     char buf[bufSize];
 
-    snprintf(buf, bufSize, "%lg,%s,%d\n",
+    snprintf(buf, bufSize, "%g,%s,%d\n",
              time, machines.to_string_hyphen(" ", "-").c_str(), pstate_after);
+    xbt_assert(_wbuf != nullptr);
+    _wbuf->appendText(buf);
+}
+
+
+EnergyConsumptionTracer::EnergyConsumptionTracer()
+{
+}
+
+EnergyConsumptionTracer::~EnergyConsumptionTracer()
+{
+    if (_wbuf != nullptr)
+    {
+        delete _wbuf;
+        _wbuf = nullptr;
+    }
+}
+
+void EnergyConsumptionTracer::set_context(const BatsimContext *context)
+{
+    xbt_assert(context->energy_used);
+    _context = context;
+}
+
+void EnergyConsumptionTracer::set_filename(const string &filename)
+{
+    xbt_assert(_wbuf == nullptr, "Double call of EnergyConsumptionTracer::set_filename");
+    _wbuf = new WriteBuffer(filename);
+
+    _wbuf->appendText("time,energy,event_type\n");
+}
+
+void EnergyConsumptionTracer::add_job_start(double date, int job_id)
+{
+    (void) job_id;
+    add_entry(date, 's');
+}
+
+void EnergyConsumptionTracer::add_job_end(double date, int job_id)
+{
+    (void) job_id;
+    add_entry(date, 'e');
+}
+
+void EnergyConsumptionTracer::add_pstate_change(double date, const MachineRange & machines, int new_pstate)
+{
+    (void) machines;
+    (void) new_pstate;
+    add_entry(date, 'p');
+}
+
+void EnergyConsumptionTracer::add_entry(double date, char event_type)
+{
+    xbt_assert(_wbuf != nullptr);
+
+    long double energy = _context->machines.total_consumed_energy(_context);
+
+    const int buf_size = 64;
+    char buf[buf_size];
+
+    snprintf(buf, buf_size, "%g,%Lg,%c\n",
+             date, energy, event_type);
+    xbt_assert(_wbuf != nullptr);
     _wbuf->appendText(buf);
 }

@@ -280,6 +280,11 @@ int main(int argc, char * argv[])
 
     if (context.energy_used)
     {
+        // Energy consumption tracing
+        context.energy_tracer.set_context(&context);
+        context.energy_tracer.set_filename(mainArgs.exportPrefix + "_consumed_energy.csv");
+
+        // Power state tracing
         context.pstate_tracer.setFilename(mainArgs.exportPrefix + "_pstate_changes.csv");
 
         std::map<int, MachineRange> pstate_to_machine_set;

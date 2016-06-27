@@ -257,15 +257,16 @@ public:
     PStateChangeTracer();
 
     /**
+     * @brief Destroys a PStateChangeTracer
+     * @details The output file is flushed and written
+     */
+    ~PStateChangeTracer();
+
+    /**
      * @brief Sets the output filename of the tracer
      * @param filename The name of the output file of the tracer
      */
     void setFilename(const std::string & filename);
-
-    /**
-     * @brief Destroys a PStateChangeTracer
-     */
-    ~PStateChangeTracer();
 
     /**
      * @brief Adds a power state change in the tracer
@@ -276,5 +277,69 @@ public:
     void add_pstate_change(double time, MachineRange machines, int pstate_after);
 
 private:
+    WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
+};
+
+/**
+ * @brief Traces the energy consumption of the computation machines
+ */
+class EnergyConsumptionTracer
+{
+public:
+    /**
+     * @brief Constructs a EnergyConsumptionTracer
+     */
+    EnergyConsumptionTracer();
+
+    /**
+     * @brief Destroys a EnergyConsumptionTracer
+     * @details The output file is flushed and written
+     */
+    ~EnergyConsumptionTracer();
+
+    /**
+     * @brief Sets the Batsim context
+     * @param[in] context The Batsim context
+     */
+    void set_context(const BatsimContext * context);
+
+    /**
+     * @brief Sets the output filename of the tracer
+     * @param[in] filename The name of the output file of the tracer
+     */
+    void set_filename(const std::string & filename);
+
+    /**
+     * @brief Adds a job start in the tracer
+     * @param[in] date The date at which the job has been started
+     * @param[in] job_id The job unique number
+     */
+    void add_job_start(double date, int job_id);
+
+    /**
+     * @brief Adds a job end in the tracer
+     * @param[in] date The date at which the job has ended
+     * @param[in] job_id The job unique number
+     */
+    void add_job_end(double date, int job_id);
+
+    /**
+     * @brief Adds a power state change in the tracer
+     * @param[in] date The date at which the power state has been changed
+     * @param[in] machines The machines whose power state has changed
+     * @param[in] new_pstate The new power state of the machine
+     */
+    void add_pstate_change(double date, const MachineRange & machines, int new_pstate);
+
+private:
+    /**
+     * @brief Adds a line in the output file
+     * @param[in] date The date at which the event has occured
+     * @param[in] event_type The type of the event which occured
+     */
+    void add_entry(double date, char event_type);
+
+private:
+    const BatsimContext * _context = nullptr; //!< The Batsim context
     WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
 };

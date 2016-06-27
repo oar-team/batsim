@@ -23,6 +23,7 @@ struct BatsimContext
     Profiles profiles;                              //!< The profiles
     PajeTracer paje_tracer;                         //!< The PajeTracer
     PStateChangeTracer pstate_tracer;               //!< The PStateChangeTracer
+    EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
     CurrentSwitches current_switches;               //!< The current switches
 
     long long microseconds_used_by_scheduler = 0;   //!< The number of microseconds used by the scheduler
