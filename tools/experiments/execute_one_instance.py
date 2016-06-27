@@ -79,11 +79,13 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
                                 output_dir = self.execution_data.output_directory))
 
         # Let's check whether the process was successful
-        if (process.exit_code != 0) or process.timeouted or process.killed:
+        if (process.exit_code != 0) or process.timeouted or process.killed or process.error:
             self.execution_data.failure = True
 
             if process.killed:
                 logger.error("Batsim ended unsucessfully (killed)")
+            elif process.error:
+                logger.error("Batsim ended unsucessfully (error: {})".format(process.error_reason))
             elif process.timeouted:
                 logger.error("Batsim ended unsucessfully (reached timeout)")
             elif process.exit_code != 0:
@@ -111,11 +113,13 @@ class SchedLifecycleHandler(ProcessLifecycleHandler):
                                 output_dir = self.execution_data.output_directory))
 
         # Let's check whether the process was successful
-        if (process.exit_code != 0) or process.timeouted or process.killed:
+        if (process.exit_code != 0) or process.timeouted or process.killed or process.error:
             self.execution_data.failure = True
 
             if process.killed:
                 logger.error("Sched ended unsucessfully (killed)")
+            elif process.error:
+                logger.error("Sched ended unsucessfully (error: {})".format(process.error_reason))
             elif process.timeouted:
                 logger.error("Sched ended unsucessfully (reached timeout)")
             elif process.exit_code != 0:
