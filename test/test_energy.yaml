@@ -17,11 +17,9 @@ implicit_instances:
         -
           - tiny # short name
           - workload_profiles/test_workload_profile.json # filename
-          - 4 # number of machines to use
         -
           - medium
           - workload_profiles/batsim_paper_workload_example.json
-          - 32
       pybatsim_algo:
         - fillerSched
         - easyBackfillNotopo
@@ -29,5 +27,5 @@ implicit_instances:
       timeout: 10
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${pybatsim_algo}_@0{workload}
-      batsim_command: batsim @1{platform} @1{workload} -p -e ${output_directory}/out -s ./@0{platform}_@0{workload}_${pybatsim_algo} -l @2{workload}
+      batsim_command: batsim @1{platform} @1{workload} -p -e ${output_directory}/out -s ./@0{platform}_@0{workload}_${pybatsim_algo} -L
       sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} @1{workload} -s ./@0{platform}_@0{workload}_${pybatsim_algo}

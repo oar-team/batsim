@@ -19,8 +19,9 @@ void check_worload_validity(const BatsimContext * context);
  * @brief Loads a workload from a JSON file
  * @param[in,out] context The BatsimContext
  * @param[in] json_filename The name of the JSON workload file
+ * @param[out] nb_machines The number of machines described in the JSON file
  */
-void load_json_workload(BatsimContext * context, const std::string & json_filename);
+void load_json_workload(BatsimContext * context, const std::string & json_filename, int & nb_machines);
 
 /**
  * @brief Used to simulate SMPI jobs

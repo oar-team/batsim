@@ -56,6 +56,7 @@ struct MainArguments
     std::string exportPrefix = "out";                       //!< The filename prefix used to export simulation information
 
     int limit_machines_count = -1;                          //!< The number of machines to use to compute jobs. -1 : no limit. >= 1 : the number of computation machines
+    bool limit_machines_count_by_workload = false;          //!< If set to true, the number of computing machiens to use should be limited by the workload description
 
     bool energy_used = false;                               //!< True if and only if the SimGrid energy plugin should be used.
     VerbosityLevel verbosity = VerbosityLevel::INFORMATION; //!< Sets the Batsim verbosity
@@ -97,6 +98,11 @@ int parse_opt (int key, char *arg, struct argp_state *state)
         }
 
         mainArgs->limit_machines_count = ivalue;
+        break;
+    }
+    case 'L':
+    {
+        mainArgs->limit_machines_count_by_workload = true;
         break;
     }
     case 'm':
@@ -184,6 +190,7 @@ int main(int argc, char * argv[])
         {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output. Default value: 'out'", 0},
         {"allow-space-sharing", 'h', 0, 0, "Allows space sharing: the same resource can compute several jobs at the same time", 0},
         {"limit-machine-count", 'l', "M", 0, "Allows to limit the number of computing machines to use. If M == -1 (default), all the machines described in PLATFORM_FILE are used (but the master_host). If M >= 1, only the first M machines will be used to comupte jobs.", 0},
+        {"limit-machine-count-by-worload", 'L', 0, 0, "If set, allows to limit the number of computing machines to use. This number is read from the workload file. If both limit-machine-count and limit-machine-count-by-worload are set, the minimum of the two will be used.", 0},
         {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks. Default value: 'master_host'", 0},
         {"energy-plugin", 'p', 0, 0, "Enables energy-aware experiments", 0},
         {"quiet", 'q', 0, 0, "Shortcut for --verbosity=quiet", 0},
@@ -260,8 +267,20 @@ int main(int argc, char * argv[])
     context.allow_space_sharing = mainArgs.allow_space_sharing;
     context.trace_schedule = mainArgs.enable_schedule_tracing;
 
-    load_json_workload(&context, mainArgs.workloadFilename);
+    int nb_machines_by_workload;
+    load_json_workload(&context, mainArgs.workloadFilename, nb_machines_by_workload);
     context.jobs.setProfiles(&context.profiles);
+
+    int limit_machines_count = -1;
+    if ((mainArgs.limit_machines_count_by_workload) && (mainArgs.limit_machines_count > 0))
+        limit_machines_count = min(mainArgs.limit_machines_count, nb_machines_by_workload);
+    else if (mainArgs.limit_machines_count_by_workload)
+        limit_machines_count = nb_machines_by_workload;
+    else if (mainArgs.limit_machines_count > 0)
+        limit_machines_count = mainArgs.limit_machines_count;
+
+    if (limit_machines_count != -1)
+        XBT_INFO("The number of machines will be limited to %d", limit_machines_count);
 
     XBT_INFO("Checking whether SMPI is used or not...");
     context.smpi_used = context.jobs.containsSMPIJob();
@@ -284,7 +303,7 @@ int main(int argc, char * argv[])
     MSG_create_environment(mainArgs.platformFilename.c_str());
 
     xbt_dynar_t hosts = MSG_hosts_as_dynar();
-    context.machines.createMachines(hosts, &context, mainArgs.masterHostName, mainArgs.limit_machines_count);
+    context.machines.createMachines(hosts, &context, mainArgs.masterHostName, limit_machines_count);
     xbt_dynar_free(&hosts);
     const Machine * masterMachine = context.machines.masterMachine();
     if (context.trace_schedule)

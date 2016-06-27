@@ -21,6 +21,7 @@ def find_socket_from_batsim_command(batsim_command):
     batparser.add_argument("-e", "--export", type=str, default="out")
     batparser.add_argument("-h", "--allow-space-sharing", action='store_true')
     batparser.add_argument("-l", "--limit-machine-count", type=int, default=-1)
+    batparser.add_argument("-L", "--limit-machine-count-by-workload", action='store_true')
     batparser.add_argument("-m", "--master-host", default="master_host")
     batparser.add_argument("-p", "--energy-plugin", action='store_true')
     batparser.add_argument("-q", "--quiet", action='store_true')

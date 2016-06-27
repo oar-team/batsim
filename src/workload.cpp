@@ -60,7 +60,7 @@ void check_worload_validity(const BatsimContext *context)
     }
 }
 
-void load_json_workload(BatsimContext *context, const std::string &filename)
+void load_json_workload(BatsimContext *context, const std::string &filename, int & nb_machines)
 {
     XBT_INFO("Loading JSON workload '%s'...", filename.c_str());
     // Let the file content be placed in a string
@@ -78,8 +78,15 @@ void load_json_workload(BatsimContext *context, const std::string &filename)
     // JSON document creation
     Document doc;
     doc.Parse(content.c_str());
-
     xbt_assert(doc.IsObject());
+
+    // Let's try to read the number of machines in the JSON document
+    xbt_assert(doc.HasMember("nb_res"), "Invalid JSON file '%s': the 'nb_res' field is missing", filename.c_str());
+    const Value & nb_res_node = doc["nb_res"];
+    xbt_assert(nb_res_node.IsInt(), "Invalid JSON file '%s': the 'nb_res' field is not an integer", filename.c_str());
+    nb_machines = nb_res_node.GetInt();
+    xbt_assert(nb_machines > 0, "Invalid JSON file '%s': the value of the 'nb_res' field is invalid (%d)", filename.c_str(), nb_machines);
+
     context->jobs.load_from_json(doc, filename);
     context->profiles.load_from_json(doc, filename);
 
