@@ -53,7 +53,7 @@ install:
   ####################
   # Python libraries #
   ####################
-  - sudo -H pip install --upgrade pip
+  - pip install --user --upgrade pip
   - pip --version
   - python2 --version
   # Install Execo (used in the test script)
