@@ -10,7 +10,6 @@ from execo import *
 
 def find_socket_from_batsim_command(batsim_command):
     split_command = shlex.split(batsim_command)
-    logger.info("split_command = {}".format(split_command))
 
     batparser = argparse.ArgumentParser(prog = split_command[0],
                                         description = 'Batsim command parser',
@@ -43,9 +42,11 @@ def create_dir_if_not_exists(directory):
         os.makedirs(directory)
 
 class InstanceExecutionData:
-    def __init__(self, batsim_process, sched_process, timeout, output_directory):
+    def __init__(self, batsim_process, batsim_socket, sched_process,
+                 timeout, output_directory):
         self.batsim_process = batsim_process
         self.sched_process = sched_process
+        self.batsim_socket = batsim_socket
         self.timeout = timeout
         self.output_directory = output_directory
         self.nb_started = 0
@@ -60,7 +61,8 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
 
         # Wait for Batsim to create the socket
         if wait_for_batsim_to_open_connection(self.execution_data,
-                                              timeout = self.execution_data.timeout):
+                                              timeout = self.execution_data.timeout,
+                                              sock = self.execution_data.batsim_socket):
             # Launches the scheduler
             logger.info("Batsim's socket is opened")
             self.execution_data.sched_process.start()
@@ -230,6 +232,7 @@ def execute_one_instance(working_directory,
     # Let's create a shared execution data, which will be given to LC handlers
     execution_data = InstanceExecutionData(batsim_process = batsim_process,
                                            sched_process = sched_process,
+                                           batsim_socket = batsim_socket,
                                            timeout = timeout,
                                            output_directory = output_directory)
 
