@@ -24,8 +24,8 @@ implicit_instances:
         - fillerSched
         - easyBackfillNotopo
     generic_instance:
-      timeout: 5
+      timeout: 10
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${pybatsim_algo}_@0{workload}
-      batsim_command: batsim @1{platform} @1{workload} -e ${output_directory}/out -s ./@0{platform}_@0{workload}
-      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} @1{workload} -s ./@0{platform}_@0{workload}
+      batsim_command: batsim @1{platform} @1{workload} -e ${output_directory}/out -s ./@0{platform}_@0{workload}_${pybatsim_algo}
+      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} @1{workload} -s ./@0{platform}_@0{workload}_${pybatsim_algo}
