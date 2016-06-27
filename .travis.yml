@@ -76,11 +76,12 @@ compiler:
 # Build steps
 script:
   # Compile Batsim
-  - cd ${BATSIM_BASE_DIR} # Compile Batsim
+  - cd ${BATSIM_BASE_DIR}
   - mkdir build
   - cd build
   - cmake ..
   - make -j $(nproc)
+  - sudo make install
 
   # Doxygen, warning check then publication on the Inria gforge
   - cd ${BATSIM_BASE_DIR}/doc
