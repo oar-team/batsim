@@ -9,11 +9,15 @@ Here is an overview of how Batsim work compared with real execution.
 
 ![Batsim vs. real]
 
-For a better comprehension of what is Batsim and why it is interesting see the following presentation that was made for JSSPP 2016 IPDPS workshop:
+External References
+-------------------
+* Batsim scientific publication pre-print is available on HAL:
+  https://hal.inria.fr/hal-01333471v1
 
-[./publications/Batsim\_JSSPP\_2016.pdf]
+* For a better comprehension of what is Batsim and why it is interesting see the following presentation that was made for JSSPP 2016 IPDPS workshop: 
+  [./publications/Batsim\_JSSPP\_2016.pdf]
 
-Batsim internal documentation can be found [there](http://batsim.gforge.inria.fr/).
+* Batsim internal documentation can be found [there](http://batsim.gforge.inria.fr/).
 
 Build status
 ------------
