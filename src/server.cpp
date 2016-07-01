@@ -243,6 +243,7 @@ int uds_server_process(int argc, char *argv[])
                     {
                         int machine_id = *machine_id_it;
                         const Machine * machine = context->machines[machine_id];
+                        (void) machine; // Avoids a warning if assertions are ignored
                         xbt_assert(machine->jobs_being_computed.empty(),
                                    "Invalid job allocation: machine %d ('%s') is currently computing jobs (these ones:"
                                    " {%s}) whereas space sharing is forbidden. Space sharing can be enabled via an option,"
@@ -259,6 +260,7 @@ int uds_server_process(int argc, char *argv[])
                         int machine_id = *machine_id_it;
                         Machine * machine = context->machines[machine_id];
                         int ps = MSG_host_get_pstate(machine->host);
+                        (void) ps; // Avoids a warning if assertions are ignored
                         xbt_assert(machine->has_pstate(ps));
                         xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
                                    "Invalid job allocation: machine %d ('%s') is not in a computation pstate (ps=%d)",
@@ -299,6 +301,7 @@ int uds_server_process(int argc, char *argv[])
 
             xbt_assert(context->machines.exists(message->machine_id));
             Machine * machine = context->machines[message->machine_id];
+            (void) machine; // Avoids a warning if assertions are ignored
             xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
 
             string reply_message_content;
@@ -319,6 +322,7 @@ int uds_server_process(int argc, char *argv[])
 
             xbt_assert(context->machines.exists(message->machine_id));
             Machine * machine = context->machines[message->machine_id];
+            (void) machine; // Avoids a warning if assertions are ignored
             xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
 
             string reply_message_content;

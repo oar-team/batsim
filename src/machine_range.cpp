@@ -148,6 +148,7 @@ string MachineRange::to_string_elements(const string &sep) const
 
 MachineRange MachineRange::from_string_hyphen(const string &str, const string &sep, const string &joiner, const string & error_prefix)
 {
+    (void) error_prefix; // Avoids a warning if assertions are ignored
     MachineRange res;
 
     // Let us do a split by sep to get all the parts

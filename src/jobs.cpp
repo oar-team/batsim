@@ -44,6 +44,7 @@ void Jobs::setProfiles(Profiles *profiles)
 
 void Jobs::load_from_json(const Document &doc, const string &filename)
 {
+    (void) filename; // Avoids a warning if assertions are ignored
     xbt_assert(doc.IsObject());
     xbt_assert(doc.HasMember("jobs"), "Invalid JSON file '%s': the 'jobs' array is missing", filename.c_str());
     const Value & jobs = doc["jobs"];

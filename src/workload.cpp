@@ -32,7 +32,12 @@ void check_worload_validity(const BatsimContext *context)
         {
             SequenceProfileData * data = (SequenceProfileData *) profile->data;
             for (const auto & prof : data->sequence)
-                xbt_assert(context->profiles.exists(prof), "Invalid composed profile '%s': the used profile '%s' does not exist", mit.first.c_str(), prof.c_str());
+            {
+                (void) prof; // Avoids a warning if assertions are ignored
+                xbt_assert(context->profiles.exists(prof),
+                           "Invalid composed profile '%s': the used profile '%s' does not exist",
+                           mit.first.c_str(), prof.c_str());
+            }
         }
     }
 
@@ -49,6 +54,7 @@ void check_worload_validity(const BatsimContext *context)
         if (profile->type == ProfileType::MSG_PARALLEL)
         {
             MsgParallelProfileData * data = (MsgParallelProfileData *) profile->data;
+            (void) data; // Avoids a warning if assertions are ignored
             xbt_assert(data->nb_res == job->required_nb_res, "Invalid job %d: the requested number of resources (%d) do NOT match"
                        " the number of resources of the associated profile '%s' (%d)", job->id, job->required_nb_res, job->profile.c_str(), data->nb_res);
         }

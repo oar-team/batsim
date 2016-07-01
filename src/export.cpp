@@ -515,6 +515,7 @@ void exportJobsToCSV(const std::string &filename, const BatsimContext *context)
                      (job->starting_time + job->runtime - job->submission_time) / job->runtime, // stretch
                      job->consumed_energy
                      );
+            (void) ret; // Avoids a warning if assertions are ignored
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
             f << buf;
             free(buf);
@@ -588,6 +589,7 @@ void exportScheduleToCSV(const std::string &filename, const BatsimContext *conte
                        seconds_used_by_scheduler,
                        max_job_execution_time / min_job_execution_time,
                        total_consumed_energy);
+    (void) ret; // Avoids a warning if assertions are ignored
     xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
     f << buf;

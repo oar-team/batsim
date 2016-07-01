@@ -269,6 +269,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
                     xbt_assert(context->jobs.exists(alloc->job_id), "Invalid static job allocation received ('%s'): the job %d does not exist",
                                allocation_string.c_str(), alloc->job_id);
                     Job * job = context->jobs[alloc->job_id];
+                    (void) job; // Avoids a warning if assertions are ignored
                     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                                "Invalid static job allocation received ('%s') : the job %d state indicates it cannot be executed now",
                                allocation_string.c_str(), job->id);
@@ -350,6 +351,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
                 xbt_assert(context->jobs.exists(message->job_id), "Invalid event received ('%s'): job %d does not exist",
                            event_string.c_str(), message->job_id);
                 Job * job = context->jobs[message->job_id];
+                (void) job; // Avoids a warning if assertions are ignored
                 xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED, "Invalid event received ('%s'): job %d cannot be"
                           " rejected now. For being rejected, a job must be submitted and not allocated yet.",
                            event_string.c_str(), job->id);

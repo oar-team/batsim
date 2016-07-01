@@ -182,4 +182,5 @@ bool CurrentSwitches::mark_switch_as_done(int machine_id,
     }
 
     xbt_assert(false, "Invalid CurrentSwitches::mark_switch_as_done call: machine %d was not switching to pstate %d", machine_id, target_pstate);
+    return false;
 }

@@ -308,6 +308,7 @@ void Machines::updateMachinesOnJobEnd(int jobID, const MachineRange & usedMachin
 
         // Let's erase jobID in the jobs_being_computed data structure
         int ret = machine->jobs_being_computed.erase(jobID);
+        (void) ret; // Avoids a warning if assertions are ignored
         xbt_assert(ret == 1);
 
         if (machine->jobs_being_computed.empty())
