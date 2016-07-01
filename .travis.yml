@@ -82,7 +82,7 @@ script:
   - cd ${BATSIM_BASE_DIR}
   - mkdir build
   - cd build
-  - cmake ..
+  - cmake .. -Denable_warnings=ON -Dtreat_warnings_as_errors=ON
   - make -j $(nproc)
   - sudo make install
 
