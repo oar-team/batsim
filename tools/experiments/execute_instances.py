@@ -9,6 +9,59 @@ from execo import *
 from execo_engine import *
 from execute_one_instance import *
 
+def retrieve_dirs_from_instances(variables, working_directory):
+    filename_ok = False
+    while not filename_ok:
+        r = random_string()
+        script_filename = '{wd}/{rand}_script.sh'.format(wd=working_directory,
+                                                         rand=r)
+        output_dir_filename = '{wd}/{rand}_out_dir'.format(wd=working_directory,
+                                                           rand=r)
+        working_dir_filename = '{wd}/{rand}_working_dir'.format(wd=working_directory,
+                                                                rand=r)
+        filename_ok = not os.path.exists(script_filename) and not os.path.exists(output_dir_filename) and not os.path.exists(working_dir_filename)
+
+    put_variables_in_file(variables, script_filename)
+
+    # Let's add some directives to prepare the instance!
+    text_to_add = "# Preparation\n"
+    text_to_add += 'echo {v} > {f}\n'.format(v = "${base_output_directory}",
+                                             f = output_dir_filename)
+    text_to_add += 'echo {v} > {f}\n'.format(v = "${base_working_directory}",
+                                             f = working_dir_filename)
+
+    # Let's append the directives in the file
+    f = open(script_filename, 'a')
+    f.write(text_to_add)
+    f.close()
+
+    # Let's execute the script
+    p = Process(cmd = 'bash {f}'.format(f=script_filename),
+                shell = True,
+                name = "Preparation command",
+                kill_subprocesses = True,
+                cwd = working_directory)
+
+    p.start().wait()
+    assert(p.finished_ok and not p.error)
+
+    # Let's get the working directory
+    f = open(working_dir_filename, 'r')
+    base_working_dir = f.read().strip()
+    f.close()
+
+    # Let's get the output directory
+    f = open(output_dir_filename, 'r')
+    base_output_dir = f.read().strip()
+    f.close()
+
+    # Let's remove temporary files
+    delete_file_if_exists(script_filename)
+    delete_file_if_exists(working_dir_filename)
+    delete_file_if_exists(output_dir_filename)
+
+    return (base_working_dir, base_output_dir)
+
 def get_script_path():
     return os.path.dirname(os.path.realpath(sys.argv[0]))
 
@@ -165,13 +218,6 @@ def prepare_implicit_instance(implicit_instances,
     # Let's copy it
     instance = generic_instance.copy()
 
-    # Let's use base_variables into some fields of the instance
-    for var_name in ['working_directory', 'output_directory', 'name']:
-        if var_name in instance:
-            val = evaluate_variables_in_string(instance[var_name],
-                                               base_variables)
-            instance[var_name] = val
-
     # Let's handle the variables
     if not 'variables' in instance:
         instance['variables'] = {}
@@ -183,18 +229,6 @@ def prepare_implicit_instance(implicit_instances,
         if isinstance(var_val, tuple):
             instance['variables'][var_name] = list(var_val)
         else:
-            instance['variables'][var_name] = var_val
-
-    # Let's use base_variables into the variables of the instance
-    for var_name in instance['variables']:
-        var_val = instance['variables'][var_name]
-        if isinstance(var_val, str):
-            new_val = evaluate_variables_in_string(var_val, base_variables)
-            instance['variables'][var_name] = new_val
-        elif isinstance(var_val, list):
-            for item_i in range(len(var_val)):
-                new_val = evaluate_variables_in_string(var_val[item_i], base_variables)
-                var_val[item_i] = new_val
             instance['variables'][var_name] = var_val
 
     # Let's add the base_variables into the instance's variables
@@ -477,14 +511,25 @@ can be found in the instances_examples subdirectory.
     if args.base_output_directory:
         base_output_directory = args.base_output_directory
 
+    # Let's add some base_variables
+    base_variables['base_working_directory'] = base_working_directory
+    base_variables['base_output_directory'] = base_output_directory
+
+    # Let's retrieve bwd and owd (they might need some bash interpretation)
+    (base_working_directory, base_output_directory) = retrieve_dirs_from_instances(base_variables, "/tmp")
+
+    # Let's update those variables
+    base_variables['base_working_directory'] = base_working_directory
+    base_variables['base_output_directory'] = base_output_directory
+
+    # Let's check that variables are fine
+    check_variables(base_variables)
+
+    # Let's update the working directory
     os.chdir(base_working_directory)
 
     logger.info('Base working directory: {wd}'.format(wd = os.getcwd()))
     logger.info('Base output directory: {od}'.format(od = base_output_directory))
-
-    # Let's add some base_variables
-    base_variables['base_working_directory'] = base_working_directory
-    base_variables['base_output_directory'] = base_output_directory
 
     # Let's get instances from the description file
     implicit_instances = {}
@@ -499,11 +544,11 @@ can be found in the instances_examples subdirectory.
     if not args.post_only:
         # Let the execution be started
         # Commands before instance execution
-        for command in commands_before_instances:
-            if not execute_command(working_directory = base_working_directory,
-                                   command = command,
-                                   variables = variables):
-                sys.exit(1)
+        # for command in commands_before_instances:
+        #     if not execute_command(working_directory = base_working_directory,
+        #                            command = command,
+        #                            variables = variables):
+        #         sys.exit(1)
 
         if args.pre_only:
             sys.exit(0)
@@ -519,11 +564,11 @@ can be found in the instances_examples subdirectory.
             sys.exit(2)
 
     # Commands after instance execution
-    for command in commands_after_instances:
-        if not execute_command(working_directory = base_working_directory,
-                               command = command,
-                               variables = variables):
-            sys.exit(3)
+    # for command in commands_after_instances:
+    #     if not execute_command(working_directory = base_working_directory,
+    #                            command = command,
+    #                            variables = variables):
+    #         sys.exit(3)
 
     # Everything went succesfully, let's return 0
     sys.exit(0)

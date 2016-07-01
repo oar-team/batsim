@@ -13,10 +13,8 @@ implicit_instances:
         - ["smallPF", "platforms/energy_platform_homogeneous_no_net_128.xml"]
       workload :
         - ["tiny", "workload_profiles/test_workload_profile.json"]
-        - ["medium", "workload_profiles/batsim_paper_workload_example.json"]
       pybatsim_algo:
         - fillerSched
-        - easyBackfillNotopo
     generic_instance:
       timeout: 10
       working_directory: ${base_working_directory}

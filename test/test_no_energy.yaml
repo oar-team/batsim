@@ -10,22 +10,16 @@ implicit_instances:
   implicit:
     sweep:
       platform :
-        -
-          - smallPF
-          - platforms/energy_platform_homogeneous_no_net_128.xml
+        - ["smallPF", "platforms/energy_platform_homogeneous_no_net_128.xml"]
       workload :
-        -
-          - tiny
-          - workload_profiles/test_workload_profile.json
-        -
-          - medium
-          - workload_profiles/batsim_paper_workload_example.json
+        - ["tiny", "workload_profiles/test_workload_profile.json"]
+        - ["medium", "workload_profiles/batsim_paper_workload_example.json"]
       pybatsim_algo:
         - fillerSched
         - easyBackfillNotopo
     generic_instance:
       timeout: 10
       working_directory: ${base_working_directory}
-      output_directory: ${base_output_directory}/results/${pybatsim_algo}_@0{workload}
-      batsim_command: batsim @1{platform} @1{workload} -e ${output_directory}/out -s ./@0{platform}_@0{workload}_${pybatsim_algo}
-      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} @1{workload} -s ./@0{platform}_@0{workload}_${pybatsim_algo}
+      output_directory: ${base_output_directory}/results/${pybatsim_algo}_${workload[0]}
+      batsim_command: batsim ${platform[1]} ${workload[1]} -e ${output_directory}/out -s ./${platform[0]}_${workload[0]}_${pybatsim_algo}
+      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload[1]} -s ./${platform[0]}_${workload[0]}_${pybatsim_algo}
