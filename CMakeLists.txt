@@ -1,12 +1,44 @@
-cmake_minimum_required(VERSION 2.8.11)
+# Let's use at least v3.1 for sanity's sake.
+cmake_minimum_required(VERSION 3.1)
 
 project("Batsim")
+
+# Enable C++11
+# Let's check that the used compiler handles c++11 correctly
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8.1")
+        message(FATAL_ERROR "Insufficient gcc version: 4.8.1 is needed to support C++11")
+    elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5")
+        message(WARNING "Old gcc version found: Using version 5 or greater is recommended")
+    endif()
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "3.3")
+        message(FATAL_ERROR "Insufficient clang version: 3.3 is needed to support C++11")
+    elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "3.4")
+        message(WARNING "Old clang version found: Using version 3.4 or greater is recommended")
+    endif()
+else()
+    message(WARNING "Unknown compiler. Make sure it fully supports C++11.")
+endif()
+
+# Let's enable C++11
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Options
 option(enable_warnings "Enable compilation warnings" ON)
 option(treat_warnings_as_errors "Treat compilation warnings as compilation errors" OFF)
-option(enable_optimizations "Enable compilation-level optimizations" OFF)
 option(ignore_assertions "Ignore assertions, which could make the simulation unstable, but could improve its performance" OFF)
+
+# Build type
+# Set a default build type if none was specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'Debug' as none was specified.")
+  set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+    "MinSizeRel" "RelWithDebInfo")
+endif()
 
 ################
 # Dependencies #
@@ -45,62 +77,25 @@ target_link_libraries(batsim ${SIMGRID_LIBRARIES} ${Boost_SYSTEM_LIBRARY_DEBUG}
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim
         DESTINATION bin)
 
-##################
-# Compiler flags #
-##################
-
-# Let's check that compiler versions are ok with c++11
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8.1")
-        message(FATAL_ERROR "Insufficient gcc version: 4.8.1 is needed to support C++11")
-    elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5")
-        message(WARNING "Old gcc version found: Using version 5 or greater is recommended")
-    endif()
-    set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS "-std=c++11")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "3.3")
-        message(FATAL_ERROR "Insufficient clang version: 3.3 is needed to support C++11")
-    elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "3.4")
-        message(WARNING "Old clang version found: Using version 3.4 or greater is recommended")
-    endif()
-    set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS "-std=c++11")
-else()
-    message(WARNING "Unknown compiler. C++11 should not be enabled correctly.")
-    set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS "-std=c++11")
-endif()
-
 # Let's enable warnings if needed
 if (enable_warnings)
-    set(my_flags " -Wall -Wextra")
+    set(warning_flags " -Wall -Wextra")
 
     if (treat_warnings_as_errors)
-        set(my_flags "${my_flags} -Werror")
+        set(warning_flags "${warning_flags} -Werror")
     endif()
 
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS ${my_flags})
+        set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS ${warning_flags})
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS ${my_flags})
+        set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS ${warning_flags})
     else()
         message(WARNING "Unknown compiler. Warnings should not be enabled correctly.")
-        set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS ${my_flags})
+        set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS ${warning_flags})
     endif()
 endif()
 
-# Let's enable optimization if needed
-if (enable_optimizations)
-    set(optim_flags " -O2")
-
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS ${optim_flags})
-    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS ${optim_flags})
-    else()
-        message(WARNING "Unknown compiler. Warnings should not be enabled correctly.")
-        set_property(TARGET batsim APPEND_STRING PROPERTY COMPILE_FLAGS ${optim_flags})
-    endif()
-endif()
-
+# Let's ignore assertions if needed (might improve performance but can be dangerous)
 if (ignore_assertions)
     target_compile_definitions(batsim PRIVATE NDEBUG)
 endif()
