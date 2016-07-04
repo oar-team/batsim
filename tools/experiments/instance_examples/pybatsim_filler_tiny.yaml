@@ -1,18 +1,21 @@
-# This script should be called from Batsim's root directory
+# This instance should be executed from Batsim's root directory
 
 # If needed, the working directory can be specified within this file
-#working_directory: ~/proj/batsim
+# working_directory: ~/proj/batsim
 
-# If needed, the output directory can be specified within this file
-#output_directory: /tmp/pyfiller/tiny
-
+# The different variables can be defined here
 variables:
-  platform: platforms/small_platform.xml
-  workload: workload_profiles/test_workload_profile.json
-  pybatsim_algo: fillerSched
+  platform: {"name":"small", "filename":"platforms/small_platform.xml"} # A dictionary
+  workload: {"name":"tiny", "filename":"workload_profiles/test_workload_profile.json"} # Another dictionary
+  pybatsim_algo: fillerSched # A simple variable
+  useless_list: ["just_an_example", "mmh..."] # A list
 # Some variables are automatically added into this dictionary:
 #   - working_directory
 #   - output_directory
 
-batsim_command: batsim ${platform} ${workload} -e ${output_directory}/out
-sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload}
+# If needed, the output directory can be specified within this file
+output_directory: /tmp/pyfiller/tiny
+
+# The commands
+batsim_command: batsim ${platform["filename"]} ${workload["filename"]} -e ${output_directory}/out -s ${output_directory}/socket
+sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload["filename"]} -s ${output_directory}/socket

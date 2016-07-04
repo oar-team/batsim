@@ -1,4 +1,4 @@
-Batsim
+"Batsim
 ======
 
 Batsim is a Batch Scheduler Simulator. A Batch scheduler AKA Resources and jobs management system (RJMS) is a syteme that manage large scale cluster job placement and scheduling and computation nodes energy policies.
@@ -29,15 +29,21 @@ Build status
 [linux-badge]: https://travis-ci.org/oar-team/batsim.svg?branch=master "Travis build status"
 [linux-link]:  https://travis-ci.org/oar-team/batsim "Travis build status"
 
-Tools and visualisation
-------------------------
+Visualisation
+-------------
 
-Batsim outpus files can be visualise using external tools:
+Batsim outpus files can be visualised using external tools:
 
 -   [Evalys] can be used to visualise Gantt chart from the Batsim job.csv files and SWF files
 -   [Vite] for the Pajé traces
 
-Also, some additional tools can be found in [tools](./tools) folder for SWF conversion for example.
+Tools
+-----
+
+Also, some tools can be found in the [tools](./tools) directory:
+  - scripts to do conversions between SWF and Batsim formats
+  - scripts to setup experiments with Batsim (more details
+    [here](./tools/experiments))
 
 Write your own scheduler (or adapt an existing one)
 ---------------------------------------------------

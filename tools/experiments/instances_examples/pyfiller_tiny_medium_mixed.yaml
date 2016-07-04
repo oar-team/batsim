@@ -1,40 +1,67 @@
 # This script should be called from Batsim's root directory
 
 # If needed, the working directory of this script can be specified within this file
-#base_working_directory: ~/proj/batsim
+# base_working_directory: ~/proj/batsim
 
 # If needed, the output directory of this script can be specified within this file
-#base_output_directory: ~/proj/batsim/results
+base_output_directory: ${base_working_directory}/instances_out
 
+# If needed, base_variables can be defined
+# base_variables:
+#   - target_conference: IPDPS'2016
+# base_output_directory and base_working_directory are
+# added in the base_variables.
+
+# The instances defined by a combination of parameters
 implicit_instances:
   implicit:
+    # The different parameters to explore.
+    # Beware: sweep must be a dictionary whose keys are valid identifiers and
+    # whose values are lists.
     sweep:
       platform :
-        -
-          - smallPF
-          - platforms/energy_platform_homogeneous_no_net_128.xml
+        # We only define one platform whose name is homo128 and with a filename.
+        # Giving a 'name' field to your dictionaries is good practice, because
+        # it is used to generate instance YAML files for each combination.
+        # If no 'name' is found, the first value is taken instead, which could
+        # be dangerous.
+        - {"name":"homo128", "filename":"platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        -
-          - tiny
-          - workload_profiles/test_workload_profile.json
-        -
-          - medium
-          - workload_profiles/batsim_paper_workload_example.json
+        # We define two different workloads there. Please not their names MUST
+        # be different to avoid duplication of YAML instance files.
+        - {"name":"tiny", "filename":"workload_profiles/test_workload_profile.json"}
+        - {"name":"medium", "filename":"workload_profiles/batsim_paper_workload_example.json"}
       pybatsim_algo:
+        # We use only one scheduling algorithm
         - fillerSched
     generic_instance:
+      # All base_variables are added into the variables of the instance.
+      # Hence, base_working_directory can be used there for example.
       working_directory: ${base_working_directory}
-      output_directory: ${base_output_directory}/results/${pybatsim_algo}_@0{workload}
-      batsim_command: batsim @1{platform} @1{workload} -e ${output_directory}/out
-      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} @1{workload}
+      output_directory: ${base_output_directory}/results/${pybatsim_algo}_${workload["name"]}_${platform["name"]}
+      # If you want your instances to be executable in parallel, you should
+      # specify the socket which should be used to communicate.
+      batsim_command: batsim ${platform["filename"]} ${workload["filename"]} -e ${output_directory}/out -s ${output_directory}/socket
+      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload["filename"]} -s ${output_directory}/socket
 
+# You can define instances explicitely here.
+# Beware: the explicit_instances value must be a list.
 explicit_instances:
-  - name : pyfiller tiny small platform
-    output_directory: ${base_output_directory}/results/explicit/tiny/small_pf
-    variables:
+  - name : easybf_tiny_small
+    output_directory: ${base_output_directory}/results/explicit/easybf_tiny_small
+    variables: # We use simple values here, not dictionaries (but they could have been used!)
       platform: platforms/small_platform.xml
       workload: workload_profiles/test_workload_profile.json
-      pybatsim_algo: fillerSched
+      pybatsim_algo: easyBackfill
+      # All base_variables are also copied here
 
-    batsim_command: batsim ${platform} ${workload} -e ${output_directory}/out
-    sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload}
+    batsim_command: batsim ${platform} ${workload} -e ${output_directory}/out -s ${output_directory}/socket
+    sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload} -s ${output_directory}/socket
+
+# These commands will be executed before running the instances, in this order
+# commands_before_instances:
+#   - pwd > ./lost.txt
+
+# These commands will be executed after running all the instances, in this order
+# commands_after_instances:
+#   - ls

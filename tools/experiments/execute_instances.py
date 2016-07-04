@@ -82,6 +82,7 @@ def check_sweep(sweeps):
     dict_keys = {}
     var_types = {}
     used_identifiers = {}
+    dicts_without_names = set()
 
     for var_name in sweeps:
         var_value = sweeps[var_name]
@@ -142,6 +143,7 @@ def check_sweep(sweeps):
                     used_name = element['name']
                 else:
                     used_name = element.values().nextitem()
+                    dicts_without_names.add(var_name)
                 if not is_valid_identifier(used_name):
                     logger.error("Invalid sweep variable {v}: the name got from dict {d} (name={n}, got either from the 'name' field if it exists or the first value otherwise) is not a valid identifier. It must be because it is used to create files.".format(v=var_name, d=element, n=used_name))
                     sys.exit(1)
@@ -154,6 +156,9 @@ def check_sweep(sweeps):
                         used_identifiers[var_name].add(used_name)
                 else:
                     used_identifiers[var_name] = set([used_name])
+
+    if len(dicts_without_names) > 0:
+        logger.warning("Different dictionary variables do not have a 'name' key: {d}".format(d=dicts_without_names))
 
 def get_script_path():
     return os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -371,22 +376,9 @@ def prepare_explicit_instance(explicit_instances,
     # Let's retrieve the instance
     instance = explicit_instances[instance_id]
 
-    # Let's use base_variables into some fields of the instance
-    for var_name in ['working_directory', 'output_directory', 'name']:
-        if var_name in instance:
-            val = evaluate_variables_in_string(instance[var_name],
-                                               base_variables)
-            instance[var_name] = val
-
     # Let's handle the variables
     if not 'variables' in instance:
         instance['variables'] = {}
-
-    # Let's use base_variables into the variables of the instance
-    for var_name in instance['variables']:
-        var_val = instance['variables'][var_name]
-        new_val = evaluate_variables_in_string(var_val, base_variables)
-        instance['variables'][var_name] = new_val
 
     # Let's add the base_variables into the instance's variables
     instance['variables'].update(base_variables)

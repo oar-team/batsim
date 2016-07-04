@@ -99,4 +99,4 @@ script:
   # Tests #
   #########
   - cd ${BATSIM_BASE_DIR}
-  - ./test/run_tests.sh
+  - bash -ex ./test/run_tests.sh
