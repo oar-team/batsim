@@ -1,4 +1,4 @@
-"Batsim
+Batsim
 ======
 
 Batsim is a Batch Scheduler Simulator. A Batch scheduler AKA Resources and jobs management system (RJMS) is a syteme that manage large scale cluster job placement and scheduling and computation nodes energy policies.

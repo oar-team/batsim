@@ -182,6 +182,7 @@ base_output_directory: ${base_working_directory}/instances_out
 
 # The instances defined by a combination of parameters
 implicit_instances:
+  # Several set of combinations can be defined. This one is called 'implicit'.
   implicit:
     # The different parameters to explore.
     # Beware: sweep must be a dictionary whose keys are valid identifiers and
@@ -190,18 +191,20 @@ implicit_instances:
       platform :
         # We only define one platform whose name is homo128 and with a filename.
         # Giving a 'name' field to your dictionaries is good practice, because
-        # it is used to generate instance YAML files for each combination.
+        # it is used to generate instance YAML filenames for each combination.
         # If no 'name' is found, the first value is taken instead, which could
         # be dangerous.
         - {"name":"homo128", "filename":"platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
         # We define two different workloads there. Please not their names MUST
-        # be different to avoid duplication of YAML instance files.
+        # be different to avoid different instances pointing to the same YAML
+        # filename.
         - {"name":"tiny", "filename":"workload_profiles/test_workload_profile.json"}
         - {"name":"medium", "filename":"workload_profiles/batsim_paper_workload_example.json"}
       pybatsim_algo:
         # We use only one scheduling algorithm
         - fillerSched
+    # Defines how each instance of 'implicit' should be computed
     generic_instance:
       # All base_variables are added into the variables of the instance.
       # Hence, base_working_directory can be used there for example.
