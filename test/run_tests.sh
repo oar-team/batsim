@@ -1,4 +1,12 @@
-#!/usr/bin/bash -e
+#!/usr/bin/bash -ex
+#       .
+#      / \
+#     / | \
+#    /  |  \    This script should be called from Batsim root directory !
+#   /   |   \
+#  /         \
+# /     o     \
+# ‾‾‾‾‾‾‾‾‾‾‾‾‾
 
 # Clean test output directories
 \rm -rf test/out/unique
