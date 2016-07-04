@@ -10,19 +10,19 @@ implicit_instances:
   implicit:
     sweep:
       platform :
-        - ["smallPF", "platforms/energy_platform_homogeneous_no_net_128.xml"]
+        - {"name":"homo128", "filename":"platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - ["tiny", "workload_profiles/test_workload_profile.json"]
-        - ["medium", "workload_profiles/batsim_paper_workload_example.json"]
+        - {"name":"tiny", "filename":"workload_profiles/test_workload_profile.json"}
+        - {"name":"medium", "filename":"workload_profiles/batsim_paper_workload_example.json"}
       pybatsim_algo:
         - fillerSched
         - easyBackfillNotopo
     generic_instance:
       timeout: 10
       working_directory: ${base_working_directory}
-      output_directory: ${base_output_directory}/results/${pybatsim_algo}_${workload[0]}
-      batsim_command: batsim ${platform[1]} ${workload[1]} -p -e ${output_directory}/out -s ${output_directory}/socket -L
-      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload[1]} -s ${output_directory}/socket
+      output_directory: ${base_output_directory}/results/${pybatsim_algo}_${workload["name"]}
+      batsim_command: batsim ${platform["filename"]} ${workload["filename"]} -p -e ${output_directory}/out -s ${output_directory}/socket -L
+      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload["filename"]} -s ${output_directory}/socket
       # commands_before_execution:
       #   - ls .
       #   - |

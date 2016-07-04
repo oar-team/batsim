@@ -128,11 +128,14 @@ def retrieve_info_from_instance(variables, working_directory, batsim_command):
 def check_variables(variables):
     # Let's check that they have valid bash identifier names
     for var_name in variables:
-        if not re.match("^[_A-Za-z][_a-zA-Z0-9]*$", var_name):
+        if not is_valid_identifier(var_name):
             logger.error("Invalid variable name '{var_name}'".format(var_name))
             return False
 
     return True
+
+def is_valid_identifier(string):
+    return re.match("^[_A-Za-z][_a-zA-Z0-9]*$", string)
 
 def variable_to_text(variables, var_name):
     text = ""

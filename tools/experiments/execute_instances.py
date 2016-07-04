@@ -9,6 +9,14 @@ from execo import *
 from execo_engine import *
 from execute_one_instance import *
 
+class hashabledict(dict):
+    def __hash__(self):
+        return hash(tuple(sorted(self.items())))
+
+class hashablelist(list):
+    def __hash__(self):
+        return hash(tuple(self))
+
 def retrieve_dirs_from_instances(variables, working_directory):
     filename_ok = False
     while not filename_ok:
@@ -61,6 +69,91 @@ def retrieve_dirs_from_instances(variables, working_directory):
     delete_file_if_exists(output_dir_filename)
 
     return (base_working_dir, base_output_dir)
+
+# todo: check that explicit instances have a 'name' field typed as a string
+
+def check_sweep(sweeps):
+    # Let's check that sweeping values are consistent (same type, same fields)
+    if not isinstance(sweeps, dict):
+        logger.error("Invalid sweep: must be a dict")
+        sys.exit(1)
+
+    list_sizes = {}
+    dict_keys = {}
+    var_types = {}
+    used_identifiers = {}
+
+    for var_name in sweeps:
+        var_value = sweeps[var_name]
+        if not isinstance(var_value, list):
+            logger.error("Invalid sweep variable {v}: associated value is not a list".format(v=var_name))
+            sys.exit(1)
+        if len(var_value) < 1:
+            logger.error("Invalid sweep variable {v}: length of list value must be > 0".format(v=var_name))
+            sys.exit(1)
+        for element in var_value:
+            # Let's check that all values have the same type
+            t = type(element)
+            if var_name in var_types:
+                if t != var_types[var_name]:
+                    logger.error("Invalid sweep variable {v}: all possible values are not of the same type".format(v=var_name))
+                    sys.exit(1)
+            else:
+                var_types[var_name] = t
+
+            # Let's do more check on lists and dicts
+            if t == list:
+                length = len(element)
+                if var_name in list_sizes:
+                    if length != list_sizes[var_name]:
+                        logger.error("Invalid sweep variable {v}: all possible values must be of the same type (and since they are lists, they should have the same length)".format(v=var_name))
+                        sys.exit(1)
+                else:
+                    list_sizes[var_name] = length
+                if length < 1:
+                    logger.error("Invalid sweep variable {v}: lists must be non-empty".format(v=var_name))
+                    sys.exit(1)
+                used_name = element[0]
+                if not is_valid_identifier(used_name):
+                    logger.error("Invalid sweep variable {v}: first element ({f}) must be a valid identifier because it is used to create files".format(v=var_name, f=used_name))
+                    sys.exit(1)
+                # Let's check that all names are unique
+                if var_name in used_identifiers:
+                    if used_name in used_identifiers[var_name]:
+                        logger.error("Invalid sweep variable {v}: first element value ({f}) must be unique".format(v=var_name,f=used_name))
+                        sys.exit(1)
+                    else:
+                        used_identifiers[var_name].add(used_name)
+                else:
+                    used_identifiers[var_name] = set([used_name])
+
+            elif t == dict:
+                keys = element.keys()
+                if var_name in dict_keys:
+                    if keys != dict_keys[var_name]:
+                        logger.error("Invalid sweep variable {v}: all possible values must be of the same type (and since they are dicts, they should have the same keys".format(v=var_name))
+                        sys.exit(1)
+                else:
+                    dict_keys[var_name] = keys
+                if len(keys) < 1:
+                    logger.error("Invalid sweep variable {v}: dicts must be non-empty".format(v=var_name))
+                    sys.exit(1)
+                if 'name' in element:
+                    used_name = element['name']
+                else:
+                    used_name = element.values().nextitem()
+                if not is_valid_identifier(used_name):
+                    logger.error("Invalid sweep variable {v}: the name got from dict {d} (name={n}, got either from the 'name' field if it exists or the first value otherwise) is not a valid identifier. It must be because it is used to create files.".format(v=var_name, d=element, n=used_name))
+                    sys.exit(1)
+                # Let's check that all names are unique
+                if var_name in used_identifiers:
+                    if used_name in used_identifiers[var_name]:
+                        logger.error("Invalid sweep variable {v}: the name got from dict {d} (name={n}, got either from the 'name' field if it exists or the first value otherwise) must be unique".format(v=var_name,d=element,n=used_name))
+                        sys.exit(1)
+                    else:
+                        used_identifiers[var_name].add(used_name)
+                else:
+                    used_identifiers[var_name] = set([used_name])
 
 def get_script_path():
     return os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -226,8 +319,10 @@ def prepare_implicit_instance(implicit_instances,
     for var_name in sweep:
         assert(var_name in comb)
         var_val = comb[var_name]
-        if isinstance(var_val, tuple):
+        if isinstance(var_val, hashablelist):
             instance['variables'][var_name] = list(var_val)
+        elif isinstance(var_val, hashabledict):
+            instance['variables'][var_name] = dict(var_val)
         else:
             instance['variables'][var_name] = var_val
 
@@ -241,9 +336,14 @@ def prepare_implicit_instance(implicit_instances,
     for var in sweep:
         val = comb[var]
         val_to_use = val
-        if isinstance(val, tuple):
+        if isinstance(val, hashablelist):
             val_to_use = val[0]
-        combname_suffix += '__{var}={val}'.format(var = var,
+        elif isinstance(val, hashabledict):
+            if 'name' in val:
+                val_to_use = val['name']
+            else:
+                val_to_use = val.itervalues().next()
+        combname_suffix += '__{var}_{val}'.format(var = var,
                                                   val = val_to_use)
 
     combname += combname_suffix
@@ -337,15 +437,16 @@ def generate_instances_combs(explicit_instances,
             implicit_instance = implicit_instances[implicit_instance_name]
             if 'sweep' in implicit_instance:
                 sweep_var = implicit_instance['sweep'].copy()
-                # Let's transform lists into tuples (we need hashable objects to call sweep later)
-                #print("before", sweep_var)
+                check_sweep(sweep_var)
+                # Let's make sure all objects are hashable so sweep() can be called
                 for sweep_var_key in sweep_var:
                     sweep_var_value = sweep_var[sweep_var_key]
-                    #print("sweep_var_value=",sweep_var_value)
+                    assert(isinstance(sweep_var_value, list))
                     for list_i in range(len(sweep_var_value)):
                         if isinstance(sweep_var_value[list_i], list):
-                            #print('LIST !!!')
-                            sweep_var_value[list_i] = tuple(sweep_var_value[list_i])
+                            sweep_var_value[list_i] = hashablelist(sweep_var_value[list_i])
+                        elif isinstance(sweep_var_value[list_i], dict):
+                            sweep_var_value[list_i] = hashabledict(sweep_var_value[list_i])
                     #print('\n')
                 #print("after", sweep_var)
                 #print('\n')
