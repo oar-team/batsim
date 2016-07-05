@@ -182,6 +182,11 @@ def put_variables_in_file(variables,
         if var_name in variables:
             text_to_write += variable_to_text(variables, var_name)
 
+    # Let's export all variables
+    text_to_write +="\n# Export variables\n"
+    for var_name in variables:
+        text_to_write += "export {var_name}\n".format(var_name = var_name)
+
     text_to_write += "\n"
     write_string_into_file(text_to_write, output_filename)
 
@@ -195,7 +200,7 @@ def create_file_from_command(command,
     text_to_write += "source {}".format(variables_definition_filename)
 
     # Let's write the commands
-    text_to_write += "\n# User-specified commands\n"
+    text_to_write += "\n\n# User-specified commands\n"
     text_to_write += command
     text_to_write += "\n"
 
@@ -223,6 +228,7 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
         logger.info("Batsim started")
 
         # Wait for Batsim to create the socket
+        logger.info("Waiting for socket {} to open".format(self.execution_data.batsim_socket))
         if wait_for_batsim_to_open_connection(self.execution_data,
                                               timeout = self.execution_data.timeout,
                                               sock = self.execution_data.batsim_socket):
@@ -300,11 +306,25 @@ def execute_command(command,
                     working_directory,
                     variables_filename,
                     output_script_filename,
+                    output_subscript_filename,
                     output_script_output_dir,
                     command_name):
-    create_file_from_command(command = command,
-                             output_filename = output_script_filename,
-                             variables_definition_filename = variables_filename)
+
+    # If the command is composed of different lines,
+    # a corresponding script file will be created
+    if '\n' in command:
+        multiline_command = True
+        write_string_into_file(command, output_subscript_filename)
+        make_file_executable(output_subscript_filename)
+
+        fake_command = os.path.abspath(output_subscript_filename)
+        create_file_from_command(fake_command,
+                                 output_filename = output_script_filename,
+                                 variables_definition_filename = variables_filename)
+    else:
+        create_file_from_command(command = command,
+                                 output_filename = output_script_filename,
+                                 variables_definition_filename = variables_filename)
 
     # Let's create the execo process
     cmd_process = Process(cmd = 'bash {f}'.format(f=output_script_filename),
@@ -313,15 +333,17 @@ def execute_command(command,
                           name = command_name,
                           cwd = working_directory)
 
+    logger.info("Executing command: {cmd}".format(cmd=command))
+
     # Let's start the process
     cmd_process.start().wait()
 
     # Let's write command outputs
     create_dir_if_not_exists(output_script_output_dir)
-    write_string_into_file(process.stdout, '{out}/{name}.stdout'.format(
+    write_string_into_file(cmd_process.stdout, '{out}/{name}.stdout'.format(
                             out = output_script_output_dir,
                             name = command_name))
-    write_string_into_file(process.stderr, '{out}/{name}.stderr'.format(
+    write_string_into_file(cmd_process.stderr, '{out}/{name}.stderr'.format(
                             out = output_script_output_dir,
                             name = command_name))
 
@@ -340,6 +362,7 @@ def wait_for_batsim_to_open_connection(execution_data,
     while remaining_time > 0 and not socket_in_use(sock) and not execution_data.batsim_process.ended:
         time.sleep(seconds_to_sleep)
         remaining_time -= seconds_to_sleep
+        #logger.debug("Batsim stderr: {}".format(execution_data.batsim_process.stderr))
 
     return socket_in_use(sock)
 
@@ -395,6 +418,7 @@ def execute_one_instance(working_directory,
     # Let's create the execo processes
     batsim_process = Process(cmd = 'bash {batsim_script}'.format(
                                 batsim_script = batsim_script_filename),
+                             shell = True,
                              kill_subprocesses = True,
                              name = "batsim_process",
                              cwd = working_directory,
@@ -403,6 +427,7 @@ def execute_one_instance(working_directory,
 
     sched_process = Process(cmd = 'bash {sched_script}'.format(
                                 sched_script = sched_script_filename),
+                            shell = True,
                             kill_subprocesses = True,
                             name = "sched_process",
                             cwd = working_directory,
@@ -551,18 +576,22 @@ Examples of such input files can be found in the subdirectory instance_examples.
         create_dir_if_not_exists(pre_commands_dir)
         create_dir_if_not_exists(pre_commands_output_dir)
 
-        nb_chars_command_ids = 1 + math.log10(len(commands_before_execution))
+        nb_chars_command_ids = int(1 + math.log10(len(commands_before_execution)))
 
         for command_id in range(len(commands_before_execution)):
             command_name = 'command' + str(command_id).zfill(nb_chars_command_ids)
-            output_command_filename = '{commands_dir}/{name}.sh'.format(
+            output_command_filename = '{commands_dir}/{name}.bash'.format(
                                         commands_dir = pre_commands_dir,
                                         name = command_name)
+            output_subscript_filename = '{commands_dir}/{name}_sub'.format(
+                                            commands_dir = pre_commands_dir,
+                                            name = command_name)
 
             if not execute_command(command = commands_before_execution[command_id],
                                    working_directory = working_directory,
                                    variables_filename = variables_filename,
                                    output_script_filename = output_command_filename,
+                                   output_subscript_filename = output_subscript_filename,
                                    output_script_output_dir = pre_commands_output_dir,
                                    command_name = command_name):
                 sys.exit(1)
@@ -585,18 +614,22 @@ Examples of such input files can be found in the subdirectory instance_examples.
         create_dir_if_not_exists(post_commands_dir)
         create_dir_if_not_exists(post_commands_output_dir)
 
-        nb_chars_command_ids = 1 + math.log10(len(commands_after_execution))
+        nb_chars_command_ids = int(1 + math.log10(len(commands_after_execution)))
 
         for command_id in range(len(commands_after_execution)):
             command_name = 'command' + str(command_id).zfill(nb_chars_command_ids)
-            output_command_filename = '{commands_dir}/{name}.sh'.format(
+            output_command_filename = '{commands_dir}/{name}.bash'.format(
                                         commands_dir = post_commands_dir,
                                         name = command_name)
+            output_subscript_filename = '{commands_dir}/{name}_sub'.format(
+                                            commands_dir = post_commands_dir,
+                                            name = command_name)
 
             if not execute_command(command = commands_after_execution[command_id],
                                    working_directory = working_directory,
                                    variables_filename = variables_filename,
                                    output_script_filename = output_command_filename,
+                                   output_subscript_filename = output_subscript_filename,
                                    output_script_output_dir = post_commands_output_dir,
                                    command_name = command_name):
                 sys.exit(1)
