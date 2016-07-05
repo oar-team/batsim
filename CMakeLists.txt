@@ -50,7 +50,7 @@ find_package(SimGrid REQUIRED)
 include_directories(${SIMGRID_INCLUDE_DIR})
 
 ## Boost dependency
-find_package(Boost REQUIRED COMPONENTS system filesystem)
+find_package(Boost 1.48 REQUIRED COMPONENTS system filesystem)
 include_directories(${Boost_INCLUDE_DIR})
 
 ## Rapidjson dependency
