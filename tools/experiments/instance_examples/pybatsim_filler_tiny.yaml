@@ -28,7 +28,7 @@ commands_before_execution:
   - echo $(pwd) > ${output_directory}/.pwd
   - cp ${output_directory}/.pwd ${output_directory}/crap_file
   - |
-    #!/bin/python2
+    #!/usr/bin/python2
     import os
     fname = os.environ['output_directory'] + '/python_output'
     f = open(fname, 'w')
