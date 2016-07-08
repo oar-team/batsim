@@ -138,7 +138,7 @@ def find_all_values(var_value):
         for subvalue in var_value:
             ret.update(subvalue)
     else:
-        ret.add(var_value)
+        ret.add(str(var_value))
     return ret
 
 def check_variables(variables):
