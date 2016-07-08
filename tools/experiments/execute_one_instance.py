@@ -63,7 +63,10 @@ def make_file_executable(filename):
     st = os.stat(filename)
     os.chmod(filename, st.st_mode | stat.S_IEXEC)
 
-def retrieve_info_from_instance(variables, working_directory, batsim_command):
+def retrieve_info_from_instance(variables,
+                                variables_declaration_order,
+                                working_directory,
+                                batsim_command):
     filename_ok = False
     while not filename_ok:
         r = random_string()
@@ -77,7 +80,7 @@ def retrieve_info_from_instance(variables, working_directory, batsim_command):
                                                                rand=r)
         filename_ok = not os.path.exists(script_filename) and not os.path.exists(output_dir_filename) and not os.path.exists(working_dir_filename) and not os.path.exists(command_filename)
 
-    put_variables_in_file(variables, script_filename)
+    put_variables_in_file(variables, variables_declaration_order, script_filename)
 
     # Let's add some directives to prepare the instance!
     text_to_add = "# Preparation\n"
@@ -125,14 +128,73 @@ def retrieve_info_from_instance(variables, working_directory, batsim_command):
 
     return (working_dir, output_dir, command)
 
+def find_all_values(var_value):
+    ret = set()
+
+    if isinstance(var_value, dict):
+        for subvalue in var_value.values():
+            ret.update(find_all_values(subvalue))
+    elif isinstance(var_value, list):
+        for subvalue in var_value:
+            ret.update(subvalue)
+    else:
+        ret.add(var_value)
+    return ret
+
 def check_variables(variables):
     # Let's check that they have valid bash identifier names
     for var_name in variables:
         if not is_valid_identifier(var_name):
             logger.error("Invalid variable name '{var_name}'".format(var_name))
-            return False
+            return (False, [])
 
-    return True
+    # Let's check whether the dependency graph is a DAG
+    # Let's initialize dependencies
+    dependencies = {}
+    for var_name in variables:
+        dependencies[var_name] = set()
+
+    # Let's compute the dependencies of each variable
+    for var_name in variables:
+        in_depth_values = find_all_values(variables[var_name])
+        logger.debug("in_depth_values of {}: {}".format(var_name, in_depth_values))
+        for potential_dependency_name in variables:
+            substr = '${' + potential_dependency_name
+            for depth_value in in_depth_values:
+                if substr in depth_value:
+                    dependencies[var_name].add(potential_dependency_name)
+
+    # Let's sort the variables by ascending number of dependencies
+    ordered = [(len(dependencies[var_name]), var_name, dependencies[var_name]) for var_name in dependencies]
+    ordered.sort()
+
+    # Let's do the DAG check while building a declaration order
+    declared_variables = set()
+    variables_declaration_order = []
+    saturated = False
+
+    while len(declared_variables) < len(variables) and not saturated:
+        saturated = True
+        for (nb_deps, var_name, deps) in ordered:
+            all_deps_declared = True
+            for dep_name in deps:
+                if dep_name not in declared_variables:
+                    all_deps_declared = False
+            if all_deps_declared:
+                declared_variables.add(var_name)
+                variables_declaration_order.append(var_name)
+                saturated = False
+                ordered.remove((nb_deps, var_name, deps))
+                logger.debug("Declared {}, declared_vars:{}".format(var_name, declared_variables))
+                break
+
+    if len(declared_variables) == len(variables):
+        return (True, variables_declaration_order)
+    else:
+        undeclared_variables = set([var_name for var_name in variables]) - declared_variables
+        undeclared_variables = list(undeclared_variables)
+        logger.error("Invalid variables: Could not find a declaration order that allows to declare these variables: {}. All variables : {}".format(undeclared_variables, variables))
+        return (False, [])
 
 def is_valid_identifier(string):
     return re.match("^[_A-Za-z][_a-zA-Z0-9]*$", string)
@@ -163,28 +225,20 @@ def variable_to_text(variables, var_name):
     return text
 
 def put_variables_in_file(variables,
+                          variables_declaration_order,
                           output_filename):
     text_to_write = "#!/usr/bin/bash\n"
 
-    special_vars = ['base_working_directory',
-                    'base_output_directory',
-                    'working_directory',
-                    'output_directory']
-
-    # Let's define all variables but special ones
+    # Let's define all variables in the specified order
     text_to_write += "\n# Variables definition\n"
-    for var_name in variables:
-        if var_name not in special_vars:
-            text_to_write += variable_to_text(variables, var_name)
 
-    # Let's add special variables in the file
-    for var_name in special_vars:
-        if var_name in variables:
-            text_to_write += variable_to_text(variables, var_name)
+    for var_name in variables_declaration_order:
+        assert(var_name in variables)
+        text_to_write += variable_to_text(variables, var_name)
 
     # Let's export all variables
     text_to_write +="\n# Export variables\n"
-    for var_name in variables:
+    for var_name in variables_declaration_order:
         text_to_write += "export {var_name}\n".format(var_name = var_name)
 
     text_to_write += "\n"
@@ -347,7 +401,7 @@ def execute_command(command,
                             out = output_script_output_dir,
                             name = command_name))
 
-    return cmd_process.finished_ok and not cmd_process.error
+    return cmd_process.finished_ok and not cmd_process.error and cmd_process.exit_code == 0
 
 def socket_in_use(sock):
     return sock in open('/proc/net/unix').read()
@@ -536,21 +590,26 @@ Examples of such input files can be found in the subdirectory instance_examples.
     if args.output_directory:
         output_directory = args.output_directory
 
-    # Let's check that variables are fine
-    check_variables(variables)
-
     # Let's add some variables
     variables['working_directory'] = working_directory
     variables['output_directory'] = output_directory
 
+     # Let's check that variables are fine
+    (var_ok, var_decl_order) = check_variables(variables)
+    if not var_ok:
+        sys.exit(1)
+
     # Let's correctly interpret the working_dir and output_dir values
     (wd, od, batsim_command) = retrieve_info_from_instance(variables,
-                                                   "/tmp",
-                                                   batsim_command)
+                                                           var_decl_order,
+                                                           "/tmp",
+                                                           batsim_command)
 
     # Let's update those values
     variables['working_directory'] = working_directory = wd
     variables['output_directory'] = output_directory = od
+
+    print("Variables = {}".format(variables))
 
     # Let's create the directories if needed
     create_dir_if_not_exists(working_directory)
@@ -564,7 +623,7 @@ Examples of such input files can be found in the subdirectory instance_examples.
 
     # Let's create a variable definition file in the instance output directory
     variables_filename = '{out}/variables.bash'.format(out = output_directory)
-    put_variables_in_file(variables, variables_filename)
+    put_variables_in_file(variables, var_decl_order, variables_filename)
 
     # Let the execution be started
     # Commands before instance execution

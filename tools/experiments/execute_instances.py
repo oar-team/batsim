@@ -17,7 +17,9 @@ class hashablelist(list):
     def __hash__(self):
         return hash(tuple(self))
 
-def retrieve_dirs_from_instances(variables, working_directory):
+def retrieve_dirs_from_instances(variables,
+                                 variables_declaration_order,
+                                 working_directory):
     filename_ok = False
     while not filename_ok:
         r = random_string()
@@ -29,7 +31,7 @@ def retrieve_dirs_from_instances(variables, working_directory):
                                                                 rand=r)
         filename_ok = not os.path.exists(script_filename) and not os.path.exists(output_dir_filename) and not os.path.exists(working_dir_filename)
 
-    put_variables_in_file(variables, script_filename)
+    put_variables_in_file(variables, variables_declaration_order, script_filename)
 
     # Let's add some directives to prepare the instance!
     text_to_add = "# Preparation\n"
@@ -608,21 +610,31 @@ can be found in the instances_examples subdirectory.
     base_variables['base_working_directory'] = base_working_directory
     base_variables['base_output_directory'] = base_output_directory
 
+    # Let's check that variables are fine
+    (var_ok, var_decl_order) = check_variables(base_variables)
+    if not var_ok:
+        sys.exit(1)
+
     # Let's retrieve bwd and owd (they might need some bash interpretation)
-    (base_working_directory, base_output_directory) = retrieve_dirs_from_instances(base_variables, "/tmp")
+    (base_working_directory, base_output_directory) = retrieve_dirs_from_instances(base_variables, var_decl_order, "/tmp")
 
     # Let's update those variables
     base_variables['base_working_directory'] = base_working_directory
     base_variables['base_output_directory'] = base_output_directory
 
-    # Let's check that variables are fine
-    check_variables(base_variables)
+    # Let's create the directories if needed
+    create_dir_if_not_exists(base_working_directory)
+    create_dir_if_not_exists(base_output_directory)
 
     # Let's update the working directory
     os.chdir(base_working_directory)
 
     logger.info('Base working directory: {wd}'.format(wd = os.getcwd()))
     logger.info('Base output directory: {od}'.format(od = base_output_directory))
+
+    # Let's create a variable definition file in the instance output directory
+    base_variables_filename = '{out}/base_variables.bash'.format(out = base_output_directory)
+    put_variables_in_file(base_variables, var_decl_order, base_variables_filename)
 
     # Let's get instances from the description file
     implicit_instances = {}
@@ -635,13 +647,34 @@ can be found in the instances_examples subdirectory.
         explicit_instances = desc_data['explicit_instances']
 
     if not args.post_only:
-        # Let the execution be started
-        # Commands before instance execution
-        # for command in commands_before_instances:
-        #     if not execute_command(working_directory = base_working_directory,
-        #                            command = command,
-        #                            variables = variables):
-        #         sys.exit(1)
+        # Commands before instances execution
+        if len(commands_before_instances) > 0:
+            pre_commands_dir = '{bod}/pre_commands'.format(
+                bod = base_output_directory)
+            pre_commands_output_dir = '{bod}/out'.format(
+                bod = pre_commands_dir)
+            create_dir_if_not_exists(pre_commands_dir)
+            create_dir_if_not_exists(pre_commands_output_dir)
+
+            nb_chars_command_ids = int(1 + math.log10(len(commands_before_instances)))
+
+            for command_id in range(len(commands_before_instances)):
+                command_name = 'command' + str(command_id).zfill(nb_chars_command_ids)
+                output_command_filename = '{commands_dir}/{name}.bash'.format(
+                                            commands_dir = pre_commands_dir,
+                                            name = command_name)
+                output_subscript_filename = '{commands_dir}/{name}_sub'.format(
+                                                commands_dir = pre_commands_dir,
+                                                name = command_name)
+
+                if not execute_command(command = commands_before_instances[command_id],
+                                       working_directory = base_working_directory,
+                                       variables_filename = base_variables_filename,
+                                       output_script_filename = output_command_filename,
+                                       output_subscript_filename = output_subscript_filename,
+                                       output_script_output_dir = pre_commands_output_dir,
+                                       command_name = command_name):
+                    sys.exit(1)
 
         if args.pre_only:
             sys.exit(0)
@@ -656,12 +689,35 @@ can be found in the instances_examples subdirectory.
                                  nb_workers_per_host = args.nb_workers_per_host):
             sys.exit(2)
 
-    # Commands after instance execution
-    # for command in commands_after_instances:
-    #     if not execute_command(working_directory = base_working_directory,
-    #                            command = command,
-    #                            variables = variables):
-    #         sys.exit(3)
+    # Commands after instances execution
+    if len(commands_after_instances) > 0:
+        post_commands_dir = '{bod}/post_commands'.format(
+            bod = base_output_directory)
+        post_commands_output_dir = '{bod}/out'.format(
+            bod = post_commands_dir)
+        create_dir_if_not_exists(post_commands_dir)
+        create_dir_if_not_exists(post_commands_output_dir)
+
+        nb_chars_command_ids = int(1 + math.log10(len(commands_after_instances)))
+
+        for command_id in range(len(commands_after_instances)):
+            command_name = 'command' + str(command_id).zfill(nb_chars_command_ids)
+            output_command_filename = '{commands_dir}/{name}.bash'.format(
+                                        commands_dir = post_commands_dir,
+                                        name = command_name)
+            output_subscript_filename = '{commands_dir}/{name}_sub'.format(
+                                            commands_dir = post_commands_dir,
+                                            name = command_name)
+
+            if not execute_command(command = commands_after_instances[command_id],
+                                   working_directory = base_working_directory,
+                                   variables_filename = base_variables_filename,
+                                   output_script_filename = output_command_filename,
+                                   output_subscript_filename = output_subscript_filename,
+                                   output_script_output_dir = post_commands_output_dir,
+                                   command_name = command_name):
+                sys.exit(1)
+
 
     # Everything went succesfully, let's return 0
     sys.exit(0)
