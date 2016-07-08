@@ -334,6 +334,7 @@ public:
 private:
     /**
      * @brief Adds a line in the output file
+     * @return The energy consumed by the computing machines from simulation's start to the current simulation time
      * @param[in] date The date at which the event has occured
      * @param[in] event_type The type of the event which occured
      */
