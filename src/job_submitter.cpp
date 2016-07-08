@@ -37,16 +37,24 @@ int job_submitter_process(int argc, char *argv[])
 
     sort(jobsVector.begin(), jobsVector.end(), job_comparator_subtime);
 
-    for (const Job * job : jobsVector)
+    if (jobsVector.size() > 0)
     {
-        if (job->submission_time > previousSubmissionDate)
-            MSG_process_sleep(job->submission_time - previousSubmissionDate);
+        const Job * first_submitted_job = *jobsVector.begin();
 
-        JobSubmittedMessage * msg = new JobSubmittedMessage;
-        msg->job_id = job->id;
+        for (const Job * job : jobsVector)
+        {
+            if (job->submission_time > previousSubmissionDate)
+                MSG_process_sleep(job->submission_time - previousSubmissionDate);
 
-        send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
-        previousSubmissionDate = MSG_get_clock();
+            JobSubmittedMessage * msg = new JobSubmittedMessage;
+            msg->job_id = job->id;
+
+            send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
+            previousSubmissionDate = MSG_get_clock();
+
+            if (job == first_submitted_job)
+                context->energy_first_job_submission = context->machines.total_consumed_energy(context);
+        }
     }
 
     send_message("server", IPMessageType::SUBMITTER_BYE);

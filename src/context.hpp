@@ -26,6 +26,9 @@ struct BatsimContext
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
     CurrentSwitches current_switches;               //!< The current switches
 
+    long double energy_first_job_submission = -1;   //!< The amount of consumed energy (J) when the first job is submitted
+    long double energy_last_job_completion;         //!< The amount of consumed energy (J) when the last job is completed
+
     long long microseconds_used_by_scheduler = 0;   //!< The number of microseconds used by the scheduler
     bool energy_used;                               //!< Stores whether the energy part of Batsim should be used
     bool smpi_used;                                 //!< Stores whether SMPI should be used

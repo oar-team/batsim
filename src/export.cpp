@@ -580,7 +580,7 @@ void exportScheduleToCSV(const std::string &filename, const BatsimContext *conte
 
     XBT_INFO("Makespan=%lf, scheduling_time=%Lf", makespan, seconds_used_by_scheduler);
 
-    long double total_consumed_energy = context->machines.total_consumed_energy(context);
+    long double total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
 
     char * buf;
     int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%Lf,%lf,%Lg\n",
@@ -643,7 +643,7 @@ EnergyConsumptionTracer::~EnergyConsumptionTracer()
     }
 }
 
-void EnergyConsumptionTracer::set_context(const BatsimContext *context)
+void EnergyConsumptionTracer::set_context(BatsimContext *context)
 {
     xbt_assert(context->energy_used);
     _context = context;
@@ -666,7 +666,7 @@ void EnergyConsumptionTracer::add_job_start(double date, int job_id)
 void EnergyConsumptionTracer::add_job_end(double date, int job_id)
 {
     (void) job_id;
-    add_entry(date, 'e');
+    _context->energy_last_job_completion = add_entry(date, 'e');
 }
 
 void EnergyConsumptionTracer::add_pstate_change(double date, const MachineRange & machines, int new_pstate)
@@ -676,7 +676,7 @@ void EnergyConsumptionTracer::add_pstate_change(double date, const MachineRange 
     add_entry(date, 'p');
 }
 
-void EnergyConsumptionTracer::add_entry(double date, char event_type)
+long double EnergyConsumptionTracer::add_entry(double date, char event_type)
 {
     xbt_assert(_wbuf != nullptr);
 
@@ -689,4 +689,6 @@ void EnergyConsumptionTracer::add_entry(double date, char event_type)
              date, energy, event_type);
     xbt_assert(_wbuf != nullptr);
     _wbuf->appendText(buf);
+
+    return energy;
 }

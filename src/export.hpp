@@ -301,7 +301,7 @@ public:
      * @brief Sets the Batsim context
      * @param[in] context The Batsim context
      */
-    void set_context(const BatsimContext * context);
+    void set_context(BatsimContext * context);
 
     /**
      * @brief Sets the output filename of the tracer
@@ -337,9 +337,9 @@ private:
      * @param[in] date The date at which the event has occured
      * @param[in] event_type The type of the event which occured
      */
-    void add_entry(double date, char event_type);
+    long double add_entry(double date, char event_type);
 
 private:
-    const BatsimContext * _context = nullptr; //!< The Batsim context
+    BatsimContext * _context = nullptr; //!< The Batsim context
     WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
 };
