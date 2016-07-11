@@ -35,7 +35,7 @@ before_install:
 install:
   # Install SimGrid
   - cd ${BATSIM_BASE_DIR}
-  - git clone https://mpoquet@github.com/oar-team/simgrid-batsim.git -b batsim-compatible --depth 1 simgrid-batsim
+  - git clone https://github.com/oar-team/simgrid-batsim.git -b batsim-compatible --depth 1 simgrid-batsim
   - cd simgrid-batsim
   - mkdir build
   - cd build
