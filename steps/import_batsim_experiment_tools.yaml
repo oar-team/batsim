@@ -9,5 +9,5 @@
 - import_expe_batsim:
   - exec_in: |
       cd $$expe_batsim_home
-      git clone https://scm.gforge.inria.fr/anonscm/git/expe-batsim/expe-batsim.git
+      git clone https://github.com/oar-team/batsim-experiments.git
 

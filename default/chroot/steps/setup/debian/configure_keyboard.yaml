@@ -4,7 +4,7 @@
     - /etc/default/keyboard
     - |
       XKBMODEL="pc105"
-      XKBLAYOUT="$$layout"
+      XKBLAYOUT="$${layout}"
       XKBVARIANT=""
       XKBOPTIONS=""
   - exec_in: apt-get -y --force-yes install console-setup console-data 2>&1

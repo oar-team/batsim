@@ -6,22 +6,22 @@
   - write_in:
     - /etc/apt/sources.list
     - |
-      deb $$apt_repository $${release} main
-      deb-src $$apt_repository $${release} main
+      deb $${apt_repository} $${release} main
+      deb-src $${apt_repository} $${release} main
       
-      deb $$apt_repository $${release}-backports main
-      deb-src $$apt_repository $${release}-backports main
+      deb $${apt_repository} $${release}-backports main
+      deb-src $${apt_repository} $${release}-backports main
       
       deb http://security.debian.org/ $${release}/updates main
       deb-src http://security.debian.org/ $${release}/updates main
 
 - add_contribs_and_nonfree_sources:
   - exec_in: |
-      if [ $$enable_contrib = true ]; then
+      if [ $${enable_contrib} = true ]; then
         REPO_CONTRIB="contrib"
       fi
   - exec_in: |
-      if [ $$enable_nonfree = true ]; then
+      if [ $${enable_nonfree} = true ]; then
         REPO_NONFREE="non-free"
       fi
   - exec_in: perl -pi -e "s/main$/main $REPO_CONTRIB $REPO_NONFREE/" /etc/apt/sources.list

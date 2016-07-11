@@ -21,7 +21,7 @@ global:
   apt_enable_contrib: true
   apt_enable_nonfree: true
 
-  setup_packages: >
+  setup_packages: >-
     bsdutils ca-certificates locales man-db less libui-dialog-perl dialog
     isc-dhcp-client ifupdown iptables iputils-ping iproute netbase net-tools
     psmisc openssh-server acpid acpi-support-base sysvinit bzip2 wget
@@ -34,9 +34,9 @@ bootstrap:
 # Install and configuration steps
 setup:
   - configure_apt:
-    - repository: $$apt_repository
-    - enable_contrib_repo: $$apt_enable_contrib
-    - enable_nonfree_repo: $$apt_enable_nonfree
+    - repository: $${apt_repository}
+    - enable_contrib_repo: $${apt_enable_contrib}
+    - enable_nonfree_repo: $${apt_enable_nonfree}
   - "@base"
 
 # Export the generated appliance in the format of your choice

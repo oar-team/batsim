@@ -1,12 +1,12 @@
 - change_git_ro_remote_to_dev_remote:
   # For expe-batsim
   - exec_in: |
-      cd $$simctn_dir/expe-batsim
+      cd $$simctn_dir/batsim-experiments
       git remote rename origin readonly
-      git remote add origin git+ssh://mmercier@scm.gforge.inria.fr/gitroot/expe-batsim/expe-batsim.git
+      git remote add origin git@github.com:oar-team/batsim-experiments.git
 
   # For batsim
   - exec_in: |
       cd $$simctn_dir/batsim
       git remote rename origin readonly
-      git remote add origin git+ssh://mmercier@scm.gforge.inria.fr/gitroot/batsim/batsim.git
+      git remote add origin git@github.com:oar-team/batsim.git

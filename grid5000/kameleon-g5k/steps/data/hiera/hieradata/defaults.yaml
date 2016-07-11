@@ -1,7 +1,0 @@
----
-env::std::misc::rootpwd: ""
-env::std::oar::ssh:
-  oarnodesetting_ssh_key: ""
-  oarnodesetting_ssh_key_pub: ""
-  id_rsa: ""
-  id_rsa_pub: ""

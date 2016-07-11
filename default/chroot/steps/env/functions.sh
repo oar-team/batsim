@@ -14,7 +14,7 @@ function __download {
     else
         echo "wget is missing, trying with curl..."
         if which curl >/dev/null; then
-            curl -# -L --retry 999 --retry-max-time 0 "$1" -o "$2" 2>&1
+            curl --fail -# -L --retry 999 --retry-max-time 0 "$1" -o "$2" 2>&1
         else
             echo "curl is missing, trying with python..."
             if which python >/dev/null; then

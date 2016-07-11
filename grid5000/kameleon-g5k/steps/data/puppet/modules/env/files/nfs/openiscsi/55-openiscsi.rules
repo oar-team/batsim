@@ -1,1 +1,0 @@
-KERNEL=="sd*", SUBSYSTEMS=="scsi", PROGRAM="/etc/udev/scripts/iscsidev.sh %b",SYMLINK+="iscsi/%c/part%n"

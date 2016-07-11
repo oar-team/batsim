@@ -3,6 +3,7 @@
 
 - attached_image_disk: $$kameleon_cwd/attached_base_$$kameleon_recipe_name.$$image_format
 - initial_image_disk: $$image_disk.$$image_format
+- ova_image_disk: $$image_disk.ova
 
 - rename_attached_image_disk:
   - exec_local: mv $$initial_image_disk $$attached_image_disk
@@ -37,8 +38,11 @@
   - on_setup_clean:
     - exec_local: |
         if [ ! -e  $$initial_image_disk ]; then
-          VBoxManage clonehd $$attached_image_disk $$initial_image_disk \
-            --format $$image_format
+          rm -f $$ova_image_disk
+          VBoxManage export $$virtualbox_vmid -o $$ova_image_disk
+          tar xvf $$ova_image_disk
+          rm -f $$ova_image_disk
+          mv $${image_disk}*disk1.vmdk $$image_disk.$$image_format
         fi
 
 - delete_vm_at_the_end:

@@ -1,12 +1,12 @@
 # Save Appliance from virtualbox
-- export_appliance_script: $$kameleon_cwd/export_appliance.py
+- export_appliance_script: $$kameleon_data_dir/helpers/export_appliance.py
 # Zero free unallocated blocks from ext2/3 file-systems before export to
 # reduce image size
 - zerofree: true
 
 
 - save_appliance:
-  - check_cmd_local: python
+  - check_cmd_local: python2
   - exec_local: |
       if [ "$$zerofree" = "true" ]; then
         EXPORT_OPTS="--zerofree"

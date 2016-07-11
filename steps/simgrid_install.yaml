@@ -22,13 +22,13 @@
   - exec_in: |
       mkdir -p $$work_dir
       cd $$work_dir
-      git clone git://scm.gforge.inria.fr/simgrid/simgrid.git
+      git clone https://github.com/oar-team/simgrid-batsim.git --depth 1
   - exec_in: |
-      cd $$work_dir/simgrid
+      cd $$work_dir/simgrid-batsim
       git checkout $$commit_hash
       mkdir build
   - exec_in: |
-      cd $$work_dir/simgrid/build
+      cd $$work_dir/simgrid-batsim/build
       cmake -DCMAKE_INSTALL_PREFIX=$$install_prefix -Denable_documentation=OFF ../
       make -j$(nproc)
       make install

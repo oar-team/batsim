@@ -1,5 +1,5 @@
 - insecure_ssh_key: $$kameleon_cwd/insecure_ssh_key
-- create_appliance_script: $$kameleon_cwd/create_appliance.py
+- create_appliance_script: $$kameleon_data_dir/helpers/create_appliance.py
 
 - kameleon_authorized_keys: /root/.ssh/.kameleon_authorized_keys
 - authorized_keys: /root/.ssh/authorized_keys
@@ -15,7 +15,7 @@
   - exec_local: |
       rm -f $${image_disk}.$${image_format}
       # Create an appliance from rootfs directory
-      python2 $$create_appliance_script $$rootfs_archive_download_path \
+      python $$create_appliance_script $$rootfs_archive_download_path \
         --size $$image_size \
         -o $$image_disk \
         --filesystem $$filesystem_type \
@@ -35,7 +35,7 @@
 
 - inject_ssh_private_key:
   - check_cmd_local: virt-customize
-  - exec_local: >
+  - exec_local: >-
       virt-customize \
         -a $${image_disk}.$${image_format} \
         --run-command 'mkdir -p /root/.ssh/' \
@@ -45,7 +45,7 @@
         --run-command 'chmod 600 /root/.ssh/authorized_keys' \
         --run-command 'chown -R root:root /root/.ssh'
   - on_export_init:
-    - exec_local: >
+    - exec_local: >-
         virt-customize \
           -a $${image_disk}.$${image_format} \
           --run-command 'diff -U $(wc -l < $$authorized_keys) $$authorized_keys $$kameleon_authorized_keys | grep '^-' | sed 's/^-//g' > $$safe_authorized_keys' \

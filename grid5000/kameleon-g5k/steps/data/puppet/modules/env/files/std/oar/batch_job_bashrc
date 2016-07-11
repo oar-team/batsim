@@ -1,6 +1,0 @@
-#
-# OAR bash environnement file for only the batch job users
-#
-
-source ~/.bashrc
-
