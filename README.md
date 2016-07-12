@@ -62,6 +62,15 @@ protocol: For more detail on the protocol, see [protocol description].
 A good starting point is Pybatsim which helps you to easily implement your
 scheduling policy in Python. See the [pybatsim folder] for more details.
 
+Try it directly with Docker
+----------------------------
+
+You can use the docker container to try it without installation:
+``` bash
+docker run -ti oarteam/batsim bash
+batsim
+```
+
 Installation
 ------------
 
