@@ -123,8 +123,10 @@ def retrieve_info_from_instance(variables,
 
     # Let's remove temporary files
     delete_file_if_exists(script_filename)
+
     delete_file_if_exists(working_dir_filename)
     delete_file_if_exists(output_dir_filename)
+    delete_file_if_exists(command_filename)
 
     return (working_dir, output_dir, command)
 
