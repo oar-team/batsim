@@ -456,16 +456,21 @@ def execute_instances(base_working_directory,
                       host_list,
                       implicit_instances,
                       explicit_instances,
-                      nb_workers_per_host):
+                      nb_workers_per_host,
+                      recompute_all_instances):
     # Let's generate all instances that should be executed
     combs = generate_instances_combs(implicit_instances = implicit_instances,
                                      explicit_instances = explicit_instances)
     sweeper = ParamSweeper('{out}/sweeper'.format(out = base_output_directory),
                            combs)
 
-    # Debug : let's mark all inprogress values as todo
+    # Let's mark all inprogress values as todo
     for comb in sweeper.get_inprogress():
         sweeper.cancel(comb)
+
+    if recompute_all_instances:
+        for comb in sweeper.get_done():
+            sweeper.cancel(comb)
 
     # Let's create data shared by all workers
     worker_shared_data = WorkersSharedData(sweeper = sweeper,
@@ -540,6 +545,12 @@ can be found in the instances_examples subdirectory.
                    help = 'Sets the number of workers that should be allocated '
                           'to each host.')
 
+    p.add_argument('-r', '--recompute_all_instances',
+                   action = 'store_true',
+                   help = "If set, all instances will be recomputed. "
+                          "By default, Execo's cache allows to avoid "
+                          "recomputations of already done instances")
+
     p.add_argument('-bwd', '--base_working_directory',
                    type = str,
                    default = None,
@@ -584,8 +595,12 @@ can be found in the instances_examples subdirectory.
     commands_before_instances = []
     commands_after_instances = []
     base_variables = {}
-    host_list = ['localhost']
 
+    recompute_all_instances = False
+    if args.recompute_all_instances:
+        recompute_all_instances = True
+
+    host_list = ['localhost']
     if args.mpi_hostfile:
         host_list = retrieve_hostlist_from_mpi_hostfile(args.mpi_hostfile)
 
@@ -686,7 +701,8 @@ can be found in the instances_examples subdirectory.
                                  host_list = host_list,
                                  implicit_instances = implicit_instances,
                                  explicit_instances = explicit_instances,
-                                 nb_workers_per_host = args.nb_workers_per_host):
+                                 nb_workers_per_host = args.nb_workers_per_host,
+                                 recompute_all_instances = recompute_all_instances):
             sys.exit(2)
 
     # Commands after instances execution
