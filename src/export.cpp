@@ -41,6 +41,8 @@ WriteBuffer::~WriteBuffer()
     {
         delete[] buffer;
         buffer = nullptr;
+
+        f.close();
     }
 }
 
@@ -301,6 +303,8 @@ void PajeTracer::finalize(const BatsimContext * context, double time)
     _wbuf->flushBuffer();
 
     state = FINALIZED;
+
+    XBT_INFO("PajeTracer finalized");
 }
 
 void PajeTracer::addJobLaunching(int jobID, const std::vector<int> & usedMachineIDs, double time)

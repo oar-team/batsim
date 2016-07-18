@@ -439,7 +439,44 @@ string Machine::jobs_being_computed_as_string() const
     return boost::algorithm::join(jobs_strings, ", ");
 }
 
+bool string_including_integers_comparator(const string & s1, const string & s2)
+{
+    int c1 = 0;
+    int c2 = 0;
+
+    int size1 = s1.length();
+    int size2 = s2.length();
+
+    for ( ; c1 < size1 && c2 < size2; )
+    {
+        if (isdigit(s1[c1]) && isdigit(s2[c2]))
+        {
+            int int1 = atoi(&s1[c1]);
+            int int2 = atoi(&s2[c2]);
+
+            if (int1 != int2)
+                return int1 < int2;
+
+            int int1_length = log10(int1) + 1;
+            int int2_length = log10(int2) + 1;
+
+            c1 += int1_length;
+            c2 += int2_length;
+        }
+        else
+        {
+            if (s1[c1] != s2[c2])
+                return s1[c1] < s2[c2];
+
+            ++c1;
+            ++c2;
+        }
+    }
+
+    return s1.length() < s2.length();
+}
+
 bool machine_comparator_name(const Machine *m1, const Machine *m2)
 {
-    return m1->name < m2->name;
+    return string_including_integers_comparator(m1->name, m2->name);
 }
