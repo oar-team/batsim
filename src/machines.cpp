@@ -439,7 +439,7 @@ string Machine::jobs_being_computed_as_string() const
     return boost::algorithm::join(jobs_strings, ", ");
 }
 
-bool string_including_integers_comparator(const string & s1, const string & s2)
+bool string_including_integers_comparator(const std::string & s1, const std::string & s2)
 {
     int c1 = 0;
     int c2 = 0;

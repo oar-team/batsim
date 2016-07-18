@@ -70,7 +70,16 @@ struct Machine
 };
 
 /**
- * @brief Compares two machines according to the lexicographical order of their names
+ * @brief Compares two strings. If both strings contain integers at the same place, the integers themselves are compared.
+ * @details For example, "machine2" < "machine10", "machine10_12" < "machine10_153"...
+ * @param s1 The first string to compare
+ * @param s2 The second string to compare
+ * @return True if and only if s1 < s2, taking numbers into account
+ */
+bool string_including_integers_comparator(const std::string & s1, const std::string & s2);
+
+/**
+ * @brief Compares two machines according to their names, taking into account numbers within them
  * @param[in] m1 The first machine
  * @param[in] m2 The second machine
  * @return True if and only if the machine name of the first machine if before the machine name of the second machine, lexicographically speaking
