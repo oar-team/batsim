@@ -49,7 +49,7 @@ struct MainArguments
 {
     std::string platformFilename;                           //!< The SimGrid platform filename
     std::string workloadFilename;                           //!< The JSON workload filename
-    std::string workflowFilename;                           //!< The JSON workload filename
+    std::string workflowFilename;                           //!< The (JSON ?? or anything really) workflow filename
 
     std::string socketFilename = "/tmp/bat_socket";         //!< The Unix Domain Socket filename
 
