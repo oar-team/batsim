@@ -31,6 +31,14 @@ struct JobIdentifier
 };
 
 /**
+ * @brief Compares two JobIdentifier thanks to their string representations
+ * @param[in] ji1 The first JobIdentifier
+ * @param[in] ji2 The second JobIdentifier
+ * @return ji1.to_string() < ji2.to_string()
+ */
+bool operator<(const JobIdentifier & ji1, const JobIdentifier & ji2);
+
+/**
  * @brief Stores the different types of inter-process messages
  */
 enum class IPMessageType
@@ -46,9 +54,35 @@ enum class IPMessageType
     ,SCHED_READY            //!< SchedulerHandler -> Server. The scheduler handler tells the server that the scheduler is ready (messages can be sent to it).
     ,WAITING_DONE           //!< Waiter -> server. The waiter tells the server that the target time has been reached.
     ,SUBMITTER_HELLO        //!< Submitter -> Server. The submitter tells it starts submitting to the server.
+    ,SUBMITTER_CALLBACK     //!< Server -> Submitter. The server sends a message to the Submitter. This message is initiated when a Job which has been submitted by the submitter has completed. The submitter must have said that it wanted to be called back when he said hello.
     ,SUBMITTER_BYE          //!< Submitter -> Server. The submitter tells it stops submitting to the server.
     ,SWITCHED_ON            //!< SwitcherON -> Server. The switcherON process tells the server the machine pstate has been changed
     ,SWITCHED_OFF           //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
+};
+
+/**
+ * @brief The content of the SUBMITTER_HELLO message
+ */
+struct SubmitterHelloMessage
+{
+    std::string submitter_name; //!< The name of the submitter. Must be unique. Is also used as a mailbox.
+    bool enable_callback_on_job_completion; //!< If set to true, the submitter should be called back when its jobs complete.
+};
+
+/**
+ * @brief The content of the SUBMITTER_BYE message
+ */
+struct SubmitterByeMessage
+{
+    std::string submitter_name; //!< The name of the submitter.
+};
+
+/**
+ * @brief The content of the SUBMITTER_CALLBACK message
+ */
+struct SubmitterJobCompletionCallbackMessage
+{
+    JobIdentifier job_id; //!< The JobIdentifier
 };
 
 /**
@@ -56,6 +90,7 @@ enum class IPMessageType
  */
 struct JobSubmittedMessage
 {
+    std::string submitter_name; //!< The name of the submitter which submitted the job.
     JobIdentifier job_id; //!< The JobIdentifier
 };
 

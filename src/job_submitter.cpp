@@ -27,8 +27,33 @@ int static_job_submitter_process(int argc, char *argv[])
                "which does not exist", args->workload_name.c_str());
 
     Workload * workload = context->workloads.at(args->workload_name);
+    const string submitter_name = "static_submitter";
 
-    send_message("server", IPMessageType::SUBMITTER_HELLO);
+    /*  ░░░░░░░░▄▄▄███░░░░░░░░░░░░░░░░░░░░
+        ░░░▄▄██████████░░░░░░░░░░░░░░░░░░░
+        ░███████████████░░░░░░░░░░░░░░░░░░
+        ░▀███████████████░░░░░▄▄▄░░░░░░░░░
+        ░░░███████████████▄███▀▀▀░░░░░░░░░
+        ░░░░███████████████▄▄░░░░░░░░░░░░░
+        ░░░░▄████████▀▀▄▄▄▄▄░▀░░░░░░░░░░░░
+        ▄███████▀█▄▀█▄░░█░▀▀▀░█░░▄▄░░░░░░░
+        ▀▀░░░██▄█▄░░▀█░░▄███████▄█▀░░░▄░░░
+        ░░░░░█░█▀▄▄▀▄▀░█▀▀▀█▀▄▄▀░░░░░░▄░▄█
+        ░░░░░█░█░░▀▀▄▄█▀░█▀▀░░█░░░░░░░▀██░
+        ░░░░░▀█▄░░░░░░░░░░░░░▄▀░░░░░░▄██░░
+        ░░░░░░▀█▄▄░░░░░░░░▄▄█░░░░░░▄▀░░█░░
+        ░░░░░░░░░▀███▀▀████▄██▄▄░░▄▀░░░░░░
+        ░░░░░░░░░░░█▄▀██▀██▀▄█▄░▀▀░░░░░░░░
+        ░░░░░░░░░░░██░▀█▄█░█▀░▀▄░░░░░░░░░░
+        ░░░░░░░░░░█░█▄░░▀█▄▄▄░░█░░░░░░░░░░
+        ░░░░░░░░░░█▀██▀▀▀▀░█▄░░░░░░░░░░░░░
+        ░░░░░░░░░░░░▀░░░░░░░░░░░▀░░░░░░░░░ */
+
+    SubmitterHelloMessage * hello_msg = new SubmitterHelloMessage;
+    hello_msg->submitter_name = submitter_name;
+    hello_msg->enable_callback_on_job_completion = false;
+
+    send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
 
     double previousSubmissionDate = MSG_get_clock();
 
@@ -61,6 +86,7 @@ int static_job_submitter_process(int argc, char *argv[])
 
             // Let's now continue the simulation
             JobSubmittedMessage * msg = new JobSubmittedMessage;
+            msg->submitter_name = submitter_name;
             msg->job_id.workload_name = args->workload_name;
             msg->job_id.job_number = job->number;
 
@@ -72,7 +98,9 @@ int static_job_submitter_process(int argc, char *argv[])
         }
     }
 
-    send_message("server", IPMessageType::SUBMITTER_BYE);
+    SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
+    bye_msg->submitter_name = submitter_name;
+    send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
     delete args;
     return 0;
 }

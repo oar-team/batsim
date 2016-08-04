@@ -64,6 +64,9 @@ std::string ipMessageTypeToString(IPMessageType type)
         case IPMessageType::SUBMITTER_HELLO:
             s = "SUBMITTER_HELLO";
             break;
+        case IPMessageType::SUBMITTER_CALLBACK:
+            s = "SUBMITTER_CALLBACK";
+            break;
         case IPMessageType::SUBMITTER_BYE:
             s = "SUBMITTER_BYE";
             break;
@@ -130,9 +133,18 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SUBMITTER_HELLO:
         {
+            SubmitterHelloMessage * msg = (SubmitterHelloMessage *) data;
+            delete msg;
+        } break;
+        case IPMessageType::SUBMITTER_CALLBACK:
+        {
+            SubmitterJobCompletionCallbackMessage * msg = (SubmitterJobCompletionCallbackMessage *) data;
+            delete msg;
         } break;
         case IPMessageType::SUBMITTER_BYE:
         {
+            SubmitterByeMessage * msg = (SubmitterByeMessage *) data;
+            delete msg;
         } break;
         case IPMessageType::SWITCHED_ON:
         {
@@ -155,4 +167,9 @@ IPMessage::~IPMessage()
 string JobIdentifier::to_string() const
 {
     return workload_name + '!' + std::to_string(job_number);
+}
+
+bool operator<(const JobIdentifier &ji1, const JobIdentifier &ji2)
+{
+    return ji1.to_string() < ji2.to_string();
 }

@@ -39,6 +39,18 @@ int uds_server_process(int argc, char *argv[])
     const int protocol_version = 2;
     bool sched_ready = true;
 
+    // Let's store some information about the submitters
+    struct Submitter
+    {
+        string mailbox;
+        bool should_be_called_back;
+    };
+
+    map<string, Submitter*> submitters;
+
+    // Let's store the origin or some jobs
+    map<JobIdentifier, Submitter*> origin_of_jobs;
+
     string send_buffer;
 
     while ((nb_submitters == 0) || (nb_submitters_finished < nb_submitters) ||
@@ -57,13 +69,33 @@ int uds_server_process(int argc, char *argv[])
         {
         case IPMessageType::SUBMITTER_HELLO:
         {
+            xbt_assert(task_data->data != nullptr);
+            SubmitterHelloMessage * message = (SubmitterHelloMessage *) task_data->data;
+
+            xbt_assert(submitters.count(message->submitter_name) == 0,
+                       "Invalid new submitter '%s': a submitter with the same name already exists!",
+                       message->submitter_name.c_str());
+
             nb_submitters++;
-            XBT_INFO( "New submitter said hello. Number of polite submitters: %d", nb_submitters);
+
+            Submitter * submitter = new Submitter;
+            submitter->mailbox = message->submitter_name;
+            submitter->should_be_called_back = message->enable_callback_on_job_completion;
+
+            submitters[message->submitter_name] = submitter;
+
+            XBT_INFO("New submitter said hello. Number of polite submitters: %d", nb_submitters);
 
         } break; // end of case SUBMITTER_HELLO
 
         case IPMessageType::SUBMITTER_BYE:
         {
+            xbt_assert(task_data->data != nullptr);
+            SubmitterByeMessage * message = (SubmitterByeMessage *) task_data->data;
+
+            xbt_assert(submitters.count(message->submitter_name) == 1);
+            submitters.erase(message->submitter_name);
+
             nb_submitters_finished++;
             XBT_INFO( "A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
 
@@ -73,6 +105,18 @@ int uds_server_process(int argc, char *argv[])
         {
             xbt_assert(task_data->data != nullptr);
             JobCompletedMessage * message = (JobCompletedMessage *) task_data->data;
+
+            if (origin_of_jobs.count(message->job_id) == 1)
+            {
+                // Let's call the submitter which submitted the job back
+                SubmitterJobCompletionCallbackMessage * msg = new SubmitterJobCompletionCallbackMessage;
+                msg->job_id = message->job_id;
+
+                Submitter * submitter = origin_of_jobs.at(message->job_id);
+                send_message(submitter->mailbox, IPMessageType::SUBMITTER_CALLBACK, (void*) msg);
+
+                origin_of_jobs.erase(message->job_id);
+            }
 
             nb_running_jobs--;
             xbt_assert(nb_running_jobs >= 0);
@@ -91,9 +135,19 @@ int uds_server_process(int argc, char *argv[])
             xbt_assert(task_data->data != nullptr);
             JobSubmittedMessage * message = (JobSubmittedMessage *) task_data->data;
 
+            xbt_assert(submitters.count(message->submitter_name) == 1);
+
+            Submitter * submitter = submitters.at(message->submitter_name);
+            if (submitter->should_be_called_back)
+            {
+                xbt_assert(origin_of_jobs.count(message->job_id) == 0);
+                origin_of_jobs[message->job_id] = submitter;
+            }
+
             nb_submitted_jobs++;
             Job * job = context->workloads.job_at(message->job_id);
             job->state = JobState::JOB_STATE_SUBMITTED;
+
 
             XBT_INFO( "Job %d SUBMITTED. %d jobs submitted so far", job->number, nb_submitted_jobs);
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":S:" + message->job_id.to_string();
@@ -348,7 +402,12 @@ int uds_server_process(int argc, char *argv[])
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":e:" +
                            std::to_string(total_consumed_energy);
             XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
-        }
+        } break; // end of case SCHED_TELL_ME_ENERGY
+
+        case IPMessageType::SUBMITTER_CALLBACK:
+        {
+            xbt_assert(false, "The server received a SUBMITTER_CALLBACK message, which should not happen");
+        } break; // end of case SUBMITTER_CALLBACK
         } // end of switch
 
         delete task_data;
