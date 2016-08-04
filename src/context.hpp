@@ -11,6 +11,7 @@
 #include "profiles.hpp"
 #include "export.hpp"
 #include "pstate.hpp"
+#include "storage.hpp"
 
 /**
  * @brief The Batsim context
@@ -25,6 +26,7 @@ struct BatsimContext
     PStateChangeTracer pstate_tracer;               //!< The PStateChangeTracer
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
     CurrentSwitches current_switches;               //!< The current switches
+    RedisStorage storage;                           //!< The RedisStorage
 
     long double energy_first_job_submission = -1;   //!< The amount of consumed energy (J) when the first job is submitted
     long double energy_last_job_completion;         //!< The amount of consumed energy (J) when the last job is completed

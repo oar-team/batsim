@@ -55,6 +55,9 @@ struct MainArguments
     std::string masterHostName = "master_host";             //!< The name of the SimGrid host which runs scheduler processes and not user tasks
     std::string exportPrefix = "out";                       //!< The filename prefix used to export simulation information
 
+    std::string redis_hostname = "127.0.0.1";               //!< The Redis (data storage) server host name
+    int redis_port = 6379;                                  //!< The Redis (data storage) server port
+
     int limit_machines_count = -1;                          //!< The number of machines to use to compute jobs. -1 : no limit. >= 1 : the number of computation machines
     bool limit_machines_count_by_workload = false;          //!< If set to true, the number of computing machiens to use should be limited by the workload description
 
@@ -84,6 +87,9 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     case 'h':
         mainArgs->allow_space_sharing = true;
         break;
+    case 'H':
+        mainArgs->redis_hostname = arg;
+        break;
     case 'e':
         mainArgs->exportPrefix = arg;
         break;
@@ -111,6 +117,20 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     case 'p':
         mainArgs->energy_used = true;
         break;
+    case 'P':
+    {
+        int ivalue = stoi(arg);
+
+        if ((ivalue <= 0) || (ivalue > 65535))
+        {
+            mainArgs->abort = true;
+            mainArgs->abortReason += "\n  invalid PORT positional argument (" + to_string(ivalue) +
+                                     "): it should be a valid port: integer in range [1,65535].";
+        }
+
+        mainArgs->redis_port = ivalue;
+        break;
+    }
     case 'v':
     {
         string sArg = arg;
@@ -189,10 +209,12 @@ int main(int argc, char * argv[])
     {
         {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output. Default value: 'out'", 0},
         {"allow-space-sharing", 'h', 0, 0, "Allows space sharing: the same resource can compute several jobs at the same time", 0},
+        {"redis-hostname", 'H', "HOSTNAME", 0, "Sets the host name of the remote Redis (data storage) server.", 0},
         {"limit-machine-count", 'l', "M", 0, "Allows to limit the number of computing machines to use. If M == -1 (default), all the machines described in PLATFORM_FILE are used (but the master_host). If M >= 1, only the first M machines will be used to comupte jobs.", 0},
         {"limit-machine-count-by-worload", 'L', 0, 0, "If set, allows to limit the number of computing machines to use. This number is read from the workload file. If both limit-machine-count and limit-machine-count-by-worload are set, the minimum of the two will be used.", 0},
         {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks. Default value: 'master_host'", 0},
         {"energy-plugin", 'p', 0, 0, "Enables energy-aware experiments", 0},
+        {"redis-port", 'P', "PORT", 0, "Sets the port of the remote Redis (data storage) server.", 0},
         {"quiet", 'q', 0, 0, "Shortcut for --verbosity=quiet", 0},
         {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename. Default value: '/tmp/bat_socket'", 0},
         {"process-tracing", 't', 0, 0, "Enables SimGrid process tracing (shortcut for SimGrid options ----cfg=tracing:1 --cfg=tracing/msg/process:1)", 0},
@@ -349,6 +371,10 @@ int main(int argc, char * argv[])
     // Socket
     context.socket.create_socket(mainArgs.socketFilename);
     context.socket.accept_pending_connection();
+
+    // Redis
+    context.storage.set_instance_key_prefix(absolute_filename(mainArgs.socketFilename));
+    context.storage.connect_to_server(mainArgs.redis_hostname, mainArgs.redis_port);
 
     // Main processes running
     XBT_INFO("Creating jobs_submitter process...");

@@ -435,3 +435,18 @@ int request_reply_scheduler_process(int argc, char *argv[])
     delete args;
     return 0;
 }
+
+std::string absolute_filename(const std::string & filename)
+{
+    xbt_assert(filename.length() > 0);
+
+    // Let's assume filenames starting by "/" are absolute.
+    if (filename[0] == '/')
+        return filename;
+
+    char cwd_buf[PATH_MAX];
+    char * getcwd_ret = getcwd(cwd_buf, PATH_MAX);
+    xbt_assert(getcwd_ret == cwd_buf, "getcwd failed");
+
+    return string(getcwd_ret) + '/' + filename;
+}

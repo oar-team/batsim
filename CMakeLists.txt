@@ -57,6 +57,17 @@ include_directories(${Boost_INCLUDE_DIR})
 find_package(rapidjson REQUIRED)
 include_directories(${RAPIDJSON_INCLUDE_DIRS})
 
+## Redox dependency
+find_package(redox REQUIRED)
+include_directories(${REDOX_INCLUDE_DIR})
+
+## Redox sub dependencies
+find_package(hiredis REQUIRED)
+include_directories(${HIREDIS_INCLUDE_DIRS})
+
+find_package(libev REQUIRED)
+include_directories(${LIBEV_INCLUDE_DIRS})
+
 ################
 # Source files #
 ################
@@ -68,8 +79,12 @@ file(GLOB batsim_SRC
 add_executable(batsim ${batsim_SRC})
 
 # Libraries to link
-target_link_libraries(batsim ${SIMGRID_LIBRARIES} ${Boost_SYSTEM_LIBRARY_DEBUG}
-                      ${Boost_FILESYSTEM_LIBRARY_DEBUG})
+target_link_libraries(batsim ${SIMGRID_LIBRARIES}
+                      ${Boost_SYSTEM_LIBRARY_DEBUG}
+                      ${Boost_FILESYSTEM_LIBRARY_DEBUG}
+                      ${REDOX_LIBRARY}
+                      ${LIBEV_LIBRARY}
+                      ${HIREDIS_LIBRARY})
 
 ################
 # Installation #

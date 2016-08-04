@@ -89,3 +89,10 @@ private:
  * @return 0
  */
 int request_reply_scheduler_process(int argc, char *argv[]);
+
+/**
+ * @brief Computes the absolute filename of a given file
+ * @param[in] filename The name of the file (not necessarily existing).
+ * @return The absolute filename corresponding to the given filename
+ */
+std::string absolute_filename(const std::string & filename);
