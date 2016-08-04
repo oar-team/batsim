@@ -492,41 +492,48 @@ void exportJobsToCSV(const std::string &filename, const BatsimContext *context)
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
 
     // write headers
-    f << "jobID,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,consumed_energy,allocated_processors\n";
+    f << "job_number,workload_name,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,consumed_energy,allocated_processors\n";
 
-    const auto & jobs = context->jobs.jobs();
-    for (const auto & mit : jobs)
+    for (const auto mit : context->workloads.workloads())
     {
-        Job * job = mit.second;
+        string workload_name = mit.first;
+        const Workload * workload = mit.second;
 
-        if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+        const auto & jobs = workload->jobs->jobs();
+        for (const auto & mit : jobs)
         {
-            char * buf = nullptr;
-            int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
-            xbt_assert(job->runtime >= 0);
+            Job * job = mit.second;
 
-            int ret = asprintf(&buf, "%d,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
-                     job->id,
-                     job->submission_time,
-                     job->required_nb_res,
-                     job->walltime,
-                     success,
-                     job->starting_time,
-                     job->runtime,
-                     job->starting_time + job->runtime, // finish_time
-                     job->starting_time - job->submission_time, // waiting_time
-                     job->starting_time + job->runtime - job->submission_time, // turnaround_time
-                     (job->starting_time + job->runtime - job->submission_time) / job->runtime, // stretch
-                     job->consumed_energy
-                     );
-            (void) ret; // Avoids a warning if assertions are ignored
-            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-            f << buf;
-            free(buf);
+            if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+            {
+                char * buf = nullptr;
+                int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
+                xbt_assert(job->runtime >= 0);
 
-            xbt_assert((int)job->allocation.size() == job->required_nb_res);
+                int ret = asprintf(&buf, "%d,%s,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
+                                   job->number, // job_id
+                                   workload_name.c_str(), // workload_name
+                                   job->submission_time, // submission_time
+                                   job->required_nb_res, // requested_number_of_processors
+                                   job->walltime, // requested_time
+                                   success, // success
+                                   job->starting_time, // starting_time
+                                   job->runtime, // execution_time
+                                   job->starting_time + job->runtime, // finish_time
+                                   job->starting_time - job->submission_time, // waiting_time
+                                   job->starting_time + job->runtime - job->submission_time, // turnaround_time
+                                   (job->starting_time + job->runtime - job->submission_time) / job->runtime, // stretch
+                                   job->consumed_energy // consumed energy
+                                   );
+                (void) ret; // Avoids a warning if assertions are ignored
+                xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+                f << buf;
+                free(buf);
 
-            f << job->allocation.to_string_hyphen(" ") << "\n";
+                xbt_assert((int)job->allocation.size() == job->required_nb_res);
+
+                f << job->allocation.to_string_hyphen(" ") << "\n";
+            }
         }
     }
 
@@ -552,33 +559,38 @@ void exportScheduleToCSV(const std::string &filename, const BatsimContext *conte
 
     long double seconds_used_by_scheduler = context->microseconds_used_by_scheduler / (long double)1e6;
 
-    const auto & jobs = context->jobs.jobs();
-    for (const auto & mit : jobs)
+    for (const auto mit : context->workloads.workloads())
     {
-        Job * job = mit.second;
+        const Workload * workload = mit.second;
 
-        if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+        const auto & jobs = workload->jobs->jobs();
+        for (const auto & mit : jobs)
         {
-            nb_jobs_finished++;
+            Job * job = mit.second;
 
-            if (job->runtime < min_job_execution_time)
-                min_job_execution_time = job->runtime;
-            if (job->runtime > max_job_execution_time)
-                max_job_execution_time = job->runtime;
+            if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+            {
+                nb_jobs_finished++;
 
-            if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
-                nb_jobs_success++;
-            else
-                nb_jobs_killed++;
+                if (job->runtime < min_job_execution_time)
+                    min_job_execution_time = job->runtime;
+                if (job->runtime > max_job_execution_time)
+                    max_job_execution_time = job->runtime;
 
-            double completion_time = job->starting_time + job->runtime;
-            double turnaround_time = job->starting_time + job->runtime - job->submission_time;
+                if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
+                    nb_jobs_success++;
+                else
+                    nb_jobs_killed++;
 
-            if (completion_time > makespan)
-                makespan = completion_time;
+                double completion_time = job->starting_time + job->runtime;
+                double turnaround_time = job->starting_time + job->runtime - job->submission_time;
 
-            if (turnaround_time > max_turnaround_time)
-                max_turnaround_time = turnaround_time;
+                if (completion_time > makespan)
+                    makespan = completion_time;
+
+                if (turnaround_time > max_turnaround_time)
+                    max_turnaround_time = turnaround_time;
+            }
         }
     }
 

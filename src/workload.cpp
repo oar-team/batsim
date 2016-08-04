@@ -22,56 +22,30 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(workload, "workload"); //!< Logging
 
-void check_worload_validity(const BatsimContext *context)
+Workload::Workload()
 {
-    // Let's check that every SEQUENCE-typed profile points to existing profiles
-    for (auto mit : context->profiles.profiles())
-    {
-        Profile * profile = mit.second;
-        if (profile->type == ProfileType::SEQUENCE)
-        {
-            SequenceProfileData * data = (SequenceProfileData *) profile->data;
-            for (const auto & prof : data->sequence)
-            {
-                (void) prof; // Avoids a warning if assertions are ignored
-                xbt_assert(context->profiles.exists(prof),
-                           "Invalid composed profile '%s': the used profile '%s' does not exist",
-                           mit.first.c_str(), prof.c_str());
-            }
-        }
-    }
+    jobs = new Jobs;
+    profiles = new Profiles;
 
-    // TODO : check that there are no circular calls between composed profiles...
-    // TODO: compute the constraint of the profile number of resources, to check if it match the jobs that use it
-
-    // Let's check that the profile of each job exists
-    for (auto mit : context->jobs.jobs())
-    {
-        Job * job = mit.second;
-        xbt_assert(context->profiles.exists(job->profile), "Invalid job %d: the associated profile '%s' does not exist", job->id, job->profile.c_str());
-
-        const Profile * profile = context->profiles[job->profile];
-        if (profile->type == ProfileType::MSG_PARALLEL)
-        {
-            MsgParallelProfileData * data = (MsgParallelProfileData *) profile->data;
-            (void) data; // Avoids a warning if assertions are ignored
-            xbt_assert(data->nb_res == job->required_nb_res, "Invalid job %d: the requested number of resources (%d) do NOT match"
-                       " the number of resources of the associated profile '%s' (%d)", job->id, job->required_nb_res, job->profile.c_str(), data->nb_res);
-        }
-        else if (profile->type == ProfileType::SEQUENCE)
-        {
-            // TODO: check if the number of resources matches a resource-constrained composed profile
-        }
-
-    }
+    jobs->setProfiles(profiles);
+    jobs->setWorkload(this);
 }
 
-void load_json_workload(BatsimContext *context, const std::string &filename, int & nb_machines)
+Workload::~Workload()
 {
-    XBT_INFO("Loading JSON workload '%s'...", filename.c_str());
+    delete jobs;
+    delete profiles;
+
+    jobs = nullptr;
+    profiles = nullptr;
+}
+
+void Workload::load_from_json(const std::string &json_filename, int &nb_machines)
+{
+    XBT_INFO("Loading JSON workload '%s'...", json_filename.c_str());
     // Let the file content be placed in a string
-    ifstream ifile(filename);
-    xbt_assert(ifile.is_open(), "Cannot read file '%s'", filename.c_str());
+    ifstream ifile(json_filename);
+    xbt_assert(ifile.is_open(), "Cannot read file '%s'", json_filename.c_str());
     string content;
 
     ifile.seekg(0, ios::end);
@@ -87,30 +61,177 @@ void load_json_workload(BatsimContext *context, const std::string &filename, int
     xbt_assert(doc.IsObject());
 
     // Let's try to read the number of machines in the JSON document
-    xbt_assert(doc.HasMember("nb_res"), "Invalid JSON file '%s': the 'nb_res' field is missing", filename.c_str());
+    xbt_assert(doc.HasMember("nb_res"), "Invalid JSON file '%s': the 'nb_res' field is missing", json_filename.c_str());
     const Value & nb_res_node = doc["nb_res"];
-    xbt_assert(nb_res_node.IsInt(), "Invalid JSON file '%s': the 'nb_res' field is not an integer", filename.c_str());
+    xbt_assert(nb_res_node.IsInt(), "Invalid JSON file '%s': the 'nb_res' field is not an integer", json_filename.c_str());
     nb_machines = nb_res_node.GetInt();
-    xbt_assert(nb_machines > 0, "Invalid JSON file '%s': the value of the 'nb_res' field is invalid (%d)", filename.c_str(), nb_machines);
+    xbt_assert(nb_machines > 0, "Invalid JSON file '%s': the value of the 'nb_res' field is invalid (%d)",
+               json_filename.c_str(), nb_machines);
 
-    context->jobs.load_from_json(doc, filename);
-    context->profiles.load_from_json(doc, filename);
+    jobs->load_from_json(doc, json_filename);
+    profiles->load_from_json(doc, json_filename);
 
     XBT_INFO("JSON workload parsed sucessfully.");
     XBT_INFO("Checking workload validity...");
-    check_worload_validity(context);
+    check_validity();
     XBT_INFO("Workload seems to be valid.");
 }
 
-void register_smpi_applications(const BatsimContext *context)
+void Workload::register_smpi_applications()
 {
     XBT_INFO("Registering SMPI applications...");
-    for (auto mit : context->jobs.jobs())
+    for (auto mit : jobs->jobs())
     {
         Job * job = mit.second;
-        string job_id_str = to_string(job->id);
+        string job_id_str = to_string(job->number);
         XBT_INFO("Registering app. instance='%s', nb_process=%d", job_id_str.c_str(), job->required_nb_res);
         SMPI_app_instance_register(job_id_str.c_str(), smpi_replay_process, job->required_nb_res);
     }
     XBT_INFO("SMPI applications have been registered");
+}
+
+void Workload::check_validity()
+{
+    // Let's check that every SEQUENCE-typed profile points to existing profiles
+    for (auto mit : profiles->profiles())
+    {
+        Profile * profile = mit.second;
+        if (profile->type == ProfileType::SEQUENCE)
+        {
+            SequenceProfileData * data = (SequenceProfileData *) profile->data;
+            for (const auto & prof : data->sequence)
+            {
+                (void) prof; // Avoids a warning if assertions are ignored
+                xbt_assert(profiles->exists(prof),
+                           "Invalid composed profile '%s': the used profile '%s' does not exist",
+                           mit.first.c_str(), prof.c_str());
+            }
+        }
+    }
+
+    // TODO : check that there are no circular calls between composed profiles...
+    // TODO: compute the constraint of the profile number of resources, to check if it match the jobs that use it
+
+    // Let's check that the profile of each job exists
+    for (auto mit : jobs->jobs())
+    {
+        Job * job = mit.second;
+        xbt_assert(profiles->exists(job->profile),
+                   "Invalid job %d: the associated profile '%s' does not exist",
+                   job->number, job->profile.c_str());
+
+        const Profile * profile = profiles->at(job->profile);
+        if (profile->type == ProfileType::MSG_PARALLEL)
+        {
+            MsgParallelProfileData * data = (MsgParallelProfileData *) profile->data;
+            (void) data; // Avoids a warning if assertions are ignored
+            xbt_assert(data->nb_res == job->required_nb_res,
+                       "Invalid job %d: the requested number of resources (%d) do NOT match"
+                       " the number of resources of the associated profile '%s' (%d)",
+                       job->number, job->required_nb_res, job->profile.c_str(), data->nb_res);
+        }
+        else if (profile->type == ProfileType::SEQUENCE)
+        {
+            // TODO: check if the number of resources matches a resource-constrained composed profile
+        }
+    }
+}
+
+
+
+Workloads::Workloads()
+{
+
+}
+
+Workloads::~Workloads()
+{
+    for (auto mit : _workloads)
+    {
+        Workload * workload = mit.second;
+        delete workload;
+    }
+    _workloads.clear();
+}
+
+Workload *Workloads::operator[](const std::string &workload_name)
+{
+    return at(workload_name);
+}
+
+const Workload *Workloads::operator[](const std::string &workload_name) const
+{
+    return at(workload_name);
+}
+
+Workload *Workloads::at(const std::string &workload_name)
+{
+    xbt_assert(exists(workload_name));
+    return _workloads.at(workload_name);
+}
+
+const Workload *Workloads::at(const std::string &workload_name) const
+{
+    xbt_assert(exists(workload_name));
+    return _workloads.at(workload_name);
+}
+
+Job *Workloads::job_at(const std::string &workload_name, int job_number)
+{
+    return at(workload_name)->jobs->at(job_number);
+}
+
+const Job *Workloads::job_at(const std::string &workload_name, int job_number) const
+{
+    return at(workload_name)->jobs->at(job_number);
+}
+
+Job *Workloads::job_at(const JobIdentifier &job_id)
+{
+    return at(job_id.workload_name)->jobs->at(job_id.job_number);
+}
+
+const Job *Workloads::job_at(const JobIdentifier &job_id) const
+{
+    return at(job_id.workload_name)->jobs->at(job_id.job_number);
+}
+
+void Workloads::insert_workload(const std::string &workload_name, Workload *workload)
+{
+    xbt_assert(!exists(workload_name));
+    xbt_assert(!exists(workload->name));
+
+    workload->name = workload_name;
+    _workloads[workload_name] = workload;
+}
+
+bool Workloads::exists(const std::string &workload_name) const
+{
+    return _workloads.count(workload_name) == 1;
+}
+
+bool Workloads::job_exists(const std::string &workload_name, const int job_number)
+{
+    if (!exists(workload_name))
+        return false;
+
+    return at(workload_name)->jobs->exists(job_number);
+}
+
+bool Workloads::job_exists(const JobIdentifier &job_id)
+{
+    if (!exists(job_id.workload_name))
+        return false;
+
+    return at(job_id.workload_name)->jobs->exists(job_id.job_number);
+}
+
+std::map<std::string, Workload *> &Workloads::workloads()
+{
+    return _workloads;
+}
+
+const std::map<std::string, Workload *> &Workloads::workloads() const
+{
+    return _workloads;
 }

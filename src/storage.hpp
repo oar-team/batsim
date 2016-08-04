@@ -1,3 +1,8 @@
+/**
+ * @file storage.hpp
+ * @brief Contains data storage (Redis) related classes
+ */
+
 #pragma once
 
 #include <string>

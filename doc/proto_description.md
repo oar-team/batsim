@@ -38,35 +38,35 @@ the job ID of the job which just completed. This part is not mandatory, it depen
 
 # Message Stamps #
 
-| Proto. version  | Stamp | Direction     | Content syntax           | Meaning
-|---------------- |-------|-------------- |------------------------- |-------------
-|        0+       |   S   | Bastim->Sched | JOB_ID                   | Job submission: one (static) job is available and can now be allocated to resources.
-|        0+       |   C   | Batsim->Sched | JOB_ID                   | Job completion: one (static) job finished its execution.
-|        0+       |   J   | Sched->Batsim | JID1=MID1,MID2,MIDn[;...]| Job allocation: tells to put job JID1 on machines MID1, ..., MIDn. Many jobs might be allocated in the same event. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
-|        0+       |   N   | Both          | No content               | NOP: tells to do nothing / nothing happened.
-|        1+       |   P   | Sched->Batsim | MID1,MID2,MIDn=PSTATE    | Asks to change the power state of some machines. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
-|        1+       |   p   | Batsim->Sched | MID1,MID2,MIDn=PSTATE    | Tells the scheduler that the power state of one or several machines has changed. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb. There is one and only one 'p' message for each 'P' message.
-|        1+       |   R   | Sched->Batsim | JOB_ID                   | Job rejection: the scheduler tells that one (static) job will not be computed.
-|        1+       |   n   | Sched->Batsim | TIME                     | NOP me later: the scheduler asks to be awaken at the given simulation time TIME.
-|        1+       |   E   | Sched->Batsim | No content               | Asks Batsim about the total consumed energy (from time 0 to now) in Joules. Works only in energy mode.
-|        1+       |   e   | Batsim->Sched | CONSUMED_ENERGY          | Batsim tells the total consumed energy (from time 0 to now) in Joules. Works only in energy mode. There is one and only one 'e' message for each 'E' message.
+| Proto. version  | Stamp | Direction     | Content syntax                  | Meaning
+|---------------- |-------|-------------- |-------------------------------- |-------------
+|        2+       |   S   | Bastim->Sched | WLOAD!JOB_ID                    | Job submission: job JOB_ID of workload WLOAD is available and can now be allocated to resources.
+|        2+       |   C   | Batsim->Sched | WLOAD!JOB_ID                    | Job completion: job JOB_ID of workload WLOAD finished its execution.
+|        2+       |   J   | Sched->Batsim | WLOAD!JID1=MID1,MID2,MIDn[;...] | Job allocation: tells to put job JID1 of workload WLOAD on machines MID1, ..., MIDn. Many jobs might be allocated in the same event. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
+|        0+       |   N   | Both          | No content                      | NOP: tells to do nothing / nothing happened.
+|        1+       |   P   | Sched->Batsim | MID1,MID2,MIDn=PSTATE           | Asks to change the power state of some machines. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
+|        1+       |   p   | Batsim->Sched | MID1,MID2,MIDn=PSTATE           | Tells the scheduler that the power state of one or several machines has changed. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb. There is one and only one 'p' message for each 'P' message.
+|        2+       |   R   | Sched->Batsim | WLOAD!JOB_ID                    | Job rejection: the scheduler tells that one (static) job will not be computed.
+|        1+       |   n   | Sched->Batsim | TIME                            | NOP me later: the scheduler asks to be awaken at the given simulation time TIME.
+|        1+       |   E   | Sched->Batsim | No content                      | Asks Batsim about the total consumed energy (from time 0 to now) in Joules. Works only in energy mode.
+|        1+       |   e   | Batsim->Sched | CONSUMED_ENERGY                 | Batsim tells the total consumed energy (from time 0 to now) in Joules. Works only in energy mode. There is one and only one 'e' message for each 'E' message.
 
 # Message Examples #
 
 ## Static Job Submission ##
     Batsim -> Scheduler
-    0:10.000015|10.000015:S:1
-    0:13|12:S:2|12.5:S:3|13:S:4
+    0:10.000015|10.000015:S:static!1
+    0:13|12:S:2|12.5:S:3|13:S:static!4
 
 ## Static Job Completion ##
     Batsim -> Scheduler
-    0:15.836694|15.836694:C:1
-    0:40.001320|25:C:2|38.002565:C:3
+    0:15.836694|15.836694:C:static!1
+    0:40.001320|25:C:2|38.002565:C:static!3
 
 ## Static Job Allocation ##
     Scheduler -> Batsim
-    0:15.000015|15.000015:J:1=1,2,0,3;2=3
-    0:45.00132|45.00132:J:4=3,1,2,0
+    0:15.000015|15.000015:J:static!1=1,2,0,3;static!2=3
+    0:45.00132|45.00132:J:static!4=3,1,2,0
 
 ## NOP ##
     Scheduler -> Batsim or Batsim -> Scheduler
@@ -85,7 +85,7 @@ the job ID of the job which just completed. This part is not mandatory, it depen
 
 ## Static Job Rejection ##
     Scheduler -> Batsim
-    0:50|50:R:5
+    0:50|50:R:static!5
 
 ## NOP Me Later ##
     Scheduler -> Batsim

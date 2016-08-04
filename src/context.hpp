@@ -12,6 +12,7 @@
 #include "export.hpp"
 #include "pstate.hpp"
 #include "storage.hpp"
+#include "workload.hpp"
 
 /**
  * @brief The Batsim context
@@ -20,8 +21,7 @@ struct BatsimContext
 {
     UnixDomainSocket socket;                        //!< The UnixDomainSocket
     Machines machines;                              //!< The machines
-    Jobs jobs;                                      //!< The jobs
-    Profiles profiles;                              //!< The profiles
+    Workloads workloads;                            //!< The workloads
     PajeTracer paje_tracer;                         //!< The PajeTracer
     PStateChangeTracer pstate_tracer;               //!< The PStateChangeTracer
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer

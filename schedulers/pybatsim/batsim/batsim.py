@@ -149,6 +149,11 @@ class Batsim(object):
         # [ (timestamp, txtDATA), ...]
         self._msgs_to_send = []
 
+        # TODO: job identifiers are now WORKLOAD!JOB_NUMBER.
+        # The hack in the next loop allows pybatsim to still work with static
+        # jobs, but the new syntax should be handled so pybatsim also handles
+        # dynamic jobs.
+
         for i in range(1, len(sub_msgs)):
             data = sub_msgs[i].split(':')
             if data[1] == 'R':
@@ -156,10 +161,15 @@ class Batsim(object):
             elif data[1] == 'N':
                 self.scheduler.onNOP()
             elif data[1] == 'S':
-                self.scheduler.onJobSubmission(self.jobs[int(data[2])])
+                # Received WORKLOAD_NAME!JOB_ID
+                workload_name, job_id = data[2].split('!')
+                job_id = int(job_id)
+                self.scheduler.onJobSubmission(self.jobs[job_id])
                 self.nb_jobs_recieved += 1
             elif data[1] == 'C':
-                j = self.jobs[int(data[2])]
+                workload_name, job_id = data[2].split('!')
+                job_id = int(job_id)
+                j = self.jobs[job_id]
                 j.finish_time = float(data[0])
                 self.scheduler.onJobCompletion(j)
             elif data[1] == 'p':

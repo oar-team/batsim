@@ -15,6 +15,22 @@
 struct BatsimContext;
 
 /**
+ * @brief A simple structure used to identify one job
+ */
+struct JobIdentifier
+{
+    std::string workload_name; //!< The name of the workload the job belongs to
+    int job_number; //!< The job unique number inside its workload
+
+    /**
+     * @brief Returns a string representation of the JobIdentifier.
+     * @details Output format is WORKLOAD_NAME!JOB_NUMBER
+     * @return A string representation of the JobIdentifier.
+     */
+    std::string to_string() const;
+};
+
+/**
  * @brief Stores the different types of inter-process messages
  */
 enum class IPMessageType
@@ -40,7 +56,7 @@ enum class IPMessageType
  */
 struct JobSubmittedMessage
 {
-    int job_id; //!< The job ID
+    JobIdentifier job_id; //!< The JobIdentifier
 };
 
 /**
@@ -48,7 +64,7 @@ struct JobSubmittedMessage
  */
 struct JobCompletedMessage
 {
-    int job_id; //!< The job ID
+    JobIdentifier job_id; //!< The JobIdentifier
 };
 
 /**
@@ -56,7 +72,7 @@ struct JobCompletedMessage
  */
 struct JobRejectedMessage
 {
-    int job_id; //!< The job ID
+    JobIdentifier job_id; //!< The JobIdentifier
 };
 
 /**
@@ -64,7 +80,7 @@ struct JobRejectedMessage
  */
 struct SchedulingAllocation
 {
-    int job_id; //!< The job unique number
+    JobIdentifier job_id; //!< The JobIdentifier
     MachineRange machine_ids; //!< The IDs of the machines on which the job should be allocated
     std::vector<msg_host_t> hosts;  //!< The corresponding SimGrid hosts
 };
@@ -177,6 +193,7 @@ struct SwitchPStateProcessArguments
 struct JobSubmitterProcessArguments
 {
     BatsimContext * context;    //!< The BatsimContext
+    std::string workload_name; //!< The name of the workload the submitter should use
 };
 
 /**

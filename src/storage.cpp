@@ -1,3 +1,8 @@
+/**
+ * @file storage.cpp
+ * @brief Contains data storage (Redis) related methods implementation
+ */
+
 #include "storage.hpp"
 
 #include <simgrid.h>

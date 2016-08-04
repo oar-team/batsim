@@ -35,6 +35,7 @@ struct Profile
 
     ProfileType type; //!< The type of the profile
     void * data; //!< The associated data
+    std::string json_description; //!< The JSON description of the profile
 };
 
 /**
@@ -124,6 +125,21 @@ public:
      * @pre Such a profile exists
      */
     const Profile * operator[](const std::string & profile_name) const;
+
+    /**
+     * @brief Accesses one profile thanks to its name
+     * @param[in] profile_name The name of the profile
+     * @return The profile whose name is profile_name
+     * @pre Such a profile exists
+     */
+    Profile * at(const std::string & profile_name);
+    /**
+     * @brief Accesses one profile thanks to its name (const version)
+     * @param[in] profile_name The name of the profile
+     * @return The profile whose name is profile_name
+     * @pre Such a profile exists
+     */
+    const Profile * at(const std::string & profile_name) const;
 
     /**
      * @brief Checks whether a profile exists

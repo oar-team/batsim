@@ -32,7 +32,7 @@ int smpi_replay_process(int argc, char *argv[]);
  * @param[in,out] remaining_time The remaining amount of time before walltime
  * @return 0
  */
-int execute_profile(BatsimContext * context,
+int execute_profile(BatsimContext *context,
                     const std::string & profile_name,
                     const SchedulingAllocation * allocation,
                     double * remaining_time);

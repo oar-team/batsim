@@ -6,9 +6,9 @@
 #pragma once
 
 /**
- * @brief The process in charge of submitting jobs
+ * @brief The process in charge of submitting static jobs (those described before running the simulations)
  * @param argc The number of arguments
  * @param argv The argument values
  * @return 0
  */
-int job_submitter_process(int argc, char *argv[]);
+int static_job_submitter_process(int argc, char *argv[]);

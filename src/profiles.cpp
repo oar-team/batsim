@@ -11,7 +11,10 @@
 #include <boost/algorithm/string.hpp>
 
 #include <simgrid/msg.h>
+
 #include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
 
 using namespace std;
 using namespace rapidjson;
@@ -166,6 +169,12 @@ void Profiles::load_from_json(const Document &doc, const string & filename)
             profile->data = data;
         }
 
+        // Let's get the JSON string which describes the profile
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        value.Accept(writer);
+        profile->json_description = buffer.GetString();
+
         xbt_assert(!exists(string(key.GetString())), "Invalid JSON file '%s': duplication of profile name '%s'", filename.c_str(), key.GetString());
         _profiles[string(key.GetString())] = profile;
     }
@@ -185,13 +194,23 @@ const Profile *Profiles::operator[](const std::string &profile_name) const
     return mit->second;
 }
 
+Profile * Profiles::at(const std::string & profile_name)
+{
+    return operator[](profile_name);
+}
+
+const Profile * Profiles::at(const std::string & profile_name) const
+{
+    return operator[](profile_name);
+}
+
 bool Profiles::exists(const std::string &profile_name) const
 {
     auto mit = _profiles.find(profile_name);
     return mit != _profiles.end();
 }
 
-const std::map<string, Profile *> Profiles::profiles() const
+const std::map<std::string, Profile *> Profiles::profiles() const
 {
     return _profiles;
 }

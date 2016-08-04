@@ -289,9 +289,12 @@ int main(int argc, char * argv[])
     context.allow_space_sharing = mainArgs.allow_space_sharing;
     context.trace_schedule = mainArgs.enable_schedule_tracing;
 
+    // Loading the static workload
     int nb_machines_by_workload;
-    load_json_workload(&context, mainArgs.workloadFilename, nb_machines_by_workload);
-    context.jobs.setProfiles(&context.profiles);
+    const string static_workload_name = "static";
+    Workload * static_workload = new Workload;
+    static_workload->load_from_json(mainArgs.workloadFilename, nb_machines_by_workload);
+    context.workloads.insert_workload(static_workload_name, static_workload);
 
     int limit_machines_count = -1;
     if ((mainArgs.limit_machines_count_by_workload) && (mainArgs.limit_machines_count > 0))
@@ -305,7 +308,7 @@ int main(int argc, char * argv[])
         XBT_INFO("The number of machines will be limited to %d", limit_machines_count);
 
     XBT_INFO("Checking whether SMPI is used or not...");
-    context.smpi_used = context.jobs.containsSMPIJob();
+    context.smpi_used = static_workload->jobs->containsSMPIJob();
     if (!context.smpi_used)
     {
         XBT_INFO("SMPI will NOT be used.");
@@ -314,7 +317,7 @@ int main(int argc, char * argv[])
     else
     {
         XBT_INFO("SMPI will be used.");
-        register_smpi_applications(&context);
+        static_workload->register_smpi_applications();
         SMPI_init();
     }
 
@@ -380,7 +383,8 @@ int main(int argc, char * argv[])
     XBT_INFO("Creating jobs_submitter process...");
     JobSubmitterProcessArguments * submitterArgs = new JobSubmitterProcessArguments;
     submitterArgs->context = &context;
-    MSG_process_create("jobs_submitter", job_submitter_process, (void*)submitterArgs, masterMachine->host);
+    submitterArgs->workload_name = static_workload_name;
+    MSG_process_create("jobs_submitter", static_job_submitter_process, (void*)submitterArgs, masterMachine->host);
     XBT_INFO("The jobs_submitter process has been created.");
 
     XBT_INFO("Creating the uds_server process...");

@@ -49,10 +49,11 @@ int smpi_replay_process(int argc, char *argv[])
 int execute_profile(BatsimContext *context,
                     const std::string & profile_name,
                     const SchedulingAllocation * allocation,
-                    double *remaining_time)
+                    double * remaining_time)
 {
-    Job * job = context->jobs[allocation->job_id];
-    Profile * profile = context->profiles[profile_name];
+    Workload * workload = context->workloads.at(allocation->job_id.workload_name);
+    Job * job = workload->jobs->at(allocation->job_id.job_number);
+    Profile * profile = workload->profiles->at(profile_name);
     int nb_res = job->required_nb_res;
 
     if (profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS)
@@ -85,7 +86,7 @@ int execute_profile(BatsimContext *context,
             }
         }
 
-        string task_name = "phg " + to_string(job->id) + "'" + job->profile + "'";
+        string task_name = "phg " + to_string(job->number) + "'" + job->profile + "'";
         XBT_INFO("Creating task '%s'", task_name.c_str());
 
         msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(),
@@ -129,7 +130,7 @@ int execute_profile(BatsimContext *context,
         memcpy(computation_amount, data->cpu, sizeof(double) * nb_res);
         memcpy(communication_amount, data->com, sizeof(double) * nb_res * nb_res);
 
-        string task_name = "p " + to_string(job->id) + "'" + job->profile + "'";
+        string task_name = "p " + to_string(job->number) + "'" + job->profile + "'";
         XBT_INFO("Creating task '%s'", task_name.c_str());
 
         msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(),
@@ -204,7 +205,7 @@ int execute_profile(BatsimContext *context,
         for (int i = 0; i < nb_res; ++i)
         {
             char *str_instance_id = NULL;
-            int ret = asprintf(&str_instance_id, "%d", job->id);
+            int ret = asprintf(&str_instance_id, "%d", job->number);
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
             char *str_rank_id  = NULL;
@@ -212,7 +213,7 @@ int execute_profile(BatsimContext *context,
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
             char *str_pname = NULL;
-            ret = asprintf(&str_pname, "%d_%d", job->id, i);
+            ret = asprintf(&str_pname, "%d_%d", job->number, i);
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
             char **argv = xbt_new(char*, 5);
@@ -230,7 +231,7 @@ int execute_profile(BatsimContext *context,
         return 1;
     }
     else
-        xbt_die("Cannot execute job %d: the profile type '%s' is unknown", job->id, job->profile.c_str());
+        xbt_die("Cannot execute job %d: the profile type '%s' is unknown", job->number, job->profile.c_str());
 
     return 0;
 }
@@ -243,7 +244,8 @@ int execute_job_process(int argc, char *argv[])
     // Retrieving input parameters
     ExecuteJobProcessArguments * args = (ExecuteJobProcessArguments *) MSG_process_get_data(MSG_process_self());
 
-    Job * job = args->context->jobs[args->allocation->job_id];
+    Workload * workload = args->context->workloads.at(args->allocation->job_id.workload_name);
+    Job * job = workload->jobs->at(args->allocation->job_id.job_number);
     job->starting_time = MSG_get_clock();
     job->allocation = args->allocation->machine_ids;
     double remaining_time = job->walltime;
@@ -261,25 +263,25 @@ int execute_job_process(int argc, char *argv[])
         }
 
         // Let's trace the consumed energy
-        args->context->energy_tracer.add_job_start(MSG_get_clock(), job->id);
+        args->context->energy_tracer.add_job_start(MSG_get_clock(), job->number);
     }
 
     // Job computation
-    args->context->machines.updateMachinesOnJobRun(job->id, args->allocation->machine_ids);
+    args->context->machines.updateMachinesOnJobRun(job->number, args->allocation->machine_ids);
     if (execute_profile(args->context, job->profile, args->allocation, &remaining_time) == 1)
     {
-        XBT_INFO("Job %d finished in time", job->id);
+        XBT_INFO("Job %d finished in time", job->number);
         job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
     }
     else
     {
-        XBT_INFO("Job %d had been killed (walltime %lf reached", job->id, job->walltime);
+        XBT_INFO("Job %d had been killed (walltime %lf reached", job->number, job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
         if (args->context->trace_schedule)
-            args->context->paje_tracer.addJobKill(job->id, args->allocation->machine_ids, MSG_get_clock(), true);
+            args->context->paje_tracer.addJobKill(job->number, args->allocation->machine_ids, MSG_get_clock(), true);
     }
 
-    args->context->machines.updateMachinesOnJobEnd(job->id, args->allocation->machine_ids);
+    args->context->machines.updateMachinesOnJobEnd(job->number, args->allocation->machine_ids);
     job->runtime = MSG_get_clock() - job->starting_time;
 
     // If energy is enabled, let us compute the energy used by the machines after running the job
@@ -300,12 +302,12 @@ int execute_job_process(int argc, char *argv[])
         job->consumed_energy = job->consumed_energy - consumed_energy_before;
 
         // Let's trace the consumed energy
-        args->context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
+        args->context->energy_tracer.add_job_end(MSG_get_clock(), job->number);
     }
 
     // Let us tell the server that the job completed
     JobCompletedMessage * message = new JobCompletedMessage;
-    message->job_id = job->id;
+    message->job_id = args->allocation->job_id;
 
     send_message("server", IPMessageType::JOB_COMPLETED, (void*)message);
     delete args->allocation;

@@ -36,7 +36,7 @@ int uds_server_process(int argc, char *argv[])
     int nb_running_jobs = 0;
     int nb_switching_machines = 0;
     int nb_waiters = 0;
-    const int protocol_version = 1;
+    const int protocol_version = 2;
     bool sched_ready = true;
 
     string send_buffer;
@@ -77,11 +77,11 @@ int uds_server_process(int argc, char *argv[])
             nb_running_jobs--;
             xbt_assert(nb_running_jobs >= 0);
             nb_completed_jobs++;
-            Job * job = context->jobs[message->job_id];
+            Job * job = context->workloads.job_at(message->job_id);
 
-            XBT_INFO( "Job %d COMPLETED. %d jobs completed so far", job->id, nb_completed_jobs);
+            XBT_INFO( "Job %d COMPLETED. %d jobs completed so far", job->number, nb_completed_jobs);
 
-            send_buffer += '|' + std::to_string(MSG_get_clock()) + ":C:" + std::to_string(job->id);
+            send_buffer += '|' + std::to_string(MSG_get_clock()) + ":C:" + message->job_id.to_string();
             XBT_DEBUG( "Message to send to scheduler: %s", send_buffer.c_str());
 
         } break; // end of case JOB_COMPLETED
@@ -92,11 +92,11 @@ int uds_server_process(int argc, char *argv[])
             JobSubmittedMessage * message = (JobSubmittedMessage *) task_data->data;
 
             nb_submitted_jobs++;
-            Job * job = context->jobs[message->job_id];
+            Job * job = context->workloads.job_at(message->job_id);
             job->state = JobState::JOB_STATE_SUBMITTED;
 
-            XBT_INFO( "Job %d SUBMITTED. %d jobs submitted so far", job->id, nb_submitted_jobs);
-            send_buffer += "|" + std::to_string(MSG_get_clock()) + ":S:" + std::to_string(job->id);
+            XBT_INFO( "Job %d SUBMITTED. %d jobs submitted so far", job->number, nb_submitted_jobs);
+            send_buffer += "|" + std::to_string(MSG_get_clock()) + ":S:" + message->job_id.to_string();
             XBT_DEBUG( "Message to send to scheduler: '%s'", send_buffer.c_str());
 
         } break; // end of case JOB_SUBMITTED
@@ -106,11 +106,11 @@ int uds_server_process(int argc, char *argv[])
             xbt_assert(task_data->data != nullptr);
             JobRejectedMessage * message = (JobRejectedMessage *) task_data->data;
 
-            Job * job = context->jobs[message->job_id];
+            Job * job = context->workloads.job_at(message->job_id);
             job->state = JobState::JOB_STATE_REJECTED;
             nb_completed_jobs++;
 
-            XBT_INFO( "Job %d has been rejected", job->id);
+            XBT_INFO( "Job %d has been rejected", job->number);
         } break; // end of case SCHED_REJECTION
 
         case IPMessageType::SCHED_NOP_ME_LATER:
@@ -206,13 +206,18 @@ int uds_server_process(int argc, char *argv[])
                 XBT_INFO("Nothing to do received while nothing is currently happening (no job is running, no machine is switching state, no wake-up timer is active) and some jobs are waiting to be scheduled... This might cause a deadlock!");
 
                 // Let us display the available jobs (to help in the scheduler debugging)
-                const std::map<int, Job *> & jobs = context->jobs.jobs();
                 vector<string> submittedJobs;
 
-                for (auto & mit : jobs)
+                for (auto const workload_mit : context->workloads.workloads())
                 {
-                    if (mit.second->state == JobState::JOB_STATE_SUBMITTED)
-                        submittedJobs.push_back(std::to_string(mit.second->id));
+                    const string & workload_name = workload_mit.first;
+                    Workload * workload = workload_mit.second;
+                    for (auto & job_mit : workload->jobs->jobs())
+                    {
+                        const Job * job = job_mit.second;
+                        if (job->state == JobState::JOB_STATE_SUBMITTED)
+                            submittedJobs.push_back(workload_name + '!' + std::to_string(job->number));
+                    }
                 }
 
                 string submittedJobsString = boost::algorithm::join(submittedJobs, ", ");
@@ -229,7 +234,7 @@ int uds_server_process(int argc, char *argv[])
 
             for (SchedulingAllocation * allocation : message->allocations)
             {
-                Job * job = context->jobs[allocation->job_id];
+                Job * job = context->workloads.job_at(allocation->job_id);
                 job->state = JobState::JOB_STATE_RUNNING;
 
                 nb_running_jobs++;
@@ -275,7 +280,7 @@ int uds_server_process(int argc, char *argv[])
                 ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
                 exec_args->context = context;
                 exec_args->allocation = allocation;
-                string pname = "job" + to_string(job->id);
+                string pname = "job" + to_string(job->number);
                 MSG_process_create(pname.c_str(), execute_job_process, (void*)exec_args, context->machines[allocation->machine_ids.first_element()]->host);
             }
 
