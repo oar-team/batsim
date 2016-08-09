@@ -223,13 +223,23 @@ struct SwitchPStateProcessArguments
 };
 
 /**
- * @brief The arguments of the job_submitter_process process
+ * @brief The arguments of the static_job_submitter_process process
  */
 struct JobSubmitterProcessArguments
 {
     BatsimContext * context;    //!< The BatsimContext
     std::string workload_name; //!< The name of the workload the submitter should use
 };
+
+/**
+ * @brief The arguments of the workflow_submitter_process process
+ */
+struct WorkflowSubmitterProcessArguments
+{
+    BatsimContext * context;       //!< The BatsimContext
+    std::string workflow_filename; //!< The name of the workflow description file the submitter should use
+};
+
 
 /**
  * @brief The arguments of the waiter_process process
