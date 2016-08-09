@@ -123,7 +123,7 @@ int uds_server_process(int argc, char *argv[])
             nb_completed_jobs++;
             Job * job = context->workloads.job_at(message->job_id);
 
-            XBT_INFO( "Job %d COMPLETED. %d jobs completed so far", job->number, nb_completed_jobs);
+            XBT_INFO( "Job %s-%d COMPLETED. %d jobs completed so far", job->workload->name.c_str(), job->number, nb_completed_jobs);
 
             send_buffer += '|' + std::to_string(MSG_get_clock()) + ":C:" + message->job_id.to_string();
             XBT_DEBUG( "Message to send to scheduler: %s", send_buffer.c_str());
@@ -148,8 +148,8 @@ int uds_server_process(int argc, char *argv[])
             Job * job = context->workloads.job_at(message->job_id);
             job->state = JobState::JOB_STATE_SUBMITTED;
 
+            XBT_INFO( "Job %s-%d SUBMITTED. %d jobs submitted so far", job->workload->name.c_str(), job->number, nb_submitted_jobs);
 
-            XBT_INFO( "Job %d SUBMITTED. %d jobs submitted so far", job->number, nb_submitted_jobs);
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":S:" + message->job_id.to_string();
             XBT_DEBUG( "Message to send to scheduler: '%s'", send_buffer.c_str());
 
