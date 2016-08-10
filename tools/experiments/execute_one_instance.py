@@ -19,15 +19,16 @@ def find_socket_from_batsim_command(batsim_command):
                                         description = 'Batsim command parser',
                                         add_help = False)
 
-    batparser.add_argument("platform")
-    batparser.add_argument("workload")
+    batparser.add_argument("-p", "--platform", type=str)
+    batparser.add_argument("-w", "--workload", type=str)
+    batparser.add_argument("-W", "--workflow", type=str)
 
     batparser.add_argument("-e", "--export", type=str, default="out")
+    batparser.add_argument("-E", "--energy-plugin", action='store_true')
     batparser.add_argument("-h", "--allow-space-sharing", action='store_true')
     batparser.add_argument("-l", "--limit-machine-count", type=int, default=-1)
     batparser.add_argument("-L", "--limit-machine-count-by-workload", action='store_true')
     batparser.add_argument("-m", "--master-host", default="master_host")
-    batparser.add_argument("-p", "--energy-plugin", action='store_true')
     batparser.add_argument("-q", "--quiet", action='store_true')
     batparser.add_argument("-s", "--socket", type=str, default="/tmp/bat_socket")
     batparser.add_argument("-t", "--process-tracing", action='store_true')
