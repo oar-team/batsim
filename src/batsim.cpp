@@ -49,7 +49,7 @@ struct MainArguments
 {
     std::string platformFilename;                           //!< The SimGrid platform filename
     std::string workloadFilename;                           //!< The JSON workload filename
-    std::string workflowFilename;                           //!< The (JSON ?? or anything really) workflow filename
+    std::string workflowFilename;                           //!< The workflow description filename
 
     std::string socketFilename = "/tmp/bat_socket";         //!< The Unix Domain Socket filename
 
@@ -159,16 +159,26 @@ int parse_opt (int key, char *arg, struct argp_state *state)
         break;
     case 'p':
         mainArgs->platformFilename = arg;
-        break;
+      if (access(mainArgs->platformFilename.c_str(), R_OK) == -1)
+	{
+	  mainArgs->abort = true;
+	  mainArgs->abortReason += "\n  invalid PLATFORM_FILE argument: file '" + string(mainArgs->platformFilename) + "' cannot be read";
+	}
+  break;
     case 'w':
       mainArgs->workloadFilename = arg;
-      break;
+      if (access(mainArgs->workloadFilename.c_str(), R_OK) == -1)
+	{
+	  mainArgs->abort = true;
+	  mainArgs->abortReason += "\n  invalid WORKLOAD_FILE argument: file '" + string(mainArgs->workloadFilename) + "' cannot be read";
+	}
+break;
     case 'W':
       mainArgs->workflowFilename = arg;
       if (access(mainArgs->workflowFilename.c_str(), R_OK) == -1)
 	{
 	  mainArgs->abort = true;
-	  mainArgs->abortReason += "\n  invalid WORKFLOW_FILE argument: file '" + string(mainArgs->workloadFilename) + "' cannot be read";
+	  mainArgs->abortReason += "\n  invalid WORKFLOW_FILE argument: file '" + string(mainArgs->workflowFilename) + "' cannot be read";
 	}
       break;
     case 't':
@@ -250,11 +260,6 @@ int main(int argc, char * argv[])
 	mainArgs.abortReason += "\n  invalid PLATFORM_FILE argument: file '" + string(mainArgs.platformFilename) + "' cannot be read";
       }
 
-    if ((access(mainArgs.workloadFilename.c_str(), R_OK) == -1)==(access(mainArgs.workflowFilename.c_str(), R_OK) == -1))
-      {
-	mainArgs.abort = true;
-	mainArgs.abortReason += "\n  invalid WORKLOAD or WORKFLOW argument: file '" + string(mainArgs.workloadFilename) + "' and file '" + string(mainArgs.workflowFilename) + "' are either both readable or none are.";
-      }
     
     if (mainArgs.abort)
     {
@@ -410,13 +415,24 @@ int main(int argc, char * argv[])
     context.storage.set_instance_key_prefix(absolute_filename(mainArgs.socketFilename));
     context.storage.connect_to_server(mainArgs.redis_hostname, mainArgs.redis_port);
 
-    // Main processes running
+    // Starting the simulated processes 
+
     XBT_INFO("Creating jobs_submitter process...");
     JobSubmitterProcessArguments * submitterArgs = new JobSubmitterProcessArguments;
     submitterArgs->context = &context;
     submitterArgs->workload_name = static_workload_name;
     MSG_process_create("jobs_submitter", static_job_submitter_process, (void*)submitterArgs, masterMachine->host);
     XBT_INFO("The jobs_submitter process has been created.");
+
+    if (! mainArgs.workflowFilename.empty()) {
+      XBT_INFO("Creating workflow_submitter process...");
+      WorkflowSubmitterProcessArguments * submitterArgs = new WorkflowSubmitterProcessArguments;
+      submitterArgs->context = &context;
+      submitterArgs->workflow_filename = mainArgs.workflowFilename;
+      MSG_process_create("workflow_submitter", workflow_submitter_process, (void*)submitterArgs, masterMachine->host);
+      XBT_INFO("The workflow_submitter process has been created.");
+    }
+
 
     XBT_INFO("Creating the uds_server process...");
     ServerProcessArguments * serverArgs = new ServerProcessArguments;

@@ -49,8 +49,6 @@ struct Job
     MachineRange allocation; //!< The machines on which the job has been executed.
     JobState state; //!< The current state of the job
 
-    std::string completion_notification_mailbox; //!< The mailbox to which to the server will MSG_task_dsend a JOB_STATE_COMPLETED_* JOB_STATE_REJECTED message (useful for dynamic job submitters)
-
 };
 
 /**
