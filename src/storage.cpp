@@ -5,7 +5,7 @@
 
 #include "storage.hpp"
 
-#include <simgrid.h>
+#include <xbt.h>
 
 using namespace std;
 

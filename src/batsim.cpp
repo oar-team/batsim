@@ -49,6 +49,7 @@ struct MainArguments
 {
     std::string platformFilename;                           //!< The SimGrid platform filename
     std::string workloadFilename;                           //!< The JSON workload filename
+    std::string workflowFilename;                           //!< The workflow description filename
 
     std::string socketFilename = "/tmp/bat_socket";         //!< The Unix Domain Socket filename
 
@@ -114,7 +115,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     case 'm':
         mainArgs->masterHostName = arg;
         break;
-    case 'p':
+    case 'E':
         mainArgs->energy_used = true;
         break;
     case 'P':
@@ -156,40 +157,65 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     case 's':
         mainArgs->socketFilename = arg;
         break;
+    case 'p':
+        mainArgs->platformFilename = arg;
+      if (access(mainArgs->platformFilename.c_str(), R_OK) == -1)
+	{
+	  mainArgs->abort = true;
+	  mainArgs->abortReason += "\n  invalid PLATFORM_FILE argument: file '" + string(mainArgs->platformFilename) + "' cannot be read";
+	}
+  break;
+    case 'w':
+      mainArgs->workloadFilename = arg;
+      if (access(mainArgs->workloadFilename.c_str(), R_OK) == -1)
+	{
+	  mainArgs->abort = true;
+	  mainArgs->abortReason += "\n  invalid WORKLOAD_FILE argument: file '" + string(mainArgs->workloadFilename) + "' cannot be read";
+	}
+break;
+    case 'W':
+      mainArgs->workflowFilename = arg;
+      if (access(mainArgs->workflowFilename.c_str(), R_OK) == -1)
+	{
+	  mainArgs->abort = true;
+	  mainArgs->abortReason += "\n  invalid WORKFLOW_FILE argument: file '" + string(mainArgs->workflowFilename) + "' cannot be read";
+	}
+      break;
     case 't':
         mainArgs->enable_simgrid_process_tracing = true;
         break;
     case 'T':
         mainArgs->enable_schedule_tracing = false;
         break;
-    case ARGP_KEY_ARG:
-        switch(state->arg_num)
-        {
-        case 0:
-            mainArgs->platformFilename = arg;
-            if (access(mainArgs->platformFilename.c_str(), R_OK) == -1)
-            {
-                mainArgs->abort = true;
-                mainArgs->abortReason += "\n  invalid PLATFORM_FILE argument: file '" + string(mainArgs->platformFilename) + "' cannot be read";
-            }
-            break;
-        case 1:
-            mainArgs->workloadFilename = arg;
-            if (access(mainArgs->workloadFilename.c_str(), R_OK) == -1)
-            {
-                mainArgs->abort = true;
-                mainArgs->abortReason += "\n  invalid WORKLOAD_FILE argument: file '" + string(mainArgs->workloadFilename) + "' cannot be read";
-            }
-            break;
-        }
-        break;
-    case ARGP_KEY_END:
-        if (state->arg_num < 2)
-        {
-            mainArgs->abort = true;
-            mainArgs->abortReason += "\n  Too few arguments. Try the --help option to display usage information.";
-        }
-        break;
+    // case ARGP_KEY_ARG:
+    //     switch(state->arg_num)
+    //     {
+    //     case 0:
+    //         mainArgs->platformFilename = arg;
+    //         if (access(mainArgs->platformFilename.c_str(), R_OK) == -1)
+    //         {
+    //             mainArgs->abort = true;
+    //             mainArgs->abortReason += "\n  invalid PLATFORM_FILE argument: file '" + string(mainArgs->platformFilename) + "' cannot be read";
+    //         }
+    //         break;
+    //     case 1:
+    //         mainArgs->workloadFilename = arg;
+    //         if (access(mainArgs->workloadFilename.c_str(), R_OK) == -1)
+    //         {
+    //             mainArgs->abort = true;
+    //             mainArgs->abortReason += "\n  invalid WORKLOAD_FILE argument: file '" + string(mainArgs->workloadFilename) + "' cannot be read";
+    //         }
+    //         break;
+    //     }
+    //     break;
+    // case ARGP_KEY_END:
+    //     if (state->arg_num < 2)
+    //     {
+    //         mainArgs->abort = true;
+    //         mainArgs->abortReason += "\n  Too few arguments. Try the --help option to display usage information.";
+    //     }
+    //     break;
+	// To be removed after code review
     }
 
     return 0;
@@ -207,14 +233,17 @@ int main(int argc, char * argv[])
 
     struct argp_option options[] =
     {
+        {"platform", 'p', "FILENAME", 0, "Platform to be simulated by SimGrid. Required.", 0},
+        {"workload", 'w', "FILENAME", 0, "Workload to be submitted to the platform. Required unless a workflow is submitted.", 0},
+        {"workflow", 'W', "FILENAME", 0, "Workflow to be submitted to the platform. Required unless a workload is submitted.", 0},
         {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output. Default value: 'out'", 0},
         {"allow-space-sharing", 'h', 0, 0, "Allows space sharing: the same resource can compute several jobs at the same time", 0},
         {"redis-hostname", 'H', "HOSTNAME", 0, "Sets the host name of the remote Redis (data storage) server.", 0},
         {"limit-machine-count", 'l', "M", 0, "Allows to limit the number of computing machines to use. If M == -1 (default), all the machines described in PLATFORM_FILE are used (but the master_host). If M >= 1, only the first M machines will be used to comupte jobs.", 0},
         {"limit-machine-count-by-worload", 'L', 0, 0, "If set, allows to limit the number of computing machines to use. This number is read from the workload file. If both limit-machine-count and limit-machine-count-by-worload are set, the minimum of the two will be used.", 0},
         {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks. Default value: 'master_host'", 0},
-        {"energy-plugin", 'p', 0, 0, "Enables energy-aware experiments", 0},
         {"redis-port", 'P', "PORT", 0, "Sets the port of the remote Redis (data storage) server.", 0},
+        {"energy-plugin", 'E', 0, 0, "Enables energy-aware experiments", 0},
         {"quiet", 'q', 0, 0, "Shortcut for --verbosity=quiet", 0},
         {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename. Default value: '/tmp/bat_socket'", 0},
         {"process-tracing", 't', 0, 0, "Enables SimGrid process tracing (shortcut for SimGrid options ----cfg=tracing:1 --cfg=tracing/msg/process:1)", 0},
@@ -222,9 +251,16 @@ int main(int argc, char * argv[])
         {"verbosity", 'v', "VERBOSITY_LEVEL", 0, "Sets the Batsim verbosity level. Available values are : quiet, network-only, information (default), debug.", 0},
         {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
     };
-    struct argp argp = {options, parse_opt, "PLATFORM_FILE WORKLOAD_FILE", "A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.", 0, 0, 0};
+    struct argp argp = {options, parse_opt, 0, "A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.", 0, 0, 0};
     argp_parse(&argp, argc, argv, 0, 0, &mainArgs);
 
+    if (access(mainArgs.platformFilename.c_str(), R_OK) == -1)
+      {
+	mainArgs.abort = true;
+	mainArgs.abortReason += "\n  invalid PLATFORM_FILE argument: file '" + string(mainArgs.platformFilename) + "' cannot be read";
+      }
+
+    
     if (mainArgs.abort)
     {
         fprintf(stderr, "Impossible to run batsim:%s\n", mainArgs.abortReason.c_str());
@@ -379,13 +415,24 @@ int main(int argc, char * argv[])
     context.storage.set_instance_key_prefix(absolute_filename(mainArgs.socketFilename));
     context.storage.connect_to_server(mainArgs.redis_hostname, mainArgs.redis_port);
 
-    // Main processes running
+    // Starting the simulated processes 
+
     XBT_INFO("Creating jobs_submitter process...");
     JobSubmitterProcessArguments * submitterArgs = new JobSubmitterProcessArguments;
     submitterArgs->context = &context;
     submitterArgs->workload_name = static_workload_name;
     MSG_process_create("jobs_submitter", static_job_submitter_process, (void*)submitterArgs, masterMachine->host);
     XBT_INFO("The jobs_submitter process has been created.");
+
+    if (! mainArgs.workflowFilename.empty()) {
+      XBT_INFO("Creating workflow_submitter process...");
+      WorkflowSubmitterProcessArguments * submitterArgs = new WorkflowSubmitterProcessArguments;
+      submitterArgs->context = &context;
+      submitterArgs->workflow_filename = mainArgs.workflowFilename;
+      MSG_process_create("workflow_submitter", workflow_submitter_process, (void*)submitterArgs, masterMachine->host);
+      XBT_INFO("The workflow_submitter process has been created.");
+    }
+
 
     XBT_INFO("Creating the uds_server process...");
     ServerProcessArguments * serverArgs = new ServerProcessArguments;
