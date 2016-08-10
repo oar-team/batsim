@@ -164,6 +164,13 @@ IPMessage::~IPMessage()
     data = nullptr;
 }
 
+JobIdentifier::JobIdentifier(const string &workload_name, int job_number) :
+    workload_name(workload_name),
+    job_number(job_number)
+{
+
+}
+
 string JobIdentifier::to_string() const
 {
     return workload_name + '!' + std::to_string(job_number);

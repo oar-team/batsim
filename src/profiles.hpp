@@ -36,6 +36,26 @@ struct Profile
     ProfileType type; //!< The type of the profile
     void * data; //!< The associated data
     std::string json_description; //!< The JSON description of the profile
+
+    /**
+     * @brief Creates a new-allocated Profile from a JSON description
+     * @param[in] profile_name The name of the profile
+     * @param[in] json_desc The JSON description
+     * @return The new-allocated Profile
+     * @pre The JSON description is valid
+     */
+    static Profile * from_json(const std::string & profile_name,
+                               const rapidjson::Value & json_desc);
+
+    /**
+     * @brief Creates a new-allocated Profile from a JSON description
+     * @param[in] profile_name The name of the profile
+     * @param[in] json_str The JSON description (as a string)
+     * @return The new-allocated Profile
+     * @pre The JSON description is valid
+     */
+    static Profile * from_json(const std::string & profile_name,
+                               const std::string & json_str);
 };
 
 /**
@@ -147,6 +167,14 @@ public:
      * @return True if and only if a profile whose name is profile_name is in the Profiles
      */
     bool exists(const std::string & profile_name) const;
+
+    /**
+     * @brief Adds a Profile into a Profiles instance
+     * @param[in] profile_name The name of the profile to name
+     * @param[in] profile The profile to add
+     * @pre No profile with the same name exists in the Profiles instance
+     */
+    void add_profile(const std::string & profile_name, Profile * profile);
 
     /**
      * @brief Returns a copy of the internal std::map used in the Profiles

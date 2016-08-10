@@ -78,9 +78,9 @@ int static_job_submitter_process(int argc, char *argv[])
                 MSG_process_sleep(job->submission_time - previousSubmissionDate);
 
             // Let's put the metadata about the job into the data storage
-            string job_id_string = args->workload_name + "!" + to_string(job->number);
-            string job_key = "job_" + job_id_string;
-            string profile_key = "profile_" + job_id_string;
+            JobIdentifier job_id(workload->name, job->number);
+            string job_key = RedisStorage::job_key(job_id);
+            string profile_key = RedisStorage::profile_key(workload->name, job->profile);
             context->storage.set(job_key, job->json_description);
             context->storage.set(profile_key, workload->profiles->at(job->profile)->json_description);
 
