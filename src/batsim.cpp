@@ -174,8 +174,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
         break;
     case 'T':
         mainArgs->enable_schedule_tracing = false;
-        break;
-    }
+        break;    
     case 'v':
     {
         string sArg = arg;
@@ -194,6 +193,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
             mainArgs->abortReason += "\n  invalid VERBOSITY_LEVEL argument: '" + string(sArg) + "' is not in {quiet, network-only, information, debug}.";
         }
         break;
+    }
     }
 
     return 0;
