@@ -79,7 +79,7 @@ int static_job_submitter_process(int argc, char *argv[])
         {
             if (job->submission_time > previousSubmissionDate)
                 MSG_process_sleep(job->submission_time - previousSubmissionDate);
-	    // Setting the mailbox
+        // Setting the mailbox
             //job->completion_notification_mailbox = "SOME_MAILBOX";
 
             // Let's put the metadata about the job into the data storage
@@ -118,6 +118,7 @@ int workflow_submitter_process(int argc, char *argv[])
 
     WorkflowSubmitterProcessArguments * args = (WorkflowSubmitterProcessArguments *) MSG_process_get_data(MSG_process_self());
     BatsimContext * context = args->context;
+    (void) context; // Avoids a unused warning, for future Travis builds
 
     /*
     xbt_assert(context->workloads.exists(args->workload_name),
@@ -160,7 +161,7 @@ int workflow_submitter_process(int argc, char *argv[])
         {
             if (job->submission_time > previousSubmissionDate)
                 MSG_process_sleep(job->submission_time - previousSubmissionDate);
-	    // Setting the mailbox
+        // Setting the mailbox
             //job->completion_notification_mailbox = "SOME_MAILBOX";
 
             // Let's put the metadata about the job into the data storage
