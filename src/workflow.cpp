@@ -30,8 +30,6 @@ Workflow::~Workflow()
     // delete name;   TOFIX
     name = nullptr;
     tasks.clear();
-    sources.clear();
-    sinks.clear();
 
 }
 
@@ -40,8 +38,9 @@ void Workflow::load_from_xml(const std::string &xml_filename)
     XBT_INFO("Loading XML workflow '%s'...", xml_filename.c_str());
     // XML document creation
     xml_parse_result result = dax_tree.load_file(xml_filename.c_str());
-    (void) result; // Silences unused warning
 
+    xbt_assert(result, "Invalid XML file");
+    
     /*
     // Let's try to read the number of machines in the XML document
     xbt_assert(doc.HasMember("nb_res"), "Invalid XML file '%s': the 'nb_res' field is missing", xml_filename.c_str());
@@ -63,9 +62,34 @@ void Workflow::load_from_xml(const std::string &xml_filename)
 
 void Workflow::check_validity()
 {
-    // Likely not needed, so it doesn't do anything for now
-    return;
+  // Likely not needed, so it doesn't do anything for now
+  return;
 }
+
+void Workflow::add_task(Task task) {
+  this->tasks.push_back(task);
+}
+
+std::vector<Task>* Workflow::get_source_tasks() {
+  std::vector<Task> *task_list = new std::vector<Task>;
+  for(std::vector<Task>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+    if ((*it).parents.empty()) {
+      task_list->push_back(*it);
+    }
+  }
+  return task_list;
+}
+
+std::vector<Task>* Workflow::get_sink_tasks() {
+  std::vector<Task> *task_list = new std::vector<Task>;
+  for(std::vector<Task>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+    if ((*it).children.empty()) {
+      task_list->push_back(*it);
+    }
+  }
+  return task_list;
+}
+
 
 
 Task::Task(const int num_procs, const double execution_time)
@@ -84,13 +108,13 @@ Task::~Task()
 
 void Task::add_parent(Task parent)
 {
-  this->parents.push_back(&parent);
+  this->parents.push_back(parent);
 }
 
 
 void Task::add_child(Task child)
 {
-  this->children.push_back(&child);
+  this->children.push_back(child);
 }
 
 void Task::set_batsim_job(Job batsim_job)
@@ -100,4 +124,65 @@ void Task::set_batsim_job(Job batsim_job)
 }
 
 
+
+Workflows::Workflows()
+{
+
+}
+
+Workflows::~Workflows()
+{
+    // for (auto mit : _workflows)
+    // {
+    //     Workflow * workflow = mit.second;
+    //     delete workflow;
+    // }
+    // _workflows.clear();
+}
+
+Workflow *Workflows::operator[](const std::string &workflow_name)
+{
+    return at(workflow_name);
+}
+
+const Workflow *Workflows::operator[](const std::string &workflow_name) const
+{
+    return at(workflow_name);
+}
+
+Workflow *Workflows::at(const std::string &workflow_name)
+{
+    xbt_assert(exists(workflow_name));
+    //    return _workflows.at(workflow_name);
+}
+
+const Workflow *Workflows::at(const std::string &workflow_name) const
+{
+    xbt_assert(exists(workflow_name));
+    //    return _workflows.at(workflow_name);
+}
+
+void Workflows::insert_workflow(const std::string &workflow_name, Workflow *workflow)
+{
+    xbt_assert(!exists(workflow_name));
+    xbt_assert(!exists(workflow->name));
+
+    workflow->name = workflow_name;
+    //    _workflows[workflow_name] = workflow;
+}
+
+bool Workflows::exists(const std::string &workflow_name) const
+{
+  //    return _workflows.count(workflow_name) == 1;
+}
+
+// std::map<std::string, Workflow *> &Workflows::workflows()
+// {
+//     return _workflows;
+// }
+
+// const std::map<std::string, Workflow *> &Workflows::workflows() const
+// {
+//     return _workflows;
+// }
 
