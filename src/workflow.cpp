@@ -40,8 +40,8 @@ void Workflow::load_from_xml(const std::string &xml_filename)
     XBT_INFO("Loading XML workflow '%s'...", xml_filename.c_str());
     // XML document creation
     xml_parse_result result = dax_tree.load_file(xml_filename.c_str());
+    (void) result; // Silences unused warning
 
-    
     /*
     // Let's try to read the number of machines in the XML document
     xbt_assert(doc.HasMember("nb_res"), "Invalid XML file '%s': the 'nb_res' field is missing", xml_filename.c_str());
