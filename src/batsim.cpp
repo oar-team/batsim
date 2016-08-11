@@ -26,6 +26,7 @@
 #include "profiles.hpp"
 #include "server.hpp"
 #include "workload.hpp"
+#include "workflow.hpp"
 
 using namespace std;
 
@@ -307,9 +308,16 @@ int main(int argc, char * argv[])
     int nb_machines_by_workload;
     const string static_workload_name = "static";
     Workload * static_workload = new Workload;
-    static_workload->load_from_json(mainArgs.workloadFilename, nb_machines_by_workload);
-    context.workloads.insert_workload(static_workload_name, static_workload);
-
+    if (! mainArgs.workloadFilename.empty()) {
+      // TODO note
+      // As we want to make workloads or workflows separately,
+      // requiring a load in in every case is not what we want. I
+      // introduced a if to temporarily fix this, but there are
+      // probably a lot of clean-up to do in the following code
+      static_workload->load_from_json(mainArgs.workloadFilename, nb_machines_by_workload);
+      context.workloads.insert_workload(static_workload_name, static_workload);
+    }
+      
     // Creating an empty placeholder workload for the workflow submitter, if needed
     if (! mainArgs.workflowFilename.empty()) {
       const string workflow_workload_name = "static";
@@ -317,7 +325,21 @@ int main(int argc, char * argv[])
       workflow_workload->jobs = nullptr;
       workflow_workload->profiles = nullptr;
       context.workloads.insert_workload(workflow_workload_name, workflow_workload);
+      // TODO note
+      // for the time being an exception is thrown if we pass both
+      // workload and workflow; I don't think this is necessary, we
+      // could have job submitters for both type of job source
+
+      //      Workload * workflow_workload = new Workload;
+
     }
+
+    printf("%s\n",context.workloads.at("static"));
+
+    exit(0);
+    
+    // Test of workflows
+    // workflow_content(
 
     int limit_machines_count = -1;
     if ((mainArgs.limit_machines_count_by_workload) && (mainArgs.limit_machines_count > 0))
