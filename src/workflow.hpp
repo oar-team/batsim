@@ -6,13 +6,14 @@
 #pragma once
 
 #include <string>
-#include <map>
+#include <vector>
 
 #ifndef HEADER_PUGIXML_HPP
 #       include <pugixml-1.7/pugixml.hpp>
 #endif
 
 class Job;
+class Task;
 
 /**
  * @brief A workflow is a DAG of tasks, with points to
@@ -24,7 +25,7 @@ public:
     /**
      * @brief Builds an empty Workflow
      */
-    Workflow();
+    Workflow(const std::string & name);
 
     /**
      * @brief Destroys a Workflow
@@ -35,7 +36,7 @@ public:
      * @brief Loads a complete workflow from an XML filename
      * @param[in] xml_filename The name of the XML file
      */
-    void load_from_xml(const std::string & xml_filename)
+    void load_from_xml(const std::string & xml_filename);
 
     /**
      * @brief Checks whether a Workflow is valid (not needed since loading from XML?)
@@ -45,9 +46,9 @@ public:
 
 public:
     std::string name; //!< The Workflow name
-    Task * tasks = nullptr; //!< ALL tasks of the Workflow
-    Task * sources = nullptr; //!< The source tasks of the workflow
-    Task * sinks = nullptr; //!< The sink tasks of the workflow
+    std::vector<const Task *> tasks;  //!< References to all tasks
+    std::vector<const Task *> sources; //!< References to source tasks
+    std::vector<const Task *> sinks; //!< References to sink tasks
 
 private:
     pugi::xml_document dax_tree;
@@ -66,7 +67,7 @@ public:
     Task(const int num_procs, const double execution_time);
 
     /**
-     * @brief Destructeur
+     * @brief Destructor
      */
     ~Task();
 
@@ -89,9 +90,9 @@ public:
 public:
     int num_procs; //!< The number of processors needed for the tas
     double execution_time; //!< The execution time of the task
-    Job batsim_job; //!< The batsim job created for this task
-    Task * parents = nullptr; //!< The parents
-    Task * children = nullptr; //!< The children
+    Job *batsim_job; //!< The batsim job created for this task
+    std::vector<const Task *> parents; //!< The parent
+    std::vector<const Task *> children; //!< The children
 
 };
 
