@@ -329,17 +329,7 @@ int main(int argc, char * argv[])
       // for the time being an exception is thrown if we pass both
       // workload and workflow; I don't think this is necessary, we
       // could have job submitters for both type of job source
-
-      //      Workload * workflow_workload = new Workload;
-
     }
-
-    printf("%s\n",context.workloads.at("static"));
-
-    exit(0);
-    
-    // Test of workflows
-    // workflow_content(
 
     int limit_machines_count = -1;
     if ((mainArgs.limit_machines_count_by_workload) && (mainArgs.limit_machines_count > 0))
