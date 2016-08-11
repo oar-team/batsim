@@ -317,6 +317,13 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
                 logger.error("Batsim ended unsucessfully (exit_code = {})".format(process.exit_code))
             else:
                 logger.error("Batsim ended unsucessfully (unknown reason)")
+
+            if process.stdout != '':
+                logger.info('Batsim stdout:\n{}'.format(process.stdout))
+
+            if process.stderr != '':
+                logger.info('Batsim stderr:\n{}'.format(process.stderr))
+
             if self.execution_data.sched_process.running:
                 logger.warning("Killing Sched")
                 self.execution_data.sched_process.kill(auto_force_kill_timeout = 1)
