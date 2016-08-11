@@ -113,7 +113,11 @@ script:
   # Tests #
   #########
   # Let's run the redis server
-  - redis-server>/dev/null &
+  - |
+    redis-server>/dev/null &
+    while ! nc -z localhost 6379; do
+      sleep 1
+    done
 
   # Let's make sure the our scripts' examples work correctly
   - cd ${BATSIM_BASE_DIR}

@@ -23,6 +23,10 @@ then
     echo "Running a Redis server..."
     redis-server>/dev/null &
     server_launched_by_me=1
+
+    while ! nc -z localhost 6379; do
+      sleep 1
+    done
 fi
 
 # Let's check that the example inputs of execution scripts work
