@@ -40,7 +40,7 @@ void Workflow::load_from_xml(const std::string &xml_filename)
     xml_parse_result result = dax_tree.load_file(xml_filename.c_str());
 
     xbt_assert(result, "Invalid XML file");
-    
+
     /*
     // Let's try to read the number of machines in the XML document
     xbt_assert(doc.HasMember("nb_res"), "Invalid XML file '%s': the 'nb_res' field is missing", xml_filename.c_str());
@@ -153,13 +153,17 @@ const Workflow *Workflows::operator[](const std::string &workflow_name) const
 Workflow *Workflows::at(const std::string &workflow_name)
 {
     xbt_assert(exists(workflow_name));
-    //    return _workflows.at(workflow_name);
+    xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
+    return nullptr;
+    //return _workflows.at(workflow_name);
 }
 
 const Workflow *Workflows::at(const std::string &workflow_name) const
 {
     xbt_assert(exists(workflow_name));
-    //    return _workflows.at(workflow_name);
+    xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
+    return nullptr;
+    //return _workflows.at(workflow_name);
 }
 
 void Workflows::insert_workflow(const std::string &workflow_name, Workflow *workflow)
@@ -173,7 +177,9 @@ void Workflows::insert_workflow(const std::string &workflow_name, Workflow *work
 
 bool Workflows::exists(const std::string &workflow_name) const
 {
-  //    return _workflows.count(workflow_name) == 1;
+    xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
+    return workflow_name == "mmh";
+    //return _workflows.count(workflow_name) == 1;
 }
 
 // std::map<std::string, Workflow *> &Workflows::workflows()
