@@ -65,7 +65,7 @@ install:
   - make install
   - cd ../install
   - mv -f lib64 lib
-  - sudo cp ./* /usr/
+  - sudo cp -r ./* /usr/
 
   ####################
   # Python libraries #
