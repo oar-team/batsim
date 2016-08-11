@@ -56,6 +56,7 @@ install:
   # Install redox
   - cd ${BATSIM_BASE_DIR}
   - git clone https://github.com/hmartiro/redox.git
+  - cd redox
   - git checkout 64becf28f3dd
   - mkdir build
   - cd build
