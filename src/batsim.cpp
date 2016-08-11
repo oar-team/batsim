@@ -312,7 +312,7 @@ int main(int argc, char * argv[])
 
     // Creating an empty placeholder workload for the workflow submitter, if needed
     if (! mainArgs.workflowFilename.empty()) {
-      const string workload_workload_name = "static";
+      const string workflow_workload_name = "static";
       Workload * workflow_workload = new Workload;
       workflow_workload->jobs = nullptr;
       workflow_workload->profiles = nullptr;
