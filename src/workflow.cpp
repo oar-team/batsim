@@ -8,7 +8,7 @@
 #include <fstream>
 #include <streambuf>
 
-#include <pugixml-1.7/pugixml.hpp>
+#include "pugixml-1.7/pugixml.hpp"
 
 #include "context.hpp"
 #include "jobs.hpp"
@@ -37,27 +37,12 @@ Workflow::~Workflow()
 
 void Workflow::load_from_xml(const std::string &xml_filename)
 {
-    // TODO: TO IMPLEMENT!!!
-	
-/*
     XBT_INFO("Loading XML workflow '%s'...", xml_filename.c_str());
-    // Let the file content be placed in a string
-    ifstream ifile(xml_filename);
-    xbt_assert(ifile.is_open(), "Cannot read file '%s'", xml_filename.c_str());
-    string content;
-
-    ifile.seekg(0, ios::end);
-    content.reserve(ifile.tellg());
-    ifile.seekg(0, ios::beg);
-
-    content.assign((std::istreambuf_iterator<char>(ifile)),
-                std::istreambuf_iterator<char>());
-
     // XML document creation
-    Document doc;
-    doc.Parse(content.c_str());
-    xbt_assert(doc.IsObject());
+    xml_parse_result result = dax_tree.load_file(xml_filename.c_str());
 
+    
+    /*
     // Let's try to read the number of machines in the XML document
     xbt_assert(doc.HasMember("nb_res"), "Invalid XML file '%s': the 'nb_res' field is missing", xml_filename.c_str());
     const Value & nb_res_node = doc["nb_res"];
@@ -68,13 +53,11 @@ void Workflow::load_from_xml(const std::string &xml_filename)
 
     jobs->load_from_xml(doc, xml_filename);
     profiles->load_from_xml(doc, xml_filename);
-
+    */
     XBT_INFO("XML workflow parsed sucessfully.");
     XBT_INFO("Checking workflow validity...");
     check_validity();
     XBT_INFO("Workflow seems to be valid.");
-*/
-
 }
 
 

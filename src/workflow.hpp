@@ -9,7 +9,7 @@
 #include <vector>
 
 #ifndef HEADER_PUGIXML_HPP
-#       include <pugixml-1.7/pugixml.hpp>
+#       include "pugixml-1.7/pugixml.hpp"
 #endif
 
 class Job;
