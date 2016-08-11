@@ -8,6 +8,10 @@
 #include <string>
 #include <map>
 
+#ifndef HEADER_PUGIXML_HPP
+#       include <pugixml-1.7/pugixml.hpp>
+#endif
+
 class Job;
 
 /**
@@ -45,6 +49,8 @@ public:
     Task * sources = nullptr; //!< The source tasks of the workflow
     Task * sinks = nullptr; //!< The sink tasks of the workflow
 
+private:
+    pugi::xml_document dax_tree;
 };
 
 /**
