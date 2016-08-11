@@ -125,3 +125,64 @@ void Task::set_batsim_job(Job batsim_job)
 
 
 
+Workflows::Workflows()
+{
+
+}
+
+Workflows::~Workflows()
+{
+    // for (auto mit : _workflows)
+    // {
+    //     Workflow * workflow = mit.second;
+    //     delete workflow;
+    // }
+    // _workflows.clear();
+}
+
+Workflow *Workflows::operator[](const std::string &workflow_name)
+{
+    return at(workflow_name);
+}
+
+const Workflow *Workflows::operator[](const std::string &workflow_name) const
+{
+    return at(workflow_name);
+}
+
+Workflow *Workflows::at(const std::string &workflow_name)
+{
+    xbt_assert(exists(workflow_name));
+    //    return _workflows.at(workflow_name);
+}
+
+const Workflow *Workflows::at(const std::string &workflow_name) const
+{
+    xbt_assert(exists(workflow_name));
+    //    return _workflows.at(workflow_name);
+}
+
+void Workflows::insert_workflow(const std::string &workflow_name, Workflow *workflow)
+{
+    xbt_assert(!exists(workflow_name));
+    xbt_assert(!exists(workflow->name));
+
+    workflow->name = workflow_name;
+    //    _workflows[workflow_name] = workflow;
+}
+
+bool Workflows::exists(const std::string &workflow_name) const
+{
+  //    return _workflows.count(workflow_name) == 1;
+}
+
+// std::map<std::string, Workflow *> &Workflows::workflows()
+// {
+//     return _workflows;
+// }
+
+// const std::map<std::string, Workflow *> &Workflows::workflows() const
+// {
+//     return _workflows;
+// }
+
