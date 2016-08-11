@@ -24,22 +24,24 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(workflow, "workflow"); //!< Logging
 
 Workflow::Workflow(const std::string & name)
 {
-    this->name = workflow_name;
-    this->tasks = nullptr;
-    this->source_tasks = nullptr;
-    this->sink_tasks = nullptr;
+    this->name = name;
 }
 
 Workflow::~Workflow()
 {
-    delete name;
-    delete tasks;
-    delete sources;
-    delete sinks;
+    // delete name;   TOFIX
+    name = nullptr;
+    tasks.clear();
+    sources.clear();
+    sinks.clear();
+
 }
 
-void Workflow::load_from_xml(const std::string &xml_filename, int &nb_machines)
+void Workflow::load_from_xml(const std::string &xml_filename)
 {
+    // TODO: TO IMPLEMENT!!!
+	
+/*
     XBT_INFO("Loading XML workflow '%s'...", xml_filename.c_str());
     // Let the file content be placed in a string
     ifstream ifile(xml_filename);
@@ -73,16 +75,16 @@ void Workflow::load_from_xml(const std::string &xml_filename, int &nb_machines)
     XBT_INFO("Checking workflow validity...");
     check_validity();
     XBT_INFO("Workflow seems to be valid.");
+*/
+
 }
 
 
 void Workflow::check_validity()
 {
-    // Likely not needed here
-    return void;
+    // Likely not needed, so it doesn't do anything for now
+    return;
 }
-
-
 
 
 Task::Task(const int num_procs, const double execution_time)
@@ -90,15 +92,31 @@ Task::Task(const int num_procs, const double execution_time)
     this->num_procs = num_procs;
     this->execution_time = execution_time;
     this->batsim_job = nullptr;
-    this->parents = nullptr;
-    this->children = nullptr;
 }
 
 Task::~Task()
 {
-    delete batsim_job
-    delete parents;
-    delete children;
+    parents.clear();
+    children.clear();
 }
+
+
+void Task::add_parent(Task parent)
+{
+  this->parents.push_back(&parent);
+}
+
+
+void Task::add_child(Task child)
+{
+  this->children.push_back(&child);
+}
+
+void Task::set_batsim_job(Job batsim_job)
+{
+  this->batsim_job = &batsim_job;
+
+}
+
 
 
