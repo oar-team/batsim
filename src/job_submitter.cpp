@@ -140,7 +140,7 @@ int workflow_submitter_process(int argc, char *argv[])
     send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
 
     /* Send a Bogus Job and wait for the notification */
-    Job bogus_job = new Job;
+    //Job bogus_job = new Job;
 
    /*
 
