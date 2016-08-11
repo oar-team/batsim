@@ -7,6 +7,8 @@
 
 #include <xbt.h>
 
+using namespace std;
+
 RedisStorage::RedisStorage()
 {
     //TODO: wrap redox logging into simgrid?
@@ -73,6 +75,21 @@ std::string RedisStorage::key_subparts_separator() const
 {
     return _key_subparts_separator;
 }
+
+std::string RedisStorage::job_key(const JobIdentifier &job_id)
+{
+    std::string key = "job_" + job_id.workload_name + '!' + to_string(job_id.job_number);
+    return key;
+}
+
+std::string RedisStorage::profile_key(const std::string &workload_name,
+                                        const std::string &profile_name)
+{
+    std::string key = "profile_" + workload_name + '!' + profile_name;
+    return key;
+}
+
+
 
 std::string RedisStorage::build_key(const std::string & user_given_key) const
 {

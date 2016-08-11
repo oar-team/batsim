@@ -12,6 +12,7 @@ class Jobs;
 struct Job;
 class Profiles;
 struct JobIdentifier;
+struct BatsimContext;
 
 /**
  * @brief A workload is simply some Jobs with their associated Profiles
@@ -151,6 +152,16 @@ public:
      * @return True if the given job exists, false otherwise
      */
     bool job_exists(const JobIdentifier & job_id);
+
+    /**
+     * @brief Adds a job into memory if needed
+     * @details If the jobs already exists, this method does nothing. Otherwise, the job information is loaded from the remote data storage, one Job and one Profile are created and one Workload is created if needed.
+     * @param[in] job_id The job identifier
+     * @param[in,out] context The Batsim Context
+     * @return The Job corresponding to job_id.
+     */
+    Job * add_job_if_not_exists(const JobIdentifier & job_id,
+                                BatsimContext * context);
 
     /**
      * @brief Inserts a new Workload into a Workloads

@@ -144,11 +144,14 @@ int uds_server_process(int argc, char *argv[])
                 origin_of_jobs[message->job_id] = submitter;
             }
 
-            nb_submitted_jobs++;
-            Job * job = context->workloads.job_at(message->job_id);
-            job->state = JobState::JOB_STATE_SUBMITTED;
+            // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
+            Job * job = context->workloads.add_job_if_not_exists(message->job_id, context);
 
-            XBT_INFO( "Job %s-%d SUBMITTED. %d jobs submitted so far", job->workload->name.c_str(), job->number, nb_submitted_jobs);
+            // Update control information
+            job->state = JobState::JOB_STATE_SUBMITTED;
+            nb_submitted_jobs++;
+            XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far",
+                     message->job_id.to_string().c_str(), nb_submitted_jobs);
 
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":S:" + message->job_id.to_string();
             XBT_DEBUG( "Message to send to scheduler: '%s'", send_buffer.c_str());

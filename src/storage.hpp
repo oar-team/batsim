@@ -9,6 +9,8 @@
 
 #include <redox.hpp>
 
+#include "ipp.hpp"
+
 /**
  * @brief Wrapper class around Redox, a Redis client library.
  * @details This class provides blocking methods that communicate
@@ -82,6 +84,22 @@ public:
      * @return The key subparts separator.
      */
     std::string key_subparts_separator() const;
+
+    /**
+     * @brief Returns the key in the data storage corresponding to a JobIdentifier
+     * @param[in] job_id The JobIdentifier
+     * @return The key in the data storage corresponding to a JobIdentifier
+     */
+    static std::string job_key(const JobIdentifier & job_id);
+
+    /**
+     * @brief Returns the key in the data storage corresponding to a profile
+     * @param[in] workload_name The workload name of the profile
+     * @param[in] profile_name The profile name
+     * @return The key in the data storage corresponding to a profile
+     */
+    static std::string profile_key(const std::string & workload_name,
+                                   const std::string & profile_name);
 
 private:
     /**

@@ -49,6 +49,25 @@ struct Job
     MachineRange allocation; //!< The machines on which the job has been executed.
     JobState state; //!< The current state of the job
 
+    /**
+     * @brief Creates a new-allocated Job from a JSON description
+     * @param[in] json_desc The JSON description of the job
+     * @param[in] workload The Workload the job is in
+     * @return The newly allocated Job
+     * @pre The JSON description of the job is valid
+     */
+    static Job * from_json(const rapidjson::Value & json_desc,
+                           Workload * workload);
+
+    /**
+     * @brief Creates a new-allocated Job from a JSON description
+     * @param[in] json_str The JSON description of the job (as a string)
+     * @param[in] workload The Workload the job is in
+     * @return The newly allocated Job
+     * @pre The JSON description of the job is valid
+     */
+    static Job * from_json(const std::string & json_str,
+                           Workload * workload);
 };
 
 /**
@@ -71,6 +90,7 @@ public:
     Jobs();
     /**
      * @brief Destroys a Jobs
+     * @details All Job instances will be deleted
      */
     ~Jobs();
 
@@ -95,38 +115,45 @@ public:
 
     /**
      * @brief Accesses one job thanks to its unique number
-     * @param[in] job_id The job unique number
+     * @param[in] job_number The job unique number
      * @return A pointer to the job associated to the given job number
      */
-    Job * operator[](int job_id);
+    Job * operator[](int job_number);
 
     /**
      * @brief Accesses one job thanks to its unique number (const version)
-     * @param[in] job_id The job unique number
+     * @param[in] job_number The job unique number
      * @return A (const) pointer to the job associated to the given job number
      */
-    const Job * operator[](int job_id) const;
+    const Job * operator[](int job_number) const;
 
     /**
      * @brief Accesses one job thanks to its unique number
-     * @param[in] job_id The job unique number
+     * @param[in] job_number The job unique number
      * @return A pointer to the job associated to the given job number
      */
-    Job * at(int job_id);
+    Job * at(int job_number);
 
     /**
      * @brief Accesses one job thanks to its unique number (const version)
-     * @param[in] job_id The job unique number
+     * @param[in] job_number The job unique number
      * @return A (const) pointer to the job associated to the given job number
      */
-    const Job * at(int job_id) const;
+    const Job * at(int job_number) const;
+
+    /**
+     * @brief Adds a job into a Jobs instance
+     * @param[in] job The job to add
+     * @pre No job with the same number exist in the Jobs instance
+     */
+    void add_job(Job * job);
 
     /**
      * @brief Allows to know whether a job exists
-     * @param[in] job_id The unique job number
+     * @param[in] job_number The unique job number
      * @return True if and only if a job with the given job number exists
      */
-    bool exists(int job_id) const;
+    bool exists(int job_number) const;
 
     /**
      * @brief Allows to know whether the Jobs contains any SMPI job

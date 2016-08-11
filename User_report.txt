@@ -16,11 +16,19 @@ tar -xzvf redis-3.2.3.tar.gz
 unzip redox-master.zip 
 sudo apt-get install libev-dev
 sudo apt-get install python-sortedcontainers
+
+  (the following are more related to evalys)
+
 sudo apt-get install libfreetype6-dev
 sudo apt-get install libpng-dev
 sudo -H pip install git+https://github.com/oar-team/evalys.git
+sudo pip install tox
+sudo pip install pytest
 
-
+sudo apt-get install python3-pip
+sudo apt-get install libffi-dev
+sudo /usr/bin/python3 -m pip install matplotlib
+sudo /usr/bin/python3 -m pip install cairocffi
 
    Current invocation in data-storage branch:
 

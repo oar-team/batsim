@@ -492,7 +492,7 @@ void exportJobsToCSV(const std::string &filename, const BatsimContext *context)
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
 
     // write headers
-    f << "job_number,workload_name,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,consumed_energy,allocated_processors\n";
+    f << "jobID,workload_name,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,consumed_energy,allocated_processors\n";
 
     for (const auto mit : context->workloads.workloads())
     {
