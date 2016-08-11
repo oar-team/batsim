@@ -41,6 +41,7 @@ void Workflow::load_from_xml(const std::string &xml_filename)
     // XML document creation
     xml_parse_result result = dax_tree.load_file(xml_filename.c_str());
 
+    xbt_assert(result, "Invalid XML file");
     
     /*
     // Let's try to read the number of machines in the XML document
