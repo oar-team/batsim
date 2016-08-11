@@ -51,7 +51,7 @@ public:
     /**
      * @brief Get source tasks
      */
-    std::vector<Task>* get_source_tasks();
+    std::vector<Task &>  get_source_tasks();
 
     /**
      * @brief Get sink tasks
