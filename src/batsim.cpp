@@ -332,6 +332,15 @@ int main(int argc, char * argv[])
     static_workload->load_from_json(mainArgs.workloadFilename, nb_machines_by_workload);
     context.workloads.insert_workload(static_workload_name, static_workload);
 
+    // Creating an empty placeholder workload for the workflow submitter, if needed
+    if (! mainArgs.workflowFilename.empty()) {
+      const string workload_workload_name = "static";
+      Workload * workflow_workload = new Workload;
+      workflow_workload->jobs = nullptr;
+      workflow_workload->profiles = nullptr;
+      context.workloads.insert_workload(workflow_workload_name, workflow_workload);
+    }
+
     int limit_machines_count = -1;
     if ((mainArgs.limit_machines_count_by_workload) && (mainArgs.limit_machines_count > 0))
         limit_machines_count = min(mainArgs.limit_machines_count, nb_machines_by_workload);
