@@ -51,16 +51,16 @@ public:
     /**
      * @brief Get source tasks
      */
-    std::vector<Task &>  get_source_tasks();
+    std::vector<Task *>  get_source_tasks();
 
     /**
      * @brief Get sink tasks
      */
-    std::vector<Task>* get_sink_tasks();
+    std::vector<Task *> get_sink_tasks();
 
 public:
     std::string name; //!< The Workflow name
-    std::vector<Task> tasks;  //!< References to all tasks
+    std::vector<Task *> tasks;  //!< References to all tasks
 
 private:
     pugi::xml_document dax_tree; //!< The DAX tree
@@ -102,9 +102,9 @@ public:
 public:
     int num_procs; //!< The number of processors needed for the tas
     double execution_time; //!< The execution time of the task
-    Job *batsim_job; //!< The batsim job created for this task
-    std::vector<Task> parents; //!< The parent
-    std::vector<Task> children; //!< The children
+    Job &batsim_job; //!< The batsim job created for this task
+    std::vector<Task *> parents; //!< The parent
+    std::vector<Task *> children; //!< The children
 
 };
 
