@@ -8,7 +8,7 @@ addons:
       - doxygen
       - graphviz
       - python-pip
-      - travis-server
+      - redis-server
       - libhiredis-dev
       - libev-dev
 env:
