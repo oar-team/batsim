@@ -8,8 +8,7 @@
 #include <fstream>
 #include <streambuf>
 
-// TODO : include xml lib
-//#include <rapidjson/document.h>
+#include <pugixml-1.7/pugixml.hpp>
 
 #include <smpi/smpi.h>
 
