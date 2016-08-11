@@ -16,8 +16,7 @@
 #include "jobs_execution.hpp"
 
 using namespace std;
-// TODO : include xml namespace
-//using namespace rapidjson;
+using namespace pugi;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(workflow, "workflow"); //!< Logging
 
