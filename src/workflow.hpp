@@ -39,12 +39,24 @@ public:
      */
     void check_validity();
 
+    /**
+     * @brief Adds a task to the workflow
+     */
+    void add_task(Task task);
+
+    /**
+     * @brief Get source tasks
+     */
+    std::vector<Task>* get_source_tasks();
+
+    /**
+     * @brief Get sink tasks
+     */
+    std::vector<Task>* get_sink_tasks();
 
 public:
     std::string name; //!< The Workflow name
-    std::vector<const Task *> tasks;  //!< References to all tasks
-    std::vector<const Task *> sources; //!< References to source tasks
-    std::vector<const Task *> sinks; //!< References to sink tasks
+    std::vector<Task> tasks;  //!< References to all tasks
 };
 
 /**
@@ -84,8 +96,8 @@ public:
     int num_procs; //!< The number of processors needed for the tas
     double execution_time; //!< The execution time of the task
     Job *batsim_job; //!< The batsim job created for this task
-    std::vector<const Task *> parents; //!< The parent
-    std::vector<const Task *> children; //!< The children
+    std::vector<Task> parents; //!< The parent
+    std::vector<Task> children; //!< The children
 
 };
 

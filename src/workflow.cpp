@@ -32,8 +32,6 @@ Workflow::~Workflow()
     // delete name;   TOFIX
     name = nullptr;
     tasks.clear();
-    sources.clear();
-    sinks.clear();
 
 }
 
@@ -82,9 +80,34 @@ void Workflow::load_from_xml(const std::string &xml_filename)
 
 void Workflow::check_validity()
 {
-    // Likely not needed, so it doesn't do anything for now
-    return;
+  // Likely not needed, so it doesn't do anything for now
+  return;
 }
+
+void Workflow::add_task(Task task) {
+  this->tasks.push_back(task);
+}
+
+std::vector<Task>* Workflow::get_source_tasks() {
+  std::vector<Task> *task_list = new std::vector<Task>;
+  for(std::vector<Task>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+    if ((*it).parents.empty()) {
+      task_list->push_back(*it);
+    }
+  }
+  return task_list;
+}
+
+std::vector<Task>* Workflow::get_sink_tasks() {
+  std::vector<Task> *task_list = new std::vector<Task>;
+  for(std::vector<Task>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+    if ((*it).children.empty()) {
+      task_list->push_back(*it);
+    }
+  }
+  return task_list;
+}
+
 
 
 Task::Task(const int num_procs, const double execution_time)
@@ -103,13 +126,13 @@ Task::~Task()
 
 void Task::add_parent(Task parent)
 {
-  this->parents.push_back(&parent);
+  this->parents.push_back(parent);
 }
 
 
 void Task::add_child(Task child)
 {
-  this->children.push_back(&child);
+  this->children.push_back(child);
 }
 
 void Task::set_batsim_job(Job batsim_job)
