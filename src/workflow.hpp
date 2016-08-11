@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <cstddef>
 
 #ifndef HEADER_PUGIXML_HPP
 #       include "pugixml-1.7/pugixml.hpp"
@@ -102,7 +103,7 @@ public:
 public:
     int num_procs; //!< The number of processors needed for the tas
     double execution_time; //!< The execution time of the task
-    Job &batsim_job; //!< The batsim job created for this task
+    Job *batsim_job = nullptr; //!< The batsim job created for this task
     std::vector<Task *> parents; //!< The parent
     std::vector<Task *> children; //!< The children
 
