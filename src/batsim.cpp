@@ -174,8 +174,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
         break;
     case 'T':
         mainArgs->enable_schedule_tracing = false;
-        break;
-    }
+        break;    
     case 'v':
     {
         string sArg = arg;
@@ -194,6 +193,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
             mainArgs->abortReason += "\n  invalid VERBOSITY_LEVEL argument: '" + string(sArg) + "' is not in {quiet, network-only, information, debug}.";
         }
         break;
+    }
     }
 
     return 0;
@@ -309,6 +309,15 @@ int main(int argc, char * argv[])
     Workload * static_workload = new Workload;
     static_workload->load_from_json(mainArgs.workloadFilename, nb_machines_by_workload);
     context.workloads.insert_workload(static_workload_name, static_workload);
+
+    // Creating an empty placeholder workload for the workflow submitter, if needed
+    if (! mainArgs.workflowFilename.empty()) {
+      const string workflow_workload_name = "static";
+      Workload * workflow_workload = new Workload;
+      workflow_workload->jobs = nullptr;
+      workflow_workload->profiles = nullptr;
+      context.workloads.insert_workload(workflow_workload_name, workflow_workload);
+    }
 
     int limit_machines_count = -1;
     if ((mainArgs.limit_machines_count_by_workload) && (mainArgs.limit_machines_count > 0))
