@@ -74,6 +74,9 @@ batsim
 Installation
 ------------
 
+As Batsim and its dependencies are installed and built by Travis, you can find
+an example on how to do it in [this Travis script](.travis.yml).
+
 ### Dependencies
 
 Batsim's dependencies are listed below:
@@ -82,29 +85,7 @@ Batsim's dependencies are listed below:
 -   RapidJSON (1.02 or greater)
 -   Boost 1.48 or greater (system, filesystem)
 -   C++11 compiler
-
-The following script can be used to install SimGrid and RapidJSON:
-``` bash
-# Install SimGrid
-git clone https://github.com/oar-team/simgrid-batsim.git \
-    -b batsim-compatible --depth 1 simgrid-batsim
-cd simgrid-batsim
-mkdir build
-cd build
-cmake .. -Denable_documentation=OFF #-DCMAKE_INSTALL_PREFIX=/usr
-make -j $(nproc)
-sudo make install
-
-# Install rapidjson
-cd ${BATSIM_BASE_DIR}
-git clone https://github.com/miloyip/rapidjson.git
-cd rapidjson
-git checkout 3d5848a # v1.02
-sudo cp -a include/rapidjson /usr/include
-```
-
-Boost 1.48 or greater is probably available in the packages of your favourite
-distribution.
+-   Redox (and its dependencies: hiredis and libev)
 
 ### Building Batsim
 Batsim can be built via CMake. An example script is given below:

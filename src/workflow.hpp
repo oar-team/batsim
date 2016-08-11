@@ -8,7 +8,11 @@
 #include <string>
 #include <vector>
 
-class Job;
+#ifndef HEADER_PUGIXML_HPP
+#       include "pugixml-1.7/pugixml.hpp"
+#endif
+
+struct Job;
 class Task;
 
 /**
@@ -57,6 +61,9 @@ public:
 public:
     std::string name; //!< The Workflow name
     std::vector<Task> tasks;  //!< References to all tasks
+
+private:
+    pugi::xml_document dax_tree; //!< The DAX tree
 };
 
 /**

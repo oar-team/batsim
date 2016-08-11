@@ -73,7 +73,9 @@ include_directories(${LIBEV_INCLUDE_DIRS})
 ################
 file(GLOB batsim_SRC
     "src/*.hpp"
-    "src/*.cpp")
+    "src/*.cpp"
+    "src/pugixml-1.7/*.hpp"
+    "src/pugixml-1.7/*.cpp")
 
 # Executables
 add_executable(batsim ${batsim_SRC})

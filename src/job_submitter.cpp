@@ -122,20 +122,21 @@ int workflow_submitter_process(int argc, char *argv[])
 
     /* Not needed here for now, since the workflow filename was
      * passed as an argument, and has already been checked
-     
+
     xbt_assert(context->workloads.exists(args->workload_name),
                "Error: a static_job_submitter_process is in charge of workload '%s', "
                "which does not exist", args->workload_name.c_str());
      */
 
     const char *workflow_filename = args->workflow_filename.c_str();
+    (void) workflow_filename; // Silences unused warning
     const string submitter_name = "workflow_submitter";
 
     //XBT_INFO("I AM A WORKFLOW SUBMITTER FOR WORKFLOW %s!", workflow_filename);
 
     SubmitterHelloMessage * hello_msg = new SubmitterHelloMessage;
     hello_msg->submitter_name = submitter_name;
-    hello_msg->enable_callback_on_job_completion = true; 
+    hello_msg->enable_callback_on_job_completion = true;
 
     send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
 
