@@ -67,24 +67,24 @@ void Workflow::check_validity()
 }
 
 void Workflow::add_task(Task task) {
-  this->tasks.push_back(task);
+  this->tasks.push_back(&task);
 }
 
-std::vector<Task>* Workflow::get_source_tasks() {
-  std::vector<Task> *task_list = new std::vector<Task>;
-  for(std::vector<Task>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
-    if ((*it).parents.empty()) {
-      task_list->push_back(*it);
+std::vector<Task *> Workflow::get_source_tasks() {
+  std::vector<Task *> task_list;
+  for(std::vector<Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+    if ((*it)->parents.empty()) {
+      task_list.push_back(*it);
     }
   }
   return task_list;
 }
 
-std::vector<Task>* Workflow::get_sink_tasks() {
-  std::vector<Task> *task_list = new std::vector<Task>;
-  for(std::vector<Task>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
-    if ((*it).children.empty()) {
-      task_list->push_back(*it);
+std::vector<Task *> Workflow::get_sink_tasks() {
+  std::vector<Task *> task_list;
+  for(std::vector<Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+    if ((*it)->children.empty()) {
+      task_list.push_back(*it);
     }
   }
   return task_list;
@@ -108,13 +108,13 @@ Task::~Task()
 
 void Task::add_parent(Task parent)
 {
-  this->parents.push_back(parent);
+  this->parents.push_back(&parent);
 }
 
 
 void Task::add_child(Task child)
 {
-  this->children.push_back(child);
+  this->children.push_back(&child);
 }
 
 void Task::set_batsim_job(Job batsim_job)
