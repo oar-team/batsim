@@ -57,7 +57,7 @@ public:
     /**
      * @brief Constructor
      */
-    Task(int num_procs, double execution_time, Job batsim_job);
+    Task(const int num_procs, const double execution_time);
 
     /**
      * @brief Destructeur
@@ -73,6 +73,11 @@ public:
      * @brief Add a child to a task
      */
     void add_child(Task child_task);
+
+    /**
+     * @brief Associates a batsim Job to the task
+     */
+    void set_batsim_job(Job batsim_job);
 
 
 public:
