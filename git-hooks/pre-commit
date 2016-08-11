@@ -15,6 +15,20 @@ then
     exit 1
 fi
 
+# Let's run a redis server if needed
+server_launched_by_me=0
+r=$(ps faux | grep redis-server | grep -v grep | wc -l)
+if [ $r -eq 0 ]
+then
+    echo "Running a Redis server..."
+    redis-server>/dev/null &
+    server_launched_by_me=1
+
+    while ! nc -z localhost 6379; do
+      sleep 1
+    done
+fi
+
 # Let's check that the example inputs of execution scripts work
 echo "Checking whether example inputs of execution scripts work..."
 cd ${base_dir}
@@ -43,3 +57,10 @@ fi
 echo "Checking whether tests pass..."
 cd ${base_dir}
 ./test/run_tests.sh 1>/dev/null 2>/dev/null
+
+# Let's stop the redis server if it has been launched by this script
+if [ $server_launched_by_me -eq 1 ]
+then
+    echo "Stopping the Redis server..."
+    killall redis-server
+fi

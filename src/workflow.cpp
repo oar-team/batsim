@@ -40,6 +40,7 @@ void Workflow::load_from_xml(const std::string &xml_filename)
     XBT_INFO("Loading XML workflow '%s'...", xml_filename.c_str());
     // XML document creation
     xml_parse_result result = dax_tree.load_file(xml_filename.c_str());
+    (void) result; // Silences unused warning
 
     xbt_assert(result, "Invalid XML file");
     

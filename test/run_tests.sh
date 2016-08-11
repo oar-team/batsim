@@ -14,8 +14,23 @@
 \rm -rf test/out/space_sharing
 \rm -rf test/out/energy
 
+# Run a travis server if needed
+server_launched_by_me=0
+r=$(ps faux | grep redis-server | grep -v grep | wc -l)
+if [ $r -eq 0 ]
+then
+    redis-server>/dev/null &
+    server_launched_by_me=1
+fi
+
 # Run different tests
 tools/experiments/execute_instances.py test/test_unique.yaml -bod test/out/unique
 tools/experiments/execute_instances.py test/test_no_energy.yaml -bod test/out/no_energy
 tools/experiments/execute_instances.py test/test_space_sharing.yaml -bod test/out/space_sharing
 tools/experiments/execute_instances.py test/test_energy.yaml -bod test/out/energy
+
+# Let's stop the redis server if it has been launched by this script
+if [ $server_launched_by_me -eq 1 ]
+then
+    killall redis-server
+fi

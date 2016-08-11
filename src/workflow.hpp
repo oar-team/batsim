@@ -12,7 +12,7 @@
 #       include "pugixml-1.7/pugixml.hpp"
 #endif
 
-class Job;
+struct Job;
 class Task;
 
 /**
@@ -51,7 +51,7 @@ public:
     std::vector<const Task *> sinks; //!< References to sink tasks
 
 private:
-    pugi::xml_document dax_tree;
+    pugi::xml_document dax_tree; //!< The DAX tree
 };
 
 /**
