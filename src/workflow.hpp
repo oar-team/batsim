@@ -109,3 +109,83 @@ public:
 };
 
 
+/**
+ * @brief Handles a set of Workflows, identified by their names
+ */
+class Workflows
+{
+public:
+    /**
+     * @brief Builds an empty Workflows
+     */
+    Workflows();
+
+    /**
+     * @brief Destroys a Workflows
+     */
+    ~Workflows();
+
+    /**
+     * @brief Allows to access a Workflow thanks to its name
+     * @param[in] workflow_name The name of the workflow to access
+     * @return The workflow associated with the given workflow name
+     * @pre The workflow exists
+     */
+    Workflow * operator[](const std::string & workflow_name);
+
+    /**
+     * @brief Allows to access a Workflow thanks to its name
+     * @param[in] workflow_name The name of the workflow to access
+     * @return The workflow associated with the given workflow name
+     * @pre The workflow exists
+     */
+    const Workflow * operator[](const std::string & workflow_name) const;
+
+    /**
+     * @brief Allows to access a Workflow thanks to its name
+     * @param[in] workflow_name The name of the workflow to access
+     * @return The workflow associated with the given workflow name
+     * @pre The workflow exists
+     */
+    Workflow * at(const std::string & workflow_name);
+
+    /**
+     * @brief Allows to access a Workflow thanks to its name
+     * @param[in] workflow_name The name of the workflow to access
+     * @return The workflow associated with the given workflow name
+     * @pre The workflow exists
+     */
+    const Workflow * at(const std::string & workflow_name) const;
+
+    /**
+     * @brief Inserts a new Workflow into a Workflows
+     * @param[in] workflow_name The name of the new Workflow to insert
+     * @param[in] workflow The Workflow to insert
+     * @pre There should be no existing Workflow with the same name in the Workflows
+     */
+    void insert_workflow(const std::string & workflow_name,
+                         Workflow * workflow);
+
+    /**
+     * @brief Checks whether a Workflow with the given name exist.
+     * @param[in] workflow_name The name of the Workflow whose existence is checked
+     * @return true if a Workflow with the given name exists in the Workflows, false otherwise.
+     */
+    bool exists(const std::string & workflow_name) const;
+
+    /**
+     * @brief Gets the internal map
+     * @return The internal map
+     */
+    std::map<std::string, Workflow*> & workflows();
+
+    /**
+     * @brief Gets the internal map (const version)
+     * @return The internal map (const version)
+     */
+    const std::map<std::string, Workflow*> & workflows() const;
+
+private:
+    std::map<std::string, Workflow*> _workflows; //!< Associates Workflows with their names
+};
+
