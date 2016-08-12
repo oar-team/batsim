@@ -338,8 +338,6 @@ int main(int argc, char * argv[])
       context.workflows.insert_workflow(workflow_workload_name, file_workflow);
     }
 
-    XBT_INFO("I don't understand how this is memory is not out of scope here: %s",(context.workloads.at("static"))->name.c_str());
-
     int limit_machines_count = -1;
     if ((mainArgs.limit_machines_count_by_workload) && (mainArgs.limit_machines_count > 0))
         limit_machines_count = min(mainArgs.limit_machines_count, nb_machines_by_workload);
