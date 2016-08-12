@@ -319,8 +319,8 @@ int main(int argc, char * argv[])
     }
       
     // Creating an empty placeholder workload for the workflow submitter, if needed
+    const string workflow_workload_name = "workflow";
     if (! mainArgs.workflowFilename.empty()) {
-      const string workflow_workload_name = "workflow";
       Workload * workflow_workload = new Workload;
       workflow_workload->jobs = nullptr;
       workflow_workload->profiles = nullptr;
@@ -435,7 +435,7 @@ int main(int argc, char * argv[])
         XBT_INFO("Creating workflow_submitter process...");
         WorkflowSubmitterProcessArguments * submitterArgs = new WorkflowSubmitterProcessArguments;
         submitterArgs->context = &context;
-        submitterArgs->workflow_filename = mainArgs.workflowFilename;
+        submitterArgs->workflow_name = workflow_workload_name;
         MSG_process_create("workflow_submitter", workflow_submitter_process, (void*)submitterArgs, masterMachine->host);
         XBT_INFO("The workflow_submitter process has been created.");
     }

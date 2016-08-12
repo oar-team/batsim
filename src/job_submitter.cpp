@@ -128,11 +128,23 @@ int workflow_submitter_process(int argc, char *argv[])
                "which does not exist", args->workload_name.c_str());
      */
 
-    const char *workflow_filename = args->workflow_filename.c_str();
-    (void) workflow_filename; // Silences unused warning
-    const string submitter_name = "workflow_submitter";
+    /*
+    const char *workflow_name = args->workflow_name;
+    (void) workflow_name; // Silences unused warning
+    */
 
-    //XBT_INFO("I AM A WORKFLOW SUBMITTER FOR WORKFLOW %s!", workflow_filename);
+    // Get the workflow
+    xbt_assert(context->workflows.exists(args->workflow_name),
+               "Error: a workflow_job_submitter_process is in charge of workload '%s', "
+               "which does not exist", args->workflow_name.c_str());
+
+    Workflow * workflow = context->workflows.at(args->workflow_name);
+
+    const string submitter_name = "workflow_submitter";
+ 
+
+    XBT_INFO("I AM A WORKFLOW SUBMITTER FOR WORKFLOW %s!", args->workflow_name.c_str());
+    XBT_INFO("This workflow has %d tasks!", workflow->tasks.size());
 
     SubmitterHelloMessage * hello_msg = new SubmitterHelloMessage;
     hello_msg->submitter_name = submitter_name;
