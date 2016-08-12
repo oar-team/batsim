@@ -67,14 +67,21 @@ void Workflow::check_validity()
 }
 
 void Workflow::add_task(Task task) {
-  this->tasks.push_back(&task);
+  this->tasks[task.id] = &task;
 }
+
+void Workflow::add_edge(Task &parent, Task &child)
+{
+  child.parents.push_back(&parent);
+  parent.children.push_back(&child);
+}
+
 
 std::vector<Task *> Workflow::get_source_tasks() {
   std::vector<Task *> task_list;
-  for(std::vector<Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
-    if ((*it)->parents.empty()) {
-      task_list.push_back(*it);
+  for(std::map<std::string, Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+    if ((it->second)->parents.empty()) {
+      task_list.push_back(it->second);
     }
   }
   return task_list;
@@ -82,9 +89,9 @@ std::vector<Task *> Workflow::get_source_tasks() {
 
 std::vector<Task *> Workflow::get_sink_tasks() {
   std::vector<Task *> task_list;
-  for(std::vector<Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
-    if ((*it)->children.empty()) {
-      task_list.push_back(*it);
+  for(std::map<std::string, Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+    if ((it->second)->children.empty()) {
+      task_list.push_back(it->second);
     }
   }
   return task_list;
@@ -92,37 +99,28 @@ std::vector<Task *> Workflow::get_sink_tasks() {
 
 
 
-Task::Task(const int num_procs, const double execution_time)
+Task::Task(const int num_procs, const double execution_time, std::string id)
 {
     this->num_procs = num_procs;
     this->execution_time = execution_time;
+    this->id = id;
     this->batsim_job = nullptr;
 }
 
 Task::~Task()
 {
-    parents.clear();
-    children.clear();
+    delete &(this->id);
+    this->parents.clear();
+    this->children.clear();
 }
 
 
-void Task::add_parent(Task parent)
-{
-  this->parents.push_back(&parent);
-}
-
-
-void Task::add_child(Task child)
-{
-  this->children.push_back(&child);
-}
 
 void Task::set_batsim_job(Job batsim_job)
 {
   this->batsim_job = &batsim_job;
 
 }
-
 
 
 Workflows::Workflows()
