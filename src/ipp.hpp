@@ -244,7 +244,7 @@ struct JobSubmitterProcessArguments
 struct WorkflowSubmitterProcessArguments
 {
     BatsimContext * context;       //!< The BatsimContext
-    std::string workflow_filename; //!< The name of the workflow description file the submitter should use
+    std::string workflow_name; //!< The name of the workflow the submitter should use
 };
 
 
