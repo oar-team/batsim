@@ -41,6 +41,22 @@ void Workflow::load_from_xml(const std::string &xml_filename)
 
     xbt_assert(result, "Invalid XML file");
 
+    xml_node dag = dax_tree.child("adag");
+
+
+
+    for (xml_node job = dag.child("job"); job; job = job.next_sibling("job"))
+      {
+	Task task (1, strtod(job.attribute("runtime").value(),NULL), job.attribute("id").value());
+	std::cout << "Test : " << job.attribute("id").value() << ", duration : " << task.execution_time << std::endl;
+
+	add_task(task);
+      }
+    
+
+    
+
+    
     /*
     // Let's try to read the number of machines in the XML document
     xbt_assert(doc.HasMember("nb_res"), "Invalid XML file '%s': the 'nb_res' field is missing", xml_filename.c_str());
