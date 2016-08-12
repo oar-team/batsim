@@ -48,12 +48,12 @@ public:
     /**
      * @brief Adds a task to the workflow
      */
-    void add_task(Task task);
+    void add_task(Task &task);
 
     /**
      * @brief Get a task based on its ID
      */
-    Task &get_task(std::string id);
+    Task *get_task(std::string id);
 
     /**
      * @brief Add an edge between a parent task and a child task
