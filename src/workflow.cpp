@@ -55,6 +55,20 @@ void Workflow::load_from_xml(const std::string &xml_filename)
 
       }
 
+    for (xml_node edge_bottom = dag.child("child"); edge_bottom; edge_bottom = edge_bottom.next_sibling("child"))
+      {
+        Task *dest = get_task(edge_bottom.attribute("ref").value());
+
+	for (xml_node edge_top = edge_bottom.child("parent"); edge_top; edge_top = edge_top.next_sibling("parent"))
+	  {
+	    Task *source = get_task(edge_top.attribute("ref").value());
+	    
+	    //std::cout << "Test : " << source->id << " --> " << dest->id << std::endl;
+	    
+	    add_edge(*source,*dest);
+	  }
+      }
+
     /* Testing things
     std::cout << get_source_tasks().size() << std::endl;
 
