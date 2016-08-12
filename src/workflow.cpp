@@ -66,8 +66,12 @@ void Workflow::check_validity()
   return;
 }
 
-void Workflow::add_task(Task task) {
+void Workflow::add_task(Task &task) {
   this->tasks[task.id] = &task;
+}
+
+Task * Workflow::get_task(std::string id) {
+	  return this->tasks[id];
 }
 
 void Workflow::add_edge(Task &parent, Task &child)
