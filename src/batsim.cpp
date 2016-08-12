@@ -325,11 +325,19 @@ int main(int argc, char * argv[])
       workflow_workload->jobs = nullptr;
       workflow_workload->profiles = nullptr;
       context.workloads.insert_workload(workflow_workload_name, workflow_workload);
+
+      XBT_INFO("Creating workload %s as placeholder for %s", workflow_workload_name.c_str(), mainArgs.workflowFilename.c_str());
+
       // TODO note
       // for the time being an exception is thrown if we pass both
       // workload and workflow; I don't think this is necessary, we
       // could have job submitters for both type of job source
+
+      Workflow * file_workflow = new Workflow(mainArgs.workflowFilename);
+      file_workflow->load_from_xml(mainArgs.workflowFilename);
     }
+
+    XBT_INFO("I don't understand how this is memory is not out of scope here: %s",(context.workloads.at("static"))->name.c_str());
 
     int limit_machines_count = -1;
     if ((mainArgs.limit_machines_count_by_workload) && (mainArgs.limit_machines_count > 0))

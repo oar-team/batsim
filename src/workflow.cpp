@@ -41,6 +41,47 @@ void Workflow::load_from_xml(const std::string &xml_filename)
 
     xbt_assert(result, "Invalid XML file");
 
+    xml_node dag = dax_tree.child("adag");
+
+
+
+    for (xml_node job = dag.child("job"); job; job = job.next_sibling("job"))
+      {
+        Task *task = new Task (1, strtod(job.attribute("runtime").value(),NULL), job.attribute("id").value());
+	//std::cout << "Test : " << job.attribute("id").value() << ", duration : " << strtod(job.attribute("runtime").value(),NULL) << std::endl;
+       	//std::cout << "Test : " << job.attribute("id").value() << ", duration : " << task->execution_time << std::endl;
+
+	add_task(*task);
+
+      }
+
+    for (xml_node edge_bottom = dag.child("child"); edge_bottom; edge_bottom = edge_bottom.next_sibling("child"))
+      {
+        Task *dest = get_task(edge_bottom.attribute("ref").value());
+
+	for (xml_node edge_top = edge_bottom.child("parent"); edge_top; edge_top = edge_top.next_sibling("parent"))
+	  {
+	    Task *source = get_task(edge_top.attribute("ref").value());
+	    
+	    //std::cout << "Test : " << source->id << " --> " << dest->id << std::endl;
+	    
+	    add_edge(*source,*dest);
+	  }
+      }
+
+    /* Testing things
+    std::cout << get_source_tasks().size() << std::endl;
+
+    Task *stuff1 = get_task("ID00017");
+    Task *stuff2 = get_task("ID00018");
+
+    std::cout << stuff1->execution_time << std::endl;
+
+    add_edge(*stuff1,*stuff2);
+
+    std::cout << get_source_tasks().size() << std::endl;
+    */
+    
     /*
     // Let's try to read the number of machines in the XML document
     xbt_assert(doc.HasMember("nb_res"), "Invalid XML file '%s': the 'nb_res' field is missing", xml_filename.c_str());
@@ -66,25 +107,36 @@ void Workflow::check_validity()
   return;
 }
 
-void Workflow::add_task(Task task) {
-  this->tasks.push_back(task);
+void Workflow::add_task(Task &task) {
+  this->tasks[task.id] = &task;
 }
 
-std::vector<Task>* Workflow::get_source_tasks() {
-  std::vector<Task> *task_list = new std::vector<Task>;
-  for(std::vector<Task>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
-    if ((*it).parents.empty()) {
-      task_list->push_back(*it);
+Task * Workflow::get_task(std::string id) {
+	  return this->tasks[id];
+}
+
+void Workflow::add_edge(Task &parent, Task &child)
+{
+  child.parents.push_back(&parent);
+  parent.children.push_back(&child);
+}
+
+
+std::vector<Task *> Workflow::get_source_tasks() {
+  std::vector<Task *> task_list;
+  for(std::map<std::string, Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+    if ((it->second)->parents.empty()) {
+      task_list.push_back(it->second);
     }
   }
   return task_list;
 }
 
-std::vector<Task>* Workflow::get_sink_tasks() {
-  std::vector<Task> *task_list = new std::vector<Task>;
-  for(std::vector<Task>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
-    if ((*it).children.empty()) {
-      task_list->push_back(*it);
+std::vector<Task *> Workflow::get_sink_tasks() {
+  std::vector<Task *> task_list;
+  for(std::map<std::string, Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+    if ((it->second)->children.empty()) {
+      task_list.push_back(it->second);
     }
   }
   return task_list;
@@ -92,37 +144,28 @@ std::vector<Task>* Workflow::get_sink_tasks() {
 
 
 
-Task::Task(const int num_procs, const double execution_time)
+Task::Task(const int num_procs, const double execution_time, std::string id)
 {
     this->num_procs = num_procs;
     this->execution_time = execution_time;
+    this->id = id;
     this->batsim_job = nullptr;
 }
 
 Task::~Task()
 {
-    parents.clear();
-    children.clear();
+    delete &(this->id);
+    this->parents.clear();
+    this->children.clear();
 }
 
 
-void Task::add_parent(Task parent)
-{
-  this->parents.push_back(parent);
-}
-
-
-void Task::add_child(Task child)
-{
-  this->children.push_back(child);
-}
 
 void Task::set_batsim_job(Job batsim_job)
 {
   this->batsim_job = &batsim_job;
 
 }
-
 
 
 Workflows::Workflows()
@@ -132,12 +175,12 @@ Workflows::Workflows()
 
 Workflows::~Workflows()
 {
-    // for (auto mit : _workflows)
-    // {
-    //     Workflow * workflow = mit.second;
-    //     delete workflow;
-    // }
-    // _workflows.clear();
+  for (auto mit : _workflows)
+    {
+      Workflow * workflow = mit.second;
+      delete workflow;
+    }
+  _workflows.clear();
 }
 
 Workflow *Workflows::operator[](const std::string &workflow_name)
@@ -153,17 +196,17 @@ const Workflow *Workflows::operator[](const std::string &workflow_name) const
 Workflow *Workflows::at(const std::string &workflow_name)
 {
     xbt_assert(exists(workflow_name));
-    xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
-    return nullptr;
-    //return _workflows.at(workflow_name);
+    //    xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
+    //    return nullptr;
+    return _workflows.at(workflow_name);
 }
 
 const Workflow *Workflows::at(const std::string &workflow_name) const
 {
     xbt_assert(exists(workflow_name));
-    xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
-    return nullptr;
-    //return _workflows.at(workflow_name);
+    //xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
+    //return nullptr;
+    return _workflows.at(workflow_name);
 }
 
 void Workflows::insert_workflow(const std::string &workflow_name, Workflow *workflow)
@@ -172,23 +215,23 @@ void Workflows::insert_workflow(const std::string &workflow_name, Workflow *work
     xbt_assert(!exists(workflow->name));
 
     workflow->name = workflow_name;
-    //    _workflows[workflow_name] = workflow;
+    _workflows[workflow_name] = workflow;
 }
 
 bool Workflows::exists(const std::string &workflow_name) const
 {
-    xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
-    return workflow_name == "mmh";
-    //return _workflows.count(workflow_name) == 1;
+  //xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
+  //return workflow_name == "mmh";
+    return _workflows.count(workflow_name) == 1;
 }
 
-// std::map<std::string, Workflow *> &Workflows::workflows()
-// {
-//     return _workflows;
-// }
+std::map<std::string, Workflow *> &Workflows::workflows()
+{
+  return _workflows;
+}
 
-// const std::map<std::string, Workflow *> &Workflows::workflows() const
-// {
-//     return _workflows;
-// }
+const std::map<std::string, Workflow *> &Workflows::workflows() const
+{
+  return _workflows;
+}
 

@@ -7,6 +7,8 @@
 
 #include <string>
 #include <vector>
+#include <cstddef>
+#include <map>
 
 #ifndef HEADER_PUGIXML_HPP
 #       include "pugixml-1.7/pugixml.hpp"
@@ -46,21 +48,31 @@ public:
     /**
      * @brief Adds a task to the workflow
      */
-    void add_task(Task task);
+    void add_task(Task &task);
+
+    /**
+     * @brief Get a task based on its ID
+     */
+    Task *get_task(std::string id);
+
+    /**
+     * @brief Add an edge between a parent task and a child task
+     */
+    void add_edge(Task &parent, Task &child);
 
     /**
      * @brief Get source tasks
      */
-    std::vector<Task>* get_source_tasks();
+    std::vector<Task *>  get_source_tasks();
 
     /**
      * @brief Get sink tasks
      */
-    std::vector<Task>* get_sink_tasks();
+    std::vector<Task *> get_sink_tasks();
 
 public:
     std::string name; //!< The Workflow name
-    std::vector<Task> tasks;  //!< References to all tasks
+    std::map<std::string, Task *> tasks; //!< Hashmap of all tasks
 
 private:
     pugi::xml_document dax_tree; //!< The DAX tree
@@ -76,22 +88,12 @@ public:
     /**
      * @brief Constructor
      */
-    Task(const int num_procs, const double execution_time);
+    Task(const int num_procs, const double execution_time, std::string id);
 
     /**
      * @brief Destructor
      */
     ~Task();
-
-    /**
-     * @brief Add a parent to a task
-     */
-    void add_parent(Task parent_task);
-
-    /**
-     * @brief Add a child to a task
-     */
-    void add_child(Task child_task);
 
     /**
      * @brief Associates a batsim Job to the task
@@ -102,9 +104,10 @@ public:
 public:
     int num_procs; //!< The number of processors needed for the tas
     double execution_time; //!< The execution time of the task
-    Job *batsim_job; //!< The batsim job created for this task
-    std::vector<Task> parents; //!< The parent
-    std::vector<Task> children; //!< The children
+    std::string id; //!< The task id
+    Job *batsim_job = nullptr; //!< The batsim job created for this task
+    std::vector<Task *> parents; //!< The parent
+    std::vector<Task *> children; //!< The children
 
 };
 
@@ -177,15 +180,15 @@ public:
      * @brief Gets the internal map
      * @return The internal map
      */
-  //   std::map<std::string, Workflow*> & workflows();
+     std::map<std::string, Workflow*> & workflows();
 
     /**
      * @brief Gets the internal map (const version)
      * @return The internal map (const version)
      */
-  //    const std::map<std::string, Workflow*> & workflows() const;
+      const std::map<std::string, Workflow*> & workflows() const;
 
 private:
-  //    std::map<std::string, Workflow*> _workflows; //!< Associates Workflows with their names
+     std::map<std::string, Workflow*> _workflows; //!< Associates Workflows with their names
 };
 
