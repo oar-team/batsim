@@ -47,15 +47,26 @@ void Workflow::load_from_xml(const std::string &xml_filename)
 
     for (xml_node job = dag.child("job"); job; job = job.next_sibling("job"))
       {
-	Task task (1, strtod(job.attribute("runtime").value(),NULL), job.attribute("id").value());
-	std::cout << "Test : " << job.attribute("id").value() << ", duration : " << task.execution_time << std::endl;
+        Task *task = new Task (1, strtod(job.attribute("runtime").value(),NULL), job.attribute("id").value());
+	//std::cout << "Test : " << job.attribute("id").value() << ", duration : " << strtod(job.attribute("runtime").value(),NULL) << std::endl;
+       	//std::cout << "Test : " << job.attribute("id").value() << ", duration : " << task->execution_time << std::endl;
 
-	add_task(task);
+	add_task(*task);
+
       }
-    
 
-    
+    /* Testing things
+    std::cout << get_source_tasks().size() << std::endl;
 
+    Task *stuff1 = get_task("ID00017");
+    Task *stuff2 = get_task("ID00018");
+
+    std::cout << stuff1->execution_time << std::endl;
+
+    add_edge(*stuff1,*stuff2);
+
+    std::cout << get_source_tasks().size() << std::endl;
+    */
     
     /*
     // Let's try to read the number of machines in the XML document
