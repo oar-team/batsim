@@ -78,8 +78,8 @@ void Workflow::load_from_xml(const std::string &xml_filename)
     std::cout << stuff1->execution_time << std::endl;
 
     add_edge(*stuff1,*stuff2);
-
-    std::cout << get_source_tasks().size() << std::endl;
+    
+    std::cout << get_sink_tasks().size() << std::endl;
     */
     
     /*

@@ -320,7 +320,7 @@ int main(int argc, char * argv[])
       
     // Creating an empty placeholder workload for the workflow submitter, if needed
     if (! mainArgs.workflowFilename.empty()) {
-      const string workflow_workload_name = "static";
+      const string workflow_workload_name = "workflow";
       Workload * workflow_workload = new Workload;
       workflow_workload->jobs = nullptr;
       workflow_workload->profiles = nullptr;
@@ -335,6 +335,7 @@ int main(int argc, char * argv[])
 
       Workflow * file_workflow = new Workflow(mainArgs.workflowFilename);
       file_workflow->load_from_xml(mainArgs.workflowFilename);
+      context.workflows.insert_workflow(workflow_workload_name, file_workflow);
     }
 
     XBT_INFO("I don't understand how this is memory is not out of scope here: %s",(context.workloads.at("static"))->name.c_str());
