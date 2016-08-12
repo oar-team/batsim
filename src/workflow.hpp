@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <cstddef>
+#include <map>
 
 #ifndef HEADER_PUGIXML_HPP
 #       include "pugixml-1.7/pugixml.hpp"
@@ -178,15 +179,15 @@ public:
      * @brief Gets the internal map
      * @return The internal map
      */
-  //   std::map<std::string, Workflow*> & workflows();
+     std::map<std::string, Workflow*> & workflows();
 
     /**
      * @brief Gets the internal map (const version)
      * @return The internal map (const version)
      */
-  //    const std::map<std::string, Workflow*> & workflows() const;
+      const std::map<std::string, Workflow*> & workflows() const;
 
 private:
-  //    std::map<std::string, Workflow*> _workflows; //!< Associates Workflows with their names
+     std::map<std::string, Workflow*> _workflows; //!< Associates Workflows with their names
 };
 

@@ -132,12 +132,12 @@ Workflows::Workflows()
 
 Workflows::~Workflows()
 {
-    // for (auto mit : _workflows)
-    // {
-    //     Workflow * workflow = mit.second;
-    //     delete workflow;
-    // }
-    // _workflows.clear();
+  for (auto mit : _workflows)
+    {
+      Workflow * workflow = mit.second;
+      delete workflow;
+    }
+  _workflows.clear();
 }
 
 Workflow *Workflows::operator[](const std::string &workflow_name)
@@ -153,17 +153,17 @@ const Workflow *Workflows::operator[](const std::string &workflow_name) const
 Workflow *Workflows::at(const std::string &workflow_name)
 {
     xbt_assert(exists(workflow_name));
-    xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
-    return nullptr;
-    //return _workflows.at(workflow_name);
+    //    xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
+    //    return nullptr;
+    return _workflows.at(workflow_name);
 }
 
 const Workflow *Workflows::at(const std::string &workflow_name) const
 {
     xbt_assert(exists(workflow_name));
-    xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
-    return nullptr;
-    //return _workflows.at(workflow_name);
+    //xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
+    //return nullptr;
+    return _workflows.at(workflow_name);
 }
 
 void Workflows::insert_workflow(const std::string &workflow_name, Workflow *workflow)
@@ -172,23 +172,23 @@ void Workflows::insert_workflow(const std::string &workflow_name, Workflow *work
     xbt_assert(!exists(workflow->name));
 
     workflow->name = workflow_name;
-    //    _workflows[workflow_name] = workflow;
+    _workflows[workflow_name] = workflow;
 }
 
 bool Workflows::exists(const std::string &workflow_name) const
 {
-    xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
-    return workflow_name == "mmh";
-    //return _workflows.count(workflow_name) == 1;
+  //xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
+  //return workflow_name == "mmh";
+    return _workflows.count(workflow_name) == 1;
 }
 
-// std::map<std::string, Workflow *> &Workflows::workflows()
-// {
-//     return _workflows;
-// }
+std::map<std::string, Workflow *> &Workflows::workflows()
+{
+  return _workflows;
+}
 
-// const std::map<std::string, Workflow *> &Workflows::workflows() const
-// {
-//     return _workflows;
-// }
+const std::map<std::string, Workflow *> &Workflows::workflows() const
+{
+  return _workflows;
+}
 
