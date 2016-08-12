@@ -318,11 +318,17 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
             else:
                 logger.error("Batsim ended unsucessfully (unknown reason)")
 
-            if process.stdout != '':
-                logger.info('Batsim stdout:\n{}'.format(process.stdout))
-
-            if process.stderr != '':
-                logger.info('Batsim stderr:\n{}'.format(process.stderr))
+            for (stream, sname) in [(process.stdout, 'stdout'),
+                                    (process.stderr, 'stderr')]:
+                if stream != '':
+                    max_nb_lines = 10
+                    lines = stream.split('\n')
+                    head = '\n'
+                    if len(lines) > max_nb_lines:
+                        head = '[... only the last {} lines are shown]\n'.format(max_nb_lines)
+                    logger.info('Batsim {s}:\n{h}{l}'.format(s = sname,
+                                                             h = head,
+                                                             l = '\n'.join(lines)))
 
             if self.execution_data.sched_process.running:
                 logger.warning("Killing Sched")
@@ -358,6 +364,18 @@ class SchedLifecycleHandler(ProcessLifecycleHandler):
                 logger.error("Sched ended unsucessfully (exit_code = {})".format(process.exit_code))
             else:
                 logger.error("Sched ended unsucessfully (unknown reason)")
+
+            for (stream, sname) in [(process.stdout, 'stdout'),
+                                    (process.stderr, 'stderr')]:
+                if stream != '':
+                    max_nb_lines = 10
+                    lines = stream.split('\n')
+                    head = '\n'
+                    if len(lines) > max_nb_lines:
+                        head = '[... only the last {} lines are shown]\n'.format(max_nb_lines)
+                    logger.info('Sched {s}:\n{h}{l}'.format(s = sname,
+                                                            h = head,
+                                                            l = '\n'.join(lines)))
 
             if self.execution_data.batsim_process.running:
                 logger.warning("Killing Batsim")
