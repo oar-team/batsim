@@ -322,8 +322,8 @@ int main(int argc, char * argv[])
     const string workflow_workload_name = "workflow";
     if (! mainArgs.workflowFilename.empty()) {
       Workload * workflow_workload = new Workload;
-      workflow_workload->jobs = nullptr;
-      workflow_workload->profiles = nullptr;
+      workflow_workload->jobs = new Jobs;
+      workflow_workload->profiles = new Profiles;
       context.workloads.insert_workload(workflow_workload_name, workflow_workload);
 
       XBT_INFO("Creating workload %s as placeholder for %s", workflow_workload_name.c_str(), mainArgs.workflowFilename.c_str());

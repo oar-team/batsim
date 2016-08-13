@@ -6,6 +6,7 @@
 #include "profiles.hpp"
 
 #include <fstream>
+#include <iostream>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>

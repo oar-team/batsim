@@ -118,20 +118,7 @@ int workflow_submitter_process(int argc, char *argv[])
 
     WorkflowSubmitterProcessArguments * args = (WorkflowSubmitterProcessArguments *) MSG_process_get_data(MSG_process_self());
     BatsimContext * context = args->context;
-    (void) context; // Avoids a unused warning, for future Travis builds
-
-    /* Not needed here for now, since the workflow filename was
-     * passed as an argument, and has already been checked
-
-    xbt_assert(context->workloads.exists(args->workload_name),
-               "Error: a static_job_submitter_process is in charge of workload '%s', "
-               "which does not exist", args->workload_name.c_str());
-     */
-
-    /*
-    const char *workflow_name = args->workflow_name;
-    (void) workflow_name; // Silences unused warning
-    */
+    //(void) context; // Avoids a unused warning, for future Travis builds
 
     // Get the workflow
     xbt_assert(context->workflows.exists(args->workflow_name),
@@ -153,7 +140,66 @@ int workflow_submitter_process(int argc, char *argv[])
     send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
 
     /* Send a Bogus Job and wait for the notification */
-    //Job bogus_job = new Job;
+    Task *task = workflow->get_source_tasks().at(0);
+
+    std::string profile_name = args->workflow_name + "666";
+
+    // TODO: create the profile
+    Profile * profile = new Profile;
+    profile->type = ProfileType::DELAY;
+    DelayProfileData * data = new DelayProfileData;
+    data->delay = task->execution_time;
+    profile->data = data;
+
+    profile->json_description = std::string() + "{" +
+				"\"type\": \"delay\", "+
+				"\"delay\": " + std::to_string(task->execution_time) +
+				"}";
+
+    XBT_INFO("Adding a profile with name %s",profile_name.c_str());
+    context->workloads.at("workflow")->profiles->add_profile(profile_name, profile);
+
+    Job *job = new Job;
+    job->workload = context->workloads.at("workflow");
+    job->number = 666;
+    job->profile = profile_name;
+    //job->submission_time = ???
+    job->walltime = task->execution_time + 10.0; // hack
+    job->required_nb_res = task->num_procs;
+    job->json_description = std::string() + "{" +
+                            "\"id\":666" +  ", " +
+                            "\"subtime\":" + std::to_string(MSG_get_clock()) + ", " +
+                            "\"walltime\":" + std::to_string(job->walltime) + ", " +
+                            "\"res\":" + std::to_string(job->required_nb_res) + ", " +
+                            "\"profile\":" + profile_name + 
+			    "}";
+
+    context->workloads.at("workflow")->jobs->add_job(job);
+                     
+    //job->consumed_energy = ???
+    //job->starting_time = ???
+    job->runtime = task->execution_time;
+
+    // Let's put the metadata about the job into the data storage
+    JobIdentifier job_id(workflow->name, 666);
+    string job_key = RedisStorage::job_key(job_id);
+    string profile_key = RedisStorage::profile_key(workflow->name, job->profile);
+    context->storage.set(job_key, job->json_description);
+    context->storage.set(profile_key, profile->json_description);
+
+    // Let's now continue the simulation
+    JobSubmittedMessage * msg = new JobSubmittedMessage;
+    msg->submitter_name = submitter_name;
+    msg->job_id.workload_name = "workflow";
+    msg->job_id.job_number = 666;
+
+    send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
+  
+    
+
+    XBT_INFO("WAITING FOR CALLBACK");
+    /// WAIT FOR CALLBACK
+    
 
    /*
 
