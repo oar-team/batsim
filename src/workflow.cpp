@@ -28,7 +28,7 @@ Workflow::Workflow(const std::string & name)
 Workflow::~Workflow()
 {
     // delete name;   TOFIX
-    name = nullptr;
+    // name = nullptr;
     tasks.clear();
 
 }

@@ -499,6 +499,8 @@ void exportJobsToCSV(const std::string &filename, const BatsimContext *context)
         string workload_name = mit.first;
         const Workload * workload = mit.second;
 
+	if(workload->jobs)
+	  {
         const auto & jobs = workload->jobs->jobs();
         for (const auto & mit : jobs)
         {
@@ -535,6 +537,7 @@ void exportJobsToCSV(const std::string &filename, const BatsimContext *context)
                 f << job->allocation.to_string_hyphen(" ") << "\n";
             }
         }
+	  }
     }
 
     f.close();
@@ -563,6 +566,8 @@ void exportScheduleToCSV(const std::string &filename, const BatsimContext *conte
     {
         const Workload * workload = mit.second;
 
+	if(workload->jobs)
+	  {
         const auto & jobs = workload->jobs->jobs();
         for (const auto & mit : jobs)
         {
@@ -592,6 +597,7 @@ void exportScheduleToCSV(const std::string &filename, const BatsimContext *conte
                     max_turnaround_time = turnaround_time;
             }
         }
+	  }
     }
 
     XBT_INFO("Makespan=%lf, scheduling_time=%Lf", makespan, seconds_used_by_scheduler);
