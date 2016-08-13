@@ -269,12 +269,15 @@ int uds_server_process(int argc, char *argv[])
                 {
                     const string & workload_name = workload_mit.first;
                     Workload * workload = workload_mit.second;
-                    for (auto & job_mit : workload->jobs->jobs())
-                    {
-                        const Job * job = job_mit.second;
-                        if (job->state == JobState::JOB_STATE_SUBMITTED)
-                            submittedJobs.push_back(workload_name + '!' + std::to_string(job->number));
-                    }
+		    if(workload->jobs)
+		      {
+			for (auto & job_mit : workload->jobs->jobs())
+			  {
+			    const Job * job = job_mit.second;
+			    if (job->state == JobState::JOB_STATE_SUBMITTED)
+			      submittedJobs.push_back(workload_name + '!' + std::to_string(job->number));
+			  }
+		      }
                 }
 
                 string submittedJobsString = boost::algorithm::join(submittedJobs, ", ");
