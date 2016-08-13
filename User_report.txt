@@ -37,3 +37,15 @@ redis-server
 build/batsim -p platforms/small_platform.xml -w workload_profiles/test_workload_profile.json
 
 python2 schedulers/pybatsim/launcher.py fillerSched     workload_profiles/test_workload_profile.json
+
+
+   The hack invocation:
+
+In build/
+./batsim -W ../workload_profiles/GENOME.d.351024866.5.dax -p ../platforms/small_platform.xml -w ../workload_profiles/test_workload_profile.json
+
+In schedulers/pybatsim/
+python2 launcher.py fillerSched ../../workload_profiles/test_workload_profile_hack.json 
+
+And then:
+evalys --gantt --output /tmp/g.pdf out_jobs.csv

@@ -60,6 +60,8 @@ class Batsim(object):
             msg = "J:"
             for (job, (first_res, last_res)) in allocs:
                 self.nb_jobs_scheduled += 1
+                if job.id == 6:
+                    msg += "workflow!"
                 msg += str(job.id)+ "=" + str(first_res) + "-" + str(last_res)+ ";"
 
             msg = msg[:-1] # remove last semicolon
@@ -70,6 +72,8 @@ class Batsim(object):
             msg = "J:"
             for j in jobs:
                 self.nb_jobs_scheduled += 1
+                if j.id == 6:
+                    msg += "workflow!"
                 msg += str(j.id) + "="
                 for r in res[j.id]:
                     msg += str(r) + ","
