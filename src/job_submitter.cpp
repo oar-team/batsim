@@ -167,14 +167,14 @@ int workflow_submitter_process(int argc, char *argv[])
     job->walltime = task->execution_time + 10.0; // hack
     job->required_nb_res = task->num_procs;
     job->json_description = std::string() + "{" +
-                            "\"id\":workflow!6" +  ", " +
+                            "\"id\": 6" +  ", " +
                             "\"subtime\":" + std::to_string(MSG_get_clock()) + ", " +
                             "\"walltime\":" + std::to_string(job->walltime) + ", " +
                             "\"res\":" + std::to_string(job->required_nb_res) + ", " +
-                            "\"profile\":" + profile_name + 
+                            "\"profile\": \"" + profile_name + "\"" +
 			    "}";
 
-    context->workloads.at("workflow")->jobs->add_job(job);
+    //context->workloads.at("workflow")->jobs->add_job(job);
                      
     //job->consumed_energy = ???
     //job->starting_time = ???
