@@ -135,14 +135,15 @@ int workflow_submitter_process(int argc, char *argv[])
 
     SubmitterHelloMessage * hello_msg = new SubmitterHelloMessage;
     hello_msg->submitter_name = submitter_name;
-    hello_msg->enable_callback_on_job_completion = false;
+    hello_msg->enable_callback_on_job_completion = true;
 
     send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
 
     /* Send a Bogus Job and wait for the notification */
     Task *task = workflow->get_source_tasks().at(0);
 
-    std::string profile_name = args->workflow_name + "6";
+    std::string profile_name = args->workflow_name + "2";
+
 
     // TODO: create the profile
     Profile * profile = new Profile;
@@ -161,13 +162,13 @@ int workflow_submitter_process(int argc, char *argv[])
 
     Job *job = new Job;
     job->workload = context->workloads.at("workflow");
-    job->number = 6;
+    job->number = 2;
     job->profile = profile_name;
     //job->submission_time = ???
     job->walltime = task->execution_time + 10.0; // hack
     job->required_nb_res = task->num_procs;
     job->json_description = std::string() + "{" +
-                            "\"id\": 6" +  ", " +
+                            "\"id\": 2" +  ", " +
                             "\"subtime\":" + std::to_string(MSG_get_clock()) + ", " +
                             "\"walltime\":" + std::to_string(job->walltime) + ", " +
                             "\"res\":" + std::to_string(job->required_nb_res) + ", " +
@@ -181,7 +182,7 @@ int workflow_submitter_process(int argc, char *argv[])
     job->runtime = task->execution_time;
 
     // Let's put the metadata about the job into the data storage
-    JobIdentifier job_id(workflow->name, 6);
+    JobIdentifier job_id(workflow->name, 2);
     string job_key = RedisStorage::job_key(job_id);
     string profile_key = RedisStorage::profile_key(workflow->name, job->profile);
     context->storage.set(job_key, job->json_description);
@@ -191,14 +192,23 @@ int workflow_submitter_process(int argc, char *argv[])
     JobSubmittedMessage * msg = new JobSubmittedMessage;
     msg->submitter_name = submitter_name;
     msg->job_id.workload_name = "workflow";
-    msg->job_id.job_number = 6;
+    msg->job_id.job_number = 2;
 
     send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
   
     
 
-    XBT_INFO("WAITING FOR CALLBACK");
     /// WAIT FOR CALLBACK
+    msg_task_t task_notification = NULL;
+    IPMessage *task_notification_data;
+    MSG_task_receive(&(task_notification), submitter_name.c_str());
+    task_notification_data = (IPMessage *) MSG_task_get_data(task_notification);
+    SubmitterJobCompletionCallbackMessage *notification_data = 
+        (SubmitterJobCompletionCallbackMessage *) task_notification_data->data;
+ 
+    XBT_INFO("GOT A COMPLETION NOTIFICATION FOR JOB ID: %s %d", 
+                notification_data->job_id.workload_name.c_str(), 
+                notification_data->job_id.job_number);
     
 
    /*
