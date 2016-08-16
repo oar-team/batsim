@@ -232,7 +232,6 @@ bool Workloads::job_exists(const JobIdentifier &job_id)
 
 Job *Workloads::add_job_if_not_exists(const JobIdentifier &job_id, BatsimContext *context)
 {
-    std::cout << "DEBUG2: ENTERING"  << "\n";
     xbt_assert(this == &context->workloads,
                "Bad Workloads::add_job_if_not_exists call: The given context "
                "does not match the Workloads instance (this=%p, &context->workloads=%p",
@@ -240,11 +239,9 @@ Job *Workloads::add_job_if_not_exists(const JobIdentifier &job_id, BatsimContext
 
     // If the job already exists, let's just return it
     if (job_exists(job_id)) {
-        std::cout << "FOUND IT!!!!!!\n";
         return job_at(job_id);
     }
 
-    std::cout << "DEBUG2: DIDN'T FIND IT"  << "\n";
 
     // Let's create a Workload if needed
     Workload * workload = nullptr;
@@ -257,11 +254,10 @@ Job *Workloads::add_job_if_not_exists(const JobIdentifier &job_id, BatsimContext
     else
         workload = at(job_id.workload_name);
 
+
     // Let's retrieve the job information from the data storage
     string job_key = RedisStorage::job_key(job_id);
     string job_json_description = context->storage.get(job_key);
-
-    std::cout << "DEBUG2: " << job_json_description.c_str() << "\n";
 
     // Let's create a Job if needed
     Job * job = nullptr;

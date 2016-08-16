@@ -145,6 +145,7 @@ int uds_server_process(int argc, char *argv[])
             }
 
             // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
+            XBT_INFO("GOT JOB: %s %d\n", message->job_id.workload_name.c_str(), message->job_id.job_number);
             Job * job = context->workloads.add_job_if_not_exists(message->job_id, context);
 
             // Update control information
