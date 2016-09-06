@@ -1,4 +1,4 @@
-/**
+/*
  * @file job_submitter.cpp
  * @brief Contains functions related to job submission
  */
@@ -141,71 +141,17 @@ int workflow_submitter_process(int argc, char *argv[])
     /* Create submitted_tasks map */
     std::map<std::string, Task *> submitted_tasks;
 
+    /* Create ready_tasks vector */
+    std::vector<Task *> ready_tasks = workflow->get_source_tasks();
 
     /* Pick a task */
-    Task *task = workflow->get_source_tasks().at(0);
+    Task *task = ready_tasks.at(0);
 
     /* Send a Job corresponding to the Task Job */
     string job_key = submit_workflow_task_as_job(context, args->workflow_name, submitter_name, task);
 
     /* Insert the task into the submitted_tasks map */
     submitted_tasks[job_key] = task;
-
-    /*
-    std::string profile_name = args->workflow_name + "2";
-
-
-    Profile * profile = new Profile;
-    profile->type = ProfileType::DELAY;
-    DelayProfileData * data = new DelayProfileData;
-    data->delay = task->execution_time;
-    profile->data = data;
-
-    profile->json_description = std::string() + "{" +
-				"\"type\": \"delay\", "+
-				"\"delay\": " + std::to_string(task->execution_time) +
-				"}";
-
-    XBT_INFO("Adding a profile with name %s",profile_name.c_str());
-    context->workloads.at("workflow")->profiles->add_profile(profile_name, profile);
-
-    Job *job = new Job;
-    job->workload = context->workloads.at("workflow");
-    job->number = 2;
-    job->profile = profile_name;
-    //job->submission_time = ???
-    job->walltime = task->execution_time + 10.0; // hack
-    job->required_nb_res = task->num_procs;
-    job->json_description = std::string() + "{" +
-                            "\"id\": 2" +  ", " +
-                            "\"subtime\":" + std::to_string(MSG_get_clock()) + ", " +
-                            "\"walltime\":" + std::to_string(job->walltime) + ", " +
-                            "\"res\":" + std::to_string(job->required_nb_res) + ", " +
-                            "\"profile\": \"" + profile_name + "\"" +
-			    "}";
-
-    //context->workloads.at("workflow")->jobs->add_job(job);
-                     
-    //job->consumed_energy = ???
-    //job->starting_time = ???
-    job->runtime = task->execution_time;
-
-    // Let's put the metadata about the job into the data storage
-    JobIdentifier job_id(workflow->name, 2);
-    string job_key = RedisStorage::job_key(job_id);
-    string profile_key = RedisStorage::profile_key(workflow->name, job->profile);
-    context->storage.set(job_key, job->json_description);
-    context->storage.set(profile_key, profile->json_description);
-
-    // Let's now continue the simulation
-    JobSubmittedMessage * msg = new JobSubmittedMessage;
-    msg->submitter_name = submitter_name;
-    msg->job_id.workload_name = "workflow";
-    msg->job_id.job_number = 2;
-
-    send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
-  
-    */
 
     /* Wait for callback */
     string completed_job_key = wait_for_job_completion(submitter_name);
@@ -214,23 +160,6 @@ int workflow_submitter_process(int argc, char *argv[])
     Task *completed_task = submitted_tasks[completed_job_key];
 
     XBT_INFO("TASK %s has completed!!!\n", completed_task->id.c_str());
-    
-
-/*
-    /// WAIT FOR CALLBACK
-    msg_task_t task_notification = NULL;
-    IPMessage *task_notification_data;
-    MSG_task_receive(&(task_notification), submitter_name.c_str());
-    task_notification_data = (IPMessage *) MSG_task_get_data(task_notification);
-    SubmitterJobCompletionCallbackMessage *notification_data = 
-        (SubmitterJobCompletionCallbackMessage *) task_notification_data->data;
- 
-    XBT_INFO("GOT A COMPLETION NOTIFICATION FOR JOB ID: %s %d", 
-                notification_data->job_id.workload_name.c_str(), 
-                notification_data->job_id.job_number);
-*/
-
-    
 
     /* Goodbye */
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
