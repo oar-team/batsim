@@ -9,6 +9,7 @@
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾
 
 # Clean test output directories
+\rm -rf test/out/instance_examples
 \rm -rf test/out/unique
 \rm -rf test/out/no_energy
 \rm -rf test/out/space_sharing
@@ -22,6 +23,17 @@ then
     redis-server>/dev/null &
     server_launched_by_me=1
 fi
+
+# Run input examples
+tools/experiments/execute_one_instance.py \
+    -od test/out/instance_examples/pftiny \
+    ./tools/experiments/instance_examples/pybatsim_filler_tiny.yaml
+tools/experiments/execute_one_instance.py \
+    -od test/out/instance_examples/pfmedium \
+    ./tools/experiments/instance_examples/pybatsim_filler_medium.yaml
+tools/experiments/execute_instances.py \
+    -bod test/out/instance_examples/pfmixed \
+    ./tools/experiments/instances_examples/pyfiller_tiny_medium_mixed.yaml
 
 # Run different tests
 tools/experiments/execute_instances.py test/test_unique.yaml -bod test/out/unique
