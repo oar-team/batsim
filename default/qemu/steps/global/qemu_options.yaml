@@ -1,0 +1,18 @@
+# qemu options
+qemu_enable_kvm: "$(egrep '(vmx|svm)' /proc/cpuinfo > /dev/null && echo true)"
+qemu_cpu: 2
+qemu_memory_size: 768
+qemu_monitor_socket: $$kameleon_cwd/qemu_monitor.socket
+qemu_arch: $$arch
+qemu_pidfile: $$kameleon_cwd/qemu.pid
+
+ssh_config_file: $$kameleon_cwd/ssh_config
+out_context:
+  cmd: ssh -F $$ssh_config_file $${kameleon_recipe_name} -t /bin/bash
+  workdir: /root/kameleon_workdir
+  proxy_cache: 10.0.2.2
+
+in_context:
+  cmd: ssh -F $$ssh_config_file $${kameleon_recipe_name} -t /bin/bash
+  workdir: /root/kameleon_workdir
+  proxy_cache: 10.0.2.2

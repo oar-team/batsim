@@ -1,0 +1,118 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# DESCRIPTION: An applicance for batsim experimentation
+#
+#==============================================================================
+
+---
+## Choose one of them the following extends
+
+# Checkpoint only with btrfs
+#checkpoint: btrfs.yaml
+#extend: default/chroot/debian8.yaml
+
+extend: default/virtualbox/debian8.yaml
+
+#extend: default/qemu/debian8.yaml
+
+global:
+  btrfs_volume: "/"
+  virtualbox_memory_size: 2048
+  qemu_memory_size : 2048
+  appliance_formats: tar.gz
+  appliance_tar_compression_level: fast
+  setup_packages: git cmake build-essential e2fsprogs $$setup_packages
+  default_keyboard_layout: fr
+  default_timezone: Europe/Paris
+  root_password: root
+  hostname: batsim
+  simctn_dir: /root
+
+  simgrid_commit: a267ccc
+  batsim_commit: 77efd8b
+  locality_sched_commit: 12df12a
+  oar_commit: 2c7c4df
+
+
+bootstrap:
+  - "@base"
+
+setup:
+  #
+  # General configuration
+  #
+  - "@base"
+  - enable_root_ssh_login
+
+  #
+  # Simulator and schedulers install
+  #
+  - configure_apt_testing
+
+  - simgrid_install:
+    - commit_hash: $$simgrid_commit
+
+  - batsim:
+    # Need testing to be available
+    - install_build_tools:
+      - exec_in: |
+          apt-get -y -t testing install cmake gcc clang
+    - install dependencies:
+      - exec_in: |
+          apt-get -y --force-yes install \
+          libboost-filesystem-dev \
+          libboost-system-dev 2>&1
+      # Install rapidjson (not available in jessy)
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://github.com/miloyip/rapidjson.git
+      - exec_in: |
+          cd $$simctn_dir/rapidjson
+          git checkout 3d5848a # v1.02
+          cp -a include/rapidjson /usr/include
+    - install_test_dependencies:
+      - exec_in: apt-get -y --force-yes install python-pip
+      - exec_in: pip2 install sortedcontainers
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://github.com/mickours/execo.git
+          pip install -e ./execo
+    - do_it:
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://github.com/oar-team/batsim.git
+      - exec_in: |
+          cd $$simctn_dir/batsim
+          git checkout $$batsim_commit
+          mkdir build
+      - exec_in: |
+          cd $$simctn_dir/batsim/build
+          cmake ..
+          make -j$(nproc)
+          make install
+
+  #
+  # Visualization tools
+  #
+  - evalys:
+    - install dependencies:
+      - exec_in: |
+          apt-get -y --force-yes install \
+            python3-pip \
+            python3-pyqt4 \
+            python3-matplotlib \
+            python3-pandas \
+            ipython3-notebook \
+            python3-mpld3
+    - install_evalys:
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://github.com/oar-team/evalys.git
+      - exec_in: |
+          cd $$simctn_dir/evalys
+          pip3 install .
+
+export:
+  - "@base"
