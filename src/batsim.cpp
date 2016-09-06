@@ -59,6 +59,7 @@ struct MainArguments
 
     std::string redis_hostname = "127.0.0.1";               //!< The Redis (data storage) server host name
     int redis_port = 6379;                                  //!< The Redis (data storage) server port
+    string redis_prefix;                                    //!< The Redis (data storage) instance prefix
 
     int limit_machines_count = -1;                          //!< The number of machines to use to compute jobs. -1 : no limit. >= 1 : the number of computation machines
     bool limit_machines_count_by_workload = false;          //!< If set to true, the number of computing machiens to use should be limited by the workload description
@@ -175,7 +176,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
         break;
     case 'T':
         mainArgs->enable_schedule_tracing = false;
-        break;    
+        break;
     case 'v':
     {
         string sArg = arg;
@@ -305,7 +306,7 @@ int main(int argc, char * argv[])
     context.trace_schedule = mainArgs.enable_schedule_tracing;
 
     // Loading the static workload
-    int nb_machines_by_workload;
+    int nb_machines_by_workload = -1;
     const string static_workload_name = "static";
     Workload * static_workload = new Workload;
     if (! mainArgs.workloadFilename.empty()) {
@@ -317,7 +318,7 @@ int main(int argc, char * argv[])
       static_workload->load_from_json(mainArgs.workloadFilename, nb_machines_by_workload);
       context.workloads.insert_workload(static_workload_name, static_workload);
     }
-      
+
     // Creating an empty placeholder workload for the workflow submitter, if needed
     const string workflow_workload_name = "workflow";
     if (! mainArgs.workflowFilename.empty()) {
@@ -413,16 +414,18 @@ int main(int argc, char * argv[])
         }
     }
 
-    // Socket
-    context.socket.create_socket(mainArgs.socketFilename);
-    context.socket.accept_pending_connection();
-
     // Redis
     context.storage.set_instance_key_prefix(absolute_filename(mainArgs.socketFilename));
     context.storage.connect_to_server(mainArgs.redis_hostname, mainArgs.redis_port);
 
-    // Starting the simulated processes
+    // Let's store some metadata about the current instance in the data storage
+    context.storage.set("nb_res", std::to_string(context.machines.nb_machines()));
 
+    // Socket
+    context.socket.create_socket(mainArgs.socketFilename);
+    context.socket.accept_pending_connection();
+
+    // Starting the simulated processes
     XBT_INFO("Creating jobs_submitter process...");
     JobSubmitterProcessArguments * submitterArgs = new JobSubmitterProcessArguments;
     submitterArgs->context = &context;

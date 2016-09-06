@@ -18,4 +18,4 @@ variables:
 #   - output_directory
 
 batsim_command: batsim -p ${platform} -w ${workload} -e ${output_directory}/out
-sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload}
+sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo}

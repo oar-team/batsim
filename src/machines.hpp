@@ -183,6 +183,12 @@ public:
      */
     long double total_consumed_energy(const BatsimContext * context) const;
 
+    /**
+     * @brief Returns the number of computing machines
+     * @return The number of computing machines
+     */
+    int nb_machines() const;
+
 private:
     std::vector<Machine *> _machines; //!< The vector of computing machines
     Machine * _masterMachine = nullptr; //!< The Master host

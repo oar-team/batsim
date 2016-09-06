@@ -274,6 +274,11 @@ long double Machines::total_consumed_energy(const BatsimContext *context) const
     return total_consumed_energy;
 }
 
+int Machines::nb_machines() const
+{
+    return _machines.size();
+}
+
 void Machines::updateMachinesOnJobRun(int jobID, const MachineRange & usedMachines)
 {
     for (auto it = usedMachines.elements_begin(); it != usedMachines.elements_end(); ++it)

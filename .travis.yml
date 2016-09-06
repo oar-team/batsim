@@ -80,6 +80,9 @@ install:
   - git checkout 725fddc # cwd support
   - pip install --user -U -e .
 
+  # Install redis (used by pybatsim)
+  - pip install --user -U redis
+
   # Install sortedcontainers (used in some schedulers, used by the tests)
   - pip install --user -U sortedcontainers
 
