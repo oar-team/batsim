@@ -125,16 +125,6 @@ script:
       sleep 1
     done
 
-  # Let's make sure the our scripts' examples work correctly
-  - cd ${BATSIM_BASE_DIR}
-  - ./tools/experiments/execute_one_instance.py ./tools/experiments/instance_examples/pybatsim_filler_tiny.yaml
-
-  - cd ${BATSIM_BASE_DIR}
-  - ./tools/experiments/execute_one_instance.py ./tools/experiments/instance_examples/pybatsim_filler_medium.yaml
-
-  - cd ${BATSIM_BASE_DIR}
-  - ./tools/experiments/execute_instances.py ./tools/experiments/instances_examples/pyfiller_tiny_medium_mixed.yaml
-
   # Let's run the tests
   - cd ${BATSIM_BASE_DIR}
   - bash -ex ./test/run_tests.sh
