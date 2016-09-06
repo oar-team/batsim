@@ -137,7 +137,7 @@ int workflow_submitter_process(int argc, char *argv[])
     hello_msg->submitter_name = submitter_name;
     hello_msg->enable_callback_on_job_completion = true;
     send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
- 
+
     /* Create submitted_tasks map */
     std::map<std::string, Task *> submitted_tasks;
 
@@ -162,9 +162,9 @@ int workflow_submitter_process(int argc, char *argv[])
     profile->data = data;
 
     profile->json_description = std::string() + "{" +
-				"\"type\": \"delay\", "+
-				"\"delay\": " + std::to_string(task->execution_time) +
-				"}";
+                "\"type\": \"delay\", "+
+                "\"delay\": " + std::to_string(task->execution_time) +
+                "}";
 
     XBT_INFO("Adding a profile with name %s",profile_name.c_str());
     context->workloads.at("workflow")->profiles->add_profile(profile_name, profile);
@@ -182,10 +182,10 @@ int workflow_submitter_process(int argc, char *argv[])
                             "\"walltime\":" + std::to_string(job->walltime) + ", " +
                             "\"res\":" + std::to_string(job->required_nb_res) + ", " +
                             "\"profile\": \"" + profile_name + "\"" +
-			    "}";
+                "}";
 
     //context->workloads.at("workflow")->jobs->add_job(job);
-                     
+
     //job->consumed_energy = ???
     //job->starting_time = ???
     job->runtime = task->execution_time;
@@ -204,7 +204,7 @@ int workflow_submitter_process(int argc, char *argv[])
     msg->job_id.job_number = 2;
 
     send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
-  
+
     */
 
     /* Wait for callback */
@@ -214,7 +214,7 @@ int workflow_submitter_process(int argc, char *argv[])
     Task *completed_task = submitted_tasks[completed_job_key];
 
     XBT_INFO("TASK %s has completed!!!\n", completed_task->id.c_str());
-    
+
 
 /*
     /// WAIT FOR CALLBACK
@@ -222,15 +222,15 @@ int workflow_submitter_process(int argc, char *argv[])
     IPMessage *task_notification_data;
     MSG_task_receive(&(task_notification), submitter_name.c_str());
     task_notification_data = (IPMessage *) MSG_task_get_data(task_notification);
-    SubmitterJobCompletionCallbackMessage *notification_data = 
+    SubmitterJobCompletionCallbackMessage *notification_data =
         (SubmitterJobCompletionCallbackMessage *) task_notification_data->data;
- 
-    XBT_INFO("GOT A COMPLETION NOTIFICATION FOR JOB ID: %s %d", 
-                notification_data->job_id.workload_name.c_str(), 
+
+    XBT_INFO("GOT A COMPLETION NOTIFICATION FOR JOB ID: %s %d",
+                notification_data->job_id.workload_name.c_str(),
                 notification_data->job_id.job_number);
 */
 
-    
+
 
     /* Goodbye */
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
@@ -242,12 +242,20 @@ int workflow_submitter_process(int argc, char *argv[])
     return 0;
 }
 
+/**
+ * @brief TODO
+ * @param context TODO
+ * @param workflow_name TODO
+ * @param submitter_name TODO
+ * @param task TODO
+ * @return TODO
+ */
 static string submit_workflow_task_as_job(BatsimContext *context, string workflow_name, string submitter_name, Task *task) {
 
     static int job_number = 2;    // "glogal" to ensure unique job numbers in job_ids
-		// TODO TODO TODO:  The '2' above is heardcoded for Scheduler HACK
+        // TODO TODO TODO:  The '2' above is heardcoded for Scheduler HACK
 
-    const string workload_name = "workflow"; // TODO: This shouldn't be HARDCODED like this, 
+    const string workload_name = "workflow"; // TODO: This shouldn't be HARDCODED like this,
                                              // but change this right now breaks things
 
     // Create a profile
@@ -257,9 +265,9 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     data->delay = task->execution_time;
     profile->data = data;
     profile->json_description = std::string() + "{" +
-				"\"type\": \"delay\", "+
-				"\"delay\": " + std::to_string(task->execution_time) +
-				"}";
+                "\"type\": \"delay\", "+
+                "\"delay\": " + std::to_string(task->execution_time) +
+                "}";
     string profile_name = workflow_name + "_" + task->id; // Create a profile name
     context->workloads.at(workload_name)->profiles->add_profile(profile_name, profile);
 
@@ -271,7 +279,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
                             "\"walltime\":" + std::to_string(walltime) + ", " +
                             "\"res\":" + std::to_string(task->num_procs) + ", " +
                             "\"profile\": \"" + profile_name + "\"" +
-			    "}";
+                "}";
 
     // Put the metadata about the job into the data storage
     JobIdentifier job_id(workload_name, job_number);
@@ -295,18 +303,23 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
 
     // Return a key
     return id_to_return;
- 
+
 }
 
+/**
+ * @brief TODO
+ * @param submitter_name TODO
+ * @return TODO
+ */
 static string wait_for_job_completion(string submitter_name) {
     msg_task_t task_notification = NULL;
     IPMessage *task_notification_data;
     MSG_task_receive(&(task_notification), submitter_name.c_str());
     task_notification_data = (IPMessage *) MSG_task_get_data(task_notification);
-    SubmitterJobCompletionCallbackMessage *notification_data = 
+    SubmitterJobCompletionCallbackMessage *notification_data =
         (SubmitterJobCompletionCallbackMessage *) task_notification_data->data;
- 
-    return  notification_data->job_id.workload_name + "!" + 
+
+    return  notification_data->job_id.workload_name + "!" +
             std::to_string(notification_data->job_id.job_number);
 
 }

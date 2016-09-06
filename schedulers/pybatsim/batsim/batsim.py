@@ -1,24 +1,36 @@
 #/usr/bin/python2
 
+from __future__ import print_function
+
 import json
-import struct
+import os
+import re
+import redis
 import socket
-import sys, re
+import struct
+import sys
 
 class Batsim(object):
 
-    def __init__(self, json_file, scheduler, validatingmachine=None, server_address = '/tmp/bat_socket', verbose=0):
+    def __init__(self, scheduler, redis_prefix = None,
+                 redis_hostname = 'localhost', redis_port = 6379,
+                 validatingmachine = None,
+                 server_address = '/tmp/bat_socket', verbose=0):
         self.server_address = server_address
         self.verbose = verbose
+
+        if redis_prefix == None:
+            redis_prefix = os.path.abspath(server_address)
+        self.redis = DataStorage(redis_prefix, redis_hostname, redis_port)
+        self.nb_res = int(self.redis.get('nb_res'))
+        self.jobs = dict()
+
         sys.setrecursionlimit(10000)
 
         if validatingmachine is None:
             self.scheduler = scheduler
         else:
             self.scheduler = validatingmachine(scheduler)
-
-        #load json file
-        self._load_json_workload_profile(json_file)
 
         #open connection
         self._connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -33,9 +45,8 @@ class Batsim(object):
         #initialize some public attributes
         self.last_msg_recv_time = -1
 
-        self.nb_jobs_recieved = 0
+        self.nb_jobs_received = 0
         self.nb_jobs_scheduled = 0
-        self.nb_jobs_json = len(self.jobs)
 
         self.scheduler.bs = self
         self.scheduler.onAfterBatsimInit()
@@ -60,8 +71,6 @@ class Batsim(object):
             msg = "J:"
             for (job, (first_res, last_res)) in allocs:
                 self.nb_jobs_scheduled += 1
-                if job.id == 6:
-                    msg += "workflow!"
                 msg += str(job.id)+ "=" + str(first_res) + "-" + str(last_res)+ ";"
 
             msg = msg[:-1] # remove last semicolon
@@ -72,8 +81,6 @@ class Batsim(object):
             msg = "J:"
             for j in jobs:
                 self.nb_jobs_scheduled += 1
-                if j.id == 6:
-                    msg += "workflow!"
                 msg += str(j.id) + "="
                 for r in res[j.id]:
                     msg += str(r) + ","
@@ -136,7 +143,7 @@ class Batsim(object):
         lg_str = self._connection.recv(4)
 
         if not lg_str:
-            print("[BATSIM]: connection is closed by batsim core")
+            print("[BATSIM]: connection closed by batsim core")
             return False
 
         lg = struct.unpack("I",lg_str)[0]
@@ -166,13 +173,12 @@ class Batsim(object):
                 self.scheduler.onNOP()
             elif data[1] == 'S':
                 # Received WORKLOAD_NAME!JOB_ID
-                workload_name, job_id = data[2].split('!')
-                job_id = int(job_id)
+                job_id = data[2]
+                self.jobs[job_id] = self.redis.get_job(job_id)
                 self.scheduler.onJobSubmission(self.jobs[job_id])
-                self.nb_jobs_recieved += 1
+                self.nb_jobs_received += 1
             elif data[1] == 'C':
-                workload_name, job_id = data[2].split('!')
-                job_id = int(job_id)
+                job_id = data[2]
                 j = self.jobs[job_id]
                 j.finish_time = float(data[0])
                 self.scheduler.onJobCompletion(j)
@@ -210,15 +216,26 @@ class Batsim(object):
         self._connection.sendall(msg.encode())
         return True
 
+# High-level access to the Redis data storage system
+class DataStorage(object):
+    def __init__(self, prefix, hostname='localhost', port=6379):
+        self.prefix = prefix
+        self.redis = redis.StrictRedis(host=hostname, port=port)
 
+    def get(self, key):
+        real_key = '{iprefix}:{ukey}'.format(iprefix = self.prefix,
+                                             ukey = key)
+        value = self.redis.get(real_key)
+        assert(value != None), "Redis: No such key '{k}'".format(k = real_key)
+        return value
 
-    def _load_json_workload_profile(self, filename):
-        wkp_file = open(filename)
-        wkp = json.load(wkp_file)
+    def get_job(self, job_id):
+        key = 'job_{job_id}'.format(job_id = job_id)
+        job_str = self.get(key)
 
-        self.nb_res = wkp["nb_res"]
-        self.jobs = {j["id"]: Job(j["id"], j["subtime"], j["walltime"], j["res"], j["profile"]) for j in wkp["jobs"]}
-        #TODO: profiles
+        json_dict = json.loads(job_str)
+        return Job(json_dict["id"], json_dict["subtime"], json_dict["walltime"],
+                   json_dict["res"], json_dict["profile"])
 
 
 class Job(object):

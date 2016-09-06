@@ -4,7 +4,7 @@
 Run PyBatsim Sschedulers.
 
 Usage:
-    launcher.py <scheduler> <json_file> [-p] [-v] [-s <socket>] [-o <options>]
+    launcher.py <scheduler> [-p] [-v] [-s <socket>] [-o <options>]
 
 Options:
     -h --help                                      Show this help message and exit.
@@ -71,24 +71,22 @@ if __name__ == "__main__":
     options = json.loads(arguments['--options'])
 
     scheduler_filename = arguments['<scheduler>']
-    json_filename = arguments['<json_file>']
     socket = arguments['--socket']
+    # TODO: add Redis arguments (hostname, port, prefix)
 
     print "Starting simulation..."
-    print "Workload:", json_filename
     print "Scheduler:", scheduler_filename
     print "Options:", options
     time_start = time.time()
     scheduler = instanciate_scheduler(scheduler_filename, options=options)
 
-    bs = Batsim(json_filename, scheduler, validatingmachine=vm, server_address=socket, verbose=verbose)
+    bs = Batsim(scheduler, validatingmachine=vm, server_address=socket, verbose=verbose)
 
     bs.start()
     time_ran = str(timedelta(seconds=time.time()-time_start))
     print "Simulation ran for: "+time_ran
-    print "Job received:", bs.nb_jobs_recieved, ", scheduled:", bs.nb_jobs_scheduled, ", in the workload:", bs.nb_jobs_json
-    
-    if bs.nb_jobs_recieved != bs.nb_jobs_scheduled or bs.nb_jobs_scheduled != bs.nb_jobs_json:
+    print "Job received:", bs.nb_jobs_received, ", scheduled:", bs.nb_jobs_scheduled
+
+    if bs.nb_jobs_received != bs.nb_jobs_scheduled:
         sys.exit(1)
     sys.exit(0)
-    

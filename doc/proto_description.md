@@ -56,12 +56,12 @@ the job ID of the job which just completed. This part is not mandatory, it depen
 ## Static Job Submission ##
     Batsim -> Scheduler
     0:10.000015|10.000015:S:static!1
-    0:13|12:S:2|12.5:S:3|13:S:static!4
+    0:13|12:S:static!2|12.5:S:static!3|13:S:static!4
 
 ## Static Job Completion ##
     Batsim -> Scheduler
     0:15.836694|15.836694:C:static!1
-    0:40.001320|25:C:2|38.002565:C:static!3
+    0:40.001320|25:C:static!2|38.002565:C:static!3
 
 ## Static Job Allocation ##
     Scheduler -> Batsim
