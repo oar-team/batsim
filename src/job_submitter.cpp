@@ -1,4 +1,4 @@
-/**
+/*
  * @file job_submitter.cpp
  * @brief Contains functions related to job submission
  */
@@ -141,9 +141,11 @@ int workflow_submitter_process(int argc, char *argv[])
     /* Create submitted_tasks map */
     std::map<std::string, Task *> submitted_tasks;
 
+    /* Create ready_tasks vector */
+    std::vector<Task *> ready_tasks = workflow->get_source_tasks();
 
     /* Pick a task */
-    Task *task = workflow->get_source_tasks().at(0);
+    Task *task = ready_tasks.at(0);
 
     /* Send a Job corresponding to the Task Job */
     string job_key = submit_workflow_task_as_job(context, args->workflow_name, submitter_name, task);
@@ -229,7 +231,6 @@ int workflow_submitter_process(int argc, char *argv[])
                 notification_data->job_id.workload_name.c_str(),
                 notification_data->job_id.job_number);
 */
-
 
 
     /* Goodbye */
