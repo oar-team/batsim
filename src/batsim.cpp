@@ -49,8 +49,8 @@ enum class VerbosityLevel
 struct MainArguments
 {
     std::string platformFilename;                           //!< The SimGrid platform filename
-    std::string workloadFilename;                           //!< The JSON workload filename
-    std::string workflowFilename;                           //!< The workflow description filename
+    std::list<std::string> workloadFilename;                           //!< The JSON workload filename
+    std::list<std::string> workflowFilename;                           //!< The workflow description filename
 
     std::string socketFilename = "/tmp/bat_socket";         //!< The Unix Domain Socket filename
 
@@ -99,21 +99,21 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     }
     case 'w':
     {
-        mainArgs->workloadFilename = arg;
-        if (access(mainArgs->workloadFilename.c_str(), R_OK) == -1)
+      ( mainArgs->workloadFilename ).push_back( arg );
+      if (access(((std::string) arg).c_str(), R_OK) == -1)
         {
             mainArgs->abort = true;
-            mainArgs->abortReason += "\n  invalid WORKLOAD_FILE argument: file '" + string(mainArgs->workloadFilename) + "' cannot be read";
+            mainArgs->abortReason += "\n  invalid WORKLOAD_FILE argument: file '" + string(arg) + "' cannot be read";
         }
         break;
     }
     case 'W':
     {
-        mainArgs->workflowFilename = arg;
-        if (access(mainArgs->workflowFilename.c_str(), R_OK) == -1)
+      ( mainArgs->workflowFilename ).push_back( arg );
+      if (access(((std::string) arg).c_str(), R_OK) == -1)
         {
             mainArgs->abort = true;
-            mainArgs->abortReason += "\n  invalid WORKFLOW_FILE argument: file '" + string(mainArgs->workflowFilename) + "' cannot be read";
+            mainArgs->abortReason += "\n  invalid WORKFLOW_FILE argument: file '" + string(arg) + "' cannot be read";
         }
         break;
     }
@@ -307,38 +307,41 @@ int main(int argc, char * argv[])
 
     // Loading the static workload
     int nb_machines_by_workload = -1;
-    const string static_workload_name = "static";
-    Workload * static_workload = new Workload;
-    if (! mainArgs.workloadFilename.empty()) {
-      // TODO note
-      // As we want to make workloads or workflows separately,
-      // requiring a load in in every case is not what we want. I
-      // introduced a if to temporarily fix this, but there are
-      // probably a lot of clean-up to do in the following code
-      static_workload->load_from_json(mainArgs.workloadFilename, nb_machines_by_workload);
-      context.workloads.insert_workload(static_workload_name, static_workload);
+
+    //std::list<Workload *> static_workload_list;
+    // string static_workload_name = "static";
+    
+    for(std::list<std::string>::iterator i=mainArgs.workloadFilename.begin(); i != mainArgs.workloadFilename.end(); i++)
+    {
+      string static_workload_name_local = *i;
+      Workload * static_workload_local = new Workload(*i);
+      //static_workload_list.push_back(static_workload_local);
+      int nb_machines_by_workload_local = -1;
+      static_workload_local->load_from_json(*i, nb_machines_by_workload_local);
+      if( nb_machines_by_workload_local > nb_machines_by_workload )
+	{
+	  nb_machines_by_workload = nb_machines_by_workload_local;
+	}
+      context.workloads.insert_workload(static_workload_name_local, static_workload_local);
     }
 
     // Creating an empty placeholder workload for the workflow submitter, if needed
-    const string workflow_workload_name = "workflow";
-    if (! mainArgs.workflowFilename.empty()) {
-      Workload * workflow_workload = new Workload;
-      workflow_workload->jobs = new Jobs;
-      workflow_workload->profiles = new Profiles;
-      context.workloads.insert_workload(workflow_workload_name, workflow_workload);
+    //    if(mainArgs.workloadFilename.size()>0) {
+      for(std::list<std::string>::iterator i=mainArgs.workflowFilename.begin(); i != mainArgs.workflowFilename.end(); i++)
+	{
+	  string workflow_workload_name = *i;
+	  Workload * workflow_workload = new Workload(*i);
+	  workflow_workload->jobs = new Jobs;
+	  workflow_workload->profiles = new Profiles;
+	  context.workloads.insert_workload(workflow_workload_name, workflow_workload);
 
-      XBT_INFO("Creating workload %s as placeholder for %s", workflow_workload_name.c_str(), mainArgs.workflowFilename.c_str());
-
-      // TODO note
-      // for the time being an exception is thrown if we pass both
-      // workload and workflow; I don't think this is necessary, we
-      // could have job submitters for both type of job source
-
-      Workflow * file_workflow = new Workflow(mainArgs.workflowFilename);
-      file_workflow->load_from_xml(mainArgs.workflowFilename);
-      context.workflows.insert_workflow(workflow_workload_name, file_workflow);
-    }
-
+	  //      XBT_INFO("Creating workload %s as placeholder for %s", workflow_workload_name.c_str(), mainArgs.workflowFilename.c_str());
+	  Workflow * file_workflow = new Workflow(*i);
+	  file_workflow->load_from_xml(*i);
+	  context.workflows.insert_workflow(workflow_workload_name, file_workflow);
+	}
+      //}
+    
     int limit_machines_count = -1;
     if ((mainArgs.limit_machines_count_by_workload) && (mainArgs.limit_machines_count > 0))
         limit_machines_count = min(mainArgs.limit_machines_count, nb_machines_by_workload);
@@ -350,19 +353,19 @@ int main(int argc, char * argv[])
     if (limit_machines_count != -1)
         XBT_INFO("The number of machines will be limited to %d", limit_machines_count);
 
-    XBT_INFO("Checking whether SMPI is used or not...");
-    context.smpi_used = static_workload->jobs->containsSMPIJob();
-    if (!context.smpi_used)
-    {
-        XBT_INFO("SMPI will NOT be used.");
-        MSG_config("host/model", "ptask_L07");
-    }
-    else
-    {
-        XBT_INFO("SMPI will be used.");
-        static_workload->register_smpi_applications();
-        SMPI_init();
-    }
+    // XBT_INFO("Checking whether SMPI is used or not...");
+    // context.smpi_used = static_workload->jobs->containsSMPIJob();
+    // if (!context.smpi_used)
+    // {
+         XBT_INFO("SMPI will NOT be used.");
+         MSG_config("host/model", "ptask_L07");
+    // }
+    // else
+    // {
+    //     XBT_INFO("SMPI will be used.");
+    //     static_workload->register_smpi_applications();
+    //     SMPI_init();
+    // }
 
     if (context.trace_schedule)
         context.paje_tracer.setFilename(mainArgs.exportPrefix + "_schedule.trace");
@@ -426,21 +429,26 @@ int main(int argc, char * argv[])
     context.socket.accept_pending_connection();
 
     // Starting the simulated processes
-    XBT_INFO("Creating jobs_submitter process...");
-    JobSubmitterProcessArguments * submitterArgs = new JobSubmitterProcessArguments;
-    submitterArgs->context = &context;
-    submitterArgs->workload_name = static_workload_name;
-    MSG_process_create("jobs_submitter", static_job_submitter_process, (void*)submitterArgs, masterMachine->host);
-    XBT_INFO("The jobs_submitter process has been created.");
 
-    if (! mainArgs.workflowFilename.empty())
+    for(std::list<std::string>::iterator i=mainArgs.workloadFilename.begin(); i != mainArgs.workloadFilename.end(); i++)
     {
-        XBT_INFO("Creating workflow_submitter process...");
-        WorkflowSubmitterProcessArguments * submitterArgs = new WorkflowSubmitterProcessArguments;
-        submitterArgs->context = &context;
-        submitterArgs->workflow_name = workflow_workload_name;
-        MSG_process_create("workflow_submitter", workflow_submitter_process, (void*)submitterArgs, masterMachine->host);
-        XBT_INFO("The workflow_submitter process has been created.");
+      XBT_INFO("Creating jobs_submitter process...");
+      JobSubmitterProcessArguments * submitterArgs = new JobSubmitterProcessArguments;
+      submitterArgs->context = &context;
+      submitterArgs->workload_name = *i;
+      MSG_process_create("jobs_submitter", static_job_submitter_process, (void*)submitterArgs, masterMachine->host);
+      XBT_INFO("The jobs_submitter process has been created.");
+    }
+
+    // Creating an empty placeholder workload for the workflow submitter, if needed
+    for(std::list<std::string>::iterator i=mainArgs.workflowFilename.begin(); i != mainArgs.workflowFilename.end(); i++)
+    {
+      XBT_INFO("Creating workflow_submitter process...");
+      WorkflowSubmitterProcessArguments * submitterArgs = new WorkflowSubmitterProcessArguments;
+      submitterArgs->context = &context;
+      submitterArgs->workflow_name = *i;
+      MSG_process_create("workflow_submitter", workflow_submitter_process, (void*)submitterArgs, masterMachine->host);
+      XBT_INFO("The workflow_submitter process has been created.");
     }
 
 

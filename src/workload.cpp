@@ -22,13 +22,14 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(workload, "workload"); //!< Logging
 
-Workload::Workload()
+Workload::Workload(std::string arg_name)
 {
     jobs = new Jobs;
     profiles = new Profiles;
 
     jobs->setProfiles(profiles);
     jobs->setWorkload(this);
+    this->name = arg_name;
 }
 
 Workload::~Workload()
@@ -247,8 +248,8 @@ Job *Workloads::add_job_if_not_exists(const JobIdentifier &job_id, BatsimContext
     Workload * workload = nullptr;
     if (!exists(job_id.workload_name))
     {
-        workload = new Workload;
-        workload->name = job_id.workload_name;
+      workload = new Workload(job_id.workload_name);
+      //        workload->name = job_id.workload_name;
         insert_workload(job_id.workload_name, workload);
     }
     else

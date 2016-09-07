@@ -39,6 +39,6 @@ struct BatsimContext
     bool allow_space_sharing;                       //!< Stores whether space sharing (using the same machines to compute different jobs) should be allowed
     bool trace_schedule;                            //!< Stores whether the resulting schedule should be outputted
     std::string platform_filename;                  //!< The name of the platform file
-    std::string workload_filename;                  //!< The name of the workload file
+    std::list<std::string> workload_filename;       //!< The list of names of the workload files
     std::string export_prefix;                      //!< The output export prefix
 };

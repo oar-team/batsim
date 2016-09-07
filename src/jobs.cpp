@@ -4,6 +4,7 @@
  */
 
 #include "jobs.hpp"
+#include "workload.hpp"
 
 #include <string>
 #include <fstream>
@@ -194,6 +195,8 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     json_desc.Accept(writer);
     j->json_description = buffer.GetString();
+
+    XBT_INFO("Loaded job %d from workload %s", (int) j->number, j->workload->name.c_str() );
 
     return j;
 }

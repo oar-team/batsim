@@ -23,7 +23,7 @@ public:
     /**
      * @brief Builds an empty Workload
      */
-    Workload();
+  Workload(std::string workload_name);
 
     /**
      * @brief Destroys a Workload
