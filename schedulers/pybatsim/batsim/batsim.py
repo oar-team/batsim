@@ -67,7 +67,9 @@ class Batsim(object):
         allocs should have the followinf format:
         [ (job, (first res, last res)), (job, (first res, last res)), ...]
         """
+
         if len(allocs) > 0:
+
             msg = "J:"
             for (job, (first_res, last_res)) in allocs:
                 self.nb_jobs_scheduled += 1

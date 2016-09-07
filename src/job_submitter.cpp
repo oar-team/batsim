@@ -253,11 +253,8 @@ int workflow_submitter_process(int argc, char *argv[])
  */
 static string submit_workflow_task_as_job(BatsimContext *context, string workflow_name, string submitter_name, Task *task) {
 
-    static int job_number = 2;    // "glogal" to ensure unique job numbers in job_ids
-        // TODO TODO TODO:  The '2' above is heardcoded for Scheduler HACK
-
-    const string workload_name = "workflow"; // TODO: This shouldn't be HARDCODED like this,
-                                             // but change this right now breaks things
+    static int job_number = 0;    // "glogal" to ensure unique job numbers in job_ids
+    const string workload_name = workflow_name;
 
     // Create a profile
     Profile * profile = new Profile;
@@ -275,7 +272,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     // Create JSON description of Job corresponding to Task
     double walltime = task->execution_time + 10.0;
     string json_description = std::string() + "{" +
-                            "\"id\": " + std::to_string(job_number) +  ", " +
+                            "\"id\": \"" + workload_name + "!" + std::to_string(job_number) +  "\", " +
                             "\"subtime\":" + std::to_string(MSG_get_clock()) + ", " +
                             "\"walltime\":" + std::to_string(walltime) + ", " +
                             "\"res\":" + std::to_string(task->num_procs) + ", " +

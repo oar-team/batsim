@@ -258,11 +258,13 @@ Job *Workloads::add_job_if_not_exists(const JobIdentifier &job_id, BatsimContext
     // Let's retrieve the job information from the data storage
     string job_key = RedisStorage::job_key(job_id);
     string job_json_description = context->storage.get(job_key);
+    XBT_INFO("JOB INFO: %s", job_json_description.c_str());
 
     // Let's create a Job if needed
     Job * job = nullptr;
     if (!workload->jobs->exists(job_id.job_number))
     {
+	XBT_INFO("CREATING JOB %d FOR WORKLOAD %s",job_id.job_number, workload->name.c_str());
         job = Job::from_json(job_json_description, workload);
         xbt_assert(job_id.job_number == job->number,
                    "Cannot add dynamic job %s!%d: JSON job number mismatch (%d)",

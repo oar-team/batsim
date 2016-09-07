@@ -160,8 +160,18 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
     xbt_assert(json_desc.IsObject(), "Invalid JSON: one job is not an object");
 
     xbt_assert(json_desc.HasMember("id"), "Invalid JSON: one job has no 'id' field");
-    xbt_assert(json_desc["id"].IsInt(), "Invalid JSON: one job has a non-integral 'id' field ('%s')", json_desc["id"].GetString());
-    j->number = json_desc["id"].GetInt();
+
+    if (json_desc["id"].IsInt()) {
+      j->number = json_desc["id"].GetInt();
+
+    } else if (json_desc["id"].IsString()) {
+         vector<string> job_identifier_parts;
+         boost::split(job_identifier_parts, (const std::string) (json_desc["id"].GetString()), 
+                  boost::is_any_of("!"), boost::token_compress_on);
+          j->number = std::stoi(job_identifier_parts[1]);
+    } else {
+      xbt_assert(0, "Job ID is neither a string nor an integer");
+    }
 
     xbt_assert(json_desc.HasMember("subtime"), "Invalid JSON: job %d has no 'subtime' field", j->number);
     xbt_assert(json_desc["subtime"].IsNumber(), "Invalid JSON: job %d has a non-number 'subtime' field", j->number);
