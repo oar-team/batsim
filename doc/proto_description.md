@@ -18,6 +18,9 @@ by a request-reply protocol. When Batsim needs a scheduling decision, the follow
 4. Batsim receives and reads the reply.
 5. Batsim resumes the simulation.
 
+This protocol is used for synchronization purpose. Metadata associated to the
+jobs are shared via Redis, as described [here](data_storage_description.md)
+
 # Message Composition #
 
 All messages sent in this protocol are assumed to have the format MSG_SIZE MSG_CONTENT where:
