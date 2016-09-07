@@ -30,7 +30,10 @@ int static_job_submitter_process(int argc, char *argv[])
                "which does not exist", args->workload_name.c_str());
 
     Workload * workload = context->workloads.at(args->workload_name);
-    const string submitter_name = "static_submitter";
+
+    XBT_INFO("Nom : %s", (args->workload_name).c_str() );
+    
+    string submitter_name = args->workload_name + "_submitter";
 
     /*  ░░░░░░░░▄▄▄███░░░░░░░░░░░░░░░░░░░░
         ░░░▄▄██████████░░░░░░░░░░░░░░░░░░░
@@ -71,6 +74,8 @@ int static_job_submitter_process(int argc, char *argv[])
 
     sort(jobsVector.begin(), jobsVector.end(), job_comparator_subtime);
 
+    XBT_INFO("taille vecteur : %d", (int) jobsVector.size() );
+    
     if (jobsVector.size() > 0)
     {
         const Job * first_submitted_job = *jobsVector.begin();
