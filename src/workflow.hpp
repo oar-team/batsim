@@ -108,7 +108,7 @@ public:
     Job *batsim_job = nullptr; //!< The batsim job created for this task
     std::vector<Task *> parents; //!< The parent
     std::vector<Task *> children; //!< The children
-
+    int nb_parent_completed; //!< The number of preceding tasks completed
 };
 
 
