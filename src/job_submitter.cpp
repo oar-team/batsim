@@ -141,6 +141,9 @@ int workflow_submitter_process(int argc, char *argv[])
 
     XBT_INFO("I AM A WORKFLOW SUBMITTER FOR WORKFLOW %s!", args->workflow_name.c_str());
 
+    /* Initializing my task_id counter */
+    task_id_counters[workflow->name] = 0;
+
     /* Hello */
     SubmitterHelloMessage * hello_msg = new SubmitterHelloMessage;
     hello_msg->submitter_name = submitter_name;
@@ -266,17 +269,10 @@ int workflow_submitter_process(int argc, char *argv[])
  */
 static string submit_workflow_task_as_job(BatsimContext *context, string workflow_name, string submitter_name, Task *task) {
 
-    static int first_time = 1;
     const string workload_name = workflow_name;
 
-    if (first_time) {
-	first_time = 0;
-	task_id_counters[workflow_name] = 0;
-    }  else {
-	task_id_counters[workflow_name]++;
-    }
-
     int job_number = task_id_counters[workflow_name];
+    task_id_counters[workflow_name]++;
 
     // Create a profile
     Profile * profile = new Profile;
