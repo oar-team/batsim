@@ -120,6 +120,9 @@ int static_job_submitter_process(int argc, char *argv[])
 static string submit_workflow_task_as_job(BatsimContext *context, string workflow_name, string submitter_name, Task *task);
 static string wait_for_job_completion(string submitter_name);
 
+/* Ugly Global */
+std::map<std::string, int> task_id_counters;
+
 int workflow_submitter_process(int argc, char *argv[])
 {
     (void) argc;
@@ -263,8 +266,17 @@ int workflow_submitter_process(int argc, char *argv[])
  */
 static string submit_workflow_task_as_job(BatsimContext *context, string workflow_name, string submitter_name, Task *task) {
 
-    static int job_number = 0;    // "glogal" to ensure unique job numbers in job_ids
+    static int first_time = 1;
     const string workload_name = workflow_name;
+
+    if (first_time) {
+	first_time = 0;
+	task_id_counters[workflow_name] = 0;
+    }  else {
+	task_id_counters[workflow_name]++;
+    }
+
+    int job_number = task_id_counters[workflow_name];
 
     // Create a profile
     Profile * profile = new Profile;
@@ -306,8 +318,6 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     // Create an ID to return
     string id_to_return = workload_name + "!" + std::to_string(job_number);
 
-    // Increment the job_number
-    job_number++;
 
     // Return a key
     return id_to_return;
