@@ -198,6 +198,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
     */
 
     // Let us split the message by '|'.
+
     vector<string> events;
     boost::split(events, message_received, boost::is_any_of("|"), boost::token_compress_on);
     xbt_assert(events.size() >= 2, "Invalid message received ('%s'): it should be composed of at least 2 parts separated by a '|'", message_received.c_str());
@@ -278,6 +279,9 @@ int request_reply_scheduler_process(int argc, char *argv[])
 
                     Job * job = context->workloads.job_at(alloc->job_id);
                     (void) job; // Avoids a warning if assertions are ignored
+		    XBT_INFO("JOB_STATE (job %d): %d ('0' means 'not submitted')", 
+                                      job->number, job->state);
+
                     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                                "Invalid static job allocation received ('%s') : the job %d state indicates it cannot be executed now",
                                allocation_string.c_str(), job->number);
@@ -478,6 +482,7 @@ bool identify_job_from_string(BatsimContext * context,
 
     if (job_identifier_parts.size() == 1)
     {
+	XBT_INFO("WARNING: Job ID is not of format WORKLOAD!NUMBER... assuming static!");
         job_id.workload_name = "static";
         job_id.job_number = std::stoi(job_identifier_parts[0]);
     }

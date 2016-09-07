@@ -22,13 +22,14 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(workload, "workload"); //!< Logging
 
-Workload::Workload()
+Workload::Workload(std::string arg_name)
 {
     jobs = new Jobs;
     profiles = new Profiles;
 
     jobs->setProfiles(profiles);
     jobs->setWorkload(this);
+    this->name = arg_name;
 }
 
 Workload::~Workload()
@@ -247,8 +248,8 @@ Job *Workloads::add_job_if_not_exists(const JobIdentifier &job_id, BatsimContext
     Workload * workload = nullptr;
     if (!exists(job_id.workload_name))
     {
-        workload = new Workload;
-        workload->name = job_id.workload_name;
+      workload = new Workload(job_id.workload_name);
+      //        workload->name = job_id.workload_name;
         insert_workload(job_id.workload_name, workload);
     }
     else
@@ -258,11 +259,13 @@ Job *Workloads::add_job_if_not_exists(const JobIdentifier &job_id, BatsimContext
     // Let's retrieve the job information from the data storage
     string job_key = RedisStorage::job_key(job_id);
     string job_json_description = context->storage.get(job_key);
+    XBT_INFO("JOB INFO: %s", job_json_description.c_str());
 
     // Let's create a Job if needed
     Job * job = nullptr;
     if (!workload->jobs->exists(job_id.job_number))
     {
+	XBT_INFO("CREATING JOB %d FOR WORKLOAD %s",job_id.job_number, workload->name.c_str());
         job = Job::from_json(job_json_description, workload);
         xbt_assert(job_id.job_number == job->number,
                    "Cannot add dynamic job %s!%d: JSON job number mismatch (%d)",

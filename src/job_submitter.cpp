@@ -30,7 +30,10 @@ int static_job_submitter_process(int argc, char *argv[])
                "which does not exist", args->workload_name.c_str());
 
     Workload * workload = context->workloads.at(args->workload_name);
-    const string submitter_name = "static_submitter";
+
+    XBT_INFO("Nom : %s", (args->workload_name).c_str() );
+    
+    string submitter_name = args->workload_name + "_submitter";
 
     /*  ░░░░░░░░▄▄▄███░░░░░░░░░░░░░░░░░░░░
         ░░░▄▄██████████░░░░░░░░░░░░░░░░░░░
@@ -71,6 +74,8 @@ int static_job_submitter_process(int argc, char *argv[])
 
     sort(jobsVector.begin(), jobsVector.end(), job_comparator_subtime);
 
+    XBT_INFO("taille vecteur : %d", (int) jobsVector.size() );
+    
     if (jobsVector.size() > 0)
     {
         const Job * first_submitted_job = *jobsVector.begin();
@@ -86,6 +91,7 @@ int static_job_submitter_process(int argc, char *argv[])
             JobIdentifier job_id(workload->name, job->number);
             string job_key = RedisStorage::job_key(job_id);
             string profile_key = RedisStorage::profile_key(workload->name, job->profile);
+	    XBT_INFO("IN STATIC JOB SUBMITTER: '%s'", job->json_description.c_str());
             context->storage.set(job_key, job->json_description);
             context->storage.set(profile_key, workload->profiles->at(job->profile)->json_description);
 
@@ -114,6 +120,9 @@ int static_job_submitter_process(int argc, char *argv[])
 static string submit_workflow_task_as_job(BatsimContext *context, string workflow_name, string submitter_name, Task *task);
 static string wait_for_job_completion(string submitter_name);
 
+/* Ugly Global */
+std::map<std::string, int> task_id_counters;
+
 int workflow_submitter_process(int argc, char *argv[])
 {
     (void) argc;
@@ -131,6 +140,9 @@ int workflow_submitter_process(int argc, char *argv[])
     const string submitter_name = args->workflow_name + "_submitter";
 
     XBT_INFO("I AM A WORKFLOW SUBMITTER FOR WORKFLOW %s!", args->workflow_name.c_str());
+
+    /* Initializing my task_id counter */
+    task_id_counters[workflow->name] = 0;
 
     /* Hello */
     SubmitterHelloMessage * hello_msg = new SubmitterHelloMessage;
@@ -253,11 +265,10 @@ int workflow_submitter_process(int argc, char *argv[])
  */
 static string submit_workflow_task_as_job(BatsimContext *context, string workflow_name, string submitter_name, Task *task) {
 
-    static int job_number = 2;    // "glogal" to ensure unique job numbers in job_ids
-        // TODO TODO TODO:  The '2' above is heardcoded for Scheduler HACK
+    const string workload_name = workflow_name;
 
-    const string workload_name = "workflow"; // TODO: This shouldn't be HARDCODED like this,
-                                             // but change this right now breaks things
+    int job_number = task_id_counters[workflow_name];
+    task_id_counters[workflow_name]++;
 
     // Create a profile
     Profile * profile = new Profile;
@@ -275,7 +286,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     // Create JSON description of Job corresponding to Task
     double walltime = task->execution_time + 10.0;
     string json_description = std::string() + "{" +
-                            "\"id\": " + std::to_string(job_number) +  ", " +
+                            "\"id\": \"" + workload_name + "!" + std::to_string(job_number) +  "\", " +
                             "\"subtime\":" + std::to_string(MSG_get_clock()) + ", " +
                             "\"walltime\":" + std::to_string(walltime) + ", " +
                             "\"res\":" + std::to_string(task->num_procs) + ", " +
@@ -299,8 +310,6 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     // Create an ID to return
     string id_to_return = workload_name + "!" + std::to_string(job_number);
 
-    // Increment the job_number
-    job_number++;
 
     // Return a key
     return id_to_return;
