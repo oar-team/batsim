@@ -234,6 +234,7 @@ class DataStorage(object):
     def get_job(self, job_id):
         key = 'job_{job_id}'.format(job_id = job_id)
         job_str = self.get(key)
+	print("====> ", job_str)
 
         json_dict = json.loads(job_str)
         return Job(json_dict["id"], json_dict["subtime"], json_dict["walltime"],

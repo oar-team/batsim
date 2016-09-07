@@ -157,6 +157,7 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
     j->runtime = -1;
     j->state = JobState::JOB_STATE_NOT_SUBMITTED;
     j->consumed_energy = -1;
+    string workload_name;
 
     xbt_assert(json_desc.IsObject(), "Invalid JSON: one job is not an object");
 
@@ -164,12 +165,15 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
 
     if (json_desc["id"].IsInt()) {
       j->number = json_desc["id"].GetInt();
+      workload_name = workload->name;
 
     } else if (json_desc["id"].IsString()) {
-         vector<string> job_identifier_parts;
-         boost::split(job_identifier_parts, (const std::string) (json_desc["id"].GetString()), 
-                  boost::is_any_of("!"), boost::token_compress_on);
-          j->number = std::stoi(job_identifier_parts[1]);
+      vector<string> job_identifier_parts;
+      boost::split(job_identifier_parts, (const std::string) (json_desc["id"].GetString()), 
+                boost::is_any_of("!"), boost::token_compress_on);
+      workload_name = job_identifier_parts[0];
+      XBT_INFO("========  %s : %s", workload->name.c_str(), workload_name.c_str());
+      j->number = std::stoi(job_identifier_parts[1]);
     } else {
       xbt_assert(0, "Job ID is neither a string nor an integer");
     }
@@ -191,10 +195,20 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
     j->profile = json_desc["profile"].GetString();
 
     // Let's get the JSON string which describes the job (to conserve potential fields unused by Batsim)
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    json_desc.Accept(writer);
-    j->json_description = buffer.GetString();
+//    rapidjson::StringBuffer buffer;
+//    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+//    json_desc.Accept(writer);
+
+    //j->json_description = buffer.GetString();
+
+    j->json_description = std::string() + "{" +
+                            "\"id\": \"" + workload_name + "!" + std::to_string(j->number) +  "\", " +
+                            "\"subtime\":" + std::to_string(j->submission_time) + ", " +
+                            "\"walltime\":" + std::to_string(j->walltime) + ", " +
+                            "\"res\":" + std::to_string(j->required_nb_res) + ", " +
+                            "\"profile\": \"" + j->profile + "\"" +
+                "}";
+
 
     XBT_INFO("Loaded job %d from workload %s", (int) j->number, j->workload->name.c_str() );
 
