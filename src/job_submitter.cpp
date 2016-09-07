@@ -164,37 +164,50 @@ int workflow_submitter_process(int argc, char *argv[])
 
 
     
-    /* Pick a task */
-    while(!ready_tasks.empty())
+    /* Submit all the ready tasks */
+
+    while((!ready_tasks.empty())||(!submitted_tasks.empty())) /* Stops when there are no more ready tasks or tasks actually running */
       {
-	Task *task = ready_tasks.at(0);
-	ready_tasks.erase(ready_tasks.begin() + 0);
-	
-	/* Send a Job corresponding to the Task Job */
-	string job_key = submit_workflow_task_as_job(context, args->workflow_name, submitter_name, task);
-	
-	XBT_INFO("Inserting task %s", job_key.c_str());
-	
-	/* Insert the task into the submitted_tasks map */
-	submitted_tasks[job_key] = task;
-	
-	/* Wait for callback */
-	string completed_job_key = wait_for_job_completion(submitter_name);
-	
-	XBT_INFO("TASK # %s has completed!!!\n", completed_job_key.c_str());
-	
-	/* Look for the task in the map */
-	Task *completed_task = submitted_tasks[completed_job_key];
-	
-	XBT_INFO("TASK %s has completed!!!\n", completed_task->id.c_str());
-
-	std::vector<Task *> my_kids = completed_task->children;
-	std::transform (my_kids.begin(),my_kids.end(),my_kids.begin(),inc_child);
-
-	for (std::vector<Task *>::iterator kiddo=my_kids.begin(); kiddo!=my_kids.end(); ++kiddo)
+	while(!ready_tasks.empty()) /* we have some ready tasks to submit */
 	  {
-	    if((*kiddo)->nb_parent_completed==(int)(*kiddo)->parents.size())
-	      ready_tasks.push_back(*kiddo);
+	    Task *task = ready_tasks.at(0);
+	    ready_tasks.erase(ready_tasks.begin() + 0);
+	    
+	    /* Send a Job corresponding to the Task Job */
+	    string job_key = submit_workflow_task_as_job(context, args->workflow_name, submitter_name, task);
+	    
+	    XBT_INFO("Inserting task %s", job_key.c_str());
+	    
+	    /* Insert the task into the submitted_tasks map */
+	    submitted_tasks[job_key] = task;
+	  }
+	
+	if(!submitted_tasks.empty()) /* we are done submitting tasks, wait for one to complete */
+	  {
+	    /* Wait for callback */
+	    string completed_job_key = wait_for_job_completion(submitter_name);
+	    
+	    XBT_INFO("TASK # %s has completed!!!\n", completed_job_key.c_str());
+	    
+	    /* Look for the task in the map */
+	    Task *completed_task = submitted_tasks[completed_job_key];
+	    
+	    XBT_INFO("TASK %s has completed!!!\n", completed_task->id.c_str());
+
+	    /* All those poor hungry kids */
+	    std::vector<Task *> my_kids = completed_task->children;
+	    /* tell them they are closer to being elected */
+	    std::transform (my_kids.begin(),my_kids.end(),my_kids.begin(),inc_child);
+
+	    /* look for ready kids */
+	    for (std::vector<Task *>::iterator kiddo=my_kids.begin(); kiddo!=my_kids.end(); ++kiddo)
+	      {
+		if((*kiddo)->nb_parent_completed==(int)(*kiddo)->parents.size())
+		  ready_tasks.push_back(*kiddo);
+	      }
+
+	    /* Nothing left for this task */
+	    submitted_tasks.erase(completed_job_key);
 	  }
       }
 

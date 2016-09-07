@@ -150,6 +150,7 @@ Task::Task(const int num_procs, const double execution_time, std::string id)
     this->execution_time = execution_time;
     this->id = id;
     this->batsim_job = nullptr;
+    this->nb_parent_completed = 0;
 }
 
 Task::~Task()
