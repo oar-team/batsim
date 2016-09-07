@@ -156,6 +156,8 @@ int workflow_submitter_process(int argc, char *argv[])
     /* Send a Job corresponding to the Task Job */
     string job_key = submit_workflow_task_as_job(context, args->workflow_name, submitter_name, task);
 
+    XBT_INFO("Inserting task %s", job_key.c_str());
+    
     /* Insert the task into the submitted_tasks map */
     submitted_tasks[job_key] = task;
 
@@ -217,6 +219,8 @@ int workflow_submitter_process(int argc, char *argv[])
 
     /* Wait for callback */
     string completed_job_key = wait_for_job_completion(submitter_name);
+
+    XBT_INFO("TASK # %s has completed!!!\n", completed_job_key.c_str());
 
     /* Look for the task in the map */
     Task *completed_task = submitted_tasks[completed_job_key];
