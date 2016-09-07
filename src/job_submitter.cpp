@@ -14,6 +14,12 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(job_submitter, "job_submitter"); //!< Logging
 
+Task* inc_child (Task *i)
+{
+  i->nb_parent_completed++;
+
+  return i;
+}
 
 using namespace std;
 
@@ -156,98 +162,41 @@ int workflow_submitter_process(int argc, char *argv[])
     /* Create ready_tasks vector */
     std::vector<Task *> ready_tasks = workflow->get_source_tasks();
 
-    /* Pick a task */
-    Task *task = ready_tasks.at(0);
 
-    /* Send a Job corresponding to the Task Job */
-    string job_key = submit_workflow_task_as_job(context, args->workflow_name, submitter_name, task);
-
-    XBT_INFO("Inserting task %s", job_key.c_str());
     
-    /* Insert the task into the submitted_tasks map */
-    submitted_tasks[job_key] = task;
+    /* Pick a task */
+    while(!ready_tasks.empty())
+      {
+	Task *task = ready_tasks.at(0);
+	ready_tasks.erase(ready_tasks.begin() + 0);
+	
+	/* Send a Job corresponding to the Task Job */
+	string job_key = submit_workflow_task_as_job(context, args->workflow_name, submitter_name, task);
+	
+	XBT_INFO("Inserting task %s", job_key.c_str());
+	
+	/* Insert the task into the submitted_tasks map */
+	submitted_tasks[job_key] = task;
+	
+	/* Wait for callback */
+	string completed_job_key = wait_for_job_completion(submitter_name);
+	
+	XBT_INFO("TASK # %s has completed!!!\n", completed_job_key.c_str());
+	
+	/* Look for the task in the map */
+	Task *completed_task = submitted_tasks[completed_job_key];
+	
+	XBT_INFO("TASK %s has completed!!!\n", completed_task->id.c_str());
 
-    /*
-    std::string profile_name = args->workflow_name + "2";
+	std::vector<Task *> my_kids = completed_task->children;
+	std::transform (my_kids.begin(),my_kids.end(),my_kids.begin(),inc_child);
 
-
-    Profile * profile = new Profile;
-    profile->type = ProfileType::DELAY;
-    DelayProfileData * data = new DelayProfileData;
-    data->delay = task->execution_time;
-    profile->data = data;
-
-    profile->json_description = std::string() + "{" +
-                "\"type\": \"delay\", "+
-                "\"delay\": " + std::to_string(task->execution_time) +
-                "}";
-
-    XBT_INFO("Adding a profile with name %s",profile_name.c_str());
-    context->workloads.at("workflow")->profiles->add_profile(profile_name, profile);
-
-    Job *job = new Job;
-    job->workload = context->workloads.at("workflow");
-    job->number = 2;
-    job->profile = profile_name;
-    //job->submission_time = ???
-    job->walltime = task->execution_time + 10.0; // hack
-    job->required_nb_res = task->num_procs;
-    job->json_description = std::string() + "{" +
-                            "\"id\": 2" +  ", " +
-                            "\"subtime\":" + std::to_string(MSG_get_clock()) + ", " +
-                            "\"walltime\":" + std::to_string(job->walltime) + ", " +
-                            "\"res\":" + std::to_string(job->required_nb_res) + ", " +
-                            "\"profile\": \"" + profile_name + "\"" +
-                "}";
-
-    //context->workloads.at("workflow")->jobs->add_job(job);
-
-    //job->consumed_energy = ???
-    //job->starting_time = ???
-    job->runtime = task->execution_time;
-
-    // Let's put the metadata about the job into the data storage
-    JobIdentifier job_id(workflow->name, 2);
-    string job_key = RedisStorage::job_key(job_id);
-    string profile_key = RedisStorage::profile_key(workflow->name, job->profile);
-    context->storage.set(job_key, job->json_description);
-    context->storage.set(profile_key, profile->json_description);
-
-    // Let's now continue the simulation
-    JobSubmittedMessage * msg = new JobSubmittedMessage;
-    msg->submitter_name = submitter_name;
-    msg->job_id.workload_name = "workflow";
-    msg->job_id.job_number = 2;
-
-    send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
-
-    */
-
-    /* Wait for callback */
-    string completed_job_key = wait_for_job_completion(submitter_name);
-
-    XBT_INFO("TASK # %s has completed!!!\n", completed_job_key.c_str());
-
-    /* Look for the task in the map */
-    Task *completed_task = submitted_tasks[completed_job_key];
-
-    XBT_INFO("TASK %s has completed!!!\n", completed_task->id.c_str());
-
-
-/*
-    /// WAIT FOR CALLBACK
-    msg_task_t task_notification = NULL;
-    IPMessage *task_notification_data;
-    MSG_task_receive(&(task_notification), submitter_name.c_str());
-    task_notification_data = (IPMessage *) MSG_task_get_data(task_notification);
-    SubmitterJobCompletionCallbackMessage *notification_data =
-        (SubmitterJobCompletionCallbackMessage *) task_notification_data->data;
-
-    XBT_INFO("GOT A COMPLETION NOTIFICATION FOR JOB ID: %s %d",
-                notification_data->job_id.workload_name.c_str(),
-                notification_data->job_id.job_number);
-*/
-
+	for (std::vector<Task *>::iterator kiddo=my_kids.begin(); kiddo!=my_kids.end(); ++kiddo)
+	  {
+	    if((*kiddo)->nb_parent_completed==(int)(*kiddo)->parents.size())
+	      ready_tasks.push_back(*kiddo);
+	  }
+      }
 
     /* Goodbye */
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
