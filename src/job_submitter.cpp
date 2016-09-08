@@ -146,6 +146,7 @@ int workflow_submitter_process(int argc, char *argv[])
     const string submitter_name = args->workflow_name + "_submitter";
 
     XBT_INFO("I AM A WORKFLOW SUBMITTER FOR WORKFLOW %s!", args->workflow_name.c_str());
+    XBT_INFO("*************** MY START TIME SHOULD BE: %lf", workflow->start_time);
 
     /* Initializing my task_id counter */
     task_id_counters[workflow->name] = 0;

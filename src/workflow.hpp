@@ -73,6 +73,7 @@ public:
 public:
     std::string name; //!< The Workflow name
     std::map<std::string, Task *> tasks; //!< Hashmap of all tasks
+    double start_time; //!< Workflow start time
 
 private:
     pugi::xml_document dax_tree; //!< The DAX tree

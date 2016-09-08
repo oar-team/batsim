@@ -14,6 +14,9 @@
 #include <simgrid/plugins/energy.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/join.hpp>
+
 
 #include "context.hpp"
 #include "export.hpp"
@@ -51,11 +54,16 @@ struct MainArguments
     std::string platformFilename;                           //!< The SimGrid platform filename
     std::list<std::string> workloadFilename;                           //!< The JSON workload filename
     std::list<std::string> workflowFilename;                           //!< The workflow description filename
+    std::list<double> workflowStartTime;                           //!< The workflow description filename
 
     std::string socketFilename = "/tmp/bat_socket";         //!< The Unix Domain Socket filename
 
     std::string masterHostName = "master_host";             //!< The name of the SimGrid host which runs scheduler processes and not user tasks
     std::string exportPrefix = "out";                       //!< The filename prefix used to export simulation information
+
+    bool stop_when_workflow_finishes = false;		    //!< Stops the simulation as soon as a workflow completes - ignored if no workflow is being simulated
+
+    double workflow_start_time = 0.0;			    //!< Time at which the workflow begins execution
 
     std::string redis_hostname = "127.0.0.1";               //!< The Redis (data storage) server host name
     int redis_port = 6379;                                  //!< The Redis (data storage) server port
@@ -109,13 +117,24 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     }
     case 'W':
     {
-      ( mainArgs->workflowFilename ).push_back( arg );
-      if (access(((std::string) arg).c_str(), R_OK) == -1)
+      // format:   FILENAME[:start_time]
+      vector<string> parts;
+      boost::split(parts, (const std::string)std::string(arg), 
+                   boost::is_any_of(":"), boost::token_compress_on);
+   
+      ( mainArgs->workflowFilename ).push_back( parts.at(0).c_str() );
+      if (access(parts.at(0).c_str(), R_OK) == -1)
         {
             mainArgs->abort = true;
-            mainArgs->abortReason += "\n  invalid WORKFLOW_FILE argument: file '" + string(arg) + "' cannot be read";
+            mainArgs->abortReason += "\n  invalid WORKFLOW_FILE argument: file '" + parts.at(0) + "' cannot be read";
         }
-        break;
+
+      if (parts.size() == 2) { 
+          mainArgs->workflowStartTime.push_back(std::stod(parts.at(1)));
+      } else {
+          mainArgs->workflowStartTime.push_back(0.0);
+      }
+       break;
     }
 
     case 'e':
@@ -215,7 +234,7 @@ int main(int argc, char * argv[])
     {
         {"platform", 'p', "FILENAME", 0, "Platform to be simulated by SimGrid. Required.", 0},
         {"workload", 'w', "FILENAME", 0, "Workload to be submitted to the platform. Required unless a workflow is submitted.", 0},
-        {"workflow", 'W', "FILENAME", 0, "Workflow to be submitted to the platform. Required unless a workload is submitted.", 0},
+        {"workflow", 'W', "FILENAME[:start_time]", 0, "Workflow to be submitted to the platform, with an optional start time. Required unless a workload is submitted.", 0},
 
         {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output. Default value: 'out'", 0},
         {"energy-plugin", 'E', 0, 0, "Enables energy-aware experiments", 0},
@@ -327,7 +346,13 @@ int main(int argc, char * argv[])
 
     // Creating an empty placeholder workload for the workflow submitter, if needed
     //    if(mainArgs.workloadFilename.size()>0) {
-      for(std::list<std::string>::iterator i=mainArgs.workflowFilename.begin(); i != mainArgs.workflowFilename.end(); i++)
+      std::list<std::string>::iterator i;
+      std::list<double>::iterator j;
+      for(i=mainArgs.workflowFilename.begin(),
+          j=mainArgs.workflowStartTime.begin(); 
+          i != mainArgs.workflowFilename.end(),
+          j != mainArgs.workflowStartTime.end(); 
+          i++,j++)
 	{
 	  string workflow_workload_name = *i;
 	  Workload * workflow_workload = new Workload(*i);
@@ -337,6 +362,7 @@ int main(int argc, char * argv[])
 
 	  //      XBT_INFO("Creating workload %s as placeholder for %s", workflow_workload_name.c_str(), mainArgs.workflowFilename.c_str());
 	  Workflow * file_workflow = new Workflow(*i);
+	  file_workflow->start_time = *j;
 	  file_workflow->load_from_xml(*i);
 	  context.workflows.insert_workflow(workflow_workload_name, file_workflow);
 	}
