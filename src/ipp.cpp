@@ -11,7 +11,7 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(ipp, "ipp"); //!< Logging
 
-void send_message(const std::string & destination_mailbox, IPMessageType type, void * data)
+void generic_send_message(const std::string & destination_mailbox, IPMessageType type, void * data, bool detached)
 {
     IPMessage * message = new IPMessage;
     message->type = type;
@@ -22,7 +22,27 @@ void send_message(const std::string & destination_mailbox, IPMessageType type, v
     XBT_INFO("message from '%s' to '%s' of type '%s' with data %p",
              MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(), ipMessageTypeToString(type).c_str(), data);
 
-    MSG_task_send(task_to_send, destination_mailbox.c_str());
+    if (detached)
+      {
+	MSG_task_dsend(task_to_send, destination_mailbox.c_str(), NULL);
+      }
+    else
+      {
+	MSG_task_send(task_to_send, destination_mailbox.c_str());
+      }
+    
+    XBT_INFO("message from '%s' to '%s' of type '%s' with data %p done",
+             MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(), ipMessageTypeToString(type).c_str(), data);
+}
+
+void send_message(const std::string & destination_mailbox, IPMessageType type, void * data)
+{
+  generic_send_message(destination_mailbox, type, data, false);
+}
+
+void dsend_message(const std::string & destination_mailbox, IPMessageType type, void * data)
+{
+  generic_send_message(destination_mailbox, type, data, true);
 }
 
 std::string ipMessageTypeToString(IPMessageType type)
@@ -85,6 +105,12 @@ void send_message(const char *destination_mailbox, IPMessageType type, void *dat
 {
     const string str = destination_mailbox;
     send_message(str, type, data);
+}
+
+void dsend_message(const char *destination_mailbox, IPMessageType type, void *data)
+{
+    const string str = destination_mailbox;
+    dsend_message(str, type, data);
 }
 
 IPMessage::~IPMessage()

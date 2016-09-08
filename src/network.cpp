@@ -229,7 +229,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
             case NOP:
             {
                 xbt_assert(parts2.size() == 2, "Invalid event received ('%s'): NOP messages must be composed of 2 parts separated by ':'", event_string.c_str());
-                send_message("server", IPMessageType::SCHED_NOP);
+                dsend_message("server", IPMessageType::SCHED_NOP);
             } break; // End of case received_stamp == NOP
 
             case NOP_ME_LATER:
@@ -241,7 +241,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
                 if (message->target_time < MSG_get_clock())
                     XBT_WARN("Event '%s' tells to wait until time %g but it is already reached", event_string.c_str(), message->target_time);
 
-                send_message("server", IPMessageType::SCHED_NOP_ME_LATER, (void*) message);
+                dsend_message("server", IPMessageType::SCHED_NOP_ME_LATER, (void*) message);
             } break; // End of case received_stamp == NOP_ME_LATER
 
             case STATIC_JOB_ALLOCATION:

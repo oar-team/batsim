@@ -113,7 +113,7 @@ int uds_server_process(int argc, char *argv[])
                 msg->job_id = message->job_id;
 
                 Submitter * submitter = origin_of_jobs.at(message->job_id);
-                send_message(submitter->mailbox, IPMessageType::SUBMITTER_CALLBACK, (void*) msg);
+                dsend_message(submitter->mailbox, IPMessageType::SUBMITTER_CALLBACK, (void*) msg);
 
                 origin_of_jobs.erase(message->job_id);
             }
