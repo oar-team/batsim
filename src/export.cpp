@@ -514,7 +514,7 @@ void exportJobsToCSV(const std::string &filename, const BatsimContext *context)
                 xbt_assert(job->runtime >= 0);
 
                 int ret = asprintf(&buf, "%d,%s,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
-                                   job->number + 10000*workload_num, // job_id
+                                   job->number*10 + workload_num, // job_id
                                    workload_name.c_str(), // workload_name
                                    job->submission_time, // submission_time
                                    job->required_nb_res, // requested_number_of_processors
