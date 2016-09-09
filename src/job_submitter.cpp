@@ -145,8 +145,8 @@ int workflow_submitter_process(int argc, char *argv[])
 
     const string submitter_name = args->workflow_name + "_submitter";
 
-    XBT_INFO("I AM A WORKFLOW SUBMITTER FOR WORKFLOW %s!", args->workflow_name.c_str());
-    XBT_INFO("*************** MY START TIME SHOULD BE: %lf", workflow->start_time);
+    XBT_INFO("I AM A WORKFLOW SUBMITTER FOR WORKFLOW %s (start time = %lf)!", 
+                  args->workflow_name.c_str(),workflow->start_time);
 
     /* Initializing my task_id counter */
     task_id_counters[workflow->name] = 0;
@@ -163,6 +163,11 @@ int workflow_submitter_process(int argc, char *argv[])
     /* Create ready_tasks vector */
     std::vector<Task *> ready_tasks = workflow->get_source_tasks();
 
+    /* Wait until the workflow start-time */
+    if (workflow->start_time > MSG_get_clock()) {
+      XBT_INFO("Warning: already past workflow start time! (%lf)", workflow->start_time);
+    }
+    MSG_process_sleep(MAX(0.0, workflow->start_time - MSG_get_clock()));
 
     
     /* Submit all the ready tasks */
