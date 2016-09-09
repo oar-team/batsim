@@ -50,7 +50,7 @@ find_package(SimGrid REQUIRED)
 include_directories(${SIMGRID_INCLUDE_DIR})
 
 ## Boost dependency
-find_package(Boost 1.48 REQUIRED COMPONENTS system filesystem)
+find_package(Boost 1.48 REQUIRED COMPONENTS system filesystem regex)
 include_directories(${Boost_INCLUDE_DIR})
 
 ## Rapidjson dependency
@@ -84,6 +84,7 @@ add_executable(batsim ${batsim_SRC})
 target_link_libraries(batsim ${SIMGRID_LIBRARIES}
                       ${Boost_SYSTEM_LIBRARY_DEBUG}
                       ${Boost_FILESYSTEM_LIBRARY_DEBUG}
+                      ${Boost_REGEX_LIBRARY_DEBUG}
                       ${REDOX_LIBRARY}
                       ${LIBEV_LIBRARY}
                       ${HIREDIS_LIBRARY})

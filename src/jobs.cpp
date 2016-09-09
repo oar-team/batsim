@@ -10,8 +10,7 @@
 #include <fstream>
 #include <streambuf>
 #include <algorithm>
-#include <regex>
-#include <iterator>
+#include <boost/regex.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -208,9 +207,9 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
 
     // Let's replace the job ID by its WLOAD!NUMBER counterpart
     string json_description_tmp = buffer.GetString();
-    regex r("\"id\"\\s*:\\s*(?:\".+\"|\\d+)\\s*,");
+    boost::regex r("\"id\"\\s*:\\s*(?:\".+\"|\\d+)\\s*,");
     string replacement_str = "\"id\":\"" + workload_name + "!" + std::to_string(j->number) + "\",";
-    j->json_description = regex_replace(json_description_tmp, r, replacement_str);
+    j->json_description = boost::regex_replace(json_description_tmp, r, replacement_str);
 
 
 
