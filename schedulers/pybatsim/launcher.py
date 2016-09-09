@@ -4,13 +4,14 @@
 Run PyBatsim Sschedulers.
 
 Usage:
-    launcher.py <scheduler> [-p] [-v] [-s <socket>] [-o <options>]
+    launcher.py <scheduler> [-p] [-v] [-s <socket>] [-r <redis port number>] [-o <options>]
 
 Options:
     -h --help                                      Show this help message and exit.
     -v --verbose                                   Be verbose.
     -p --protect                                   Protect the scheduler using a validating machine.
     -s --socket=<socket>                           Socket to use [default: /tmp/bat_socket]
+    -r --redisport=<port number>                   Redis server port number
     -o --options=<options>                         A Json string to pass to the scheduler [default: {}]
 '''
 
@@ -72,7 +73,14 @@ if __name__ == "__main__":
 
     scheduler_filename = arguments['<scheduler>']
     socket = arguments['--socket']
-    # TODO: add Redis arguments (hostname, port, prefix)
+
+    # Redis port
+    if arguments['--redisport']:
+    	redisport = int(arguments['--redisport'])
+    else:
+	redisport = 6379
+
+    # TODO: add Redis arguments (hostname, prefix)
 
     print "Starting simulation..."
     print "Scheduler:", scheduler_filename
@@ -80,7 +88,7 @@ if __name__ == "__main__":
     time_start = time.time()
     scheduler = instanciate_scheduler(scheduler_filename, options=options)
 
-    bs = Batsim(scheduler, validatingmachine=vm, server_address=socket, verbose=verbose)
+    bs = Batsim(scheduler, validatingmachine=vm, server_address=socket, verbose=verbose, redis_port=redisport)
 
     bs.start()
     time_ran = str(timedelta(seconds=time.time()-time_start))
