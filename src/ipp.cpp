@@ -11,6 +11,13 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(ipp, "ipp"); //!< Logging
 
+/**
+ * @brief TODO
+ * @param destination_mailbox TODO
+ * @param type TODO
+ * @param data TODO
+ * @param detached TODO
+ */
 void generic_send_message(const std::string & destination_mailbox, IPMessageType type, void * data, bool detached)
 {
     IPMessage * message = new IPMessage;
@@ -20,19 +27,21 @@ void generic_send_message(const std::string & destination_mailbox, IPMessageType
     msg_task_t task_to_send = MSG_task_create(NULL, 0, 1e-6, message);
 
     XBT_INFO("message from '%s' to '%s' of type '%s' with data %p",
-             MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(), ipMessageTypeToString(type).c_str(), data);
+             MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
+             ipMessageTypeToString(type).c_str(), data);
 
     if (detached)
-      {
-	MSG_task_dsend(task_to_send, destination_mailbox.c_str(), NULL);
-      }
+    {
+        MSG_task_dsend(task_to_send, destination_mailbox.c_str(), NULL);
+    }
     else
-      {
-	MSG_task_send(task_to_send, destination_mailbox.c_str());
-      }
-    
+    {
+        MSG_task_send(task_to_send, destination_mailbox.c_str());
+    }
+
     XBT_INFO("message from '%s' to '%s' of type '%s' with data %p done",
-             MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(), ipMessageTypeToString(type).c_str(), data);
+             MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
+             ipMessageTypeToString(type).c_str(), data);
 }
 
 void send_message(const std::string & destination_mailbox, IPMessageType type, void * data)
