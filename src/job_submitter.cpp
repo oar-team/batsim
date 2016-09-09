@@ -217,6 +217,10 @@ int workflow_submitter_process(int argc, char *argv[])
 	  }
       }
 
+    double makespan = MSG_get_clock() - workflow->start_time;
+    // TODO: Do this using XBT logging? 
+    std::cout << "WORKFLOW_MAKESPAN" << " " << workflow->name << " " << makespan << "\n";
+
     /* Goodbye */
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
     bye_msg->submitter_name = submitter_name;
