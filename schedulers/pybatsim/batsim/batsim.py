@@ -22,7 +22,6 @@ class Batsim(object):
         if redis_prefix == None:
             redis_prefix = os.path.abspath(server_address)
         self.redis = DataStorage(redis_prefix, redis_hostname, redis_port)
-        self.nb_res = int(self.redis.get('nb_res'))
         self.jobs = dict()
 
         sys.setrecursionlimit(10000)
@@ -42,6 +41,7 @@ class Batsim(object):
             print("[BATSIM]: socket error")
             raise
 
+
         #initialize some public attributes
         self.last_msg_recv_time = -1
 
@@ -49,8 +49,11 @@ class Batsim(object):
         self.nb_jobs_scheduled = 0
 
         self.scheduler.bs = self
-        self.scheduler.onAfterBatsimInit()
 
+        # Wait the "simulation starts" message to read the number of machines
+        self._read_bat_msg()
+
+        self.scheduler.onAfterBatsimInit()
 
     def time(self):
         return self._current_time
@@ -162,14 +165,16 @@ class Batsim(object):
         # [ (timestamp, txtDATA), ...]
         self._msgs_to_send = []
 
-        # TODO: job identifiers are now WORKLOAD!JOB_NUMBER.
-        # The hack in the next loop allows pybatsim to still work with static
-        # jobs, but the new syntax should be handled so pybatsim also handles
-        # dynamic jobs.
+        # TODO: handle Z, f and F messages.
 
         for i in range(1, len(sub_msgs)):
             data = sub_msgs[i].split(':')
-            if data[1] == 'R':
+            if data[1] == 'A':
+                self.nb_res = int(self.redis.get('nb_res'))
+            elif data[1] == 'Z':
+                print("All jobs have been submitted and completed!")
+                print("TODO: inform schedulers about it...")
+            elif data[1] == 'R':
                 self.scheduler.onJobRejection()
             elif data[1] == 'N':
                 self.scheduler.onNOP()

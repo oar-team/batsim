@@ -279,8 +279,8 @@ int request_reply_scheduler_process(int argc, char *argv[])
 
                     Job * job = context->workloads.job_at(alloc->job_id);
                     (void) job; // Avoids a warning if assertions are ignored
-		    XBT_INFO("JOB_STATE (job %d): %d ('0' means 'not submitted')", 
-                                      job->number, job->state);
+                    XBT_INFO("JOB_STATE (job %d): %d ('0' means 'not submitted')",
+                             job->number, job->state);
 
                     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                                "Invalid static job allocation received ('%s') : the job %d state indicates it cannot be executed now",
@@ -482,7 +482,7 @@ bool identify_job_from_string(BatsimContext * context,
 
     if (job_identifier_parts.size() == 1)
     {
-	XBT_INFO("WARNING: Job ID is not of format WORKLOAD!NUMBER... assuming static!");
+        XBT_WARN("Job ID is not of format WORKLOAD!NUMBER... assuming static!");
         job_id.workload_name = "static";
         job_id.job_number = std::stoi(job_identifier_parts[0]);
     }
