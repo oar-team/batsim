@@ -4,7 +4,7 @@
  */
 
 #include <string>
-
+#include <sys/types.h>
 #include <stdio.h>
 #include <argp.h>
 #include <unistd.h>
@@ -59,7 +59,7 @@ struct MainArguments
     std::string socketFilename = "/tmp/bat_socket";         //!< The Unix Domain Socket filename
 
     std::string masterHostName = "master_host";             //!< The name of the SimGrid host which runs scheduler processes and not user tasks
-    std::string exportPrefix = "out";                       //!< The filename prefix used to export simulation information
+    std::string exportPrefix;                               //!< The filename prefix used to export simulation information
 
     bool stop_when_workflow_finishes = false;		    //!< Stops the simulation as soon as a workflow completes - ignored if no workflow is being simulated
 
@@ -251,6 +251,10 @@ int main(int argc, char * argv[])
     };
     struct argp argp = {options, parse_opt, 0, "A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.", 0, 0, 0};
     argp_parse(&argp, argc, argv, 0, 0, &mainArgs);
+
+    stringstream ss;
+    ss << "out_" << getpid();
+    ss >> mainArgs.exportPrefix;
 
     if (access(mainArgs.platformFilename.c_str(), R_OK) == -1)
     {
