@@ -12,12 +12,41 @@ import sys
 import time
 import yaml
 
+class ArgumentParserError(Exception): pass
+
+class ThrowingArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        raise ArgumentParserError(message)
+
 def find_socket_from_batsim_command(batsim_command):
     split_command = shlex.split(batsim_command)
 
-    batparser = argparse.ArgumentParser(prog = split_command[0],
-                                        description = 'Batsim command parser',
-                                        add_help = False)
+    assert(len(split_command) > 1), "Invalid Batsim command: '{}'".format(
+                                    batsim_command)
+
+    if 'batsim' not in split_command[0]:
+        logger.warning("Batsim does not seem to be executed directly. "
+                       "This may cause this script failing at detecting what "
+                       "Batsim's socket is.")
+
+        # Let's assume Batsim's command is just prefixed.
+        # Let's find the index at which Batsim's command appears
+        found_index = -1
+
+        for i in range(1, len(split_command)):
+            if 'batsim' in split_command[i]:
+                found_index = i
+                break
+
+        if found_index == -1:
+            logger.warning("Could not find where Batsim command starts in the "
+                           "user-given command '{}'.".format(batsim_command))
+        else:
+            split_command = split_command[found_index:]
+
+    batparser = ThrowingArgumentParser(prog = split_command[0],
+                                       description = 'Batsim command parser',
+                                       add_help = False)
 
     batparser.add_argument("platform")
     batparser.add_argument("workload")
@@ -34,7 +63,12 @@ def find_socket_from_batsim_command(batsim_command):
     batparser.add_argument("-T", "--disable-schedule-tracing", action='store_true')
     batparser.add_argument("-v", "--verbosity", type=str, default="information")
 
-    batargs = batparser.parse_args(split_command[1:])
+    try:
+        batargs = batparser.parse_args(split_command[1:])
+    except ArgumentParserError as e:
+        logger.error("Could not retrieve Batsim's socket from Batsim's command "
+                     "'{}'. Parsing error: '{}'".format(batsim_command, e))
+        sys.exit(-1)
 
     return batargs.socket
 
