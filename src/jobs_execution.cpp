@@ -94,12 +94,14 @@ int execute_profile(BatsimContext *context,
                                          computation_amount,
                                          communication_amount, NULL);
 
+        // TODO: debug job kills on timeout
+
         // Let's spawn a process which will wait until walltime and cancel the task if needed
-        KillerProcessArguments * killer_args = new KillerProcessArguments;
+        /*KillerProcessArguments * killer_args = new KillerProcessArguments;
         killer_args->task = ptask;
         killer_args->walltime = *remaining_time;
 
-        msg_process_t kill_process = MSG_process_create("killer", killer_process, killer_args, MSG_host_self());
+        msg_process_t kill_process = MSG_process_create("killer", killer_process, killer_args, MSG_host_self());*/
 
         double timeBeforeExecute = MSG_get_clock();
         XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
@@ -107,8 +109,8 @@ int execute_profile(BatsimContext *context,
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
 
         int ret = 1;
-        if (err == MSG_OK)
-            SIMIX_process_throw(kill_process, cancel_error, 0, "wake up");
+        if (err == MSG_OK) {}
+            //SIMIX_process_throw(kill_process, cancel_error, 0, "wake up");
         else if (err == MSG_TASK_CANCELED)
             ret = 0;
         else
@@ -139,11 +141,12 @@ int execute_profile(BatsimContext *context,
                                          communication_amount, NULL);
 
         // Let's spawn a process which will wait until walltime and cancel the task if needed
-        KillerProcessArguments * killer_args = new KillerProcessArguments;
+        // TODO: debug job kill on timeout
+        /*KillerProcessArguments * killer_args = new KillerProcessArguments;
         killer_args->task = ptask;
         killer_args->walltime = *remaining_time;
 
-        msg_process_t kill_process = MSG_process_create("killer", killer_process, killer_args, MSG_host_self());
+        msg_process_t kill_process = MSG_process_create("killer", killer_process, killer_args, MSG_host_self());*/
 
         double timeBeforeExecute = MSG_get_clock();
         XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
@@ -151,8 +154,8 @@ int execute_profile(BatsimContext *context,
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
 
         int ret = 1;
-        if (err == MSG_OK)
-            SIMIX_process_throw(kill_process, cancel_error, 0, "wake up");
+        if (err == MSG_OK){}
+            //SIMIX_process_throw(kill_process, cancel_error, 0, "wake up");
         else if (err == MSG_TASK_CANCELED)
             ret = 0;
         else
