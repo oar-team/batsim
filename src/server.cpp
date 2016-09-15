@@ -36,8 +36,9 @@ int uds_server_process(int argc, char *argv[])
     int nb_running_jobs = 0;
     int nb_switching_machines = 0;
     int nb_waiters = 0;
-    const int protocol_version = 2;
+    const int protocol_version = 3;
     bool sched_ready = true;
+    bool all_jobs_submitted_and_completed = false;
 
     // Let's store some information about the submitters
     struct Submitter
@@ -53,6 +54,18 @@ int uds_server_process(int argc, char *argv[])
 
     string send_buffer;
 
+    // Let's tell the Decision process that the simulation is about to begin (and that some data can be read from the data storage)
+    send_buffer = "|" + std::to_string(MSG_get_clock()) + ":A";
+    RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
+    req_rep_args->context = context;
+    req_rep_args->send_buffer = to_string(protocol_version) + ":" + to_string(MSG_get_clock()) + send_buffer;
+    send_buffer.clear();
+
+    MSG_process_create("Scheduler REQ-REP", request_reply_scheduler_process, (void*)req_rep_args, MSG_host_self());
+    sched_ready = false;
+
+
+    // Simulation loop
     while ((nb_submitters == 0) || (nb_submitters_finished < nb_submitters) ||
            (nb_completed_jobs < nb_submitted_jobs) || (!sched_ready) ||
            (nb_switching_machines > 0) || (nb_waiters > 0))
@@ -70,6 +83,8 @@ int uds_server_process(int argc, char *argv[])
         case IPMessageType::SUBMITTER_HELLO:
         {
             xbt_assert(task_data->data != nullptr);
+            xbt_assert(!all_jobs_submitted_and_completed,
+                       "A new submitter said hello but all jobs have already been submitted and completed... Aborting.");
             SubmitterHelloMessage * message = (SubmitterHelloMessage *) task_data->data;
 
             xbt_assert(submitters.count(message->submitter_name) == 0,
@@ -127,6 +142,16 @@ int uds_server_process(int argc, char *argv[])
 
             send_buffer += '|' + std::to_string(MSG_get_clock()) + ":C:" + message->job_id.to_string();
             XBT_DEBUG( "Message to send to scheduler: %s", send_buffer.c_str());
+
+            if (nb_completed_jobs == nb_submitted_jobs &&
+                nb_submitters_finished == nb_submitters)
+            {
+                all_jobs_submitted_and_completed = true;
+                XBT_INFO("It seems that all jobs have been submitted and completed!");
+
+                send_buffer += "|" + std::to_string(MSG_get_clock()) + ":Z";
+                XBT_DEBUG( "Message to send to scheduler: %s", send_buffer.c_str());
+            }
 
         } break; // end of case JOB_COMPLETED
 
@@ -270,15 +295,15 @@ int uds_server_process(int argc, char *argv[])
                 {
                     const string & workload_name = workload_mit.first;
                     Workload * workload = workload_mit.second;
-		    if(workload->jobs)
-		      {
-			for (auto & job_mit : workload->jobs->jobs())
-			  {
-			    const Job * job = job_mit.second;
-			    if (job->state == JobState::JOB_STATE_SUBMITTED)
-			      submittedJobs.push_back(workload_name + '!' + std::to_string(job->number));
-			  }
-		      }
+                    if (workload->jobs)
+                    {
+                        for (auto & job_mit : workload->jobs->jobs())
+                        {
+                            const Job * job = job_mit.second;
+                            if (job->state == JobState::JOB_STATE_SUBMITTED)
+                                submittedJobs.push_back(workload_name + '!' + std::to_string(job->number));
+                        }
+                    }
                 }
 
                 string submittedJobsString = boost::algorithm::join(submittedJobs, ", ");
@@ -433,7 +458,8 @@ int uds_server_process(int argc, char *argv[])
 
     } // end of while
 
-    XBT_INFO( "All jobs completed!");
+    XBT_INFO("Simulation is finished!");
+    xbt_assert(all_jobs_submitted_and_completed, "Left simulation loop but all_jobs_submitted_and_completed is false");
 
     delete args;
     return 0;

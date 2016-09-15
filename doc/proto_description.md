@@ -53,8 +53,20 @@ the job ID of the job which just completed. This part is not mandatory, it depen
 |        1+       |   n   | Sched->Batsim | TIME                            | NOP me later: the scheduler asks to be awaken at the given simulation time TIME.
 |        1+       |   E   | Sched->Batsim | No content                      | Asks Batsim about the total consumed energy (from time 0 to now) in Joules. Works only in energy mode.
 |        1+       |   e   | Batsim->Sched | CONSUMED_ENERGY                 | Batsim tells the total consumed energy (from time 0 to now) in Joules. Works only in energy mode. There is one and only one 'e' message for each 'E' message.
+|        3+       |   A   | Batsim->Sched | No content                      | Batsim tells the scheduler that the simulation is about to begin (the Scheduler can now read information from Redis). This is the first message Batsim sends.
+|        3+       |   Z   | Batsim->Sched | No content                      | Batsim tells the scheduler that the simulation is about to end (all jobs have been submitted and completed/rejected)
+|        3+       |   F   | Batsim->Sched | MID1,MID2,MIDn                  | Batsim tells the scheduler that the given machines are in a failure state (crashed, no jobs can be computed on them). Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
+|        3+       |   f   | Batsim->Sched | MID1,MID2,MIDn                  | Batsim tells the scheduler that the given machines are no longer in a failure state (jobs can now be computed on them). Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
 
 # Message Examples #
+
+## Simulation starts ##
+    Batsim -> Scheduler
+    3:0.000000|0.000000:A
+
+## Simulation ends ##
+    Batsim -> Scheduler
+    3:46.556835|46.556835:C:workload_profiles/test_workload_profile.json!2|46.556835:Z
 
 ## Static Job Submission ##
     Batsim -> Scheduler

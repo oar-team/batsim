@@ -435,16 +435,16 @@ int main(int argc, char * argv[])
         }
     }
 
+    // Socket
+    context.socket.create_socket(mainArgs.socketFilename);
+    context.socket.accept_pending_connection();
+
     // Redis
     context.storage.set_instance_key_prefix(absolute_filename(mainArgs.socketFilename));
     context.storage.connect_to_server(mainArgs.redis_hostname, mainArgs.redis_port);
 
     // Let's store some metadata about the current instance in the data storage
     context.storage.set("nb_res", std::to_string(context.machines.nb_machines()));
-
-    // Socket
-    context.socket.create_socket(mainArgs.socketFilename);
-    context.socket.accept_pending_connection();
 
     // Starting the simulated processes
 
