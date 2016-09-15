@@ -60,9 +60,13 @@ include_directories(${RAPIDJSON_INCLUDE_DIRS})
 ################
 # Source files #
 ################
+
+## Batsim
 file(GLOB batsim_SRC
     "src/*.hpp"
     "src/*.cpp")
+ 
+list(REMOVE_ITEM batsim_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/batexec.cpp)
 
 # Executables
 add_executable(batsim ${batsim_SRC})
@@ -71,10 +75,24 @@ add_executable(batsim ${batsim_SRC})
 target_link_libraries(batsim ${SIMGRID_LIBRARIES} ${Boost_SYSTEM_LIBRARY_DEBUG}
                       ${Boost_FILESYSTEM_LIBRARY_DEBUG})
 
+## Batexec
+file(GLOB batexec_SRC
+    "src/*.hpp"
+    "src/*.cpp")
+list(REMOVE_ITEM batexec_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/batsim.cpp)
+  
+# Executables
+add_executable(batexec ${batexec_SRC})
+
+# Libraries to link
+target_link_libraries(batexec ${SIMGRID_LIBRARIES} ${Boost_SYSTEM_LIBRARY_DEBUG}
+                      ${Boost_FILESYSTEM_LIBRARY_DEBUG})
+
+
 ################
 # Installation #
 ################
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim ${CMAKE_CURRENT_BINARY_DIR}/batexec
         DESTINATION bin)
 
 # Let's enable warnings if needed
