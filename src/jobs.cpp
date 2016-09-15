@@ -214,7 +214,7 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
 
 
 
-    XBT_INFO("Loaded job %d from workload %s", (int) j->number, j->workload->name.c_str() );
+    XBT_INFO("Loaded job %d from workload %s. The remainder of this string is just here to explicit the Black Hole issue (#1).", (int) j->number, j->workload->name.c_str() );
 
     return j;
 }
