@@ -34,7 +34,10 @@ def find_socket_from_batsim_command(batsim_command):
     batparser.add_argument("-T", "--disable-schedule-tracing", action='store_true')
     batparser.add_argument("-v", "--verbosity", type=str, default="information")
 
-    batargs = batparser.parse_args(split_command[1:])
+    if split_command[0] == 'valgrind':
+        batargs = batparser.parse_args(split_command[2:])
+    else:
+        batargs = batparser.parse_args(split_command[1:])
 
     return batargs.socket
 
