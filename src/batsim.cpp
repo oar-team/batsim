@@ -271,38 +271,23 @@ int main(int argc, char * argv[])
     if (mainArgs.energy_used)
         sg_energy_plugin_init();
 
+    vector<string> log_categories_to_set = {"workload", "job_submitter", "redis", "jobs", "batsim", "machines", "pstate",
+                                            "workflow", "jobs_execution", "server", "export", "profiles", "machine_range",
+                                            "network", "ipp"};
+    string log_threshold_to_set = "info";
+
     if (mainArgs.verbosity == VerbosityLevel::QUIET || mainArgs.verbosity == VerbosityLevel::NETWORK_ONLY)
-    {
-        xbt_log_control_set("workload.thresh:error");
-        xbt_log_control_set("jobs.thresh:error");
-        xbt_log_control_set("batsim.thresh:error");
-        xbt_log_control_set("machines.thresh:error");
-        xbt_log_control_set("pstate.thresh:error");
-        xbt_log_control_set("jobs_execution.thresh:error");
-        xbt_log_control_set("export.thresh:error");
-        xbt_log_control_set("profiles.thresh:error");
-        xbt_log_control_set("network.thresh:error");
-        xbt_log_control_set("server.thresh:error");
-        xbt_log_control_set("ipp.thresh:error");
-    }
+        log_threshold_to_set = "error";
 
     if (mainArgs.verbosity == VerbosityLevel::NETWORK_ONLY)
-    {
         xbt_log_control_set("network.thresh:info");
-    }
     else if (mainArgs.verbosity == VerbosityLevel::DEBUG)
+        log_threshold_to_set = "debug";
+
+    for (const auto & log_cat : log_categories_to_set)
     {
-        xbt_log_control_set("workload.thresh:debug");
-        xbt_log_control_set("jobs.thresh:debug");
-        xbt_log_control_set("batsim.thresh:debug");
-        xbt_log_control_set("machines.thresh:debug");
-        xbt_log_control_set("pstate.thresh:debug");
-        xbt_log_control_set("jobs_execution.thresh:debug");
-        xbt_log_control_set("export.thresh:debug");
-        xbt_log_control_set("profiles.thresh:debug");
-        xbt_log_control_set("network.thresh:debug");
-        xbt_log_control_set("server.thresh:debug");
-        xbt_log_control_set("ipp.thresh:debug");
+        const string final_str = log_cat + ".thresh:" + log_threshold_to_set;
+        xbt_log_control_set(final_str.c_str());
     }
 
     // Initialization

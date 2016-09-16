@@ -5,9 +5,13 @@
 
 #include "storage.hpp"
 
+#include <boost/locale.hpp>
+
 #include <xbt.h>
 
 using namespace std;
+
+XBT_LOG_NEW_DEFAULT_CATEGORY(redis, "redis"); //!< Logging
 
 RedisStorage::RedisStorage()
 {
@@ -51,13 +55,37 @@ void RedisStorage::disconnect()
 std::string RedisStorage::get(const std::string & key)
 {
     xbt_assert(_is_connected, "Bad RedisStorage::get call: Not connected");
-    return _redox.get(build_key(key));
+
+    string real_key = boost::locale::conv::to_utf<char>(build_key(key), "UTF-8");
+
+    try
+    {
+        return _redox.get(real_key);
+    }
+    catch (const std::exception & e)
+    {
+        XBT_ERROR("Couldn't get the value associated to key '%s' in Redis! "
+                  "Message: %s", real_key.c_str(), e.what());
+        return "";
+    }
 }
 
 bool RedisStorage::set(const std::string &key, const std::string &value)
 {
+    string real_key = boost::locale::conv::to_utf<char>(build_key(key), "UTF-8");
+    string real_value = boost::locale::conv::to_utf<char>(value, "UTF-8");
+
     xbt_assert(_is_connected, "Bad RedisStorage::get call: Not connected");
-    return _redox.set(build_key(key), value);
+    bool ret = _redox.set(real_key, real_value);
+    if (ret)
+    {
+        XBT_INFO("Set: '%s'='%s'", real_key.c_str(), real_value.c_str());
+        xbt_assert(get(key) == value, "Batsim <-> Redis communications are inconsistent!");
+    }
+    else
+        XBT_WARN("Couldn't set: '%s'='%s'", real_key.c_str(), real_value.c_str());
+
+    return ret;
 }
 
 bool RedisStorage::del(const std::string &key)

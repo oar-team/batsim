@@ -107,6 +107,11 @@ const std::map<std::string, Profile *> Profiles::profiles() const
     return _profiles;
 }
 
+int Profiles::nb_profiles() const
+{
+    return _profiles.size();
+}
+
 
 MsgParallelProfileData::~MsgParallelProfileData()
 {

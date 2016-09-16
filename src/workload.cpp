@@ -72,7 +72,8 @@ void Workload::load_from_json(const std::string &json_filename, int &nb_machines
     jobs->load_from_json(doc, json_filename);
     profiles->load_from_json(doc, json_filename);
 
-    XBT_INFO("JSON workload parsed sucessfully.");
+    XBT_INFO("JSON workload parsed sucessfully. Read %d jobs and %d profiles.",
+             jobs->nb_jobs(), profiles->nb_profiles());
     XBT_INFO("Checking workload validity...");
     check_validity();
     XBT_INFO("Workload seems to be valid.");
@@ -265,7 +266,7 @@ Job *Workloads::add_job_if_not_exists(const JobIdentifier &job_id, BatsimContext
     Job * job = nullptr;
     if (!workload->jobs->exists(job_id.job_number))
     {
-	XBT_INFO("CREATING JOB %d FOR WORKLOAD %s",job_id.job_number, workload->name.c_str());
+        XBT_INFO("CREATING JOB %d FOR WORKLOAD %s",job_id.job_number, workload->name.c_str());
         job = Job::from_json(job_json_description, workload);
         xbt_assert(job_id.job_number == job->number,
                    "Cannot add dynamic job %s!%d: JSON job number mismatch (%d)",

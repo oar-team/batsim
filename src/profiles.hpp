@@ -182,6 +182,12 @@ public:
      */
     const std::map<std::string, Profile *> profiles() const;
 
+    /**
+     * @brief Returns the number of profiles of the Profiles instance
+     * @return The number of profiles of the Profiles instance
+     */
+    int nb_profiles() const;
+
 private:
     std::map<std::string, Profile*> _profiles; //!< Stores all the profiles, indexed by their names
 };

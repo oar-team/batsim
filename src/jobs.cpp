@@ -145,6 +145,11 @@ const std::map<int, Job* > &Jobs::jobs() const
     return _jobs;
 }
 
+int Jobs::nb_jobs() const
+{
+    return _jobs.size();
+}
+
 bool job_comparator_subtime(const Job *a, const Job *b)
 {
     return a->submission_time < b->submission_time;
@@ -212,9 +217,7 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
     j->json_description = boost::regex_replace(json_description_tmp, r, replacement_str);
 
 
-
-
-    XBT_INFO("Loaded job %d from workload %s. The remainder of this string is just here to explicit the Black Hole issue (#1).", (int) j->number, j->workload->name.c_str() );
+    XBT_DEBUG("Loaded job %d from workload %s", (int) j->number, j->workload->name.c_str() );
 
     return j;
 }

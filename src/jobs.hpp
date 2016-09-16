@@ -172,6 +172,12 @@ public:
      */
     const std::map<int, Job*> & jobs() const;
 
+    /**
+     * @brief Returns the number of jobs of the Jobs instance
+     * @return the number of jobs of the Jobs instance
+     */
+    int nb_jobs() const;
+
 private:
     std::map<int, Job*> _jobs; //!< The std::map which contains the jobs
     Profiles * _profiles = nullptr; //!< The profiles associated with the jobs
