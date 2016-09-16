@@ -317,17 +317,6 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
         self.execution_data = execution_data
     def start(self, process):
         logger.info("Batsim started")
-
-        # Wait for Batsim to create the socket
-        logger.info("Waiting for socket {} to open".format(self.execution_data.batsim_socket))
-        if wait_for_batsim_to_open_connection(self.execution_data,
-                                              timeout = self.execution_data.timeout,
-                                              sock = self.execution_data.batsim_socket):
-            # Launches the scheduler
-            logger.info("Batsim's socket {} is now opened".format(self.execution_data.batsim_socket))
-            self.execution_data.sched_process.start()
-        else:
-            self.execution_data.failure = True
         self.execution_data.nb_started += 1
 
     def end(self, process):
@@ -562,6 +551,17 @@ def execute_one_instance(working_directory,
 
     # Batsim starts
     batsim_process.start()
+
+    # Wait for Batsim to create the socket
+    logger.info("Waiting for socket {} to open".format(execution_data.batsim_socket))
+    if wait_for_batsim_to_open_connection(execution_data,
+                                          timeout = execution_data.timeout,
+                                          sock = execution_data.batsim_socket):
+        # Launches the scheduler
+        logger.info("Batsim's socket {} is now opened".format(execution_data.batsim_socket))
+        execution_data.sched_process.start()
+    else:
+        execution_data.failure = True
 
     # Wait for processes' termination
     while (execution_data.failure == False) and (execution_data.nb_finished < 2):
