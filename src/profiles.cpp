@@ -196,6 +196,9 @@ Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Va
         xbt_assert(json_desc["delay"].IsNumber(), "Invalid JSON: profile '%s' has a non-number 'delay' field", profile_name.c_str());
         data->delay = json_desc["delay"].GetDouble();
 
+        xbt_assert(data->delay > 0, "Invalid JSON: profile '%s' has a non-strictly-positive 'delay' field (%g)",
+                   profile_name.c_str(), data->delay);
+
         profile->data = data;
     }
     else if (profile_type == "msg_par")
@@ -214,6 +217,7 @@ Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Va
         {
             xbt_assert(cpu[i].IsNumber(), "Invalid JSON: profile '%s' computation array is invalid: all elements must be numbers", profile_name.c_str());
             data->cpu[i] = cpu[i].GetDouble();
+            xbt_assert(data->cpu[i] >= 0, "Invalid JSON: profile '%s' computation array is invalid: all elements must be non-negative", profile_name.c_str());
         }
 
         xbt_assert(json_desc.HasMember("com"), "Invalid JSON: profile '%s' has no 'com' field", profile_name.c_str());
@@ -238,10 +242,12 @@ Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Va
         xbt_assert(json_desc.HasMember("cpu"), "Invalid JSON: profile '%s' has no 'cpu' field", profile_name.c_str());
         xbt_assert(json_desc["cpu"].IsNumber(), "Invalid JSON: profile '%s' has a non-number 'cpu' field", profile_name.c_str());
         data->cpu = json_desc["cpu"].GetDouble();
+        xbt_assert(data->cpu >= 0, "Invalid JSON: profile '%s' has a non-positive 'cpu' field (%g)", profile_name.c_str(), data->cpu);
 
         xbt_assert(json_desc.HasMember("com"), "Invalid JSON: profile '%s' has no 'com' field", profile_name.c_str());
         xbt_assert(json_desc["com"].IsNumber(), "Invalid JSON: profile '%s' has a non-number 'com' field", profile_name.c_str());
         data->com = json_desc["com"].GetDouble();
+        xbt_assert(data->com >= 0, "Invalid JSON: profile '%s' has a non-positive 'com' field (%g)", profile_name.c_str(), data->com);
 
         profile->data = data;
     }
