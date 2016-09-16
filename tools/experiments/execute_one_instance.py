@@ -462,8 +462,9 @@ def execute_one_instance(working_directory,
                          sched_command,
                          variables_filename,
                          timeout = None):
+    if timeout == None:
+        timeout = 3600
 
-    timeout = 3600
     logger.info('Batsim command: "{}"'.format(batsim_command))
     logger.info('Sched command: "{}"'.format(sched_command))
 
