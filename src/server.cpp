@@ -207,7 +207,7 @@ int uds_server_process(int argc, char *argv[])
             args->target_time = message->target_time;
 
             string pname = "waiter " + to_string(message->target_time);
-            MSG_process_create(pname.c_str(), waiter_process, (void*) args, context->machines.masterMachine()->host);
+            MSG_process_create(pname.c_str(), waiter_process, (void*) args, context->machines.master_machine()->host);
             ++nb_waiters;
         } break; // end of case SCHED_NOP_ME_LATER
 

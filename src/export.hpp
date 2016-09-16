@@ -20,6 +20,18 @@
 struct BatsimContext;
 
 /**
+ * @brief Prepares Batsim's outputting
+ * @param[in,out] context The BatsimContext
+ */
+void prepare_batsim_outputs(BatsimContext * context);
+
+/**
+ * @brief Finalizes the different Batsim's outputs
+ * @param[in] context The BatsimContext
+ */
+void finalize_batsim_outputs(BatsimContext * context);
+
+/**
  * @brief Buffered-write output file
  */
 class WriteBuffer
@@ -61,14 +73,14 @@ private:
  * @param[in] filename The name of the output file used to write the CSV data
  * @param[in] context The BatsimContext
  */
-void exportJobsToCSV(const std::string &filename, const BatsimContext * context);
+void export_jobs_to_csv(const std::string &filename, const BatsimContext * context);
 
 /**
  * @brief Compute and exports some schedule criteria to a CSV file
  * @param[in] filename The name of the output file used to write the CSV data
  * @param[in] context The BatsimContext
  */
-void exportScheduleToCSV(const std::string &filename, const BatsimContext * context);
+void export_schedule_to_csv(const std::string &filename, const BatsimContext * context);
 
 
 /**

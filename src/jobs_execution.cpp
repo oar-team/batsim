@@ -270,7 +270,7 @@ int execute_job_process(int argc, char *argv[])
     }
 
     // Job computation
-    args->context->machines.updateMachinesOnJobRun(job->number, args->allocation->machine_ids);
+    args->context->machines.update_machines_on_job_run(job->number, args->allocation->machine_ids);
     if (execute_profile(args->context, job->profile, args->allocation, &remaining_time) == 1)
     {
         XBT_INFO("Job %d finished in time", job->number);
@@ -284,7 +284,7 @@ int execute_job_process(int argc, char *argv[])
             args->context->paje_tracer.addJobKill(job->number, args->allocation->machine_ids, MSG_get_clock(), true);
     }
 
-    args->context->machines.updateMachinesOnJobEnd(job->number, args->allocation->machine_ids);
+    args->context->machines.update_machines_on_job_end(job->number, args->allocation->machine_ids);
     job->runtime = MSG_get_clock() - job->starting_time;
 
     // If energy is enabled, let us compute the energy used by the machines after running the job

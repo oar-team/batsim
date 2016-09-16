@@ -13,6 +13,7 @@
 
 #include <simgrid/plugins/energy.h>
 
+#include "batsim.hpp"
 #include "context.hpp"
 #include "export.hpp"
 
@@ -31,12 +32,12 @@ Machines::~Machines()
         delete machine;
     _machines.clear();
 
-    if (_masterMachine != nullptr)
-        delete _masterMachine;
-    _masterMachine = nullptr;
+    if (_master_machine != nullptr)
+        delete _master_machine;
+    _master_machine = nullptr;
 }
 
-void Machines::createMachines(xbt_dynar_t hosts, const BatsimContext *context, const string &masterHostName, int limit_machine_count)
+void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, const string &masterHostName, int limit_machine_count)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
 
@@ -184,14 +185,14 @@ void Machines::createMachines(xbt_dynar_t hosts, const BatsimContext *context, c
         }
         else
         {
-            xbt_assert(_masterMachine == nullptr, "There are two master hosts...");
+            xbt_assert(_master_machine == nullptr, "There are two master hosts...");
             machine->id = -1;
-            _masterMachine = machine;
+            _master_machine = machine;
         }
     }
 
-    xbt_assert(_masterMachine != nullptr, "Cannot find the MasterHost '%s' in the platform file", masterHostName.c_str());
-    sortMachinesByAscendingName();
+    xbt_assert(_master_machine != nullptr, "Cannot find the MasterHost '%s' in the platform file", masterHostName.c_str());
+    sort_machines_by_ascending_name();
 
     // Let's limit the number of machines
     if (limit_machine_count != -1)
@@ -230,7 +231,7 @@ bool Machines::exists(int machineID) const
     return machineID >= 0 && machineID < (int)_machines.size();
 }
 
-void Machines::displayDebug() const
+void Machines::display_debug() const
 {
     // Let us traverse machines to display some information about them
     vector<string> machinesVector;
@@ -254,9 +255,9 @@ const std::vector<Machine *> &Machines::machines() const
     return _machines;
 }
 
-const Machine *Machines::masterMachine() const
+const Machine *Machines::master_machine() const
 {
-    return _masterMachine;
+    return _master_machine;
 }
 
 long double Machines::total_consumed_energy(const BatsimContext *context) const
@@ -279,7 +280,7 @@ int Machines::nb_machines() const
     return _machines.size();
 }
 
-void Machines::updateMachinesOnJobRun(int jobID, const MachineRange & usedMachines)
+void Machines::update_machines_on_job_run(int jobID, const MachineRange & usedMachines)
 {
     for (auto it = usedMachines.elements_begin(); it != usedMachines.elements_end(); ++it)
     {
@@ -301,7 +302,7 @@ void Machines::updateMachinesOnJobRun(int jobID, const MachineRange & usedMachin
     }
 }
 
-void Machines::updateMachinesOnJobEnd(int jobID, const MachineRange & usedMachines)
+void Machines::update_machines_on_job_end(int jobID, const MachineRange & usedMachines)
 {
     for (auto it = usedMachines.elements_begin(); it != usedMachines.elements_end(); ++it)
     {
@@ -331,7 +332,7 @@ void Machines::updateMachinesOnJobEnd(int jobID, const MachineRange & usedMachin
     }
 }
 
-void Machines::sortMachinesByAscendingName()
+void Machines::sort_machines_by_ascending_name()
 {
     std::sort(_machines.begin(), _machines.end(), machine_comparator_name);
 
@@ -339,12 +340,12 @@ void Machines::sortMachinesByAscendingName()
         _machines[i]->id = i;
 }
 
-void Machines::setTracer(PajeTracer *tracer)
+void Machines::set_tracer(PajeTracer *tracer)
 {
     _tracer = tracer;
 }
 
-string machineStateToString(MachineState state)
+string machine_state_to_string(MachineState state)
 {
     string s;
 
@@ -397,7 +398,7 @@ void Machine::display_machine(bool is_energy_used) const
     string str = "Machine\n";
     str += "  id = " + to_string(id) + "\n";
     str += "  name = '" + name + "'\n";
-    str += "  state = " + machineStateToString(state) + "\n";
+    str += "  state = " + machine_state_to_string(state) + "\n";
     str += "  jobs_being_computed = [" + boost::algorithm::join(jobsVector, ", ") + "]\n";
 
     if (is_energy_used)
@@ -484,4 +485,19 @@ bool string_including_integers_comparator(const std::string & s1, const std::str
 bool machine_comparator_name(const Machine *m1, const Machine *m2)
 {
     return string_including_integers_comparator(m1->name, m2->name);
+}
+
+
+void create_machines(const MainArguments & main_args, BatsimContext * context, int max_nb_machines_to_use)
+{
+    XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
+    XBT_INFO("The name of the master host is '%s'", main_args.master_host_name.c_str());
+
+    MSG_create_environment(main_args.platform_filename.c_str());
+
+    xbt_dynar_t hosts = MSG_hosts_as_dynar();
+    context->machines.create_machines(hosts, context, main_args.master_host_name, max_nb_machines_to_use);
+    xbt_dynar_free(&hosts);
+
+    XBT_INFO("The machines have been created successfully. There are %d computing machines.", context->machines.nb_machines());
 }

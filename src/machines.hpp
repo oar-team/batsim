@@ -17,6 +17,7 @@
 
 class PajeTracer;
 struct BatsimContext;
+struct MainArguments;
 
 /**
  * @brief Enumerates the different states of a Machine
@@ -109,7 +110,7 @@ public:
      * @param[in] masterHostName The name of the host which should be used as the Master host
      * @param[in] limit_machine_count If set to -1, all the machines are used. If set to a strictly positive number N, only the first machines N will be used to compute jobs
      */
-    void createMachines(xbt_dynar_t hosts, const BatsimContext * context, const std::string & masterHostName, int limit_machine_count = -1);
+    void create_machines(xbt_dynar_t hosts, const BatsimContext * context, const std::string & masterHostName, int limit_machine_count = -1);
 
     /**
      * @brief Must be called when a job is executed on some machines
@@ -117,7 +118,7 @@ public:
      * @param[in] jobID The unique job number
      * @param[in] usedMachines The machines on which the job is executed
      */
-    void updateMachinesOnJobRun(int jobID, const MachineRange & usedMachines);
+    void update_machines_on_job_run(int jobID, const MachineRange & usedMachines);
 
     /**
      * @brief Must be called when a job finishes its execution on some machines
@@ -125,18 +126,18 @@ public:
      * @param[in] jobID The unique job number
      * @param[in] usedMachines The machines on which the job is executed
      */
-    void updateMachinesOnJobEnd(int jobID, const MachineRange & usedMachines);
+    void update_machines_on_job_end(int jobID, const MachineRange & usedMachines);
 
     /**
      * @brief Sorts the machine by ascending name (lexicographically speaking)
      */
-    void sortMachinesByAscendingName();
+    void sort_machines_by_ascending_name();
 
     /**
      * @brief Sets the PajeTracer
      * @param[in] tracer The PajeTracer
      */
-    void setTracer(PajeTracer * tracer);
+    void set_tracer(PajeTracer * tracer);
 
     /**
      * @brief Accesses a Machine thanks to its unique number
@@ -162,7 +163,7 @@ public:
     /**
      * @brief Displays all machines (debug purpose)
      */
-    void displayDebug() const;
+    void display_debug() const;
 
     /**
      * @brief Returns a const reference to the vector of Machine
@@ -174,7 +175,7 @@ public:
      * @brief Returns a const pointer to the Master host machine
      * @return A const pointer to the Master host machine
      */
-    const Machine * masterMachine() const;
+    const Machine * master_machine() const;
 
     /**
      * @brief Computes and returns the total consumed energy of all the computing machines
@@ -191,7 +192,7 @@ public:
 
 private:
     std::vector<Machine *> _machines; //!< The vector of computing machines
-    Machine * _masterMachine = nullptr; //!< The Master host
+    Machine * _master_machine = nullptr; //!< The Master host
     PajeTracer * _tracer = nullptr; //!< The PajeTracer
 };
 
@@ -200,4 +201,12 @@ private:
  * @param[in] state The MachineState
  * @return A std::string corresponding to a given MachineState
  */
-std::string machineStateToString(MachineState state);
+std::string machine_state_to_string(MachineState state);
+
+/**
+ * @brief Creates the machines whose behaviour should be simulated
+ * @param[in] main_args Batsim's arguments
+ * @param[in] context The BatsimContext
+ * @param[in] max_nb_machines_to_use The maximum number of computing machines to use
+ */
+void create_machines(const MainArguments & main_args, BatsimContext * context, int max_nb_machines_to_use);

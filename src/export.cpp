@@ -22,6 +22,66 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(export, "export"); //!< Logging
 
+
+void prepare_batsim_outputs(BatsimContext * context)
+{
+    if (context->trace_schedule)
+        context->paje_tracer.setFilename(context->export_prefix + "_schedule.trace");
+
+    if (context->trace_schedule)
+    {
+        context->machines.set_tracer(&context->paje_tracer);
+        context->paje_tracer.initialize(context, MSG_get_clock());
+    }
+
+    if (context->energy_used)
+    {
+        // Energy consumption tracing
+        context->energy_tracer.set_context(context);
+        context->energy_tracer.set_filename(context->export_prefix + "_consumed_energy.csv");
+
+        // Power state tracing
+        context->pstate_tracer.setFilename(context->export_prefix + "_pstate_changes.csv");
+
+        std::map<int, MachineRange> pstate_to_machine_set;
+        for (const Machine * machine : context->machines.machines())
+        {
+            int machine_id = machine->id;
+            int pstate = MSG_host_get_pstate(machine->host);
+
+            if (pstate_to_machine_set.count(pstate) == 0)
+            {
+                MachineRange range;
+                range.insert(machine_id);
+                pstate_to_machine_set[pstate] = range;
+            }
+            else
+                pstate_to_machine_set[pstate].insert(machine_id);
+        }
+
+        for (auto mit : pstate_to_machine_set)
+        {
+            int pstate = mit.first;
+            MachineRange & range = mit.second;
+            context->pstate_tracer.add_pstate_change(MSG_get_clock(), range, pstate);
+        }
+    }
+}
+
+void finalize_batsim_outputs(BatsimContext * context)
+{
+    // Schedule (Pajé)
+    if (context->trace_schedule)
+        context->paje_tracer.finalize(context, MSG_get_clock());
+
+    // Schedule-oriented output information
+    export_schedule_to_csv(context->export_prefix + "_schedule.csv", context);
+
+    // Job-oriented output information
+    export_jobs_to_csv(context->export_prefix + "_jobs.csv", context);
+}
+
+
 WriteBuffer::WriteBuffer(const std::string & filename, int bufferSize)
     : bufferSize(bufferSize)
 {
@@ -486,7 +546,7 @@ void PajeTracer::hsvToRgb(double h, double s, double v, double & r, double & g, 
 }
 
 
-void exportJobsToCSV(const std::string &filename, const BatsimContext *context)
+void export_jobs_to_csv(const std::string &filename, const BatsimContext *context)
 {
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
@@ -498,54 +558,54 @@ void exportJobsToCSV(const std::string &filename, const BatsimContext *context)
     {
         string workload_name = mit.first;
         const Workload * workload = mit.second;
-	int workload_num = distance((context->workloads.workloads()).begin(), (context->workloads.workloads()).find(mit.first)); 
+        int workload_num = distance((context->workloads.workloads()).begin(), (context->workloads.workloads()).find(mit.first));
 
-	if(workload->jobs)
-	  {
-        const auto & jobs = workload->jobs->jobs();
-        for (const auto & mit : jobs)
+        if(workload->jobs)
         {
-            Job * job = mit.second;
-
-            if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+            const auto & jobs = workload->jobs->jobs();
+            for (const auto & mit : jobs)
             {
-                char * buf = nullptr;
-                int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
-                xbt_assert(job->runtime >= 0);
+                Job * job = mit.second;
 
-                int ret = asprintf(&buf, "%d,%s,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
-                                   job->number*10 + workload_num, // job_id
-                                   workload_name.c_str(), // workload_name
-                                   job->submission_time, // submission_time
-                                   job->required_nb_res, // requested_number_of_processors
-                                   job->walltime, // requested_time
-                                   success, // success
-                                   job->starting_time, // starting_time
-                                   job->runtime, // execution_time
-                                   job->starting_time + job->runtime, // finish_time
-                                   job->starting_time - job->submission_time, // waiting_time
-                                   job->starting_time + job->runtime - job->submission_time, // turnaround_time
-                                   (job->starting_time + job->runtime - job->submission_time) / job->runtime, // stretch
-                                   job->consumed_energy // consumed energy
-                                   );
-                (void) ret; // Avoids a warning if assertions are ignored
-                xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-                f << buf;
-                free(buf);
+                if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+                {
+                    char * buf = nullptr;
+                    int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
+                    xbt_assert(job->runtime >= 0);
 
-                xbt_assert((int)job->allocation.size() == job->required_nb_res);
+                    int ret = asprintf(&buf, "%d,%s,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
+                                       job->number*10 + workload_num, // job_id
+                                       workload_name.c_str(), // workload_name
+                                       job->submission_time, // submission_time
+                                       job->required_nb_res, // requested_number_of_processors
+                                       job->walltime, // requested_time
+                                       success, // success
+                                       job->starting_time, // starting_time
+                                       job->runtime, // execution_time
+                                       job->starting_time + job->runtime, // finish_time
+                                       job->starting_time - job->submission_time, // waiting_time
+                                       job->starting_time + job->runtime - job->submission_time, // turnaround_time
+                                       (job->starting_time + job->runtime - job->submission_time) / job->runtime, // stretch
+                                       job->consumed_energy // consumed energy
+                                       );
+                    (void) ret; // Avoids a warning if assertions are ignored
+                    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+                    f << buf;
+                    free(buf);
 
-                f << job->allocation.to_string_hyphen(" ") << "\n";
+                    xbt_assert((int)job->allocation.size() == job->required_nb_res);
+
+                    f << job->allocation.to_string_hyphen(" ") << "\n";
+                }
             }
         }
-	  }
     }
 
     f.close();
 }
 
 
-void exportScheduleToCSV(const std::string &filename, const BatsimContext *context)
+void export_schedule_to_csv(const std::string &filename, const BatsimContext *context)
 {
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
@@ -567,8 +627,8 @@ void exportScheduleToCSV(const std::string &filename, const BatsimContext *conte
     {
         const Workload * workload = mit.second;
 
-	if(workload->jobs)
-	  {
+    if(workload->jobs)
+      {
         const auto & jobs = workload->jobs->jobs();
         for (const auto & mit : jobs)
         {
@@ -598,7 +658,7 @@ void exportScheduleToCSV(const std::string &filename, const BatsimContext *conte
                     max_turnaround_time = turnaround_time;
             }
         }
-	  }
+      }
     }
 
     XBT_INFO("Makespan=%lf, scheduling_time=%Lf", makespan, seconds_used_by_scheduler);

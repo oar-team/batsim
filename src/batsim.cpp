@@ -17,7 +17,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 
-
+#include "batsim.hpp"
 #include "context.hpp"
 #include "export.hpp"
 #include "ipp.hpp"
@@ -36,53 +36,6 @@ using namespace std;
 XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "batsim"); //!< Logging
 
 /**
- * @brief Batsim verbosity level
- */
-enum class VerbosityLevel
-{
-    QUIET           //!< Almost nothing should be displayed
-    ,NETWORK_ONLY   //!< Only network messages should be displayed
-    ,INFORMATION    //!< Informations should be displayed (default)
-    ,DEBUG          //!< Debug informations should be displayed too
-};
-
-/**
- * @brief The main function arguments (a.k.a. program arguments)
- */
-struct MainArguments
-{
-    std::string platformFilename;                           //!< The SimGrid platform filename
-    std::list<std::string> workloadFilename;                           //!< The JSON workload filename
-    std::list<std::string> workflowFilename;                           //!< The workflow description filename
-    std::list<double> workflowStartTime;                           //!< The workflow description filename
-
-    std::string socketFilename = "/tmp/bat_socket";         //!< The Unix Domain Socket filename
-
-    std::string masterHostName = "master_host";             //!< The name of the SimGrid host which runs scheduler processes and not user tasks
-    std::string exportPrefix;                               //!< The filename prefix used to export simulation information
-
-    bool stop_when_workflow_finishes = false;		    //!< Stops the simulation as soon as a workflow completes - ignored if no workflow is being simulated
-
-    double workflow_start_time = 0.0;			    //!< Time at which the workflow begins execution
-
-    std::string redis_hostname = "127.0.0.1";               //!< The Redis (data storage) server host name
-    int redis_port = 6379;                                  //!< The Redis (data storage) server port
-    string redis_prefix;                                    //!< The Redis (data storage) instance prefix
-
-    int limit_machines_count = -1;                          //!< The number of machines to use to compute jobs. -1 : no limit. >= 1 : the number of computation machines
-    bool limit_machines_count_by_workload = false;          //!< If set to true, the number of computing machiens to use should be limited by the workload description
-
-    bool energy_used = false;                               //!< True if and only if the SimGrid energy plugin should be used.
-    VerbosityLevel verbosity = VerbosityLevel::INFORMATION; //!< Sets the Batsim verbosity
-    bool allow_space_sharing = false;                       //!< Allows/forbids space sharing. Two jobs can run on the same machine if and only if space sharing is allowed.
-    bool enable_simgrid_process_tracing = false;            //!< If set to true, this options enables the tracing of SimGrid processes
-    bool enable_schedule_tracing = true;                    //!< If set to true, the schedule is exported to a Pajé trace file
-
-    bool abort = false;                                     //!< A boolean value. If set to yet, the launching should be aborted for reason abortReason
-    std::string abortReason;                                //!< Human readable reasons which explains why the launch should be aborted
-};
-
-/**
  * @brief Used to parse the main function parameters
  * @param[in] key The current key
  * @param[in] arg The current argument
@@ -91,27 +44,27 @@ struct MainArguments
  */
 int parse_opt (int key, char *arg, struct argp_state *state)
 {
-    MainArguments * mainArgs = (MainArguments *) state->input;
+    MainArguments * main_args = (MainArguments *) state->input;
 
     switch (key)
     {
     case 'p':
     {
-        mainArgs->platformFilename = arg;
-        if (access(mainArgs->platformFilename.c_str(), R_OK) == -1)
+        main_args->platform_filename = arg;
+        if (access(main_args->platform_filename.c_str(), R_OK) == -1)
         {
-            mainArgs->abort = true;
-            mainArgs->abortReason += "\n  invalid PLATFORM_FILE argument: file '" + string(mainArgs->platformFilename) + "' cannot be read";
+            main_args->abort = true;
+            main_args->abortReason += "\n  invalid PLATFORM_FILE argument: file '" + string(main_args->platform_filename) + "' cannot be read";
         }
         break;
     }
     case 'w':
     {
-      ( mainArgs->workloadFilename ).push_back( arg );
-      if (access(((std::string) arg).c_str(), R_OK) == -1)
+        main_args->workload_filenames.push_back(arg);
+        if (access(((string) arg).c_str(), R_OK) == -1)
         {
-            mainArgs->abort = true;
-            mainArgs->abortReason += "\n  invalid WORKLOAD_FILE argument: file '" + string(arg) + "' cannot be read";
+            main_args->abort = true;
+            main_args->abortReason += "\n  invalid WORKLOAD_FILE argument: file '" + string(arg) + "' cannot be read";
         }
         break;
     }
@@ -122,30 +75,34 @@ int parse_opt (int key, char *arg, struct argp_state *state)
         boost::split(parts, (const std::string)std::string(arg),
                      boost::is_any_of(":"), boost::token_compress_on);
 
-        mainArgs->workflowFilename.push_back(parts.at(0).c_str());
         if (access(parts.at(0).c_str(), R_OK) == -1)
         {
-            mainArgs->abort = true;
-            mainArgs->abortReason += "\n  invalid WORKFLOW_FILE argument: file '" + parts.at(0) + "' cannot be read";
+            main_args->abort = true;
+            main_args->abortReason += "\n  invalid WORKFLOW_FILE argument: file '" + parts.at(0) + "' cannot be read";
         }
-
-        if (parts.size() == 2)
-            mainArgs->workflowStartTime.push_back(std::stod(parts.at(1)));
         else
-            mainArgs->workflowStartTime.push_back(0.0);
+        {
+            string workflow_filename = parts.at(0).c_str();
+            double workflow_start_time = 0.0;
+
+            if (parts.size() == 2)
+                workflow_start_time = std::stod(parts.at(1));
+
+            main_args->workflow_descriptions.push_back({workflow_filename, workflow_start_time});
+        }
         break;
     }
     case 'e':
-        mainArgs->exportPrefix = arg;
+        main_args->export_prefix = arg;
         break;
     case 'E':
-        mainArgs->energy_used = true;
+        main_args->energy_used = true;
         break;
     case 'h':
-        mainArgs->allow_space_sharing = true;
+        main_args->allow_space_sharing = true;
         break;
     case 'H':
-        mainArgs->redis_hostname = arg;
+        main_args->redis_hostname = arg;
         break;
     case 'l':
     {
@@ -153,20 +110,20 @@ int parse_opt (int key, char *arg, struct argp_state *state)
 
         if ((ivalue < -1) || (ivalue == 0))
         {
-            mainArgs->abort = true;
-            mainArgs->abortReason += "\n  invalid M positional argument (" + to_string(ivalue) + "): it should either be -1 or a strictly positive value";
+            main_args->abort = true;
+            main_args->abortReason += "\n  invalid M positional argument (" + to_string(ivalue) + "): it should either be -1 or a strictly positive value";
         }
 
-        mainArgs->limit_machines_count = ivalue;
+        main_args->limit_machines_count = ivalue;
         break;
     }
     case 'L':
     {
-        mainArgs->limit_machines_count_by_workload = true;
+        main_args->limit_machines_count_by_workload = true;
         break;
     }
     case 'm':
-        mainArgs->masterHostName = arg;
+        main_args->master_host_name = arg;
         break;
     case 'P':
     {
@@ -174,42 +131,42 @@ int parse_opt (int key, char *arg, struct argp_state *state)
 
         if ((ivalue <= 0) || (ivalue > 65535))
         {
-            mainArgs->abort = true;
-            mainArgs->abortReason += "\n  invalid PORT positional argument (" + to_string(ivalue) +
+            main_args->abort = true;
+            main_args->abortReason += "\n  invalid PORT positional argument (" + to_string(ivalue) +
                                      "): it should be a valid port: integer in range [1,65535].";
         }
 
-        mainArgs->redis_port = ivalue;
+        main_args->redis_port = ivalue;
         break;
     }
     case 'q':
-        mainArgs->verbosity = VerbosityLevel::QUIET;
+        main_args->verbosity = VerbosityLevel::QUIET;
         break;
     case 's':
-        mainArgs->socketFilename = arg;
+        main_args->socket_filename = arg;
         break;
     case 't':
-        mainArgs->enable_simgrid_process_tracing = true;
+        main_args->enable_simgrid_process_tracing = true;
         break;
     case 'T':
-        mainArgs->enable_schedule_tracing = false;
+        main_args->enable_schedule_tracing = false;
         break;
     case 'v':
     {
         string sArg = arg;
         boost::to_lower(sArg);
         if (sArg == "quiet")
-            mainArgs->verbosity = VerbosityLevel::QUIET;
+            main_args->verbosity = VerbosityLevel::QUIET;
         else if (sArg == "network-only")
-            mainArgs->verbosity = VerbosityLevel::NETWORK_ONLY;
+            main_args->verbosity = VerbosityLevel::NETWORK_ONLY;
         else if (sArg == "information")
-            mainArgs->verbosity = VerbosityLevel::INFORMATION;
+            main_args->verbosity = VerbosityLevel::INFORMATION;
         else if (sArg == "debug")
-            mainArgs->verbosity = VerbosityLevel::DEBUG;
+            main_args->verbosity = VerbosityLevel::DEBUG;
         else
         {
-            mainArgs->abort = true;
-            mainArgs->abortReason += "\n  invalid VERBOSITY_LEVEL argument: '" + string(sArg) + "' is not in {quiet, network-only, information, debug}.";
+            main_args->abort = true;
+            main_args->abortReason += "\n  invalid VERBOSITY_LEVEL argument: '" + string(sArg) + "' is not in {quiet, network-only, information, debug}.";
         }
         break;
     }
@@ -219,15 +176,14 @@ int parse_opt (int key, char *arg, struct argp_state *state)
 }
 
 /**
- * @brief Main function
- * @param[in] argc The number of arguments
- * @param[in] argv The arguments' values
- * @return 0 on success, something else otherwise
+ * @brief Parses Batsim's command-line arguments
+ * @param[in] argc The number of arguments given to the main function
+ * @param[in] argv The values of arguments given to the main function
+ * @param[out] main_args Batsim's usable arguments
+ * @return
  */
-int main(int argc, char * argv[])
+bool parse_main_args(int argc, char * argv[], MainArguments & main_args)
 {
-    MainArguments mainArgs;
-
     struct argp_option options[] =
     {
         {"platform", 'p', "FILENAME", 0, "Platform to be simulated by SimGrid. Required.", 0},
@@ -249,40 +205,49 @@ int main(int argc, char * argv[])
         {"verbosity", 'v', "VERBOSITY_LEVEL", 0, "Sets the Batsim verbosity level. Available values are : quiet, network-only, information (default), debug.", 0},
         {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
     };
-    struct argp argp = {options, parse_opt, 0, "A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.", 0, 0, 0};
-    argp_parse(&argp, argc, argv, 0, 0, &mainArgs);
 
+    struct argp argp = {options, parse_opt, 0, "A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.", 0, 0, 0};
+    argp_parse(&argp, argc, argv, 0, 0, &main_args);
+
+    /* These lines make my experiments fail (and pollute my Batsim dir), please use -e or add a command-line :p
     stringstream ss;
     ss << "out_" << getpid();
-    ss >> mainArgs.exportPrefix;
+    ss >> main_args.export_prefix;*/
 
-    if (access(mainArgs.platformFilename.c_str(), R_OK) == -1)
+    if (access(main_args.platform_filename.c_str(), R_OK) == -1)
     {
-        mainArgs.abort = true;
-        mainArgs.abortReason += "\n  invalid PLATFORM_FILE argument: file '" + string(mainArgs.platformFilename) + "' cannot be read";
+        main_args.abort = true;
+        main_args.abortReason += "\n  invalid PLATFORM_FILE argument: file '" + string(main_args.platform_filename) + "' cannot be read";
     }
 
-    if (mainArgs.abort)
+    if (main_args.abort)
     {
-        fprintf(stderr, "Impossible to run batsim:%s\n", mainArgs.abortReason.c_str());
-        return 1;
+        fprintf(stderr, "Impossible to run batsim:%s\n", main_args.abortReason.c_str());
+        return false;
     }
 
-    if (mainArgs.energy_used)
-        sg_energy_plugin_init();
+    return true;
+}
 
-    vector<string> log_categories_to_set = {"workload", "job_submitter", "redis", "jobs", "batsim", "machines", "pstate",
+/**
+ * @brief Configures how the simulation should be logged
+ * @param[in,out] main_args Batsim's arguments
+ */
+void configure_batsim_logging_output(const MainArguments & main_args)
+{
+    vector<string> log_categories_to_set = {"workload", "job_submitter", "redis", "jobs", "machines", "pstate",
                                             "workflow", "jobs_execution", "server", "export", "profiles", "machine_range",
                                             "network", "ipp"};
-    string log_threshold_to_set = "info";
+    string log_threshold_to_set = "critical";
 
-    if (mainArgs.verbosity == VerbosityLevel::QUIET || mainArgs.verbosity == VerbosityLevel::NETWORK_ONLY)
+    if (main_args.verbosity == VerbosityLevel::QUIET || main_args.verbosity == VerbosityLevel::NETWORK_ONLY)
         log_threshold_to_set = "error";
-
-    if (mainArgs.verbosity == VerbosityLevel::NETWORK_ONLY)
-        xbt_log_control_set("network.thresh:info");
-    else if (mainArgs.verbosity == VerbosityLevel::DEBUG)
+    else if (main_args.verbosity == VerbosityLevel::DEBUG)
         log_threshold_to_set = "debug";
+    else if (main_args.verbosity == VerbosityLevel::INFORMATION)
+        log_threshold_to_set = "info";
+    else
+        xbt_assert(false, "FIXME!");
 
     for (const auto & log_cat : log_categories_to_set)
     {
@@ -290,187 +255,204 @@ int main(int argc, char * argv[])
         xbt_log_control_set(final_str.c_str());
     }
 
-    // Initialization
+    // In network-only, we add a rule to display the network info
+    if (main_args.verbosity == VerbosityLevel::NETWORK_ONLY)
+        xbt_log_control_set("network.thresh:info");
+
+    // Batsim is always set to info, to allow to trace Batsim's input easily
+    xbt_log_control_set("batsim.thresh:info");
+}
+
+/**
+ * @brief Initializes SimGrid
+ * @param[in] main_args Batsim's arguments
+ * @param[in] argc The number of arguments given to the main function
+ * @param[in] argv The values of arguments given to the main function
+ */
+void initialize_msg(const MainArguments & main_args, int argc, char * argv[])
+{
+    // Must be initialized before MSG_init
+    if (main_args.energy_used)
+        sg_energy_plugin_init();
+
     MSG_init(&argc, argv);
 
     // Setting SimGrid configuration if the SimGrid process tracing is enabled
-    if (mainArgs.enable_simgrid_process_tracing)
+    if (main_args.enable_simgrid_process_tracing)
     {
-        string sg_trace_filename = mainArgs.exportPrefix + "_sg_processes.trace";
+        string sg_trace_filename = main_args.export_prefix + "_sg_processes.trace";
 
         MSG_config("tracing", "1");
         MSG_config("tracing/msg/process", "1");
         MSG_config("tracing/filename", sg_trace_filename.c_str());
     }
+}
 
+/**
+ * @brief Loads the workloads defined in Batsim's arguments
+ * @param[in] main_args Batsim's arguments
+ * @param[in,out] context The BatsimContext
+ * @param[out] max_nb_machines_to_use The maximum number of machines that should be used in the simulation. This number is computed from Batsim's arguments but depends on Workloads' content. -1 means no limitation.
+ */
+void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext * context, int & max_nb_machines_to_use)
+{
+    int max_nb_machines_in_workloads = -1;
+
+    // Let's create the workloads
+    for (const auto & workload_filename : main_args.workload_filenames)
+    {
+        string workload_name = workload_filename; // TODO: compress names?
+        Workload * workload = new Workload(workload_name);
+
+        int nb_machines_in_workload = -1;
+        workload->load_from_json(workload_filename, nb_machines_in_workload);
+        max_nb_machines_in_workloads = max(max_nb_machines_in_workloads, nb_machines_in_workload);
+
+        context->workloads.insert_workload(workload_name, workload);
+    }
+
+    // Let's create the workflows
+    for (const auto & desc : main_args.workflow_descriptions)
+    {
+        string workflow_name = desc.workflow_filename; // TODO: compress names?
+        string workflow_workload_name = workflow_name;
+        Workload * workload = new Workload(workflow_workload_name); // Is creating the Workload now necessary? Workloads::add_job_if_not_exists may be enough
+        workload->jobs = new Jobs;
+        workload->profiles = new Profiles;
+        context->workloads.insert_workload(workflow_workload_name, workload);
+
+        Workflow * workflow = new Workflow(workflow_name);
+        workflow->start_time = desc.workflow_start_time;
+        workflow->load_from_xml(desc.workflow_filename);
+        context->workflows.insert_workflow(workflow_name, workflow);
+    }
+
+    // Let's compute how the number of machines to use should be limited
+    max_nb_machines_to_use = -1;
+    if ((main_args.limit_machines_count_by_workload) && (main_args.limit_machines_count > 0))
+        max_nb_machines_to_use = min(main_args.limit_machines_count, max_nb_machines_in_workloads);
+    else if (main_args.limit_machines_count_by_workload)
+        max_nb_machines_to_use = max_nb_machines_in_workloads;
+    else if (main_args.limit_machines_count > 0)
+        max_nb_machines_to_use = main_args.limit_machines_count;
+
+    if (max_nb_machines_to_use != -1)
+        XBT_INFO("The maximum number of machines to use is %d", max_nb_machines_to_use);
+}
+
+/**
+ * @brief Starts the SimGrid processes that should be executed at the beginning of the simulation
+ * @param[in] main_args Batsim's arguments
+ * @param[in] context The BatsimContext
+ */
+void start_initial_simulation_processes(const MainArguments & main_args, BatsimContext * context)
+{
+    const Machine * master_machine = context->machines.master_machine();
+
+    // Let's run a static_job_submitter process for each workload
+    for (const auto & workload_filename : main_args.workload_filenames)
+    {
+        XBT_DEBUG("Creating a workload_submitter process...");
+        string workload_name = workload_filename;
+
+        JobSubmitterProcessArguments * submitter_args = new JobSubmitterProcessArguments;
+        submitter_args->context = context;
+        submitter_args->workload_name = workload_name;
+
+        string submitter_instance_name = "workload_submitter_" + workload_name;
+        MSG_process_create(submitter_instance_name.c_str(), static_job_submitter_process, (void*)submitter_args, master_machine->host);
+        XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
+    }
+
+    // Let's run a workflow_submitter process for each workflow
+    for (const auto & desc : main_args.workflow_descriptions)
+    {
+        XBT_DEBUG("Creating a workflow_submitter process...");
+        string workflow_name = desc.workflow_filename;
+
+        WorkflowSubmitterProcessArguments * submitter_args = new WorkflowSubmitterProcessArguments;
+        submitter_args->context = context;
+        submitter_args->workflow_name = workflow_name;
+
+        string submitter_instance_name = "workflow_submitter_" + workflow_name;
+        MSG_process_create(submitter_instance_name.c_str(), workflow_submitter_process, (void*)submitter_args, master_machine->host);
+        XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
+    }
+
+
+    XBT_INFO("Creating the 'server' process...");
+    ServerProcessArguments * server_args = new ServerProcessArguments;
+    server_args->context = context;
+    MSG_process_create("server", uds_server_process, (void*)server_args, master_machine->host);
+    XBT_INFO("The process 'server' has been created.");
+}
+
+/**
+ * @brief Main function
+ * @param[in] argc The number of arguments
+ * @param[in] argv The arguments' values
+ * @return 0 on success, something else otherwise
+ */
+int main(int argc, char * argv[])
+{
+    // Let's parse command-line arguments
+    MainArguments main_args;
+    if (!parse_main_args(argc, argv, main_args))
+        return 1;
+
+    // Let's configure how Batsim should be logged
+    configure_batsim_logging_output(main_args);
+
+    // Let's initialize SimGrid
+    initialize_msg(main_args, argc, argv);
+
+    // Let's create the BatsimContext, which stores information about the current instance
     BatsimContext context;
-    context.platform_filename = mainArgs.platformFilename;
-    context.workload_filename = mainArgs.workloadFilename;
-    context.export_prefix = mainArgs.exportPrefix;
-    context.energy_used = mainArgs.energy_used;
-    context.allow_space_sharing = mainArgs.allow_space_sharing;
-    context.trace_schedule = mainArgs.enable_schedule_tracing;
+    context.platform_filename = main_args.platform_filename;
+    context.export_prefix = main_args.export_prefix;
+    context.energy_used = main_args.energy_used;
+    context.allow_space_sharing = main_args.allow_space_sharing;
+    context.trace_schedule = main_args.enable_schedule_tracing;
 
-    // Loading the static workload
-    int nb_machines_by_workload = -1;
+    // Let's load the workloads and workflows
+    int max_nb_machines_to_use = -1;
+    load_workloads_and_workflows(main_args, &context, max_nb_machines_to_use);
 
-    //std::list<Workload *> static_workload_list;
-    // string static_workload_name = "static";
-
-    for(std::list<std::string>::iterator i=mainArgs.workloadFilename.begin(); i != mainArgs.workloadFilename.end(); i++)
-    {
-        string static_workload_name_local = *i;
-        Workload * static_workload_local = new Workload(*i);
-        //static_workload_list.push_back(static_workload_local);
-        int nb_machines_by_workload_local = -1;
-        static_workload_local->load_from_json(*i, nb_machines_by_workload_local);
-        if( nb_machines_by_workload_local > nb_machines_by_workload )
-        {
-            nb_machines_by_workload = nb_machines_by_workload_local;
-        }
-        context.workloads.insert_workload(static_workload_name_local, static_workload_local);
-    }
-
-    // Creating an empty placeholder workload for the workflow submitter, if needed
-    //    if(mainArgs.workloadFilename.size()>0) {
-    std::list<std::string>::iterator i;
-    std::list<double>::iterator j;
-    for(i=mainArgs.workflowFilename.begin(),
-        j=mainArgs.workflowStartTime.begin();
-        i != mainArgs.workflowFilename.end() && // This line was occulted by the ','. I transformed it into a '&&', remove this comment if it's ok
-        j != mainArgs.workflowStartTime.end();
-        i++,j++)
-    {
-        string workflow_workload_name = *i;
-        Workload * workflow_workload = new Workload(*i);
-        workflow_workload->jobs = new Jobs;
-        workflow_workload->profiles = new Profiles;
-        context.workloads.insert_workload(workflow_workload_name, workflow_workload);
-
-        //      XBT_INFO("Creating workload %s as placeholder for %s", workflow_workload_name.c_str(), mainArgs.workflowFilename.c_str());
-        Workflow * file_workflow = new Workflow(*i);
-        file_workflow->start_time = *j;
-        file_workflow->load_from_xml(*i);
-        context.workflows.insert_workflow(workflow_workload_name, file_workflow);
-    }
-    //}
-
-    int limit_machines_count = -1;
-    if ((mainArgs.limit_machines_count_by_workload) && (mainArgs.limit_machines_count > 0))
-        limit_machines_count = min(mainArgs.limit_machines_count, nb_machines_by_workload);
-    else if (mainArgs.limit_machines_count_by_workload)
-        limit_machines_count = nb_machines_by_workload;
-    else if (mainArgs.limit_machines_count > 0)
-        limit_machines_count = mainArgs.limit_machines_count;
-
-    if (limit_machines_count != -1)
-        XBT_INFO("The number of machines will be limited to %d", limit_machines_count);
-
-    // TODO: make SMPI work again
-    XBT_INFO("SMPI will NOT be used.");
+    // Let's choose which SimGrid computing model should be used
+    XBT_INFO("SMPI will NOT be used."); // TODO: make SMPI work again
     MSG_config("host/model", "ptask_L07");
 
-    if (context.trace_schedule)
-        context.paje_tracer.setFilename(mainArgs.exportPrefix + "_schedule.trace");
+    // Let's create the machines
+    create_machines(main_args, &context, max_nb_machines_to_use);
 
-    XBT_INFO("Creating the machines...");
-    MSG_create_environment(mainArgs.platformFilename.c_str());
+    // Let's prepare Batsim's outputs
+    XBT_INFO("Batsim's export prefix is '%s'", context.export_prefix.c_str());
+    prepare_batsim_outputs(&context);
 
-    xbt_dynar_t hosts = MSG_hosts_as_dynar();
-    context.machines.createMachines(hosts, &context, mainArgs.masterHostName, limit_machines_count);
-    xbt_dynar_free(&hosts);
-    const Machine * masterMachine = context.machines.masterMachine();
-    if (context.trace_schedule)
-    {
-        context.machines.setTracer(&context.paje_tracer);
-        context.paje_tracer.initialize(&context, MSG_get_clock());
-    }
-    XBT_INFO("Machines created successfully. There are %lu computing machines.", context.machines.machines().size());
-
-    if (context.energy_used)
-    {
-        // Energy consumption tracing
-        context.energy_tracer.set_context(&context);
-        context.energy_tracer.set_filename(mainArgs.exportPrefix + "_consumed_energy.csv");
-
-        // Power state tracing
-        context.pstate_tracer.setFilename(mainArgs.exportPrefix + "_pstate_changes.csv");
-
-        std::map<int, MachineRange> pstate_to_machine_set;
-        for (const Machine * machine : context.machines.machines())
-        {
-            int machine_id = machine->id;
-            int pstate = MSG_host_get_pstate(machine->host);
-
-            if (pstate_to_machine_set.count(pstate) == 0)
-            {
-                MachineRange range;
-                range.insert(machine_id);
-                pstate_to_machine_set[pstate] = range;
-            }
-            else
-                pstate_to_machine_set[pstate].insert(machine_id);
-        }
-
-        for (auto mit : pstate_to_machine_set)
-        {
-            int pstate = mit.first;
-            MachineRange & range = mit.second;
-            context.pstate_tracer.add_pstate_change(MSG_get_clock(), range, pstate);
-        }
-    }
-
-    // Socket
-    context.socket.create_socket(mainArgs.socketFilename);
+    // Let's create the socket
+    // TODO: check that the socket is not currently being used
+    context.socket.create_socket(main_args.socket_filename);
     context.socket.accept_pending_connection();
 
-    // Redis
-    context.storage.set_instance_key_prefix(absolute_filename(mainArgs.socketFilename));
-    context.storage.connect_to_server(mainArgs.redis_hostname, mainArgs.redis_port);
+    // Let's prepare connection
+    context.storage.set_instance_key_prefix(absolute_filename(main_args.socket_filename)); // TODO: main argument?
+    context.storage.connect_to_server(main_args.redis_hostname, main_args.redis_port);
 
     // Let's store some metadata about the current instance in the data storage
     context.storage.set("nb_res", std::to_string(context.machines.nb_machines()));
 
-    // Starting the simulated processes
+    // Let's execute the initial processes
+    start_initial_simulation_processes(main_args, &context);
 
-    for(std::list<std::string>::iterator i=mainArgs.workloadFilename.begin(); i != mainArgs.workloadFilename.end(); i++)
-    {
-        XBT_INFO("Creating jobs_submitter process...");
-        JobSubmitterProcessArguments * submitterArgs = new JobSubmitterProcessArguments;
-        submitterArgs->context = &context;
-        submitterArgs->workload_name = *i;
-        MSG_process_create("jobs_submitter", static_job_submitter_process, (void*)submitterArgs, masterMachine->host);
-        XBT_INFO("The jobs_submitter process has been created.");
-    }
-
-    // Creating an empty placeholder workload for the workflow submitter, if needed
-    for(std::list<std::string>::iterator i=mainArgs.workflowFilename.begin(); i != mainArgs.workflowFilename.end(); i++)
-    {
-        XBT_INFO("Creating workflow_submitter process...");
-        WorkflowSubmitterProcessArguments * submitterArgs = new WorkflowSubmitterProcessArguments;
-        submitterArgs->context = &context;
-        submitterArgs->workflow_name = *i;
-        MSG_process_create("workflow_submitter", workflow_submitter_process, (void*)submitterArgs, masterMachine->host);
-        XBT_INFO("The workflow_submitter process has been created.");
-    }
-
-
-    XBT_INFO("Creating the uds_server process...");
-    ServerProcessArguments * serverArgs = new ServerProcessArguments;
-    serverArgs->context = &context;
-    MSG_process_create("server", uds_server_process, (void*)serverArgs, masterMachine->host);
-    XBT_INFO("The uds_server process has been created.");
-
+    // Simulation main loop, handled by MSG
     msg_error_t res = MSG_main();
 
+    // If SMPI had been used, it should be finalized
     if (context.smpi_used)
         SMPI_finalize();
 
-    // Finalization
-    if (context.trace_schedule)
-        context.paje_tracer.finalize(&context, MSG_get_clock());
-    exportScheduleToCSV(mainArgs.exportPrefix + "_schedule.csv", &context);
-    exportJobsToCSV(mainArgs.exportPrefix + "_jobs.csv", &context);
+    // Let's finalize Batsim's outputs
+    finalize_batsim_outputs(&context);
 
     if (res == MSG_OK)
         return 0;
