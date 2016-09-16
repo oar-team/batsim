@@ -15,6 +15,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 
+#include <boost/locale.hpp>
+
 #include <simgrid/msg.h>
 
 #include "context.hpp"
@@ -126,19 +128,25 @@ string UnixDomainSocket::receive()
         }
         nb_bytes_read += ret;
     }
-    XBT_INFO("Received '%s'", msg.c_str());
 
-    return msg;
+    // Let's convert the received string from UTF-8
+    string msg_utf8 = boost::locale::conv::from_utf(msg, "UTF-8");
+    XBT_INFO("Received '%s'", msg_utf8.c_str());
+
+    return msg_utf8;
 }
 
 void UnixDomainSocket::send(const string & message)
 {
     xbt_assert(_client_socket != -1, "Bad UnixDomainSocket::send call: the client socket does not exist");
 
-    uint32_t message_size = message.size();
-    XBT_INFO("Sending '%s'", message.c_str());
+    // Let's make sure the message is sent as UTF-8
+    string utf8_message = boost::locale::conv::to_utf<char>(message, "UTF-8");
+
+    uint32_t message_size = utf8_message.size();
+    XBT_INFO("Sending '%s'", utf8_message.c_str());
     write(_client_socket, &message_size, 4);
-    write(_client_socket, (void*)message.c_str(), message_size);
+    write(_client_socket, (void*)utf8_message.c_str(), message_size);
 }
 
 int request_reply_scheduler_process(int argc, char *argv[])
