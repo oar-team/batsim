@@ -590,6 +590,11 @@ Examples of such input files can be found in the subdirectory instance_examples.
                           'either absolute or relative to the working directory. '
                           ' If unset, the working directory is used instead')
 
+    p.add_argument('--post_only',
+                   action = 'store_true',
+                   help = 'If set, only the post commands of this instance will '
+                          'be computed.')
+
     args = p.parse_args()
 
     # Let's read the YAML file content to get the real parameters
@@ -663,44 +668,45 @@ Examples of such input files can be found in the subdirectory instance_examples.
     variables_filename = '{out}/variables.bash'.format(out = output_directory)
     put_variables_in_file(variables, var_decl_order, variables_filename)
 
-    # Let the execution be started
-    # Commands before instance execution
-    if len(commands_before_execution) > 0:
-        pre_commands_dir = '{instance_out_dir}/pre_commands'.format(
-            instance_out_dir = output_directory)
-        pre_commands_output_dir = '{commands_dir}/out'.format(
-            commands_dir = pre_commands_dir)
-        create_dir_if_not_exists(pre_commands_dir)
-        create_dir_if_not_exists(pre_commands_output_dir)
+    if not args.post_only:
+        # Let the execution be started
+        # Commands before instance execution
+        if len(commands_before_execution) > 0:
+            pre_commands_dir = '{instance_out_dir}/pre_commands'.format(
+                instance_out_dir = output_directory)
+            pre_commands_output_dir = '{commands_dir}/out'.format(
+                commands_dir = pre_commands_dir)
+            create_dir_if_not_exists(pre_commands_dir)
+            create_dir_if_not_exists(pre_commands_output_dir)
 
-        nb_chars_command_ids = int(1 + math.log10(len(commands_before_execution)))
+            nb_chars_command_ids = int(1 + math.log10(len(commands_before_execution)))
 
-        for command_id in range(len(commands_before_execution)):
-            command_name = 'command' + str(command_id).zfill(nb_chars_command_ids)
-            output_command_filename = '{commands_dir}/{name}.bash'.format(
-                                        commands_dir = pre_commands_dir,
-                                        name = command_name)
-            output_subscript_filename = '{commands_dir}/{name}_sub'.format(
+            for command_id in range(len(commands_before_execution)):
+                command_name = 'command' + str(command_id).zfill(nb_chars_command_ids)
+                output_command_filename = '{commands_dir}/{name}.bash'.format(
                                             commands_dir = pre_commands_dir,
                                             name = command_name)
+                output_subscript_filename = '{commands_dir}/{name}_sub'.format(
+                                                commands_dir = pre_commands_dir,
+                                                name = command_name)
 
-            if not execute_command(command = commands_before_execution[command_id],
-                                   working_directory = working_directory,
-                                   variables_filename = variables_filename,
-                                   output_script_filename = output_command_filename,
-                                   output_subscript_filename = output_subscript_filename,
-                                   output_script_output_dir = pre_commands_output_dir,
-                                   command_name = command_name):
-                sys.exit(1)
+                if not execute_command(command = commands_before_execution[command_id],
+                                       working_directory = working_directory,
+                                       variables_filename = variables_filename,
+                                       output_script_filename = output_command_filename,
+                                       output_subscript_filename = output_subscript_filename,
+                                       output_script_output_dir = pre_commands_output_dir,
+                                       command_name = command_name):
+                    sys.exit(1)
 
-    # Instance execution
-    if not execute_one_instance(working_directory = working_directory,
-                                output_directory = output_directory,
-                                batsim_command = batsim_command,
-                                sched_command = sched_command,
-                                variables_filename = variables_filename,
-                                timeout = timeout):
-        sys.exit(1)
+        # Instance execution
+        if not execute_one_instance(working_directory = working_directory,
+                                    output_directory = output_directory,
+                                    batsim_command = batsim_command,
+                                    sched_command = sched_command,
+                                    variables_filename = variables_filename,
+                                    timeout = timeout):
+            sys.exit(1)
 
     # Commands after instance execution
     if len(commands_after_execution) > 0:
