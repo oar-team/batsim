@@ -58,47 +58,51 @@ r = re.compile('\s*' + (element + '\s+') * 17 + element + '\s*')
 currentID = 0
 version=0
 
-# Let a job be a tuple (jobID, resCount, runTime, submitTime, profile, walltime)
+# Let a job be a tuple (job_id, nb_res, run_time, submit_time, profile, walltime)
 
 jobs = []
 profiles = SortedSet()
+
+nb_jobs_discarded = 0
 
 # Let's loop over the lines of the input file
 for line in args.inputSWF:
 	res = r.match(line)
 
 	if res:
-		jobID = (int(float(res.group(SwfField.JOB_ID.value))))
-		resCount = int(float(res.group(SwfField.ALLOCATED_PROCESSOR_COUNT.value)))
-		runTime = float(res.group(SwfField.RUN_TIME.value))
-		submitTime = max(0,float(res.group(SwfField.SUBMIT_TIME.value)))
-		wallTime = max(args.jobWalltimeFactor*runTime, float(res.group(SwfField.REQUESTED_TIME.value)))
+		job_id = (int(float(res.group(SwfField.JOB_ID.value))))
+		nb_res = int(float(res.group(SwfField.ALLOCATED_PROCESSOR_COUNT.value)))
+		run_time = float(res.group(SwfField.RUN_TIME.value))
+		submit_time = max(0,float(res.group(SwfField.SUBMIT_TIME.value)))
+		walltime = max(args.jobWalltimeFactor*run_time, float(res.group(SwfField.REQUESTED_TIME.value)))
 
 		if args.givenWalltimeOnly:
-			wallTime = float(res.group(SwfField.REQUESTED_TIME.value))
+			walltime = float(res.group(SwfField.REQUESTED_TIME.value))
 
-		if resCount > 0:
-			profile = int(((runTime // args.jobGrain)+1) * args.jobGrain)
+		if nb_res > 0 and walltime > run_time and run_time > 0 and submit_time >= 0:
+			profile = int(((run_time // args.jobGrain)+1) * args.jobGrain)
 			profiles.add(profile)
 
-			job = (currentID, resCount, runTime, submitTime, profile, wallTime)
+			job = (currentID, nb_res, run_time, submit_time, profile, walltime)
 			currentID = currentID + 1
 			jobs.append(job)
-		elif args.verbose:
-			print('Job {} has been discarded'.format(jobID))
+		else:
+			nb_jobs_discarded += 1
+			if args.verbose:
+				print('Job {} has been discarded'.format(job_id))
 
 # Export JSON
 # Let's generate a list of dictionaries for the jobs
 djobs = list()
-for (jobID, resCount, runTime, submitTime, profile, wallTime) in jobs:
-	djobs.append({'id':jobID, 'subtime':submitTime, 'walltime':wallTime, 'res':resCount, 'profile': str(profile)})
+for (job_id, nb_res, run_time, submit_time, profile, walltime) in jobs:
+	djobs.append({'id':job_id, 'subtime':submit_time, 'walltime':walltime, 'res':nb_res, 'profile': str(profile)})
 
 # Let's generate a dict of dictionaries for the profiles
 dprofs = {}
 for profile in profiles:
 	dprofs[str(profile)] = {'type':'delay', 'delay':profile}
 
-platform_size = max([resCount for (jobID, resCount, runTime, submitTime, profile, wallTime) in jobs])
+platform_size = max([nb_res for (job_id, nb_res, run_time, submit_time, profile, walltime) in jobs])
 if args.platformSize != None:
 	if args.platformSize < 1:
 		print('Invalid input: platform size must be strictly positive')
@@ -120,6 +124,7 @@ try:
 
 	if not args.quiet:
 		print('{} jobs and {} profiles had been created'.format(len(jobs), len(profiles)))
+		print('{} jobs have been discarded'.format(nb_jobs_discarded))
 
 except IOError:
 	print('Cannot write file', outputJsonFilename)

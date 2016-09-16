@@ -110,7 +110,7 @@ for line in args.inputSWF:
 		submit_time = max(0,float(res.group(SwfField.SUBMIT_TIME.value)))
 		wall_time = max(run_time, float(res.group(SwfField.REQUESTED_TIME.value)))
 
-		if nb_res > 0:
+		if nb_res > 0 and wall_time > run_time and run_time > 0 and submit_time >= 0:
 			job = Job(job_id = job_id,
 					  nb_res = nb_res,
 					  wait_time = wait_time,
