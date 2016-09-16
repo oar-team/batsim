@@ -168,6 +168,7 @@ def get_script_path():
 class WorkersSharedData:
     def __init__(self,
                  sweeper,
+                 instances_post_cmds_only,
                  implicit_instances,
                  explicit_instances,
                  nb_workers_finished,
@@ -175,6 +176,7 @@ class WorkersSharedData:
                  base_output_directory,
                  base_variables):
         self.sweeper = sweeper
+        self.instances_post_cmds_only = instances_post_cmds_only
         self.implicit_instances = implicit_instances
         self.explicit_instances = explicit_instances
         self.nb_workers_finished = nb_workers_finished
@@ -211,7 +213,8 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
                     implicit_instances = self.data.implicit_instances,
                     base_working_directory = self.data.base_working_directory,
                     base_output_directory = self.data.base_output_directory,
-                    base_variables = self.data.base_variables)
+                    base_variables = self.data.base_variables,
+                    post_commands_only = self.comb in self.data.instances_post_cmds_only)
                 self.combname = combname
                 self._launch_process(instance_command = command)
             else:
@@ -294,22 +297,26 @@ def prepare_instance(comb,
                      implicit_instances,
                      base_working_directory,
                      base_output_directory,
-                     base_variables):
+                     base_variables,
+                     post_commands_only = False):
     if comb['explicit']:
         return prepare_explicit_instance(explicit_instances = explicit_instances,
                                          instance_id = comb['instance_id'],
                                          base_output_directory = base_output_directory,
-                                         base_variables = base_variables)
+                                         base_variables = base_variables,
+                                         post_commands_only = post_commands_only)
     else:
         return prepare_implicit_instance(implicit_instances = implicit_instances,
                                          comb = comb,
                                          base_output_directory = base_output_directory,
-                                         base_variables = base_variables)
+                                         base_variables = base_variables,
+                                         post_commands_only = post_commands_only)
 
 def prepare_implicit_instance(implicit_instances,
                               comb,
                               base_output_directory,
-                              base_variables):
+                              base_variables,
+                              post_commands_only = False):
     # Let's retrieve instance
     instance = implicit_instances[comb['instance_name']]
     generic_instance = instance['generic_instance']
@@ -365,16 +372,23 @@ def prepare_implicit_instance(implicit_instances,
 
     write_string_into_file(yaml_content, desc_filename)
 
+    # Let's prepare the command options
+    options = ""
+    if post_commands_only:
+        options = ' --post_only'
+
     # Let's prepare the launch command
-    instance_command = '{exec_script} {desc_filename}'.format(
+    instance_command = '{exec_script}{opt} {desc_filename}'.format(
                             exec_script = execute_one_instance_script,
+                            opt = options,
                             desc_filename = desc_filename)
     return (desc_filename, combname, instance_command)
 
 def prepare_explicit_instance(explicit_instances,
                               instance_id,
                               base_output_directory,
-                              base_variables):
+                              base_variables,
+                              post_commands_only = False):
     # Let's retrieve the instance
     instance = explicit_instances[instance_id]
 
@@ -395,9 +409,15 @@ def prepare_explicit_instance(explicit_instances,
     write_string_into_file(yaml.dump(instance, default_flow_style=False),
                            desc_filename)
 
+    # Let's prepare the command options
+    options = ""
+    if post_commands_only:
+        options = ' --post_only'
+
     # Let's prepare the launch command
-    instance_command = '{exec_script} {desc_filename}'.format(
+    instance_command = '{exec_script}{opt} {desc_filename}'.format(
                             exec_script = execute_one_instance_script,
+                            opt = options,
                             desc_filename = desc_filename)
     return (desc_filename, combname, instance_command)
 
@@ -457,7 +477,8 @@ def execute_instances(base_working_directory,
                       implicit_instances,
                       explicit_instances,
                       nb_workers_per_host,
-                      recompute_all_instances):
+                      recompute_all_instances,
+                      recompute_instances_post_commands):
     # Let's generate all instances that should be executed
     combs = generate_instances_combs(implicit_instances = implicit_instances,
                                      explicit_instances = explicit_instances)
@@ -468,12 +489,20 @@ def execute_instances(base_working_directory,
     for comb in sweeper.get_inprogress():
         sweeper.cancel(comb)
 
+    instances_post_cmds_only = set()
+    if recompute_instances_post_commands:
+        for comb in sweeper.get_done():
+            instances_post_cmds_only.add(comb)
+            sweeper.cancel(comb)
+
     if recompute_all_instances:
+        instances_post_cmds_only.clear()
         for comb in sweeper.get_done():
             sweeper.cancel(comb)
 
     # Let's create data shared by all workers
     worker_shared_data = WorkersSharedData(sweeper = sweeper,
+                                           instances_post_cmds_only = instances_post_cmds_only,
                                            implicit_instances = implicit_instances,
                                            explicit_instances = explicit_instances,
                                            nb_workers_finished = 0,
@@ -505,7 +534,7 @@ def execute_instances(base_working_directory,
 
     # Let's wait for the completion of all workers
     while worker_shared_data.nb_workers_finished < nb_workers:
-        sleep(1)
+        sleep(0.5)
 
     # Let's check that all instances have been executed successfully
     success = len(sweeper.get_skipped()) == 0
@@ -550,6 +579,12 @@ can be found in the instances_examples subdirectory.
                    help = "If set, all instances will be recomputed. "
                           "By default, Execo's cache allows to avoid "
                           "recomputations of already done instances")
+
+    p.add_argument('-p', '--recompute_instances_post_commands',
+                   action = 'store_true',
+                   help = 'If set, the post_commands of the instances which '
+                          'are already done will be computed before trying to '
+                          'execute the other instances')
 
     p.add_argument('-bwd', '--base_working_directory',
                    type = str,
@@ -599,6 +634,10 @@ can be found in the instances_examples subdirectory.
     recompute_all_instances = False
     if args.recompute_all_instances:
         recompute_all_instances = True
+
+    recompute_instances_post_commands = False
+    if args.recompute_instances_post_commands:
+        recompute_instances_post_commands = True
 
     host_list = ['localhost']
     if args.mpi_hostfile:
@@ -696,13 +735,14 @@ can be found in the instances_examples subdirectory.
 
         # Instances' execution
         if not execute_instances(base_working_directory = base_working_directory,
-                                 base_output_directory = base_output_directory,
-                                 base_variables = base_variables,
-                                 host_list = host_list,
-                                 implicit_instances = implicit_instances,
-                                 explicit_instances = explicit_instances,
-                                 nb_workers_per_host = args.nb_workers_per_host,
-                                 recompute_all_instances = recompute_all_instances):
+            base_output_directory = base_output_directory,
+            base_variables = base_variables,
+            host_list = host_list,
+            implicit_instances = implicit_instances,
+            explicit_instances = explicit_instances,
+            nb_workers_per_host = args.nb_workers_per_host,
+            recompute_all_instances = recompute_all_instances,
+            recompute_instances_post_commands = recompute_instances_post_commands):
             sys.exit(2)
 
     # Commands after instances execution
