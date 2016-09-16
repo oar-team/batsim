@@ -429,14 +429,14 @@ int main(int argc, char * argv[])
     XBT_INFO("Batsim's export prefix is '%s'", context.export_prefix.c_str());
     prepare_batsim_outputs(&context);
 
+    // Let's prepare Redis's connection
+    context.storage.set_instance_key_prefix(absolute_filename(main_args.socket_filename)); // TODO: main argument?
+    context.storage.connect_to_server(main_args.redis_hostname, main_args.redis_port);
+
     // Let's create the socket
     // TODO: check that the socket is not currently being used
     context.socket.create_socket(main_args.socket_filename);
     context.socket.accept_pending_connection();
-
-    // Let's prepare connection
-    context.storage.set_instance_key_prefix(absolute_filename(main_args.socket_filename)); // TODO: main argument?
-    context.storage.connect_to_server(main_args.redis_hostname, main_args.redis_port);
 
     // Let's store some metadata about the current instance in the data storage
     context.storage.set("nb_res", std::to_string(context.machines.nb_machines()));
