@@ -420,6 +420,7 @@ int main(int argc, char * argv[])
 
     // Let's choose which SimGrid computing model should be used
     XBT_INFO("SMPI will NOT be used."); // TODO: make SMPI work again
+    context.smpi_used = false;
     MSG_config("host/model", "ptask_L07");
 
     // Let's create the machines
