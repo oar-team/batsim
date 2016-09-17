@@ -25,5 +25,5 @@ implicit_instances:
       timeout: 20
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${pybatsim_algo}_${workload[0]}
-      batsim_command: batsim -p ${platform[1]} -w ${workload[1]} -h -e ${output_directory}/out -s ${output_directory}/socket -q
+      batsim_command: batsim -p ${platform[1]} -w ${workload[1]} -h -e ${output_directory}/out -s ${output_directory}/socket
       sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} -s ${output_directory}/socket
