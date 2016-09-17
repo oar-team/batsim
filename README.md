@@ -80,7 +80,7 @@ Batsim's dependencies are listed below:
 -   SimGrid (we recommend the batsim-compatible branch of our fork:
     https://github.com/oar-team/simgrid-batsim/tree/batsim-compatible)
 -   RapidJSON (1.02 or greater)
--   Boost 1.48 or greater (system, filesystem)
+-   Boost 1.58 or greater (system, filesystem)
 -   C++11 compiler
 
 The following script can be used to install SimGrid and RapidJSON:
