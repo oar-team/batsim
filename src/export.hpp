@@ -119,15 +119,15 @@ private:
 public:
     /**
      * @brief Builds a PajeTracer
-     * @param[in] logLaunchings If set to true, job launching time will be written in the trace. This option leads to larger trace files
+     * @param[in] log_launchings If set to true, job launching time will be written in the trace. This option leads to larger trace files
      */
-    PajeTracer(bool logLaunchings = false);
+    PajeTracer(bool log_launchings = false);
 
     /**
      * @brief Sets the filename of a PajeTracer
      * @param[in] filename The name of the output file
      */
-    void setFilename(const std::string & filename);
+    void set_filename(const std::string & filename);
 
     /**
      * @brief PajeTracer destructor.
@@ -157,7 +157,7 @@ public:
      * @param[in] usedMachineIDs The machines which compute the job
      * @param[in] time The simulation time at which the addition is done
      */
-    void addJobLaunching(int jobID, const std::vector<int> & usedMachineIDs, double time);
+    void add_job_launching(int jobID, const std::vector<int> & usedMachineIDs, double time);
 
     /**
      * @brief Creates a job in the Pajé output file
@@ -188,7 +188,7 @@ public:
      * @param[in] time The simulation time at which the kill is done
      * @param[in] associateKillToMachines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
      */
-    void addJobKill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines = false);
+    void add_job_kill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines = false);
 
     /**
      * @brief Adds a global utilization value of the system.
@@ -196,7 +196,7 @@ public:
      * @param[in] utilization The global utilization of the system.
      * @param[in] time The simulation time at which the system has this utilization value
      */
-    void addGlobalUtilization(double utilization, double time);
+    void add_global_utilization(double utilization, double time);
 
 public:
     /**
@@ -209,7 +209,7 @@ public:
      * @param[out] g The green, whose value is in [0,1]
      * @param[out] b The blue, whose value is in [0,1]
      */
-    static void hsvToRgb(double h, double s, double v, double & r, double & g, double & b);
+    static void hsv_to_rgb(double h, double s, double v, double & r, double & g, double & b);
 
 private:
     /**
@@ -217,12 +217,12 @@ private:
      * @details The colors are fairly shared in the Hue color spectrum.
      * @param[in] colorCount colorCount
      */
-    void generateColors(int colorCount = 8);
+    void generate_colors(int colorCount = 8);
 
     /**
      * @brief Randomize the position of the colors in the colormap
      */
-    void shuffleColors();
+    void shuffle_colors();
 
 private:
     const char * rootType = "root_ct";                  //!< The root type output name
@@ -246,7 +246,7 @@ private:
     const char * launchingColor = "\"0.3 0.3 0.3\"";    //!< The color used for machines launching a job
     const char * utilizationColor = "\"0.0 0.5 0.0\"";  //!< The color used for the utilization graph
 
-    const bool _logLaunchings; //!< If set to true, job launchings should be outputted (in addition to starting decisions)
+    const bool _log_launchings; //!< If set to true, job launchings should be outputted (in addition to starting decisions)
 
     WriteBuffer * _wbuf = nullptr;  //!< The buffer class used to handle the output file
 

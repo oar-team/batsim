@@ -26,10 +26,8 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(export, "export"); //!< Logging
 void prepare_batsim_outputs(BatsimContext * context)
 {
     if (context->trace_schedule)
-        context->paje_tracer.setFilename(context->export_prefix + "_schedule.trace");
-
-    if (context->trace_schedule)
     {
+        context->paje_tracer.set_filename(context->export_prefix + "_schedule.trace");
         context->machines.set_tracer(&context->paje_tracer);
         context->paje_tracer.initialize(context, MSG_get_clock());
     }
@@ -139,28 +137,33 @@ void WriteBuffer::flushBuffer()
 
 
 
-PajeTracer::PajeTracer(bool logLaunchings) :
-    _logLaunchings(logLaunchings)
+PajeTracer::PajeTracer(bool log_launchings) :
+    _log_launchings(log_launchings)
 {
-    generateColors(64);
-    shuffleColors();
+    generate_colors(64);
+    shuffle_colors();
 }
 
-void PajeTracer::setFilename(const string &filename)
+void PajeTracer::set_filename(const string &filename)
 {
-    xbt_assert(_wbuf == nullptr);
+    xbt_assert(_wbuf == nullptr, "Double call of PajeTracer::set_filename");
     _wbuf = new WriteBuffer(filename);
 }
 
 PajeTracer::~PajeTracer()
 {
-    if (state != FINALIZED && state != UNINITIALIZED)
-        fprintf(stderr, "Destruction of a PajeTracer object which has not been finalized. The corresponding trace file may be invalid.\n");
-
+    // If the write buffer had not been set, the PajeTracer has not been used and can disappear in silence
     if (_wbuf != nullptr)
     {
-        delete _wbuf;
-        _wbuf = nullptr;
+        if (state != FINALIZED && state != UNINITIALIZED)
+            fprintf(stderr, "Destruction of a PajeTracer object which has not been finalized. "
+                            "The corresponding trace file may be invalid.\n");
+
+        if (_wbuf != nullptr)
+        {
+            delete _wbuf;
+            _wbuf = nullptr;
+        }
     }
 }
 
@@ -367,7 +370,7 @@ void PajeTracer::finalize(const BatsimContext * context, double time)
     XBT_INFO("PajeTracer finalized");
 }
 
-void PajeTracer::addJobLaunching(int jobID, const std::vector<int> & usedMachineIDs, double time)
+void PajeTracer::add_job_launching(int jobID, const std::vector<int> & usedMachineIDs, double time)
 {
     (void) jobID;
     xbt_assert(state == INITIALIZED, "Bad addJobLaunching call: the PajeTracer object is not initialized or had been finalized");
@@ -375,7 +378,7 @@ void PajeTracer::addJobLaunching(int jobID, const std::vector<int> & usedMachine
     const int bufSize = 64;
     char buf[bufSize];
 
-    if (_logLaunchings)
+    if (_log_launchings)
     {
         // Let's change the state of all the machines which launch the job
         for (const int & machineID : usedMachineIDs)
@@ -430,7 +433,7 @@ void PajeTracer::set_machine_as_computing_job(int machineID, int jobID, double t
     _wbuf->appendText(buf);
 }
 
-void PajeTracer::addJobKill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines)
+void PajeTracer::add_job_kill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines)
 {
     xbt_assert(state == INITIALIZED, "Bad addJobKill call: the PajeTracer object is not initialized or had been finalized");
 
@@ -457,7 +460,7 @@ void PajeTracer::addJobKill(int jobID, const MachineRange & usedMachineIDs, doub
     }
 }
 
-void PajeTracer::addGlobalUtilization(double utilization, double time)
+void PajeTracer::add_global_utilization(double utilization, double time)
 {
     xbt_assert(state == INITIALIZED, "Bad addJobKill call: the PajeTracer object is not initialized or had been finalized");
 
@@ -471,7 +474,7 @@ void PajeTracer::addGlobalUtilization(double utilization, double time)
     _wbuf->appendText(buf);
 }
 
-void PajeTracer::generateColors(int colorCount)
+void PajeTracer::generate_colors(int colorCount)
 {
     xbt_assert(colorCount > 0);
 
@@ -483,19 +486,19 @@ void PajeTracer::generateColors(int colorCount)
     for (int i = 0; i < colorCount; ++i)
     {
         h = i * hueFraction;
-        hsvToRgb(h,s,v, r,g,b);
+        hsv_to_rgb(h,s,v, r,g,b);
 
         snprintf(buf, bufSize, "\"%lf %lf %lf\"", r, g, b);
         _colors.push_back(buf);
     }
 }
 
-void PajeTracer::shuffleColors()
+void PajeTracer::shuffle_colors()
 {
     random_shuffle(_colors.begin(), _colors.end());
 }
 
-void PajeTracer::hsvToRgb(double h, double s, double v, double & r, double & g, double & b)
+void PajeTracer::hsv_to_rgb(double h, double s, double v, double & r, double & g, double & b)
 {
     if (s == 0) // Achromatic (grey)
     {
