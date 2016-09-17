@@ -38,7 +38,7 @@ Profiles::~Profiles()
 
 void Profiles::load_from_json(const Document &doc, const string & filename)
 {
-    xbt_assert(doc.IsObject());
+    xbt_assert(doc.IsObject(), "Invalid JSON file '%s': not a JSON object", filename.c_str());
     xbt_assert(doc.HasMember("profiles"), "Invalid JSON file '%s': the 'profiles' object is missing", filename.c_str());
     const Value & profiles = doc["profiles"];
     xbt_assert(profiles.IsObject(), "Invalid JSON file '%s': the 'profiles' member is not an object", filename.c_str());

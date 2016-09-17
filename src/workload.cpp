@@ -59,7 +59,7 @@ void Workload::load_from_json(const std::string &json_filename, int &nb_machines
     // JSON document creation
     Document doc;
     doc.Parse(content.c_str());
-    xbt_assert(doc.IsObject());
+    xbt_assert(doc.IsObject(), "Invalid JSON file '%s': not a JSON object", json_filename.c_str());
 
     // Let's try to read the number of machines in the JSON document
     xbt_assert(doc.HasMember("nb_res"), "Invalid JSON file '%s': the 'nb_res' field is missing", json_filename.c_str());
