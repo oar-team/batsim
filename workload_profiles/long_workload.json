@@ -21,7 +21,12 @@
         {"id":15, "subtime":1e15, "walltime": 30,  "res": 1, "profile": "4"},
         {"id":16, "subtime":1e16, "walltime": 30,  "res": 1, "profile": "4"},
         {"id":17, "subtime":1e17, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id":18, "subtime":1e18, "walltime": 30,  "res": 1, "profile": "4"}
+        {"id":18, "subtime":1e18, "walltime": 30,  "res": 1, "profile": "4"},
+        {"id":19, "subtime":1e19, "walltime": 30,  "res": 1, "profile": "4"},
+        {"id":20, "subtime":1e20, "walltime": 30,  "res": 1, "profile": "4"},
+        {"id":21, "subtime":1e21, "walltime": 30,  "res": 1, "profile": "4"},
+        {"id":22, "subtime":1e22, "walltime": 30,  "res": 1, "profile": "4"},
+        {"id":23, "subtime":1e23, "walltime": 30,  "res": 1, "profile": "4"}
     ],
 
     "profiles": {

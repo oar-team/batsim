@@ -157,9 +157,15 @@ int request_reply_scheduler_process(int argc, char *argv[])
     RequestReplyProcessArguments * args = (RequestReplyProcessArguments *) MSG_process_get_data(MSG_process_self());
     BatsimContext * context = args->context;
 
-    char sendDateAsString[16];
-    sprintf(sendDateAsString, "%f", MSG_get_clock());
-
+    const int date_buf_size = 32;
+    char sending_date_as_string[date_buf_size];
+    int nb_printed_char = snprintf(sending_date_as_string, date_buf_size,
+                                   "%f", MSG_get_clock());
+    xbt_assert(nb_printed_char < date_buf_size - 1,
+               "The date is now written as a %d-character long string, but the date "
+               "buffer size is %d. Since information will be lost now or in a near "
+               "future, the simulation is aborted.",
+               nb_printed_char, date_buf_size);
     char *sendBuf = (char*) args->send_buffer.c_str();
     XBT_DEBUG("Buffer received in REQ-REP: '%s'", sendBuf);
 
@@ -211,7 +217,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
     boost::split(events, message_received, boost::is_any_of("|"), boost::token_compress_on);
     xbt_assert(events.size() >= 2, "Invalid message received ('%s'): it should be composed of at least 2 parts separated by a '|'", message_received.c_str());
 
-    double previousDate = std::stod (sendDateAsString);
+    double previousDate = std::stod(sending_date_as_string);
 
     for (unsigned int eventI = 1; eventI < events.size(); ++eventI)
     {

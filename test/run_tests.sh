@@ -40,6 +40,7 @@ tools/experiments/execute_instances.py test/test_unique.yaml -bod test/out/uniqu
 tools/experiments/execute_instances.py test/test_no_energy.yaml -bod test/out/no_energy
 tools/experiments/execute_instances.py test/test_space_sharing.yaml -bod test/out/space_sharing
 tools/experiments/execute_instances.py test/test_energy.yaml -bod test/out/energy
+tools/experiments/execute_instances.py test/test_long_simulation_time.yaml -bod test/out/long_simulation_time
 
 # Let's stop the redis server if it has been launched by this script
 if [ $server_launched_by_me -eq 1 ]
