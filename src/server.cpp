@@ -114,6 +114,17 @@ int uds_server_process(int argc, char *argv[])
             nb_submitters_finished++;
             XBT_INFO( "A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
 
+            if (!all_jobs_submitted_and_completed &&
+                nb_completed_jobs == nb_submitted_jobs &&
+                nb_submitters_finished == nb_submitters)
+            {
+                all_jobs_submitted_and_completed = true;
+                XBT_INFO("It seems that all jobs have been submitted and completed!");
+
+                send_buffer += "|" + std::to_string(MSG_get_clock()) + ":Z";
+                XBT_DEBUG( "Message to send to scheduler: %s", send_buffer.c_str());
+            }
+
         } break; // end of case SUBMITTER_BYE
 
         case IPMessageType::JOB_COMPLETED:
@@ -143,7 +154,8 @@ int uds_server_process(int argc, char *argv[])
             send_buffer += '|' + std::to_string(MSG_get_clock()) + ":C:" + message->job_id.to_string();
             XBT_DEBUG( "Message to send to scheduler: %s", send_buffer.c_str());
 
-            if (nb_completed_jobs == nb_submitted_jobs &&
+            if (!all_jobs_submitted_and_completed &&
+                nb_completed_jobs == nb_submitted_jobs &&
                 nb_submitters_finished == nb_submitters)
             {
                 all_jobs_submitted_and_completed = true;
