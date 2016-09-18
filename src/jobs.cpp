@@ -212,10 +212,22 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
 
     // Let's replace the job ID by its WLOAD!NUMBER counterpart
     string json_description_tmp = buffer.GetString();
-    boost::regex r("\"id\"\\s*:\\s*(?:\".+\"|\\d+)\\s*,");
-    string replacement_str = "\"id\":\"" + workload_name + "!" + std::to_string(j->number) + "\",";
+    boost::regex r("\"id\"\\s*:\\s*(?:\".+\"|\\d+)\\s*");
+    string replacement_str = "\"id\":\"" + workload_name + "!" + std::to_string(j->number) + "\"";
     j->json_description = boost::regex_replace(json_description_tmp, r, replacement_str);
 
+    // Let's check that the new description is a valid JSON string
+    rapidjson::Document check_doc;
+    check_doc.Parse(j->json_description.c_str());
+    xbt_assert(check_doc.IsObject(),
+               "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
+               "The output string '%s' is not valid JSON.", j->json_description.c_str());
+    xbt_assert(check_doc.HasMember("id"),
+               "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
+               "The output JSON '%s' has no 'id' field.", j->json_description.c_str());
+    xbt_assert(check_doc["id"].IsString(),
+               "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
+               "The output JSON '%s' has a non-string 'id' field.", j->json_description.c_str());
 
     XBT_DEBUG("Loaded job %d from workload %s", (int) j->number, j->workload->name.c_str() );
 

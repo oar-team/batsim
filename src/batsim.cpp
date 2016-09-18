@@ -337,7 +337,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
         max_nb_machines_to_use = main_args.limit_machines_count;
 
     if (max_nb_machines_to_use != -1)
-        XBT_INFO("The maximum number of machines to use is %d", max_nb_machines_to_use);
+        XBT_INFO("The maximum number of machines to use is %d.", max_nb_machines_to_use);
 }
 
 /**
@@ -380,7 +380,7 @@ void start_initial_simulation_processes(const MainArguments & main_args, BatsimC
     }
 
 
-    XBT_INFO("Creating the 'server' process...");
+    XBT_DEBUG("Creating the 'server' process...");
     ServerProcessArguments * server_args = new ServerProcessArguments;
     server_args->context = context;
     MSG_process_create("server", uds_server_process, (void*)server_args, master_machine->host);
@@ -427,7 +427,7 @@ int main(int argc, char * argv[])
     create_machines(main_args, &context, max_nb_machines_to_use);
 
     // Let's prepare Batsim's outputs
-    XBT_INFO("Batsim's export prefix is '%s'", context.export_prefix.c_str());
+    XBT_INFO("Batsim's export prefix is '%s'.", context.export_prefix.c_str());
     prepare_batsim_outputs(&context);
 
     // Let's prepare Redis's connection
