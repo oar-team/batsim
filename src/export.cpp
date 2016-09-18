@@ -68,6 +68,9 @@ void prepare_batsim_outputs(BatsimContext * context)
 
 void finalize_batsim_outputs(BatsimContext * context)
 {
+    // Let's say the simulation is ended now
+    context->simulation_end_time = chrono::high_resolution_clock::now();
+
     // Schedule (Pajé)
     if (context->trace_schedule)
         context->paje_tracer.finalize(context, MSG_get_clock());
@@ -613,7 +616,7 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
 
-    f << "nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,makespan,max_turnaround_time,scheduling_time,jobs_execution_time_boundary_ratio,consumed_joules\n";
+    f << "nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,makespan,max_turnaround_time,simulation_time,scheduling_time,jobs_execution_time_boundary_ratio,consumed_joules\n";
 
     int nb_jobs = 0;
     int nb_jobs_finished = 0;
@@ -625,6 +628,10 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     double max_job_execution_time = DBL_MIN;
 
     long double seconds_used_by_scheduler = context->microseconds_used_by_scheduler / (long double)1e6;
+
+    // Let's compute the simulation time
+    chrono::duration<long double> diff = context->simulation_end_time - context->simulation_start_time;
+    long double seconds_used_by_the_whole_simulation = diff.count();
 
     for (const auto mit : context->workloads.workloads())
     {
@@ -669,9 +676,10 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     long double total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
 
     char * buf;
-    int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%Lf,%lf,%Lg\n",
+    int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%Lf,%Lf,%lf,%Lg\n",
                        nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed,
                        (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time,
+                       seconds_used_by_the_whole_simulation,
                        seconds_used_by_scheduler,
                        max_job_execution_time / min_job_execution_time,
                        total_consumed_energy);

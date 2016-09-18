@@ -183,10 +183,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
         XBT_INFO("Runtime error received: %s", error.what());
         XBT_INFO("Flushing output files...");
 
-        if (context->trace_schedule)
-            context->paje_tracer.finalize(context, MSG_get_clock());
-        export_schedule_to_csv(context->export_prefix + "_schedule.csv", context);
-        export_jobs_to_csv(context->export_prefix + "_jobs.csv", context);
+        finalize_batsim_outputs(context);
 
         XBT_INFO("Output files flushed. Aborting execution now.");
         throw runtime_error("Execution aborted (connection broken)");

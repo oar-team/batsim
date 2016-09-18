@@ -413,6 +413,7 @@ int main(int argc, char * argv[])
     context.energy_used = main_args.energy_used;
     context.allow_space_sharing = main_args.allow_space_sharing;
     context.trace_schedule = main_args.enable_schedule_tracing;
+    context.simulation_start_time = chrono::high_resolution_clock::now();
 
     // Let's load the workloads and workflows
     int max_nb_machines_to_use = -1;

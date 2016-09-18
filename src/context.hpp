@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <chrono>
+
 #include "network.hpp"
 #include "machines.hpp"
 #include "jobs.hpp"
@@ -14,6 +16,8 @@
 #include "storage.hpp"
 #include "workload.hpp"
 #include "workflow.hpp"
+
+typedef std::chrono::time_point<std::chrono::high_resolution_clock> my_timestamp;
 
 /**
  * @brief The Batsim context
@@ -34,6 +38,9 @@ struct BatsimContext
     long double energy_last_job_completion;         //!< The amount of consumed energy (J) when the last job is completed
 
     long long microseconds_used_by_scheduler = 0;   //!< The number of microseconds used by the scheduler
+    my_timestamp simulation_start_time;             //!< The moment in time at which the simulation has started
+    my_timestamp simulation_end_time;               //!< The moment in time at which the simulation has ended
+
     bool energy_used;                               //!< Stores whether the energy part of Batsim should be used
     bool smpi_used;                                 //!< Stores whether SMPI should be used
     bool allow_space_sharing;                       //!< Stores whether space sharing (using the same machines to compute different jobs) should be allowed
