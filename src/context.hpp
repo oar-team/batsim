@@ -17,6 +17,9 @@
 #include "workload.hpp"
 #include "workflow.hpp"
 
+/**
+ * @brief Stores a high-resolution timestamp
+ */
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> my_timestamp;
 
 /**
