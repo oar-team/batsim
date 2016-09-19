@@ -50,7 +50,9 @@ void UnixDomainSocket::create_socket(const string & filename)
     sockaddr_un addr;
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, filename.c_str(), sizeof(addr.sun_path)-1);
+
+    xbt_assert(filename.size() < sizeof(addr.sun_path), "Socket filename too long!");
+    strncpy(addr.sun_path, filename.c_str(), min(filename.size()+1,sizeof(addr.sun_path)));
 
     unlink(filename.c_str());
 
