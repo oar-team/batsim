@@ -112,7 +112,7 @@ int uds_server_process(int argc, char *argv[])
             submitters.erase(message->submitter_name);
 
             nb_submitters_finished++;
-            XBT_INFO( "A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
+            XBT_INFO("A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
 
             if (!all_jobs_submitted_and_completed &&
                 nb_completed_jobs == nb_submitted_jobs &&
@@ -122,7 +122,7 @@ int uds_server_process(int argc, char *argv[])
                 XBT_INFO("It seems that all jobs have been submitted and completed!");
 
                 send_buffer += "|" + std::to_string(MSG_get_clock()) + ":Z";
-                XBT_DEBUG( "Message to send to scheduler: %s", send_buffer.c_str());
+                XBT_DEBUG("Message to send to scheduler: %s", send_buffer.c_str());
             }
 
         } break; // end of case SUBMITTER_BYE

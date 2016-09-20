@@ -26,9 +26,9 @@ void generic_send_message(const std::string & destination_mailbox, IPMessageType
 
     msg_task_t task_to_send = MSG_task_create(NULL, 0, 1e-6, message);
 
-    XBT_INFO("message from '%s' to '%s' of type '%s' with data %p",
-             MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
-             ipMessageTypeToString(type).c_str(), data);
+    XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p",
+              MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
+              ipMessageTypeToString(type).c_str(), data);
 
     if (detached)
     {
@@ -39,9 +39,9 @@ void generic_send_message(const std::string & destination_mailbox, IPMessageType
         MSG_task_send(task_to_send, destination_mailbox.c_str());
     }
 
-    XBT_INFO("message from '%s' to '%s' of type '%s' with data %p done",
-             MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
-             ipMessageTypeToString(type).c_str(), data);
+    XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p done",
+              MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
+              ipMessageTypeToString(type).c_str(), data);
 }
 
 void send_message(const std::string & destination_mailbox, IPMessageType type, void * data)

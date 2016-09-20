@@ -261,6 +261,9 @@ void configure_batsim_logging_output(const MainArguments & main_args)
 
     // Batsim is always set to info, to allow to trace Batsim's input easily
     xbt_log_control_set("batsim.thresh:info");
+
+    // Simgrid-related log control
+    xbt_log_control_set("surf_energy.thresh:critical");
 }
 
 /**
