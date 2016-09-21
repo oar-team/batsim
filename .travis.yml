@@ -37,15 +37,15 @@ before_install:
   # Update apt lists
   - cat /etc/apt/sources.list
   - |
-      cat >> /etc/apt/sources.list <<EOF
+      sudo cat >> /etc/apt/sources.list <<EOF
       #### testing  #########
       deb http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse
       EOF
 
   # Install boost
-  - apt-get update
-  - apt-get build-dep -t intrepid libboost-all-dev
-  - apt-get install -b source -t xenial libboost-all-dev
+  - sudo apt-get update
+  - sudo apt-get build-dep -t intrepid libboost-all-dev
+  - sudo apt-get install -b source -t xenial libboost-all-dev
 
 install:
   # Install SimGrid
