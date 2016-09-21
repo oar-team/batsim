@@ -1,29 +1,54 @@
-# Try fo find Simgrid:
-#   SIMGRID_FOUND
-#   SIMGRID_INCLUDE_DIRS
-#   SIMGRID_LIBRARIES
-#   SIMGRID_DEFINITIONS
+#IF YOU HAVE INSTALL SIMGRID IN A SPECIAL DIRECTORY
+#YOU CAN SPECIFY SIMGRID_ROOT
 
-message("-- Looking for simgrid.h")
-find_path(SIMGRID_INCLUDE_DIR
-          NAMES simgrid.h
-          HINTS ENV SIMGRID_PATH ENV INCLUDE ENV CPATH
-          PATHS /opt/simgrid /opt/Simgrid
-          PATH_SUFFIXES include)
-message("-- Looking for simgrid.h - ${SIMGRID_INCLUDE_DIR}")
+# TO CALL THIS FILE USE
+#set(CMAKE_MODULE_PATH
+#${CMAKE_MODULE_PATH}
+#${CMAKE_HOME_DIRECTORY}/tools/cmake/Modules
+#)
 
-message("-- Looking for libsimgrid")
-find_library(SIMGRID_LIBRARY
-             NAMES simgrid
-             HINTS ENV SIMGRID_PATH ENV LIBRARY_PATH
-             PATHS /opt/simgrid /opt/Simgrid
-             PATH_SUFFIXES lib)
-message("-- Looking for libsimgrid -- ${SIMGRID_LIBRARY}")
+find_library(HAVE_SIMGRID_LIB
+  NAME simgrid
+  HINTS
+  $ENV{LD_LIBRARY_PATH}
+  $ENV{SIMGRID_ROOT}
+  PATH_SUFFIXES lib64 lib
+  PATHS
+  /opt
+  /opt/local
+  /opt/csw
+  /sw
+  /usr
+  )
 
-set(SIMGRID_LIBRARIES ${SIMGRID_LIBRARY} )
-set(SIMGRID_INCLUDE_DIRS ${SIMGRID_INCLUDE_DIR} )
+find_program(HAVE_TESH
+  NAMES tesh
+  HINTS
+  $ENV{SIMGRID_ROOT}
+  PATH_SUFFIXES bin
+  PATHS
+  /opt
+  /opt/local
+  /opt/csw
+  /sw
+  /usr
+  )
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(SimGrid DEFAULT_MSG
-                                  SIMGRID_LIBRARY SIMGRID_INCLUDE_DIR)
-mark_as_advanced(SIMGRID_INCLUDE_DIR SIMGRID_LIBRARY)
+message(STATUS "Looking for lib SimGrid")
+if(HAVE_SIMGRID_LIB)
+  message(STATUS "Looking for lib SimGrid - found")
+  get_filename_component(simgrid_version ${HAVE_SIMGRID_LIB} REALPATH)
+  string(REPLACE "${HAVE_SIMGRID_LIB}." "" simgrid_version "${simgrid_version}")
+  string(REGEX MATCH "^[0-9]" SIMGRID_MAJOR_VERSION "${simgrid_version}")
+  string(REGEX MATCH "^[0-9].[0-9]" SIMGRID_MINORœ_VERSION "${simgrid_version}")
+  string(REGEX MATCH "^[0-9].[0-9].[0-9]" SIMGRID_PATCH_VERSION "${simgrid_version}")
+  string(REGEX REPLACE "^${SIMGRID_MINOR_VERSION}." "" SIMGRID_PATCH_VERSION "${SIMGRID_PATCH_VERSION}")
+  string(REGEX REPLACE "^${SIMGRID_MAJOR_VERSION}." "" SIMGRID_MINOR_VERSION "${SIMGRID_MINOR_VERSION}")
+  message(STATUS "Simgrid version : ${SIMGRID_MAJOR_VERSION}.${SIMGRID_MINOR_VERSION}")
+else()
+  message(STATUS "Looking for lib SimGrid - not found")
+endif()
+
+if(HAVE_TESH)
+  message(STATUS "Found Tesh: ${HAVE_TESH}")
+endif()

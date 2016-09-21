@@ -81,7 +81,7 @@ file(GLOB batsim_SRC
 add_executable(batsim ${batsim_SRC})
 
 # Libraries to link
-target_link_libraries(batsim ${SIMGRID_LIBRARIES}
+target_link_libraries(batsim ${SIMGRID_LIBRARY}
                       ${Boost_FILESYSTEM_LIBRARY_DEBUG}
                       ${Boost_LOCALE_LIBRARY_DEBUG}
                       ${Boost_REGEX_LIBRARY_DEBUG}
