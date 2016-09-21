@@ -3,8 +3,6 @@ addons:
   apt:
     packages:
       - cmake
-      - libboost-dev
-      - libboost-all-dev
       - doxygen
       - graphviz
       - python-pip
@@ -35,6 +33,19 @@ before_install:
   - chmod 0600 travisci_rsa
   - cp travisci_rsa ~/.ssh/id_rsa
   - ssh-keyscan scm.gforge.inria.fr >> ~/.ssh/known_hosts
+
+  # Update apt lists
+  - cat /etc/apt/sources.list
+  - |
+      cat >> /etc/apt/sources.list <<EOF
+      #### testing  #########
+      deb http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse
+      EOF
+
+  # Install boost
+  - apt-get update
+  - apt-get build-dep -t intrepid libboost-all-dev
+  - apt-get install -b source -t xenial libboost-all-dev
 
 install:
   # Install SimGrid
