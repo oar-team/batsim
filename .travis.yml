@@ -43,7 +43,7 @@ before_install:
   # Install boost
   - sudo apt-get update
   - sudo apt-get build-dep libboost-all-dev
-  - sudo apt-get install -b source -t xenial libboost-all-dev
+  - sudo apt-get -b source -t xenial libboost-all-dev
 
 install:
   # Install SimGrid
