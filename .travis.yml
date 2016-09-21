@@ -37,16 +37,12 @@ before_install:
   # Update apt lists
   - cat /etc/apt/sources.list
   - cp /etc/apt/sources.list /tmp/sources.list
-  - |
-      cat >> /tmp/sources.list <<ENDOFHACK
-      #### testing  #########
-      deb http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse
-      ENDOFHACK
+  - echo 'deb http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse' >> /tmp/sources.list
   - sudo mv /tmp/sources.list /etc/apt/sources.list
 
   # Install boost
   - sudo apt-get update
-  - sudo apt-get build-dep -t intrepid libboost-all-dev
+  - sudo apt-get build-dep -t xenial libboost-all-dev
   - sudo apt-get install -b source -t xenial libboost-all-dev
 
 install:
