@@ -68,6 +68,12 @@ struct MainArguments
     std::string abortReason;                                //!< Human readable reasons which explains why the launch should be aborted
 };
 
+/**
+ * @brief Simple process to execute a job
+ * @param argc unused?
+ * @param argv unused?
+ * @return 0
+ */
 int lite_execute_job_process(int argc, char *argv[])
 {
     (void) argc;
@@ -116,7 +122,7 @@ static int job_launcher_process(int argc, char *argv[])
 {
   (void) argc;
   (void) argv;
-  
+
   JobSubmitterProcessArguments * args = (JobSubmitterProcessArguments *) MSG_process_get_data(MSG_process_self());
   BatsimContext * context = args->context;
 
@@ -130,7 +136,7 @@ static int job_launcher_process(int argc, char *argv[])
 
       const Profile * profile = context->profiles[job->profile];
       int nb_res = job->required_nb_res;
- 
+
       SchedulingAllocation * alloc = new SchedulingAllocation;
 
       alloc->job_id = job->id;
@@ -144,14 +150,14 @@ static int job_launcher_process(int argc, char *argv[])
         alloc->hosts.push_back(context->machines[i]->host);
       }
 
-        
+
       ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
       exec_args->context = context;
       exec_args->allocation = alloc;
       string pname = "job" + to_string(job->id);
       MSG_process_create(pname.c_str(), lite_execute_job_process, (void*)exec_args, context->machines[alloc->machine_ids.first_element()]->host);
 
-      
+
     }
 }
 
