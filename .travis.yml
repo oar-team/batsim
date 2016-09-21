@@ -36,11 +36,13 @@ before_install:
 
   # Update apt lists
   - cat /etc/apt/sources.list
+  - cp /etc/apt/sources.list /tmp/sources.list
   - |
-      sudo cat >> /etc/apt/sources.list <<EOF
+      cat >> /tmp/sources.list <<ENDOFHACK
       #### testing  #########
       deb http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse
-      EOF
+      ENDOFHACK
+  - sudo mv /tmp/sources.list /etc/apt/sources.list
 
   # Install boost
   - sudo apt-get update
