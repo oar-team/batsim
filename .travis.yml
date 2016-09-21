@@ -45,6 +45,8 @@ before_install:
   - sudo apt-get update
   - sudo apt-get build-dep libboost-all-dev
   - sudo apt-get -b source -t xenial libboost-all-dev
+  - sudo ls -l .
+  - sudo dpkg -i libboost-all-dev*.deb
   - find /usr -name 'libboost*.so*'
 
 install:
