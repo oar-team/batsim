@@ -3,11 +3,12 @@
  * @brief Batsim's entry point
  */
 
-#include <string>
 #include <sys/types.h>
 #include <stdio.h>
 #include <argp.h>
 #include <unistd.h>
+
+#include <string>
 
 #include <simgrid/msg.h>
 #include <smpi/smpi.h>
@@ -16,6 +17,8 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
+
+#include <openssl/sha.h>
 
 #include "batsim.hpp"
 #include "context.hpp"
@@ -34,6 +37,33 @@
 using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "batsim"); //!< Logging
+
+string generate_sha1_string(std::string string_to_hash, int output_length)
+{
+    static_assert(sizeof(unsigned char) == sizeof(char), "sizeof(unsigned char) should equals to sizeof(char)");
+    xbt_assert(output_length > 0);
+    xbt_assert(output_length < SHA_DIGEST_LENGTH);
+
+    unsigned char sha1_buf[SHA_DIGEST_LENGTH];
+    SHA1((const unsigned char *)string_to_hash.c_str(), string_to_hash.size(), sha1_buf);
+
+    char * output_buf = (char *) calloc(SHA_DIGEST_LENGTH * 2 + 1, sizeof(char));
+    xbt_assert(output_buf != 0, "Couldn't allocate memory");
+
+    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i)
+    {
+        int nb_printed_char = snprintf(output_buf + 2*i, 3, "%02x", sha1_buf[i]);
+        xbt_assert(nb_printed_char == 2, "Fix me :(");
+    }
+
+    XBT_DEBUG("SHA-1 of string '%s' is '%s'\n", string_to_hash.c_str(), output_buf);
+
+    string result(output_buf, output_length);
+    xbt_assert((int)result.size() == output_length);
+
+    free(output_buf);
+    return result;
+}
 
 /**
  * @brief Used to parse the main function parameters
@@ -60,11 +90,19 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     }
     case 'w':
     {
-        main_args->workload_filenames.push_back(arg);
         if (access(((string) arg).c_str(), R_OK) == -1)
         {
             main_args->abort = true;
             main_args->abortReason += "\n  invalid WORKLOAD_FILE argument: file '" + string(arg) + "' cannot be read";
+        }
+        else
+        {
+            MainArguments::WorkloadDescription desc;
+            desc.filename = absolute_filename(arg);
+            desc.name = generate_sha1_string(arg);
+
+            XBT_INFO("Workload '%s' corresponds to workload file '%s'.", desc.name.c_str(), desc.filename.c_str());
+            main_args->workload_descriptions.push_back(desc);
         }
         break;
     }
@@ -88,7 +126,13 @@ int parse_opt (int key, char *arg, struct argp_state *state)
             if (parts.size() == 2)
                 workflow_start_time = std::stod(parts.at(1));
 
-            main_args->workflow_descriptions.push_back({workflow_filename, workflow_start_time});
+            MainArguments::WorkflowDescription desc;
+            desc.filename = absolute_filename(workflow_filename);
+            desc.name = generate_sha1_string(desc.filename);
+            desc.start_time = workflow_start_time;
+
+            XBT_INFO("Workflow '%s' corresponds to workflow file '%s'.", desc.name.c_str(), desc.filename.c_str());
+            main_args->workflow_descriptions.push_back(desc);
         }
         break;
     }
@@ -302,32 +346,29 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     int max_nb_machines_in_workloads = -1;
 
     // Let's create the workloads
-    for (const auto & workload_filename : main_args.workload_filenames)
+    for (const MainArguments::WorkloadDescription & desc : main_args.workload_descriptions)
     {
-        string workload_name = workload_filename; // TODO: compress names?
-        Workload * workload = new Workload(workload_name);
+        Workload * workload = new Workload(desc.name);
 
         int nb_machines_in_workload = -1;
-        workload->load_from_json(workload_filename, nb_machines_in_workload);
+        workload->load_from_json(desc.filename, nb_machines_in_workload);
         max_nb_machines_in_workloads = max(max_nb_machines_in_workloads, nb_machines_in_workload);
 
-        context->workloads.insert_workload(workload_name, workload);
+        context->workloads.insert_workload(desc.name, workload);
     }
 
     // Let's create the workflows
-    for (const auto & desc : main_args.workflow_descriptions)
+    for (const MainArguments::WorkflowDescription & desc : main_args.workflow_descriptions)
     {
-        string workflow_name = desc.workflow_filename; // TODO: compress names?
-        string workflow_workload_name = workflow_name;
-        Workload * workload = new Workload(workflow_workload_name); // Is creating the Workload now necessary? Workloads::add_job_if_not_exists may be enough
+        Workload * workload = new Workload(desc.workload_name); // Is creating the Workload now necessary? Workloads::add_job_if_not_exists may be enough
         workload->jobs = new Jobs;
         workload->profiles = new Profiles;
-        context->workloads.insert_workload(workflow_workload_name, workload);
+        context->workloads.insert_workload(desc.workload_name, workload);
 
-        Workflow * workflow = new Workflow(workflow_name);
-        workflow->start_time = desc.workflow_start_time;
-        workflow->load_from_xml(desc.workflow_filename);
-        context->workflows.insert_workflow(workflow_name, workflow);
+        Workflow * workflow = new Workflow(desc.name);
+        workflow->start_time = desc.start_time;
+        workflow->load_from_xml(desc.filename);
+        context->workflows.insert_workflow(desc.name, workflow);
     }
 
     // Let's compute how the number of machines to use should be limited
@@ -353,31 +394,28 @@ void start_initial_simulation_processes(const MainArguments & main_args, BatsimC
     const Machine * master_machine = context->machines.master_machine();
 
     // Let's run a static_job_submitter process for each workload
-    for (const auto & workload_filename : main_args.workload_filenames)
+    for (const MainArguments::WorkloadDescription & desc : main_args.workload_descriptions)
     {
         XBT_DEBUG("Creating a workload_submitter process...");
-        string workload_name = workload_filename;
-
         JobSubmitterProcessArguments * submitter_args = new JobSubmitterProcessArguments;
         submitter_args->context = context;
-        submitter_args->workload_name = workload_name;
+        submitter_args->workload_name = desc.name;
 
-        string submitter_instance_name = "workload_submitter_" + workload_name;
+        string submitter_instance_name = "workload_submitter_" + desc.name;
         MSG_process_create(submitter_instance_name.c_str(), static_job_submitter_process, (void*)submitter_args, master_machine->host);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
     // Let's run a workflow_submitter process for each workflow
-    for (const auto & desc : main_args.workflow_descriptions)
+    for (const MainArguments::WorkflowDescription & desc : main_args.workflow_descriptions)
     {
         XBT_DEBUG("Creating a workflow_submitter process...");
-        string workflow_name = desc.workflow_filename;
 
         WorkflowSubmitterProcessArguments * submitter_args = new WorkflowSubmitterProcessArguments;
         submitter_args->context = context;
-        submitter_args->workflow_name = workflow_name;
+        submitter_args->workflow_name = desc.name;
 
-        string submitter_instance_name = "workflow_submitter_" + workflow_name;
+        string submitter_instance_name = "workflow_submitter_" + desc.name;
         MSG_process_create(submitter_instance_name.c_str(), workflow_submitter_process, (void*)submitter_args, master_machine->host);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <list>
+
 /**
  * @brief Batsim verbosity level
  */
@@ -12,22 +15,43 @@ enum class VerbosityLevel
 };
 
 /**
+ * @brief Generates a uuid string
+ * @param[in] string_to_hash T
+ * @param[in] output_length The maximum length of the output string
+ * @pre output_length > 0 && output_length < 20
+ * @post result.size() == output_length
+ * @return The generated hash (truncated to output_length characters if needed)
+ */
+std::string generate_sha1_string(std::string string_to_hash, int output_length = 6);
+
+/**
  * @brief Stores Batsim's arguments, a.k.a. the main function arguments
  */
 struct MainArguments
 {
     /**
+     * @brief Stores the command-line description of a workload
+     */
+    struct WorkloadDescription
+    {
+        std::string filename;   //!< The name of the workload file
+        std::string name;       //!< The name of the workload
+    };
+
+    /**
      * @brief Stores the command-line description of a workflow
      */
     struct WorkflowDescription
     {
-        std::string workflow_filename;  //!< The name of the workflow file
-        double workflow_start_time;     //!< The moment in time at which the workflow should be started
+        std::string filename;       //!< The name of the workflow file
+        std::string name;           //!< The name of the workflow
+        std::string workload_name;  //!< The name of the workload associated with the workflow
+        double start_time;          //!< The moment in time at which the workflow should be started
     };
 
     std::string platform_filename;                          //!< The SimGrid platform filename
-    std::list<std::string> workload_filenames;              //!< The JSON workload filename
-    std::list<WorkflowDescription> workflow_descriptions;   //!< The workflow descriptions
+    std::list<WorkloadDescription> workload_descriptions;   //!< The workloads' descriptions
+    std::list<WorkflowDescription> workflow_descriptions;   //!< The workflows' descriptions
 
     std::string socket_filename = "/tmp/bat_socket";        //!< The Unix Domain Socket filename
 

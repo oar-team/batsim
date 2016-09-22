@@ -57,6 +57,10 @@ include_directories(${Boost_INCLUDE_DIR})
 find_package(rapidjson REQUIRED)
 include_directories(${RAPIDJSON_INCLUDE_DIRS})
 
+## OpenSSL dependency
+find_package(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
+
 ## Redox dependency
 find_package(redox REQUIRED)
 include_directories(${REDOX_INCLUDE_DIR})
@@ -87,6 +91,7 @@ target_link_libraries(batsim
                       ${Boost_LOCALE_LIBRARY_DEBUG}
                       ${Boost_REGEX_LIBRARY_DEBUG}
                       ${Boost_SYSTEM_LIBRARY_DEBUG}
+                      ${OPENSSL_LIBRARIES}
                       ${REDOX_LIBRARY}
                       ${LIBEV_LIBRARY}
                       ${HIREDIS_LIBRARY})
