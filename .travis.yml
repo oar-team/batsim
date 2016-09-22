@@ -3,8 +3,6 @@ addons:
   apt:
     packages:
       - cmake
-      - libboost-dev
-      - libboost-all-dev
       - doxygen
       - graphviz
       - python-pip
@@ -31,6 +29,23 @@ before_install:
   - chmod 0600 travisci_rsa
   - cp travisci_rsa ~/.ssh/id_rsa
   - ssh-keyscan scm.gforge.inria.fr >> ~/.ssh/known_hosts
+
+  # Update apt lists (in order to install boost 1.58+)
+  - cat /etc/apt/sources.list
+  - cp /etc/apt/sources.list /tmp/sources.list
+  - echo 'deb http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse' >> /tmp/sources.list
+  - echo 'deb-src http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse' >> /tmp/sources.list
+  - sudo mv /tmp/sources.list /etc/apt/sources.list
+
+  # Install boost 1.58+ (does not work, to fix!)
+  - mkdir -p /tmp/boost
+  - cd /tmp/boost
+  - sudo apt-get update
+  - sudo apt-get build-dep libboost-all-dev
+  - sudo apt-get -b source -t xenial libboost-all-dev
+  - sudo ls -l .
+  - sudo dpkg --force-all -i *.deb
+  - sudo find / -name 'libboost*.so*'
 
 install:
   # Install SimGrid
