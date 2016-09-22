@@ -189,14 +189,14 @@ public:
      * @param[in] other The other MachineRange
      * @return The current MachineRange after the operation
      */
-    MachineRange & operator&=(const MachineRange & other);
+    MachineRange & operator &=(const MachineRange & other);
 
     /**
      * @brief Sets the set as the difference between itself and another MachineRange
      * @param[in] other The other MachineRange
      * @return The current MachineRange after the operation
      */
-    MachineRange &operator-=(const MachineRange & other);
+    MachineRange & operator-=(const MachineRange & other);
 
 public:
     /**
