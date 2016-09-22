@@ -288,6 +288,16 @@ public:
      */
     void add_pstate_change(double time, MachineRange machines, int pstate_after);
 
+    /**
+     * @brief Forces the flushing of what happened to the output file
+     */
+    void flush();
+
+    /**
+     * @brief Closes the buffer and its associated output file
+     */
+    void close_buffer();
+
 private:
     WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
 };
@@ -342,6 +352,16 @@ public:
      * @param[in] new_pstate The new power state of the machine
      */
     void add_pstate_change(double date, const MachineRange & machines, int new_pstate);
+
+    /**
+     * @brief Forces the flushing of what happened to the output file
+     */
+    void flush();
+
+    /**
+     * @brief Closes the buffer and its associated output file
+     */
+    void close_buffer();
 
 private:
     /**

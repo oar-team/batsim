@@ -75,6 +75,16 @@ void finalize_batsim_outputs(BatsimContext * context)
     if (context->trace_schedule)
         context->paje_tracer.finalize(context, MSG_get_clock());
 
+    // Energy-related output
+    if (context->energy_used)
+    {
+        context->energy_tracer.flush();
+        context->pstate_tracer.flush();
+
+        context->energy_tracer.close_buffer();
+        context->pstate_tracer.close_buffer();
+    }
+
     // Schedule-oriented output information
     export_schedule_to_csv(context->export_prefix + "_schedule.csv", context);
 
@@ -367,6 +377,9 @@ void PajeTracer::finalize(const BatsimContext * context, double time)
              DESTROY_CONTAINER, time, root, rootType);
     _wbuf->appendText(buf);
     _wbuf->flushBuffer();
+
+    delete _wbuf;
+    _wbuf = nullptr;
 
     state = FINALIZED;
 
@@ -723,6 +736,21 @@ void PStateChangeTracer::add_pstate_change(double time, MachineRange machines, i
     _wbuf->appendText(buf);
 }
 
+void PStateChangeTracer::flush()
+{
+    xbt_assert(_wbuf != nullptr);
+
+    _wbuf->flushBuffer();
+}
+
+void PStateChangeTracer::close_buffer()
+{
+    xbt_assert(_wbuf != nullptr);
+
+    delete _wbuf;
+    _wbuf = nullptr;
+}
+
 
 EnergyConsumptionTracer::EnergyConsumptionTracer()
 {
@@ -768,6 +796,21 @@ void EnergyConsumptionTracer::add_pstate_change(double date, const MachineRange 
     (void) machines;
     (void) new_pstate;
     add_entry(date, 'p');
+}
+
+void EnergyConsumptionTracer::flush()
+{
+    xbt_assert(_wbuf != nullptr);
+
+    _wbuf->flushBuffer();
+}
+
+void EnergyConsumptionTracer::close_buffer()
+{
+    xbt_assert(_wbuf != nullptr);
+
+    delete _wbuf;
+    _wbuf = nullptr;
 }
 
 long double EnergyConsumptionTracer::add_entry(double date, char event_type)
