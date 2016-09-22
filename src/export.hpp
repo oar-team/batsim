@@ -42,7 +42,7 @@ public:
      * @param[in] filename The file that will be written
      * @param[in] bufferSize The size of the buffer (in bytes).
      */
-    WriteBuffer(const std::string & filename, int bufferSize = 64*1024);
+    WriteBuffer(const std::string & filename, int buffer_size = 64*1024);
 
     /**
      * @brief Destructor
@@ -54,18 +54,18 @@ public:
      * @brief Appends a text at the end of the buffer. If the buffer is full, it is automatically flushed into the disk.
      * @param[in] text The text to append
      */
-    void appendText(const char * text);
+    void append_text(const char * text);
 
     /**
      * @brief Write the current content of the buffer into the file
      */
-    void flushBuffer();
+    void flush_buffer();
 
 private:
     std::ofstream f;            //!< The file stream on which the buffer is outputted
-    const int bufferSize;       //!< The buffer maximum size
+    const int buffer_size;      //!< The buffer maximum size
     char * buffer = nullptr;    //!< The buffer
-    int bufferPos = 0;          //!< The current position of the buffer (previous positions are already written)
+    int buffer_pos = 0;         //!< The current position of the buffer (previous positions are already written)
 };
 
 /**

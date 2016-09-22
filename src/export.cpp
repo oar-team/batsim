@@ -93,11 +93,11 @@ void finalize_batsim_outputs(BatsimContext * context)
 }
 
 
-WriteBuffer::WriteBuffer(const std::string & filename, int bufferSize)
-    : bufferSize(bufferSize)
+WriteBuffer::WriteBuffer(const std::string & filename, int buffer_size)
+    : buffer_size(buffer_size)
 {
-    xbt_assert(bufferSize > 0, "Invalid buffer size (%d)", bufferSize);
-    buffer = new char[bufferSize];
+    xbt_assert(buffer_size > 0, "Invalid buffer size (%d)", buffer_size);
+    buffer = new char[buffer_size];
 
     f.open(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
@@ -105,8 +105,8 @@ WriteBuffer::WriteBuffer(const std::string & filename, int bufferSize)
 
 WriteBuffer::~WriteBuffer()
 {
-    if (bufferPos > 0)
-        flushBuffer();
+    if (buffer_pos > 0)
+        flush_buffer();
 
     if (buffer != nullptr)
     {
@@ -117,33 +117,35 @@ WriteBuffer::~WriteBuffer()
     }
 }
 
-void WriteBuffer::appendText(const char * text)
+void WriteBuffer::append_text(const char * text)
 {
     const int textLength = strlen(text);
 
     // If the buffer is big enough
-    if (bufferPos + textLength < bufferSize)
+    if (buffer_pos + textLength < buffer_size)
     {
         // Let's append the text to the buffer
-        memcpy(buffer + bufferPos, text, textLength * sizeof(char));
-        bufferPos += textLength;
+        memcpy(buffer + buffer_pos, text, textLength * sizeof(char));
+        buffer_pos += textLength;
     }
     else
     {
         // Let's write the current buffer content in the file
-        flushBuffer();
+        flush_buffer();
 
         // Let's write the text in the buffer
-        xbt_assert(textLength < bufferSize, "Text too large to fit in the buffer (%d required, only got %d)", textLength, bufferSize);
+        xbt_assert(textLength < buffer_size,
+                   "Text too large to fit in the buffer (%d required, only got %d)",
+                   textLength, buffer_size);
         memcpy(buffer, text, textLength * sizeof(char));
-        bufferPos = textLength;
+        buffer_pos = textLength;
     }
 }
 
-void WriteBuffer::flushBuffer()
+void WriteBuffer::flush_buffer()
 {
-    f.write(buffer, bufferPos);
-    bufferPos = 0;
+    f.write(buffer, buffer_pos);
+    buffer_pos = 0;
 }
 
 
@@ -262,7 +264,7 @@ void PajeTracer::initialize(const BatsimContext *context, double time)
              DEFINE_STATE_TYPE, DEFINE_ENTITY_VALUE, SET_STATE,
              DEFINE_EVENT_TYPE, NEW_EVENT, DEFINE_VARIABLE_TYPE,
              SET_VARIABLE);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 
     // Let's create our container types
     snprintf(buf, bufSize,
@@ -276,7 +278,7 @@ void PajeTracer::initialize(const BatsimContext *context, double time)
              DEFINE_CONTAINER_TYPE, rootType,      machineType,
              DEFINE_CONTAINER_TYPE,                schedulerType,
              DEFINE_CONTAINER_TYPE, schedulerType, killerType);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 
     // Let's create our event types
     snprintf(buf, bufSize,
@@ -286,7 +288,7 @@ void PajeTracer::initialize(const BatsimContext *context, double time)
              "\n",
              DEFINE_EVENT_TYPE, killerType, killEventKiller,
              DEFINE_EVENT_TYPE, machineType, killEventMachine);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 
     // Let's create our variable types
     snprintf(buf, bufSize,
@@ -294,13 +296,13 @@ void PajeTracer::initialize(const BatsimContext *context, double time)
              "%d %s %s \"Utilization\" %s\n"
              "\n",
              DEFINE_VARIABLE_TYPE, schedulerType, utilizationVarType, utilizationColor);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 
     snprintf(buf, bufSize,
              "# Containers creation\n"
              "%d %lf %s %s \"Machines\" 0\n",
              CREATE_CONTAINER, time, rootType, root);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 
     for (const Machine * m : context->machines.machines())
     {
@@ -310,7 +312,7 @@ void PajeTracer::initialize(const BatsimContext *context, double time)
                  CREATE_CONTAINER, time, machineType,
                  machinePrefix, m->id,
                  m->name.c_str(), root);
-        _wbuf->appendText(buf);
+        _wbuf->append_text(buf);
     }
 
     snprintf(buf, bufSize,
@@ -319,7 +321,7 @@ void PajeTracer::initialize(const BatsimContext *context, double time)
              "\n",
              CREATE_CONTAINER, time, schedulerType, scheduler,
              CREATE_CONTAINER, time, killerType, killer, scheduler);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 
     // Let's declare that machines have a state
     snprintf(buf, bufSize,
@@ -327,7 +329,7 @@ void PajeTracer::initialize(const BatsimContext *context, double time)
              "%d %s %s \"Machine state\"\n"
              "\n",
              DEFINE_STATE_TYPE, machineState, machineType);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 
     // Let's declare some machine states
     snprintf(buf, bufSize,
@@ -338,7 +340,7 @@ void PajeTracer::initialize(const BatsimContext *context, double time)
              "# Begin of events\n",
              DEFINE_ENTITY_VALUE, mstateWaiting, machineState, waitingColor,
              DEFINE_ENTITY_VALUE, mstateLaunching, machineState, launchingColor);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 
     // Let's set all the machines in waiting state
     for (const Machine * m : context->machines.machines())
@@ -346,7 +348,7 @@ void PajeTracer::initialize(const BatsimContext *context, double time)
         snprintf(buf, bufSize,
                  "%d %lf %s %s%d %s\n",
                  SET_STATE, time, machineState, machinePrefix, m->id, mstateWaiting);
-        _wbuf->appendText(buf);
+        _wbuf->append_text(buf);
     }
 
     state = INITIALIZED;
@@ -362,21 +364,21 @@ void PajeTracer::finalize(const BatsimContext * context, double time)
     snprintf(buf, bufSize,
              "\n"
              "# End of events, containers destruction\n");
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 
     for (const Machine * m : context->machines.machines())
     {
         snprintf(buf, bufSize,
                  "%d %lf %s%d %s\n",
                  DESTROY_CONTAINER, time, machinePrefix, m->id, machineType);
-        _wbuf->appendText(buf);
+        _wbuf->append_text(buf);
     }
 
     snprintf(buf, bufSize,
              "%d %lf %s %s\n",
              DESTROY_CONTAINER, time, root, rootType);
-    _wbuf->appendText(buf);
-    _wbuf->flushBuffer();
+    _wbuf->append_text(buf);
+    _wbuf->flush_buffer();
 
     delete _wbuf;
     _wbuf = nullptr;
@@ -402,7 +404,7 @@ void PajeTracer::add_job_launching(int jobID, const std::vector<int> & usedMachi
             snprintf(buf, bufSize,
                      "%d %lf %s %s%d %s\n",
                      SET_STATE, time, machineState, machinePrefix, machineID, mstateLaunching);
-            _wbuf->appendText(buf);
+            _wbuf->append_text(buf);
         }
     }
 }
@@ -417,7 +419,7 @@ void PajeTracer::register_new_job(int jobID)
     snprintf(buf, bufSize,
              "%d %s%d %s \"%d\" %s\n",
              DEFINE_ENTITY_VALUE, jobPrefix, jobID, machineState, jobID, _colors[jobID % (int)_colors.size()].c_str());
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 
     _jobs[jobID] = jobPrefix + to_string(jobID);
 }
@@ -429,7 +431,7 @@ void PajeTracer::set_machine_idle(int machineID, double time)
     snprintf(buf, bufSize,
              "%d %lf %s %s%d %s\n",
              SET_STATE, time, machineState, machinePrefix, machineID, mstateWaiting);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 }
 
 void PajeTracer::set_machine_as_computing_job(int machineID, int jobID, double time)
@@ -446,7 +448,7 @@ void PajeTracer::set_machine_as_computing_job(int machineID, int jobID, double t
     snprintf(buf, bufSize,
              "%d %lf %s %s%d %s\n",
              SET_STATE, time, machineState, machinePrefix, machineID, mit->second.c_str());
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 }
 
 void PajeTracer::add_job_kill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines)
@@ -460,7 +462,7 @@ void PajeTracer::add_job_kill(int jobID, const MachineRange & usedMachineIDs, do
     snprintf(buf, bufSize,
              "%d %lf %s %s \"%d\"\n",
              NEW_EVENT, time, killEventKiller, killer, jobID);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 
     if (associateKillToMachines)
     {
@@ -471,7 +473,7 @@ void PajeTracer::add_job_kill(int jobID, const MachineRange & usedMachineIDs, do
             snprintf(buf, bufSize,
                      "%d %lf %s %s%d \"%d\"\n",
                      NEW_EVENT, time, killEventMachine, machinePrefix, machine_id, jobID);
-            _wbuf->appendText(buf);
+            _wbuf->append_text(buf);
         }
     }
 }
@@ -487,7 +489,7 @@ void PajeTracer::add_global_utilization(double utilization, double time)
     snprintf(buf, bufSize,
              "%d %lf %s %s %lf\n",
              SET_VARIABLE, time, utilizationVarType, scheduler, utilization);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 }
 
 void PajeTracer::generate_colors(int colorCount)
@@ -713,7 +715,7 @@ void PStateChangeTracer::setFilename(const string &filename)
     xbt_assert(_wbuf == nullptr, "Double call of PStateChangeTracer::setFilename");
     _wbuf = new WriteBuffer(filename);
 
-    _wbuf->appendText("time,machine_id,new_pstate\n");
+    _wbuf->append_text("time,machine_id,new_pstate\n");
 }
 
 PStateChangeTracer::~PStateChangeTracer()
@@ -733,14 +735,14 @@ void PStateChangeTracer::add_pstate_change(double time, MachineRange machines, i
     snprintf(buf, bufSize, "%g,%s,%d\n",
              time, machines.to_string_hyphen(" ", "-").c_str(), pstate_after);
     xbt_assert(_wbuf != nullptr);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 }
 
 void PStateChangeTracer::flush()
 {
     xbt_assert(_wbuf != nullptr);
 
-    _wbuf->flushBuffer();
+    _wbuf->flush_buffer();
 }
 
 void PStateChangeTracer::close_buffer()
@@ -776,7 +778,7 @@ void EnergyConsumptionTracer::set_filename(const string &filename)
     xbt_assert(_wbuf == nullptr, "Double call of EnergyConsumptionTracer::set_filename");
     _wbuf = new WriteBuffer(filename);
 
-    _wbuf->appendText("time,energy,event_type\n");
+    _wbuf->append_text("time,energy,event_type\n");
 }
 
 void EnergyConsumptionTracer::add_job_start(double date, int job_id)
@@ -802,7 +804,7 @@ void EnergyConsumptionTracer::flush()
 {
     xbt_assert(_wbuf != nullptr);
 
-    _wbuf->flushBuffer();
+    _wbuf->flush_buffer();
 }
 
 void EnergyConsumptionTracer::close_buffer()
@@ -825,7 +827,7 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     snprintf(buf, buf_size, "%g,%Lg,%c\n",
              date, energy, event_type);
     xbt_assert(_wbuf != nullptr);
-    _wbuf->appendText(buf);
+    _wbuf->append_text(buf);
 
     return energy;
 }
