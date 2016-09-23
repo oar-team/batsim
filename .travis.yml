@@ -38,13 +38,8 @@ before_install:
   - sudo mv /tmp/sources.list /etc/apt/sources.list
 
   # Install boost 1.58+ (does not work, to fix!)
-  - mkdir -p /tmp/boost
-  - cd /tmp/boost
-  - sudo apt-get update
-  - sudo apt-get build-dep libboost-all-dev
-  - sudo apt-get -b source -t xenial libboost-all-dev
-  - sudo ls -l .
-  - sudo dpkg --force-all -i *.deb
+  - sudo apt update
+  - sudo apt install -y libboost-all-dev
   - sudo find / -name 'libboost*.so*'
 
 install:
