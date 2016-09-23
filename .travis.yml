@@ -37,10 +37,9 @@ before_install:
   - echo 'deb-src http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse' >> /tmp/sources.list
   - sudo mv /tmp/sources.list /etc/apt/sources.list
 
-  # Install boost 1.58+ (does not work, to fix!)
+  # Install boost 1.58+
   - sudo apt update
   - sudo apt install -y libboost-all-dev
-  - sudo find / -name 'libboost*.so*'
 
 install:
   # Install SimGrid
