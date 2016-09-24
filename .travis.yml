@@ -41,6 +41,10 @@ before_install:
   - sudo apt update
   - sudo apt install -y libboost-all-dev
 
+  # Trying to update g++
+  - sudo apt install -y g++
+  - g++ --version
+
 install:
   # Install SimGrid
   - cd ${BATSIM_BASE_DIR}
