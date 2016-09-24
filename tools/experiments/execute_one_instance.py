@@ -355,7 +355,7 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
 
             if self.execution_data.sched_process.running:
                 logger.warning("Killing Sched")
-                self.execution_data.sched_process.kill(auto_force_kill_timeout = 1)
+                self.execution_data.sched_process.kill(auto_force_kill_timeout = 30)
         else:
             logger.info("Batsim ended successfully")
         self.execution_data.nb_finished += 1
@@ -402,7 +402,7 @@ class SchedLifecycleHandler(ProcessLifecycleHandler):
 
             if self.execution_data.batsim_process.running:
                 logger.warning("Killing Batsim")
-                self.execution_data.batsim_process.kill(auto_force_kill_timeout = 1)
+                self.execution_data.batsim_process.kill(auto_force_kill_timeout = 30)
         else:
             logger.info("Sched ended successfully")
         self.execution_data.nb_finished += 1
