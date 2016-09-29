@@ -666,7 +666,7 @@ Examples of such input files can be found in the subdirectory instance_examples.
      # Let's check that variables are fine
     (var_ok, var_decl_order) = check_variables(variables)
     if not var_ok:
-        sys.exit(1)
+        sys.exit(-2)
 
     # Let's correctly interpret the working_dir and output_dir values
     (wd, od, batsim_command) = retrieve_info_from_instance(variables,
@@ -732,7 +732,7 @@ Examples of such input files can be found in the subdirectory instance_examples.
                                     sched_command = sched_command,
                                     variables_filename = variables_filename,
                                     timeout = timeout):
-            sys.exit(1)
+            sys.exit(2)
 
     # Commands after instance execution
     if len(commands_after_execution) > 0:
@@ -761,7 +761,7 @@ Examples of such input files can be found in the subdirectory instance_examples.
                                    output_subscript_filename = output_subscript_filename,
                                    output_script_output_dir = post_commands_output_dir,
                                    command_name = command_name):
-                sys.exit(1)
+                sys.exit(3)
 
     # Everything went succesfully, let's return 0
     sys.exit(0)

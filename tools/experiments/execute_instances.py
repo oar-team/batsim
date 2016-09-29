@@ -284,7 +284,14 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
                             hostname = self.hostname,
                             local_rank = self.local_rank,
                             comb = self.comb))
-            self.data.sweeper.skip(self.comb)
+            # http://stackoverflow.com/questions/7616187/python-error-codes-are-upshifted
+            if (process.exit_code != None) and ((process.exit_code >> 8) == 3):
+                logger.warning('However, the comb {comb} is marked as done, '
+                               'because it failed in the post-commands '
+                               'section.'.format(comb=self.comb))
+                self.data.sweeper.done(self.comb)
+            else:
+                self.data.sweeper.skip(self.comb)
 
         # Let's clear current instance variables
         self.comb = None
