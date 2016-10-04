@@ -129,6 +129,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
             MainArguments::WorkflowDescription desc;
             desc.filename = absolute_filename(workflow_filename);
             desc.name = generate_sha1_string(desc.filename);
+	    desc.workload_name = desc.name;
             desc.start_time = workflow_start_time;
 
             XBT_INFO("Workflow '%s' corresponds to workflow file '%s'.", desc.name.c_str(), desc.filename.c_str());

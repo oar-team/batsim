@@ -209,6 +209,7 @@ void Workloads::insert_workload(const std::string &workload_name, Workload *work
 
 bool Workloads::exists(const std::string &workload_name) const
 {
+
     return _workloads.count(workload_name) == 1;
 }
 
