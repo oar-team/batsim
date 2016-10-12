@@ -144,7 +144,7 @@ def check_sweep(sweeps):
                 if 'name' in element:
                     used_name = element['name']
                 else:
-                    used_name = element.values().nextitem()
+                    used_name = element.values()[0]
                     dicts_without_names.add(var_name)
                 if not is_valid_identifier(used_name):
                     logger.error("Invalid sweep variable {v}: the name got from dict {d} (name={n}, got either from the 'name' field if it exists or the first value otherwise) is not a valid identifier. It must be because it is used to create files.".format(v=var_name, d=element, n=used_name))
