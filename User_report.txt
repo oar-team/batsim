@@ -16,6 +16,7 @@ tar -xzvf redis-3.2.3.tar.gz
 unzip redox-master.zip 
 sudo apt-get install libev-dev
 sudo apt-get install python-sortedcontainers
+sudo pip install redis
 
   (the following are more related to evalys)
 

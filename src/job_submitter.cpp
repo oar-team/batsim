@@ -246,6 +246,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     int job_number = task_id_counters[workflow_name];
     task_id_counters[workflow_name]++;
 
+
     // Create a profile
     Profile * profile = new Profile;
     profile->type = ProfileType::DELAY;
