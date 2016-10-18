@@ -116,6 +116,7 @@ int static_job_submitter_process(int argc, char *argv[])
     }
 
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
+    bye_msg->is_workflow_submitter = false;
     bye_msg->submitter_name = submitter_name;
     send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
     delete args;
@@ -145,7 +146,7 @@ int workflow_submitter_process(int argc, char *argv[])
 
     const string submitter_name = args->workflow_name + "_submitter";
 
-    XBT_INFO("I AM A WORKFLOW SUBMITTER FOR WORKFLOW %s (start time = %lf)!", 
+    XBT_INFO("New Workflow submitter for workflow %s (start time = %lf)!", 
                   args->workflow_name.c_str(),workflow->start_time);
 
     /* Initializing my task_id counter */
@@ -218,11 +219,11 @@ int workflow_submitter_process(int argc, char *argv[])
       }
 
     double makespan = MSG_get_clock() - workflow->start_time;
-    // TODO: Do this using XBT logging? 
-    std::cout << "WORKFLOW_MAKESPAN" << " " << workflow->name << " " << makespan << "\n";
+    XBT_INFO("WORKFLOW_MAKESPAN %s %lf\n", workflow->name.c_str(), makespan);
 
     /* Goodbye */
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
+    bye_msg->is_workflow_submitter = true;
     bye_msg->submitter_name = submitter_name;
     send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
 

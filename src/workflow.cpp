@@ -226,6 +226,12 @@ bool Workflows::exists(const std::string &workflow_name) const
     return _workflows.count(workflow_name) == 1;
 }
 
+bool Workflows::size() const
+{
+	return _workflows.size();
+}
+
+
 std::map<std::string, Workflow *> &Workflows::workflows()
 {
   return _workflows;

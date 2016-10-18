@@ -178,6 +178,13 @@ public:
     bool exists(const std::string & workflow_name) const;
 
     /**
+     * @brief Returns the number of workflows
+     * @return the number of workflows
+     */
+    bool size() const;
+
+ 
+    /**
      * @brief Gets the internal map
      * @return The internal map
      */

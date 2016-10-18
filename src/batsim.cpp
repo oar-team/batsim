@@ -106,6 +106,11 @@ int parse_opt (int key, char *arg, struct argp_state *state)
         }
         break;
     }
+    case 'k':
+    {
+        main_args->terminate_with_last_workflow = true;
+        break;
+    }
     case 'W':
     {
         // format:   FILENAME[:start_time]
@@ -235,6 +240,7 @@ bool parse_main_args(int argc, char * argv[], MainArguments & main_args)
         {"workload", 'w', "FILENAME", 0, "Workload to be submitted to the platform. Required unless a workflow is submitted.", 0},
         {"workflow", 'W', "FILENAME[:start_time]", 0, "Workflow to be submitted to the platform, with an optional start time. Required unless a workload is submitted.", 0},
 
+	{"ignore-workflow-beyond-last-workflow", 'k', 0, 0, "Ignore workload jobs that occur after all workflows have completed, if any, as completed", 0},
         {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output. Default value: 'out'", 0},
         {"energy-plugin", 'E', 0, 0, "Enables energy-aware experiments", 0},
         {"allow-space-sharing", 'h', 0, 0, "Allows space sharing: the same resource can compute several jobs at the same time", 0},
@@ -456,6 +462,8 @@ int main(int argc, char * argv[])
     context.allow_space_sharing = main_args.allow_space_sharing;
     context.trace_schedule = main_args.enable_schedule_tracing;
     context.simulation_start_time = chrono::high_resolution_clock::now();
+
+    context.terminate_with_last_workflow = main_args.terminate_with_last_workflow;
 
     // Let's load the workloads and workflows
     int max_nb_machines_to_use = -1;

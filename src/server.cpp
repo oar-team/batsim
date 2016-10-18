@@ -33,6 +33,7 @@ int uds_server_process(int argc, char *argv[])
     int nb_scheduled_jobs = 0;
     int nb_submitters = 0;
     int nb_submitters_finished = 0;
+    int nb_workflow_submitters_finished = 0;
     int nb_running_jobs = 0;
     int nb_switching_machines = 0;
     int nb_waiters = 0;
@@ -67,8 +68,8 @@ int uds_server_process(int argc, char *argv[])
 
     // Simulation loop
     while ((nb_submitters == 0) || (nb_submitters_finished < nb_submitters) ||
-           (nb_completed_jobs < nb_submitted_jobs) || (!sched_ready) ||
-           (nb_switching_machines > 0) || (nb_waiters > 0))
+          (nb_completed_jobs < nb_submitted_jobs) || (!sched_ready) ||
+          (nb_switching_machines > 0) || (nb_waiters > 0))
     {
         // Let's wait a message from a node or the request-reply process...
         msg_task_t task_received = NULL;
@@ -112,6 +113,9 @@ int uds_server_process(int argc, char *argv[])
             submitters.erase(message->submitter_name);
 
             nb_submitters_finished++;
+	    if (message->is_workflow_submitter) {
+	      nb_workflow_submitters_finished++;
+            }
             XBT_INFO("A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
 
             if (!all_jobs_submitted_and_completed &&
@@ -169,6 +173,16 @@ int uds_server_process(int argc, char *argv[])
 
         case IPMessageType::JOB_SUBMITTED:
         {
+
+	    // Ignore all submissions if -k was specified and all workflows
+            // have completed
+	    if ((context->workflows.size() != 0) && (context->terminate_with_last_workflow) && 
+                (nb_workflow_submitters_finished == context->workflows.size())) {
+	      XBT_INFO("Ignoring Job due to -k command-line option");
+              break;
+            }
+	
+
             xbt_assert(task_data->data != nullptr);
             JobSubmittedMessage * message = (JobSubmittedMessage *) task_data->data;
 
@@ -471,7 +485,8 @@ int uds_server_process(int argc, char *argv[])
     } // end of while
 
     XBT_INFO("Simulation is finished!");
-    xbt_assert(all_jobs_submitted_and_completed, "Left simulation loop but all_jobs_submitted_and_completed is false");
+    bool simulation_is_completed = all_jobs_submitted_and_completed;
+    xbt_assert(simulation_is_completed, "Left simulation loop but it seems that not all that should have completed has!");
 
     delete args;
     return 0;
