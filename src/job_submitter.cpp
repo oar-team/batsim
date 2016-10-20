@@ -203,6 +203,7 @@ int workflow_submitter_process(int argc, char *argv[])
 
 	    /* All those poor hungry kids */
 	    std::vector<Task *> my_kids = completed_task->children;
+
 	    /* tell them they are closer to being elected */
 	    std::transform (my_kids.begin(),my_kids.end(),my_kids.begin(),inc_child);
 

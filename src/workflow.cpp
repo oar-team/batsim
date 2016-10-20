@@ -117,8 +117,17 @@ Task * Workflow::get_task(std::string id) {
 
 void Workflow::add_edge(Task &parent, Task &child)
 {
-  child.parents.push_back(&parent);
-  parent.children.push_back(&child);
+  if(std::find(child.parents.begin(), child.parents.end(), &parent) != child.parents.end()) {
+    // Edge already there, no hyperedge
+  } else {
+    child.parents.push_back(&parent);
+  } 
+
+  if(std::find(parent.children.begin(), parent.children.end(), &parent) != parent.children.end()) {
+    // Edge already there, no hyperedge
+  } else {
+    parent.children.push_back(&child);
+  } 
 }
 
 
