@@ -220,7 +220,7 @@ int workflow_submitter_process(int argc, char *argv[])
       }
 
     double makespan = MSG_get_clock() - workflow->start_time;
-    XBT_INFO("WORKFLOW_MAKESPAN %s %lf\n", workflow->name.c_str(), makespan);
+    XBT_INFO("WORKFLOW_MAKESPAN %s %lf  (depth = %d)\n", workflow->name.c_str(), makespan, workflow->get_maximum_depth());
 
     /* Goodbye */
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
