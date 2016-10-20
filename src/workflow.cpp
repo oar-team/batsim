@@ -154,7 +154,7 @@ std::vector<Task *> Workflow::get_sink_tasks() {
 
 int Workflow::get_maximum_depth() {
   int max_depth = -1;
-  std::vector<Task *> sinks = this->get_source_tasks();
+  std::vector<Task *> sinks = this->get_sink_tasks();
   for (std::vector<Task*>::iterator it = sinks.begin(); it != sinks.end(); ++it) {
     if ((max_depth == -1) || ((*it)->depth > max_depth)) {
       max_depth = (*it)->depth;
