@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <boost/bind.hpp>
 
 #include "jobs.hpp"
 #include "ipp.hpp"
@@ -213,7 +214,7 @@ int workflow_submitter_process(int argc, char *argv[])
 
 	    /* tell them they are closer to being elected */
 	    std::transform (my_kids.begin(),my_kids.end(),my_kids.begin(),inc_child);
-	    std::transform (my_kids.begin(),my_kids.end(),my_kids.begin(), boost::bind(&bottom_level_f, _1, completed_task)));
+	    std::transform (my_kids.begin(),my_kids.end(),my_kids.begin(), boost::bind(&bottom_level_f, _1, completed_task));
 
 	    /* look for ready kids */
 	    for (std::vector<Task *>::iterator kiddo=my_kids.begin(); kiddo!=my_kids.end(); ++kiddo)
