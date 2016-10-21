@@ -202,12 +202,12 @@ int workflow_submitter_process(int argc, char *argv[])
 	    /* Wait for callback */
 	    string completed_job_key = wait_for_job_completion(submitter_name);
 	    
-	    XBT_INFO("TASK # %s has completed!!!\n", completed_job_key.c_str());
+	    //XBT_INFO("TASK # %s has completed!!!\n", completed_job_key.c_str());
 	    
 	    /* Look for the task in the map */
 	    Task *completed_task = submitted_tasks[completed_job_key];
 	    
-	    XBT_INFO("TASK %s has completed!!!\n", completed_task->id.c_str());
+	    XBT_INFO("TASK %s has completed! (depth=%d)\n", completed_task->id.c_str(),completed_task->depth);
 
 	    /* All those poor hungry kids */
 	    std::vector<Task *> my_kids = completed_task->children;
