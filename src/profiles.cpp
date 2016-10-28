@@ -174,6 +174,15 @@ Profile::~Profile()
             d = nullptr;
         }
     }
+    else if (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS0)
+    {
+        MsgParallelHomogeneousPFS0ProfileData * d = (MsgParallelHomogeneousPFS0ProfileData *) data;
+        if (d != nullptr)
+        {
+            delete d;
+            d = nullptr;
+        }
+    }    
     else
         XBT_ERROR("Deletion of an unknown profile type (%d)", type);
 }
@@ -268,6 +277,18 @@ Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Va
         for (unsigned int i = 0; i < seq.Size(); ++i)
 
             profile->data = data;
+    }
+    else if (profile_type == "msg_par_hg_pfs0")
+    {
+        profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS0;
+        MsgParallelHomogeneousPFS0ProfileData * data = new MsgParallelHomogeneousPFS0ProfileData;
+
+        xbt_assert(json_desc.HasMember("size"), "Invalid JSON: profile '%s' has no 'size' field", profile_name.c_str());
+        xbt_assert(json_desc["size"].IsNumber(), "Invalid JSON: profile '%s' has a non-number 'size' field", profile_name.c_str());
+        data->size = json_desc["size"].GetDouble();
+        xbt_assert(data->size >= 0, "Invalid JSON: profile '%s' has a non-positive 'size' field (%g)", profile_name.c_str(), data->size);
+
+        profile->data = data;
     }
     else if (profile_type == "smpi")
     {
