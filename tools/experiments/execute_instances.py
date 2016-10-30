@@ -619,6 +619,7 @@ can be found in the instances_examples subdirectory.
                           'either absolute or relative to the working directory. '
                           ' If unset, the working directory is used instead')
 
+
     g = p.add_mutually_exclusive_group()
 
     g.add_argument('--pre_only',
@@ -649,6 +650,12 @@ can be found in the instances_examples subdirectory.
                           'are already done will be computed before trying to '
                           'execute the other instances')
 
+    g.add_argument('-pg', '--recompute_already_done_post_commands',
+                   action = 'store_true',
+                   help = 'Does quite the same as '
+                          '--recompute_instances_post_commands, but does not '
+                          'try to execute skipped instances')
+
     args = p.parse_args()
 
     # Some basic checks
@@ -675,6 +682,13 @@ can be found in the instances_examples subdirectory.
     recompute_instances_post_commands = False
     if args.recompute_instances_post_commands:
         recompute_instances_post_commands = True
+
+    # This option is just a combination of other options :D
+    recompute_already_done_post_commands = False
+    if args.recompute_already_done_post_commands:
+        recompute_already_done_post_commands = True
+        recompute_instances_post_commands = True
+        generate_only = True
 
     host_list = ['localhost']
     if args.mpi_hostfile:
@@ -780,11 +794,12 @@ can be found in the instances_examples subdirectory.
             nb_workers_per_host = args.nb_workers_per_host,
             recompute_all_instances = recompute_all_instances,
             recompute_instances_post_commands = recompute_instances_post_commands,
-            generate_only = generate_only):
+            generate_only = generate_only) and not recompute_already_done_post_commands:
             sys.exit(2)
 
     # Commands after instances execution
-    if len(commands_after_instances) > 0 and not generate_only:
+    if len(commands_after_instances) > 0 and \
+       (not generate_only or recompute_already_done_post_commands):
         post_commands_dir = '{bod}/post_commands'.format(
             bod = base_output_directory)
         post_commands_output_dir = '{bod}/out'.format(
