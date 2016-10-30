@@ -174,7 +174,8 @@ class WorkersSharedData:
                  nb_workers_finished,
                  base_working_directory,
                  base_output_directory,
-                 base_variables):
+                 base_variables,
+                 generate_only):
         self.sweeper = sweeper
         self.instances_post_cmds_only = instances_post_cmds_only
         self.implicit_instances = implicit_instances
@@ -183,6 +184,7 @@ class WorkersSharedData:
         self.base_working_directory = base_working_directory
         self.base_output_directory = base_output_directory
         self.base_variables = base_variables
+        self.generate_only = generate_only
 
 class WorkerLifeCycleHandler(ProcessLifecycleHandler):
     def __init__(self,
@@ -214,7 +216,8 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
                     base_working_directory = self.data.base_working_directory,
                     base_output_directory = self.data.base_output_directory,
                     base_variables = self.data.base_variables,
-                    post_commands_only = self.comb in self.data.instances_post_cmds_only)
+                    post_commands_only = self.comb in self.data.instances_post_cmds_only,
+                    generate_only = self.data.generate_only)
                 self.combname = combname
                 self._launch_process(instance_command = command)
             else:
@@ -290,6 +293,12 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
                                'because it failed in the post-commands '
                                'section.'.format(comb=self.comb))
                 self.data.sweeper.done(self.comb)
+            elif (process.exit_code != None) and \
+                 ((process.exit_code >> 8) == 4) and \
+                 self.data.generate_only:
+                logger.warning('However, this is not a problem because not '
+                               'executing the instance has been asked.')
+                self.data.sweeper.skip(self.comb)
             else:
                 self.data.sweeper.skip(self.comb)
 
@@ -305,25 +314,29 @@ def prepare_instance(comb,
                      base_working_directory,
                      base_output_directory,
                      base_variables,
-                     post_commands_only = False):
+                     post_commands_only = False,
+                     generate_only = False):
     if comb['explicit']:
         return prepare_explicit_instance(explicit_instances = explicit_instances,
                                          instance_id = comb['instance_id'],
                                          base_output_directory = base_output_directory,
                                          base_variables = base_variables,
-                                         post_commands_only = post_commands_only)
+                                         post_commands_only = post_commands_only,
+                                         generate_only = generate_only)
     else:
         return prepare_implicit_instance(implicit_instances = implicit_instances,
                                          comb = comb,
                                          base_output_directory = base_output_directory,
                                          base_variables = base_variables,
-                                         post_commands_only = post_commands_only)
+                                         post_commands_only = post_commands_only,
+                                         generate_only = generate_only)
 
 def prepare_implicit_instance(implicit_instances,
                               comb,
                               base_output_directory,
                               base_variables,
-                              post_commands_only = False):
+                              post_commands_only = False,
+                              generate_only = False):
     # Let's retrieve instance
     instance = implicit_instances[comb['instance_name']]
     generic_instance = instance['generic_instance']
@@ -383,6 +396,8 @@ def prepare_implicit_instance(implicit_instances,
     options = ""
     if post_commands_only:
         options = ' --post_only'
+    elif generate_only:
+        options = ' --do_not_execute'
 
     # Let's prepare the launch command
     instance_command = '{exec_script}{opt} {desc_filename}'.format(
@@ -395,7 +410,8 @@ def prepare_explicit_instance(explicit_instances,
                               instance_id,
                               base_output_directory,
                               base_variables,
-                              post_commands_only = False):
+                              post_commands_only = False,
+                              generate_only = False):
     # Let's retrieve the instance
     instance = explicit_instances[instance_id]
 
@@ -420,6 +436,8 @@ def prepare_explicit_instance(explicit_instances,
     options = ""
     if post_commands_only:
         options = ' --post_only'
+    elif generate_only:
+        options = ' --do_not_execute'
 
     # Let's prepare the launch command
     instance_command = '{exec_script}{opt} {desc_filename}'.format(
@@ -485,7 +503,8 @@ def execute_instances(base_working_directory,
                       explicit_instances,
                       nb_workers_per_host,
                       recompute_all_instances,
-                      recompute_instances_post_commands):
+                      recompute_instances_post_commands,
+                      generate_only = False):
     # Let's generate all instances that should be executed
     combs = generate_instances_combs(implicit_instances = implicit_instances,
                                      explicit_instances = explicit_instances)
@@ -515,7 +534,8 @@ def execute_instances(base_working_directory,
                                            nb_workers_finished = 0,
                                            base_working_directory = base_working_directory,
                                            base_output_directory = base_output_directory,
-                                           base_variables = base_variables)
+                                           base_variables = base_variables,
+                                           generate_only = generate_only)
 
     # Let's create all workers
     nb_workers = min(len(combs), len(host_list) * nb_workers_per_host)
@@ -581,18 +601,6 @@ can be found in the instances_examples subdirectory.
                    help = 'Sets the number of workers that should be allocated '
                           'to each host.')
 
-    p.add_argument('-r', '--recompute_all_instances',
-                   action = 'store_true',
-                   help = "If set, all instances will be recomputed. "
-                          "By default, Execo's cache allows to avoid "
-                          "recomputations of already done instances")
-
-    p.add_argument('-p', '--recompute_instances_post_commands',
-                   action = 'store_true',
-                   help = 'If set, the post_commands of the instances which '
-                          'are already done will be computed before trying to '
-                          'execute the other instances')
-
     p.add_argument('-bwd', '--base_working_directory',
                    type = str,
                    default = None,
@@ -623,6 +631,24 @@ can be found in the instances_examples subdirectory.
                    help = "If set, only the commands which go after instances' "
                           'executions will be executed.')
 
+    g.add_argument('-g', '--generate_only',
+                   action = 'store_true',
+                   help = 'If set, the instances will not be executed but only '
+                          'generated. Commands before execution will be run, '
+                          'commands before each instance too.')
+
+    g.add_argument('-r', '--recompute_all_instances',
+                   action = 'store_true',
+                   help = "If set, all instances will be recomputed. "
+                          "By default, Execo's cache allows to avoid "
+                          "recomputations of already done instances")
+
+    g.add_argument('-p', '--recompute_instances_post_commands',
+                   action = 'store_true',
+                   help = 'If set, the post_commands of the instances which '
+                          'are already done will be computed before trying to '
+                          'execute the other instances')
+
     args = p.parse_args()
 
     # Some basic checks
@@ -637,6 +663,10 @@ can be found in the instances_examples subdirectory.
     commands_before_instances = []
     commands_after_instances = []
     base_variables = {}
+
+    generate_only = False
+    if args.generate_only:
+        generate_only = True
 
     recompute_all_instances = False
     if args.recompute_all_instances:
@@ -749,11 +779,12 @@ can be found in the instances_examples subdirectory.
             explicit_instances = explicit_instances,
             nb_workers_per_host = args.nb_workers_per_host,
             recompute_all_instances = recompute_all_instances,
-            recompute_instances_post_commands = recompute_instances_post_commands):
+            recompute_instances_post_commands = recompute_instances_post_commands,
+            generate_only = generate_only):
             sys.exit(2)
 
     # Commands after instances execution
-    if len(commands_after_instances) > 0:
+    if len(commands_after_instances) > 0 and not generate_only:
         post_commands_dir = '{bod}/post_commands'.format(
             bod = base_output_directory)
         post_commands_output_dir = '{bod}/out'.format(
