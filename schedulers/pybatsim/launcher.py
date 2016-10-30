@@ -44,10 +44,10 @@ def instanciate_scheduler(name, options):
     package = __import__ ('schedulers', fromlist=[my_module])
     if my_module not in package.__dict__:
         print "No such scheduler (module file not found)."
-        exit(1)
+        sys.exit(1)
     if my_class not in package.__dict__[my_module].__dict__:
         print "No such scheduler (class within the module file not found)."
-        exit(1)
+        sys.exit(1)
     #load the class
     scheduler_non_instancied = package.__dict__[my_module].__dict__[my_class]
     scheduler = scheduler_non_instancied(options)

@@ -70,6 +70,11 @@ public:
      */
     std::vector<Task *> get_sink_tasks();
 
+    /**
+     * @brief Get the maximum depth
+     */
+    int get_maximum_depth();
+
 public:
     std::string name; //!< The Workflow name
     std::map<std::string, Task *> tasks; //!< Hashmap of all tasks
@@ -110,6 +115,7 @@ public:
     std::vector<Task *> parents; //!< The parent
     std::vector<Task *> children; //!< The children
     int nb_parent_completed; //!< The number of preceding tasks completed
+    int depth = 0; // The task's top level
 };
 
 
@@ -177,6 +183,13 @@ public:
      */
     bool exists(const std::string & workflow_name) const;
 
+    /**
+     * @brief Returns the number of workflows
+     * @return the number of workflows
+     */
+    bool size() const;
+
+ 
     /**
      * @brief Gets the internal map
      * @return The internal map

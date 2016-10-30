@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <boost/bind.hpp>
 
 #include "jobs.hpp"
 #include "ipp.hpp"
@@ -19,6 +20,13 @@ Task* inc_child (Task *i)
   i->nb_parent_completed++;
 
   return i;
+}
+
+Task* bottom_level_f (Task *child, Task *parent)
+{
+  child->depth = std::max( child->depth, (parent->depth)+1 );
+
+  return child;
 }
 
 using namespace std;
@@ -116,6 +124,7 @@ int static_job_submitter_process(int argc, char *argv[])
     }
 
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
+    bye_msg->is_workflow_submitter = false;
     bye_msg->submitter_name = submitter_name;
     send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
     delete args;
@@ -145,7 +154,7 @@ int workflow_submitter_process(int argc, char *argv[])
 
     const string submitter_name = args->workflow_name + "_submitter";
 
-    XBT_INFO("I AM A WORKFLOW SUBMITTER FOR WORKFLOW %s (start time = %lf)!", 
+    XBT_INFO("New Workflow submitter for workflow %s (start time = %lf)!", 
                   args->workflow_name.c_str(),workflow->start_time);
 
     /* Initializing my task_id counter */
@@ -193,17 +202,19 @@ int workflow_submitter_process(int argc, char *argv[])
 	    /* Wait for callback */
 	    string completed_job_key = wait_for_job_completion(submitter_name);
 	    
-	    XBT_INFO("TASK # %s has completed!!!\n", completed_job_key.c_str());
+	    //XBT_INFO("TASK # %s has completed!!!\n", completed_job_key.c_str());
 	    
 	    /* Look for the task in the map */
 	    Task *completed_task = submitted_tasks[completed_job_key];
 	    
-	    XBT_INFO("TASK %s has completed!!!\n", completed_task->id.c_str());
+	    XBT_INFO("TASK %s has completed! (depth=%d)\n", completed_task->id.c_str(),completed_task->depth);
 
 	    /* All those poor hungry kids */
 	    std::vector<Task *> my_kids = completed_task->children;
+
 	    /* tell them they are closer to being elected */
 	    std::transform (my_kids.begin(),my_kids.end(),my_kids.begin(),inc_child);
+	    std::transform (my_kids.begin(),my_kids.end(),my_kids.begin(), boost::bind(&bottom_level_f, _1, completed_task));
 
 	    /* look for ready kids */
 	    for (std::vector<Task *>::iterator kiddo=my_kids.begin(); kiddo!=my_kids.end(); ++kiddo)
@@ -218,11 +229,11 @@ int workflow_submitter_process(int argc, char *argv[])
       }
 
     double makespan = MSG_get_clock() - workflow->start_time;
-    // TODO: Do this using XBT logging? 
-    std::cout << "WORKFLOW_MAKESPAN" << " " << workflow->name << " " << makespan << "\n";
+    XBT_INFO("WORKFLOW_MAKESPAN %s %lf  (depth = %d)\n", workflow->name.c_str(), makespan, workflow->get_maximum_depth());
 
     /* Goodbye */
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
+    bye_msg->is_workflow_submitter = true;
     bye_msg->submitter_name = submitter_name;
     send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
 

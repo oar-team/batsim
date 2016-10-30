@@ -117,8 +117,17 @@ Task * Workflow::get_task(std::string id) {
 
 void Workflow::add_edge(Task &parent, Task &child)
 {
-  child.parents.push_back(&parent);
-  parent.children.push_back(&child);
+  if(std::find(child.parents.begin(), child.parents.end(), &parent) != child.parents.end()) {
+    // Edge already there, no hyperedge
+  } else {
+    child.parents.push_back(&parent);
+  } 
+
+  if(std::find(parent.children.begin(), parent.children.end(), &parent) != parent.children.end()) {
+    // Edge already there, no hyperedge
+  } else {
+    parent.children.push_back(&child);
+  } 
 }
 
 
@@ -140,6 +149,18 @@ std::vector<Task *> Workflow::get_sink_tasks() {
     }
   }
   return task_list;
+}
+
+
+int Workflow::get_maximum_depth() {
+  int max_depth = -1;
+  std::vector<Task *> sinks = this->get_sink_tasks();
+  for (std::vector<Task*>::iterator it = sinks.begin(); it != sinks.end(); ++it) {
+    if ((max_depth == -1) || ((*it)->depth > max_depth)) {
+      max_depth = (*it)->depth;
+    }
+  } 
+  return max_depth;
 }
 
 
@@ -225,6 +246,12 @@ bool Workflows::exists(const std::string &workflow_name) const
   //return workflow_name == "mmh";
     return _workflows.count(workflow_name) == 1;
 }
+
+bool Workflows::size() const
+{
+	return _workflows.size();
+}
+
 
 std::map<std::string, Workflow *> &Workflows::workflows()
 {
