@@ -52,7 +52,7 @@ struct MainArguments
     std::string platform_filename;                          //!< The SimGrid platform filename
     std::list<WorkloadDescription> workload_descriptions;   //!< The workloads' descriptions
     std::list<WorkflowDescription> workflow_descriptions;   //!< The workflows' descriptions
-    bool terminate_with_last_workflow = false;
+    bool terminate_with_last_workflow = false;              //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
     std::string socket_filename = "/tmp/bat_socket";        //!< The Unix Domain Socket filename
 

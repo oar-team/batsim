@@ -38,7 +38,7 @@ struct BatsimContext
     CurrentSwitches current_switches;               //!< The current switches
     RedisStorage storage;                           //!< The RedisStorage
 
-    bool terminate_with_last_workflow;
+    bool terminate_with_last_workflow = false;      //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
     long double energy_first_job_submission = -1;   //!< The amount of consumed energy (J) when the first job is submitted
     long double energy_last_job_completion;         //!< The amount of consumed energy (J) when the last job is completed

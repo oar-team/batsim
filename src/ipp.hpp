@@ -81,7 +81,7 @@ struct SubmitterHelloMessage
  */
 struct SubmitterByeMessage
 {
-    bool is_workflow_submitter;
+    bool is_workflow_submitter; //!< Stores whether the finished submitter was a Workflow submitter
     std::string submitter_name; //!< The name of the submitter.
 };
 

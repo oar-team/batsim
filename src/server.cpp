@@ -113,9 +113,8 @@ int uds_server_process(int argc, char *argv[])
             submitters.erase(message->submitter_name);
 
             nb_submitters_finished++;
-	    if (message->is_workflow_submitter) {
-	      nb_workflow_submitters_finished++;
-            }
+            if (message->is_workflow_submitter)
+                nb_workflow_submitters_finished++;
             XBT_INFO("A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
 
             if (!all_jobs_submitted_and_completed &&
@@ -173,15 +172,13 @@ int uds_server_process(int argc, char *argv[])
 
         case IPMessageType::JOB_SUBMITTED:
         {
-
-	    // Ignore all submissions if -k was specified and all workflows
-            // have completed
-	    if ((context->workflows.size() != 0) && (context->terminate_with_last_workflow) && 
-                (nb_workflow_submitters_finished == context->workflows.size())) {
-	      XBT_INFO("Ignoring Job due to -k command-line option");
-              break;
+            // Ignore all submissions if -k was specified and all workflows have completed
+            if ((context->workflows.size() != 0) && (context->terminate_with_last_workflow) &&
+                    (nb_workflow_submitters_finished == context->workflows.size()))
+            {
+                XBT_INFO("Ignoring Job due to -k command-line option");
+                break;
             }
-	
 
             xbt_assert(task_data->data != nullptr);
             JobSubmittedMessage * message = (JobSubmittedMessage *) task_data->data;
