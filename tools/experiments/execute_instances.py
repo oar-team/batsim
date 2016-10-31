@@ -505,27 +505,39 @@ def execute_instances(base_working_directory,
                       recompute_all_instances,
                       recompute_instances_post_commands,
                       generate_only = False,
-                      mark_as_skipped_lambda = None):
+                      mark_as_cancelled_lambda = None):
     # Let's generate all instances that should be executed
     combs = generate_instances_combs(implicit_instances = implicit_instances,
                                      explicit_instances = explicit_instances)
     sweeper = ParamSweeper('{out}/sweeper'.format(out = base_output_directory),
                            combs)
 
-    if mark_as_skipped_lambda == '':
-        logger.info('The first finished combination is shown below.')
-        logger.info(next(iter(sweeper.get_done())))
-        sys.exit(0)
-    elif mark_as_skipped_lambda != None:
-        logger.info('Trying to find instances to mark as skipped. '
+    if mark_as_cancelled_lambda == '':
+        if len(sweeper.get_done()) > 0:
+            logger.info('The first finished combination is shown below.')
+            logger.info(next(iter(sweeper.get_done())))
+            sys.exit(0)
+        elif len(sweeper.get_inprogress()) > 0:
+            logger.info('The first inprogress combination is shown below.')
+            logger.info(next(iter(sweeper.get_inprogress())))
+            sys.exit(0)
+        elif len(sweeper.get_remaining()) > 0:
+            logger.info('The first todo combination is shown below.')
+            logger.info(next(iter(sweeper.get_remaining())))
+            sys.exit(0)
+        else:
+            logger.info('It seems that there is no combination... Try again.')
+            sys.exit(0)
+    elif mark_as_cancelled_lambda != None:
+        logger.info('Trying to find instances to mark as cancelled. '
                     'Lambda parameter is "{p}". Lambda filter string is "{f}".'.format(
                         p = 'x',
-                        f = mark_as_skipped_lambda))
+                        f = mark_as_cancelled_lambda))
         combs_to_mark = [y for y in filter(lambda x:
-                                           eval(mark_as_skipped_lambda),
+                                           eval(mark_as_cancelled_lambda),
                                            sweeper.get_done())]
 
-        logger.info('{nb} instances will be marked as skipped. Are you sure? '
+        logger.info('{nb} instances will be marked as cancelled. Are you sure? '
                     'Type "yes" to confirm.'.format(nb = len(combs_to_mark)))
 
         input_line = sys.stdin.readline().strip().lower()
@@ -533,10 +545,10 @@ def execute_instances(base_working_directory,
         if input_line == 'yes':
             for comb_to_mark in combs_to_mark:
                 sweeper.cancel(comb_to_mark)
-            logger.info('{nb} instances have been marked as skipped.')
+            logger.info('{nb} instances have been marked as cancelled.'.format(
+                nb = len(combs_to_mark)))
         else:
-            logger.info('Aborted. No instance has been marked as skipped')
-        sys.exit(0)
+            logger.info('Aborted. No instance has been marked as cancelled')
 
     # Let's mark all inprogress values as todo
     for comb in sweeper.get_inprogress():
@@ -646,6 +658,16 @@ can be found in the instances_examples subdirectory.
                           'either absolute or relative to the working directory. '
                           ' If unset, the working directory is used instead')
 
+    p.add_argument('-m', '--mark_instances_as_cancelled',
+                   type = str,
+                   default = None,
+                   help = 'Allows to mark some instances as cancelled, which '
+                          'will force them to be recomputed. The parameter '
+                          'is a lambda expression used to filter which '
+                          'instances should be recomputed. If the parameter '
+                          'is empty, a combination example is displayed. '
+                          'The lambda parameter is named "x".')
+
 
     g = p.add_mutually_exclusive_group()
 
@@ -683,16 +705,6 @@ can be found in the instances_examples subdirectory.
                           '--recompute_instances_post_commands, but does not '
                           'try to execute skipped instances')
 
-    g.add_argument('-m', '--mark_instances_as_skipped',
-                   type = str,
-                   default = None,
-                   help = 'Allows to mark some instances as skipped, which '
-                          'will force them to be recomputed. The parameter '
-                          'is a lambda expression used to filter which '
-                          'instances should be recomputed. If the parameter '
-                          'is empty, a combination example is displayed. '
-                          'The lambda parameter is named "x".')
-
     args = p.parse_args()
 
     # Some basic checks
@@ -727,9 +739,9 @@ can be found in the instances_examples subdirectory.
         recompute_instances_post_commands = True
         generate_only = True
 
-    mark_as_skipped_lambda = None
-    if args.mark_instances_as_skipped != None:
-        mark_as_skipped_lambda = args.mark_instances_as_skipped
+    mark_as_cancelled_lambda = None
+    if args.mark_instances_as_cancelled != None:
+        mark_as_cancelled_lambda = args.mark_instances_as_cancelled
 
     host_list = ['localhost']
     if args.mpi_hostfile:
@@ -836,7 +848,7 @@ can be found in the instances_examples subdirectory.
             recompute_all_instances = recompute_all_instances,
             recompute_instances_post_commands = recompute_instances_post_commands,
             generate_only = generate_only,
-            mark_as_skipped_lambda = mark_as_skipped_lambda) and not recompute_already_done_post_commands:
+            mark_as_cancelled_lambda = mark_as_cancelled_lambda) and not recompute_already_done_post_commands:
             sys.exit(2)
 
     # Commands after instances execution
