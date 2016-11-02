@@ -292,7 +292,7 @@ batsim platforms/small_platform.xml \
        -s /tmp/batsim_output/socket
 ```
 
-##### Running the OAR (Camelot) Scheduler
+##### Running the OAR (Kamelot) Scheduler
 The scheduler is run via **bataar.py**, which is the OAR3 adaptor to interact
 with Batsim.
 
