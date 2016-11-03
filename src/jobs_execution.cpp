@@ -233,6 +233,77 @@ int execute_profile(BatsimContext *context,
         }
         return 1;
     }
+
+    if (profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS0)
+    {
+        MsgParallelHomogeneousPFS0ProfileData * data = (MsgParallelHomogeneousPFS0ProfileData *)profile->data;
+
+        double cpu = 0.0;
+        double size = data->size;
+        std::vector<msg_host_t> hosts_pfs0(allocation->hosts); 
+
+        // Add the pfs_machine
+        hosts_pfs0.push_back((context->machines.pfs_machine())->host);
+        
+        nb_res = nb_res + 1;
+        
+        // These amounts are deallocated by SG
+        double * computation_amount = xbt_new(double, nb_res);
+        double * communication_amount = NULL;
+        if(size != 0.0)
+            communication_amount = xbt_new(double, nb_res*nb_res);
+
+
+        // Let us fill the local computation and communication matrices
+        int k = 0;
+        for (int y = 0; y < nb_res; ++y)
+        {
+            computation_amount[y] = cpu;
+            if(communication_amount != NULL) {
+                for (int x = 0; x < nb_res; ++x)
+                {
+                    if ((x != nb_res-1) || (x == y))
+                        communication_amount[k++] = 0;
+                    else
+                        communication_amount[k++] = size;
+                }
+            }
+        }
+
+        string task_name = "phg " + to_string(job->number) + "'" + job->profile + "'";
+        XBT_INFO("Creating task '%s'", task_name.c_str());
+
+        msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(),
+                                         nb_res, allocation->hosts.data(),
+                                         computation_amount,
+                                         communication_amount, NULL);
+
+        // TODO: debug job kills on timeout
+
+        // Let's spawn a process which will wait until walltime and cancel the task if needed
+        /*KillerProcessArguments * killer_args = new KillerProcessArguments;
+        killer_args->task = ptask;
+        killer_args->walltime = *remaining_time;
+
+        msg_process_t kill_process = MSG_process_create("killer", killer_process, killer_args, MSG_host_self());*/
+
+        double timeBeforeExecute = MSG_get_clock();
+        XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
+        msg_error_t err = MSG_parallel_task_execute(ptask);
+        *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
+
+        int ret = 1;
+        if (err == MSG_OK) {}
+            //SIMIX_process_throw(kill_process, cancel_error, 0, "wake up");
+        else if (err == MSG_TASK_CANCELED)
+            ret = 0;
+        else
+            xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
+
+        XBT_INFO("Task '%s' finished", MSG_task_get_name(ptask));
+        MSG_task_destroy(ptask);
+        return ret;
+    }
     else
         xbt_die("Cannot execute job %d: the profile type '%s' is unknown", job->number, job->profile.c_str());
 
