@@ -388,7 +388,8 @@ def prepare_implicit_instance(implicit_instances,
     instance['variables'].update(base_variables)
 
     # Let's add the instance_id into the instance's variables
-    dict_iid = {'instance_id': instance_id_from_comb(comb, hash_length)}
+    instance_id = instance_id_from_comb(comb, hash_length)
+    dict_iid = {'instance_id': instance_id}
     instance['variables'].update(dict_iid)
 
     # Let's generate a combname
@@ -412,8 +413,8 @@ def prepare_implicit_instance(implicit_instances,
 
     # Let's write a YAML description file corresponding to the instance
     desc_dir = '{out}/instances'.format(out = base_output_directory)
-    desc_filename = '{dir}/{combname}.yaml'.format(dir = desc_dir,
-                                                   combname = combname)
+    desc_filename = '{dir}/{instance_id}.yaml'.format(dir = desc_dir,
+                                                      instance_id = instance_id)
 
     create_dir_if_not_exists('{out}/instances'.format(out = base_output_directory))
     yaml_content = yaml.dump(instance, default_flow_style = False)
@@ -453,14 +454,15 @@ def prepare_explicit_instance(explicit_instances,
     instance['variables'].update(base_variables)
 
     # Let's add the instance_id into the instance's variables
-    dict_iid = {'instance_id': instance_id_from_comb(comb, hash_length)}
+    instance_id = instance_id_from_comb(comb, hash_length)
+    dict_iid = {'instance_id': instance_id}
     instance['variables'].update(dict_iid)
 
     # Let's write a YAML description file corresponding to the instance
     desc_dir = '{out}/instances'.format(out = base_output_directory)
     combname = 'explicit_{id}'.format(id = instance_id)
-    desc_filename = '{dir}/{combname}.yaml'.format(dir = desc_dir,
-                                                   combname = combname)
+    desc_filename = '{dir}/{instance_id}.yaml'.format(dir = desc_dir,
+                                                      instance_id = instance_id)
 
     create_dir_if_not_exists('{out}/instances'.format(out = base_output_directory))
     write_string_into_file(yaml.dump(instance, default_flow_style=False),
