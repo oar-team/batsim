@@ -8,6 +8,8 @@ import hashlib
 from execo import *
 from execo_engine import *
 from execute_one_instance import *
+import pandas as pd
+import hashlib
 
 class hashabledict(dict):
     def __hash__(self):
@@ -16,6 +18,20 @@ class hashabledict(dict):
 class hashablelist(list):
     def __hash__(self):
         return hash(tuple(self))
+
+def flatten_dict(init, lkey=''):
+    ret = {}
+    for rkey,val in init.items():
+        key = lkey+rkey
+        if isinstance(val, dict):
+            ret.update(flatten_dict(val, key+'__'))
+        else:
+            ret[key] = val
+    return ret
+
+def instance_id_from_comb(comb, hash_length):
+    fdict = flatten_dict(comb)
+    return hashlib.sha1(str(fdict)).hexdigest()[:hash_length]
 
 def retrieve_dirs_from_instances(variables,
                                  variables_declaration_order,
@@ -175,7 +191,8 @@ class WorkersSharedData:
                  base_working_directory,
                  base_output_directory,
                  base_variables,
-                 generate_only):
+                 generate_only,
+                 hash_length):
         self.sweeper = sweeper
         self.instances_post_cmds_only = instances_post_cmds_only
         self.implicit_instances = implicit_instances
@@ -185,6 +202,7 @@ class WorkersSharedData:
         self.base_output_directory = base_output_directory
         self.base_variables = base_variables
         self.generate_only = generate_only
+        self.hash_length = hash_length
 
 class WorkerLifeCycleHandler(ProcessLifecycleHandler):
     def __init__(self,
@@ -217,7 +235,8 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
                     base_output_directory = self.data.base_output_directory,
                     base_variables = self.data.base_variables,
                     post_commands_only = self.comb in self.data.instances_post_cmds_only,
-                    generate_only = self.data.generate_only)
+                    generate_only = self.data.generate_only,
+                    hash_length = self.data.hash_length)
                 self.combname = combname
                 self._launch_process(instance_command = command)
             else:
@@ -315,28 +334,33 @@ def prepare_instance(comb,
                      base_output_directory,
                      base_variables,
                      post_commands_only = False,
-                     generate_only = False):
+                     generate_only = False,
+                     hash_length = 8):
     if comb['explicit']:
         return prepare_explicit_instance(explicit_instances = explicit_instances,
+                                         comb = comb,
                                          instance_id = comb['instance_id'],
                                          base_output_directory = base_output_directory,
                                          base_variables = base_variables,
                                          post_commands_only = post_commands_only,
-                                         generate_only = generate_only)
+                                         generate_only = generate_only,
+                                         hash_length = hash_length)
     else:
         return prepare_implicit_instance(implicit_instances = implicit_instances,
                                          comb = comb,
                                          base_output_directory = base_output_directory,
                                          base_variables = base_variables,
                                          post_commands_only = post_commands_only,
-                                         generate_only = generate_only)
+                                         generate_only = generate_only,
+                                         hash_length = hash_length)
 
 def prepare_implicit_instance(implicit_instances,
                               comb,
                               base_output_directory,
                               base_variables,
                               post_commands_only = False,
-                              generate_only = False):
+                              generate_only = False,
+                              hash_length = 8):
     # Let's retrieve instance
     instance = implicit_instances[comb['instance_name']]
     generic_instance = instance['generic_instance']
@@ -362,6 +386,10 @@ def prepare_implicit_instance(implicit_instances,
 
     # Let's add the base_variables into the instance's variables
     instance['variables'].update(base_variables)
+
+    # Let's add the instance_id into the instance's variables
+    dict_iid = {'instance_id': instance_id_from_comb(comb, hash_length)}
+    instance['variables'].update(dict_iid)
 
     # Let's generate a combname
     combname = 'implicit'
@@ -407,11 +435,13 @@ def prepare_implicit_instance(implicit_instances,
     return (desc_filename, combname, instance_command)
 
 def prepare_explicit_instance(explicit_instances,
+                              comb,
                               instance_id,
                               base_output_directory,
                               base_variables,
                               post_commands_only = False,
-                              generate_only = False):
+                              generate_only = False,
+                              hash_length = 8):
     # Let's retrieve the instance
     instance = explicit_instances[instance_id]
 
@@ -421,6 +451,10 @@ def prepare_explicit_instance(explicit_instances,
 
     # Let's add the base_variables into the instance's variables
     instance['variables'].update(base_variables)
+
+    # Let's add the instance_id into the instance's variables
+    dict_iid = {'instance_id': instance_id_from_comb(comb, hash_length)}
+    instance['variables'].update(dict_iid)
 
     # Let's write a YAML description file corresponding to the instance
     desc_dir = '{out}/instances'.format(out = base_output_directory)
@@ -512,6 +546,35 @@ def execute_instances(base_working_directory,
     sweeper = ParamSweeper('{out}/sweeper'.format(out = base_output_directory),
                            combs)
 
+    # Preparation of the instances data frame
+    all_combs = sweeper.get_remaining() | sweeper.get_done() | \
+                sweeper.get_skipped() | sweeper.get_inprogress()
+
+    hash_length = 8
+    rows_list = []
+    for comb in all_combs:
+        row_dict = flatten_dict(comb)
+        row_dict['instance_id'] = instance_id_from_comb(comb, hash_length)
+
+        rows_list.append(row_dict)
+
+    # Let's generate the instances data frame
+    instances_df = pd.DataFrame(rows_list)
+
+    # Let's check that instance ids are unique
+    assert len(instances_df) == len(instances_df['instance_id'].unique()),\
+           "Instance IDs are not unique ({}!={})! " \
+           "The hash length might be too small.".format(len(instances_df), \
+                len(instances_df['instance_id'].unique()))
+
+    # Let's save the dataframe into a csv file
+    create_dir_if_not_exists('{base_output_dir}/instances'.format(
+                                  base_output_dir = base_output_directory))
+    instances_df.to_csv('{base_output_dir}/instances/instances_info.csv'.format(
+                            base_output_dir = base_output_directory))
+
+
+
     if mark_as_cancelled_lambda == '':
         if len(sweeper.get_done()) > 0:
             logger.info('The first finished combination is shown below.')
@@ -574,7 +637,8 @@ def execute_instances(base_working_directory,
                                            base_working_directory = base_working_directory,
                                            base_output_directory = base_output_directory,
                                            base_variables = base_variables,
-                                           generate_only = generate_only)
+                                           generate_only = generate_only,
+                                           hash_length = hash_length)
 
     # Let's create all workers
     nb_workers = min(len(combs), len(host_list) * nb_workers_per_host)

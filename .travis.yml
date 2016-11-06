@@ -87,6 +87,12 @@ install:
   # Install sortedcontainers (used in some schedulers, used by the tests)
   - pip install --user -U sortedcontainers
 
+  # Install pandas (used by the experiment management scripts)
+  - pip install --user -U pandas
+
+  # Install hashlib (used by the experiment management scripts)
+  - pip install --user -U hashlib
+
 # Enable C++ support
 language: cpp
 
