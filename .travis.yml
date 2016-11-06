@@ -91,7 +91,7 @@ install:
   - pip install --user -U pandas
 
   # Install hashlib (used by the experiment management scripts)
-  - pip install --user -U hashlib
+  - easy_install --user hashlib
 
 # Enable C++ support
 language: cpp
