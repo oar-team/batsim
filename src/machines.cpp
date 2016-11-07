@@ -35,9 +35,14 @@ Machines::~Machines()
     if (_master_machine != nullptr)
         delete _master_machine;
     _master_machine = nullptr;
+
+    if (_pfs_machine != nullptr)
+        delete _pfs_machine;
+    _pfs_machine = nullptr;
+
 }
 
-void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, const string &masterHostName, int limit_machine_count)
+void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, const string &masterHostName, const string &pfsHostName, int limit_machine_count)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
 
@@ -176,22 +181,36 @@ void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, 
                 }
             }
         }
-
-        if (machine->name != masterHostName)
+        
+        if ((machine->name != masterHostName) && (machine->name != pfsHostName))
         {
+            
             machine->id = id;
             ++id;
             _machines.push_back(machine);
         }
         else
-        {
-            xbt_assert(_master_machine == nullptr, "There are two master hosts...");
-            machine->id = -1;
-            _master_machine = machine;
-        }
+            if (machine->name == masterHostName)
+            {
+                xbt_assert(_master_machine == nullptr, "There are two master hosts...");
+                machine->id = -1;
+                _master_machine = machine;
+            }
+            else
+            {
+                
+                xbt_assert(_pfs_machine == nullptr, "There are two pfs hosts...");
+                machine->id = -2;
+                _pfs_machine = machine;
+                 XBT_INFO("Pfs_Host (parallel filesystem host) is here.");
+            } 
     }
 
     xbt_assert(_master_machine != nullptr, "Cannot find the MasterHost '%s' in the platform file", masterHostName.c_str());
+    if (_pfs_machine == nullptr)
+    {
+         XBT_INFO("There is not Pfs_Host (parallel filesystem host).");
+    }
     sort_machines_by_ascending_name();
 
     // Let's limit the number of machines
@@ -259,6 +278,13 @@ const Machine *Machines::master_machine() const
 {
     return _master_machine;
 }
+
+const Machine *Machines::pfs_machine() const
+{
+    return _pfs_machine;
+}
+
+
 
 long double Machines::total_consumed_energy(const BatsimContext *context) const
 {
@@ -492,11 +518,12 @@ void create_machines(const MainArguments & main_args, BatsimContext * context, i
 {
     XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
     XBT_INFO("The name of the master host is '%s'", main_args.master_host_name.c_str());
-
+    XBT_INFO("The name of the parallel file system host is '%s'", main_args.pfs_host_name.c_str());
+ 
     MSG_create_environment(main_args.platform_filename.c_str());
 
     xbt_dynar_t hosts = MSG_hosts_as_dynar();
-    context->machines.create_machines(hosts, context, main_args.master_host_name, max_nb_machines_to_use);
+    context->machines.create_machines(hosts, context, main_args.master_host_name, main_args.pfs_host_name, max_nb_machines_to_use);
     xbt_dynar_free(&hosts);
 
     XBT_INFO("The machines have been created successfully. There are %d computing machines.", context->machines.nb_machines());

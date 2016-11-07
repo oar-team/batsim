@@ -108,9 +108,10 @@ public:
      * @param[in] hosts The SimGrid hosts
      * @param[in] context The Batsim Context
      * @param[in] masterHostName The name of the host which should be used as the Master host
+     * @param[in] pfsHostName The name of the host which should be used as the parallel filestem host
      * @param[in] limit_machine_count If set to -1, all the machines are used. If set to a strictly positive number N, only the first machines N will be used to compute jobs
      */
-    void create_machines(xbt_dynar_t hosts, const BatsimContext * context, const std::string & masterHostName, int limit_machine_count = -1);
+    void create_machines(xbt_dynar_t hosts, const BatsimContext * context, const std::string & masterHostName, const std::string & pfsHostName, int limit_machine_count = -1);
 
     /**
      * @brief Must be called when a job is executed on some machines
@@ -178,6 +179,12 @@ public:
     const Machine * master_machine() const;
 
     /**
+     * @brief Returns a const pointer to the Parallel File System host machine
+     * @return A const pointer to the Parallel File System host machine
+     */
+    const Machine * pfs_machine() const;
+
+    /**
      * @brief Computes and returns the total consumed energy of all the computing machines
      * @param[in] context The Batsim context
      * @return The total consumed energy of all the computing machines
@@ -193,6 +200,7 @@ public:
 private:
     std::vector<Machine *> _machines; //!< The vector of computing machines
     Machine * _master_machine = nullptr; //!< The Master host
+    Machine * _pfs_machine = nullptr; //!< The Master host
     PajeTracer * _tracer = nullptr; //!< The PajeTracer
 };
 

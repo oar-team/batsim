@@ -58,7 +58,9 @@ struct MainArguments
 
     std::string master_host_name = "master_host";           //!< The name of the SimGrid host which runs scheduler processes and not user tasks
     std::string export_prefix;                              //!< The filename prefix used to export simulation information
-
+  
+    std::string pfs_host_name = "pfs_host";                 //!< The name of the SimGrid host which serves as parallel file system
+    
     std::string redis_hostname = "127.0.0.1";               //!< The Redis (data storage) server host name
     int redis_port = 6379;                                  //!< The Redis (data storage) server port
     std::string redis_prefix;                               //!< The Redis (data storage) instance prefix
