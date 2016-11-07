@@ -181,29 +181,36 @@ void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, 
                 }
             }
         }
-
+        
         if ((machine->name != masterHostName) && (machine->name != pfsHostName))
         {
+            
             machine->id = id;
             ++id;
             _machines.push_back(machine);
         }
-        else if (machine->name == masterHostName)
+        else
+            if (machine->name == masterHostName)
             {
                 xbt_assert(_master_machine == nullptr, "There are two master hosts...");
                 machine->id = -1;
                 _master_machine = machine;
             }
-        else
+            else
             {
+                
                 xbt_assert(_pfs_machine == nullptr, "There are two pfs hosts...");
                 machine->id = -2;
                 _pfs_machine = machine;
+                 XBT_INFO("Pfs_Host (parallel filesystem host) is here.");
             } 
     }
 
     xbt_assert(_master_machine != nullptr, "Cannot find the MasterHost '%s' in the platform file", masterHostName.c_str());
-    xbt_assert(_pfs_machine != nullptr, "There is not PFS_Host '%s' in the platform file", pfsHostName.c_str());
+    if (_pfs_machine == nullptr)
+    {
+         XBT_INFO("There is not Pfs_Host (parallel filesystem host).");
+    }
     sort_machines_by_ascending_name();
 
     // Let's limit the number of machines
