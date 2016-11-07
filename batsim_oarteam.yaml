@@ -106,10 +106,10 @@ setup:
       - exec_in: |
           cd $$simctn_dir
           git clone https://github.com/oar-team/evalys.git
+          cd evalys
           git checkout $${evalys_commit}
-      - exec_in: |
           cd $$simctn_dir/evalys
-          pip3 install .
+          pip3 install -e .
 
 export:
   - "@base"
