@@ -2,7 +2,7 @@
 # vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
 #==============================================================================
 #
-# DESCRIPTION: Debian 8 (Jessie) base system built with chroot.
+# DESCRIPTION: Debian 8 (Jessie) base system.
 #
 #==============================================================================
 ---

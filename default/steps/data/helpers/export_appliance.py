@@ -4,6 +4,7 @@
 from __future__ import division, unicode_literals
 
 import os
+# import time
 import os.path as op
 import sys
 import subprocess
@@ -49,20 +50,40 @@ def tar_convert(disk, output, excludes, compression_level):
 
     compr = ""
     if output.endswith(('tar.gz', 'tgz')):
-        compr = "| %s %s" % (which("gzip"), compression_level_opt)
+        try:
+            compr = "| %s %s" % (which("pigz"), compression_level_opt)
+        except:
+            compr = "| %s %s" % (which("gzip"), compression_level_opt)
     elif output.endswith(('tar.bz2', 'tbz')):
         compr = "| %s %s" % (which("bzip2"), compression_level_opt)
     elif output.endswith(('tar.xz', 'txz')):
-        compr = "| %s %s -c -" % (which("xz"), compression_level_opt)
+        compr = "| {} {} -c --threads=0 -".format(
+            which("xz"), compression_level_opt)
     elif output.endswith(('tar.lzo', 'tzo')):
         compr = "| %s %s -c -" % (which("lzop"), compression_level_opt)
 
-    tar_options_list = ["numericowner:true",
-                        "excludes:\"%s\"" % ' '.join(excludes)]
+    tar_options_list = ["--selinux", "--acls", "--xattrs",
+                        "--numeric-owner", "--one-file-system"] + \
+                       ['--exclude="%s"' % s for s in excludes]
     tar_options = ' '.join(tar_options_list)
-    cmd = which("guestfish") + \
-        " --ro -i tar-out -a %s / - %s %s > %s"
-    cmd = cmd % (disk, tar_options, compr, output)
+    directory = dir_path = os.path.dirname(os.path.realpath(disk))
+    cmds = [
+        which("mkdir") + " %s/.mnt" % directory,
+        which("guestmount") + " --ro -i -a %s %s/.mnt" % (disk, directory),
+        which("tar") + " -c %s -C %s/.mnt . %s > %s" % (tar_options, directory, compr, output),
+        which("guestunmount") + " %s/.mnt" % directory,
+        which("rmdir") + " %s/.mnt" % directory
+        ]
+    cmd = " && ".join(cmds)
+    # NB: guestfish version >= 1.32 supports the special tar options, but not available in Debian stable (jessie): do not use for now
+    #tar_options_list = ["selinux:true", "acls:true", "xattrs:true",
+    #                    "numericowner:true",
+    #                    "excludes:\"%s\"" % ' '.join(excludes)]
+    #tar_options = ' '.join(tar_options_list)
+    #cmd = which("guestfish") + \
+    #    " --ro -i tar-out -a %s / - %s %s > %s"
+    #cmd = cmd % (disk, tar_options, compr, output)
+
     proc = subprocess.Popen(cmd, env=os.environ.copy(), shell=True)
     proc.communicate()
     if proc.returncode:
@@ -81,8 +102,11 @@ def qemu_convert(disk, output_fmt, output_filename):
         raise subprocess.CalledProcessError(proc.returncode, ' '.join(cmd))
 
 
-def run_guestfish_script(disk, script, mount=False):
-    """Run guestfish script."""
+def run_guestfish_script(disk, script, mount=""):
+    """
+    Run guestfish script.
+    Mount should be in ("read_only", "read_write", "ro", "rw")
+    """
     args = [which("guestfish"), '-a', disk]
     if mount in ("read_only", "read_write", "ro", "rw"):
         args.append('-i')
@@ -103,7 +127,7 @@ def run_guestfish_script(disk, script, mount=False):
 def guestfish_zerofree(filename):
     """Fill free space with zero"""
     logger.info(guestfish_zerofree.__doc__)
-    cmd = "virt-list-filesystems %s" % filename
+    cmd = "virt-filesystems -a %s" % filename
     fs = subprocess.check_output(cmd.encode('utf-8'),
                                  stderr=subprocess.STDOUT,
                                  shell=True,
@@ -122,6 +146,18 @@ def convert_disk_image(args):
     os.environ['LIBGUESTFS_CACHEDIR'] = os.getcwd()
     if args.verbose:
         os.environ['LIBGUESTFS_DEBUG'] = '1'
+
+    # sometimes guestfish fails because of other virtualization tools are
+    # still running use a test and retry to wait for availability
+    # attempts = 0
+    # while attempts < 3:
+    #    try:
+    #        logger.info("Waiting for virtualisation to be available...")
+    #        run_guestfish_script(filename, "cat /etc/hostname", mount='ro')
+    #        break
+    #    except:
+    #        attempts += 1
+    #        time.sleep(1)
 
     if args.zerofree:
         guestfish_zerofree(filename)
@@ -175,19 +211,15 @@ if __name__ == '__main__':
                         help='Enable very verbose messages')
     log_format = '%(levelname)s: %(message)s'
     level = logging.INFO
-    try:
-        args = parser.parse_args()
-        if args.verbose:
-            level = logging.DEBUG
+    args = parser.parse_args()
+    if args.verbose:
+        level = logging.DEBUG
 
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(level)
-        handler.setFormatter(logging.Formatter(log_format))
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(level)
+    handler.setFormatter(logging.Formatter(log_format))
 
-        logger.setLevel(level)
-        logger.addHandler(handler)
+    logger.setLevel(level)
+    logger.addHandler(handler)
 
-        convert_disk_image(args)
-    except Exception as exc:
-        sys.stderr.write(u"\nError: %s\n" % exc)
-        sys.exit(1)
+    convert_disk_image(args)

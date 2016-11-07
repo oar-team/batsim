@@ -2,10 +2,12 @@
 # vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
 #==============================================================================
 #
-# DESCRIPTION: Base template for Archlinux appliance.
+# DESCRIPTION: Base template for Kameleon appliance.
 #
 #==============================================================================
 ---
+extend: ../steps/backend/$${backend}.yaml
+
 # Loads some helpful aliases (this files are located in steps/aliases/ directory)
 aliases: defaults.yaml
 
@@ -16,6 +18,9 @@ env:
 
 # Global variables use by Kameleon engine and the steps
 global:
+  ## Select backend for in context isolation
+  backend: qemu
+
   ## User varibales : used by the recipe
   user_name: kameleon
   user_password: $${user_name}
@@ -33,15 +38,15 @@ global:
   rootfs_archive_download_path: $${kameleon_cwd}/rootfs.tar.xz
   # rootfs options
   rootfs: $${kameleon_cwd}/rootfs
+  ssh_config_file: $${kameleon_cwd}/ssh_config
 
   # Distribution
   arch: x86_64
   hostname: kameleon-$${distrib}
 
-  # appliance options
+  # output appliance options
   filesystem_type: ext4
   image_size: 10G
-  image_format: qcow2
   image_disk: $${kameleon_cwd}/base_$${kameleon_recipe_name}
   # Allowed formats are: tar.gz, tar.bz2, tar.xz, tar.lzo, qcow, qcow2, qed, vdi, raw, vmdk
   appliance_formats: qcow2 tar.gz
@@ -57,29 +62,11 @@ global:
     - $${distrib}/$${release}
     - $${distrib}
 
-  # Shell session from where we launch exec_out commands. There is often a
-  # local bash session, but it can be a remote shell on other machines or on
-  # any shell. (eg. bash, chroot, fakechroot, ssh, tmux, lxc...)
-  out_context:
-    cmd: bash
-    workdir: $${kameleon_cwd}
-    proxy_cache: 127.0.0.1
-
-  # Shell session that allows us to connect to the building machine in order to
-  # configure it and setup additional programs
-  in_context:
-    cmd: USER=root HOME=/root LC_ALL=POSIX chroot $${rootfs} bash
-    workdir: /root/kameleon_workdir
-    proxy_cache: 127.0.0.1
-
   # E.g: net.ifnames=0 console=tty0 console=ttyS0,115200n8
   kernel_args: "quiet net.ifnames=0 biosdevname=0"
 
-# Bootstrap the new system and create the 'in_context'
 bootstrap:
-  - enable_checkpoint
-  - prepare_chroot
-  - start_chroot
+  - "@base"
 
 # Install and configuration steps
 setup:
@@ -103,11 +90,5 @@ setup:
     - password: $${user_name}
   - clean_system
 
-# Export the generated appliance in the format of your choice
 export:
-  - disable_checkpoint
-  - save_appliance:
-    - output_filename: $${appliance_filename}
-    - output_formats: $${appliance_formats}
-    - tar_compression_level: $${appliance_tar_compression_level}
-    - tar_excludes: $${appliance_tar_excludes}
+  - "@base"

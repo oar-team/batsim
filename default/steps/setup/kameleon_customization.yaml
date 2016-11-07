@@ -2,25 +2,25 @@
 
 - configure_bashrc:
   - local2in:
-    - $$kameleon_data_dir/skel/.bashrc
+    - $${kameleon_data_dir}/skel/.bashrc
     - /etc/skel/.bashrc
   - local2in:
-    - $$kameleon_data_dir/skel/.bashrc
+    - $${kameleon_data_dir}/skel/.bashrc
     - /root/.bashrc
 
 
 - configure_vim:
   - local2in:
-    - $$kameleon_data_dir/skel/.vimrc
+    - $${kameleon_data_dir}/skel/.vimrc
     - /etc/skel/.vimrc
   - local2in:
-    - $$kameleon_data_dir/skel/.vimrc
+    - $${kameleon_data_dir}/skel/.vimrc
     - /root/.vimrc
 
 - configure_python:
   - local2in:
-    - $$kameleon_data_dir/skel/.pythonrc.py
+    - $${kameleon_data_dir}/skel/.pythonrc.py
     - /etc/skel/.pythonrc.py
   - local2in:
-    - $$kameleon_data_dir/skel/.pythonrc.py
+    - $${kameleon_data_dir}/skel/.pythonrc.py
     - /root/.pythonrc.py

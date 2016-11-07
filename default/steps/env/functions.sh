@@ -9,12 +9,14 @@ export -f fail
 
 function __download {
     echo "Downloading: $1..."
-    if which wget >/dev/null; then
-        wget --retry-connrefused --progress=bar:force "$1" -O "$2" 2>&1
+    # Put cURL first because it accept URIs (like file://...)
+    echo "Use cURL"
+    if which curl >/dev/null; then
+        curl -S --fail -# -L --retry 999 --retry-max-time 0 "$1" -o "$2" 2>&1
     else
-        echo "wget is missing, trying with curl..."
-        if which curl >/dev/null; then
-            curl --fail -# -L --retry 999 --retry-max-time 0 "$1" -o "$2" 2>&1
+        echo "Curl is missing, trying with wget..."
+        if which wget >/dev/null; then
+        wget --retry-connrefused --progress=bar:force "$1" -O "$2" 2>&1
         else
             echo "curl is missing, trying with python..."
             if which python >/dev/null; then

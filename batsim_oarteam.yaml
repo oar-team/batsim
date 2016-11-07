@@ -13,9 +13,7 @@
 #checkpoint: btrfs.yaml
 #extend: default/chroot/debian8.yaml
 
-extend: default/virtualbox/debian8.yaml
-
-#extend: default/qemu/debian8.yaml
+extend: default/from_image/debian8.yaml
 
 global:
   btrfs_volume: "/"
@@ -30,8 +28,8 @@ global:
   hostname: batsim
   simctn_dir: /root
 
-  simgrid_commit: a267ccc
-  batsim_commit: 77efd8b
+  simgrid_commit: 42a5c2c5f
+  batsim_commit: 6841604271
   locality_sched_commit: 12df12a
   oar_commit: 2c7c4df
 

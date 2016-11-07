@@ -1,37 +1,13 @@
-- insecure_ssh_key: $$kameleon_cwd/insecure_ssh_key
-- create_appliance_script: $$kameleon_data_dir/helpers/create_appliance.py
+- insecure_ssh_key: $${kameleon_cwd}/insecure_ssh_key
 
 - kameleon_authorized_keys: /root/.ssh/.kameleon_authorized_keys
 - authorized_keys: /root/.ssh/authorized_keys
 - safe_authorized_keys: /root/.ssh/safe_authorized_keys
 
-- download_rootfs_archive:
-  - download_file_local:
-    - $$rootfs_archive_url
-    - $$rootfs_archive_download_path
-
-- create_appliance:
-  - check_cmd_local: virt-make-fs
-  - exec_local: |
-      rm -f $${image_disk}.$${image_format}
-      # Create an appliance from rootfs directory
-      python $$create_appliance_script $$rootfs_archive_download_path \
-        --size $$image_size \
-        -o $$image_disk \
-        --filesystem $$filesystem_type \
-        --format $$image_format \
-        --append "$$kernel_args"
-  - exec_local: rm -f $$rootfs_archive_download_path
-
-- delete_initial_image_at_the_end:
-  - on_checkpoint: skip
-  - on_export_clean:
-    - exec_local: rm -f $${image_disk}.$${image_format}
-
 - generate_ssh_keys:
   - check_cmd_local: ssh-keygen
-  - exec_local: echo -e  'y\n' | ssh-keygen -q -t rsa -b 4096 -f $$insecure_ssh_key -N ''
-  - exec_local: cat $$insecure_ssh_key
+  - exec_local: echo -e  'y\n' | ssh-keygen -q -t rsa -b 4096 -f $${insecure_ssh_key} -N ''
+  - exec_local: cat $${insecure_ssh_key}
 
 - inject_ssh_private_key:
   - check_cmd_local: virt-customize
@@ -48,9 +24,9 @@
     - exec_local: >-
         virt-customize \
           -a $${image_disk}.$${image_format} \
-          --run-command 'diff -U $(wc -l < $$authorized_keys) $$authorized_keys $$kameleon_authorized_keys | grep '^-' | sed 's/^-//g' > $$safe_authorized_keys' \
-          --run-command 'mv $$safe_authorized_keys $$authorized_keys' \
-          --run-command 'chmod 600 $$authorized_keys' \
+          --run-command 'diff -U $(wc -l < $${authorized_keys}) $${authorized_keys} $${kameleon_authorized_keys} | grep '^-' | sed 's/^-//g' > $${safe_authorized_keys}' \
+          --run-command 'mv $${safe_authorized_keys} $${authorized_keys}' \
+          --run-command 'chmod 600 $${authorized_keys}' \
           --delete /root/.ssh/.kameleon_authorized_keys
 
 - create_ssh_config:
@@ -61,13 +37,13 @@
       echo "SSH forwarding port: $SSH_FWD_PORT"
 
   - write_local:
-    - $$ssh_config_file
+    - $${ssh_config_file}
     - |
       Host $${kameleon_recipe_name}
       HostName 127.0.0.1
       Port $SSH_FWD_PORT
       User root
-      IdentityFile $$insecure_ssh_key
+      IdentityFile $${insecure_ssh_key}
       UserKnownHostsFile /dev/null
       StrictHostKeyChecking no
       PasswordAuthentication no
