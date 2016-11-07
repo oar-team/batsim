@@ -32,10 +32,8 @@ global:
   batsim_commit: 6841604271
   locality_sched_commit: 12df12a
   oar_commit: 2c7c4df
-
-
-bootstrap:
-  - "@base"
+  evalys_commit: fae0e04
+  batsim_experiments_commit: 5ce3017342
 
 setup:
   #
@@ -108,6 +106,7 @@ setup:
       - exec_in: |
           cd $$simctn_dir
           git clone https://github.com/oar-team/evalys.git
+          git checkout $${evalys_commit}
       - exec_in: |
           cd $$simctn_dir/evalys
           pip3 install .
