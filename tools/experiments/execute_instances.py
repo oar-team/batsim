@@ -221,13 +221,13 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
         if len(self.data.sweeper.get_remaining()) > 0:
             # Let's get the next instance to compute
             self.comb = self.data.sweeper.get_next()
-            logger.info('Worker ({hostname}, {local_rank}) got comb {comb}'.format(
+            logger.info('\nWorker ({hostname}, {local_rank}) got comb : {comb}'.format(
                     hostname = self.hostname,
                     local_rank = self.local_rank,
                     comb = self.comb))
 
             if self.comb != None:
-                (desc_filename, combname, command) = prepare_instance(
+                (desc_filename, instance_id, combname, command) = prepare_instance(
                     comb = self.comb,
                     explicit_instances = self.data.explicit_instances,
                     implicit_instances = self.data.implicit_instances,
@@ -238,6 +238,7 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
                     generate_only = self.data.generate_only,
                     hash_length = self.data.hash_length)
                 self.combname = combname
+                self.instance_id = instance_id
                 self._launch_process(instance_command = command)
             else:
                 logger.info('Worker ({hostname}, {local_rank}) finished'.format(
@@ -283,34 +284,34 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
                                     base_output_dir = self.data.base_output_directory))
 
         write_string_into_file(process.stdout,
-                               '{base_output_dir}/instances/output/{combname}.stdout'.format(
+                               '{base_output_dir}/instances/output/{iid}.stdout'.format(
                                 base_output_dir = self.data.base_output_directory,
-                                combname = self.combname))
+                                iid = self.instance_id))
         write_string_into_file(process.stderr,
-                               '{base_output_dir}/instances/output/{combname}.stderr'.format(
+                               '{base_output_dir}/instances/output/{iid}.stderr'.format(
                                 base_output_dir = self.data.base_output_directory,
-                                combname = self.combname))
+                                iid = self.instance_id))
 
         # Let's mark whether the computation was successful
         if process.finished_ok:
             self.data.sweeper.done(self.comb)
             # Logging
-            logger.info('Worker ({hostname}, {local_rank}) finished comb {comb} '
+            logger.info('Worker ({hostname}, {local_rank}) finished comb {iid} '
                         'successfully'.format(
                             hostname = self.hostname,
                             local_rank = self.local_rank,
-                            comb = self.comb))
+                            iid = self.instance_id))
         else:
             logger.warning('Worker ({hostname}, {local_rank}) finished comb '
-                           '{comb} unsuccessfully'.format(
+                           '{iid} unsuccessfully'.format(
                             hostname = self.hostname,
                             local_rank = self.local_rank,
-                            comb = self.comb))
+                            iid = self.instance_id))
             # http://stackoverflow.com/questions/7616187/python-error-codes-are-upshifted
             if (process.exit_code != None) and ((process.exit_code >> 8) == 3):
-                logger.warning('However, the comb {comb} is marked as done, '
+                logger.warning('However, the comb {iid} is marked as done, '
                                'because it failed in the post-commands '
-                               'section.'.format(comb=self.comb))
+                               'section.'.format(iid=self.instance_id))
                 self.data.sweeper.done(self.comb)
             elif (process.exit_code != None) and \
                  ((process.exit_code >> 8) == 4) and \
@@ -323,6 +324,7 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
 
         # Let's clear current instance variables
         self.comb = None
+        self.instance_id = None
         self.combname = None
 
         self.execute_next_instance()
@@ -433,7 +435,7 @@ def prepare_implicit_instance(implicit_instances,
                             exec_script = execute_one_instance_script,
                             opt = options,
                             desc_filename = desc_filename)
-    return (desc_filename, combname, instance_command)
+    return (desc_filename, instance_id, combname, instance_command)
 
 def prepare_explicit_instance(explicit_instances,
                               comb,
@@ -480,7 +482,7 @@ def prepare_explicit_instance(explicit_instances,
                             exec_script = execute_one_instance_script,
                             opt = options,
                             desc_filename = desc_filename)
-    return (desc_filename, combname, instance_command)
+    return (desc_filename, instance_id, combname, instance_command)
 
 def retrieve_hostlist_from_mpi_hostfile(hostfile):
     hosts = set()

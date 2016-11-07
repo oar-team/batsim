@@ -92,6 +92,7 @@ install:
 
   # Install hashlib (used by the experiment management scripts)
   - easy_install --user hashlib
+  - easy_install hashlib
 
 # Enable C++ support
 language: cpp
