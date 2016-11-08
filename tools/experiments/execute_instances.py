@@ -575,8 +575,8 @@ def execute_instances(base_working_directory,
     create_dir_if_not_exists('{base_output_dir}/instances'.format(
                                   base_output_dir = base_output_directory))
     instances_df.to_csv('{base_output_dir}/instances/instances_info.csv'.format(
-                            base_output_dir = base_output_directory))
-
+                            base_output_dir = base_output_directory),
+                        index = False, na_rep = 'NA')
 
 
     if mark_as_cancelled_lambda == '':
