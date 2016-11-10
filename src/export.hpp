@@ -376,3 +376,52 @@ private:
     BatsimContext * _context = nullptr; //!< The Batsim context
     WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
 };
+
+/**
+ * @brief Traces the repartition of the machine states over time
+ */
+class MachineStateTracer
+{
+public:
+    /**
+     * @brief Constructs a MachineStateTracer
+     */
+    MachineStateTracer();
+
+    /**
+     * @brief Destroys a MachineStateTracer
+     */
+    ~MachineStateTracer();
+
+    /**
+     * @brief Sets the BatsimContext
+     * @param[in] context The BatsimContext
+     */
+    void set_context(BatsimContext * context);
+
+    /**
+     * @brief Sets the output filename of the tracer
+     * @param[in] filename  The name of the output file of the tracer
+     */
+    void set_filename(const std::string & filename);
+
+    /**
+     * @brief Writes a line in the output file, corresponding to the current state, at the given date
+     * @param[in] date The current date
+     */
+    void write_machine_states(double date);
+
+    /**
+     * @brief Flushes the pending writings to the output file
+     */
+    void flush();
+
+    /**
+     * @brief Closes the output buffer
+     */
+    void close_buffer();
+
+private:
+    BatsimContext * _context = nullptr; //!< The Batsim context
+    WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
+};

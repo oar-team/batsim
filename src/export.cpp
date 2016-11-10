@@ -32,6 +32,12 @@ void prepare_batsim_outputs(BatsimContext * context)
         context->paje_tracer.initialize(context, MSG_get_clock());
     }
 
+    if (context->trace_machine_states)
+    {
+        context->machine_state_tracer.set_context(context);
+        context->machine_state_tracer.set_filename(context->export_prefix + "_machine_states.csv");
+    }
+
     if (context->energy_used)
     {
         // Energy consumption tracing
@@ -74,6 +80,12 @@ void finalize_batsim_outputs(BatsimContext * context)
     // Schedule (Pajé)
     if (context->trace_schedule)
         context->paje_tracer.finalize(context, MSG_get_clock());
+
+    if (context->trace_machine_states)
+    {
+        context->machine_state_tracer.flush();
+        context->machine_state_tracer.close_buffer();
+    }
 
     // Energy-related output
     if (context->energy_used)
@@ -981,4 +993,85 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     free(buf);
 
     return energy;
+}
+
+MachineStateTracer::MachineStateTracer()
+{
+
+}
+
+MachineStateTracer::~MachineStateTracer()
+{
+    if (_wbuf != nullptr)
+    {
+        delete _wbuf;
+        _wbuf = nullptr;
+    }
+}
+
+void MachineStateTracer::set_context(BatsimContext *context)
+{
+    _context = context;
+}
+
+void MachineStateTracer::set_filename(const string &filename)
+{
+    xbt_assert(_wbuf == nullptr, "Double call of MachineStateTracer::set_filename");
+    _wbuf = new WriteBuffer(filename);
+
+    vector<string> header_substrings;
+    const vector<MachineState> machine_states = {MachineState::SLEEPING,
+                                                 MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING,
+                                                 MachineState::IDLE,
+                                                 MachineState::COMPUTING};
+    for (const MachineState & state : machine_states)
+        header_substrings.push_back("nb_" + machine_state_to_string(state));
+
+    string header = "time," + boost::algorithm::join(header_substrings, ",") + "\n";
+
+    _wbuf->append_text(header.c_str());
+}
+
+void MachineStateTracer::write_machine_states(double date)
+{
+    xbt_assert(_context != nullptr);
+    xbt_assert(_wbuf != nullptr);
+
+    const std::map<MachineState, int> & numbers = _context->machines.nb_machines_in_each_state();
+
+    const int buf_size = 256;
+    int nb_printed;
+    char * buf = (char*) malloc(sizeof(char) * buf_size);
+    xbt_assert(buf != 0, "Couldn't allocate memory");
+
+    nb_printed = snprintf(buf, buf_size, "%g,%d,%d,%d,%d,%d\n",
+                          date,
+                          numbers.at(MachineState::SLEEPING),
+                          numbers.at(MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING),
+                          numbers.at(MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING),
+                          numbers.at(MachineState::IDLE),
+                          numbers.at(MachineState::COMPUTING));
+    xbt_assert(nb_printed < buf_size - 1,
+               "Writing error: buffer has been completely filled, some information might "
+               "have been lost. Please increase Batsim's output temporary buffers' size");
+    xbt_assert(_wbuf != nullptr);
+    _wbuf->append_text(buf);
+
+    free(buf);
+}
+
+void MachineStateTracer::flush()
+{
+    xbt_assert(_wbuf != nullptr);
+
+    _wbuf->flush_buffer();
+}
+
+void MachineStateTracer::close_buffer()
+{
+    xbt_assert(_wbuf != nullptr);
+
+    delete _wbuf;
+    _wbuf = nullptr;
 }

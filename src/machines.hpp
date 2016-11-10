@@ -19,6 +19,7 @@
 class PajeTracer;
 struct BatsimContext;
 struct MainArguments;
+class Machines;
 
 /**
  * @brief Enumerates the different states of a Machine
@@ -37,17 +38,22 @@ enum class MachineState
  */
 struct Machine
 {
-    Machine();
+    /**
+     * @brief Constructs a Machine
+     * @param[in] machines The Machines instances the Machine is within
+     */
+    Machine(Machines * machines);
 
     /**
      * @brief Destroys a Machine
      */
     ~Machine();
 
+    Machines * machines = nullptr; //!< Points to the Machines instance which contains the Machine
     int id; //!< The machine unique number
     std::string name; //!< The machine name
     msg_host_t host; //!< The SimGrid host corresponding to the machine
-    MachineState state; //!< The current state of the Machine
+    MachineState state = MachineState::IDLE; //!< The current state of the Machine
     std::set<int> jobs_being_computed; //!< The set of jobs being computed on the Machine
 
     std::map<int, PStateType> pstates; //!< Maps power state number to their power state type
@@ -209,11 +215,25 @@ public:
      */
     int nb_machines() const;
 
+    /**
+     * @brief Updates the number of machines in each state after a MachineState transition
+     * @param[in] old_state The old state of a Machine
+     * @param[in] new_state The new state of a Machine
+     */
+    void update_nb_machines_in_each_state(MachineState old_state, MachineState new_state);
+
+    /**
+     * @brief _nb_machines_in_each_state getter
+     * @return A const reference to _nb_machines_in_each_state getter
+     */
+    const std::map<MachineState, int> & nb_machines_in_each_state() const;
+
 private:
     std::vector<Machine *> _machines; //!< The vector of computing machines
     Machine * _master_machine = nullptr; //!< The Master host
     Machine * _pfs_machine = nullptr; //!< The Master host
     PajeTracer * _tracer = nullptr; //!< The PajeTracer
+    std::map<MachineState, int> _nb_machines_in_each_state; //!< Counts how many machines are in each state
 };
 
 /**

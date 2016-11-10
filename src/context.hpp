@@ -36,6 +36,7 @@ struct BatsimContext
     PajeTracer paje_tracer;                         //!< The PajeTracer
     PStateChangeTracer pstate_tracer;               //!< The PStateChangeTracer
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
+    MachineStateTracer machine_state_tracer;        //!< The MachineStateTracer
     CurrentSwitches current_switches;               //!< The current switches
     RedisStorage storage;                           //!< The RedisStorage
 
@@ -52,6 +53,7 @@ struct BatsimContext
     bool smpi_used;                                 //!< Stores whether SMPI should be used
     bool allow_space_sharing;                       //!< Stores whether space sharing (using the same machines to compute different jobs) should be allowed
     bool trace_schedule;                            //!< Stores whether the resulting schedule should be outputted
+    bool trace_machine_states;                      //!< Stores whether the machines states should be outputted
     std::string platform_filename;                  //!< The name of the platform file
     std::string export_prefix;                      //!< The output export prefix
 };

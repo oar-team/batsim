@@ -23,7 +23,12 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(machines, "machines"); //!< Logging
 
 Machines::Machines()
 {
-
+    const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
+                                                 MachineState::COMPUTING,
+                                                 MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
+    for (const MachineState & state : machine_states)
+        _nb_machines_in_each_state[state] = 0;
 }
 
 Machines::~Machines()
@@ -53,12 +58,11 @@ void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, 
     unsigned int i, id=0;
     xbt_dynar_foreach(hosts, i, host)
     {
-        Machine * machine = new Machine;
+        Machine * machine = new Machine(this);
 
         machine->name = sg_host_get_name(host);
         machine->host = host;
         machine->jobs_being_computed = {};
-        machine->update_machine_state(MachineState::IDLE);
 
         if (context->energy_used)
         {
@@ -231,6 +235,8 @@ void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, 
 
         _machines.resize(limit_machine_count);
     }
+
+    _nb_machines_in_each_state[MachineState::IDLE] = (int)_machines.size();
 }
 
 const Machine * Machines::operator[](int machineID) const
@@ -304,6 +310,17 @@ long double Machines::total_consumed_energy(const BatsimContext *context) const
 int Machines::nb_machines() const
 {
     return _machines.size();
+}
+
+void Machines::update_nb_machines_in_each_state(MachineState old_state, MachineState new_state)
+{
+    _nb_machines_in_each_state[old_state]--;
+    _nb_machines_in_each_state[new_state]++;
+}
+
+const std::map<MachineState, int> &Machines::nb_machines_in_each_state() const
+{
+    return _nb_machines_in_each_state;
 }
 
 void Machines::update_machines_on_job_run(int jobID, const MachineRange & usedMachines)
@@ -397,8 +414,10 @@ string machine_state_to_string(MachineState state)
     return s;
 }
 
-Machine::Machine()
+Machine::Machine(Machines *machines) :
+    machines(machines)
 {
+    xbt_assert(this->machines != nullptr);
     const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
                                                  MachineState::COMPUTING,
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
@@ -490,6 +509,7 @@ void Machine::update_machine_state(MachineState new_state)
 
     time_spent_in_each_state[state] += delta_time;
 
+    machines->update_nb_machines_in_each_state(state, new_state);
     state = new_state;
 }
 
