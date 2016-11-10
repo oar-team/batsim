@@ -732,8 +732,6 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
 
-    f << "nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,makespan,max_turnaround_time,simulation_time,scheduling_time,jobs_execution_time_boundary_ratio,consumed_joules\n";
-
     int nb_jobs = 0;
     int nb_jobs_finished = 0;
     int nb_jobs_success = 0;
@@ -749,59 +747,95 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     chrono::duration<long double> diff = context->simulation_end_time - context->simulation_start_time;
     Rational seconds_used_by_the_whole_simulation = diff.count();
 
+    // Let's compute jobs-oriented metrics
     for (const auto mit : context->workloads.workloads())
     {
         const Workload * workload = mit.second;
 
-    if(workload->jobs)
-      {
-        const auto & jobs = workload->jobs->jobs();
-        for (const auto & mit : jobs)
+        if(workload->jobs != nullptr)
         {
-            Job * job = mit.second;
-            nb_jobs++;
-
-            if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+            const auto & jobs = workload->jobs->jobs();
+            for (const auto & mit : jobs)
             {
-                nb_jobs_finished++;
+                Job * job = mit.second;
+                nb_jobs++;
 
-                if (job->runtime < min_job_execution_time)
-                    min_job_execution_time = job->runtime;
-                if (job->runtime > max_job_execution_time)
-                    max_job_execution_time = job->runtime;
+                if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
+                    job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+                {
+                    nb_jobs_finished++;
 
-                if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
-                    nb_jobs_success++;
-                else
-                    nb_jobs_killed++;
+                    if (job->runtime < min_job_execution_time)
+                        min_job_execution_time = job->runtime;
+                    if (job->runtime > max_job_execution_time)
+                        max_job_execution_time = job->runtime;
 
-                double completion_time = job->starting_time + job->runtime;
-                double turnaround_time = job->starting_time + job->runtime - job->submission_time;
+                    if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
+                        nb_jobs_success++;
+                    else
+                        nb_jobs_killed++;
 
-                if (completion_time > makespan)
-                    makespan = completion_time;
+                    double completion_time = job->starting_time + job->runtime;
+                    double turnaround_time = job->starting_time + job->runtime - job->submission_time;
 
-                if (turnaround_time > max_turnaround_time)
-                    max_turnaround_time = turnaround_time;
+                    if (completion_time > makespan)
+                        makespan = completion_time;
+
+                    if (turnaround_time > max_turnaround_time)
+                        max_turnaround_time = turnaround_time;
+                }
             }
         }
-      }
     }
 
     XBT_INFO("Makespan=%lf, scheduling_time=%Lf", makespan, seconds_used_by_scheduler);
-
     Rational total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
 
+    // Let's compute machine-related metrics
+    vector<string> machine_oriented_header_substrings;
+    vector<string> machine_oriented_values_substrings;
+    map<MachineState, Rational> time_spent_in_each_state;
+    const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
+                                                 MachineState::COMPUTING,
+                                                 MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
+    for (const MachineState & state : machine_states)
+        time_spent_in_each_state[state] = 0;
+
+    for (const Machine * machine : context->machines.machines())
+        for (const MachineState & state : machine_states)
+            time_spent_in_each_state[state] += machine->time_spent_in_each_state.at(state);
+
+    for (const MachineState & state : machine_states)
+    {
+        machine_oriented_header_substrings.push_back("time_" + machine_state_to_string(state));
+        machine_oriented_values_substrings.push_back(to_string((double)time_spent_in_each_state[state]));
+    }
+
+    string machine_oriented_metrics_header = boost::algorithm::join(machine_oriented_header_substrings, ",");
+    string machine_oriented_metrics_values = boost::algorithm::join(machine_oriented_values_substrings, ",");
+
     char * buf;
-    int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%g\n",
-                       nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed,
-                       (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time,
-                       (double) seconds_used_by_the_whole_simulation,
-                       (double) seconds_used_by_scheduler,
-                       max_job_execution_time / min_job_execution_time,
-                       (double) total_consumed_energy);
+    int ret = asprintf(&buf, "nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,"
+                       "makespan,max_turnaround_time,simulation_time,scheduling_time,"
+                       "jobs_execution_time_boundary_ratio,consumed_joules,%s\n",
+                       machine_oriented_metrics_header.c_str());
+    xbt_assert(ret != -1, "asprintf failed (buffer too small?)");
+
+    f << buf;
+    free(buf);
+
+    ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%g,%s\n",
+                   nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed,
+                   (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time,
+                   (double) seconds_used_by_the_whole_simulation,
+                   (double) seconds_used_by_scheduler,
+                   max_job_execution_time / min_job_execution_time,
+                   (double) total_consumed_energy,
+                   machine_oriented_metrics_values.c_str());
+    xbt_assert(ret != -1, "asprintf failed (buffer too small?)");
+
     (void) ret; // Avoids a warning if assertions are ignored
-    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
     f << buf;
     free(buf);

@@ -58,7 +58,7 @@ void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, 
         machine->name = sg_host_get_name(host);
         machine->host = host;
         machine->jobs_being_computed = {};
-        machine->state = MachineState::IDLE;
+        machine->update_machine_state(MachineState::IDLE);
 
         if (context->energy_used)
         {
@@ -181,10 +181,10 @@ void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, 
                 }
             }
         }
-        
+
         if ((machine->name != masterHostName) && (machine->name != pfsHostName))
         {
-            
+
             machine->id = id;
             ++id;
             _machines.push_back(machine);
@@ -198,12 +198,12 @@ void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, 
             }
             else
             {
-                
+
                 xbt_assert(_pfs_machine == nullptr, "There are two pfs hosts...");
                 machine->id = -2;
                 _pfs_machine = machine;
                  XBT_INFO("Pfs_Host (parallel filesystem host) is here.");
-            } 
+            }
     }
 
     xbt_assert(_master_machine != nullptr, "Cannot find the MasterHost '%s' in the platform file", masterHostName.c_str());
@@ -312,7 +312,7 @@ void Machines::update_machines_on_job_run(int jobID, const MachineRange & usedMa
     {
         int machine_id = *it;
         Machine * machine = _machines[machine_id];
-        machine->state = MachineState::COMPUTING;
+        machine->update_machine_state(MachineState::COMPUTING);
 
         int previous_top_job = -1;
         if (!machine->jobs_being_computed.empty())
@@ -345,7 +345,7 @@ void Machines::update_machines_on_job_end(int jobID, const MachineRange & usedMa
 
         if (machine->jobs_being_computed.empty())
         {
-            machine->state = MachineState::IDLE;
+            machine->update_machine_state(MachineState::IDLE);
             if (_tracer != nullptr)
                 _tracer->set_machine_idle(machine->id, MSG_get_clock());
         }
@@ -395,6 +395,16 @@ string machine_state_to_string(MachineState state)
     }
 
     return s;
+}
+
+Machine::Machine()
+{
+    const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
+                                                 MachineState::COMPUTING,
+                                                 MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
+    for (const MachineState & state : machine_states)
+        time_spent_in_each_state[state] = 0;
 }
 
 Machine::~Machine()
@@ -471,6 +481,18 @@ string Machine::jobs_being_computed_as_string() const
     return boost::algorithm::join(jobs_strings, ", ");
 }
 
+void Machine::update_machine_state(MachineState new_state)
+{
+    Rational current_time = MSG_get_clock();
+
+    Rational delta_time = current_time - last_state_change_date;
+    xbt_assert(delta_time >= 0);
+
+    time_spent_in_each_state[state] += delta_time;
+
+    state = new_state;
+}
+
 bool string_including_integers_comparator(const std::string & s1, const std::string & s2)
 {
     int c1 = 0;
@@ -519,7 +541,7 @@ void create_machines(const MainArguments & main_args, BatsimContext * context, i
     XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
     XBT_INFO("The name of the master host is '%s'", main_args.master_host_name.c_str());
     XBT_INFO("The name of the parallel file system host is '%s'", main_args.pfs_host_name.c_str());
- 
+
     MSG_create_environment(main_args.platform_filename.c_str());
 
     xbt_dynar_t hosts = MSG_hosts_as_dynar();

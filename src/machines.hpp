@@ -5,15 +5,16 @@
 
 #pragma once
 
-#include <vector>
-#include <set>
 #include <map>
+#include <set>
 #include <string>
+#include <vector>
 
 #include <simgrid/msg.h>
 
-#include "pstate.hpp"
+#include "exact_numbers.hpp"
 #include "machine_range.hpp"
+#include "pstate.hpp"
 
 class PajeTracer;
 struct BatsimContext;
@@ -36,6 +37,8 @@ enum class MachineState
  */
 struct Machine
 {
+    Machine();
+
     /**
      * @brief Destroys a Machine
      */
@@ -49,6 +52,9 @@ struct Machine
 
     std::map<int, PStateType> pstates; //!< Maps power state number to their power state type
     std::map<int, SleepPState *> sleep_pstates; //!< Maps sleep power state numbers to their SleepPState
+
+    Rational last_state_change_date = 0; //!< The time at which the last state change has been done
+    std::map<MachineState, Rational> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
 
     /**
      * @brief Returns whether the Machine has the given power state
@@ -68,6 +74,12 @@ struct Machine
      * @return A std::string corresponding to the jobs being computed of the Machine
      */
     std::string jobs_being_computed_as_string() const;
+
+    /**
+     * @brief Updates the MachineState of one machine, updating logging counters
+     * @param[in] new_state The new state of the machine
+     */
+    void update_machine_state(MachineState new_state);
 };
 
 /**

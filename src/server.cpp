@@ -266,7 +266,7 @@ int uds_server_process(int argc, char *argv[])
                     }
                     else if (machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
                     {
-                        machine->state = MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING;
+                        machine->update_machine_state(MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING);
                         SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
                         args->context = context;
                         args->machine_id = machine_id;
@@ -287,7 +287,7 @@ int uds_server_process(int argc, char *argv[])
                             "Switching from a sleep pstate to a non-computation pstate on machine %d ('%s') : %d -> %d, which is forbidden",
                             machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
 
-                    machine->state = MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING;
+                    machine->update_machine_state(MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING);
                     SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
                     args->context = context;
                     args->machine_id = machine_id;
