@@ -9,11 +9,12 @@
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾
 
 # Clean test output directories
+\rm -rf test/out/energy
 \rm -rf test/out/instance_examples
-\rm -rf test/out/unique
+\rm -rf test/out/long_simulation_time
 \rm -rf test/out/no_energy
 \rm -rf test/out/space_sharing
-\rm -rf test/out/energy
+\rm -rf test/out/unique
 
 # Run a travis server if needed
 server_launched_by_me=0
