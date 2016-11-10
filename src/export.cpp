@@ -743,11 +743,11 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     double min_job_execution_time = DBL_MAX;
     double max_job_execution_time = DBL_MIN;
 
-    long double seconds_used_by_scheduler = context->microseconds_used_by_scheduler / (long double)1e6;
+    Rational seconds_used_by_scheduler = context->microseconds_used_by_scheduler / (Rational)1e6;
 
     // Let's compute the simulation time
     chrono::duration<long double> diff = context->simulation_end_time - context->simulation_start_time;
-    long double seconds_used_by_the_whole_simulation = diff.count();
+    Rational seconds_used_by_the_whole_simulation = diff.count();
 
     for (const auto mit : context->workloads.workloads())
     {
@@ -789,16 +789,16 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
 
     XBT_INFO("Makespan=%lf, scheduling_time=%Lf", makespan, seconds_used_by_scheduler);
 
-    long double total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
+    Rational total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
 
     char * buf;
-    int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%Lf,%Lf,%lf,%Lg\n",
+    int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%g\n",
                        nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed,
                        (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time,
-                       seconds_used_by_the_whole_simulation,
-                       seconds_used_by_scheduler,
+                       (double) seconds_used_by_the_whole_simulation,
+                       (double) seconds_used_by_scheduler,
                        max_job_execution_time / min_job_execution_time,
-                       total_consumed_energy);
+                       (double) total_consumed_energy);
     (void) ret; // Avoids a warning if assertions are ignored
     xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
