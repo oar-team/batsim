@@ -35,6 +35,7 @@ struct Job
 {
     Workload * workload = nullptr; //!< The workload the job belongs to
     int number; //!< The job unique number within its workload
+    std::string id; //!< The job unique identifier
     std::string profile; //!< The job profile name. The corresponding profile tells how the job should be computed
     double submission_time; //!< The job submission time: The time at which the becomes available
     double walltime; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed

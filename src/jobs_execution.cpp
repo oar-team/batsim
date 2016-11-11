@@ -240,13 +240,13 @@ int execute_profile(BatsimContext *context,
 
         double cpu = 0.0;
         double size = data->size;
-        std::vector<msg_host_t> hosts_pfs0(allocation->hosts); 
+        std::vector<msg_host_t> hosts_pfs0(allocation->hosts);
 
         // Add the pfs_machine
         hosts_pfs0.push_back((context->machines.pfs_machine())->host);
-        
+
         nb_res = nb_res + 1;
-        
+
         // These amounts are deallocated by SG
         double * computation_amount = xbt_new(double, nb_res);
         double * communication_amount = NULL;
@@ -341,7 +341,9 @@ int execute_job_process(int argc, char *argv[])
     }
 
     // Job computation
-    args->context->machines.update_machines_on_job_run(job->number, args->allocation->machine_ids);
+    args->context->machines.update_machines_on_job_run(job,
+                                                       args->allocation->machine_ids,
+                                                       args->context);
     if (execute_profile(args->context, job->profile, args->allocation, &remaining_time) == 1)
     {
         XBT_INFO("Job %d finished in time", job->number);
@@ -352,10 +354,15 @@ int execute_job_process(int argc, char *argv[])
         XBT_INFO("Job %d had been killed (walltime %lf reached", job->number, job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
         if (args->context->trace_schedule)
-            args->context->paje_tracer.add_job_kill(job->number, args->allocation->machine_ids, MSG_get_clock(), true);
+            args->context->paje_tracer.add_job_kill(job,
+                                                    args->allocation->machine_ids,
+                                                    MSG_get_clock(),
+                                                    true);
     }
 
-    args->context->machines.update_machines_on_job_end(job->number, args->allocation->machine_ids);
+    args->context->machines.update_machines_on_job_end(job,
+                                                       args->allocation->machine_ids,
+                                                       args->context);
     job->runtime = MSG_get_clock() - job->starting_time;
 
     // If energy is enabled, let us compute the energy used by the machines after running the job

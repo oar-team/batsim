@@ -18,6 +18,7 @@
 #include "machines.hpp"
 
 struct BatsimContext;
+struct Job;
 
 /**
  * @brief Prepares Batsim's outputting
@@ -153,42 +154,43 @@ public:
     /**
      * @brief Adds a job launch in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param[in] jobID The job unique number
-     * @param[in] usedMachineIDs The machines which compute the job
+     * @param[in] job The job
+     * @param[in] used_machine_ids The machines which compute the job
      * @param[in] time The simulation time at which the addition is done
      */
-    void add_job_launching(int jobID, const std::vector<int> & usedMachineIDs, double time);
+    void add_job_launching(const Job * job, const std::vector<int> & used_machine_ids, double time);
 
     /**
      * @brief Creates a job in the Pajé output file
-     * @param[in] jobID The job unique number
+     * @param[in] job The job
      */
-    void register_new_job(int jobID);
+    void register_new_job(const Job * job);
 
     /**
      * @brief Sets a machine in the idle state
-     * @param[in] machineID The unique machine number
+     * @param[in] machine_id The unique machine number
      * @param[in] time The time at which the machine should be marked as idle
      */
-    void set_machine_idle(int machineID, double time);
+    void set_machine_idle(int machine_id, double time);
 
     /**
      * @brief Sets a machine in the computing state
-     * @param[in] machineID The unique machine number
-     * @param[in] jobID The unique job number that the machine computes
+     * @param[in] machine_id The unique machine number
+     * @param[in] job The job
      * @param[in] time The time at which the machine should be marked as computing the job
      */
-    void set_machine_as_computing_job(int machineID, int jobID, double time);
+    void set_machine_as_computing_job(int machine_id, const Job * job, double time);
 
     /**
      * @brief Adds a job kill in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param[in] jobID The job unique number
-     * @param[in] usedMachineIDs The machines which compute the job
+     * @param[in] job The job
+     * @param[in] used_machine_ids The machines which compute the job
      * @param[in] time The simulation time at which the kill is done
-     * @param[in] associateKillToMachines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
+     * @param[in] associate_kill_to_machines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
      */
-    void add_job_kill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines = false);
+    void add_job_kill(const Job * job, const MachineRange & used_machine_ids,
+                      double time, bool associate_kill_to_machines = false);
 
     /**
      * @brief Adds a global utilization value of the system.
@@ -215,9 +217,9 @@ private:
     /**
      * @brief Generate colors
      * @details The colors are fairly shared in the Hue color spectrum.
-     * @param[in] colorCount colorCount
+     * @param[in] color_count The number of colours to generate
      */
-    void generate_colors(int colorCount = 8);
+    void generate_colors(int color_count = 8);
 
     /**
      * @brief Randomize the position of the colors in the colormap
@@ -250,7 +252,7 @@ private:
 
     WriteBuffer * _wbuf = nullptr;  //!< The buffer class used to handle the output file
 
-    std::map<int, std::string> _jobs; //!< Maps job numbers to their Pajé representation
+    std::map<const Job *, std::string> _jobs; //!< Maps jobs to their Pajé representation
     std::vector<std::string> _colors; //!< Strings associated with colors, used for the jobs
 
     PajeTracerState state = UNINITIALIZED; //!< The state of the PajeTracer

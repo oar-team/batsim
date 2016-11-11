@@ -16,10 +16,11 @@
 #include "machine_range.hpp"
 #include "pstate.hpp"
 
-class PajeTracer;
 struct BatsimContext;
-struct MainArguments;
+struct Job;
 class Machines;
+struct MainArguments;
+class PajeTracer;
 
 /**
  * @brief Enumerates the different states of a Machine
@@ -54,7 +55,7 @@ struct Machine
     std::string name; //!< The machine name
     msg_host_t host; //!< The SimGrid host corresponding to the machine
     MachineState state = MachineState::IDLE; //!< The current state of the Machine
-    std::set<int> jobs_being_computed; //!< The set of jobs being computed on the Machine
+    std::set<const Job *> jobs_being_computed; //!< The set of jobs being computed on the Machine
 
     std::map<int, PStateType> pstates; //!< Maps power state number to their power state type
     std::map<int, SleepPState *> sleep_pstates; //!< Maps sleep power state numbers to their SleepPState
@@ -134,18 +135,24 @@ public:
     /**
      * @brief Must be called when a job is executed on some machines
      * @details Puts the used machines in a computing state and traces the job beginning
-     * @param[in] jobID The unique job number
-     * @param[in] usedMachines The machines on which the job is executed
+     * @param[in] job The job
+     * @param[in] used_machines The machines on which the job is executed
+     * @param[in,out] context The Batsim Context
      */
-    void update_machines_on_job_run(int jobID, const MachineRange & usedMachines);
+    void update_machines_on_job_run(const Job * job,
+                                    const MachineRange & used_machines,
+                                    BatsimContext * context);
 
     /**
      * @brief Must be called when a job finishes its execution on some machines
      * @details Puts the used machines in an idle state and traces the job ending
-     * @param[in] jobID The unique job number
-     * @param[in] usedMachines The machines on which the job is executed
+     * @param[in] job The job
+     * @param[in] used_machines The machines on which the job is executed
+     * @param[in,out] context The BatsimContext
      */
-    void update_machines_on_job_end(int jobID, const MachineRange & usedMachines);
+    void update_machines_on_job_end(const Job *job,
+                                    const MachineRange & used_machines,
+                                    BatsimContext *context);
 
     /**
      * @brief Sorts the machine by ascending name (lexicographically speaking)

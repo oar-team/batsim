@@ -17,6 +17,7 @@
 #include <float.h>
 
 #include "context.hpp"
+#include "jobs.hpp"
 
 using namespace std;
 
@@ -447,9 +448,11 @@ void PajeTracer::finalize(const BatsimContext * context, double time)
     XBT_INFO("PajeTracer finalized");
 }
 
-void PajeTracer::add_job_launching(int jobID, const std::vector<int> & usedMachineIDs, double time)
+void PajeTracer::add_job_launching(const Job * job,
+                                   const std::vector<int> & used_machine_ids,
+                                   double time)
 {
-    (void) jobID;
+    (void) job;
     xbt_assert(state == INITIALIZED, "Bad addJobLaunching call: the PajeTracer object is not initialized or had been finalized");
 
     const int buf_size = 256;
@@ -460,7 +463,7 @@ void PajeTracer::add_job_launching(int jobID, const std::vector<int> & usedMachi
     if (_log_launchings)
     {
         // Let's change the state of all the machines which launch the job
-        for (const int & machineID : usedMachineIDs)
+        for (const int & machineID : used_machine_ids)
         {
             nb_printed = snprintf(buf, buf_size,
                                   "%d %lf %s %s%d %s\n",
@@ -475,9 +478,11 @@ void PajeTracer::add_job_launching(int jobID, const std::vector<int> & usedMachi
     free(buf);
 }
 
-void PajeTracer::register_new_job(int jobID)
+void PajeTracer::register_new_job(const Job *job)
 {
-    xbt_assert(_jobs.find(jobID) == _jobs.end(), "Cannot register new job %d: it already exists", jobID);
+    xbt_assert(_jobs.find(job) == _jobs.end(),
+               "Cannot register new job %s: it already exists", job->id);
+
     const int buf_size = 256;
     int nb_printed;
     char * buf = (char*) malloc(sizeof(char) * buf_size);
@@ -485,19 +490,20 @@ void PajeTracer::register_new_job(int jobID)
 
     // Let's create a state value corresponding to this job
     nb_printed = snprintf(buf, buf_size,
-                          "%d %s%d %s \"%d\" %s\n",
-                          DEFINE_ENTITY_VALUE, jobPrefix, jobID, machineState, jobID, _colors[jobID % (int)_colors.size()].c_str());
+                          "%d %s%s %s \"%s\" %s\n",
+                          DEFINE_ENTITY_VALUE, jobPrefix, job->id.c_str(), machineState,
+                          job->id.c_str(), _colors[job->number % (int)_colors.size()].c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
     _wbuf->append_text(buf);
 
-    _jobs[jobID] = jobPrefix + to_string(jobID);
+    _jobs[job] = jobPrefix + job->id;
 
     free(buf);
 }
 
-void PajeTracer::set_machine_idle(int machineID, double time)
+void PajeTracer::set_machine_idle(int machine_id, double time)
 {
     const int buf_size = 256;
     int nb_printed;
@@ -506,7 +512,7 @@ void PajeTracer::set_machine_idle(int machineID, double time)
 
     nb_printed = snprintf(buf, buf_size,
                           "%d %lf %s %s%d %s\n",
-                          SET_STATE, time, machineState, machinePrefix, machineID, mstateWaiting);
+                          SET_STATE, time, machineState, machinePrefix, machine_id, mstateWaiting);
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -515,13 +521,13 @@ void PajeTracer::set_machine_idle(int machineID, double time)
     free(buf);
 }
 
-void PajeTracer::set_machine_as_computing_job(int machineID, int jobID, double time)
+void PajeTracer::set_machine_as_computing_job(int machine_id, const Job * job, double time)
 {
-    auto mit = _jobs.find(jobID);
+    auto mit = _jobs.find(job);
     if (mit == _jobs.end())
     {
-        register_new_job(jobID);
-        mit = _jobs.find(jobID);
+        register_new_job(job);
+        mit = _jobs.find(job);
     }
 
     const int buf_size = 256;
@@ -531,7 +537,8 @@ void PajeTracer::set_machine_as_computing_job(int machineID, int jobID, double t
 
     nb_printed = snprintf(buf, buf_size,
                           "%d %lf %s %s%d %s\n",
-                          SET_STATE, time, machineState, machinePrefix, machineID, mit->second.c_str());
+                          SET_STATE, time, machineState, machinePrefix, machine_id,
+                          mit->second.c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -540,7 +547,8 @@ void PajeTracer::set_machine_as_computing_job(int machineID, int jobID, double t
     free(buf);
 }
 
-void PajeTracer::add_job_kill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines)
+void PajeTracer::add_job_kill(const Job *job, const MachineRange & used_machine_ids,
+                              double time, bool associate_kill_to_machines)
 {
     xbt_assert(state == INITIALIZED, "Bad addJobKill call: the PajeTracer object is not initialized or had been finalized");
 
@@ -551,22 +559,23 @@ void PajeTracer::add_job_kill(int jobID, const MachineRange & usedMachineIDs, do
 
     // Let's add a kill event associated with the scheduler
     nb_printed = snprintf(buf, buf_size,
-                          "%d %lf %s %s \"%d\"\n",
-                          NEW_EVENT, time, killEventKiller, killer, jobID);
+                          "%d %lf %s %s \"%s\"\n",
+                          NEW_EVENT, time, killEventKiller, killer, job->id.c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
     _wbuf->append_text(buf);
 
-    if (associateKillToMachines)
+    if (associate_kill_to_machines)
     {
         // Let's add a kill event associated with each machine
-        for (auto it = usedMachineIDs.elements_begin(); it != usedMachineIDs.elements_end(); ++it)
+        for (auto it = used_machine_ids.elements_begin(); it != used_machine_ids.elements_end(); ++it)
         {
             int machine_id = *it;
             nb_printed = snprintf(buf, buf_size,
-                                  "%d %lf %s %s%d \"%d\"\n",
-                                  NEW_EVENT, time, killEventMachine, machinePrefix, machine_id, jobID);
+                                  "%d %lf %s %s%d \"%s\"\n",
+                                  NEW_EVENT, time, killEventMachine, machinePrefix, machine_id,
+                                  job->id.c_str());
             xbt_assert(nb_printed < buf_size - 1,
                        "Writing error: buffer has been completely filled, some information might "
                        "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -598,9 +607,9 @@ void PajeTracer::add_global_utilization(double utilization, double time)
     free(buf);
 }
 
-void PajeTracer::generate_colors(int colorCount)
+void PajeTracer::generate_colors(int color_count)
 {
-    xbt_assert(colorCount > 0);
+    xbt_assert(color_count > 0);
 
     double h, s=1, v=1, r, g, b;
     const int buf_size = 256;
@@ -608,8 +617,8 @@ void PajeTracer::generate_colors(int colorCount)
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
-    double hueFraction = 360.0 / colorCount;
-    for (int i = 0; i < colorCount; ++i)
+    double hueFraction = 360.0 / color_count;
+    for (int i = 0; i < color_count; ++i)
     {
         h = i * hueFraction;
         hsv_to_rgb(h,s,v, r,g,b);
@@ -678,7 +687,6 @@ void PajeTracer::hsv_to_rgb(double h, double s, double v, double & r, double & g
         break;
     }
 }
-
 
 void export_jobs_to_csv(const std::string &filename, const BatsimContext *context)
 {

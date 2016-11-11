@@ -16,6 +16,7 @@
 #include "batsim.hpp"
 #include "context.hpp"
 #include "export.hpp"
+#include "jobs.hpp"
 
 using namespace std;
 
@@ -323,40 +324,49 @@ const std::map<MachineState, int> &Machines::nb_machines_in_each_state() const
     return _nb_machines_in_each_state;
 }
 
-void Machines::update_machines_on_job_run(int jobID, const MachineRange & usedMachines)
+void Machines::update_machines_on_job_run(const Job * job,
+                                          const MachineRange & used_machines,
+                                          BatsimContext * context)
 {
-    for (auto it = usedMachines.elements_begin(); it != usedMachines.elements_end(); ++it)
+    for (auto it = used_machines.elements_begin(); it != used_machines.elements_end(); ++it)
     {
         int machine_id = *it;
         Machine * machine = _machines[machine_id];
         machine->update_machine_state(MachineState::COMPUTING);
 
-        int previous_top_job = -1;
+        const Job * previous_top_job = nullptr;
         if (!machine->jobs_being_computed.empty())
             previous_top_job = *machine->jobs_being_computed.begin();
 
-        machine->jobs_being_computed.insert(jobID);
+        machine->jobs_being_computed.insert(job);
 
-        if (previous_top_job == -1 || previous_top_job != *machine->jobs_being_computed.begin())
+        if (previous_top_job == nullptr || previous_top_job != *machine->jobs_being_computed.begin())
         {
             if (_tracer != nullptr)
-                _tracer->set_machine_as_computing_job(machine->id, *machine->jobs_being_computed.begin(), MSG_get_clock());
+                _tracer->set_machine_as_computing_job(machine->id,
+                                                      *machine->jobs_being_computed.begin(),
+                                                      MSG_get_clock());
         }
     }
+
+    if (context->trace_machine_states)
+        context->machine_state_tracer.write_machine_states(MSG_get_clock());
 }
 
-void Machines::update_machines_on_job_end(int jobID, const MachineRange & usedMachines)
+void Machines::update_machines_on_job_end(const Job * job,
+                                          const MachineRange & used_machines,
+                                          BatsimContext * context)
 {
-    for (auto it = usedMachines.elements_begin(); it != usedMachines.elements_end(); ++it)
+    for (auto it = used_machines.elements_begin(); it != used_machines.elements_end(); ++it)
     {
         int machine_id = *it;
         Machine * machine = _machines[machine_id];
 
         xbt_assert(!machine->jobs_being_computed.empty());
-        int previous_top_job = *machine->jobs_being_computed.begin();
+        const Job * previous_top_job = *machine->jobs_being_computed.begin();
 
         // Let's erase jobID in the jobs_being_computed data structure
-        int ret = machine->jobs_being_computed.erase(jobID);
+        int ret = machine->jobs_being_computed.erase(job);
         (void) ret; // Avoids a warning if assertions are ignored
         xbt_assert(ret == 1);
 
@@ -369,10 +379,14 @@ void Machines::update_machines_on_job_end(int jobID, const MachineRange & usedMa
         else if (*machine->jobs_being_computed.begin() != previous_top_job)
         {
             if (_tracer != nullptr)
-                _tracer->set_machine_as_computing_job(machine->id, *machine->jobs_being_computed.begin(), MSG_get_clock());
+                _tracer->set_machine_as_computing_job(machine->id,
+                                                      *machine->jobs_being_computed.begin(),
+                                                      MSG_get_clock());
         }
-
     }
+
+    if (context->trace_machine_states)
+        context->machine_state_tracer.write_machine_states(MSG_get_clock());
 }
 
 void Machines::sort_machines_by_ascending_name()
@@ -444,17 +458,17 @@ bool Machine::has_pstate(int pstate) const
 void Machine::display_machine(bool is_energy_used) const
 {
     // Let us traverse jobs_being_computed to display some information about them
-    vector<string> jobsVector;
-    for (auto & jobID : jobs_being_computed)
+    vector<string> jobs_vector;
+    for (auto & job : jobs_being_computed)
     {
-        jobsVector.push_back(std::to_string(jobID));
+        jobs_vector.push_back(job->id);
     }
 
     string str = "Machine\n";
     str += "  id = " + to_string(id) + "\n";
     str += "  name = '" + name + "'\n";
     str += "  state = " + machine_state_to_string(state) + "\n";
-    str += "  jobs_being_computed = [" + boost::algorithm::join(jobsVector, ", ") + "]\n";
+    str += "  jobs_being_computed = [" + boost::algorithm::join(jobs_vector, ", ") + "]\n";
 
     if (is_energy_used)
     {
@@ -494,8 +508,8 @@ string Machine::jobs_being_computed_as_string() const
 {
     vector<string> jobs_strings;
 
-    for (auto & jobID : jobs_being_computed)
-        jobs_strings.push_back(to_string(jobID));
+    for (auto & job : jobs_being_computed)
+        jobs_strings.push_back(job->id);
 
     return boost::algorithm::join(jobs_strings, ", ");
 }

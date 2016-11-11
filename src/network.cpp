@@ -159,9 +159,6 @@ int request_reply_scheduler_process(int argc, char *argv[])
     RequestReplyProcessArguments * args = (RequestReplyProcessArguments *) MSG_process_get_data(MSG_process_self());
     BatsimContext * context = args->context;
 
-    if (context->trace_machine_states)
-        context->machine_state_tracer.write_machine_states(MSG_get_clock());
-
     const int date_buf_size = 32;
     char sending_date_as_string[date_buf_size];
     int nb_printed_char = snprintf(sending_date_as_string, date_buf_size,
