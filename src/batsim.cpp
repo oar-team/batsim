@@ -471,6 +471,7 @@ int main(int argc, char * argv[])
     context.energy_used = main_args.energy_used;
     context.allow_space_sharing = main_args.allow_space_sharing;
     context.trace_schedule = main_args.enable_schedule_tracing;
+    context.trace_machine_states = main_args.enable_machine_state_tracing;
     context.simulation_start_time = chrono::high_resolution_clock::now();
 
     context.terminate_with_last_workflow = main_args.terminate_with_last_workflow;

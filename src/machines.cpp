@@ -404,10 +404,10 @@ string machine_state_to_string(MachineState state)
         s = "computing";
         break;
     case MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING:
-        s = "sleeping->computing";
+        s = "switching_on";
         break;
     case MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING:
-        s = "computing->sleeping";
+        s = "switching_off";
         break;
     }
 

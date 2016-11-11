@@ -1031,6 +1031,7 @@ void MachineStateTracer::set_filename(const string &filename)
     string header = "time," + boost::algorithm::join(header_substrings, ",") + "\n";
 
     _wbuf->append_text(header.c_str());
+    _wbuf->flush_buffer();
 }
 
 void MachineStateTracer::write_machine_states(double date)
