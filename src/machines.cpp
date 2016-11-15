@@ -516,15 +516,16 @@ string Machine::jobs_being_computed_as_string() const
 
 void Machine::update_machine_state(MachineState new_state)
 {
-    Rational current_time = MSG_get_clock();
+    Rational current_date = MSG_get_clock();
 
-    Rational delta_time = current_time - last_state_change_date;
+    Rational delta_time = current_date - last_state_change_date;
     xbt_assert(delta_time >= 0);
 
     time_spent_in_each_state[state] += delta_time;
 
     machines->update_nb_machines_in_each_state(state, new_state);
     state = new_state;
+    last_state_change_date = current_date;
 }
 
 bool string_including_integers_comparator(const std::string & s1, const std::string & s2)
