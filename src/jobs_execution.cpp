@@ -322,7 +322,7 @@ int execute_job_process(int argc, char *argv[])
     Job * job = workload->jobs->at(args->allocation->job_id.job_number);
     job->starting_time = MSG_get_clock();
     job->allocation = args->allocation->machine_ids;
-    double remaining_time = job->walltime;
+    double remaining_time = (double)job->walltime;
 
     // If energy is enabled, let us compute the energy used by the machines before running the job
     if (args->context->energy_used)
@@ -363,7 +363,10 @@ int execute_job_process(int argc, char *argv[])
     args->context->machines.update_machines_on_job_end(job,
                                                        args->allocation->machine_ids,
                                                        args->context);
-    job->runtime = MSG_get_clock() - job->starting_time;
+    job->runtime = (Rational)MSG_get_clock() - job->starting_time;
+    xbt_assert(job->runtime > 0, "The execution of job '%s' resulted in a null execution time. "
+               "This might be caused by MSG_clock() precision but also by a bad job profile.",
+               job->id.c_str());
 
     // If energy is enabled, let us compute the energy used by the machines after running the job
     if (args->context->energy_used)

@@ -718,16 +718,16 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
                     int ret = asprintf(&buf, "%d,%s,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
                                        job->number*10 + workload_num, // job_id
                                        workload_name.c_str(), // workload_name
-                                       job->submission_time, // submission_time
+                                       (double)job->submission_time, // submission_time
                                        job->required_nb_res, // requested_number_of_processors
-                                       job->walltime, // requested_time
+                                       (double)job->walltime, // requested_time
                                        success, // success
-                                       job->starting_time, // starting_time
-                                       job->runtime, // execution_time
-                                       job->starting_time + job->runtime, // finish_time
-                                       job->starting_time - job->submission_time, // waiting_time
-                                       job->starting_time + job->runtime - job->submission_time, // turnaround_time
-                                       (job->starting_time + job->runtime - job->submission_time) / job->runtime, // stretch
+                                       (double)job->starting_time, // starting_time
+                                       (double)job->runtime, // execution_time
+                                       (double)(job->starting_time + job->runtime), // finish_time
+                                       (double)(job->starting_time - job->submission_time), // waiting_time
+                                       (double)(job->starting_time + job->runtime - job->submission_time), // turnaround_time
+                                       (double)((job->starting_time + job->runtime - job->submission_time) / job->runtime), // stretch
                                        job->consumed_energy // consumed energy
                                        );
                     (void) ret; // Avoids a warning if assertions are ignored
@@ -756,16 +756,23 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     int nb_jobs_finished = 0;
     int nb_jobs_success = 0;
     int nb_jobs_killed = 0;
-    double makespan = 0;
-    double max_turnaround_time = 0;
-    double min_job_execution_time = DBL_MAX;
-    double max_job_execution_time = DBL_MIN;
+    Rational makespan = 0;
+    Rational sum_waiting_time = 0;
+    Rational sum_turnaround_time = 0;
+    Rational sum_slowdown = 0;
+    Rational max_waiting_time = 0;
+    Rational max_turnaround_time = 0;
+    Rational max_slowdown = 0;
+
+    map<string, string> output_map;
 
     Rational seconds_used_by_scheduler = context->microseconds_used_by_scheduler / (Rational)1e6;
+    output_map["scheduling_time"] = to_string((double) seconds_used_by_scheduler);
 
     // Let's compute the simulation time
     chrono::duration<long double> diff = context->simulation_end_time - context->simulation_start_time;
     Rational seconds_used_by_the_whole_simulation = diff.count();
+    output_map["simulation_time"] = to_string((double) seconds_used_by_the_whole_simulation);
 
     // Let's compute jobs-oriented metrics
     for (const auto mit : context->workloads.workloads())
@@ -785,35 +792,59 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
                 {
                     nb_jobs_finished++;
 
-                    if (job->runtime < min_job_execution_time)
-                        min_job_execution_time = job->runtime;
-                    if (job->runtime > max_job_execution_time)
-                        max_job_execution_time = job->runtime;
-
                     if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
                         nb_jobs_success++;
                     else
                         nb_jobs_killed++;
 
-                    double completion_time = job->starting_time + job->runtime;
-                    double turnaround_time = job->starting_time + job->runtime - job->submission_time;
+                    Rational waiting_time = job->starting_time - job->submission_time;
+                    Rational completion_time = job->starting_time + job->runtime;
+                    Rational turnaround_time = completion_time - job->submission_time;
+                    Rational slowdown = turnaround_time / job->runtime;
+
+                    sum_waiting_time += waiting_time;
+                    sum_turnaround_time += turnaround_time;
+                    sum_slowdown += slowdown;
 
                     if (completion_time > makespan)
                         makespan = completion_time;
 
+                    if (waiting_time > max_waiting_time)
+                        max_waiting_time = waiting_time;
+
                     if (turnaround_time > max_turnaround_time)
                         max_turnaround_time = turnaround_time;
+
+                    if (slowdown > max_slowdown)
+                        max_slowdown = slowdown;
                 }
             }
         }
     }
 
-    XBT_INFO("Makespan=%lf, scheduling_time=%Lf", makespan, seconds_used_by_scheduler);
+    output_map["nb_jobs"] = to_string(nb_jobs);
+    output_map["nb_jobs_finished"] = to_string(nb_jobs_finished);
+    output_map["nb_jobs_success"] = to_string(nb_jobs_success);
+    output_map["nb_jobs_killed"] = to_string(nb_jobs_killed);
+    output_map["success_rate"] = to_string((double)nb_jobs_success/nb_jobs);
+
+    output_map["makespan"] = to_string((double)makespan);
+    output_map["mean_waiting_time"] = to_string((double)sum_waiting_time/nb_jobs);
+    output_map["mean_turnaround_time"] = to_string((double)sum_turnaround_time/nb_jobs);
+    output_map["mean_slowdown"] = to_string((double)sum_slowdown/nb_jobs);
+    output_map["max_waiting_time"] = to_string((double)max_waiting_time);
+    output_map["max_turnaround_time"] = to_string((double)max_turnaround_time);
+    output_map["max_slowdown"] = to_string((double)max_slowdown);
+
+    output_map["nb_computing_machines"] = to_string(context->machines.nb_machines());
+
+    XBT_INFO("Makespan=%lf, scheduling_time=%lf", (double)makespan, (double)seconds_used_by_scheduler);
+
     Rational total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
+    output_map["consumed_joules"] = to_string((double) total_consumed_energy);
+
 
     // Let's compute machine-related metrics
-    vector<string> machine_oriented_header_substrings;
-    vector<string> machine_oriented_values_substrings;
     map<MachineState, Rational> time_spent_in_each_state;
     const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
                                                  MachineState::COMPUTING,
@@ -827,38 +858,21 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
             time_spent_in_each_state[state] += machine->time_spent_in_each_state.at(state);
 
     for (const MachineState & state : machine_states)
+        output_map["time_" + machine_state_to_string(state)] = to_string((double)time_spent_in_each_state[state]);
+
+
+    // Let's write the output map into the file
+    vector<string> keys, values;
+    for (const auto mit : output_map)
     {
-        machine_oriented_header_substrings.push_back("time_" + machine_state_to_string(state));
-        machine_oriented_values_substrings.push_back(to_string((double)time_spent_in_each_state[state]));
+        keys.push_back(mit.first);
+        values.push_back(mit.second);
     }
 
-    string machine_oriented_metrics_header = boost::algorithm::join(machine_oriented_header_substrings, ",");
-    string machine_oriented_metrics_values = boost::algorithm::join(machine_oriented_values_substrings, ",");
+    f << boost::algorithm::join(keys, ",") << "\n";
+    f << boost::algorithm::join(values, ",") << "\n";
 
-    char * buf;
-    int ret = asprintf(&buf, "nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,"
-                       "makespan,max_turnaround_time,simulation_time,scheduling_time,"
-                       "jobs_execution_time_boundary_ratio,consumed_joules,%s\n",
-                       machine_oriented_metrics_header.c_str());
-    xbt_assert(ret != -1, "asprintf failed (buffer too small?)");
-
-    f << buf;
-    free(buf);
-
-    ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%g,%s\n",
-                   nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed,
-                   (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time,
-                   (double) seconds_used_by_the_whole_simulation,
-                   (double) seconds_used_by_scheduler,
-                   max_job_execution_time / min_job_execution_time,
-                   (double) total_consumed_energy,
-                   machine_oriented_metrics_values.c_str());
-    xbt_assert(ret != -1, "asprintf failed (buffer too small?)");
-
-    (void) ret; // Avoids a warning if assertions are ignored
-
-    f << buf;
-    free(buf);
+    f.close();
 }
 
 PStateChangeTracer::PStateChangeTracer()

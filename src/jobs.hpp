@@ -10,6 +10,7 @@
 
 #include <rapidjson/document.h>
 
+#include "exact_numbers.hpp"
 #include "machine_range.hpp"
 
 class Profiles;
@@ -37,16 +38,16 @@ struct Job
     int number; //!< The job unique number within its workload
     std::string id; //!< The job unique identifier
     std::string profile; //!< The job profile name. The corresponding profile tells how the job should be computed
-    double submission_time; //!< The job submission time: The time at which the becomes available
-    double walltime; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed
+    Rational submission_time; //!< The job submission time: The time at which the becomes available
+    Rational walltime; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed
     int required_nb_res; //!< The number of resources the job is requested to be executed on
 
     std::string json_description; //!< The JSON description of the job
 
     long double consumed_energy; //!< The sum, for each machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
 
-    double starting_time; //!< The time at which the job starts to be executed.
-    double runtime; //!< The amount of time during which the job has been executed
+    Rational starting_time; //!< The time at which the job starts to be executed.
+    Rational runtime; //!< The amount of time during which the job has been executed
     MachineRange allocation; //!< The machines on which the job has been executed.
     JobState state; //!< The current state of the job
 
