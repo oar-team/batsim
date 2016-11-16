@@ -192,7 +192,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
     }
 
     auto end = chrono::steady_clock::now();
-    Rational elapsed_microseconds = chrono::duration <long double, micro> (end - start).count();
+    Rational elapsed_microseconds = (double) chrono::duration <long double, micro> (end - start).count();
     context->microseconds_used_by_scheduler += elapsed_microseconds;
 
     /*
