@@ -44,7 +44,7 @@ before_install:
 install:
   # Install """up-to-date""" Boost
   - sudo apt update
-  - sudo apt install -y libboost-dev/xenial
+  - sudo apt install -y libboost-all-dev/xenial
 
   # Install SimGrid
   - cd ${BATSIM_BASE_DIR}
