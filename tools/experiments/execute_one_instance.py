@@ -487,7 +487,8 @@ def execute_one_instance(working_directory,
                          batsim_command,
                          sched_command,
                          variables_filename,
-                         timeout = None):
+                         timeout = None,
+                         do_not_execute = False):
     if timeout == None:
         timeout = 3600
 
@@ -510,6 +511,11 @@ def execute_one_instance(working_directory,
     create_file_from_command(command = sched_command,
                              output_filename = sched_script_filename,
                              variables_definition_filename = variables_filename)
+
+    if do_not_execute == True:
+        logger.info('Skipping the execution of the instance because '
+                    'do_not_execute is True.')
+        sys.exit(4)
 
     # Let's create lifecycle handlers, which will manage what to do on process's events
     batsim_lifecycle_handler = BatsimLifecycleHandler()
@@ -616,10 +622,19 @@ Examples of such input files can be found in the subdirectory instance_examples.
                           'either absolute or relative to the working directory. '
                           ' If unset, the working directory is used instead')
 
-    p.add_argument('--post_only',
+    g = p.add_mutually_exclusive_group()
+
+    g.add_argument('--post_only',
                    action = 'store_true',
                    help = 'If set, only the post commands of this instance will '
                           'be computed.')
+
+    g.add_argument('--do_not_execute',
+                   action = 'store_true',
+                   help = 'If set, the Batsim+scheduler instance is not '
+                          'executed, only the precommands are. The execution '
+                          'scripts should also be generated. Furthermore, post '
+                          'commands will be skipped.')
 
     args = p.parse_args()
 
@@ -658,6 +673,11 @@ Examples of such input files can be found in the subdirectory instance_examples.
 
     if args.output_directory:
         output_directory = args.output_directory
+
+    do_not_execute = False
+    if args.do_not_execute:
+        do_not_execute = True
+
 
     # Let's add some variables
     variables['working_directory'] = working_directory
@@ -731,7 +751,8 @@ Examples of such input files can be found in the subdirectory instance_examples.
                                     batsim_command = batsim_command,
                                     sched_command = sched_command,
                                     variables_filename = variables_filename,
-                                    timeout = timeout):
+                                    timeout = timeout,
+                                    do_not_execute = do_not_execute):
             sys.exit(2)
 
     # Commands after instance execution

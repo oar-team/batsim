@@ -134,7 +134,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
             MainArguments::WorkflowDescription desc;
             desc.filename = absolute_filename(workflow_filename);
             desc.name = generate_sha1_string(desc.filename);
-	    desc.workload_name = desc.name;
+            desc.workload_name = desc.name;
             desc.start_time = workflow_start_time;
 
             XBT_INFO("Workflow '%s' corresponds to workflow file '%s'.", desc.name.c_str(), desc.filename.c_str());
@@ -175,6 +175,9 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     case 'm':
         main_args->master_host_name = arg;
         break;
+    case 'f':
+        main_args->pfs_host_name = arg;
+        break;
     case 'P':
     {
         int ivalue = stoi(arg);
@@ -200,6 +203,9 @@ int parse_opt (int key, char *arg, struct argp_state *state)
         break;
     case 'T':
         main_args->enable_schedule_tracing = false;
+        break;
+    case 'U':
+        main_args->enable_machine_state_tracing = false;
         break;
     case 'v':
     {
@@ -236,23 +242,27 @@ bool parse_main_args(int argc, char * argv[], MainArguments & main_args)
 {
     struct argp_option options[] =
     {
+        // Required parameters (p is always required, |w| + |W] must be >= 1)
         {"platform", 'p', "FILENAME", 0, "Platform to be simulated by SimGrid. Required.", 0},
         {"workload", 'w', "FILENAME", 0, "Workload to be submitted to the platform. Required unless a workflow is submitted.", 0},
         {"workflow", 'W', "FILENAME[:start_time]", 0, "Workflow to be submitted to the platform, with an optional start time. Required unless a workload is submitted.", 0},
 
-	{"ignore-workflow-beyond-last-workflow", 'k', 0, 0, "Ignore workload jobs that occur after all workflows have completed, if any, as completed", 0},
+        // Optional parameters
         {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output. Default value: 'out'", 0},
         {"energy-plugin", 'E', 0, 0, "Enables energy-aware experiments", 0},
         {"allow-space-sharing", 'h', 0, 0, "Allows space sharing: the same resource can compute several jobs at the same time", 0},
         {"redis-hostname", 'H', "HOSTNAME", 0, "Sets the host name of the remote Redis (data storage) server.", 0},
+        {"ignore-workflow-beyond-last-workflow", 'k', 0, 0, "Ignore workload jobs that occur after all workflows have completed, if any, as completed", 0},
         {"limit-machine-count", 'l', "M", 0, "Allows to limit the number of computing machines to use. If M == -1 (default), all the machines described in PLATFORM_FILE are used (but the master_host). If M >= 1, only the first M machines will be used to comupte jobs.", 0},
         {"limit-machine-count-by-worload", 'L', 0, 0, "If set, allows to limit the number of computing machines to use. This number is read from the workload file. If both limit-machine-count and limit-machine-count-by-worload are set, the minimum of the two will be used.", 0},
         {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks. Default value: 'master_host'", 0},
+        {"pfs-host", 'f', "NAME", 0, "The name of the host in PLATFORM_FILE which will be the parallel filesystem target as data sink/source. Default value: 'pfs_host'", 0},
         {"redis-port", 'P', "PORT", 0, "Sets the port of the remote Redis (data storage) server.", 0},
         {"quiet", 'q', 0, 0, "Shortcut for --verbosity=quiet", 0},
         {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename. Default value: '/tmp/bat_socket'", 0},
         {"process-tracing", 't', 0, 0, "Enables SimGrid process tracing (shortcut for SimGrid options ----cfg=tracing:1 --cfg=tracing/msg/process:1)", 0},
         {"disable-schedule-tracing", 'T', 0, 0, "If set, the tracing of the schedule is disabled (the output file _schedule.trace will not be exported)", 0},
+        {"disable-machine-state-tracing", 'U', 0, 0, "If set, the tracing of the machine states is disabled (the output file _machine_states.csv will not be exported)", 0},
         {"verbosity", 'v', "VERBOSITY_LEVEL", 0, "Sets the Batsim verbosity level. Available values are : quiet, network-only, information (default), debug.", 0},
         {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
     };
@@ -461,6 +471,7 @@ int main(int argc, char * argv[])
     context.energy_used = main_args.energy_used;
     context.allow_space_sharing = main_args.allow_space_sharing;
     context.trace_schedule = main_args.enable_schedule_tracing;
+    context.trace_machine_states = main_args.enable_machine_state_tracing;
     context.simulation_start_time = chrono::high_resolution_clock::now();
 
     context.terminate_with_last_workflow = main_args.terminate_with_last_workflow;

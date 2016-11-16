@@ -16,11 +16,12 @@
  */
 enum class ProfileType
 {
-    DELAY                       //!< The profile is a delay. Its data is of type DelayProfileData
-    ,MSG_PARALLEL               //!< The profile is composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
-    ,MSG_PARALLEL_HOMOGENEOUS   //!< The profile is a homogeneous MSG one. Its data is of type MsgParallelHomogeneousProfileData
-    ,SMPI                       //!< The profile is a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
-    ,SEQUENCE                   //!< The profile is non-atomic: it is composed of a sequence of other profiles
+    DELAY                           //!< The profile is a delay. Its data is of type DelayProfileData
+    ,MSG_PARALLEL                   //!< The profile is composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
+    ,MSG_PARALLEL_HOMOGENEOUS       //!< The profile is a homogeneous MSG one. Its data is of type MsgParallelHomogeneousProfileData
+    ,SMPI                           //!< The profile is a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
+    ,SEQUENCE                       //!< The profile is non-atomic: it is composed of a sequence of other profiles
+    ,MSG_PARALLEL_HOMOGENEOUS_PFS0  //!< The profile is a homogeneous MSG for simple parallel filesystem. Its data is of type MsgParallelHomogeneousPFS0ProfileData             
 };
 
 /**
@@ -106,6 +107,14 @@ struct SequenceProfileData
 {
     int repeat;  //!< The number of times the sequence must be repeated
     std::vector<std::string> sequence; //!< The sequence of profile names, executed in this order
+};
+
+/**
+ * @brief The data associated to MSG_PARALLEL_HOMOGENEOUS_PFS0 profiles
+ */
+struct MsgParallelHomogeneousPFS0ProfileData
+{
+    double size; //!< The size of data per compute node to transfer to pfs_machine (simulate a simple I/O traffic model)
 };
 
 /**

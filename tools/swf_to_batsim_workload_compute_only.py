@@ -40,6 +40,11 @@ parser = argparse.ArgumentParser(description='Reads a SWF (Standard Workload For
 parser.add_argument('inputSWF', type=argparse.FileType('r'),
                     help='The input SWF file')
 parser.add_argument('outputJSON', type=str, help='The output JSON file')
+
+parser.add_argument('-cs', '--computationSpeed',
+                    type=float, required=True,
+                    help='The computation speed of the machines, in number of floating-point operations per second. This parameter is used to convert logged seconds to a number of floating-point operations')
+
 parser.add_argument('-jwf', '--jobWalltimeFactor',
                     type=float, default=2,
                     help='Jobs walltimes are computed by the formula max(givenWalltime, jobWalltimeFactor*givenRuntime)')
@@ -119,7 +124,9 @@ for (job_id, nb_res, run_time, submit_time, profile, walltime) in jobs:
 # Let's generate a dict of dictionaries for the profiles
 dprofs = {}
 for profile in profiles:
-	dprofs[str(profile)] = {'type':'delay', 'delay':profile}
+	dprofs[str(profile)] = {'type':'msg_par_hg',
+							'cpu':profile * args.computationSpeed,
+							'com':0.0}
 
 platform_size = max([nb_res for (job_id, nb_res, run_time, submit_time,
                                  profile, walltime) in jobs])

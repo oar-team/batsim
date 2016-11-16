@@ -17,6 +17,7 @@
 #include <float.h>
 
 #include "context.hpp"
+#include "jobs.hpp"
 
 using namespace std;
 
@@ -30,6 +31,12 @@ void prepare_batsim_outputs(BatsimContext * context)
         context->paje_tracer.set_filename(context->export_prefix + "_schedule.trace");
         context->machines.set_tracer(&context->paje_tracer);
         context->paje_tracer.initialize(context, MSG_get_clock());
+    }
+
+    if (context->trace_machine_states)
+    {
+        context->machine_state_tracer.set_context(context);
+        context->machine_state_tracer.set_filename(context->export_prefix + "_machine_states.csv");
     }
 
     if (context->energy_used)
@@ -74,6 +81,12 @@ void finalize_batsim_outputs(BatsimContext * context)
     // Schedule (Pajé)
     if (context->trace_schedule)
         context->paje_tracer.finalize(context, MSG_get_clock());
+
+    if (context->trace_machine_states)
+    {
+        context->machine_state_tracer.flush();
+        context->machine_state_tracer.close_buffer();
+    }
 
     // Energy-related output
     if (context->energy_used)
@@ -435,9 +448,11 @@ void PajeTracer::finalize(const BatsimContext * context, double time)
     XBT_INFO("PajeTracer finalized");
 }
 
-void PajeTracer::add_job_launching(int jobID, const std::vector<int> & usedMachineIDs, double time)
+void PajeTracer::add_job_launching(const Job * job,
+                                   const std::vector<int> & used_machine_ids,
+                                   double time)
 {
-    (void) jobID;
+    (void) job;
     xbt_assert(state == INITIALIZED, "Bad addJobLaunching call: the PajeTracer object is not initialized or had been finalized");
 
     const int buf_size = 256;
@@ -448,7 +463,7 @@ void PajeTracer::add_job_launching(int jobID, const std::vector<int> & usedMachi
     if (_log_launchings)
     {
         // Let's change the state of all the machines which launch the job
-        for (const int & machineID : usedMachineIDs)
+        for (const int & machineID : used_machine_ids)
         {
             nb_printed = snprintf(buf, buf_size,
                                   "%d %lf %s %s%d %s\n",
@@ -463,9 +478,11 @@ void PajeTracer::add_job_launching(int jobID, const std::vector<int> & usedMachi
     free(buf);
 }
 
-void PajeTracer::register_new_job(int jobID)
+void PajeTracer::register_new_job(const Job *job)
 {
-    xbt_assert(_jobs.find(jobID) == _jobs.end(), "Cannot register new job %d: it already exists", jobID);
+    xbt_assert(_jobs.find(job) == _jobs.end(),
+               "Cannot register new job %s: it already exists", job->id);
+
     const int buf_size = 256;
     int nb_printed;
     char * buf = (char*) malloc(sizeof(char) * buf_size);
@@ -473,19 +490,20 @@ void PajeTracer::register_new_job(int jobID)
 
     // Let's create a state value corresponding to this job
     nb_printed = snprintf(buf, buf_size,
-                          "%d %s%d %s \"%d\" %s\n",
-                          DEFINE_ENTITY_VALUE, jobPrefix, jobID, machineState, jobID, _colors[jobID % (int)_colors.size()].c_str());
+                          "%d %s%s %s \"%s\" %s\n",
+                          DEFINE_ENTITY_VALUE, jobPrefix, job->id.c_str(), machineState,
+                          job->id.c_str(), _colors[job->number % (int)_colors.size()].c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
     _wbuf->append_text(buf);
 
-    _jobs[jobID] = jobPrefix + to_string(jobID);
+    _jobs[job] = jobPrefix + job->id;
 
     free(buf);
 }
 
-void PajeTracer::set_machine_idle(int machineID, double time)
+void PajeTracer::set_machine_idle(int machine_id, double time)
 {
     const int buf_size = 256;
     int nb_printed;
@@ -494,7 +512,7 @@ void PajeTracer::set_machine_idle(int machineID, double time)
 
     nb_printed = snprintf(buf, buf_size,
                           "%d %lf %s %s%d %s\n",
-                          SET_STATE, time, machineState, machinePrefix, machineID, mstateWaiting);
+                          SET_STATE, time, machineState, machinePrefix, machine_id, mstateWaiting);
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -503,13 +521,13 @@ void PajeTracer::set_machine_idle(int machineID, double time)
     free(buf);
 }
 
-void PajeTracer::set_machine_as_computing_job(int machineID, int jobID, double time)
+void PajeTracer::set_machine_as_computing_job(int machine_id, const Job * job, double time)
 {
-    auto mit = _jobs.find(jobID);
+    auto mit = _jobs.find(job);
     if (mit == _jobs.end())
     {
-        register_new_job(jobID);
-        mit = _jobs.find(jobID);
+        register_new_job(job);
+        mit = _jobs.find(job);
     }
 
     const int buf_size = 256;
@@ -519,7 +537,8 @@ void PajeTracer::set_machine_as_computing_job(int machineID, int jobID, double t
 
     nb_printed = snprintf(buf, buf_size,
                           "%d %lf %s %s%d %s\n",
-                          SET_STATE, time, machineState, machinePrefix, machineID, mit->second.c_str());
+                          SET_STATE, time, machineState, machinePrefix, machine_id,
+                          mit->second.c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -528,7 +547,8 @@ void PajeTracer::set_machine_as_computing_job(int machineID, int jobID, double t
     free(buf);
 }
 
-void PajeTracer::add_job_kill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines)
+void PajeTracer::add_job_kill(const Job *job, const MachineRange & used_machine_ids,
+                              double time, bool associate_kill_to_machines)
 {
     xbt_assert(state == INITIALIZED, "Bad addJobKill call: the PajeTracer object is not initialized or had been finalized");
 
@@ -539,22 +559,23 @@ void PajeTracer::add_job_kill(int jobID, const MachineRange & usedMachineIDs, do
 
     // Let's add a kill event associated with the scheduler
     nb_printed = snprintf(buf, buf_size,
-                          "%d %lf %s %s \"%d\"\n",
-                          NEW_EVENT, time, killEventKiller, killer, jobID);
+                          "%d %lf %s %s \"%s\"\n",
+                          NEW_EVENT, time, killEventKiller, killer, job->id.c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
     _wbuf->append_text(buf);
 
-    if (associateKillToMachines)
+    if (associate_kill_to_machines)
     {
         // Let's add a kill event associated with each machine
-        for (auto it = usedMachineIDs.elements_begin(); it != usedMachineIDs.elements_end(); ++it)
+        for (auto it = used_machine_ids.elements_begin(); it != used_machine_ids.elements_end(); ++it)
         {
             int machine_id = *it;
             nb_printed = snprintf(buf, buf_size,
-                                  "%d %lf %s %s%d \"%d\"\n",
-                                  NEW_EVENT, time, killEventMachine, machinePrefix, machine_id, jobID);
+                                  "%d %lf %s %s%d \"%s\"\n",
+                                  NEW_EVENT, time, killEventMachine, machinePrefix, machine_id,
+                                  job->id.c_str());
             xbt_assert(nb_printed < buf_size - 1,
                        "Writing error: buffer has been completely filled, some information might "
                        "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -586,9 +607,9 @@ void PajeTracer::add_global_utilization(double utilization, double time)
     free(buf);
 }
 
-void PajeTracer::generate_colors(int colorCount)
+void PajeTracer::generate_colors(int color_count)
 {
-    xbt_assert(colorCount > 0);
+    xbt_assert(color_count > 0);
 
     double h, s=1, v=1, r, g, b;
     const int buf_size = 256;
@@ -596,8 +617,8 @@ void PajeTracer::generate_colors(int colorCount)
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
-    double hueFraction = 360.0 / colorCount;
-    for (int i = 0; i < colorCount; ++i)
+    double hueFraction = 360.0 / color_count;
+    for (int i = 0; i < color_count; ++i)
     {
         h = i * hueFraction;
         hsv_to_rgb(h,s,v, r,g,b);
@@ -667,7 +688,6 @@ void PajeTracer::hsv_to_rgb(double h, double s, double v, double & r, double & g
     }
 }
 
-
 void export_jobs_to_csv(const std::string &filename, const BatsimContext *context)
 {
     ofstream f(filename, ios_base::trunc);
@@ -698,16 +718,16 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
                     int ret = asprintf(&buf, "%d,%s,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
                                        job->number*10 + workload_num, // job_id
                                        workload_name.c_str(), // workload_name
-                                       job->submission_time, // submission_time
+                                       (double)job->submission_time, // submission_time
                                        job->required_nb_res, // requested_number_of_processors
-                                       job->walltime, // requested_time
+                                       (double)job->walltime, // requested_time
                                        success, // success
-                                       job->starting_time, // starting_time
-                                       job->runtime, // execution_time
-                                       job->starting_time + job->runtime, // finish_time
-                                       job->starting_time - job->submission_time, // waiting_time
-                                       job->starting_time + job->runtime - job->submission_time, // turnaround_time
-                                       (job->starting_time + job->runtime - job->submission_time) / job->runtime, // stretch
+                                       (double)job->starting_time, // starting_time
+                                       (double)job->runtime, // execution_time
+                                       (double)(job->starting_time + job->runtime), // finish_time
+                                       (double)(job->starting_time - job->submission_time), // waiting_time
+                                       (double)(job->starting_time + job->runtime - job->submission_time), // turnaround_time
+                                       (double)((job->starting_time + job->runtime - job->submission_time) / job->runtime), // stretch
                                        job->consumed_energy // consumed energy
                                        );
                     (void) ret; // Avoids a warning if assertions are ignored
@@ -732,78 +752,127 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
 
-    f << "nb_jobs,nb_jobs_finished,nb_jobs_success,nb_jobs_killed,success_rate,makespan,max_turnaround_time,simulation_time,scheduling_time,jobs_execution_time_boundary_ratio,consumed_joules\n";
-
     int nb_jobs = 0;
     int nb_jobs_finished = 0;
     int nb_jobs_success = 0;
     int nb_jobs_killed = 0;
-    double makespan = 0;
-    double max_turnaround_time = 0;
-    double min_job_execution_time = DBL_MAX;
-    double max_job_execution_time = DBL_MIN;
+    Rational makespan = 0;
+    Rational sum_waiting_time = 0;
+    Rational sum_turnaround_time = 0;
+    Rational sum_slowdown = 0;
+    Rational max_waiting_time = 0;
+    Rational max_turnaround_time = 0;
+    Rational max_slowdown = 0;
 
-    long double seconds_used_by_scheduler = context->microseconds_used_by_scheduler / (long double)1e6;
+    map<string, string> output_map;
+
+    Rational seconds_used_by_scheduler = context->microseconds_used_by_scheduler / (Rational)1e6;
+    output_map["scheduling_time"] = to_string((double) seconds_used_by_scheduler);
 
     // Let's compute the simulation time
     chrono::duration<long double> diff = context->simulation_end_time - context->simulation_start_time;
-    long double seconds_used_by_the_whole_simulation = diff.count();
+    Rational seconds_used_by_the_whole_simulation = diff.count();
+    output_map["simulation_time"] = to_string((double) seconds_used_by_the_whole_simulation);
 
+    // Let's compute jobs-oriented metrics
     for (const auto mit : context->workloads.workloads())
     {
         const Workload * workload = mit.second;
 
-    if(workload->jobs)
-      {
-        const auto & jobs = workload->jobs->jobs();
-        for (const auto & mit : jobs)
+        if(workload->jobs != nullptr)
         {
-            Job * job = mit.second;
-
-            if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+            const auto & jobs = workload->jobs->jobs();
+            for (const auto & mit : jobs)
             {
-                nb_jobs_finished++;
+                Job * job = mit.second;
+                nb_jobs++;
 
-                if (job->runtime < min_job_execution_time)
-                    min_job_execution_time = job->runtime;
-                if (job->runtime > max_job_execution_time)
-                    max_job_execution_time = job->runtime;
+                if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
+                    job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+                {
+                    nb_jobs_finished++;
 
-                if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
-                    nb_jobs_success++;
-                else
-                    nb_jobs_killed++;
+                    if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
+                        nb_jobs_success++;
+                    else
+                        nb_jobs_killed++;
 
-                double completion_time = job->starting_time + job->runtime;
-                double turnaround_time = job->starting_time + job->runtime - job->submission_time;
+                    Rational waiting_time = job->starting_time - job->submission_time;
+                    Rational completion_time = job->starting_time + job->runtime;
+                    Rational turnaround_time = completion_time - job->submission_time;
+                    Rational slowdown = turnaround_time / job->runtime;
 
-                if (completion_time > makespan)
-                    makespan = completion_time;
+                    sum_waiting_time += waiting_time;
+                    sum_turnaround_time += turnaround_time;
+                    sum_slowdown += slowdown;
 
-                if (turnaround_time > max_turnaround_time)
-                    max_turnaround_time = turnaround_time;
+                    if (completion_time > makespan)
+                        makespan = completion_time;
+
+                    if (waiting_time > max_waiting_time)
+                        max_waiting_time = waiting_time;
+
+                    if (turnaround_time > max_turnaround_time)
+                        max_turnaround_time = turnaround_time;
+
+                    if (slowdown > max_slowdown)
+                        max_slowdown = slowdown;
+                }
             }
         }
-      }
     }
 
-    XBT_INFO("Makespan=%lf, scheduling_time=%Lf", makespan, seconds_used_by_scheduler);
+    output_map["nb_jobs"] = to_string(nb_jobs);
+    output_map["nb_jobs_finished"] = to_string(nb_jobs_finished);
+    output_map["nb_jobs_success"] = to_string(nb_jobs_success);
+    output_map["nb_jobs_killed"] = to_string(nb_jobs_killed);
+    output_map["success_rate"] = to_string((double)nb_jobs_success/nb_jobs);
 
-    long double total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
+    output_map["makespan"] = to_string((double)makespan);
+    output_map["mean_waiting_time"] = to_string((double)sum_waiting_time/nb_jobs);
+    output_map["mean_turnaround_time"] = to_string((double)sum_turnaround_time/nb_jobs);
+    output_map["mean_slowdown"] = to_string((double)sum_slowdown/nb_jobs);
+    output_map["max_waiting_time"] = to_string((double)max_waiting_time);
+    output_map["max_turnaround_time"] = to_string((double)max_turnaround_time);
+    output_map["max_slowdown"] = to_string((double)max_slowdown);
 
-    char * buf;
-    int ret = asprintf(&buf, "%d,%d,%d,%d,%lf,%lf,%lf,%Lf,%Lf,%lf,%Lg\n",
-                       nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed,
-                       (double)nb_jobs_success/nb_jobs, makespan, max_turnaround_time,
-                       seconds_used_by_the_whole_simulation,
-                       seconds_used_by_scheduler,
-                       max_job_execution_time / min_job_execution_time,
-                       total_consumed_energy);
-    (void) ret; // Avoids a warning if assertions are ignored
-    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+    output_map["nb_computing_machines"] = to_string(context->machines.nb_machines());
 
-    f << buf;
-    free(buf);
+    XBT_INFO("Makespan=%lf, scheduling_time=%lf", (double)makespan, (double)seconds_used_by_scheduler);
+
+    Rational total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
+    output_map["consumed_joules"] = to_string((double) total_consumed_energy);
+
+
+    // Let's compute machine-related metrics
+    map<MachineState, Rational> time_spent_in_each_state;
+    const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
+                                                 MachineState::COMPUTING,
+                                                 MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
+    for (const MachineState & state : machine_states)
+        time_spent_in_each_state[state] = 0;
+
+    for (const Machine * machine : context->machines.machines())
+        for (const MachineState & state : machine_states)
+            time_spent_in_each_state[state] += machine->time_spent_in_each_state.at(state);
+
+    for (const MachineState & state : machine_states)
+        output_map["time_" + machine_state_to_string(state)] = to_string((double)time_spent_in_each_state[state]);
+
+
+    // Let's write the output map into the file
+    vector<string> keys, values;
+    for (const auto mit : output_map)
+    {
+        keys.push_back(mit.first);
+        values.push_back(mit.second);
+    }
+
+    f << boost::algorithm::join(keys, ",") << "\n";
+    f << boost::algorithm::join(values, ",") << "\n";
+
+    f.close();
 }
 
 PStateChangeTracer::PStateChangeTracer()
@@ -946,4 +1015,86 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     free(buf);
 
     return energy;
+}
+
+MachineStateTracer::MachineStateTracer()
+{
+
+}
+
+MachineStateTracer::~MachineStateTracer()
+{
+    if (_wbuf != nullptr)
+    {
+        delete _wbuf;
+        _wbuf = nullptr;
+    }
+}
+
+void MachineStateTracer::set_context(BatsimContext *context)
+{
+    _context = context;
+}
+
+void MachineStateTracer::set_filename(const string &filename)
+{
+    xbt_assert(_wbuf == nullptr, "Double call of MachineStateTracer::set_filename");
+    _wbuf = new WriteBuffer(filename);
+
+    vector<string> header_substrings;
+    const vector<MachineState> machine_states = {MachineState::SLEEPING,
+                                                 MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING,
+                                                 MachineState::IDLE,
+                                                 MachineState::COMPUTING};
+    for (const MachineState & state : machine_states)
+        header_substrings.push_back("nb_" + machine_state_to_string(state));
+
+    string header = "time," + boost::algorithm::join(header_substrings, ",") + "\n";
+
+    _wbuf->append_text(header.c_str());
+    _wbuf->flush_buffer();
+}
+
+void MachineStateTracer::write_machine_states(double date)
+{
+    xbt_assert(_context != nullptr);
+    xbt_assert(_wbuf != nullptr);
+
+    const std::map<MachineState, int> & numbers = _context->machines.nb_machines_in_each_state();
+
+    const int buf_size = 256;
+    int nb_printed;
+    char * buf = (char*) malloc(sizeof(char) * buf_size);
+    xbt_assert(buf != 0, "Couldn't allocate memory");
+
+    nb_printed = snprintf(buf, buf_size, "%g,%d,%d,%d,%d,%d\n",
+                          date,
+                          numbers.at(MachineState::SLEEPING),
+                          numbers.at(MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING),
+                          numbers.at(MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING),
+                          numbers.at(MachineState::IDLE),
+                          numbers.at(MachineState::COMPUTING));
+    xbt_assert(nb_printed < buf_size - 1,
+               "Writing error: buffer has been completely filled, some information might "
+               "have been lost. Please increase Batsim's output temporary buffers' size");
+    xbt_assert(_wbuf != nullptr);
+    _wbuf->append_text(buf);
+
+    free(buf);
+}
+
+void MachineStateTracer::flush()
+{
+    xbt_assert(_wbuf != nullptr);
+
+    _wbuf->flush_buffer();
+}
+
+void MachineStateTracer::close_buffer()
+{
+    xbt_assert(_wbuf != nullptr);
+
+    delete _wbuf;
+    _wbuf = nullptr;
 }

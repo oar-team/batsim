@@ -116,7 +116,7 @@ public:
     std::vector<Task *> parents; //!< The parent
     std::vector<Task *> children; //!< The children
     int nb_parent_completed; //!< The number of preceding tasks completed
-    int depth = 0; // The task's top level
+    int depth = 0; //!< The task's top level
 };
 
 
@@ -190,7 +190,7 @@ public:
      */
     bool size() const;
 
- 
+
     /**
      * @brief Gets the internal map
      * @return The internal map

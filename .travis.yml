@@ -87,6 +87,14 @@ install:
   # Install sortedcontainers (used in some schedulers, used by the tests)
   - pip install --user -U sortedcontainers
 
+  # Install pandas (used by the experiment management scripts)
+  - pip install --user -U pandas
+
+  # Install hashlib (used by the experiment management scripts)
+  # Quick and dirty fix (http://askubuntu.com/questions/770262/python-hashlib-fails-to-install-pip)
+  - sudo rm /usr/lib/python2.7/lib-dynload/_hashlib.x86_64-linux-gnu.so
+  - pip install --user -U hashlib
+
 # Enable C++ support
 language: cpp
 

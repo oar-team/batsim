@@ -113,9 +113,8 @@ int uds_server_process(int argc, char *argv[])
             submitters.erase(message->submitter_name);
 
             nb_submitters_finished++;
-	    if (message->is_workflow_submitter) {
-	      nb_workflow_submitters_finished++;
-            }
+            if (message->is_workflow_submitter)
+                nb_workflow_submitters_finished++;
             XBT_INFO("A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
 
             if (!all_jobs_submitted_and_completed &&
@@ -153,7 +152,8 @@ int uds_server_process(int argc, char *argv[])
             nb_completed_jobs++;
             Job * job = context->workloads.job_at(message->job_id);
 
-            XBT_INFO( "Job %s-%d COMPLETED. %d jobs completed so far", job->workload->name.c_str(), job->number, nb_completed_jobs);
+            XBT_INFO("Job %s-%d COMPLETED. %d jobs completed so far",
+                     job->workload->name.c_str(),job->number, nb_completed_jobs);
 
             send_buffer += '|' + std::to_string(MSG_get_clock()) + ":C:" + message->job_id.to_string();
             XBT_DEBUG( "Message to send to scheduler: %s", send_buffer.c_str());
@@ -173,15 +173,13 @@ int uds_server_process(int argc, char *argv[])
 
         case IPMessageType::JOB_SUBMITTED:
         {
-
-	    // Ignore all submissions if -k was specified and all workflows
-            // have completed
-	    if ((context->workflows.size() != 0) && (context->terminate_with_last_workflow) && 
-                (nb_workflow_submitters_finished == context->workflows.size())) {
-	      XBT_INFO("Ignoring Job due to -k command-line option");
-              break;
+            // Ignore all submissions if -k was specified and all workflows have completed
+            if ((context->workflows.size() != 0) && (context->terminate_with_last_workflow) &&
+                    (nb_workflow_submitters_finished == context->workflows.size()))
+            {
+                XBT_INFO("Ignoring Job due to -k command-line option");
+                break;
             }
-	
 
             xbt_assert(task_data->data != nullptr);
             JobSubmittedMessage * message = (JobSubmittedMessage *) task_data->data;
@@ -198,6 +196,7 @@ int uds_server_process(int argc, char *argv[])
             // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
             XBT_INFO("GOT JOB: %s %d\n", message->job_id.workload_name.c_str(), message->job_id.job_number);
             Job * job = context->workloads.add_job_if_not_exists(message->job_id, context);
+            job->id = message->job_id.to_string();
 
             // Update control information
             job->state = JobState::JOB_STATE_SUBMITTED;
@@ -244,7 +243,9 @@ int uds_server_process(int argc, char *argv[])
 
             context->current_switches.add_switch(message->machine_ids, message->new_pstate);
 
-            for (auto machine_it = message->machine_ids.elements_begin(); machine_it != message->machine_ids.elements_end(); ++machine_it)
+            for (auto machine_it = message->machine_ids.elements_begin();
+                 machine_it != message->machine_ids.elements_end();
+                 ++machine_it)
             {
                 const int machine_id = *machine_it;
                 Machine * machine = context->machines[machine_id];
@@ -269,7 +270,7 @@ int uds_server_process(int argc, char *argv[])
                     }
                     else if (machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
                     {
-                        machine->state = MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING;
+                        machine->update_machine_state(MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING);
                         SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
                         args->context = context;
                         args->machine_id = machine_id;
@@ -290,7 +291,7 @@ int uds_server_process(int argc, char *argv[])
                             "Switching from a sleep pstate to a non-computation pstate on machine %d ('%s') : %d -> %d, which is forbidden",
                             machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
 
-                    machine->state = MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING;
+                    machine->update_machine_state(MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING);
                     SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
                     args->context = context;
                     args->machine_id = machine_id;
@@ -304,6 +305,9 @@ int uds_server_process(int argc, char *argv[])
                 else
                     XBT_ERROR("Machine %d ('%s') has an invalid pstate : %d", machine->id, machine->name.c_str(), curr_pstate);
             }
+
+            if (context->trace_machine_states)
+                context->machine_state_tracer.write_machine_states(MSG_get_clock());
 
         } break; // end of case PSTATE_MODIFICATION
 
@@ -425,6 +429,9 @@ int uds_server_process(int argc, char *argv[])
             if (context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate,
                                                               reply_message_content, context))
             {
+                if (context->trace_machine_states)
+                    context->machine_state_tracer.write_machine_states(MSG_get_clock());
+
                 send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" + reply_message_content;
                 XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
             }
@@ -446,6 +453,9 @@ int uds_server_process(int argc, char *argv[])
             if (context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate,
                                                               reply_message_content, context))
             {
+                if (context->trace_machine_states)
+                    context->machine_state_tracer.write_machine_states(MSG_get_clock());
+
                 send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" + reply_message_content;
                 XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
             }
