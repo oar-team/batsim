@@ -97,7 +97,7 @@ int static_job_submitter_process(int argc, char *argv[])
         for (const Job * job : jobsVector)
         {
             if (job->submission_time > previous_submission_date)
-                MSG_process_sleep((double)(job->submission_time - previous_submission_date));
+                MSG_process_sleep((double)(job->submission_time) - (double)(previous_submission_date));
             // Setting the mailbox
             //job->completion_notification_mailbox = "SOME_MAILBOX";
 
