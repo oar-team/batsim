@@ -229,7 +229,11 @@ int workflow_submitter_process(int argc, char *argv[])
       }
 
     double makespan = MSG_get_clock() - workflow->start_time;
-    XBT_INFO("WORKFLOW_MAKESPAN %s %lf  (depth = %d)\n", workflow->name.c_str(), makespan, workflow->get_maximum_depth());
+    XBT_INFO("WORKFLOW_MAKESPAN %s %lf  (depth = %d)\n", workflow->filename.c_str(), makespan, workflow->get_maximum_depth());
+    // This is a TERRIBLE exit, but the goal is to stop the simulation (don't keep simulated the workload beyond
+    // the worflow completion). This is much more brutal than the -k option. To be removed/commented-out later, but right
+    // now it saves a lot of time, and was obviously easy to implement. 
+    exit(0);
 
     /* Goodbye */
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;

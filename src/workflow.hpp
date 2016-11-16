@@ -76,6 +76,7 @@ public:
     int get_maximum_depth();
 
 public:
+    std::string filename;  //!< The DAX filename
     std::string name; //!< The Workflow name
     std::map<std::string, Task *> tasks; //!< Hashmap of all tasks
     double start_time; //!< Workflow start time
