@@ -3,8 +3,6 @@ addons:
   apt:
     packages:
       - cmake
-      - libboost-dev
-      - libboost-all-dev
       - doxygen
       - graphviz
       - python-pip
@@ -36,7 +34,17 @@ before_install:
   - cp travisci_rsa ~/.ssh/id_rsa
   - ssh-keyscan scm.gforge.inria.fr >> ~/.ssh/known_hosts
 
+  # Update apt lists
+  - cat /etc/apt/sources.list
+  - cp /etc/apt/sources.list /tmp/sources.list
+  - echo 'deb http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse' >> /tmp/sources.list
+  - echo 'deb-src http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse' >> /tmp/sources.list
+  - sudo mv /tmp/sources.list /etc/apt/sources.list
+
 install:
+  # Install """up-to-date""" Boost
+  - apt install -y libboost-dev/xenial
+
   # Install SimGrid
   - cd ${BATSIM_BASE_DIR}
   - git clone https://github.com/oar-team/simgrid-batsim.git -b batsim-compatible --depth 1 simgrid-batsim
