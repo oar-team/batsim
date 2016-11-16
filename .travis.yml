@@ -92,8 +92,9 @@ install:
 
   # Install hashlib (used by the experiment management scripts)
   # Quick and dirty fix (http://askubuntu.com/questions/770262/python-hashlib-fails-to-install-pip)
-  - sudo rm /usr/lib/python2.7/lib-dynload/_hashlib.x86_64-linux-gnu.so
-  - pip install --user -U hashlib
+  - sudo rm -f /usr/lib/python2.7/lib-dynload/_hashlib.x86_64-linux-gnu.so
+  - easy_install hashlib
+  - sudo rm -f /usr/lib/python2.7/lib-dynload/_hashlib.x86_64-linux-gnu.so
 
 # Enable C++ support
 language: cpp
