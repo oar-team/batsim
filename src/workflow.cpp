@@ -47,9 +47,16 @@ void Workflow::load_from_xml(const std::string &xml_filename)
 
     for (xml_node job = dag.child("job"); job; job = job.next_sibling("job"))
       {
-        Task *task = new Task (1, strtod(job.attribute("runtime").value(),NULL), job.attribute("id").value());
-	//std::cout << "Test : " << job.attribute("id").value() << ", duration : " << strtod(job.attribute("runtime").value(),NULL) << std::endl;
-       	//std::cout << "Test : " << job.attribute("id").value() << ", duration : " << task->execution_time << std::endl;
+	// Parse the number of processors, if any
+	int num_procs = 1;
+	if (job.attribute("num_procs")) {
+  	  num_procs = (int)strtol(job.attribute("num_procs").value(),NULL,10);
+ 	}
+	if (num_procs <= 0) {
+          num_procs = 1;
+	}
+
+        Task *task = new Task (num_procs, strtod(job.attribute("runtime").value(),NULL), job.attribute("id").value());
 
 	add_task(*task);
 
@@ -98,6 +105,8 @@ void Workflow::load_from_xml(const std::string &xml_filename)
     XBT_INFO("Checking workflow validity...");
     check_validity();
     XBT_INFO("Workflow seems to be valid.");
+
+    this->filename = xml_filename;
 }
 
 
