@@ -221,7 +221,7 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
         if len(self.data.sweeper.get_remaining()) > 0:
             # Let's get the next instance to compute
             self.comb = self.data.sweeper.get_next()
-            logger.info('\nWorker ({hostname}, {local_rank}) got comb : {comb}'.format(
+            logger.info('Worker ({hostname}, {local_rank}) got comb : {comb}'.format(
                     hostname = self.hostname,
                     local_rank = self.local_rank,
                     comb = self.comb))
@@ -297,13 +297,13 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
             self.data.sweeper.done(self.comb)
             # Logging
             logger.info('Worker ({hostname}, {local_rank}) finished comb {iid} '
-                        'successfully'.format(
+                        'successfully\n'.format(
                             hostname = self.hostname,
                             local_rank = self.local_rank,
                             iid = self.instance_id))
         else:
             logger.warning('Worker ({hostname}, {local_rank}) finished comb '
-                           '{iid} unsuccessfully'.format(
+                           '{iid} unsuccessfully\n'.format(
                             hostname = self.hostname,
                             local_rank = self.local_rank,
                             iid = self.instance_id))
