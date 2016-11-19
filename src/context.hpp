@@ -56,4 +56,5 @@ struct BatsimContext
     bool trace_machine_states;                      //!< Stores whether the machines states should be outputted
     std::string platform_filename;                  //!< The name of the platform file
     std::string export_prefix;                      //!< The output export prefix
+    int workflow_limit = 0;                         //!< limit on workflow needs
 };

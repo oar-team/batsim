@@ -151,6 +151,9 @@ int workflow_submitter_process(int argc, char *argv[])
                "which does not exist", args->workflow_name.c_str());
     Workflow * workflow = context->workflows.at(args->workflow_name);
 
+    int limit = context->workflow_limit;
+    bool not_limiting = (limit == 0);
+    int current_nb = 0;
 
     const string submitter_name = args->workflow_name + "_submitter";
 
@@ -183,7 +186,7 @@ int workflow_submitter_process(int argc, char *argv[])
 
     while((!ready_tasks.empty())||(!submitted_tasks.empty())) /* Stops when there are no more ready tasks or tasks actually running */
     {
-        while(!ready_tasks.empty()) /* we have some ready tasks to submit */
+        while((!ready_tasks.empty())&&(not_limiting || (limit > current_nb))) /* we have some ready tasks to submit */
         {
             Task *task = ready_tasks.at(0);
             ready_tasks.erase(ready_tasks.begin() + 0);
@@ -195,12 +198,14 @@ int workflow_submitter_process(int argc, char *argv[])
 
             /* Insert the task into the submitted_tasks map */
             submitted_tasks[job_key] = task;
+	    current_nb++;
         }
 
         if(!submitted_tasks.empty()) /* we are done submitting tasks, wait for one to complete */
         {
             /* Wait for callback */
             string completed_job_key = wait_for_job_completion(submitter_name);
+	    current_nb--;
 
             //XBT_INFO("TASK # %s has completed!!!\n", completed_job_key.c_str());
 
