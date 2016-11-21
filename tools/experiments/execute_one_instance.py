@@ -12,29 +12,66 @@ import sys
 import time
 import yaml
 
+class ArgumentParserError(Exception): pass
+
+class ThrowingArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        raise ArgumentParserError(message)
+
 def find_socket_from_batsim_command(batsim_command):
     split_command = shlex.split(batsim_command)
 
-    batparser = argparse.ArgumentParser(prog = split_command[0],
-                                        description = 'Batsim command parser',
-                                        add_help = False)
+    assert(len(split_command) > 1), "Invalid Batsim command: '{}'".format(
+                                    batsim_command)
 
-    batparser.add_argument("platform")
-    batparser.add_argument("workload")
+    if 'batsim' not in split_command[0]:
+        logger.warning("Batsim does not seem to be executed directly. "
+                       "This may cause this script failing at detecting what "
+                       "Batsim's socket is.")
+
+        # Let's assume Batsim's command is just prefixed.
+        # Let's find the index at which Batsim's command appears
+        found_index = -1
+
+        for i in range(1, len(split_command)):
+            if 'batsim' in split_command[i]:
+                found_index = i
+                break
+
+        if found_index == -1:
+            logger.warning("Could not find where Batsim command starts in the "
+                           "user-given command '{}'.".format(batsim_command))
+        else:
+            split_command = split_command[found_index:]
+
+    batparser = ThrowingArgumentParser(prog = split_command[0],
+                                       description = 'Batsim command parser',
+                                       add_help = False)
+
+    batparser.add_argument("-p", action='store_true')
+    batparser.add_argument("-w", "--workload", type=str)
+    batparser.add_argument("-W", "--workflow", type=str)
 
     batparser.add_argument("-e", "--export", type=str, default="out")
+    batparser.add_argument("-E", "--energy-plugin", action='store_true')
     batparser.add_argument("-h", "--allow-space-sharing", action='store_true')
     batparser.add_argument("-l", "--limit-machine-count", type=int, default=-1)
     batparser.add_argument("-L", "--limit-machine-count-by-workload", action='store_true')
     batparser.add_argument("-m", "--master-host", default="master_host")
-    batparser.add_argument("-p", "--energy-plugin", action='store_true')
     batparser.add_argument("-q", "--quiet", action='store_true')
     batparser.add_argument("-s", "--socket", type=str, default="/tmp/bat_socket")
     batparser.add_argument("-t", "--process-tracing", action='store_true')
     batparser.add_argument("-T", "--disable-schedule-tracing", action='store_true')
     batparser.add_argument("-v", "--verbosity", type=str, default="information")
+    batparser.add_argument("platform")
+    batparser.add_argument("socket")
 
-    batargs = batparser.parse_args(split_command[1:])
+    try:
+        batargs = batparser.parse_args(split_command[1:])
+    except ArgumentParserError as e:
+        logger.error("Could not retrieve Batsim's socket from Batsim's command "
+                     "'{}'. Parsing error: '{}'".format(batsim_command, e))
+        sys.exit(-1)
 
     return batargs.socket
 
@@ -63,7 +100,10 @@ def make_file_executable(filename):
     st = os.stat(filename)
     os.chmod(filename, st.st_mode | stat.S_IEXEC)
 
-def retrieve_info_from_instance(variables, working_directory, batsim_command):
+def retrieve_info_from_instance(variables,
+                                variables_declaration_order,
+                                working_directory,
+                                batsim_command):
     filename_ok = False
     while not filename_ok:
         r = random_string()
@@ -77,7 +117,7 @@ def retrieve_info_from_instance(variables, working_directory, batsim_command):
                                                                rand=r)
         filename_ok = not os.path.exists(script_filename) and not os.path.exists(output_dir_filename) and not os.path.exists(working_dir_filename) and not os.path.exists(command_filename)
 
-    put_variables_in_file(variables, script_filename)
+    put_variables_in_file(variables, variables_declaration_order, script_filename)
 
     # Let's add some directives to prepare the instance!
     text_to_add = "# Preparation\n"
@@ -120,19 +160,83 @@ def retrieve_info_from_instance(variables, working_directory, batsim_command):
 
     # Let's remove temporary files
     delete_file_if_exists(script_filename)
+
     delete_file_if_exists(working_dir_filename)
     delete_file_if_exists(output_dir_filename)
+    delete_file_if_exists(command_filename)
 
     return (working_dir, output_dir, command)
+
+def find_all_values(var_value):
+    ret = set()
+
+    if isinstance(var_value, dict):
+        for subvalue in var_value.values():
+            ret.update(find_all_values(subvalue))
+    elif isinstance(var_value, list):
+        for subvalue in var_value:
+            ret.update(subvalue)
+    else:
+        ret.add(str(var_value))
+    return ret
 
 def check_variables(variables):
     # Let's check that they have valid bash identifier names
     for var_name in variables:
-        if not re.match("^[_A-Za-z][_a-zA-Z0-9]*$", var_name):
+        if not is_valid_identifier(var_name):
             logger.error("Invalid variable name '{var_name}'".format(var_name))
-            return False
+            return (False, [])
 
-    return True
+    # Let's check whether the dependency graph is a DAG
+    # Let's initialize dependencies
+    dependencies = {}
+    for var_name in variables:
+        dependencies[var_name] = set()
+
+    # Let's compute the dependencies of each variable
+    for var_name in variables:
+        in_depth_values = find_all_values(variables[var_name])
+        logger.debug("in_depth_values of {}: {}".format(var_name, in_depth_values))
+        for potential_dependency_name in variables:
+            substr = '${' + potential_dependency_name
+            for depth_value in in_depth_values:
+                if substr in depth_value:
+                    dependencies[var_name].add(potential_dependency_name)
+
+    # Let's sort the variables by ascending number of dependencies
+    ordered = [(len(dependencies[var_name]), var_name, dependencies[var_name]) for var_name in dependencies]
+    ordered.sort()
+
+    # Let's do the DAG check while building a declaration order
+    declared_variables = set()
+    variables_declaration_order = []
+    saturated = False
+
+    while len(declared_variables) < len(variables) and not saturated:
+        saturated = True
+        for (nb_deps, var_name, deps) in ordered:
+            all_deps_declared = True
+            for dep_name in deps:
+                if dep_name not in declared_variables:
+                    all_deps_declared = False
+            if all_deps_declared:
+                declared_variables.add(var_name)
+                variables_declaration_order.append(var_name)
+                saturated = False
+                ordered.remove((nb_deps, var_name, deps))
+                logger.debug("Declared {}, declared_vars:{}".format(var_name, declared_variables))
+                break
+
+    if len(declared_variables) == len(variables):
+        return (True, variables_declaration_order)
+    else:
+        undeclared_variables = set([var_name for var_name in variables]) - declared_variables
+        undeclared_variables = list(undeclared_variables)
+        logger.error("Invalid variables: Could not find a declaration order that allows to declare these variables: {}. All variables : {}".format(undeclared_variables, variables))
+        return (False, [])
+
+def is_valid_identifier(string):
+    return re.match("^[_A-Za-z][_a-zA-Z0-9]*$", string)
 
 def variable_to_text(variables, var_name):
     text = ""
@@ -160,24 +264,21 @@ def variable_to_text(variables, var_name):
     return text
 
 def put_variables_in_file(variables,
+                          variables_declaration_order,
                           output_filename):
-    text_to_write = "#!/usr/bin/bash\n"
+    text_to_write = "#!/bin/bash\n"
 
-    special_vars = ['base_working_directory',
-                    'base_output_directory',
-                    'working_directory',
-                    'output_directory']
-
-    # Let's define all variables but special ones
+    # Let's define all variables in the specified order
     text_to_write += "\n# Variables definition\n"
-    for var_name in variables:
-        if var_name not in special_vars:
-            text_to_write += variable_to_text(variables, var_name)
 
-    # Let's add special variables in the file
-    for var_name in special_vars:
-        if var_name in variables:
-            text_to_write += variable_to_text(variables, var_name)
+    for var_name in variables_declaration_order:
+        assert(var_name in variables)
+        text_to_write += variable_to_text(variables, var_name)
+
+    # Let's export all variables
+    text_to_write +="\n# Export variables\n"
+    for var_name in variables_declaration_order:
+        text_to_write += "export {var_name}\n".format(var_name = var_name)
 
     text_to_write += "\n"
     write_string_into_file(text_to_write, output_filename)
@@ -185,14 +286,14 @@ def put_variables_in_file(variables,
 def create_file_from_command(command,
                              output_filename,
                              variables_definition_filename):
-    text_to_write = "#!/usr/bin/bash\n"
+    text_to_write = "#!/bin/bash\n"
 
     # Let's define all variables
     text_to_write += "\n# Variables definition\n"
     text_to_write += "source {}".format(variables_definition_filename)
 
     # Let's write the commands
-    text_to_write += "\n# User-specified commands\n"
+    text_to_write += "\n\n# User-specified commands\n"
     text_to_write += command
     text_to_write += "\n"
 
@@ -218,16 +319,6 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
         self.execution_data = execution_data
     def start(self, process):
         logger.info("Batsim started")
-
-        # Wait for Batsim to create the socket
-        if wait_for_batsim_to_open_connection(self.execution_data,
-                                              timeout = self.execution_data.timeout,
-                                              sock = self.execution_data.batsim_socket):
-            # Launches the scheduler
-            logger.info("Batsim's socket {} is now opened".format(self.execution_data.batsim_socket))
-            self.execution_data.sched_process.start()
-        else:
-            self.execution_data.failure = True
         self.execution_data.nb_started += 1
 
     def end(self, process):
@@ -251,9 +342,22 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
                 logger.error("Batsim ended unsucessfully (exit_code = {})".format(process.exit_code))
             else:
                 logger.error("Batsim ended unsucessfully (unknown reason)")
+
+            for (stream, sname) in [(process.stdout, 'stdout'),
+                                    (process.stderr, 'stderr')]:
+                if stream != '':
+                    max_nb_lines = 10
+                    lines = stream.split('\n')
+                    head = '\n'
+                    if len(lines) > max_nb_lines:
+                        head = '[... only the last {} lines are shown]\n'.format(max_nb_lines)
+                    logger.info('Batsim {s}:\n{h}{l}'.format(s = sname,
+                                                             h = head,
+                                                             l = '\n'.join(lines)))
+
             if self.execution_data.sched_process.running:
                 logger.warning("Killing Sched")
-                self.execution_data.sched_process.kill(auto_force_kill_timeout = 1)
+                self.execution_data.sched_process.kill(auto_force_kill_timeout = 30)
         else:
             logger.info("Batsim ended successfully")
         self.execution_data.nb_finished += 1
@@ -286,9 +390,21 @@ class SchedLifecycleHandler(ProcessLifecycleHandler):
             else:
                 logger.error("Sched ended unsucessfully (unknown reason)")
 
+            for (stream, sname) in [(process.stdout, 'stdout'),
+                                    (process.stderr, 'stderr')]:
+                if stream != '':
+                    max_nb_lines = 10
+                    lines = stream.split('\n')
+                    head = '\n'
+                    if len(lines) > max_nb_lines:
+                        head = '[... only the last {} lines are shown]\n'.format(max_nb_lines)
+                    logger.info('Sched {s}:\n{h}{l}'.format(s = sname,
+                                                            h = head,
+                                                            l = '\n'.join(lines)))
+
             if self.execution_data.batsim_process.running:
                 logger.warning("Killing Batsim")
-                self.execution_data.batsim_process.kill(auto_force_kill_timeout = 1)
+                self.execution_data.batsim_process.kill(auto_force_kill_timeout = 30)
         else:
             logger.info("Sched ended successfully")
         self.execution_data.nb_finished += 1
@@ -297,11 +413,25 @@ def execute_command(command,
                     working_directory,
                     variables_filename,
                     output_script_filename,
+                    output_subscript_filename,
                     output_script_output_dir,
                     command_name):
-    create_file_from_command(command = command,
-                             output_filename = output_script_filename,
-                             variables_definition_filename = variables_filename)
+
+    # If the command is composed of different lines,
+    # a corresponding script file will be created
+    if '\n' in command:
+        multiline_command = True
+        write_string_into_file(command, output_subscript_filename)
+        make_file_executable(output_subscript_filename)
+
+        fake_command = os.path.abspath(output_subscript_filename)
+        create_file_from_command(fake_command,
+                                 output_filename = output_script_filename,
+                                 variables_definition_filename = variables_filename)
+    else:
+        create_file_from_command(command = command,
+                                 output_filename = output_script_filename,
+                                 variables_definition_filename = variables_filename)
 
     # Let's create the execo process
     cmd_process = Process(cmd = 'bash {f}'.format(f=output_script_filename),
@@ -310,19 +440,21 @@ def execute_command(command,
                           name = command_name,
                           cwd = working_directory)
 
+    logger.info("Executing command: {cmd}".format(cmd=command))
+
     # Let's start the process
     cmd_process.start().wait()
 
     # Let's write command outputs
     create_dir_if_not_exists(output_script_output_dir)
-    write_string_into_file(process.stdout, '{out}/{name}.stdout'.format(
+    write_string_into_file(cmd_process.stdout, '{out}/{name}.stdout'.format(
                             out = output_script_output_dir,
                             name = command_name))
-    write_string_into_file(process.stderr, '{out}/{name}.stderr'.format(
+    write_string_into_file(cmd_process.stderr, '{out}/{name}.stderr'.format(
                             out = output_script_output_dir,
                             name = command_name))
 
-    return cmd_process.finished_ok and not cmd_process.error
+    return cmd_process.finished_ok and not cmd_process.error and cmd_process.exit_code == 0
 
 def socket_in_use(sock):
     return sock in open('/proc/net/unix').read()
@@ -337,6 +469,7 @@ def wait_for_batsim_to_open_connection(execution_data,
     while remaining_time > 0 and not socket_in_use(sock) and not execution_data.batsim_process.ended:
         time.sleep(seconds_to_sleep)
         remaining_time -= seconds_to_sleep
+        #logger.debug("Batsim stderr: {}".format(execution_data.batsim_process.stderr))
 
     return socket_in_use(sock)
 
@@ -356,7 +489,10 @@ def execute_one_instance(working_directory,
                          batsim_command,
                          sched_command,
                          variables_filename,
-                         timeout = None):
+                         timeout = None,
+                         do_not_execute = False):
+    if timeout == None:
+        timeout = 3600
 
     logger.info('Batsim command: "{}"'.format(batsim_command))
     logger.info('Sched command: "{}"'.format(sched_command))
@@ -378,6 +514,11 @@ def execute_one_instance(working_directory,
                              output_filename = sched_script_filename,
                              variables_definition_filename = variables_filename)
 
+    if do_not_execute == True:
+        logger.info('Skipping the execution of the instance because '
+                    'do_not_execute is True.')
+        sys.exit(4)
+
     # Let's create lifecycle handlers, which will manage what to do on process's events
     batsim_lifecycle_handler = BatsimLifecycleHandler()
     sched_lifecycle_handler = SchedLifecycleHandler()
@@ -392,6 +533,7 @@ def execute_one_instance(working_directory,
     # Let's create the execo processes
     batsim_process = Process(cmd = 'bash {batsim_script}'.format(
                                 batsim_script = batsim_script_filename),
+                             shell = True,
                              kill_subprocesses = True,
                              name = "batsim_process",
                              cwd = working_directory,
@@ -400,6 +542,7 @@ def execute_one_instance(working_directory,
 
     sched_process = Process(cmd = 'bash {sched_script}'.format(
                                 sched_script = sched_script_filename),
+                            shell = True,
                             kill_subprocesses = True,
                             name = "sched_process",
                             cwd = working_directory,
@@ -418,6 +561,17 @@ def execute_one_instance(working_directory,
 
     # Batsim starts
     batsim_process.start()
+
+    # Wait for Batsim to create the socket
+    logger.info("Waiting for socket {} to open".format(execution_data.batsim_socket))
+    if wait_for_batsim_to_open_connection(execution_data,
+                                          timeout = execution_data.timeout,
+                                          sock = execution_data.batsim_socket):
+        # Launches the scheduler
+        logger.info("Batsim's socket {} is now opened".format(execution_data.batsim_socket))
+        execution_data.sched_process.start()
+    else:
+        execution_data.failure = True
 
     # Wait for processes' termination
     while (execution_data.failure == False) and (execution_data.nb_finished < 2):
@@ -470,6 +624,20 @@ Examples of such input files can be found in the subdirectory instance_examples.
                           'either absolute or relative to the working directory. '
                           ' If unset, the working directory is used instead')
 
+    g = p.add_mutually_exclusive_group()
+
+    g.add_argument('--post_only',
+                   action = 'store_true',
+                   help = 'If set, only the post commands of this instance will '
+                          'be computed.')
+
+    g.add_argument('--do_not_execute',
+                   action = 'store_true',
+                   help = 'If set, the Batsim+scheduler instance is not '
+                          'executed, only the precommands are. The execution '
+                          'scripts should also be generated. Furthermore, post '
+                          'commands will be skipped.')
+
     args = p.parse_args()
 
     # Let's read the YAML file content to get the real parameters
@@ -508,21 +676,31 @@ Examples of such input files can be found in the subdirectory instance_examples.
     if args.output_directory:
         output_directory = args.output_directory
 
-    # Let's check that variables are fine
-    check_variables(variables)
+    do_not_execute = False
+    if args.do_not_execute:
+        do_not_execute = True
+
 
     # Let's add some variables
     variables['working_directory'] = working_directory
     variables['output_directory'] = output_directory
 
+     # Let's check that variables are fine
+    (var_ok, var_decl_order) = check_variables(variables)
+    if not var_ok:
+        sys.exit(-2)
+
     # Let's correctly interpret the working_dir and output_dir values
     (wd, od, batsim_command) = retrieve_info_from_instance(variables,
-                                                   "/tmp",
-                                                   batsim_command)
+                                                           var_decl_order,
+                                                           "/tmp",
+                                                           batsim_command)
 
     # Let's update those values
     variables['working_directory'] = working_directory = wd
     variables['output_directory'] = output_directory = od
+
+    print("Variables = {}".format(variables))
 
     # Let's create the directories if needed
     create_dir_if_not_exists(working_directory)
@@ -536,42 +714,48 @@ Examples of such input files can be found in the subdirectory instance_examples.
 
     # Let's create a variable definition file in the instance output directory
     variables_filename = '{out}/variables.bash'.format(out = output_directory)
-    put_variables_in_file(variables, variables_filename)
+    put_variables_in_file(variables, var_decl_order, variables_filename)
 
-    # Let the execution be started
-    # Commands before instance execution
-    if len(commands_before_execution) > 0:
-        pre_commands_dir = '{instance_out_dir}/pre_commands'.format(
-            instance_out_dir = output_directory)
-        pre_commands_output_dir = '{commands_dir}/out'.format(
-            commands_dir = pre_commands_dir)
-        create_dir_if_not_exists(pre_commands_dir)
-        create_dir_if_not_exists(pre_commands_output_dir)
+    if not args.post_only:
+        # Let the execution be started
+        # Commands before instance execution
+        if len(commands_before_execution) > 0:
+            pre_commands_dir = '{instance_out_dir}/pre_commands'.format(
+                instance_out_dir = output_directory)
+            pre_commands_output_dir = '{commands_dir}/out'.format(
+                commands_dir = pre_commands_dir)
+            create_dir_if_not_exists(pre_commands_dir)
+            create_dir_if_not_exists(pre_commands_output_dir)
 
-        nb_chars_command_ids = 1 + math.log10(len(commands_before_execution))
+            nb_chars_command_ids = int(1 + math.log10(len(commands_before_execution)))
 
-        for command_id in range(len(commands_before_execution)):
-            command_name = 'command' + str(command_id).zfill(nb_chars_command_ids)
-            output_command_filename = '{commands_dir}/{name}.sh'.format(
-                                        commands_dir = pre_commands_dir,
-                                        name = command_name)
+            for command_id in range(len(commands_before_execution)):
+                command_name = 'command' + str(command_id).zfill(nb_chars_command_ids)
+                output_command_filename = '{commands_dir}/{name}.bash'.format(
+                                            commands_dir = pre_commands_dir,
+                                            name = command_name)
+                output_subscript_filename = '{commands_dir}/{name}_sub'.format(
+                                                commands_dir = pre_commands_dir,
+                                                name = command_name)
 
-            if not execute_command(command = commands_before_execution[command_id],
-                                   working_directory = working_directory,
-                                   variables_filename = variables_filename,
-                                   output_script_filename = output_command_filename,
-                                   output_script_output_dir = pre_commands_output_dir,
-                                   command_name = command_name):
-                sys.exit(1)
+                if not execute_command(command = commands_before_execution[command_id],
+                                       working_directory = working_directory,
+                                       variables_filename = variables_filename,
+                                       output_script_filename = output_command_filename,
+                                       output_subscript_filename = output_subscript_filename,
+                                       output_script_output_dir = pre_commands_output_dir,
+                                       command_name = command_name):
+                    sys.exit(1)
 
-    # Instance execution
-    if not execute_one_instance(working_directory = working_directory,
-                                output_directory = output_directory,
-                                batsim_command = batsim_command,
-                                sched_command = sched_command,
-                                variables_filename = variables_filename,
-                                timeout = timeout):
-        sys.exit(1)
+        # Instance execution
+        if not execute_one_instance(working_directory = working_directory,
+                                    output_directory = output_directory,
+                                    batsim_command = batsim_command,
+                                    sched_command = sched_command,
+                                    variables_filename = variables_filename,
+                                    timeout = timeout,
+                                    do_not_execute = do_not_execute):
+            sys.exit(2)
 
     # Commands after instance execution
     if len(commands_after_execution) > 0:
@@ -582,21 +766,25 @@ Examples of such input files can be found in the subdirectory instance_examples.
         create_dir_if_not_exists(post_commands_dir)
         create_dir_if_not_exists(post_commands_output_dir)
 
-        nb_chars_command_ids = 1 + math.log10(len(commands_after_execution))
+        nb_chars_command_ids = int(1 + math.log10(len(commands_after_execution)))
 
         for command_id in range(len(commands_after_execution)):
             command_name = 'command' + str(command_id).zfill(nb_chars_command_ids)
-            output_command_filename = '{commands_dir}/{name}.sh'.format(
+            output_command_filename = '{commands_dir}/{name}.bash'.format(
                                         commands_dir = post_commands_dir,
                                         name = command_name)
+            output_subscript_filename = '{commands_dir}/{name}_sub'.format(
+                                            commands_dir = post_commands_dir,
+                                            name = command_name)
 
             if not execute_command(command = commands_after_execution[command_id],
                                    working_directory = working_directory,
                                    variables_filename = variables_filename,
                                    output_script_filename = output_command_filename,
+                                   output_subscript_filename = output_subscript_filename,
                                    output_script_output_dir = post_commands_output_dir,
                                    command_name = command_name):
-                sys.exit(1)
+                sys.exit(3)
 
     # Everything went succesfully, let's return 0
     sys.exit(0)
