@@ -242,6 +242,7 @@ int uds_server_process(int argc, char *argv[])
             PStateModificationMessage * message = (PStateModificationMessage *) task_data->data;
 
             context->current_switches.add_switch(message->machine_ids, message->new_pstate);
+            context->energy_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids, message->new_pstate);
 
             for (auto machine_it = message->machine_ids.elements_begin();
                  machine_it != message->machine_ids.elements_end();

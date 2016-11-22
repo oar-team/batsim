@@ -1001,7 +1001,7 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
 
     Rational time_diff = (Rational)date - _last_entry_date;
     Rational energy_diff = Rational(energy) - _last_entry_energy;
-    Rational epower = 0;
+    Rational epower = -1;
 
     if (time_diff > 0)
         epower = energy_diff / time_diff;
@@ -1011,8 +1011,12 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
-    nb_printed = snprintf(buf, buf_size, "%g,%Lg,%c,%g\n",
-                          date, energy, event_type, (double)epower);
+    if (epower != -1)
+        nb_printed = snprintf(buf, buf_size, "%g,%Lg,%c,%g\n",
+                              date, energy, event_type, (double)epower);
+    else
+        nb_printed = snprintf(buf, buf_size, "%g,%Lg,%c,NA\n",
+                              date, energy, event_type);
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");

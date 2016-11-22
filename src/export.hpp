@@ -374,8 +374,8 @@ private:
      */
     long double add_entry(double date, char event_type);
 
-    Rational _last_entry_date = 0;
-    Rational _last_entry_energy = 0;
+    Rational _last_entry_date = 0; //!< The date of the last entry
+    Rational _last_entry_energy = 0; //!< The energy of the last entry
 
 private:
     BatsimContext * _context = nullptr; //!< The Batsim context
