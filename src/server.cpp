@@ -243,6 +243,8 @@ int uds_server_process(int argc, char *argv[])
 
             context->current_switches.add_switch(message->machine_ids, message->new_pstate);
             context->energy_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids, message->new_pstate);
+            // The pstate is set to an invalid one to know the pstate is in transition.
+            context->pstate_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids, -1);
 
             for (auto machine_it = message->machine_ids.elements_begin();
                  machine_it != message->machine_ids.elements_end();
