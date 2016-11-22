@@ -155,7 +155,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
         main_args->redis_hostname = arg;
         break;
     case 'J':
-        main_args->workflow_limit = arg;
+        main_args->workflow_limit = std::stod(arg);
         break;
     case 'l':
     {
