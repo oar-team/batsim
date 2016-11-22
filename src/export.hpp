@@ -374,6 +374,9 @@ private:
      */
     long double add_entry(double date, char event_type);
 
+    Rational _last_entry_date = 0;
+    Rational _last_entry_energy = 0;
+
 private:
     BatsimContext * _context = nullptr; //!< The Batsim context
     WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
