@@ -12,25 +12,25 @@
     When switching from the state 1 to a computing state, passing by the virtual pstate 3 is mandatory to simulate the time and energy consumed by the switch on.
      -->
     <host id="Mercury" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
-        <prop id="watt_per_state" value="30.0:100.0, 9.75:9.75, 200.996721311:200.996721311, 425.1743849:425.1743849" />
+        <prop id="watt_per_state" value="30.0:30.0:100.0, 9.75:9.75:9.75, 200.996721311:200.996721311:200.996721311, 425.1743849:425.1743849:425.1743849" />
         <prop id="watt_off" value="9.75" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
 
     <host id="Venus" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
-        <prop id="watt_per_state" value="30.0:100.0, 9.75:9.75, 200.996721311:200.996721311, 425.1743849:425.1743849" />
+        <prop id="watt_per_state" value="30.0:30.0:100.0, 9.75:9.75:9.75, 200.996721311:200.996721311:200.996721311, 425.1743849:425.1743849:425.1743849" />
         <prop id="watt_off" value="9.75" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
 
     <host id="Earth" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
-        <prop id="watt_per_state" value="30.0:100.0, 9.75:9.75, 200.996721311:200.996721311, 425.1743849:425.1743849" />
+        <prop id="watt_per_state" value="30.0:30.0:100.0, 9.75:9.75:9.75, 200.996721311:200.996721311:200.996721311, 425.1743849:425.1743849:425.1743849" />
         <prop id="watt_off" value="9.75" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
 
     <host id="Mars" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
-        <prop id="watt_per_state" value="30.0:100.0, 9.75:9.75, 200.996721311:200.996721311, 425.1743849:425.1743849" />
+        <prop id="watt_per_state" value="30.0:30.0:100.0, 9.75:9.75:9.75, 200.996721311:200.996721311:200.996721311, 425.1743849:425.1743849:425.1743849" />
         <prop id="watt_off" value="9.75" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>

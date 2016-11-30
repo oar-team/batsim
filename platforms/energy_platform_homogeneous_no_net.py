@@ -49,10 +49,10 @@ def generate_flat_platform(nb_hosts, output_file):
 
     ll = []
     for f in freqs:
-        ll.append(str(idle_watt)+":"+str(f["moyWatt"]))
-    ll.append(str(watt_off)+":"+str(watt_off))
-    ll.append(str(watt_on_to_off)+":"+str(watt_on_to_off))
-    ll.append(str(watt_off_to_on)+":"+str(watt_off_to_on))
+        ll.append(str(idle_watt)+":"+str(idle_watt)+":"+str(f["moyWatt"]))
+    ll.append(str(watt_off)+":"+str(watt_off)+":"+str(watt_off))
+    ll.append(str(watt_on_to_off)+":"+str(watt_on_to_off)+":"+str(watt_on_to_off))
+    ll.append(str(watt_off_to_on)+":"+str(watt_off_to_on)+":"+str(watt_off_to_on))
 
     watt_per_state = ", ".join(ll)
 
@@ -73,7 +73,7 @@ def generate_flat_platform(nb_hosts, output_file):
 
 <AS id="AS0"  routing="Vivaldi">
     <host id="master_host" coordinates="0 0 0" speed="100Mf">
-        <prop id="watt_per_state" value="100:200" />
+        <prop id="watt_per_state" value="100:100:200" />
         <prop id="watt_off" value="10" />
     </host>
 
