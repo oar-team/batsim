@@ -176,9 +176,15 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
     }
     else if (json_desc["id"].IsString())
     {
+        const string job_id_str = json_desc["id"].GetString();
+
         vector<string> job_identifier_parts;
-        boost::split(job_identifier_parts, (const std::string) (json_desc["id"].GetString()),
-                     boost::is_any_of("!"), boost::token_compress_on);
+        boost::split(job_identifier_parts, job_id_str, boost::is_any_of("!"), boost::token_compress_on);
+        xbt_assert(job_identifier_parts.size() == 2,
+                   "Invalid string job identifier '%s': should be formatted as two '!'-separated "
+                   "parts, the second one being an integral number. Example: 'some_text!42'.",
+                   job_id_str.c_str());
+
         workload_name = job_identifier_parts[0];
         XBT_INFO("========  %s : %s", workload->name.c_str(), workload_name.c_str());
         j->number = std::stoi(job_identifier_parts[1]);
