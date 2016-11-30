@@ -15,6 +15,7 @@
 \rm -rf test/out/no_energy
 \rm -rf test/out/space_sharing
 \rm -rf test/out/unique
+\rm -rf test/out/walltime
 
 # Run a travis server if needed
 server_launched_by_me=0
@@ -38,6 +39,7 @@ tools/experiments/execute_instances.py \
 
 # Run different tests
 tools/experiments/execute_instances.py test/test_unique.yaml -bod test/out/unique
+tools/experiments/execute_instances.py test/test_walltime.yaml -bod test/out/walltime
 tools/experiments/execute_instances.py test/test_no_energy.yaml -bod test/out/no_energy
 tools/experiments/execute_instances.py test/test_space_sharing.yaml -bod test/out/space_sharing
 tools/experiments/execute_instances.py test/test_energy.yaml -bod test/out/energy

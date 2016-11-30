@@ -212,15 +212,6 @@ struct ExecuteJobProcessArguments
 };
 
 /**
- * @brief The arguments of the killer_process process
- */
-struct KillerProcessArguments
-{
-    msg_task_t task; //!< The task that will be cancelled if the walltime is reached
-    double walltime; //!< The number of seconds to wait before cancelling the task
-};
-
-/**
  * @brief The arguments of the switch_on_machine_process and switch_off_machine_process processes
  */
 struct SwitchPStateProcessArguments

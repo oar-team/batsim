@@ -15,28 +15,6 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(jobs_execution, "jobs_execution"); //!< Logging
 
 using namespace std;
 
-int killer_process(int argc, char *argv[])
-{
-    (void) argc;
-    (void) argv;
-
-    KillerProcessArguments * args = (KillerProcessArguments *) MSG_process_get_data(MSG_process_self());
-
-    /* The sleep can either stop normally (res=MSG_OK) or be cancelled when the task execution
-     * completed (res=MSG_TASK_CANCELED) */
-    msg_error_t res = MSG_process_sleep(args->walltime);
-
-    if (res == MSG_OK)
-    {
-        // If we had time to sleep until walltime (res=MSG_OK), the task execution is not over and must be cancelled
-        XBT_INFO("Cancelling task '%s'", MSG_task_get_name(args->task));
-        MSG_task_cancel(args->task);
-    }
-
-    delete args;
-    return 0;
-}
-
 int smpi_replay_process(int argc, char *argv[])
 {
    /* for(int index = 0; index < argc; index++)
@@ -90,28 +68,18 @@ int execute_profile(BatsimContext *context,
         XBT_INFO("Creating task '%s'", task_name.c_str());
 
         msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(),
-                                         nb_res, allocation->hosts.data(),
-                                         computation_amount,
-                                         communication_amount, NULL);
-
-        // TODO: debug job kills on timeout
-
-        // Let's spawn a process which will wait until walltime and cancel the task if needed
-        /*KillerProcessArguments * killer_args = new KillerProcessArguments;
-        killer_args->task = ptask;
-        killer_args->walltime = *remaining_time;
-
-        msg_process_t kill_process = MSG_process_create("killer", killer_process, killer_args, MSG_host_self());*/
+                                                    nb_res, allocation->hosts.data(),
+                                                    computation_amount,
+                                                    communication_amount, NULL);
 
         double timeBeforeExecute = MSG_get_clock();
         XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
-        msg_error_t err = MSG_parallel_task_execute(ptask);
+        msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
 
         int ret = 1;
         if (err == MSG_OK) {}
-            //SIMIX_process_throw(kill_process, cancel_error, 0, "wake up");
-        else if (err == MSG_TASK_CANCELED)
+        else if (err == MSG_TIMEOUT)
             ret = 0;
         else
             xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
@@ -136,27 +104,18 @@ int execute_profile(BatsimContext *context,
         XBT_INFO("Creating task '%s'", task_name.c_str());
 
         msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(),
-                                         nb_res, allocation->hosts.data(),
-                                         computation_amount,
-                                         communication_amount, NULL);
-
-        // Let's spawn a process which will wait until walltime and cancel the task if needed
-        // TODO: debug job kill on timeout
-        /*KillerProcessArguments * killer_args = new KillerProcessArguments;
-        killer_args->task = ptask;
-        killer_args->walltime = *remaining_time;
-
-        msg_process_t kill_process = MSG_process_create("killer", killer_process, killer_args, MSG_host_self());*/
+                                                    nb_res, allocation->hosts.data(),
+                                                    computation_amount,
+                                                    communication_amount, NULL);
 
         double timeBeforeExecute = MSG_get_clock();
         XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
-        msg_error_t err = MSG_parallel_task_execute(ptask);
+        msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
 
         int ret = 1;
-        if (err == MSG_OK){}
-            //SIMIX_process_throw(kill_process, cancel_error, 0, "wake up");
-        else if (err == MSG_TASK_CANCELED)
+        if (err == MSG_OK) {}
+        else if (err == MSG_TIMEOUT)
             ret = 0;
         else
             xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
@@ -278,24 +237,14 @@ int execute_profile(BatsimContext *context,
                                          computation_amount,
                                          communication_amount, NULL);
 
-        // TODO: debug job kills on timeout
-
-        // Let's spawn a process which will wait until walltime and cancel the task if needed
-        /*KillerProcessArguments * killer_args = new KillerProcessArguments;
-        killer_args->task = ptask;
-        killer_args->walltime = *remaining_time;
-
-        msg_process_t kill_process = MSG_process_create("killer", killer_process, killer_args, MSG_host_self());*/
-
         double timeBeforeExecute = MSG_get_clock();
         XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
-        msg_error_t err = MSG_parallel_task_execute(ptask);
+        msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
 
         int ret = 1;
         if (err == MSG_OK) {}
-            //SIMIX_process_throw(kill_process, cancel_error, 0, "wake up");
-        else if (err == MSG_TASK_CANCELED)
+        else if (err == MSG_TIMEOUT)
             ret = 0;
         else
             xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
