@@ -13,9 +13,11 @@
 \rm -rf test/out/no_energy
 \rm -rf test/out/space_sharing
 \rm -rf test/out/energy
+\rm -rf test/out/smpi
 
 # Run different tests
 tools/experiments/execute_instances.py test/test_unique.yaml -bod test/out/unique
 tools/experiments/execute_instances.py test/test_no_energy.yaml -bod test/out/no_energy
 tools/experiments/execute_instances.py test/test_space_sharing.yaml -bod test/out/space_sharing
 tools/experiments/execute_instances.py test/test_energy.yaml -bod test/out/energy
+tools/experiments/execute_instances.py test/test_smpi.yaml -bod test/out/smpi

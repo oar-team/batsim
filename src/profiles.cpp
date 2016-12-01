@@ -141,13 +141,13 @@ void Profiles::load_from_json(const Document &doc, const string & filename)
             baseDir = baseDir.parent_path();
             xbt_assert(filesystem::exists(baseDir) && filesystem::is_directory(baseDir));
 
-            //XBT_DEBUG("baseDir = '%s'", baseDir.string().c_str());
-            //XBT_DEBUG("trace = '%s'", trace.c_str());
-
+            //XBT_INFO("baseDIR = '%s'", baseDir.string().c_str());
+            //XBT_INFO("trace = '%s'", trace.c_str());
             filesystem::path tracePath(baseDir.string() + "/" + trace);
+            //XBT_INFO("tracePath = '%s'", tracePath.string().c_str());
             xbt_assert(filesystem::exists(tracePath) && filesystem::is_regular_file(tracePath),
                        "Invalid JSON file '%s': profile '%s' has an invalid 'trace' field ('%s'), which lead to a non-existent file ('%s')",
-                       filename.c_str(), key.GetString(), trace.c_str(), string(filename + "/" + trace).c_str());
+                       filename.c_str(), key.GetString(), trace.c_str(), tracePath.string().c_str());
 
             ifstream traceFile(tracePath.string());
             xbt_assert(traceFile.is_open(), "Cannot open file '%s'", tracePath.string().c_str());

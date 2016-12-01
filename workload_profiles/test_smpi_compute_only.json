@@ -12,11 +12,7 @@
     "profiles": {
         "1": {
             "type": "smpi",
-            "trace": "app_1/traces2.txt"
-        },
-        "6": {
-            "type": "smpi",
-            "trace": "app_1/traces2.txt"
+            "trace": "smpi/compute_only/traces.txt"
         }
     }
 }

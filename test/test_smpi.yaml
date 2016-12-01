@@ -1,0 +1,32 @@
+# This script should be called from Batsim's root directory
+
+# If needed, the working directory of this script can be specified within this file
+#base_working_directory: ~/proj/batsim
+
+# If needed, the output directory of this script can be specified within this file
+#base_output_directory: ~/proj/batsim/results
+
+implicit_instances:
+  implicit:
+    sweep:
+      platform :
+        - ["smallPF", "platforms/small_platform.xml"]
+      workload :
+        - ["compute", "workload_profiles/test_smpi_compute_only.json"]
+        - ["mixed", "workload_profiles/test_smpi_mixed_comp_comm.json"]
+      pybatsim_algo:
+        - fillerSched
+    generic_instance:
+      timeout: 10
+      working_directory: ${base_working_directory}
+      output_directory: ${base_output_directory}/results/${pybatsim_algo}_${workload[0]}
+      batsim_command: batsim ${platform[1]} ${workload[1]} -e ${output_directory}/out -s ${output_directory}/socket -L
+      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} ${workload[1]} -s ${output_directory}/socket
+      # commands_before_execution:
+      #   - ls .
+      #   - |
+      #     #!/usr/bin/python3
+      #     print('Hello from python3!')
+      #   - |
+      #     #!/usr/bin/python2
+      #     print 'Hello from python2!'
