@@ -77,5 +77,6 @@ struct MainArguments
 
     bool abort = false;                                     //!< A boolean value. If set to yet, the launching should be aborted for reason abortReason
     std::string abortReason;                                //!< Human readable reasons which explains why the launch should be aborted
+    int workflow_limit = 0;                                 //!< limit on workflow needs
 };
 

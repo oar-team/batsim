@@ -154,6 +154,9 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     case 'H':
         main_args->redis_hostname = arg;
         break;
+    case 'J':
+        main_args->workflow_limit = std::stod(arg);
+        break;
     case 'l':
     {
         int ivalue = stoi(arg);
@@ -252,6 +255,7 @@ bool parse_main_args(int argc, char * argv[], MainArguments & main_args)
         {"energy-plugin", 'E', 0, 0, "Enables energy-aware experiments", 0},
         {"allow-space-sharing", 'h', 0, 0, "Allows space sharing: the same resource can compute several jobs at the same time", 0},
         {"redis-hostname", 'H', "HOSTNAME", 0, "Sets the host name of the remote Redis (data storage) server.", 0},
+        {"jobs_limit", 'J', "NUMBER", 0, "Number of possible concurrent jobs for workflows", 0},
         {"ignore-workflow-beyond-last-workflow", 'k', 0, 0, "Ignore workload jobs that occur after all workflows have completed, if any, as completed", 0},
         {"limit-machine-count", 'l', "M", 0, "Allows to limit the number of computing machines to use. If M == -1 (default), all the machines described in PLATFORM_FILE are used (but the master_host). If M >= 1, only the first M machines will be used to comupte jobs.", 0},
         {"limit-machine-count-by-worload", 'L', 0, 0, "If set, allows to limit the number of computing machines to use. This number is read from the workload file. If both limit-machine-count and limit-machine-count-by-worload are set, the minimum of the two will be used.", 0},
@@ -468,6 +472,7 @@ int main(int argc, char * argv[])
     BatsimContext context;
     context.platform_filename = main_args.platform_filename;
     context.export_prefix = main_args.export_prefix;
+    context.workflow_limit = main_args.workflow_limit;
     context.energy_used = main_args.energy_used;
     context.allow_space_sharing = main_args.allow_space_sharing;
     context.trace_schedule = main_args.enable_schedule_tracing;
