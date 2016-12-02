@@ -18,6 +18,19 @@
 #include "machines.hpp"
 
 struct BatsimContext;
+struct Job;
+
+/**
+ * @brief Prepares Batsim's outputting
+ * @param[in,out] context The BatsimContext
+ */
+void prepare_batsim_outputs(BatsimContext * context);
+
+/**
+ * @brief Finalizes the different Batsim's outputs
+ * @param[in] context The BatsimContext
+ */
+void finalize_batsim_outputs(BatsimContext * context);
 
 /**
  * @brief Buffered-write output file
@@ -28,9 +41,9 @@ public:
     /**
      * @brief Builds a WriteBuffer
      * @param[in] filename The file that will be written
-     * @param[in] bufferSize The size of the buffer (in bytes).
+     * @param[in] buffer_size The size of the buffer (in bytes).
      */
-    WriteBuffer(const std::string & filename, int bufferSize = 64*1024);
+    WriteBuffer(const std::string & filename, int buffer_size = 64*1024);
 
     /**
      * @brief Destructor
@@ -42,18 +55,18 @@ public:
      * @brief Appends a text at the end of the buffer. If the buffer is full, it is automatically flushed into the disk.
      * @param[in] text The text to append
      */
-    void appendText(const char * text);
+    void append_text(const char * text);
 
     /**
      * @brief Write the current content of the buffer into the file
      */
-    void flushBuffer();
+    void flush_buffer();
 
 private:
     std::ofstream f;            //!< The file stream on which the buffer is outputted
-    const int bufferSize;       //!< The buffer maximum size
+    const int buffer_size;      //!< The buffer maximum size
     char * buffer = nullptr;    //!< The buffer
-    int bufferPos = 0;          //!< The current position of the buffer (previous positions are already written)
+    int buffer_pos = 0;         //!< The current position of the buffer (previous positions are already written)
 };
 
 /**
@@ -61,14 +74,14 @@ private:
  * @param[in] filename The name of the output file used to write the CSV data
  * @param[in] context The BatsimContext
  */
-void exportJobsToCSV(const std::string &filename, const BatsimContext * context);
+void export_jobs_to_csv(const std::string &filename, const BatsimContext * context);
 
 /**
  * @brief Compute and exports some schedule criteria to a CSV file
  * @param[in] filename The name of the output file used to write the CSV data
  * @param[in] context The BatsimContext
  */
-void exportScheduleToCSV(const std::string &filename, const BatsimContext * context);
+void export_schedule_to_csv(const std::string &filename, const BatsimContext * context);
 
 
 /**
@@ -107,15 +120,15 @@ private:
 public:
     /**
      * @brief Builds a PajeTracer
-     * @param[in] logLaunchings If set to true, job launching time will be written in the trace. This option leads to larger trace files
+     * @param[in] log_launchings If set to true, job launching time will be written in the trace. This option leads to larger trace files
      */
-    PajeTracer(bool logLaunchings = false);
+    PajeTracer(bool log_launchings = false);
 
     /**
      * @brief Sets the filename of a PajeTracer
      * @param[in] filename The name of the output file
      */
-    void setFilename(const std::string & filename);
+    void set_filename(const std::string & filename);
 
     /**
      * @brief PajeTracer destructor.
@@ -141,42 +154,43 @@ public:
     /**
      * @brief Adds a job launch in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param[in] jobID The job unique number
-     * @param[in] usedMachineIDs The machines which compute the job
+     * @param[in] job The job
+     * @param[in] used_machine_ids The machines which compute the job
      * @param[in] time The simulation time at which the addition is done
      */
-    void addJobLaunching(int jobID, const std::vector<int> & usedMachineIDs, double time);
+    void add_job_launching(const Job * job, const std::vector<int> & used_machine_ids, double time);
 
     /**
      * @brief Creates a job in the Pajé output file
-     * @param[in] jobID The job unique number
+     * @param[in] job The job
      */
-    void register_new_job(int jobID);
+    void register_new_job(const Job * job);
 
     /**
      * @brief Sets a machine in the idle state
-     * @param[in] machineID The unique machine number
+     * @param[in] machine_id The unique machine number
      * @param[in] time The time at which the machine should be marked as idle
      */
-    void set_machine_idle(int machineID, double time);
+    void set_machine_idle(int machine_id, double time);
 
     /**
      * @brief Sets a machine in the computing state
-     * @param[in] machineID The unique machine number
-     * @param[in] jobID The unique job number that the machine computes
+     * @param[in] machine_id The unique machine number
+     * @param[in] job The job
      * @param[in] time The time at which the machine should be marked as computing the job
      */
-    void set_machine_as_computing_job(int machineID, int jobID, double time);
+    void set_machine_as_computing_job(int machine_id, const Job * job, double time);
 
     /**
      * @brief Adds a job kill in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param[in] jobID The job unique number
-     * @param[in] usedMachineIDs The machines which compute the job
+     * @param[in] job The job
+     * @param[in] used_machine_ids The machines which compute the job
      * @param[in] time The simulation time at which the kill is done
-     * @param[in] associateKillToMachines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
+     * @param[in] associate_kill_to_machines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
      */
-    void addJobKill(int jobID, const MachineRange & usedMachineIDs, double time, bool associateKillToMachines = false);
+    void add_job_kill(const Job * job, const MachineRange & used_machine_ids,
+                      double time, bool associate_kill_to_machines = false);
 
     /**
      * @brief Adds a global utilization value of the system.
@@ -184,7 +198,7 @@ public:
      * @param[in] utilization The global utilization of the system.
      * @param[in] time The simulation time at which the system has this utilization value
      */
-    void addGlobalUtilization(double utilization, double time);
+    void add_global_utilization(double utilization, double time);
 
 public:
     /**
@@ -197,20 +211,20 @@ public:
      * @param[out] g The green, whose value is in [0,1]
      * @param[out] b The blue, whose value is in [0,1]
      */
-    static void hsvToRgb(double h, double s, double v, double & r, double & g, double & b);
+    static void hsv_to_rgb(double h, double s, double v, double & r, double & g, double & b);
 
 private:
     /**
      * @brief Generate colors
      * @details The colors are fairly shared in the Hue color spectrum.
-     * @param[in] colorCount colorCount
+     * @param[in] color_count The number of colours to generate
      */
-    void generateColors(int colorCount = 8);
+    void generate_colors(int color_count = 8);
 
     /**
      * @brief Randomize the position of the colors in the colormap
      */
-    void shuffleColors();
+    void shuffle_colors();
 
 private:
     const char * rootType = "root_ct";                  //!< The root type output name
@@ -234,11 +248,11 @@ private:
     const char * launchingColor = "\"0.3 0.3 0.3\"";    //!< The color used for machines launching a job
     const char * utilizationColor = "\"0.0 0.5 0.0\"";  //!< The color used for the utilization graph
 
-    const bool _logLaunchings; //!< If set to true, job launchings should be outputted (in addition to starting decisions)
+    const bool _log_launchings; //!< If set to true, job launchings should be outputted (in addition to starting decisions)
 
     WriteBuffer * _wbuf = nullptr;  //!< The buffer class used to handle the output file
 
-    std::map<int, std::string> _jobs; //!< Maps job numbers to their Pajé representation
+    std::map<const Job *, std::string> _jobs; //!< Maps jobs to their Pajé representation
     std::vector<std::string> _colors; //!< Strings associated with colors, used for the jobs
 
     PajeTracerState state = UNINITIALIZED; //!< The state of the PajeTracer
@@ -275,6 +289,16 @@ public:
      * @param pstate_after The power state the machine will be in after the given time
      */
     void add_pstate_change(double time, MachineRange machines, int pstate_after);
+
+    /**
+     * @brief Forces the flushing of what happened to the output file
+     */
+    void flush();
+
+    /**
+     * @brief Closes the buffer and its associated output file
+     */
+    void close_buffer();
 
 private:
     WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
@@ -331,6 +355,16 @@ public:
      */
     void add_pstate_change(double date, const MachineRange & machines, int new_pstate);
 
+    /**
+     * @brief Forces the flushing of what happened to the output file
+     */
+    void flush();
+
+    /**
+     * @brief Closes the buffer and its associated output file
+     */
+    void close_buffer();
+
 private:
     /**
      * @brief Adds a line in the output file
@@ -339,6 +373,58 @@ private:
      * @param[in] event_type The type of the event which occured
      */
     long double add_entry(double date, char event_type);
+
+    Rational _last_entry_date = 0; //!< The date of the last entry
+    Rational _last_entry_energy = 0; //!< The energy of the last entry
+
+private:
+    BatsimContext * _context = nullptr; //!< The Batsim context
+    WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
+};
+
+/**
+ * @brief Traces the repartition of the machine states over time
+ */
+class MachineStateTracer
+{
+public:
+    /**
+     * @brief Constructs a MachineStateTracer
+     */
+    MachineStateTracer();
+
+    /**
+     * @brief Destroys a MachineStateTracer
+     */
+    ~MachineStateTracer();
+
+    /**
+     * @brief Sets the BatsimContext
+     * @param[in] context The BatsimContext
+     */
+    void set_context(BatsimContext * context);
+
+    /**
+     * @brief Sets the output filename of the tracer
+     * @param[in] filename  The name of the output file of the tracer
+     */
+    void set_filename(const std::string & filename);
+
+    /**
+     * @brief Writes a line in the output file, corresponding to the current state, at the given date
+     * @param[in] date The current date
+     */
+    void write_machine_states(double date);
+
+    /**
+     * @brief Flushes the pending writings to the output file
+     */
+    void flush();
+
+    /**
+     * @brief Closes the output buffer
+     */
+    void close_buffer();
 
 private:
     BatsimContext * _context = nullptr; //!< The Batsim context

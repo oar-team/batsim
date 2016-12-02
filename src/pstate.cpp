@@ -59,7 +59,7 @@ int switch_on_machine_process(int argc, char *argv[])
     MSG_host_set_pstate(machine->host, pstate);
     //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, pstate);
 
-    machine->state = MachineState::IDLE;
+    machine->update_machine_state(MachineState::IDLE);
 
     SwitchONMessage * msg = new SwitchONMessage;
     msg->machine_id = args->machine_id;
@@ -114,7 +114,7 @@ int switch_off_machine_process(int argc, char *argv[])
     MSG_host_set_pstate(machine->host, pstate);
     //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, pstate);
 
-    machine->state = MachineState::SLEEPING;
+    machine->update_machine_state(MachineState::SLEEPING);
 
     SwitchOFFMessage * msg = new SwitchOFFMessage;
     msg->machine_id = args->machine_id;

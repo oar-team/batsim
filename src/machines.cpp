@@ -13,8 +13,10 @@
 
 #include <simgrid/plugins/energy.h>
 
+#include "batsim.hpp"
 #include "context.hpp"
 #include "export.hpp"
+#include "jobs.hpp"
 
 using namespace std;
 
@@ -22,7 +24,12 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(machines, "machines"); //!< Logging
 
 Machines::Machines()
 {
-
+    const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
+                                                 MachineState::COMPUTING,
+                                                 MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
+    for (const MachineState & state : machine_states)
+        _nb_machines_in_each_state[state] = 0;
 }
 
 Machines::~Machines()
@@ -31,12 +38,17 @@ Machines::~Machines()
         delete machine;
     _machines.clear();
 
-    if (_masterMachine != nullptr)
-        delete _masterMachine;
-    _masterMachine = nullptr;
+    if (_master_machine != nullptr)
+        delete _master_machine;
+    _master_machine = nullptr;
+
+    if (_pfs_machine != nullptr)
+        delete _pfs_machine;
+    _pfs_machine = nullptr;
+
 }
 
-void Machines::createMachines(xbt_dynar_t hosts, const BatsimContext *context, const string &masterHostName, int limit_machine_count)
+void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, const string &masterHostName, const string &pfsHostName, int limit_machine_count)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
 
@@ -47,12 +59,11 @@ void Machines::createMachines(xbt_dynar_t hosts, const BatsimContext *context, c
     unsigned int i, id=0;
     xbt_dynar_foreach(hosts, i, host)
     {
-        Machine * machine = new Machine;
+        Machine * machine = new Machine(this);
 
         machine->name = sg_host_get_name(host);
         machine->host = host;
         machine->jobs_being_computed = {};
-        machine->state = MachineState::IDLE;
 
         if (context->energy_used)
         {
@@ -176,22 +187,36 @@ void Machines::createMachines(xbt_dynar_t hosts, const BatsimContext *context, c
             }
         }
 
-        if (machine->name != masterHostName)
+        if ((machine->name != masterHostName) && (machine->name != pfsHostName))
         {
+
             machine->id = id;
             ++id;
             _machines.push_back(machine);
         }
         else
-        {
-            xbt_assert(_masterMachine == nullptr, "There are two master hosts...");
-            machine->id = -1;
-            _masterMachine = machine;
-        }
+            if (machine->name == masterHostName)
+            {
+                xbt_assert(_master_machine == nullptr, "There are two master hosts...");
+                machine->id = -1;
+                _master_machine = machine;
+            }
+            else
+            {
+
+                xbt_assert(_pfs_machine == nullptr, "There are two pfs hosts...");
+                machine->id = -2;
+                _pfs_machine = machine;
+                 XBT_INFO("Pfs_Host (parallel filesystem host) is here.");
+            }
     }
 
-    xbt_assert(_masterMachine != nullptr, "Cannot find the MasterHost '%s' in the platform file", masterHostName.c_str());
-    sortMachinesByAscendingName();
+    xbt_assert(_master_machine != nullptr, "Cannot find the MasterHost '%s' in the platform file", masterHostName.c_str());
+    if (_pfs_machine == nullptr)
+    {
+         XBT_INFO("There is not Pfs_Host (parallel filesystem host).");
+    }
+    sort_machines_by_ascending_name();
 
     // Let's limit the number of machines
     if (limit_machine_count != -1)
@@ -211,6 +236,8 @@ void Machines::createMachines(xbt_dynar_t hosts, const BatsimContext *context, c
 
         _machines.resize(limit_machine_count);
     }
+
+    _nb_machines_in_each_state[MachineState::IDLE] = (int)_machines.size();
 }
 
 const Machine * Machines::operator[](int machineID) const
@@ -230,7 +257,7 @@ bool Machines::exists(int machineID) const
     return machineID >= 0 && machineID < (int)_machines.size();
 }
 
-void Machines::displayDebug() const
+void Machines::display_debug() const
 {
     // Let us traverse machines to display some information about them
     vector<string> machinesVector;
@@ -254,10 +281,17 @@ const std::vector<Machine *> &Machines::machines() const
     return _machines;
 }
 
-const Machine *Machines::masterMachine() const
+const Machine *Machines::master_machine() const
 {
-    return _masterMachine;
+    return _master_machine;
 }
+
+const Machine *Machines::pfs_machine() const
+{
+    return _pfs_machine;
+}
+
+
 
 long double Machines::total_consumed_energy(const BatsimContext *context) const
 {
@@ -274,59 +308,88 @@ long double Machines::total_consumed_energy(const BatsimContext *context) const
     return total_consumed_energy;
 }
 
-void Machines::updateMachinesOnJobRun(int jobID, const MachineRange & usedMachines)
+int Machines::nb_machines() const
 {
-    for (auto it = usedMachines.elements_begin(); it != usedMachines.elements_end(); ++it)
+    return _machines.size();
+}
+
+void Machines::update_nb_machines_in_each_state(MachineState old_state, MachineState new_state)
+{
+    _nb_machines_in_each_state[old_state]--;
+    _nb_machines_in_each_state[new_state]++;
+}
+
+const std::map<MachineState, int> &Machines::nb_machines_in_each_state() const
+{
+    return _nb_machines_in_each_state;
+}
+
+void Machines::update_machines_on_job_run(const Job * job,
+                                          const MachineRange & used_machines,
+                                          BatsimContext * context)
+{
+    for (auto it = used_machines.elements_begin(); it != used_machines.elements_end(); ++it)
     {
         int machine_id = *it;
         Machine * machine = _machines[machine_id];
-        machine->state = MachineState::COMPUTING;
+        machine->update_machine_state(MachineState::COMPUTING);
 
-        int previous_top_job = -1;
+        const Job * previous_top_job = nullptr;
         if (!machine->jobs_being_computed.empty())
             previous_top_job = *machine->jobs_being_computed.begin();
 
-        machine->jobs_being_computed.insert(jobID);
+        machine->jobs_being_computed.insert(job);
 
-        if (previous_top_job == -1 || previous_top_job != *machine->jobs_being_computed.begin())
+        if (previous_top_job == nullptr || previous_top_job != *machine->jobs_being_computed.begin())
         {
             if (_tracer != nullptr)
-                _tracer->set_machine_as_computing_job(machine->id, *machine->jobs_being_computed.begin(), MSG_get_clock());
+                _tracer->set_machine_as_computing_job(machine->id,
+                                                      *machine->jobs_being_computed.begin(),
+                                                      MSG_get_clock());
         }
     }
+
+    if (context->trace_machine_states)
+        context->machine_state_tracer.write_machine_states(MSG_get_clock());
 }
 
-void Machines::updateMachinesOnJobEnd(int jobID, const MachineRange & usedMachines)
+void Machines::update_machines_on_job_end(const Job * job,
+                                          const MachineRange & used_machines,
+                                          BatsimContext * context)
 {
-    for (auto it = usedMachines.elements_begin(); it != usedMachines.elements_end(); ++it)
+    for (auto it = used_machines.elements_begin(); it != used_machines.elements_end(); ++it)
     {
         int machine_id = *it;
         Machine * machine = _machines[machine_id];
 
         xbt_assert(!machine->jobs_being_computed.empty());
-        int previous_top_job = *machine->jobs_being_computed.begin();
+        const Job * previous_top_job = *machine->jobs_being_computed.begin();
 
         // Let's erase jobID in the jobs_being_computed data structure
-        int ret = machine->jobs_being_computed.erase(jobID);
+        int ret = machine->jobs_being_computed.erase(job);
         (void) ret; // Avoids a warning if assertions are ignored
         xbt_assert(ret == 1);
 
         if (machine->jobs_being_computed.empty())
         {
-            machine->state = MachineState::IDLE;
+            machine->update_machine_state(MachineState::IDLE);
             if (_tracer != nullptr)
                 _tracer->set_machine_idle(machine->id, MSG_get_clock());
         }
         else if (*machine->jobs_being_computed.begin() != previous_top_job)
         {
             if (_tracer != nullptr)
-                _tracer->set_machine_as_computing_job(machine->id, *machine->jobs_being_computed.begin(), MSG_get_clock());
+                _tracer->set_machine_as_computing_job(machine->id,
+                                                      *machine->jobs_being_computed.begin(),
+                                                      MSG_get_clock());
         }
-
     }
+
+    if (context->trace_machine_states)
+        context->machine_state_tracer.write_machine_states(MSG_get_clock());
 }
 
-void Machines::sortMachinesByAscendingName()
+void Machines::sort_machines_by_ascending_name()
 {
     std::sort(_machines.begin(), _machines.end(), machine_comparator_name);
 
@@ -334,12 +397,12 @@ void Machines::sortMachinesByAscendingName()
         _machines[i]->id = i;
 }
 
-void Machines::setTracer(PajeTracer *tracer)
+void Machines::set_tracer(PajeTracer *tracer)
 {
     _tracer = tracer;
 }
 
-string machineStateToString(MachineState state)
+string machine_state_to_string(MachineState state)
 {
     string s;
 
@@ -355,14 +418,26 @@ string machineStateToString(MachineState state)
         s = "computing";
         break;
     case MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING:
-        s = "sleeping->computing";
+        s = "switching_on";
         break;
     case MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING:
-        s = "computing->sleeping";
+        s = "switching_off";
         break;
     }
 
     return s;
+}
+
+Machine::Machine(Machines *machines) :
+    machines(machines)
+{
+    xbt_assert(this->machines != nullptr);
+    const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
+                                                 MachineState::COMPUTING,
+                                                 MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
+    for (const MachineState & state : machine_states)
+        time_spent_in_each_state[state] = 0;
 }
 
 Machine::~Machine()
@@ -383,17 +458,17 @@ bool Machine::has_pstate(int pstate) const
 void Machine::display_machine(bool is_energy_used) const
 {
     // Let us traverse jobs_being_computed to display some information about them
-    vector<string> jobsVector;
-    for (auto & jobID : jobs_being_computed)
+    vector<string> jobs_vector;
+    for (auto & job : jobs_being_computed)
     {
-        jobsVector.push_back(std::to_string(jobID));
+        jobs_vector.push_back(job->id);
     }
 
     string str = "Machine\n";
     str += "  id = " + to_string(id) + "\n";
     str += "  name = '" + name + "'\n";
-    str += "  state = " + machineStateToString(state) + "\n";
-    str += "  jobs_being_computed = [" + boost::algorithm::join(jobsVector, ", ") + "]\n";
+    str += "  state = " + machine_state_to_string(state) + "\n";
+    str += "  jobs_being_computed = [" + boost::algorithm::join(jobs_vector, ", ") + "]\n";
 
     if (is_energy_used)
     {
@@ -433,10 +508,24 @@ string Machine::jobs_being_computed_as_string() const
 {
     vector<string> jobs_strings;
 
-    for (auto & jobID : jobs_being_computed)
-        jobs_strings.push_back(to_string(jobID));
+    for (auto & job : jobs_being_computed)
+        jobs_strings.push_back(job->id);
 
     return boost::algorithm::join(jobs_strings, ", ");
+}
+
+void Machine::update_machine_state(MachineState new_state)
+{
+    Rational current_date = MSG_get_clock();
+
+    Rational delta_time = current_date - last_state_change_date;
+    xbt_assert(delta_time >= 0);
+
+    time_spent_in_each_state[state] += delta_time;
+
+    machines->update_nb_machines_in_each_state(state, new_state);
+    state = new_state;
+    last_state_change_date = current_date;
 }
 
 bool string_including_integers_comparator(const std::string & s1, const std::string & s2)
@@ -479,4 +568,20 @@ bool string_including_integers_comparator(const std::string & s1, const std::str
 bool machine_comparator_name(const Machine *m1, const Machine *m2)
 {
     return string_including_integers_comparator(m1->name, m2->name);
+}
+
+
+void create_machines(const MainArguments & main_args, BatsimContext * context, int max_nb_machines_to_use)
+{
+    XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
+    XBT_INFO("The name of the master host is '%s'", main_args.master_host_name.c_str());
+    XBT_INFO("The name of the parallel file system host is '%s'", main_args.pfs_host_name.c_str());
+
+    MSG_create_environment(main_args.platform_filename.c_str());
+
+    xbt_dynar_t hosts = MSG_hosts_as_dynar();
+    context->machines.create_machines(hosts, context, main_args.master_host_name, main_args.pfs_host_name, max_nb_machines_to_use);
+    xbt_dynar_free(&hosts);
+
+    XBT_INFO("The machines have been created successfully. There are %d computing machines.", context->machines.nb_machines());
 }

@@ -10,9 +10,11 @@
 
 #include <rapidjson/document.h>
 
+#include "exact_numbers.hpp"
 #include "machine_range.hpp"
 
 class Profiles;
+class Workload;
 
 /**
  * @brief Contains the different states a job can be in
@@ -32,18 +34,42 @@ enum class JobState
  */
 struct Job
 {
-    int id; //!< The unique job number
+    Workload * workload = nullptr; //!< The workload the job belongs to
+    int number; //!< The job unique number within its workload
+    std::string id; //!< The job unique identifier
     std::string profile; //!< The job profile name. The corresponding profile tells how the job should be computed
-    double submission_time; //!< The job submission time: The time at which the becomes available
-    double walltime; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed
+    Rational submission_time; //!< The job submission time: The time at which the becomes available
+    Rational walltime; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed
     int required_nb_res; //!< The number of resources the job is requested to be executed on
+
+    std::string json_description; //!< The JSON description of the job
 
     long double consumed_energy; //!< The sum, for each machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
 
-    double starting_time; //!< The time at which the job starts to be executed.
-    double runtime; //!< The amount of time during which the job has been executed
+    Rational starting_time; //!< The time at which the job starts to be executed.
+    Rational runtime; //!< The amount of time during which the job has been executed
     MachineRange allocation; //!< The machines on which the job has been executed.
     JobState state; //!< The current state of the job
+
+    /**
+     * @brief Creates a new-allocated Job from a JSON description
+     * @param[in] json_desc The JSON description of the job
+     * @param[in] workload The Workload the job is in
+     * @return The newly allocated Job
+     * @pre The JSON description of the job is valid
+     */
+    static Job * from_json(const rapidjson::Value & json_desc,
+                           Workload * workload);
+
+    /**
+     * @brief Creates a new-allocated Job from a JSON description
+     * @param[in] json_str The JSON description of the job (as a string)
+     * @param[in] workload The Workload the job is in
+     * @return The newly allocated Job
+     * @pre The JSON description of the job is valid
+     */
+    static Job * from_json(const std::string & json_str,
+                           Workload * workload);
 };
 
 /**
@@ -66,6 +92,7 @@ public:
     Jobs();
     /**
      * @brief Destroys a Jobs
+     * @details All Job instances will be deleted
      */
     ~Jobs();
 
@@ -76,6 +103,12 @@ public:
     void setProfiles(Profiles * profiles);
 
     /**
+     * @brief Sets the Workload within which this Jobs instance exist
+     * @param[in] workload The Workload
+     */
+    void setWorkload(Workload * workload);
+
+    /**
      * @brief Loads the jobs from a JSON document
      * @param[in] doc The JSON document
      * @param[in] filename The name of the file the JSON document has been extracted from
@@ -84,30 +117,51 @@ public:
 
     /**
      * @brief Accesses one job thanks to its unique number
-     * @param[in] job_id The job unique number
+     * @param[in] job_number The job unique number
      * @return A pointer to the job associated to the given job number
      */
-    Job * operator[](int job_id);
+    Job * operator[](int job_number);
 
     /**
      * @brief Accesses one job thanks to its unique number (const version)
-     * @param[in] job_id The job unique number
+     * @param[in] job_number The job unique number
      * @return A (const) pointer to the job associated to the given job number
      */
-    const Job * operator[](int job_id) const;
+    const Job * operator[](int job_number) const;
+
+    /**
+     * @brief Accesses one job thanks to its unique number
+     * @param[in] job_number The job unique number
+     * @return A pointer to the job associated to the given job number
+     */
+    Job * at(int job_number);
+
+    /**
+     * @brief Accesses one job thanks to its unique number (const version)
+     * @param[in] job_number The job unique number
+     * @return A (const) pointer to the job associated to the given job number
+     */
+    const Job * at(int job_number) const;
+
+    /**
+     * @brief Adds a job into a Jobs instance
+     * @param[in] job The job to add
+     * @pre No job with the same number exist in the Jobs instance
+     */
+    void add_job(Job * job);
 
     /**
      * @brief Allows to know whether a job exists
-     * @param[in] job_id The unique job number
+     * @param[in] job_number The unique job number
      * @return True if and only if a job with the given job number exists
      */
-    bool exists(int job_id) const;
+    bool exists(int job_number) const;
 
     /**
      * @brief Allows to know whether the Jobs contains any SMPI job
      * @return True if the number of SMPI jobs in the Jobs is greater than 0.
      */
-    bool containsSMPIJob() const;
+    bool contains_smpi_job() const;
 
     /**
      * @brief Displays the contents of the Jobs class (debug purpose)
@@ -120,7 +174,14 @@ public:
      */
     const std::map<int, Job*> & jobs() const;
 
+    /**
+     * @brief Returns the number of jobs of the Jobs instance
+     * @return the number of jobs of the Jobs instance
+     */
+    int nb_jobs() const;
+
 private:
     std::map<int, Job*> _jobs; //!< The std::map which contains the jobs
-    Profiles * _profiles; //!< The profiles associated with the jobs
+    Profiles * _profiles = nullptr; //!< The profiles associated with the jobs
+    Workload * _workload = nullptr; //!< The Workload the jobs belong to
 };

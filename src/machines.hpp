@@ -5,18 +5,22 @@
 
 #pragma once
 
-#include <vector>
-#include <set>
 #include <map>
+#include <set>
 #include <string>
+#include <vector>
 
 #include <simgrid/msg.h>
 
-#include "pstate.hpp"
+#include "exact_numbers.hpp"
 #include "machine_range.hpp"
+#include "pstate.hpp"
 
-class PajeTracer;
 struct BatsimContext;
+struct Job;
+class Machines;
+struct MainArguments;
+class PajeTracer;
 
 /**
  * @brief Enumerates the different states of a Machine
@@ -36,18 +40,28 @@ enum class MachineState
 struct Machine
 {
     /**
+     * @brief Constructs a Machine
+     * @param[in] machines The Machines instances the Machine is within
+     */
+    Machine(Machines * machines);
+
+    /**
      * @brief Destroys a Machine
      */
     ~Machine();
 
+    Machines * machines = nullptr; //!< Points to the Machines instance which contains the Machine
     int id; //!< The machine unique number
     std::string name; //!< The machine name
     msg_host_t host; //!< The SimGrid host corresponding to the machine
-    MachineState state; //!< The current state of the Machine
-    std::set<int> jobs_being_computed; //!< The set of jobs being computed on the Machine
+    MachineState state = MachineState::IDLE; //!< The current state of the Machine
+    std::set<const Job *> jobs_being_computed; //!< The set of jobs being computed on the Machine
 
     std::map<int, PStateType> pstates; //!< Maps power state number to their power state type
     std::map<int, SleepPState *> sleep_pstates; //!< Maps sleep power state numbers to their SleepPState
+
+    Rational last_state_change_date = 0; //!< The time at which the last state change has been done
+    std::map<MachineState, Rational> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
 
     /**
      * @brief Returns whether the Machine has the given power state
@@ -67,6 +81,12 @@ struct Machine
      * @return A std::string corresponding to the jobs being computed of the Machine
      */
     std::string jobs_being_computed_as_string() const;
+
+    /**
+     * @brief Updates the MachineState of one machine, updating logging counters
+     * @param[in] new_state The new state of the machine
+     */
+    void update_machine_state(MachineState new_state);
 };
 
 /**
@@ -107,36 +127,43 @@ public:
      * @param[in] hosts The SimGrid hosts
      * @param[in] context The Batsim Context
      * @param[in] masterHostName The name of the host which should be used as the Master host
+     * @param[in] pfsHostName The name of the host which should be used as the parallel filestem host
      * @param[in] limit_machine_count If set to -1, all the machines are used. If set to a strictly positive number N, only the first machines N will be used to compute jobs
      */
-    void createMachines(xbt_dynar_t hosts, const BatsimContext * context, const std::string & masterHostName, int limit_machine_count = -1);
+    void create_machines(xbt_dynar_t hosts, const BatsimContext * context, const std::string & masterHostName, const std::string & pfsHostName, int limit_machine_count = -1);
 
     /**
      * @brief Must be called when a job is executed on some machines
      * @details Puts the used machines in a computing state and traces the job beginning
-     * @param[in] jobID The unique job number
-     * @param[in] usedMachines The machines on which the job is executed
+     * @param[in] job The job
+     * @param[in] used_machines The machines on which the job is executed
+     * @param[in,out] context The Batsim Context
      */
-    void updateMachinesOnJobRun(int jobID, const MachineRange & usedMachines);
+    void update_machines_on_job_run(const Job * job,
+                                    const MachineRange & used_machines,
+                                    BatsimContext * context);
 
     /**
      * @brief Must be called when a job finishes its execution on some machines
      * @details Puts the used machines in an idle state and traces the job ending
-     * @param[in] jobID The unique job number
-     * @param[in] usedMachines The machines on which the job is executed
+     * @param[in] job The job
+     * @param[in] used_machines The machines on which the job is executed
+     * @param[in,out] context The BatsimContext
      */
-    void updateMachinesOnJobEnd(int jobID, const MachineRange & usedMachines);
+    void update_machines_on_job_end(const Job *job,
+                                    const MachineRange & used_machines,
+                                    BatsimContext *context);
 
     /**
      * @brief Sorts the machine by ascending name (lexicographically speaking)
      */
-    void sortMachinesByAscendingName();
+    void sort_machines_by_ascending_name();
 
     /**
      * @brief Sets the PajeTracer
      * @param[in] tracer The PajeTracer
      */
-    void setTracer(PajeTracer * tracer);
+    void set_tracer(PajeTracer * tracer);
 
     /**
      * @brief Accesses a Machine thanks to its unique number
@@ -162,7 +189,7 @@ public:
     /**
      * @brief Displays all machines (debug purpose)
      */
-    void displayDebug() const;
+    void display_debug() const;
 
     /**
      * @brief Returns a const reference to the vector of Machine
@@ -174,7 +201,13 @@ public:
      * @brief Returns a const pointer to the Master host machine
      * @return A const pointer to the Master host machine
      */
-    const Machine * masterMachine() const;
+    const Machine * master_machine() const;
+
+    /**
+     * @brief Returns a const pointer to the Parallel File System host machine
+     * @return A const pointer to the Parallel File System host machine
+     */
+    const Machine * pfs_machine() const;
 
     /**
      * @brief Computes and returns the total consumed energy of all the computing machines
@@ -183,10 +216,31 @@ public:
      */
     long double total_consumed_energy(const BatsimContext * context) const;
 
+    /**
+     * @brief Returns the number of computing machines
+     * @return The number of computing machines
+     */
+    int nb_machines() const;
+
+    /**
+     * @brief Updates the number of machines in each state after a MachineState transition
+     * @param[in] old_state The old state of a Machine
+     * @param[in] new_state The new state of a Machine
+     */
+    void update_nb_machines_in_each_state(MachineState old_state, MachineState new_state);
+
+    /**
+     * @brief _nb_machines_in_each_state getter
+     * @return A const reference to _nb_machines_in_each_state getter
+     */
+    const std::map<MachineState, int> & nb_machines_in_each_state() const;
+
 private:
     std::vector<Machine *> _machines; //!< The vector of computing machines
-    Machine * _masterMachine = nullptr; //!< The Master host
+    Machine * _master_machine = nullptr; //!< The Master host
+    Machine * _pfs_machine = nullptr; //!< The Master host
     PajeTracer * _tracer = nullptr; //!< The PajeTracer
+    std::map<MachineState, int> _nb_machines_in_each_state; //!< Counts how many machines are in each state
 };
 
 /**
@@ -194,4 +248,12 @@ private:
  * @param[in] state The MachineState
  * @return A std::string corresponding to a given MachineState
  */
-std::string machineStateToString(MachineState state);
+std::string machine_state_to_string(MachineState state);
+
+/**
+ * @brief Creates the machines whose behaviour should be simulated
+ * @param[in] main_args Batsim's arguments
+ * @param[in] context The BatsimContext
+ * @param[in] max_nb_machines_to_use The maximum number of computing machines to use
+ */
+void create_machines(const MainArguments & main_args, BatsimContext * context, int max_nb_machines_to_use);

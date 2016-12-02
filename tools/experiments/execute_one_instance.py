@@ -48,15 +48,16 @@ def find_socket_from_batsim_command(batsim_command):
                                        description = 'Batsim command parser',
                                        add_help = False)
 
-    batparser.add_argument("platform")
-    batparser.add_argument("workload")
+    batparser.add_argument("-p", "--platform", type=str)
+    batparser.add_argument("-w", "--workload", type=str)
+    batparser.add_argument("-W", "--workflow", type=str)
 
     batparser.add_argument("-e", "--export", type=str, default="out")
+    batparser.add_argument("-E", "--energy-plugin", action='store_true')
     batparser.add_argument("-h", "--allow-space-sharing", action='store_true')
     batparser.add_argument("-l", "--limit-machine-count", type=int, default=-1)
     batparser.add_argument("-L", "--limit-machine-count-by-workload", action='store_true')
     batparser.add_argument("-m", "--master-host", default="master_host")
-    batparser.add_argument("-p", "--energy-plugin", action='store_true')
     batparser.add_argument("-q", "--quiet", action='store_true')
     batparser.add_argument("-s", "--socket", type=str, default="/tmp/bat_socket")
     batparser.add_argument("-t", "--process-tracing", action='store_true')
@@ -339,9 +340,22 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
                 logger.error("Batsim ended unsucessfully (exit_code = {})".format(process.exit_code))
             else:
                 logger.error("Batsim ended unsucessfully (unknown reason)")
+
+            for (stream, sname) in [(process.stdout, 'stdout'),
+                                    (process.stderr, 'stderr')]:
+                if stream != '':
+                    max_nb_lines = 10
+                    lines = stream.split('\n')
+                    head = '\n'
+                    if len(lines) > max_nb_lines:
+                        head = '[... only the last {} lines are shown]\n'.format(max_nb_lines)
+                    logger.info('Batsim {s}:\n{h}{l}'.format(s = sname,
+                                                             h = head,
+                                                             l = '\n'.join(lines)))
+
             if self.execution_data.sched_process.running:
                 logger.warning("Killing Sched")
-                self.execution_data.sched_process.kill(auto_force_kill_timeout = 1)
+                self.execution_data.sched_process.kill(auto_force_kill_timeout = 30)
         else:
             logger.info("Batsim ended successfully")
         self.execution_data.nb_finished += 1
@@ -374,9 +388,21 @@ class SchedLifecycleHandler(ProcessLifecycleHandler):
             else:
                 logger.error("Sched ended unsucessfully (unknown reason)")
 
+            for (stream, sname) in [(process.stdout, 'stdout'),
+                                    (process.stderr, 'stderr')]:
+                if stream != '':
+                    max_nb_lines = 10
+                    lines = stream.split('\n')
+                    head = '\n'
+                    if len(lines) > max_nb_lines:
+                        head = '[... only the last {} lines are shown]\n'.format(max_nb_lines)
+                    logger.info('Sched {s}:\n{h}{l}'.format(s = sname,
+                                                            h = head,
+                                                            l = '\n'.join(lines)))
+
             if self.execution_data.batsim_process.running:
                 logger.warning("Killing Batsim")
-                self.execution_data.batsim_process.kill(auto_force_kill_timeout = 1)
+                self.execution_data.batsim_process.kill(auto_force_kill_timeout = 30)
         else:
             logger.info("Sched ended successfully")
         self.execution_data.nb_finished += 1
@@ -461,7 +487,8 @@ def execute_one_instance(working_directory,
                          batsim_command,
                          sched_command,
                          variables_filename,
-                         timeout = None):
+                         timeout = None,
+                         do_not_execute = False):
     if timeout == None:
         timeout = 3600
 
@@ -484,6 +511,11 @@ def execute_one_instance(working_directory,
     create_file_from_command(command = sched_command,
                              output_filename = sched_script_filename,
                              variables_definition_filename = variables_filename)
+
+    if do_not_execute == True:
+        logger.info('Skipping the execution of the instance because '
+                    'do_not_execute is True.')
+        sys.exit(4)
 
     # Let's create lifecycle handlers, which will manage what to do on process's events
     batsim_lifecycle_handler = BatsimLifecycleHandler()
@@ -590,10 +622,19 @@ Examples of such input files can be found in the subdirectory instance_examples.
                           'either absolute or relative to the working directory. '
                           ' If unset, the working directory is used instead')
 
-    p.add_argument('--post_only',
+    g = p.add_mutually_exclusive_group()
+
+    g.add_argument('--post_only',
                    action = 'store_true',
                    help = 'If set, only the post commands of this instance will '
                           'be computed.')
+
+    g.add_argument('--do_not_execute',
+                   action = 'store_true',
+                   help = 'If set, the Batsim+scheduler instance is not '
+                          'executed, only the precommands are. The execution '
+                          'scripts should also be generated. Furthermore, post '
+                          'commands will be skipped.')
 
     args = p.parse_args()
 
@@ -633,6 +674,11 @@ Examples of such input files can be found in the subdirectory instance_examples.
     if args.output_directory:
         output_directory = args.output_directory
 
+    do_not_execute = False
+    if args.do_not_execute:
+        do_not_execute = True
+
+
     # Let's add some variables
     variables['working_directory'] = working_directory
     variables['output_directory'] = output_directory
@@ -640,7 +686,7 @@ Examples of such input files can be found in the subdirectory instance_examples.
      # Let's check that variables are fine
     (var_ok, var_decl_order) = check_variables(variables)
     if not var_ok:
-        sys.exit(1)
+        sys.exit(-2)
 
     # Let's correctly interpret the working_dir and output_dir values
     (wd, od, batsim_command) = retrieve_info_from_instance(variables,
@@ -705,8 +751,9 @@ Examples of such input files can be found in the subdirectory instance_examples.
                                     batsim_command = batsim_command,
                                     sched_command = sched_command,
                                     variables_filename = variables_filename,
-                                    timeout = timeout):
-            sys.exit(1)
+                                    timeout = timeout,
+                                    do_not_execute = do_not_execute):
+            sys.exit(2)
 
     # Commands after instance execution
     if len(commands_after_execution) > 0:
@@ -735,7 +782,7 @@ Examples of such input files can be found in the subdirectory instance_examples.
                                    output_subscript_filename = output_subscript_filename,
                                    output_script_output_dir = post_commands_output_dir,
                                    command_name = command_name):
-                sys.exit(1)
+                sys.exit(3)
 
     # Everything went succesfully, let's return 0
     sys.exit(0)

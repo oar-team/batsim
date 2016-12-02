@@ -15,6 +15,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 
+#include <boost/locale.hpp>
+
 #include <simgrid/msg.h>
 
 #include "context.hpp"
@@ -48,7 +50,9 @@ void UnixDomainSocket::create_socket(const string & filename)
     sockaddr_un addr;
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, filename.c_str(), sizeof(addr.sun_path)-1);
+
+    xbt_assert(filename.size() < sizeof(addr.sun_path), "Socket filename too long!");
+    strncpy(addr.sun_path, filename.c_str(), min(filename.size()+1,sizeof(addr.sun_path)));
 
     unlink(filename.c_str());
 
@@ -126,19 +130,25 @@ string UnixDomainSocket::receive()
         }
         nb_bytes_read += ret;
     }
-    XBT_INFO("Received '%s'", msg.c_str());
 
-    return msg;
+    // Let's convert the received string from UTF-8
+    string msg_utf8 = boost::locale::conv::from_utf(msg, "UTF-8");
+    XBT_INFO("Received '%s'", msg_utf8.c_str());
+
+    return msg_utf8;
 }
 
 void UnixDomainSocket::send(const string & message)
 {
     xbt_assert(_client_socket != -1, "Bad UnixDomainSocket::send call: the client socket does not exist");
 
-    uint32_t message_size = message.size();
-    XBT_INFO("Sending '%s'", message.c_str());
+    // Let's make sure the message is sent as UTF-8
+    string utf8_message = boost::locale::conv::to_utf<char>(message, "UTF-8");
+
+    uint32_t message_size = utf8_message.size();
+    XBT_INFO("Sending '%s'", utf8_message.c_str());
     write(_client_socket, &message_size, 4);
-    write(_client_socket, (void*)message.c_str(), message_size);
+    write(_client_socket, (void*)utf8_message.c_str(), message_size);
 }
 
 int request_reply_scheduler_process(int argc, char *argv[])
@@ -149,9 +159,15 @@ int request_reply_scheduler_process(int argc, char *argv[])
     RequestReplyProcessArguments * args = (RequestReplyProcessArguments *) MSG_process_get_data(MSG_process_self());
     BatsimContext * context = args->context;
 
-    char sendDateAsString[16];
-    sprintf(sendDateAsString, "%f", MSG_get_clock());
-
+    const int date_buf_size = 32;
+    char sending_date_as_string[date_buf_size];
+    int nb_printed_char = snprintf(sending_date_as_string, date_buf_size,
+                                   "%f", MSG_get_clock());
+    xbt_assert(nb_printed_char < date_buf_size - 1,
+               "The date is now written as a %d-character long string, but the date "
+               "buffer size is %d. Since information will be lost now or in a near "
+               "future, the simulation is aborted.",
+               nb_printed_char, date_buf_size);
     char *sendBuf = (char*) args->send_buffer.c_str();
     XBT_DEBUG("Buffer received in REQ-REP: '%s'", sendBuf);
 
@@ -169,17 +185,14 @@ int request_reply_scheduler_process(int argc, char *argv[])
         XBT_INFO("Runtime error received: %s", error.what());
         XBT_INFO("Flushing output files...");
 
-        if (context->trace_schedule)
-            context->paje_tracer.finalize(context, MSG_get_clock());
-        exportScheduleToCSV(context->export_prefix + "_schedule.csv", context);
-        exportJobsToCSV(context->export_prefix + "_jobs.csv", context);
+        finalize_batsim_outputs(context);
 
         XBT_INFO("Output files flushed. Aborting execution now.");
         throw runtime_error("Execution aborted (connection broken)");
     }
 
     auto end = chrono::steady_clock::now();
-    long long elapsed_microseconds = chrono::duration <double, micro> (end - start).count();
+    Rational elapsed_microseconds = (double) chrono::duration <long double, micro> (end - start).count();
     context->microseconds_used_by_scheduler += elapsed_microseconds;
 
     /*
@@ -198,11 +211,12 @@ int request_reply_scheduler_process(int argc, char *argv[])
     */
 
     // Let us split the message by '|'.
+
     vector<string> events;
     boost::split(events, message_received, boost::is_any_of("|"), boost::token_compress_on);
     xbt_assert(events.size() >= 2, "Invalid message received ('%s'): it should be composed of at least 2 parts separated by a '|'", message_received.c_str());
 
-    double previousDate = std::stod (sendDateAsString);
+    double previousDate = std::stod(sending_date_as_string);
 
     for (unsigned int eventI = 1; eventI < events.size(); ++eventI)
     {
@@ -228,7 +242,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
             case NOP:
             {
                 xbt_assert(parts2.size() == 2, "Invalid event received ('%s'): NOP messages must be composed of 2 parts separated by ':'", event_string.c_str());
-                send_message("server", IPMessageType::SCHED_NOP);
+                dsend_message("server", IPMessageType::SCHED_NOP);
             } break; // End of case received_stamp == NOP
 
             case NOP_ME_LATER:
@@ -240,7 +254,7 @@ int request_reply_scheduler_process(int argc, char *argv[])
                 if (message->target_time < MSG_get_clock())
                     XBT_WARN("Event '%s' tells to wait until time %g but it is already reached", event_string.c_str(), message->target_time);
 
-                send_message("server", IPMessageType::SCHED_NOP_ME_LATER, (void*) message);
+                dsend_message("server", IPMessageType::SCHED_NOP_ME_LATER, (void*) message);
             } break; // End of case received_stamp == NOP_ME_LATER
 
             case STATIC_JOB_ALLOCATION:
@@ -257,22 +271,33 @@ int request_reply_scheduler_process(int argc, char *argv[])
 
                 for (const std::string & allocation_string : allocations)
                 {
-                    // Each allocation is written in the form of jobID=machineID1,machineID2,...,machineIDn
+                    // Each allocation is written in the form of wload!jobID=machineID1,machineID2,...,machineIDn
                     // Each machineIDk can either be a single machine or a closed interval machineIDa-machineIDb
                     vector<string> allocation_parts;
                     boost::split(allocation_parts, allocation_string, boost::is_any_of("="), boost::token_compress_on);
-                    xbt_assert(allocation_parts.size() == 2, "Invalid static job allocation received ('%s'): it must be composed of two parts separated by a '='",
+                    xbt_assert(allocation_parts.size() == 2, "Invalid job allocation received ('%s'): it must be composed of two parts separated by a '='",
                                allocation_string.c_str());
 
                     SchedulingAllocation * alloc = new SchedulingAllocation;
-                    alloc->job_id = std::stoi(allocation_parts[0]);
-                    xbt_assert(context->jobs.exists(alloc->job_id), "Invalid static job allocation received ('%s'): the job %d does not exist",
-                               allocation_string.c_str(), alloc->job_id);
-                    Job * job = context->jobs[alloc->job_id];
+
+                    // Let's retrieve the job identifier
+                    if (!identify_job_from_string(context, allocation_parts[0], alloc->job_id))
+                    {
+                        xbt_assert(false, "Invalid job allocation received ('%s'): The job identifier '%s' is not valid. "
+                                   "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
+                                   "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
+                                   "Furthermore, the corresponding job must exist.",
+                                   allocation_string.c_str(), allocation_parts[0].c_str());
+                    }
+
+                    Job * job = context->workloads.job_at(alloc->job_id);
                     (void) job; // Avoids a warning if assertions are ignored
+                    XBT_INFO("JOB_STATE (job %d): %d ('0' means 'not submitted')",
+                             job->number, job->state);
+
                     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                                "Invalid static job allocation received ('%s') : the job %d state indicates it cannot be executed now",
-                               allocation_string.c_str(), job->id);
+                               allocation_string.c_str(), job->number);
 
                     // In order to get the machines, let us do a split by ','!
                     vector<string> allocation_machines;
@@ -287,39 +312,39 @@ int request_reply_scheduler_process(int argc, char *argv[])
                         vector<string> interval_parts;
                         boost::split(interval_parts, allocation_machines[i], boost::is_any_of("-"), boost::token_compress_on);
                         xbt_assert(interval_parts.size() >= 1 && interval_parts.size() <= 2,
-                                   "Invalid static job allocation received ('%s'): the MIDk '%s' should either be a single machine ID"
+                                   "Invalid job allocation received ('%s'): the MIDk '%s' should either be a single machine ID"
                                    " (syntax: MID to represent the machine ID MID) or a closed interval (syntax: MIDa-MIDb to represent"
                                    " the machine interval [MIDA,MIDb])", allocation_string.c_str(), allocation_machines[i].c_str());
 
                         if (interval_parts.size() == 1)
                         {
                             int machine_id = std::stoi(interval_parts[0]);
-                            xbt_assert(context->machines.exists(machine_id), "Invalid static job allocation received ('%s'): the machine %d does not exist",
+                            xbt_assert(context->machines.exists(machine_id), "Invalid job allocation received ('%s'): the machine %d does not exist",
                                        allocation_string.c_str(), machine_id);
                             alloc->machine_ids.insert(machine_id);
                             alloc->hosts.push_back(context->machines[machine_id]->host);
                             xbt_assert((int)alloc->hosts.size() <= job->required_nb_res,
-                                       "Invalid static job allocation received ('%s'): the job %d size is %d but at least %lu machines were allocated",
-                                       allocation_string.c_str(), job->id, job->required_nb_res, alloc->hosts.size());
+                                       "Invalid job allocation received ('%s'): the job %d size is %d but at least %lu machines were allocated",
+                                       allocation_string.c_str(), job->number, job->required_nb_res, alloc->hosts.size());
                         }
                         else
                         {
                             int machineIDa = std::stoi(interval_parts[0]);
                             int machineIDb = std::stoi(interval_parts[1]);
 
-                            xbt_assert(machineIDa <= machineIDb, "Invalid static job allocation received ('%s'): the MIDk '%s' is composed of two"
+                            xbt_assert(machineIDa <= machineIDb, "Invalid job allocation received ('%s'): the MIDk '%s' is composed of two"
                                       " parts (1:%d and 2:%d) but the first value must be lesser than or equal to the second one.", allocation_string.c_str(),
                                       allocation_machines[i].c_str(), machineIDa, machineIDb);
 
                             for (int machine_id = machineIDa; machine_id <= machineIDb; ++machine_id)
                             {
-                                xbt_assert(context->machines.exists(machine_id), "Invalid static job allocation received ('%s'): the machine %d does not exist",
+                                xbt_assert(context->machines.exists(machine_id), "Invalid job allocation received ('%s'): the machine %d does not exist",
                                            allocation_string.c_str(), machine_id);
 
                                 alloc->hosts.push_back(context->machines[machine_id]->host);
                                 xbt_assert((int)alloc->hosts.size() <= job->required_nb_res,
                                            "Invalid static job allocation received ('%s'): the job %d size is %d but at least %lu machines were allocated",
-                                           allocation_string.c_str(), job->id, job->required_nb_res, alloc->hosts.size());
+                                           allocation_string.c_str(), job->number, job->required_nb_res, alloc->hosts.size());
                             }
 
                             alloc->machine_ids.insert(MachineRange::ClosedInterval(machineIDa, machineIDb));
@@ -328,8 +353,8 @@ int request_reply_scheduler_process(int argc, char *argv[])
 
                     // Let the number of allocated machines be checked
                     xbt_assert((int)alloc->machine_ids.size() == job->required_nb_res,
-                               "Invalid static job allocation received ('%s'): the job %d size is %d but %u machines were allocated (%s)",
-                               allocation_string.c_str(), job->id, job->required_nb_res, alloc->machine_ids.size(),
+                               "Invalid job allocation received ('%s'): the job %d size is %d but %u machines were allocated (%s)",
+                               allocation_string.c_str(), job->number, job->required_nb_res, alloc->machine_ids.size(),
                                alloc->machine_ids.to_string_brackets().c_str());
 
                     message->allocations.push_back(alloc);
@@ -341,20 +366,29 @@ int request_reply_scheduler_process(int argc, char *argv[])
 
             case JOB_REJECTION:
             {
-                xbt_assert(parts2.size() == 3, "Invalid event received ('%s'): static job rejections must be composed of 3 parts separated by ':'",
+                xbt_assert(parts2.size() == 3, "Invalid event received ('%s'): job rejections must be composed of 3 parts separated by ':'",
                            event_string.c_str());
 
                 // Let us create the message which will be sent to the server.
                 JobRejectedMessage * message = new JobRejectedMessage;
-                message->job_id = std::stoi(parts2[2]);
 
-                xbt_assert(context->jobs.exists(message->job_id), "Invalid event received ('%s'): job %d does not exist",
-                           event_string.c_str(), message->job_id);
-                Job * job = context->jobs[message->job_id];
+                // Let's retrieve the workload_name and the job_id from the job identifier
+                const std::string & job_identifier_string = parts2[2];
+                if (!identify_job_from_string(context, job_identifier_string, message->job_id))
+                {
+                    xbt_assert(false, "Invalid job rejection received: The job identifier '%s' is not valid. "
+                               "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
+                               "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
+                               "Furthermore, the corresponding job must exist.",
+                               job_identifier_string.c_str());
+                }
+
+
+                Job * job = context->workloads.job_at(message->job_id);
                 (void) job; // Avoids a warning if assertions are ignored
                 xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED, "Invalid event received ('%s'): job %d cannot be"
                           " rejected now. For being rejected, a job must be submitted and not allocated yet.",
-                           event_string.c_str(), job->id);
+                           event_string.c_str(), job->number);
 
                 send_message("server", IPMessageType::SCHED_REJECTION, (void*) message);
 
@@ -434,4 +468,44 @@ int request_reply_scheduler_process(int argc, char *argv[])
     send_message("server", IPMessageType::SCHED_READY);
     delete args;
     return 0;
+}
+
+std::string absolute_filename(const std::string & filename)
+{
+    xbt_assert(filename.length() > 0);
+
+    // Let's assume filenames starting by "/" are absolute.
+    if (filename[0] == '/')
+        return filename;
+
+    char cwd_buf[PATH_MAX];
+    char * getcwd_ret = getcwd(cwd_buf, PATH_MAX);
+    xbt_assert(getcwd_ret == cwd_buf, "getcwd failed");
+
+    return string(getcwd_ret) + '/' + filename;
+}
+
+bool identify_job_from_string(BatsimContext * context,
+                              const std::string & job_identifier_string,
+                              JobIdentifier & job_id)
+{
+    // Let's split the job_identifier by '!'
+    vector<string> job_identifier_parts;
+    boost::split(job_identifier_parts, job_identifier_string, boost::is_any_of("!"), boost::token_compress_on);
+
+    if (job_identifier_parts.size() == 1)
+    {
+        XBT_WARN("Job ID is not of format WORKLOAD!NUMBER... assuming static!");
+        job_id.workload_name = "static";
+        job_id.job_number = std::stoi(job_identifier_parts[0]);
+    }
+    else if (job_identifier_parts.size() == 2)
+    {
+        job_id.workload_name = job_identifier_parts[0];
+        job_id.job_number = std::stoi(job_identifier_parts[1]);
+    }
+    else
+        return false;
+
+    return context->workloads.job_exists(job_id);
 }

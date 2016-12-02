@@ -33,17 +33,43 @@ int uds_server_process(int argc, char *argv[])
     int nb_scheduled_jobs = 0;
     int nb_submitters = 0;
     int nb_submitters_finished = 0;
+    int nb_workflow_submitters_finished = 0;
     int nb_running_jobs = 0;
     int nb_switching_machines = 0;
     int nb_waiters = 0;
-    const int protocol_version = 1;
+    const int protocol_version = 3;
     bool sched_ready = true;
+    bool all_jobs_submitted_and_completed = false;
+
+    // Let's store some information about the submitters
+    struct Submitter
+    {
+        string mailbox;
+        bool should_be_called_back;
+    };
+
+    map<string, Submitter*> submitters;
+
+    // Let's store the origin or some jobs
+    map<JobIdentifier, Submitter*> origin_of_jobs;
 
     string send_buffer;
 
+    // Let's tell the Decision process that the simulation is about to begin (and that some data can be read from the data storage)
+    send_buffer = "|" + std::to_string(MSG_get_clock()) + ":A";
+    RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
+    req_rep_args->context = context;
+    req_rep_args->send_buffer = to_string(protocol_version) + ":" + to_string(MSG_get_clock()) + send_buffer;
+    send_buffer.clear();
+
+    MSG_process_create("Scheduler REQ-REP", request_reply_scheduler_process, (void*)req_rep_args, MSG_host_self());
+    sched_ready = false;
+
+
+    // Simulation loop
     while ((nb_submitters == 0) || (nb_submitters_finished < nb_submitters) ||
-           (nb_completed_jobs < nb_submitted_jobs) || (!sched_ready) ||
-           (nb_switching_machines > 0) || (nb_waiters > 0))
+          (nb_completed_jobs < nb_submitted_jobs) || (!sched_ready) ||
+          (nb_switching_machines > 0) || (nb_waiters > 0))
     {
         // Let's wait a message from a node or the request-reply process...
         msg_task_t task_received = NULL;
@@ -57,15 +83,50 @@ int uds_server_process(int argc, char *argv[])
         {
         case IPMessageType::SUBMITTER_HELLO:
         {
+            xbt_assert(task_data->data != nullptr);
+            xbt_assert(!all_jobs_submitted_and_completed,
+                       "A new submitter said hello but all jobs have already been submitted and completed... Aborting.");
+            SubmitterHelloMessage * message = (SubmitterHelloMessage *) task_data->data;
+
+            xbt_assert(submitters.count(message->submitter_name) == 0,
+                       "Invalid new submitter '%s': a submitter with the same name already exists!",
+                       message->submitter_name.c_str());
+
             nb_submitters++;
-            XBT_INFO( "New submitter said hello. Number of polite submitters: %d", nb_submitters);
+
+            Submitter * submitter = new Submitter;
+            submitter->mailbox = message->submitter_name;
+            submitter->should_be_called_back = message->enable_callback_on_job_completion;
+
+            submitters[message->submitter_name] = submitter;
+
+            XBT_INFO("New submitter said hello. Number of polite submitters: %d", nb_submitters);
 
         } break; // end of case SUBMITTER_HELLO
 
         case IPMessageType::SUBMITTER_BYE:
         {
+            xbt_assert(task_data->data != nullptr);
+            SubmitterByeMessage * message = (SubmitterByeMessage *) task_data->data;
+
+            xbt_assert(submitters.count(message->submitter_name) == 1);
+            submitters.erase(message->submitter_name);
+
             nb_submitters_finished++;
-            XBT_INFO( "A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
+            if (message->is_workflow_submitter)
+                nb_workflow_submitters_finished++;
+            XBT_INFO("A submitted said goodbye. Number of finished submitters: %d", nb_submitters_finished);
+
+            if (!all_jobs_submitted_and_completed &&
+                nb_completed_jobs == nb_submitted_jobs &&
+                nb_submitters_finished == nb_submitters)
+            {
+                all_jobs_submitted_and_completed = true;
+                XBT_INFO("It seems that all jobs have been submitted and completed!");
+
+                send_buffer += "|" + std::to_string(MSG_get_clock()) + ":Z";
+                XBT_DEBUG("Message to send to scheduler: %s", send_buffer.c_str());
+            }
 
         } break; // end of case SUBMITTER_BYE
 
@@ -74,29 +135,76 @@ int uds_server_process(int argc, char *argv[])
             xbt_assert(task_data->data != nullptr);
             JobCompletedMessage * message = (JobCompletedMessage *) task_data->data;
 
+            if (origin_of_jobs.count(message->job_id) == 1)
+            {
+                // Let's call the submitter which submitted the job back
+                SubmitterJobCompletionCallbackMessage * msg = new SubmitterJobCompletionCallbackMessage;
+                msg->job_id = message->job_id;
+
+                Submitter * submitter = origin_of_jobs.at(message->job_id);
+                dsend_message(submitter->mailbox, IPMessageType::SUBMITTER_CALLBACK, (void*) msg);
+
+                origin_of_jobs.erase(message->job_id);
+            }
+
             nb_running_jobs--;
             xbt_assert(nb_running_jobs >= 0);
             nb_completed_jobs++;
-            Job * job = context->jobs[message->job_id];
+            Job * job = context->workloads.job_at(message->job_id);
 
-            XBT_INFO( "Job %d COMPLETED. %d jobs completed so far", job->id, nb_completed_jobs);
+            XBT_INFO("Job %s-%d COMPLETED. %d jobs completed so far",
+                     job->workload->name.c_str(),job->number, nb_completed_jobs);
 
-            send_buffer += '|' + std::to_string(MSG_get_clock()) + ":C:" + std::to_string(job->id);
+            send_buffer += '|' + std::to_string(MSG_get_clock()) + ":C:" + message->job_id.to_string();
             XBT_DEBUG( "Message to send to scheduler: %s", send_buffer.c_str());
+
+            if (!all_jobs_submitted_and_completed &&
+                nb_completed_jobs == nb_submitted_jobs &&
+                nb_submitters_finished == nb_submitters)
+            {
+                all_jobs_submitted_and_completed = true;
+                XBT_INFO("It seems that all jobs have been submitted and completed!");
+
+                send_buffer += "|" + std::to_string(MSG_get_clock()) + ":Z";
+                XBT_DEBUG( "Message to send to scheduler: %s", send_buffer.c_str());
+            }
 
         } break; // end of case JOB_COMPLETED
 
         case IPMessageType::JOB_SUBMITTED:
         {
+            // Ignore all submissions if -k was specified and all workflows have completed
+            if ((context->workflows.size() != 0) && (context->terminate_with_last_workflow) &&
+                    (nb_workflow_submitters_finished == context->workflows.size()))
+            {
+                XBT_INFO("Ignoring Job due to -k command-line option");
+                break;
+            }
+
             xbt_assert(task_data->data != nullptr);
             JobSubmittedMessage * message = (JobSubmittedMessage *) task_data->data;
 
-            nb_submitted_jobs++;
-            Job * job = context->jobs[message->job_id];
-            job->state = JobState::JOB_STATE_SUBMITTED;
+            xbt_assert(submitters.count(message->submitter_name) == 1);
 
-            XBT_INFO( "Job %d SUBMITTED. %d jobs submitted so far", job->id, nb_submitted_jobs);
-            send_buffer += "|" + std::to_string(MSG_get_clock()) + ":S:" + std::to_string(job->id);
+            Submitter * submitter = submitters.at(message->submitter_name);
+            if (submitter->should_be_called_back)
+            {
+                xbt_assert(origin_of_jobs.count(message->job_id) == 0);
+                origin_of_jobs[message->job_id] = submitter;
+            }
+
+            // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
+            XBT_INFO("GOT JOB: %s %d\n", message->job_id.workload_name.c_str(), message->job_id.job_number);
+            Job * job = context->workloads.add_job_if_not_exists(message->job_id, context);
+            job->id = message->job_id.to_string();
+
+            // Update control information
+            job->state = JobState::JOB_STATE_SUBMITTED;
+            nb_submitted_jobs++;
+            XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far",
+                     message->job_id.to_string().c_str(), nb_submitted_jobs);
+
+            send_buffer += "|" + std::to_string(MSG_get_clock()) + ":S:" + message->job_id.to_string();
             XBT_DEBUG( "Message to send to scheduler: '%s'", send_buffer.c_str());
 
         } break; // end of case JOB_SUBMITTED
@@ -106,11 +214,11 @@ int uds_server_process(int argc, char *argv[])
             xbt_assert(task_data->data != nullptr);
             JobRejectedMessage * message = (JobRejectedMessage *) task_data->data;
 
-            Job * job = context->jobs[message->job_id];
+            Job * job = context->workloads.job_at(message->job_id);
             job->state = JobState::JOB_STATE_REJECTED;
             nb_completed_jobs++;
 
-            XBT_INFO( "Job %d has been rejected", job->id);
+            XBT_INFO( "Job %d has been rejected", job->number);
         } break; // end of case SCHED_REJECTION
 
         case IPMessageType::SCHED_NOP_ME_LATER:
@@ -124,7 +232,7 @@ int uds_server_process(int argc, char *argv[])
             args->target_time = message->target_time;
 
             string pname = "waiter " + to_string(message->target_time);
-            MSG_process_create(pname.c_str(), waiter_process, (void*) args, context->machines.masterMachine()->host);
+            MSG_process_create(pname.c_str(), waiter_process, (void*) args, context->machines.master_machine()->host);
             ++nb_waiters;
         } break; // end of case SCHED_NOP_ME_LATER
 
@@ -134,8 +242,24 @@ int uds_server_process(int argc, char *argv[])
             PStateModificationMessage * message = (PStateModificationMessage *) task_data->data;
 
             context->current_switches.add_switch(message->machine_ids, message->new_pstate);
+            context->energy_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids, message->new_pstate);
 
-            for (auto machine_it = message->machine_ids.elements_begin(); machine_it != message->machine_ids.elements_end(); ++machine_it)
+            // Let's quickly check whether this is a switchON or a switchOFF
+            // Unknown transition states will be set to -42.
+            int transition_state = -42;
+            Machine * first_machine = context->machines[message->machine_ids.first_element()];
+            if (first_machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE)
+                transition_state = -1; // means we are switching to a COMPUTATION_PSTATE
+            else if (first_machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
+                transition_state = -2; // means we are switching to a SLEEP_PSTATE
+
+            // The pstate is set to an invalid one to know the machines are in transition.
+            context->pstate_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids,
+                                                     transition_state);
+
+            for (auto machine_it = message->machine_ids.elements_begin();
+                 machine_it != message->machine_ids.elements_end();
+                 ++machine_it)
             {
                 const int machine_id = *machine_it;
                 Machine * machine = context->machines[machine_id];
@@ -160,7 +284,7 @@ int uds_server_process(int argc, char *argv[])
                     }
                     else if (machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
                     {
-                        machine->state = MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING;
+                        machine->update_machine_state(MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING);
                         SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
                         args->context = context;
                         args->machine_id = machine_id;
@@ -181,7 +305,7 @@ int uds_server_process(int argc, char *argv[])
                             "Switching from a sleep pstate to a non-computation pstate on machine %d ('%s') : %d -> %d, which is forbidden",
                             machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
 
-                    machine->state = MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING;
+                    machine->update_machine_state(MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING);
                     SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
                     args->context = context;
                     args->machine_id = machine_id;
@@ -196,6 +320,9 @@ int uds_server_process(int argc, char *argv[])
                     XBT_ERROR("Machine %d ('%s') has an invalid pstate : %d", machine->id, machine->name.c_str(), curr_pstate);
             }
 
+            if (context->trace_machine_states)
+                context->machine_state_tracer.write_machine_states(MSG_get_clock());
+
         } break; // end of case PSTATE_MODIFICATION
 
         case IPMessageType::SCHED_NOP:
@@ -206,13 +333,21 @@ int uds_server_process(int argc, char *argv[])
                 XBT_INFO("Nothing to do received while nothing is currently happening (no job is running, no machine is switching state, no wake-up timer is active) and some jobs are waiting to be scheduled... This might cause a deadlock!");
 
                 // Let us display the available jobs (to help in the scheduler debugging)
-                const std::map<int, Job *> & jobs = context->jobs.jobs();
                 vector<string> submittedJobs;
 
-                for (auto & mit : jobs)
+                for (auto const workload_mit : context->workloads.workloads())
                 {
-                    if (mit.second->state == JobState::JOB_STATE_SUBMITTED)
-                        submittedJobs.push_back(std::to_string(mit.second->id));
+                    const string & workload_name = workload_mit.first;
+                    Workload * workload = workload_mit.second;
+                    if (workload->jobs)
+                    {
+                        for (auto & job_mit : workload->jobs->jobs())
+                        {
+                            const Job * job = job_mit.second;
+                            if (job->state == JobState::JOB_STATE_SUBMITTED)
+                                submittedJobs.push_back(workload_name + '!' + std::to_string(job->number));
+                        }
+                    }
                 }
 
                 string submittedJobsString = boost::algorithm::join(submittedJobs, ", ");
@@ -229,7 +364,7 @@ int uds_server_process(int argc, char *argv[])
 
             for (SchedulingAllocation * allocation : message->allocations)
             {
-                Job * job = context->jobs[allocation->job_id];
+                Job * job = context->workloads.job_at(allocation->job_id);
                 job->state = JobState::JOB_STATE_RUNNING;
 
                 nb_running_jobs++;
@@ -275,7 +410,7 @@ int uds_server_process(int argc, char *argv[])
                 ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
                 exec_args->context = context;
                 exec_args->allocation = allocation;
-                string pname = "job" + to_string(job->id);
+                string pname = "job" + to_string(job->number);
                 MSG_process_create(pname.c_str(), execute_job_process, (void*)exec_args, context->machines[allocation->machine_ids.first_element()]->host);
             }
 
@@ -308,6 +443,9 @@ int uds_server_process(int argc, char *argv[])
             if (context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate,
                                                               reply_message_content, context))
             {
+                if (context->trace_machine_states)
+                    context->machine_state_tracer.write_machine_states(MSG_get_clock());
+
                 send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" + reply_message_content;
                 XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
             }
@@ -329,6 +467,9 @@ int uds_server_process(int argc, char *argv[])
             if (context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate,
                                                               reply_message_content, context))
             {
+                if (context->trace_machine_states)
+                    context->machine_state_tracer.write_machine_states(MSG_get_clock());
+
                 send_buffer += "|" + std::to_string(MSG_get_clock()) + ":p:" + reply_message_content;
                 XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
             }
@@ -343,7 +484,12 @@ int uds_server_process(int argc, char *argv[])
             send_buffer += "|" + std::to_string(MSG_get_clock()) + ":e:" +
                            std::to_string(total_consumed_energy);
             XBT_DEBUG("Message to send to scheduler : '%s'", send_buffer.c_str());
-        }
+        } break; // end of case SCHED_TELL_ME_ENERGY
+
+        case IPMessageType::SUBMITTER_CALLBACK:
+        {
+            xbt_assert(false, "The server received a SUBMITTER_CALLBACK message, which should not happen");
+        } break; // end of case SUBMITTER_CALLBACK
         } // end of switch
 
         delete task_data;
@@ -362,7 +508,9 @@ int uds_server_process(int argc, char *argv[])
 
     } // end of while
 
-    XBT_INFO( "All jobs completed!");
+    XBT_INFO("Simulation is finished!");
+    bool simulation_is_completed = all_jobs_submitted_and_completed;
+    xbt_assert(simulation_is_completed, "Left simulation loop but it seems that not all that should have completed has!");
 
     delete args;
     return 0;

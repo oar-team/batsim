@@ -15,6 +15,37 @@
 struct BatsimContext;
 
 /**
+ * @brief A simple structure used to identify one job
+ */
+struct JobIdentifier
+{
+    /**
+     * @brief Creates a JobIdentifier
+     * @param[in] workload_name The workload name
+     * @param[in] job_number The job number
+     */
+    JobIdentifier(const std::string & workload_name = "", int job_number = -1);
+
+    std::string workload_name; //!< The name of the workload the job belongs to
+    int job_number; //!< The job unique number inside its workload
+
+    /**
+     * @brief Returns a string representation of the JobIdentifier.
+     * @details Output format is WORKLOAD_NAME!JOB_NUMBER
+     * @return A string representation of the JobIdentifier.
+     */
+    std::string to_string() const;
+};
+
+/**
+ * @brief Compares two JobIdentifier thanks to their string representations
+ * @param[in] ji1 The first JobIdentifier
+ * @param[in] ji2 The second JobIdentifier
+ * @return ji1.to_string() < ji2.to_string()
+ */
+bool operator<(const JobIdentifier & ji1, const JobIdentifier & ji2);
+
+/**
  * @brief Stores the different types of inter-process messages
  */
 enum class IPMessageType
@@ -30,9 +61,36 @@ enum class IPMessageType
     ,SCHED_READY            //!< SchedulerHandler -> Server. The scheduler handler tells the server that the scheduler is ready (messages can be sent to it).
     ,WAITING_DONE           //!< Waiter -> server. The waiter tells the server that the target time has been reached.
     ,SUBMITTER_HELLO        //!< Submitter -> Server. The submitter tells it starts submitting to the server.
+    ,SUBMITTER_CALLBACK     //!< Server -> Submitter. The server sends a message to the Submitter. This message is initiated when a Job which has been submitted by the submitter has completed. The submitter must have said that it wanted to be called back when he said hello.
     ,SUBMITTER_BYE          //!< Submitter -> Server. The submitter tells it stops submitting to the server.
     ,SWITCHED_ON            //!< SwitcherON -> Server. The switcherON process tells the server the machine pstate has been changed
     ,SWITCHED_OFF           //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
+};
+
+/**
+ * @brief The content of the SUBMITTER_HELLO message
+ */
+struct SubmitterHelloMessage
+{
+    std::string submitter_name; //!< The name of the submitter. Must be unique. Is also used as a mailbox.
+    bool enable_callback_on_job_completion; //!< If set to true, the submitter should be called back when its jobs complete.
+};
+
+/**
+ * @brief The content of the SUBMITTER_BYE message
+ */
+struct SubmitterByeMessage
+{
+    bool is_workflow_submitter; //!< Stores whether the finished submitter was a Workflow submitter
+    std::string submitter_name; //!< The name of the submitter.
+};
+
+/**
+ * @brief The content of the SUBMITTER_CALLBACK message
+ */
+struct SubmitterJobCompletionCallbackMessage
+{
+    JobIdentifier job_id; //!< The JobIdentifier
 };
 
 /**
@@ -40,7 +98,8 @@ enum class IPMessageType
  */
 struct JobSubmittedMessage
 {
-    int job_id; //!< The job ID
+    std::string submitter_name; //!< The name of the submitter which submitted the job.
+    JobIdentifier job_id; //!< The JobIdentifier
 };
 
 /**
@@ -48,7 +107,7 @@ struct JobSubmittedMessage
  */
 struct JobCompletedMessage
 {
-    int job_id; //!< The job ID
+    JobIdentifier job_id; //!< The JobIdentifier
 };
 
 /**
@@ -56,7 +115,7 @@ struct JobCompletedMessage
  */
 struct JobRejectedMessage
 {
-    int job_id; //!< The job ID
+    JobIdentifier job_id; //!< The JobIdentifier
 };
 
 /**
@@ -64,7 +123,7 @@ struct JobRejectedMessage
  */
 struct SchedulingAllocation
 {
-    int job_id; //!< The job unique number
+    JobIdentifier job_id; //!< The JobIdentifier
     MachineRange machine_ids; //!< The IDs of the machines on which the job should be allocated
     std::vector<msg_host_t> hosts;  //!< The corresponding SimGrid hosts
 };
@@ -153,15 +212,6 @@ struct ExecuteJobProcessArguments
 };
 
 /**
- * @brief The arguments of the killer_process process
- */
-struct KillerProcessArguments
-{
-    msg_task_t task; //!< The task that will be cancelled if the walltime is reached
-    double walltime; //!< The number of seconds to wait before cancelling the task
-};
-
-/**
  * @brief The arguments of the switch_on_machine_process and switch_off_machine_process processes
  */
 struct SwitchPStateProcessArguments
@@ -172,12 +222,23 @@ struct SwitchPStateProcessArguments
 };
 
 /**
- * @brief The arguments of the job_submitter_process process
+ * @brief The arguments of the static_job_submitter_process process
  */
 struct JobSubmitterProcessArguments
 {
     BatsimContext * context;    //!< The BatsimContext
+    std::string workload_name; //!< The name of the workload the submitter should use
 };
+
+/**
+ * @brief The arguments of the workflow_submitter_process process
+ */
+struct WorkflowSubmitterProcessArguments
+{
+    BatsimContext * context;       //!< The BatsimContext
+    std::string workflow_name; //!< The name of the workflow the submitter should use
+};
+
 
 /**
  * @brief The arguments of the waiter_process process
@@ -202,6 +263,22 @@ void send_message(const std::string & destination_mailbox, IPMessageType type, v
  * @param[in] data The data associated to the message
  */
 void send_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
+
+/**
+ * @brief Sends a message from the given process to the given mailbox
+ * @param[in] destination_mailbox The destination mailbox
+ * @param[in] type The type of message to send
+ * @param[in] data The data associated to the message
+ */
+void dsend_message(const std::string & destination_mailbox, IPMessageType type, void * data = nullptr);
+
+/**
+ * @brief Sends a message from the given process to the given mailbox
+ * @param[in] destination_mailbox The destination mailbox
+ * @param[in] type The type of message to send
+ * @param[in] data The data associated to the message
+ */
+void dsend_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
 
 /**
  * @brief Transforms a IPMessageType into a std::string

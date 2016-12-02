@@ -4,13 +4,14 @@
 Run PyBatsim Sschedulers.
 
 Usage:
-    launcher.py <scheduler> <json_file> [-p] [-v] [-s <socket>] [-o <options>]
+    launcher.py <scheduler> [-p] [-v] [-s <socket>] [-r <redis port number>] [-o <options>]
 
 Options:
     -h --help                                      Show this help message and exit.
     -v --verbose                                   Be verbose.
     -p --protect                                   Protect the scheduler using a validating machine.
     -s --socket=<socket>                           Socket to use [default: /tmp/bat_socket]
+    -r --redisport=<port number>                   Redis server port number
     -o --options=<options>                         A Json string to pass to the scheduler [default: {}]
 '''
 
@@ -43,10 +44,10 @@ def instanciate_scheduler(name, options):
     package = __import__ ('schedulers', fromlist=[my_module])
     if my_module not in package.__dict__:
         print "No such scheduler (module file not found)."
-        exit(1)
+        sys.exit(1)
     if my_class not in package.__dict__[my_module].__dict__:
         print "No such scheduler (class within the module file not found)."
-        exit(1)
+        sys.exit(1)
     #load the class
     scheduler_non_instancied = package.__dict__[my_module].__dict__[my_class]
     scheduler = scheduler_non_instancied(options)
@@ -71,24 +72,29 @@ if __name__ == "__main__":
     options = json.loads(arguments['--options'])
 
     scheduler_filename = arguments['<scheduler>']
-    json_filename = arguments['<json_file>']
     socket = arguments['--socket']
 
+    # Redis port
+    if arguments['--redisport']:
+    	redisport = int(arguments['--redisport'])
+    else:
+	redisport = 6379
+
+    # TODO: add Redis arguments (hostname, prefix)
+
     print "Starting simulation..."
-    print "Workload:", json_filename
     print "Scheduler:", scheduler_filename
     print "Options:", options
     time_start = time.time()
     scheduler = instanciate_scheduler(scheduler_filename, options=options)
 
-    bs = Batsim(json_filename, scheduler, validatingmachine=vm, server_address=socket, verbose=verbose)
+    bs = Batsim(scheduler, validatingmachine=vm, server_address=socket, verbose=verbose, redis_port=redisport)
 
     bs.start()
     time_ran = str(timedelta(seconds=time.time()-time_start))
     print "Simulation ran for: "+time_ran
-    print "Job received:", bs.nb_jobs_recieved, ", scheduled:", bs.nb_jobs_scheduled, ", in the workload:", bs.nb_jobs_json
-    
-    if bs.nb_jobs_recieved != bs.nb_jobs_scheduled or bs.nb_jobs_scheduled != bs.nb_jobs_json:
+    print "Job received:", bs.nb_jobs_received, ", scheduled:", bs.nb_jobs_scheduled
+
+    if bs.nb_jobs_received != bs.nb_jobs_scheduled:
         sys.exit(1)
     sys.exit(0)
-    

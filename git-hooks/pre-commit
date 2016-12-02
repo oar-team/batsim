@@ -15,31 +15,38 @@ then
     exit 1
 fi
 
-# Let's check that the example inputs of execution scripts work
-echo "Checking whether example inputs of execution scripts work..."
-cd ${base_dir}
-./tools/experiments/execute_one_instance.py ./tools/experiments/instance_examples/pybatsim_filler_tiny.yaml > /dev/null
-if [ $? -ne 0 ]
-then
-    echo "Commit cancelled: instance ./tools/experiments/instance_examples/pybatsim_filler_tiny.yaml does not work"
-    exit 1
-fi
+failed=0
 
-./tools/experiments/execute_one_instance.py ./tools/experiments/instance_examples/pybatsim_filler_medium.yaml > /dev/null
-if [ $? -ne 0 ]
+# Let's run a redis server if needed
+server_launched_by_me=0
+r=$(ps faux | grep redis-server | grep -v grep | wc -l)
+if [ $r -eq 0 ]
 then
-    echo "Commit cancelled: instance ./tools/experiments/instance_examples/pybatsim_filler_medium.yaml does not work"
-    exit 1
-fi
+    echo "Running a Redis server..."
+    redis-server>/dev/null &
+    server_launched_by_me=1
 
-./tools/experiments/execute_instances.py ./tools/experiments/instances_examples/pyfiller_tiny_medium_mixed.yaml > /dev/null
-if [ $? -ne 0 ]
-then
-    echo "Commit cancelled: instance ./tools/experiments/instances_examples/pyfiller_tiny_medium_mixed.yaml does not work"
-    exit 1
+    while ! nc -z localhost 6379; do
+      sleep 1
+    done
 fi
 
 # Let's check that tests run correctly
-echo "Checking whether tests pass..."
+echo -n "Checking whether tests pass..."
 cd ${base_dir}
-./test/run_tests.sh 1>/dev/null 2>/dev/null
+bash -e ./test/run_tests.sh >/dev/null
+
+if [ $? -ne 0 ]
+then
+    failed=1
+    echo " NOPE! :("
+fi
+
+# Let's stop the redis server if it has been launched by this script
+if [ $server_launched_by_me -eq 1 ]
+then
+    echo "Stopping the Redis server..."
+    killall redis-server
+fi
+
+exit ${failed}

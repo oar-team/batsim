@@ -20,7 +20,7 @@ class FillerSched(BatsimScheduler):
         self.jobs_completed = []
         self.jobs_waiting = []
 
-        self.sched_delay = 5.0
+        self.sched_delay = 0.005
 
         self.openJobs = set()
         self.availableResources = SortedSet(range(self.bs.nb_res))

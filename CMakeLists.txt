@@ -50,12 +50,31 @@ find_package(SimGrid REQUIRED)
 include_directories(${SIMGRID_INCLUDE_DIR})
 
 ## Boost dependency
-find_package(Boost 1.58 REQUIRED COMPONENTS system filesystem)
+find_package(Boost 1.58 REQUIRED COMPONENTS system filesystem regex locale)
 include_directories(${Boost_INCLUDE_DIR})
+
+## GMP
+find_package(GMP REQUIRED)
+include_directories(${GMP_INCLUDE_DIR})
 
 ## Rapidjson dependency
 find_package(rapidjson REQUIRED)
 include_directories(${RAPIDJSON_INCLUDE_DIRS})
+
+## OpenSSL dependency
+find_package(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
+
+## Redox dependency
+find_package(redox REQUIRED)
+include_directories(${REDOX_INCLUDE_DIR})
+
+## Redox sub dependencies
+find_package(hiredis REQUIRED)
+include_directories(${HIREDIS_INCLUDE_DIRS})
+
+find_package(libev REQUIRED)
+include_directories(${LIBEV_INCLUDE_DIRS})
 
 ################
 # Source files #
@@ -64,35 +83,30 @@ include_directories(${RAPIDJSON_INCLUDE_DIRS})
 ## Batsim
 file(GLOB batsim_SRC
     "src/*.hpp"
-    "src/*.cpp")
-
-list(REMOVE_ITEM batsim_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/batexec.cpp)
+    "src/*.cpp"
+    "src/pugixml-1.7/*.hpp"
+    "src/pugixml-1.7/*.cpp")
 
 # Executables
 add_executable(batsim ${batsim_SRC})
 
 # Libraries to link
-target_link_libraries(batsim ${HAVE_SIMGRID_LIB} ${Boost_SYSTEM_LIBRARY_DEBUG}
-                      ${Boost_FILESYSTEM_LIBRARY_DEBUG})
-
-## Batexec
-file(GLOB batexec_SRC
-    "src/*.hpp"
-    "src/*.cpp")
-list(REMOVE_ITEM batexec_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/batsim.cpp)
-
-# Executables
-add_executable(batexec ${batexec_SRC})
-
-# Libraries to link
-target_link_libraries(batexec ${HAVE_SIMGRID_LIB} ${Boost_SYSTEM_LIBRARY_DEBUG}
-                      ${Boost_FILESYSTEM_LIBRARY_DEBUG})
-
+target_link_libraries(batsim
+                      ${HAVE_SIMGRID_LIB}
+                      ${GMP_LIBRARIES}
+                      ${Boost_FILESYSTEM_LIBRARY_DEBUG}
+                      ${Boost_LOCALE_LIBRARY_DEBUG}
+                      ${Boost_REGEX_LIBRARY_DEBUG}
+                      ${Boost_SYSTEM_LIBRARY_DEBUG}
+                      ${OPENSSL_LIBRARIES}
+                      ${REDOX_LIBRARY}
+                      ${LIBEV_LIBRARY}
+                      ${HIREDIS_LIBRARY})
 
 ################
 # Installation #
 ################
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim ${CMAKE_CURRENT_BINARY_DIR}/batexec
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim
         DESTINATION bin)
 
 # Let's enable warnings if needed

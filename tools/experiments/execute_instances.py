@@ -8,6 +8,8 @@ import hashlib
 from execo import *
 from execo_engine import *
 from execute_one_instance import *
+import pandas as pd
+import hashlib
 
 class hashabledict(dict):
     def __hash__(self):
@@ -16,6 +18,20 @@ class hashabledict(dict):
 class hashablelist(list):
     def __hash__(self):
         return hash(tuple(self))
+
+def flatten_dict(init, lkey=''):
+    ret = {}
+    for rkey,val in init.items():
+        key = lkey+rkey
+        if isinstance(val, dict):
+            ret.update(flatten_dict(val, key+'__'))
+        else:
+            ret[key] = val
+    return ret
+
+def instance_id_from_comb(comb, hash_length):
+    fdict = flatten_dict(comb)
+    return hashlib.sha1(str(fdict)).hexdigest()[:hash_length]
 
 def retrieve_dirs_from_instances(variables,
                                  variables_declaration_order,
@@ -144,7 +160,7 @@ def check_sweep(sweeps):
                 if 'name' in element:
                     used_name = element['name']
                 else:
-                    used_name = element.values().nextitem()
+                    used_name = element.values()[0]
                     dicts_without_names.add(var_name)
                 if not is_valid_identifier(used_name):
                     logger.error("Invalid sweep variable {v}: the name got from dict {d} (name={n}, got either from the 'name' field if it exists or the first value otherwise) is not a valid identifier. It must be because it is used to create files.".format(v=var_name, d=element, n=used_name))
@@ -174,7 +190,9 @@ class WorkersSharedData:
                  nb_workers_finished,
                  base_working_directory,
                  base_output_directory,
-                 base_variables):
+                 base_variables,
+                 generate_only,
+                 hash_length):
         self.sweeper = sweeper
         self.instances_post_cmds_only = instances_post_cmds_only
         self.implicit_instances = implicit_instances
@@ -183,6 +201,8 @@ class WorkersSharedData:
         self.base_working_directory = base_working_directory
         self.base_output_directory = base_output_directory
         self.base_variables = base_variables
+        self.generate_only = generate_only
+        self.hash_length = hash_length
 
 class WorkerLifeCycleHandler(ProcessLifecycleHandler):
     def __init__(self,
@@ -201,21 +221,24 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
         if len(self.data.sweeper.get_remaining()) > 0:
             # Let's get the next instance to compute
             self.comb = self.data.sweeper.get_next()
-            logger.info('Worker ({hostname}, {local_rank}) got comb {comb}'.format(
+            logger.info('Worker ({hostname}, {local_rank}) got comb : {comb}'.format(
                     hostname = self.hostname,
                     local_rank = self.local_rank,
                     comb = self.comb))
 
             if self.comb != None:
-                (desc_filename, combname, command) = prepare_instance(
+                (desc_filename, instance_id, combname, command) = prepare_instance(
                     comb = self.comb,
                     explicit_instances = self.data.explicit_instances,
                     implicit_instances = self.data.implicit_instances,
                     base_working_directory = self.data.base_working_directory,
                     base_output_directory = self.data.base_output_directory,
                     base_variables = self.data.base_variables,
-                    post_commands_only = self.comb in self.data.instances_post_cmds_only)
+                    post_commands_only = self.comb in self.data.instances_post_cmds_only,
+                    generate_only = self.data.generate_only,
+                    hash_length = self.data.hash_length)
                 self.combname = combname
+                self.instance_id = instance_id
                 self._launch_process(instance_command = command)
             else:
                 logger.info('Worker ({hostname}, {local_rank}) finished'.format(
@@ -261,33 +284,47 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
                                     base_output_dir = self.data.base_output_directory))
 
         write_string_into_file(process.stdout,
-                               '{base_output_dir}/instances/output/{combname}.stdout'.format(
+                               '{base_output_dir}/instances/output/{iid}.stdout'.format(
                                 base_output_dir = self.data.base_output_directory,
-                                combname = self.combname))
+                                iid = self.instance_id))
         write_string_into_file(process.stderr,
-                               '{base_output_dir}/instances/output/{combname}.stderr'.format(
+                               '{base_output_dir}/instances/output/{iid}.stderr'.format(
                                 base_output_dir = self.data.base_output_directory,
-                                combname = self.combname))
+                                iid = self.instance_id))
 
         # Let's mark whether the computation was successful
         if process.finished_ok:
             self.data.sweeper.done(self.comb)
             # Logging
-            logger.info('Worker ({hostname}, {local_rank}) finished comb {comb} '
-                        'successfully'.format(
+            logger.info('Worker ({hostname}, {local_rank}) finished comb {iid} '
+                        'successfully\n'.format(
                             hostname = self.hostname,
                             local_rank = self.local_rank,
-                            comb = self.comb))
+                            iid = self.instance_id))
         else:
             logger.warning('Worker ({hostname}, {local_rank}) finished comb '
-                           '{comb} unsuccessfully'.format(
+                           '{iid} unsuccessfully\n'.format(
                             hostname = self.hostname,
                             local_rank = self.local_rank,
-                            comb = self.comb))
-            self.data.sweeper.skip(self.comb)
+                            iid = self.instance_id))
+            # http://stackoverflow.com/questions/7616187/python-error-codes-are-upshifted
+            if (process.exit_code != None) and ((process.exit_code >> 8) == 3):
+                logger.warning('However, the comb {iid} is marked as done, '
+                               'because it failed in the post-commands '
+                               'section.'.format(iid=self.instance_id))
+                self.data.sweeper.done(self.comb)
+            elif (process.exit_code != None) and \
+                 ((process.exit_code >> 8) == 4) and \
+                 self.data.generate_only:
+                logger.warning('However, this is not a problem because not '
+                               'executing the instance has been asked.')
+                self.data.sweeper.skip(self.comb)
+            else:
+                self.data.sweeper.skip(self.comb)
 
         # Let's clear current instance variables
         self.comb = None
+        self.instance_id = None
         self.combname = None
 
         self.execute_next_instance()
@@ -298,25 +335,34 @@ def prepare_instance(comb,
                      base_working_directory,
                      base_output_directory,
                      base_variables,
-                     post_commands_only = False):
+                     post_commands_only = False,
+                     generate_only = False,
+                     hash_length = 8):
     if comb['explicit']:
         return prepare_explicit_instance(explicit_instances = explicit_instances,
+                                         comb = comb,
                                          instance_id = comb['instance_id'],
                                          base_output_directory = base_output_directory,
                                          base_variables = base_variables,
-                                         post_commands_only = post_commands_only)
+                                         post_commands_only = post_commands_only,
+                                         generate_only = generate_only,
+                                         hash_length = hash_length)
     else:
         return prepare_implicit_instance(implicit_instances = implicit_instances,
                                          comb = comb,
                                          base_output_directory = base_output_directory,
                                          base_variables = base_variables,
-                                         post_commands_only = post_commands_only)
+                                         post_commands_only = post_commands_only,
+                                         generate_only = generate_only,
+                                         hash_length = hash_length)
 
 def prepare_implicit_instance(implicit_instances,
                               comb,
                               base_output_directory,
                               base_variables,
-                              post_commands_only = False):
+                              post_commands_only = False,
+                              generate_only = False,
+                              hash_length = 8):
     # Let's retrieve instance
     instance = implicit_instances[comb['instance_name']]
     generic_instance = instance['generic_instance']
@@ -343,6 +389,11 @@ def prepare_implicit_instance(implicit_instances,
     # Let's add the base_variables into the instance's variables
     instance['variables'].update(base_variables)
 
+    # Let's add the instance_id into the instance's variables
+    instance_id = instance_id_from_comb(comb, hash_length)
+    dict_iid = {'instance_id': instance_id}
+    instance['variables'].update(dict_iid)
+
     # Let's generate a combname
     combname = 'implicit'
     combname_suffix = ''
@@ -364,8 +415,8 @@ def prepare_implicit_instance(implicit_instances,
 
     # Let's write a YAML description file corresponding to the instance
     desc_dir = '{out}/instances'.format(out = base_output_directory)
-    desc_filename = '{dir}/{combname}.yaml'.format(dir = desc_dir,
-                                                   combname = combname)
+    desc_filename = '{dir}/{instance_id}.yaml'.format(dir = desc_dir,
+                                                      instance_id = instance_id)
 
     create_dir_if_not_exists('{out}/instances'.format(out = base_output_directory))
     yaml_content = yaml.dump(instance, default_flow_style = False)
@@ -376,19 +427,24 @@ def prepare_implicit_instance(implicit_instances,
     options = ""
     if post_commands_only:
         options = ' --post_only'
+    elif generate_only:
+        options = ' --do_not_execute'
 
     # Let's prepare the launch command
     instance_command = '{exec_script}{opt} {desc_filename}'.format(
                             exec_script = execute_one_instance_script,
                             opt = options,
                             desc_filename = desc_filename)
-    return (desc_filename, combname, instance_command)
+    return (desc_filename, instance_id, combname, instance_command)
 
 def prepare_explicit_instance(explicit_instances,
+                              comb,
                               instance_id,
                               base_output_directory,
                               base_variables,
-                              post_commands_only = False):
+                              post_commands_only = False,
+                              generate_only = False,
+                              hash_length = 8):
     # Let's retrieve the instance
     instance = explicit_instances[instance_id]
 
@@ -399,11 +455,16 @@ def prepare_explicit_instance(explicit_instances,
     # Let's add the base_variables into the instance's variables
     instance['variables'].update(base_variables)
 
+    # Let's add the instance_id into the instance's variables
+    instance_id = instance_id_from_comb(comb, hash_length)
+    dict_iid = {'instance_id': instance_id}
+    instance['variables'].update(dict_iid)
+
     # Let's write a YAML description file corresponding to the instance
     desc_dir = '{out}/instances'.format(out = base_output_directory)
     combname = 'explicit_{id}'.format(id = instance_id)
-    desc_filename = '{dir}/{combname}.yaml'.format(dir = desc_dir,
-                                                   combname = combname)
+    desc_filename = '{dir}/{instance_id}.yaml'.format(dir = desc_dir,
+                                                      instance_id = instance_id)
 
     create_dir_if_not_exists('{out}/instances'.format(out = base_output_directory))
     write_string_into_file(yaml.dump(instance, default_flow_style=False),
@@ -413,13 +474,15 @@ def prepare_explicit_instance(explicit_instances,
     options = ""
     if post_commands_only:
         options = ' --post_only'
+    elif generate_only:
+        options = ' --do_not_execute'
 
     # Let's prepare the launch command
     instance_command = '{exec_script}{opt} {desc_filename}'.format(
                             exec_script = execute_one_instance_script,
                             opt = options,
                             desc_filename = desc_filename)
-    return (desc_filename, combname, instance_command)
+    return (desc_filename, instance_id, combname, instance_command)
 
 def retrieve_hostlist_from_mpi_hostfile(hostfile):
     hosts = set()
@@ -478,12 +541,81 @@ def execute_instances(base_working_directory,
                       explicit_instances,
                       nb_workers_per_host,
                       recompute_all_instances,
-                      recompute_instances_post_commands):
+                      recompute_instances_post_commands,
+                      generate_only = False,
+                      mark_as_cancelled_lambda = None):
     # Let's generate all instances that should be executed
     combs = generate_instances_combs(implicit_instances = implicit_instances,
                                      explicit_instances = explicit_instances)
     sweeper = ParamSweeper('{out}/sweeper'.format(out = base_output_directory),
                            combs)
+
+    # Preparation of the instances data frame
+    all_combs = sweeper.get_remaining() | sweeper.get_done() | \
+                sweeper.get_skipped() | sweeper.get_inprogress()
+
+    hash_length = 8
+    rows_list = []
+    for comb in all_combs:
+        row_dict = flatten_dict(comb)
+        row_dict['instance_id'] = instance_id_from_comb(comb, hash_length)
+
+        rows_list.append(row_dict)
+
+    # Let's generate the instances data frame
+    instances_df = pd.DataFrame(rows_list)
+
+    # Let's check that instance ids are unique
+    assert len(instances_df) == len(instances_df['instance_id'].unique()),\
+           "Instance IDs are not unique ({}!={})! " \
+           "The hash length might be too small.".format(len(instances_df), \
+                len(instances_df['instance_id'].unique()))
+
+    # Let's save the dataframe into a csv file
+    create_dir_if_not_exists('{base_output_dir}/instances'.format(
+                                  base_output_dir = base_output_directory))
+    instances_df.to_csv('{base_output_dir}/instances/instances_info.csv'.format(
+                            base_output_dir = base_output_directory),
+                        index = False, na_rep = 'NA')
+
+
+    if mark_as_cancelled_lambda == '':
+        if len(sweeper.get_done()) > 0:
+            logger.info('The first finished combination is shown below.')
+            logger.info(next(iter(sweeper.get_done())))
+            sys.exit(0)
+        elif len(sweeper.get_inprogress()) > 0:
+            logger.info('The first inprogress combination is shown below.')
+            logger.info(next(iter(sweeper.get_inprogress())))
+            sys.exit(0)
+        elif len(sweeper.get_remaining()) > 0:
+            logger.info('The first todo combination is shown below.')
+            logger.info(next(iter(sweeper.get_remaining())))
+            sys.exit(0)
+        else:
+            logger.info('It seems that there is no combination... Try again.')
+            sys.exit(0)
+    elif mark_as_cancelled_lambda != None:
+        logger.info('Trying to find instances to mark as cancelled. '
+                    'Lambda parameter is "{p}". Lambda filter string is "{f}".'.format(
+                        p = 'x',
+                        f = mark_as_cancelled_lambda))
+        combs_to_mark = [y for y in filter(lambda x:
+                                           eval(mark_as_cancelled_lambda),
+                                           sweeper.get_done())]
+
+        logger.info('{nb} instances will be marked as cancelled. Are you sure? '
+                    'Type "yes" to confirm.'.format(nb = len(combs_to_mark)))
+
+        input_line = sys.stdin.readline().strip().lower()
+
+        if input_line == 'yes':
+            for comb_to_mark in combs_to_mark:
+                sweeper.cancel(comb_to_mark)
+            logger.info('{nb} instances have been marked as cancelled.'.format(
+                nb = len(combs_to_mark)))
+        else:
+            logger.info('Aborted. No instance has been marked as cancelled')
 
     # Let's mark all inprogress values as todo
     for comb in sweeper.get_inprogress():
@@ -508,7 +640,9 @@ def execute_instances(base_working_directory,
                                            nb_workers_finished = 0,
                                            base_working_directory = base_working_directory,
                                            base_output_directory = base_output_directory,
-                                           base_variables = base_variables)
+                                           base_variables = base_variables,
+                                           generate_only = generate_only,
+                                           hash_length = hash_length)
 
     # Let's create all workers
     nb_workers = min(len(combs), len(host_list) * nb_workers_per_host)
@@ -574,18 +708,6 @@ can be found in the instances_examples subdirectory.
                    help = 'Sets the number of workers that should be allocated '
                           'to each host.')
 
-    p.add_argument('-r', '--recompute_all_instances',
-                   action = 'store_true',
-                   help = "If set, all instances will be recomputed. "
-                          "By default, Execo's cache allows to avoid "
-                          "recomputations of already done instances")
-
-    p.add_argument('-p', '--recompute_instances_post_commands',
-                   action = 'store_true',
-                   help = 'If set, the post_commands of the instances which '
-                          'are already done will be computed before trying to '
-                          'execute the other instances')
-
     p.add_argument('-bwd', '--base_working_directory',
                    type = str,
                    default = None,
@@ -604,6 +726,17 @@ can be found in the instances_examples subdirectory.
                           'either absolute or relative to the working directory. '
                           ' If unset, the working directory is used instead')
 
+    p.add_argument('-m', '--mark_instances_as_cancelled',
+                   type = str,
+                   default = None,
+                   help = 'Allows to mark some instances as cancelled, which '
+                          'will force them to be recomputed. The parameter '
+                          'is a lambda expression used to filter which '
+                          'instances should be recomputed. If the parameter '
+                          'is empty, a combination example is displayed. '
+                          'The lambda parameter is named "x".')
+
+
     g = p.add_mutually_exclusive_group()
 
     g.add_argument('--pre_only',
@@ -615,6 +748,30 @@ can be found in the instances_examples subdirectory.
                    action = 'store_true',
                    help = "If set, only the commands which go after instances' "
                           'executions will be executed.')
+
+    g.add_argument('-g', '--generate_only',
+                   action = 'store_true',
+                   help = 'If set, the instances will not be executed but only '
+                          'generated. Commands before execution will be run, '
+                          'commands before each instance too.')
+
+    g.add_argument('-r', '--recompute_all_instances',
+                   action = 'store_true',
+                   help = "If set, all instances will be recomputed. "
+                          "By default, Execo's cache allows to avoid "
+                          "recomputations of already done instances")
+
+    g.add_argument('-p', '--recompute_instances_post_commands',
+                   action = 'store_true',
+                   help = 'If set, the post_commands of the instances which '
+                          'are already done will be computed before trying to '
+                          'execute the other instances')
+
+    g.add_argument('-pg', '--recompute_already_done_post_commands',
+                   action = 'store_true',
+                   help = 'Does quite the same as '
+                          '--recompute_instances_post_commands, but does not '
+                          'try to execute skipped instances')
 
     args = p.parse_args()
 
@@ -631,6 +788,10 @@ can be found in the instances_examples subdirectory.
     commands_after_instances = []
     base_variables = {}
 
+    generate_only = False
+    if args.generate_only:
+        generate_only = True
+
     recompute_all_instances = False
     if args.recompute_all_instances:
         recompute_all_instances = True
@@ -638,6 +799,17 @@ can be found in the instances_examples subdirectory.
     recompute_instances_post_commands = False
     if args.recompute_instances_post_commands:
         recompute_instances_post_commands = True
+
+    # This option is just a combination of other options :D
+    recompute_already_done_post_commands = False
+    if args.recompute_already_done_post_commands:
+        recompute_already_done_post_commands = True
+        recompute_instances_post_commands = True
+        generate_only = True
+
+    mark_as_cancelled_lambda = None
+    if args.mark_instances_as_cancelled != None:
+        mark_as_cancelled_lambda = args.mark_instances_as_cancelled
 
     host_list = ['localhost']
     if args.mpi_hostfile:
@@ -742,11 +914,14 @@ can be found in the instances_examples subdirectory.
             explicit_instances = explicit_instances,
             nb_workers_per_host = args.nb_workers_per_host,
             recompute_all_instances = recompute_all_instances,
-            recompute_instances_post_commands = recompute_instances_post_commands):
+            recompute_instances_post_commands = recompute_instances_post_commands,
+            generate_only = generate_only,
+            mark_as_cancelled_lambda = mark_as_cancelled_lambda) and not recompute_already_done_post_commands:
             sys.exit(2)
 
     # Commands after instances execution
-    if len(commands_after_instances) > 0:
+    if len(commands_after_instances) > 0 and \
+       (not generate_only or recompute_already_done_post_commands):
         post_commands_dir = '{bod}/post_commands'.format(
             bod = base_output_directory)
         post_commands_output_dir = '{bod}/out'.format(

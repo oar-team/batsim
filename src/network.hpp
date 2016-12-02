@@ -6,6 +6,8 @@
 #pragma once
 
 #include <string>
+
+#include "ipp.hpp"
 struct BatsimContext;
 
 /**
@@ -89,3 +91,22 @@ private:
  * @return 0
  */
 int request_reply_scheduler_process(int argc, char *argv[]);
+
+/**
+ * @brief Computes the absolute filename of a given file
+ * @param[in] filename The name of the file (not necessarily existing).
+ * @return The absolute filename corresponding to the given filename
+ */
+std::string absolute_filename(const std::string & filename);
+
+/**
+ * @brief Retrieves the workload_name and the job_id from a job_identifier
+ * @details Job identifiers are in the form [WORKLOAD_NAME!]JOB_ID
+ * @param[in] context The BatsimContext
+ * @param[in] job_identifier_string The input job identifier string
+ * @param[out] job_id The output JobIdentifier
+ * @return true if the info has been retrieved successfully and that the job exists, false otherwise
+ */
+bool identify_job_from_string(BatsimContext * context,
+                              const std::string & job_identifier_string,
+                              JobIdentifier & job_id);

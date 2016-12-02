@@ -16,11 +16,12 @@
  */
 enum class ProfileType
 {
-    DELAY                       //!< The profile is a delay. Its data is of type DelayProfileData
-    ,MSG_PARALLEL               //!< The profile is composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
-    ,MSG_PARALLEL_HOMOGENEOUS   //!< The profile is a homogeneous MSG one. Its data is of type MsgParallelHomogeneousProfileData
-    ,SMPI                       //!< The profile is a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
-    ,SEQUENCE                   //!< The profile is non-atomic: it is composed of a sequence of other profiles
+    DELAY                           //!< The profile is a delay. Its data is of type DelayProfileData
+    ,MSG_PARALLEL                   //!< The profile is composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
+    ,MSG_PARALLEL_HOMOGENEOUS       //!< The profile is a homogeneous MSG one. Its data is of type MsgParallelHomogeneousProfileData
+    ,SMPI                           //!< The profile is a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
+    ,SEQUENCE                       //!< The profile is non-atomic: it is composed of a sequence of other profiles
+    ,MSG_PARALLEL_HOMOGENEOUS_PFS0  //!< The profile is a homogeneous MSG for simple parallel filesystem. Its data is of type MsgParallelHomogeneousPFS0ProfileData
 };
 
 /**
@@ -35,6 +36,29 @@ struct Profile
 
     ProfileType type; //!< The type of the profile
     void * data; //!< The associated data
+    std::string json_description; //!< The JSON description of the profile
+
+    /**
+     * @brief Creates a new-allocated Profile from a JSON description
+     * @param[in] profile_name The name of the profile
+     * @param[in] json_desc The JSON description
+     * @param[in] json_filename The JSON file name
+     * @return The new-allocated Profile
+     * @pre The JSON description is valid
+     */
+    static Profile * from_json(const std::string & profile_name,
+                               const rapidjson::Value & json_desc,
+                               const std::string &json_filename);
+
+    /**
+     * @brief Creates a new-allocated Profile from a JSON description
+     * @param[in] profile_name The name of the profile
+     * @param[in] json_str The JSON description (as a string)
+     * @return The new-allocated Profile
+     * @pre The JSON description is valid
+     */
+    static Profile * from_json(const std::string & profile_name,
+                               const std::string & json_str);
 };
 
 /**
@@ -88,6 +112,14 @@ struct SequenceProfileData
 };
 
 /**
+ * @brief The data associated to MSG_PARALLEL_HOMOGENEOUS_PFS0 profiles
+ */
+struct MsgParallelHomogeneousPFS0ProfileData
+{
+    double size; //!< The size of data per compute node to transfer to pfs_machine (simulate a simple I/O traffic model)
+};
+
+/**
  * @brief Used to handles all the profiles of one workload
  */
 class Profiles
@@ -126,6 +158,21 @@ public:
     const Profile * operator[](const std::string & profile_name) const;
 
     /**
+     * @brief Accesses one profile thanks to its name
+     * @param[in] profile_name The name of the profile
+     * @return The profile whose name is profile_name
+     * @pre Such a profile exists
+     */
+    Profile * at(const std::string & profile_name);
+    /**
+     * @brief Accesses one profile thanks to its name (const version)
+     * @param[in] profile_name The name of the profile
+     * @return The profile whose name is profile_name
+     * @pre Such a profile exists
+     */
+    const Profile * at(const std::string & profile_name) const;
+
+    /**
      * @brief Checks whether a profile exists
      * @param[in] profile_name The name of the profile
      * @return True if and only if a profile whose name is profile_name is in the Profiles
@@ -133,10 +180,24 @@ public:
     bool exists(const std::string & profile_name) const;
 
     /**
+     * @brief Adds a Profile into a Profiles instance
+     * @param[in] profile_name The name of the profile to name
+     * @param[in] profile The profile to add
+     * @pre No profile with the same name exists in the Profiles instance
+     */
+    void add_profile(const std::string & profile_name, Profile * profile);
+
+    /**
      * @brief Returns a copy of the internal std::map used in the Profiles
      * @return A copy of the internal std::map used in the Profiles
      */
     const std::map<std::string, Profile *> profiles() const;
+
+    /**
+     * @brief Returns the number of profiles of the Profiles instance
+     * @return The number of profiles of the Profiles instance
+     */
+    int nb_profiles() const;
 
 private:
     std::map<std::string, Profile*> _profiles; //!< Stores all the profiles, indexed by their names

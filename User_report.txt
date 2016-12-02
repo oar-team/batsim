@@ -1,0 +1,52 @@
+
+Before editing any file, here is a small reminder of things missing from the Readme.
+
+
+
+   The cmake arguments I needed to compile batsim:
+
+cmake -DREDOX_LIBRARY=/usr/local/lib64/libredox.so -DBoost_FILESYSTEM_LIBRARY_DEBUG=/usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.58.0  -DBoost_SYSTEM_LIBRARY_DEBUG=/usr/lib/x86_64-linux-gnu/libboost_system.so.1.58.0 -DSIMGRID_INCLUDE_DIR=/home/pfdutot/stow/include/ -DSIMGRID_LIBRARY=/home/pfdutot/stow/lib/libsimgrid.so ..
+
+
+
+   The installs I made:
+
+sudo apt-get install libhiredis-dev
+tar -xzvf redis-3.2.3.tar.gz 
+unzip redox-master.zip 
+sudo apt-get install libev-dev
+sudo apt-get install python-sortedcontainers
+sudo pip install redis
+
+  (the following are more related to evalys)
+
+sudo apt-get install libfreetype6-dev
+sudo apt-get install libpng-dev
+sudo -H pip install git+https://github.com/oar-team/evalys.git
+sudo pip install tox
+sudo pip install pytest
+
+sudo apt-get install python3-pip
+sudo apt-get install libffi-dev
+sudo /usr/bin/python3 -m pip install matplotlib
+sudo /usr/bin/python3 -m pip install cairocffi
+
+   Current invocation in data-storage branch:
+
+redis-server
+
+build/batsim -p platforms/small_platform.xml -w workload_profiles/test_workload_profile.json
+
+python2 schedulers/pybatsim/launcher.py fillerSched     workload_profiles/test_workload_profile.json
+
+
+   The hack invocation:
+
+In build/
+./batsim -W ../workload_profiles/GENOME.d.351024866.5.dax -p ../platforms/small_platform.xml -w ../workload_profiles/test_workload_profile.json
+
+In schedulers/pybatsim/
+python2 launcher.py fillerSched ../../workload_profiles/test_workload_profile_hack.json 
+
+And then:
+evalys --gantt --output /tmp/g.pdf out_jobs.csv

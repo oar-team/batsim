@@ -32,10 +32,18 @@ int smpi_replay_process(int argc, char *argv[]);
  * @param[in,out] remaining_time The remaining amount of time before walltime
  * @return 0
  */
-int execute_profile(BatsimContext * context,
+int execute_profile(BatsimContext *context,
                     const std::string & profile_name,
                     const SchedulingAllocation * allocation,
                     double * remaining_time);
+
+/**
+ * @brief Simple process to execute a job
+ * @param argc unused?
+ * @param argv unused?
+ * @return 0
+ */
+int lite_execute_job_process(int argc, char *argv[]);
 
 /**
  * @brief The process in charge of executing a job

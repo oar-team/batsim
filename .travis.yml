@@ -6,6 +6,10 @@ addons:
       - doxygen
       - graphviz
       - python-pip
+      - redis-server
+      - libhiredis-dev
+      - libev-dev
+      - valgrind
 env:
   global:
     secure: "ayxHlRpg3qX84ZkiLVd5s78/woUyNET99uNFviUzdDiQ9iUoaudYuu9uG9zi0RVfY0QRqESNwt8UPKTpM19M2HUqOoCYX4n865qhVkjMr2yRjK9u+HtdKZnoDRbT3o/ogSGxkctqMJmSQcgg8UdowwlAIEktIGMwk6dsAt4yYfLWABsLRulNr9SRUkTE6eNdheQaBpdD7BgIwzkEJ5cHFrd8Z9s+yRdX2RG2uXjQ3JmxdfVS2w4sboSurCQyjhbZ198Pt0/gTToinxD/BxR4rS/xyHy1o4JRbeuY103iOqGXqL1ZmoapTEA0dJ4/S51qC+xFj2KbOj555mTFG/ubWKA3FG6lezYsWlwTFPJgCQPmMu4B3dW+8ASri9aDtFs9Zt7Ul6VcE/znu/PVUPgAZTvAntb9ZYn7LK801nhIc4AAJ5mAxr1qVhtJ05QxuC6vU4c4F8mhi4YlaMDQTk4/5U0I1btn1rR7sgz9yiiEvBBV6Dha7UrDOOqoN6eXL9KE5atUcsuN/kieejj46KmLzJcl4eoElxyb2pJj+LCLzwqoAjs/BLzNWGX1fLWO2xHUPB3tDP5m3PKp9aPv55KRXp/3H3wCHH9GxIzzA1oBX3Gb5GzoW3X1CInpeaNoqs6UqYuzUozl3068o4gdCypigh0OYDwpGzQXrWOhKMP8rdM="
@@ -30,22 +34,18 @@ before_install:
   - cp travisci_rsa ~/.ssh/id_rsa
   - ssh-keyscan scm.gforge.inria.fr >> ~/.ssh/known_hosts
 
-  # Update apt lists (in order to install boost 1.58+)
+  # Update apt lists
   - cat /etc/apt/sources.list
   - cp /etc/apt/sources.list /tmp/sources.list
   - echo 'deb http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse' >> /tmp/sources.list
   - echo 'deb-src http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse' >> /tmp/sources.list
   - sudo mv /tmp/sources.list /etc/apt/sources.list
 
-  # Install boost 1.58+
-  - sudo apt update
-  - sudo apt install -y libboost-all-dev
-
-  # Trying to update g++
-  - sudo apt install -y g++
-  - g++ --version
-
 install:
+  # Install """up-to-date""" Boost
+  - sudo apt update
+  - sudo apt install -y libboost-all-dev/xenial
+
   # Install SimGrid
   - cd ${BATSIM_BASE_DIR}
   - git clone https://github.com/oar-team/simgrid-batsim.git -b batsim-compatible --depth 1 simgrid-batsim
@@ -63,6 +63,20 @@ install:
   - git checkout 3d5848a # v1.02
   - sudo cp -a include/rapidjson /usr/include
 
+  # Install redox
+  - cd ${BATSIM_BASE_DIR}
+  - git clone https://github.com/hmartiro/redox.git
+  - cd redox
+  - git checkout 64becf28f3dd
+  - mkdir build
+  - cd build
+  - cmake .. -DCMAKE_INSTALL_PREFIX=../install
+  - make -j $(nproc)
+  - make install
+  - cd ../install
+  - mv -f lib64 lib
+  - sudo cp -r ./* /usr/
+
   ####################
   # Python libraries #
   ####################
@@ -76,8 +90,20 @@ install:
   - git checkout 725fddc # cwd support
   - pip install --user -U -e .
 
+  # Install redis (used by pybatsim)
+  - pip install --user -U redis
+
   # Install sortedcontainers (used in some schedulers, used by the tests)
   - pip install --user -U sortedcontainers
+
+  # Install pandas (used by the experiment management scripts)
+  - pip install --user -U pandas
+
+  # Install hashlib (used by the experiment management scripts)
+  # Quick and dirty fix (http://askubuntu.com/questions/770262/python-hashlib-fails-to-install-pip)
+  - sudo rm -f /usr/lib/python2.7/lib-dynload/_hashlib.x86_64-linux-gnu.so
+  - easy_install hashlib
+  - sudo rm -f /usr/lib/python2.7/lib-dynload/_hashlib.x86_64-linux-gnu.so
 
 # Enable C++ support
 language: cpp
@@ -111,15 +137,12 @@ script:
   #########
   # Tests #
   #########
-  # Let's make sure the our scripts' examples work correctly
-  - cd ${BATSIM_BASE_DIR}
-  - ./tools/experiments/execute_one_instance.py ./tools/experiments/instance_examples/pybatsim_filler_tiny.yaml
-
-  - cd ${BATSIM_BASE_DIR}
-  - ./tools/experiments/execute_one_instance.py ./tools/experiments/instance_examples/pybatsim_filler_medium.yaml
-
-  - cd ${BATSIM_BASE_DIR}
-  - ./tools/experiments/execute_instances.py ./tools/experiments/instances_examples/pyfiller_tiny_medium_mixed.yaml
+  # Let's run the redis server
+  - |
+    redis-server>/dev/null &
+    while ! nc -z localhost 6379; do
+      sleep 1
+    done
 
   # Let's run the tests
   - cd ${BATSIM_BASE_DIR}

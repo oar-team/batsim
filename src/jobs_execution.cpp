@@ -15,44 +15,25 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(jobs_execution, "jobs_execution"); //!< Logging
 
 using namespace std;
 
-int killer_process(int argc, char *argv[])
-{
-    (void) argc;
-    (void) argv;
-
-    KillerProcessArguments * args = (KillerProcessArguments *) MSG_process_get_data(MSG_process_self());
-
-    /* The sleep can either stop normally (res=MSG_OK) or be cancelled when the task execution
-     * completed (res=MSG_TASK_CANCELED) */
-    msg_error_t res = MSG_process_sleep(args->walltime);
-
-    if (res == MSG_OK)
-    {
-        // If we had time to sleep until walltime (res=MSG_OK), the task execution is not over and must be cancelled
-        XBT_INFO("Cancelling task '%s'", MSG_task_get_name(args->task));
-        MSG_task_cancel(args->task);
-    }
-
-    delete args;
-    return 0;
-}
-
 int smpi_replay_process(int argc, char *argv[])
 {
    /* for(int index = 0; index < argc; index++)
         XBT_DEBUG("smpi_replay_process, arg %d = '%s'", index, argv[index]);*/
 
+    XBT_INFO("Launching smpi_replay_run");
     smpi_replay_run(&argc, &argv);
+    XBT_INFO("smpi_replay_run finished");
     return 0;
 }
 
 int execute_profile(BatsimContext *context,
                     const std::string & profile_name,
                     const SchedulingAllocation * allocation,
-                    double *remaining_time)
+                    double * remaining_time)
 {
-    Job * job = context->jobs[allocation->job_id];
-    Profile * profile = context->profiles[profile_name];
+    Workload * workload = context->workloads.at(allocation->job_id.workload_name);
+    Job * job = workload->jobs->at(allocation->job_id.job_number);
+    Profile * profile = workload->profiles->at(profile_name);
     int nb_res = job->required_nb_res;
 
     if (profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS)
@@ -85,32 +66,22 @@ int execute_profile(BatsimContext *context,
             }
         }
 
-        string task_name = "phg " + to_string(job->id) + "'" + job->profile + "'";
+        string task_name = "phg " + to_string(job->number) + "'" + job->profile + "'";
         XBT_INFO("Creating task '%s'", task_name.c_str());
 
         msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(),
-                                         nb_res, allocation->hosts.data(),
-                                         computation_amount,
-                                         communication_amount, NULL);
-
-        // TODO: debug job kills on timeout
-
-        // Let's spawn a process which will wait until walltime and cancel the task if needed
-        /*KillerProcessArguments * killer_args = new KillerProcessArguments;
-        killer_args->task = ptask;
-        killer_args->walltime = *remaining_time;
-
-        msg_process_t kill_process = MSG_process_create("killer", killer_process, killer_args, MSG_host_self());*/
+                                                    nb_res, allocation->hosts.data(),
+                                                    computation_amount,
+                                                    communication_amount, NULL);
 
         double timeBeforeExecute = MSG_get_clock();
         XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
-        msg_error_t err = MSG_parallel_task_execute(ptask);
+        msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
 
         int ret = 1;
         if (err == MSG_OK) {}
-            //SIMIX_process_throw(kill_process, cancel_error, 0, "wake up");
-        else if (err == MSG_TASK_CANCELED)
+        else if (err == MSG_TIMEOUT)
             ret = 0;
         else
             xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
@@ -131,31 +102,22 @@ int execute_profile(BatsimContext *context,
         memcpy(computation_amount, data->cpu, sizeof(double) * nb_res);
         memcpy(communication_amount, data->com, sizeof(double) * nb_res * nb_res);
 
-        string task_name = "p " + to_string(job->id) + "'" + job->profile + "'";
+        string task_name = "p " + to_string(job->number) + "'" + job->profile + "'";
         XBT_INFO("Creating task '%s'", task_name.c_str());
 
         msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(),
-                                         nb_res, allocation->hosts.data(),
-                                         computation_amount,
-                                         communication_amount, NULL);
-
-        // Let's spawn a process which will wait until walltime and cancel the task if needed
-        // TODO: debug job kill on timeout
-        /*KillerProcessArguments * killer_args = new KillerProcessArguments;
-        killer_args->task = ptask;
-        killer_args->walltime = *remaining_time;
-
-        msg_process_t kill_process = MSG_process_create("killer", killer_process, killer_args, MSG_host_self());*/
+                                                    nb_res, allocation->hosts.data(),
+                                                    computation_amount,
+                                                    communication_amount, NULL);
 
         double timeBeforeExecute = MSG_get_clock();
         XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
-        msg_error_t err = MSG_parallel_task_execute(ptask);
+        msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
 
         int ret = 1;
-        if (err == MSG_OK){}
-            //SIMIX_process_throw(kill_process, cancel_error, 0, "wake up");
-        else if (err == MSG_TASK_CANCELED)
+        if (err == MSG_OK) {}
+        else if (err == MSG_TIMEOUT)
             ret = 0;
         else
             xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
@@ -207,7 +169,7 @@ int execute_profile(BatsimContext *context,
         for (int i = 0; i < nb_res; ++i)
         {
             char *str_instance_id = NULL;
-            int ret = asprintf(&str_instance_id, "%d", job->id);
+            int ret = asprintf(&str_instance_id, "%d", job->number);
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
             char *str_rank_id  = NULL;
@@ -215,7 +177,7 @@ int execute_profile(BatsimContext *context,
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
             char *str_pname = NULL;
-            ret = asprintf(&str_pname, "%d_%d", job->id, i);
+            ret = asprintf(&str_pname, "%d_%d", job->number, i);
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
             char **argv = xbt_new(char*, 5);
@@ -232,8 +194,106 @@ int execute_profile(BatsimContext *context,
         }
         return 1;
     }
+
+    if (profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS0)
+    {
+        MsgParallelHomogeneousPFS0ProfileData * data = (MsgParallelHomogeneousPFS0ProfileData *)profile->data;
+
+        double cpu = 0.0;
+        double size = data->size;
+        std::vector<msg_host_t> hosts_pfs0(allocation->hosts);
+
+        // Add the pfs_machine
+        hosts_pfs0.push_back((context->machines.pfs_machine())->host);
+
+        nb_res = nb_res + 1;
+
+        // These amounts are deallocated by SG
+        double * computation_amount = xbt_new(double, nb_res);
+        double * communication_amount = NULL;
+        if(size != 0.0)
+            communication_amount = xbt_new(double, nb_res*nb_res);
+
+
+        // Let us fill the local computation and communication matrices
+        int k = 0;
+        for (int y = 0; y < nb_res; ++y)
+        {
+            computation_amount[y] = cpu;
+            if(communication_amount != NULL) {
+                for (int x = 0; x < nb_res; ++x)
+                {
+                    if ((x != nb_res-1) || (x == y))
+                        communication_amount[k++] = 0;
+                    else
+                        communication_amount[k++] = size;
+                }
+            }
+        }
+
+        string task_name = "phg " + to_string(job->number) + "'" + job->profile + "'";
+        XBT_INFO("Creating task '%s'", task_name.c_str());
+
+        msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(),
+                                         nb_res, allocation->hosts.data(),
+                                         computation_amount,
+                                         communication_amount, NULL);
+
+        double timeBeforeExecute = MSG_get_clock();
+        XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
+        msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
+        *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
+
+        int ret = 1;
+        if (err == MSG_OK) {}
+        else if (err == MSG_TIMEOUT)
+            ret = 0;
+        else
+            xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
+
+        XBT_INFO("Task '%s' finished", MSG_task_get_name(ptask));
+        MSG_task_destroy(ptask);
+        return ret;
+    }
     else
-        xbt_die("Cannot execute job %d: the profile type '%s' is unknown", job->id, job->profile.c_str());
+        xbt_die("Cannot execute job %d: the profile type '%s' is unknown", job->number, job->profile.c_str());
+
+    return 0;
+}
+
+int lite_execute_job_process(int argc, char *argv[])
+{
+    (void) argc;
+    (void) argv;
+
+    // Retrieving input parameters
+    ExecuteJobProcessArguments * args = (ExecuteJobProcessArguments *) MSG_process_get_data(MSG_process_self());
+
+    Job * job = args->context->workloads.job_at(args->allocation->job_id);
+    job->starting_time = MSG_get_clock();
+    job->allocation = args->allocation->machine_ids;
+    double remaining_time = (double) job->walltime;
+
+    // Job computation
+    args->context->machines.update_machines_on_job_run(job, args->allocation->machine_ids, args->context);
+    if (execute_profile(args->context, job->profile, args->allocation, &remaining_time) == 1)
+    {
+        XBT_INFO("Job %d finished in time", job->id);
+        job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
+    }
+    else
+    {
+        XBT_INFO("Job %d had been killed (walltime %lf reached", job->id, job->walltime);
+        job->state = JobState::JOB_STATE_COMPLETED_KILLED;
+        if (args->context->trace_schedule)
+            args->context->paje_tracer.add_job_kill(job, args->allocation->machine_ids, MSG_get_clock(), true);
+    }
+
+    args->context->machines.update_machines_on_job_end(job, args->allocation->machine_ids, args->context);
+    job->runtime = MSG_get_clock() - job->starting_time;
+
+    delete args->allocation;
+    delete args;
 
     return 0;
 }
@@ -246,10 +306,11 @@ int execute_job_process(int argc, char *argv[])
     // Retrieving input parameters
     ExecuteJobProcessArguments * args = (ExecuteJobProcessArguments *) MSG_process_get_data(MSG_process_self());
 
-    Job * job = args->context->jobs[args->allocation->job_id];
+    Workload * workload = args->context->workloads.at(args->allocation->job_id.workload_name);
+    Job * job = workload->jobs->at(args->allocation->job_id.job_number);
     job->starting_time = MSG_get_clock();
     job->allocation = args->allocation->machine_ids;
-    double remaining_time = job->walltime;
+    double remaining_time = (double)job->walltime;
 
     // If energy is enabled, let us compute the energy used by the machines before running the job
     if (args->context->energy_used)
@@ -264,26 +325,40 @@ int execute_job_process(int argc, char *argv[])
         }
 
         // Let's trace the consumed energy
-        args->context->energy_tracer.add_job_start(MSG_get_clock(), job->id);
+        args->context->energy_tracer.add_job_start(MSG_get_clock(), job->number);
     }
 
     // Job computation
-    args->context->machines.updateMachinesOnJobRun(job->id, args->allocation->machine_ids);
+    args->context->machines.update_machines_on_job_run(job,
+                                                       args->allocation->machine_ids,
+                                                       args->context);
     if (execute_profile(args->context, job->profile, args->allocation, &remaining_time) == 1)
     {
-        XBT_INFO("Job %d finished in time", job->id);
+        XBT_INFO("Job %d finished in time", job->number);
         job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
     }
     else
     {
-        XBT_INFO("Job %d had been killed (walltime %lf reached", job->id, job->walltime);
+        XBT_INFO("Job %d had been killed (walltime %lf reached", job->number, job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
         if (args->context->trace_schedule)
-            args->context->paje_tracer.addJobKill(job->id, args->allocation->machine_ids, MSG_get_clock(), true);
+            args->context->paje_tracer.add_job_kill(job,
+                                                    args->allocation->machine_ids,
+                                                    MSG_get_clock(),
+                                                    true);
     }
 
-    args->context->machines.updateMachinesOnJobEnd(job->id, args->allocation->machine_ids);
-    job->runtime = MSG_get_clock() - job->starting_time;
+    args->context->machines.update_machines_on_job_end(job,
+                                                       args->allocation->machine_ids,
+                                                       args->context);
+    job->runtime = (Rational)MSG_get_clock() - job->starting_time;
+    // dirty hack, should be removed once SMPI works correctly
+    if (workload->profiles->at(job->profile)->type == ProfileType::SMPI)
+        job->runtime = max(job->runtime, Rational(1e-5));
+
+    xbt_assert(job->runtime > 0, "The execution of job '%s' resulted in a null execution time. "
+               "This might be caused by MSG_clock() precision but also by a bad job profile.",
+               job->id.c_str());
 
     // If energy is enabled, let us compute the energy used by the machines after running the job
     if (args->context->energy_used)
@@ -303,12 +378,12 @@ int execute_job_process(int argc, char *argv[])
         job->consumed_energy = job->consumed_energy - consumed_energy_before;
 
         // Let's trace the consumed energy
-        args->context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
+        args->context->energy_tracer.add_job_end(MSG_get_clock(), job->number);
     }
 
     // Let us tell the server that the job completed
     JobCompletedMessage * message = new JobCompletedMessage;
-    message->job_id = job->id;
+    message->job_id = args->allocation->job_id;
 
     send_message("server", IPMessageType::JOB_COMPLETED, (void*)message);
     delete args->allocation;
