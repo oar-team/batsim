@@ -18,7 +18,7 @@ class ThrowingArgumentParser(argparse.ArgumentParser):
     def error(self, message):
         raise ArgumentParserError(message)
 
-def find_socket_from_batsim_command(batsim_command):
+def find_info_from_batsim_command(batsim_command):
     split_command = shlex.split(batsim_command)
 
     assert(len(split_command) > 1), "Invalid Batsim command: '{}'".format(
@@ -52,6 +52,7 @@ def find_socket_from_batsim_command(batsim_command):
     batparser.add_argument("-w", "--workload", type=str)
     batparser.add_argument("-W", "--workflow", type=str)
 
+    batparser.add_argument("-c", "--batexec", action='store_true')
     batparser.add_argument("-e", "--export", type=str, default="out")
     batparser.add_argument("-E", "--energy-plugin", action='store_true')
     batparser.add_argument("-h", "--allow-space-sharing", action='store_true')
@@ -66,12 +67,15 @@ def find_socket_from_batsim_command(batsim_command):
 
     try:
         batargs = batparser.parse_args(split_command[1:])
+        is_batexec = False
+        if batargs.batexec:
+            is_batexec = True
+
+        return (batargs.socket, is_batexec)
     except ArgumentParserError as e:
         logger.error("Could not retrieve Batsim's socket from Batsim's command "
                      "'{}'. Parsing error: '{}'".format(batsim_command, e))
         sys.exit(-1)
-
-    return batargs.socket
 
 def write_string_into_file(string, filename):
     f = open(filename, 'w')
@@ -522,7 +526,7 @@ def execute_one_instance(working_directory,
     sched_lifecycle_handler = SchedLifecycleHandler()
 
     # If batsim's socket is still opened, let's wait for it to close
-    batsim_socket = find_socket_from_batsim_command(batsim_command)
+    (batsim_socket, is_batexec) = find_info_from_batsim_command(batsim_command)
     socket_usable = wait_for_batsim_socket_to_be_usable(sock = batsim_socket,
                                                         timeout = timeout)
     assert(socket_usable)
@@ -568,15 +572,18 @@ def execute_one_instance(working_directory,
         # Launches the scheduler
         logger.info("Batsim's socket {} is now opened".format(execution_data.batsim_socket))
         execution_data.sched_process.start()
+
+        # Wait for processes' termination
+        while (execution_data.failure == False) and (execution_data.nb_finished < 2):
+            sleep(0.2)
+
+        while (execution_data.nb_finished < execution_data.nb_started):
+            sleep(0.2)
+
+    elif is_batexec:
+        success = True
     else:
         execution_data.failure = True
-
-    # Wait for processes' termination
-    while (execution_data.failure == False) and (execution_data.nb_finished < 2):
-        sleep(0.2)
-
-    while (execution_data.nb_finished < execution_data.nb_started):
-        sleep(0.2)
 
     if execution_data != None:
         success = not execution_data.failure

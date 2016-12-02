@@ -17,6 +17,7 @@
 \rm -rf test/out/smpi
 \rm -rf test/out/unique
 \rm -rf test/out/walltime
+\rm -rf test/out/batexec
 
 # Run a travis server if needed
 server_launched_by_me=0
@@ -46,6 +47,7 @@ tools/experiments/execute_instances.py test/test_space_sharing.yaml -bod test/ou
 tools/experiments/execute_instances.py test/test_energy.yaml -bod test/out/energy
 #tools/experiments/execute_instances.py test/test_smpi.yaml -bod test/out/smpi
 tools/experiments/execute_instances.py test/test_long_simulation_time.yaml -bod test/out/long_simulation_time
+tools/experiments/execute_instances.py test/test_batexec.yaml -bod test/out/batexec
 
 # Let's stop the redis server if it has been launched by this script
 if [ $server_launched_by_me -eq 1 ]

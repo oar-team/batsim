@@ -351,7 +351,8 @@ int job_launcher_process(int argc, char *argv[])
 
         SchedulingAllocation * alloc = new SchedulingAllocation;
 
-        alloc->job_id = job->id;
+        alloc->job_id.workload_name = args->workload_name;
+        alloc->job_id.job_number = job->number;
         alloc->hosts.clear();
         alloc->hosts.reserve(nb_res);
         alloc->machine_ids.clear();

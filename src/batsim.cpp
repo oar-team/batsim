@@ -134,6 +134,7 @@ int parse_opt (int key, char *arg, struct argp_state *state)
     // Optional parameters:
     case 'c':
         main_args->program_type = ProgramType::BATEXEC;
+        break;
     case 'e':
         main_args->export_prefix = arg;
         break;

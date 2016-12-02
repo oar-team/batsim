@@ -1,0 +1,31 @@
+# This script should be called from Batsim's root directory
+
+# If needed, the working directory of this script can be specified within this file
+#base_working_directory: ~/proj/batsim
+
+# If needed, the output directory of this script can be specified within this file
+#base_output_directory: ~/proj/batsim/results
+
+implicit_instances:
+  implicit:
+    sweep:
+      platform :
+        - ["smallPF", "platforms/small_platform.xml"]
+      workload :
+        - ["tiny", "workload_profiles/test_workload_profile.json"]
+      pybatsim_algo:
+        - fillerSched
+    generic_instance:
+      timeout: 10
+      working_directory: ${base_working_directory}
+      output_directory: ${base_output_directory}/results/${pybatsim_algo}_${workload[0]}
+      batsim_command: batsim -c -p ${platform[1]} -w ${workload[1]} -e ${output_directory}/out -s ${output_directory}/socket -L
+      sched_command: echo "I do not even exist."
+      # commands_before_execution:
+      #   - ls .
+      #   - |
+      #     #!/usr/bin/python3
+      #     print('Hello from python3!')
+      #   - |
+      #     #!/usr/bin/python2
+      #     print 'Hello from python2!'
