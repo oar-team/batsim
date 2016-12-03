@@ -39,10 +39,22 @@ int killer_process(int argc, char *argv[])
 
 int smpi_replay_process(int argc, char *argv[])
 {
-   /* for(int index = 0; index < argc; index++)
-        XBT_DEBUG("smpi_replay_process, arg %d = '%s'", index, argv[index]);*/
+    //msg_bar_t barrier = (msg_bar_t) MSG_process_get_data(MSG_process_self());
+    msg_sem_t sem = (msg_sem_t) MSG_process_get_data(MSG_process_self());
+    XBT_INFO("sem %p", sem);
+    if (sem != NULL) {
+        MSG_sem_acquire(sem);
+    }
+    XBT_INFO("SIMIX_process_self  smpi_replay_process: %p", SIMIX_process_self());
+    for(int index = 0; index < argc; index++)
+        XBT_INFO("smpi_replay_process, arg %d = '%s'", index, argv[index]);
 
     smpi_replay_run(&argc, &argv);
+
+    //    MSG_barrier_wait(barrier);
+    if (sem != NULL) {
+        MSG_sem_release(sem);
+    }
     return 0;
 }
 
@@ -200,7 +212,8 @@ int execute_profile(BatsimContext *context,
     else if (profile->type == ProfileType::SMPI)
     {
         SmpiProfileData * data = (SmpiProfileData *) profile->data;
-
+        //msg_bar_t barrier = MSG_barrier_init(nb_res);
+        msg_sem_t sem = MSG_sem_init(1);
         for (int i = 0; i < nb_res; ++i)
         {
             char *str_instance_id = NULL;
@@ -222,11 +235,22 @@ int execute_profile(BatsimContext *context,
             argv[3] = xbt_strdup((char*) data->trace_filenames[i].c_str());
             argv[4] = xbt_strdup("0"); //
 
-            MSG_process_create_with_arguments(str_pname, smpi_replay_process, NULL, allocation->hosts[i], 5, argv );
-
+            //XBT_INFO("Barrier %p", barrier);
+            if (i==0) {
+                
+                MSG_process_create_with_arguments(str_pname, smpi_replay_process, sem, allocation->hosts[i], 5, argv );
+            } else {
+                MSG_process_create_with_arguments(str_pname, smpi_replay_process, NULL, allocation->hosts[i], 5, argv );
+            }
+            //MSG_barrier_wait(barrier);
+            XBT_INFO("After MSG_process_create_with_arguments");
+            XBT_INFO("SIMIX_process_self  After MSG_process_create_with_arguments: %p", SIMIX_process_self());
             // todo: avoid memory leaks
             free(str_pname);
         }
+        MSG_sem_acquire(sem);
+        free(sem);
+        //MSG_barrier_destroy(barrier);
         return 1;
     }
     else
