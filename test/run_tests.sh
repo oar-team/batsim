@@ -11,6 +11,7 @@
 # Clean test output directories
 \rm -rf test/out/energy
 \rm -rf test/out/instance_examples
+\rm -rf test/out/sshprocess
 \rm -rf test/out/long_simulation_time
 \rm -rf test/out/no_energy
 \rm -rf test/out/space_sharing
@@ -45,6 +46,7 @@ tools/experiments/execute_instances.py test/test_walltime.yaml -bod test/out/wal
 tools/experiments/execute_instances.py test/test_no_energy.yaml -bod test/out/no_energy
 tools/experiments/execute_instances.py test/test_space_sharing.yaml -bod test/out/space_sharing
 tools/experiments/execute_instances.py test/test_energy.yaml -bod test/out/energy
+tools/experiments/execute_instances.py test/test_energy.yaml -bod test/out/sshprocess --mpi_hostfile test/mpi_hostfile_localhost
 #tools/experiments/execute_instances.py test/test_smpi.yaml -bod test/out/smpi
 tools/experiments/execute_instances.py test/test_long_simulation_time.yaml -bod test/out/long_simulation_time
 tools/experiments/execute_instances.py test/test_batexec.yaml -bod test/out/batexec

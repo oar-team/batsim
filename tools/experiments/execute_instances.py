@@ -488,8 +488,9 @@ def retrieve_hostlist_from_mpi_hostfile(hostfile):
     hosts = set()
     f = open(hostfile, 'r')
     for line in f:
+        line = line.strip()
         host = line.split(' ')[0]
-        hosts.insert(host)
+        hosts.add(host)
     return list(hosts)
 
 def generate_instances_combs(explicit_instances,
