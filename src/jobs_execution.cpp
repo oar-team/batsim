@@ -19,10 +19,17 @@ int smpi_replay_process(int argc, char *argv[])
 {
    /* for(int index = 0; index < argc; index++)
         XBT_DEBUG("smpi_replay_process, arg %d = '%s'", index, argv[index]);*/
-
+    msg_sem_t sem = (msg_sem_t) MSG_process_get_data(MSG_process_self());
+    if (sem != NULL)
+    {
+        MSG_sem_acquire(sem);
+    }
     XBT_INFO("Launching smpi_replay_run");
     smpi_replay_run(&argc, &argv);
     XBT_INFO("smpi_replay_run finished");
+    if (sem != NULL) {
+        MSG_sem_release(sem);
+    }
     return 0;
 }
 
@@ -165,6 +172,7 @@ int execute_profile(BatsimContext *context,
     else if (profile->type == ProfileType::SMPI)
     {
         SmpiProfileData * data = (SmpiProfileData *) profile->data;
+        msg_sem_t sem = MSG_sem_init(1);
 
         for (int i = 0; i < nb_res; ++i)
         {
@@ -186,12 +194,20 @@ int execute_profile(BatsimContext *context,
             argv[2] = str_rank_id;     // Rank Id
             argv[3] = xbt_strdup((char*) data->trace_filenames[i].c_str());
             argv[4] = xbt_strdup("0"); //
-
-            MSG_process_create_with_arguments(str_pname, smpi_replay_process, NULL, allocation->hosts[i], 5, argv );
+            if (i==0)
+            {    
+                MSG_process_create_with_arguments(str_pname, smpi_replay_process, sem, allocation->hosts[i], 5, argv );
+            } else
+            {
+                MSG_process_create_with_arguments(str_pname, smpi_replay_process, NULL, allocation->hosts[i], 5, argv );
+            }    
 
             // todo: avoid memory leaks
             free(str_pname);
+            
         }
+        MSG_sem_acquire(sem);
+        free(sem);
         return 1;
     }
 
