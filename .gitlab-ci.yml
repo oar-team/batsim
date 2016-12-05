@@ -1,7 +1,23 @@
 image: oarteam/batsim:bebida
 
+build:
+  stage: build
+  script:
+    - mkdir /builds/OAR/batsim/build
+    - cd /builds/OAR/batsim/build
+    - cmake .. -Dtreat_warnings_as_errors=ON
+    - make -j$(nproc)
+    - make install
+
 test:
   stage: test
   script:
+    # Let's run the redis server
+    - |
+      redis-server>/dev/null &
+      while ! nc -z localhost 6379; do
+        sleep 1
+      done
+
     - cd /builds/OAR/batsim
     - bash -ex ./test/run_tests.sh
