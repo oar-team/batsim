@@ -1,4 +1,4 @@
-image: oarteam/batsim:bebida
+image: oarteam/batsim:latest
 
 build:
   stage: build
@@ -19,5 +19,5 @@ test:
         sleep 1
       done
 
-    - cd /builds/OAR/batsim
-    - bash -ex ./test/run_tests.sh
+    - cd /builds/OAR/batsim/build
+    - make test
