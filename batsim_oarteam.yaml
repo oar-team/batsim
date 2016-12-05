@@ -63,7 +63,7 @@ setup:
     - install dependencies:
       - exec_in: |
           apt-get -y -t testing install \
-          libboost-dev-all \
+          libboost-all-dev \
           libgmp-dev \
           redis-server \
           libhiredis-dev \
