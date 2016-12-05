@@ -131,3 +131,95 @@ endif()
 if (ignore_assertions)
     target_compile_definitions(batsim PRIVATE NDEBUG)
 endif()
+
+###########
+# Testing #
+###########
+enable_testing()
+
+# Execution scripts tests
+add_test(exec1_tiny
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_one_instance.py
+         ${CMAKE_SOURCE_DIR}/tools/experiments/instance_examples/pybatsim_filler_tiny.yaml
+         -od /tmp/batsim_tools_tests/exec1/out/instance_examples/pftiny
+         -wd ${CMAKE_SOURCE_DIR})
+
+add_test(exec1_medium
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_one_instance.py
+         ${CMAKE_SOURCE_DIR}/tools/experiments/instance_examples/pybatsim_filler_medium.yaml
+         -od /tmp/batsim_tools_tests/exec1/out/instance_examples/pfmedium
+         -wd ${CMAKE_SOURCE_DIR})
+
+add_test(execN_mixed
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/tools/experiments/instances_examples/pyfiller_tiny_medium_mixed.yaml
+         -bod /tmp/batsim_tools_tests/execN
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(execN_ssh1
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_no_energy.yaml
+         -bwd ${CMAKE_SOURCE_DIR}
+         -bod /tmp/batsim_tests/ssh1
+         --mpi_hostfile ${CMAKE_SOURCE_DIR}/test/mpi_hostfile_localhost
+         --nb_workers_per_host 1)
+
+add_test(execN_ssh2
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_no_energy.yaml
+         -bwd ${CMAKE_SOURCE_DIR}
+         -bod /tmp/batsim_tests/ssh2
+         --mpi_hostfile ${CMAKE_SOURCE_DIR}/test/mpi_hostfile_localhost
+         --nb_workers_per_host 2)
+
+add_test(execN_ssh4
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_no_energy.yaml
+         -bwd ${CMAKE_SOURCE_DIR}
+         -bod /tmp/batsim_tests/ssh4
+         --mpi_hostfile ${CMAKE_SOURCE_DIR}/test/mpi_hostfile_localhost
+         --nb_workers_per_host 4)
+
+# Batsim tests
+add_test(no_energy
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_no_energy.yaml
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(energy
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_energy.yaml
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(walltime
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_walltime.yaml
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(long_simulation_time
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_long_simulation_time.yaml
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(space_sharing
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_space_sharing.yaml
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(smpi
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_smpi.yaml
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(batexec
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_batexec.yaml
+         -bwd ${CMAKE_SOURCE_DIR})
+
+
+
+
+
+
+
+

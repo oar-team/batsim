@@ -9,16 +9,7 @@
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾
 
 # Clean test output directories
-\rm -rf test/out/energy
-\rm -rf test/out/instance_examples
-\rm -rf test/out/sshprocess*
-\rm -rf test/out/long_simulation_time
-\rm -rf test/out/no_energy
-\rm -rf test/out/space_sharing
-\rm -rf test/out/smpi
-\rm -rf test/out/unique
-\rm -rf test/out/walltime
-\rm -rf test/out/batexec
+\rm -rf /tmp/batsim_tests
 
 # Run a travis server if needed
 server_launched_by_me=0
@@ -41,17 +32,16 @@ tools/experiments/execute_instances.py \
     ./tools/experiments/instances_examples/pyfiller_tiny_medium_mixed.yaml
 
 # Run different tests
-tools/experiments/execute_instances.py test/test_unique.yaml -bod test/out/unique
-tools/experiments/execute_instances.py test/test_walltime.yaml -bod test/out/walltime
-tools/experiments/execute_instances.py test/test_no_energy.yaml -bod test/out/no_energy
-tools/experiments/execute_instances.py test/test_space_sharing.yaml -bod test/out/space_sharing
-tools/experiments/execute_instances.py test/test_energy.yaml -bod test/out/energy
-tools/experiments/execute_instances.py test/test_energy.yaml -bod test/out/sshprocess1 --mpi_hostfile test/mpi_hostfile_localhost
-tools/experiments/execute_instances.py test/test_energy.yaml -bod test/out/sshprocess2 --mpi_hostfile test/mpi_hostfile_localhost --nb_workers_per_host 2
-tools/experiments/execute_instances.py test/test_energy.yaml -bod test/out/sshprocess4 --mpi_hostfile test/mpi_hostfile_localhost --nb_workers_per_host 4
+tools/experiments/execute_instances.py test/test_walltime.yaml
+tools/experiments/execute_instances.py test/test_no_energy.yaml
+tools/experiments/execute_instances.py test/test_space_sharing.yaml
+tools/experiments/execute_instances.py test/test_energy.yaml
+tools/experiments/execute_instances.py test/test_energy.yaml -bod /tmp/batsim_tests/sshprocess1 --mpi_hostfile test/mpi_hostfile_localhost
+tools/experiments/execute_instances.py test/test_energy.yaml -bod /tmp/batsim_tests/sshprocess2 --mpi_hostfile test/mpi_hostfile_localhost --nb_workers_per_host 2
+tools/experiments/execute_instances.py test/test_energy.yaml -bod /tmp/batsim_tests/sshprocess4 --mpi_hostfile test/mpi_hostfile_localhost --nb_workers_per_host 4
 #tools/experiments/execute_instances.py test/test_smpi.yaml -bod test/out/smpi
-tools/experiments/execute_instances.py test/test_long_simulation_time.yaml -bod test/out/long_simulation_time
-tools/experiments/execute_instances.py test/test_batexec.yaml -bod test/out/batexec
+tools/experiments/execute_instances.py test/test_long_simulation_time.yaml
+tools/experiments/execute_instances.py test/test_batexec.yaml
 
 # Let's stop the redis server if it has been launched by this script
 if [ $server_launched_by_me -eq 1 ]

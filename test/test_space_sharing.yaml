@@ -4,26 +4,68 @@
 #base_working_directory: ~/proj/batsim
 
 # If needed, the output directory of this script can be specified within this file
-#base_output_directory: ~/proj/batsim/results
+base_output_directory: /tmp/batsim_tests/space_sharing
+
+base_variables:
+  batsim_dir: ${base_working_directory}
 
 implicit_instances:
   implicit:
     sweep:
       platform :
-        - ["smallPF", "platforms/energy_platform_homogeneous_no_net_128.xml"]
+        - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       random_seed:
         - 0
         - 1
         - 2
         - 3
       workload :
-        - ["tiny", "workload_profiles/test_workload_profile.json"]
-        - ["medium", "workload_profiles/batsim_paper_workload_example.json"]
+        - {"name":"tiny", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
+        - {"name":"medium", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example.json"}
       pybatsim_algo:
-        - randomSched
+        - {"name":"random", "algo_name":"randomSched"}
     generic_instance:
       timeout: 20
       working_directory: ${base_working_directory}
-      output_directory: ${base_output_directory}/results/${pybatsim_algo}_${workload[0]}
-      batsim_command: batsim -p ${platform[1]} -w ${workload[1]} -h -e ${output_directory}/out -s ${output_directory}/socket
-      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo} -s ${output_directory}/socket
+      output_directory: ${base_output_directory}/results/${pybatsim_algo[name]}_${workload[name]}_${platform[name]}_${random_seed}
+      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out -s ${output_directory}/socket -L -h
+      sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo[algo_name]} -s ${output_directory}/socket
+
+commands_before_instances:
+  - |
+      #!/usr/bin/python2
+      # Let's check that the base working directory looks like Batsim's
+      import os
+      import sys
+
+      bwd = os.environ['base_working_directory']
+
+      if os.path.isdir(bwd):
+          dirs = [bwd + '/' + x for x in ['cmake', 'platforms', 'schedulers',
+                                          'src', 'tools']]
+          for dir in dirs:
+              if not os.path.isdir(dir):
+                  print('The base working directory seems to be bad: there is '
+                        "no '{}' directory.", dir)
+                  sys.exit(1)
+          sys.exit(0)
+      else:
+          print("The base working directory does not exist!")
+          sys.exit(2)
+
+  - |
+      #!/usr/bin/python2
+      # Let's clean the output directory if needed
+      import os
+      import shutil
+      import sys
+
+      bod = os.environ['base_output_directory']
+
+      if os.path.isdir(bod):
+          dirs = [bod + '/' + x for x in ['instances', 'sweeper', 'results']]
+          for dir in dirs:
+              if os.path.isdir(dir):
+                  shutil.rmtree(dir)
+
+      sys.exit(0)
