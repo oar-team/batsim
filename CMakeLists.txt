@@ -160,7 +160,7 @@ add_test(execN_ssh1
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_no_energy.yaml
          -bwd ${CMAKE_SOURCE_DIR}
-         -bod /tmp/batsim_tests/ssh1
+         -bod /tmp/batsim_tools_tests/ssh1
          --mpi_hostfile ${CMAKE_SOURCE_DIR}/test/mpi_hostfile_localhost
          --nb_workers_per_host 1)
 
@@ -168,7 +168,7 @@ add_test(execN_ssh2
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_no_energy.yaml
          -bwd ${CMAKE_SOURCE_DIR}
-         -bod /tmp/batsim_tests/ssh2
+         -bod /tmp/batsim_tools_tests/ssh2
          --mpi_hostfile ${CMAKE_SOURCE_DIR}/test/mpi_hostfile_localhost
          --nb_workers_per_host 2)
 
@@ -176,7 +176,7 @@ add_test(execN_ssh4
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_no_energy.yaml
          -bwd ${CMAKE_SOURCE_DIR}
-         -bod /tmp/batsim_tests/ssh4
+         -bod /tmp/batsim_tools_tests/ssh4
          --mpi_hostfile ${CMAKE_SOURCE_DIR}/test/mpi_hostfile_localhost
          --nb_workers_per_host 4)
 
