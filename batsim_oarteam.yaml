@@ -10,12 +10,13 @@
 ## Choose one of them the following extends
 
 # Checkpoint only with btrfs
-#checkpoint: btrfs.yaml
-#extend: default/chroot/debian8.yaml
-
+checkpoint: btrfs.yaml
 extend: default/from_image/debian8.yaml
 
+# extend: default/from_image/debian8.yaml
+
 global:
+  backend: chroot
   btrfs_volume: "/"
   virtualbox_memory_size: 2048
   qemu_memory_size : 2048
@@ -28,12 +29,12 @@ global:
   hostname: batsim
   simctn_dir: /root
 
-  simgrid_commit: 42a5c2c5f
-  batsim_commit: 6841604271
-  locality_sched_commit: 12df12a
-  oar_commit: 2c7c4df
-  evalys_commit: fae0e04
-  batsim_experiments_commit: 5ce3017342
+  simgrid_commit: dccf1b41e9c7b # Wed Nov 30 14:08:01 2016
+  batsim_commit: 354c364850c1   # Mon Dec 5 14:09:57 2016
+  execo_commit: 725fddc
+
+bootstrap:
+  - "@base"
 
 setup:
   #
@@ -47,19 +48,27 @@ setup:
   #
   - configure_apt_testing
 
+  - install_common_deps:
+
+    - install_build_tools:
+      - exec_in: |
+          apt-get -y -t testing install cmake gcc clang g++
+          update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-6 100
+
   - simgrid_install:
     - commit_hash: $$simgrid_commit
 
   - batsim:
     # Need testing to be available
-    - install_build_tools:
-      - exec_in: |
-          apt-get -y -t testing install cmake gcc clang
     - install dependencies:
       - exec_in: |
-          apt-get -y --force-yes install \
-          libboost-filesystem-dev \
-          libboost-system-dev 2>&1
+          apt-get -y -t testing install \
+          libboost-dev-all \
+          libgmp-dev \
+          redis-server \
+          libhiredis-dev \
+          libev-dev \
+          libssl-dev 2>&1
       # Install rapidjson (not available in jessy)
       - exec_in: |
           cd $$simctn_dir
@@ -68,13 +77,29 @@ setup:
           cd $$simctn_dir/rapidjson
           git checkout 3d5848a # v1.02
           cp -a include/rapidjson /usr/include
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://github.com/hmartiro/redox.git
+          cd redox
+          git checkout 64becf28f3dd
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=../install
+          make -j $(nproc)
+          make install
+          cd ../install
+          mv -f lib64 lib
+          sudo cp -r ./* /usr/
     - install_test_dependencies:
       - exec_in: apt-get -y --force-yes install python-pip
-      - exec_in: pip2 install sortedcontainers
+      - exec_in: pip2 install sortedcontainers redis
+      - exec_in: apt install -y -t testing python-pandas
       - exec_in: |
           cd $$simctn_dir
           git clone https://github.com/mickours/execo.git
-          pip install -e ./execo
+          cd execo
+          git checkout $${execo_commit}
+          pip install -e .
     - do_it:
       - exec_in: |
           cd $$simctn_dir
@@ -85,31 +110,9 @@ setup:
           mkdir build
       - exec_in: |
           cd $$simctn_dir/batsim/build
-          cmake ..
+          cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/g++-6
           make -j$(nproc)
           make install
-
-  #
-  # Visualization tools
-  #
-  - evalys:
-    - install dependencies:
-      - exec_in: |
-          apt-get -y --force-yes install \
-            python3-pip \
-            python3-pyqt4 \
-            python3-matplotlib \
-            python3-pandas \
-            ipython3-notebook \
-            python3-mpld3
-    - install_evalys:
-      - exec_in: |
-          cd $$simctn_dir
-          git clone https://github.com/oar-team/evalys.git
-          cd evalys
-          git checkout $${evalys_commit}
-          cd $$simctn_dir/evalys
-          pip3 install -e .
 
 export:
   - "@base"

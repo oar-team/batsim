@@ -17,18 +17,18 @@
 - install_prefix: /usr
 
 - install dependencies:
-  - exec_in: apt-get -y --force-yes install libboost-all-dev 2>&1
+  - exec_in: apt-get -y --force-yes install -t testing libboost-all-dev python3 2>&1
 - do_it:
   - exec_in: |
       mkdir -p $$work_dir
       cd $$work_dir
-      git clone https://github.com/oar-team/simgrid-batsim.git -b batsim-compatible --depth 1
+      git clone https://github.com/simgrid/simgrid
   - exec_in: |
-      cd $$work_dir/simgrid-batsim
+      cd $$work_dir/simgrid
       git checkout $$commit_hash
       mkdir build
   - exec_in: |
-      cd $$work_dir/simgrid-batsim/build
-      cmake -DCMAKE_INSTALL_PREFIX=$$install_prefix -Denable_documentation=OFF ../
+      cd $$work_dir/simgrid/build
+      cmake -DCMAKE_INSTALL_PREFIX=$$install_prefix -Denable_documentation=OFF -DPYTHON_EXECUTABLE=/usr/bin/python3 ../
       make -j$(nproc)
       make install

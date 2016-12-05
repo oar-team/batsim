@@ -1,0 +1,31 @@
+# Chroot backend reciep
+---
+# Uncomment the folowing line to enable btrfs chekpoint if you have a btrfs filesystem on the
+# host. More details on the checkpoint file.
+#
+# checkpoint: btrfs.yaml
+
+global:
+  # Shell session from where we launch exec_out commands. There is often a
+  # local bash session, but it can be a remote shell on other machines or on
+  # any shell. (eg. bash, chroot, fakechroot, ssh, tmux, lxc...)
+  out_context:
+    cmd: bash
+    workdir: $${kameleon_cwd}
+    proxy_cache: 127.0.0.1
+
+  # Shell session that allows us to connect to the building machine in order to
+  # configure it and setup additional programs
+  in_context:
+    cmd: USER=root HOME=/root LC_ALL=POSIX chroot $${rootfs} bash
+    workdir: /root/kameleon_workdir
+    proxy_cache: 127.0.0.1
+
+bootstrap:
+  - enable_checkpoint
+  - prepare_chroot
+  - start_chroot
+
+export:
+  - disable_checkpoint
+  - save_appliance

@@ -1,8 +1,0 @@
-setup:
-  - reproduce_bug:
-    - do_it:
-      - exec_local: export TOTO=test
-    - show:
-      - exec_local: |
-          echo this is a $TOTO
-          false

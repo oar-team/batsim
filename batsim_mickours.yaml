@@ -10,6 +10,11 @@ extend: batsim_oarteam.yaml
 
 global:
 
+  locality_sched_commit: 12df12a
+  oar_commit: 2c7c4df
+  evalys_commit: fae0e04
+  batsim_experiments_commit: 5ce3017342
+
 bootstrap:
   - "@base"
 
@@ -37,6 +42,8 @@ setup:
   #
   # Visualization tools
   #
+  - evalys
+
   - VITE_install:
     - install dependencies:
       - exec_in: apt-get -y --force-yes install vite 2>&1
