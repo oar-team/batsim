@@ -250,7 +250,7 @@ bool parse_main_args(int argc, char * argv[], MainArguments & main_args)
         {"jobs_limit", 'J', "NUMBER", 0, "Number of possible concurrent jobs for workflows", 0},
         {"ignore-workflow-beyond-last-workflow", 'k', 0, 0, "Ignore workload jobs that occur after all workflows have completed, if any, as completed", 0},
         {"limit-machine-count", 'l', "M", 0, "Allows to limit the number of computing machines to use. If M == -1 (default), all the machines described in PLATFORM_FILE are used (but the master_host). If M >= 1, only the first M machines will be used to comupte jobs.", 0},
-        {"limit-machine-count-by-worload", 'L', 0, 0, "If set, allows to limit the number of computing machines to use. This number is read from the workload file. If both limit-machine-count and limit-machine-count-by-worload are set, the minimum of the two will be used.", 0},
+        {"limit-machine-count-by-workload", 'L', 0, 0, "If set, allows to limit the number of computing machines to use. This number is read from the workload file. If both limit-machine-count and limit-machine-count-by-worload are set, the minimum of the two will be used.", 0},
         {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks. Default value: 'master_host'", 0},
         {"pfs-host", 'f', "NAME", 0, "The name of the host in PLATFORM_FILE which will be the parallel filesystem target as data sink/source. Default value: 'pfs_host'", 0},
         {"redis-port", 'P', "PORT", 0, "Sets the port of the remote Redis (data storage) server.", 0},
