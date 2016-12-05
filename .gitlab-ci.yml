@@ -3,5 +3,5 @@ image: oarteam/batsim:bebida
 test:
   stage: test
   script:
-    - cd /root/batsim
+    - cd /builds/OAR/batsim
     - bash -ex ./test/run_tests.sh
