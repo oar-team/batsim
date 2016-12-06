@@ -28,6 +28,6 @@ test:
     - build
   artifacts:
     paths:
-      - /builds/OAR/batsim/Testing
+      - /builds/OAR/batsim/build/Testing
       - /tmp/batsim_tools_tests
       - /tmp/batsim_tests

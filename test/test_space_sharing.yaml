@@ -32,40 +32,5 @@ implicit_instances:
       sched_command: python2 ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo[algo_name]} -s ${output_directory}/socket
 
 commands_before_instances:
-  - |
-      #!/usr/bin/python2
-      # Let's check that the base working directory looks like Batsim's
-      import os
-      import sys
-
-      bwd = os.environ['base_working_directory']
-
-      if os.path.isdir(bwd):
-          dirs = [bwd + '/' + x for x in ['cmake', 'platforms', 'schedulers',
-                                          'src', 'tools']]
-          for dir in dirs:
-              if not os.path.isdir(dir):
-                  print('The base working directory seems to be bad: there is '
-                        "no '{}' directory.", dir)
-                  sys.exit(1)
-          sys.exit(0)
-      else:
-          print("The base working directory does not exist!")
-          sys.exit(2)
-
-  - |
-      #!/usr/bin/python2
-      # Let's clean the output directory if needed
-      import os
-      import shutil
-      import sys
-
-      bod = os.environ['base_output_directory']
-
-      if os.path.isdir(bod):
-          dirs = [bod + '/' + x for x in ['instances', 'sweeper', 'results']]
-          for dir in dirs:
-              if os.path.isdir(dir):
-                  shutil.rmtree(dir)
-
-      sys.exit(0)
+  - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
+  - ${batsim_dir}/test/clean_output_dir.py ${base_output_directory}
