@@ -13,7 +13,7 @@ build:
       - /builds/OAR/batsim/
 
 doc:
-  state: test
+  stage: test
   script:
     - cd /builds/OAR/batsim/doc
     - doxygen
