@@ -30,7 +30,7 @@ implicit_instances:
             #!/bin/bash
 
             cat > ${output_directory}/jobs_analysis.py <<EOF
-            #!/usr/bin/python3
+            #!/usr/bin/python2
             import pandas as pd
             import sys
 
@@ -58,7 +58,7 @@ implicit_instances:
                 sys.exit(0)
 
             EOF
-        - python3 ${output_directory}/jobs_analysis.py
+        - python2 ${output_directory}/jobs_analysis.py
 
 commands_before_instances:
   - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
