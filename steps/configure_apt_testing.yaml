@@ -22,7 +22,7 @@
   - write_in:
     - /etc/apt/apt.conf.d/00default-release
     - |
-      APT::Default-Release "stable";
+      APT::Default-Release "jessie";
 
 - update_repositories:
   # Deactivate the check to make the cache system works after a while...

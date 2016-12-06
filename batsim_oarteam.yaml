@@ -13,10 +13,8 @@
 checkpoint: btrfs.yaml
 extend: default/from_image/debian8.yaml
 
-# extend: default/from_image/debian8.yaml
-
 global:
-  backend: chroot
+  backend: qemu
   btrfs_volume: "/"
   virtualbox_memory_size: 2048
   qemu_memory_size : 2048
@@ -68,6 +66,7 @@ setup:
           redis-server \
           libhiredis-dev \
           libev-dev \
+          python-yaml \
           libssl-dev 2>&1
       # Install rapidjson (not available in jessy)
       - exec_in: |
