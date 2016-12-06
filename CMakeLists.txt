@@ -184,36 +184,43 @@ add_test(execN_ssh4
 add_test(no_energy
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_no_energy.yaml
+         -bod /tmp/batsim_tests/no_energy
          -bwd ${CMAKE_SOURCE_DIR})
 
 add_test(energy
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_energy.yaml
+         -bod /tmp/batsim_tests/energy
          -bwd ${CMAKE_SOURCE_DIR})
 
 add_test(walltime
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_walltime.yaml
+         -bod /tmp/batsim_tests/walltime
          -bwd ${CMAKE_SOURCE_DIR})
 
 add_test(long_simulation_time
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_long_simulation_time.yaml
+         -bod /tmp/batsim_tests/long_simulation_time
          -bwd ${CMAKE_SOURCE_DIR})
 
 add_test(space_sharing
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_space_sharing.yaml
+         -bod /tmp/batsim_tests/space_sharing
          -bwd ${CMAKE_SOURCE_DIR})
 
 add_test(smpi
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_smpi.yaml
+         -bod /tmp/batsim_tests/smpi
          -bwd ${CMAKE_SOURCE_DIR})
 
 add_test(batexec
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_batexec.yaml
+         -bod /tmp/batsim_tests/batexec
          -bwd ${CMAKE_SOURCE_DIR})
 
 
