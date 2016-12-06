@@ -1,0 +1,35 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# DESCRIPTION: An applicance for batsim experiments en development.
+#
+#==============================================================================
+---
+extend: batsim_ci.yaml
+
+global:
+  batsim_commit: f1e835a7e1935  # Tue Dec 6 16:31:12 2016 +0100
+
+bootstrap:
+  - "@base"
+
+setup:
+  - "@base"
+
+  - build_and_install_batsim:
+    - do_it:
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://github.com/oar-team/batsim.git
+      - exec_in: |
+          cd $$simctn_dir/batsim
+          git checkout $$batsim_commit
+          mkdir build
+      - exec_in: |
+          cd $$simctn_dir/batsim/build
+          cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/g++-6
+          make -j$(nproc)
+          make install
+export:
+  - "@base"

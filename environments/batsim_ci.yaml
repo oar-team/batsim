@@ -29,7 +29,6 @@ global:
   simctn_dir: /root
 
   simgrid_commit: dccf1b41e9c7b # Wed Nov 30 14:08:01 2016
-  batsim_commit: 354c364850c1   # Mon Dec 5 14:09:57 2016
   execo_commit: 725fddc
 
 bootstrap:
@@ -102,19 +101,6 @@ setup:
     - install_doc_dependencies:
       - exec_in: apt install -y -t testing doxygen graphviz
 
-#    - do_it:
-#      - exec_in: |
-#          cd $$simctn_dir
-#          git clone https://github.com/oar-team/batsim.git
-#      - exec_in: |
-#          cd $$simctn_dir/batsim
-#          git checkout $$batsim_commit
-#          mkdir build
-#      - exec_in: |
-#          cd $$simctn_dir/batsim/build
-#          cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/g++-6
-#          make -j$(nproc)
-#          make install
 
   - reprozip:
     - reprozip_version: 1.0.8
@@ -124,9 +110,9 @@ export:
   - docker_export:
     - do_export:
       - exec_local: |
-          docker import $${appliance_filename}.tar.gz oarteam/batsim_ci:latest
+          docker import $${appliance_filename}.tar.gz oarteam/$${kameleon_recipe_name}:latest
       - exec_local: |
-          docker tag oarteam/batsim_ci:latest oarteam/batsim_ci:$(date --iso-8601)
+          docker tag oarteam/$${kameleon_recipe_name}:latest oarteam/$${kameleon_recipe_name}:$(date --iso-8601)
       - exec_local: |
-          docker push oarteam/batsim_ci:latest
-          docker push oarteam/batsim_ci:$(date --iso-8601)
+          docker push oarteam/$${kameleon_recipe_name}:latest
+          docker push oarteam/$${kameleon_recipe_name}:$(date --iso-8601)
