@@ -1,0 +1,27 @@
+# Extra download and build directory
+- extrae_home: /root
+# Extra install directory
+- extrae_install: /opt/extrae
+
+- extrae:
+  # install dependencies
+  - exec_in: |
+        apt-get -y install \
+        build-essential openmpi-bin libopenmpi-dev gfortran libxml2-dev binutils-dev libiberty-dev
+  # get source and extract
+  - local2in:
+    - $$kameleon_data_dir/extrae-3.2.1.tar.bz2
+    - $$extrae_home/extrae-3.2.1.tar.bz2
+  - exec_in: |
+        cd $$extrae_home
+        tar xf extrae-3.2.1.tar.bz2
+  - exec_in: |
+        cd $$extrae_home/extrae-3.2.1
+        MPICC=/usr/bin/mpicc ./configure --prefix=$$extrae_install \
+          --with-mpi=/usr/lib/openmpi/ \
+          --without-unwind \
+          --without-dyninst \
+          --without-papi \
+          --disable-openmp
+        make -j$(nbproc)
+        make install

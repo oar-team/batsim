@@ -1,0 +1,5 @@
+# Enable the SSH login as root user inside the new environment (disabled by
+# default on debian).
+#
+- change_sshd_config:
+  - exec_in: sed -i s/PermitRootLogin\ without-password/PermitRootLogin\ yes/ /etc/ssh/sshd_config
