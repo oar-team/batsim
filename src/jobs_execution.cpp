@@ -272,7 +272,8 @@ int execute_profile(BatsimContext *context,
         return ret;
     }
     else
-        xbt_die("Cannot execute job %d: the profile type '%s' is unknown", job->number, job->profile.c_str());
+        xbt_die("Cannot execute job %s: the profile type '%s' is unknown",
+                job->id.c_str(), job->profile.c_str());
 
     return 0;
 }
@@ -351,12 +352,13 @@ int execute_job_process(int argc, char *argv[])
                                                        args->context);
     if (execute_profile(args->context, job->profile, args->allocation, &remaining_time) == 1)
     {
-        XBT_INFO("Job %d finished in time", job->number);
+        XBT_INFO("Job %s finished in time", job->id.c_str());
         job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
     }
     else
     {
-        XBT_INFO("Job %d had been killed (walltime %lf reached", job->number, job->walltime);
+        XBT_INFO("Job %s had been killed (walltime %g reached)",
+                 job->id.c_str(), (double) job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
         if (args->context->trace_schedule)
             args->context->paje_tracer.add_job_kill(job,

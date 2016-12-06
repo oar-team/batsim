@@ -386,9 +386,10 @@ int request_reply_scheduler_process(int argc, char *argv[])
 
                 Job * job = context->workloads.job_at(message->job_id);
                 (void) job; // Avoids a warning if assertions are ignored
-                xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED, "Invalid event received ('%s'): job %d cannot be"
-                          " rejected now. For being rejected, a job must be submitted and not allocated yet.",
-                           event_string.c_str(), job->number);
+                xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
+                           "Invalid event received ('%s'): job %d (w=%s) cannot be rejected now. "
+                           "For being rejected, a job must be submitted and not allocated yet.",
+                           event_string.c_str(), job->number, job->workload->name.c_str());
 
                 send_message("server", IPMessageType::SCHED_REJECTION, (void*) message);
 
