@@ -18,11 +18,11 @@
       fi
   - exec_in: perl -pi -e "s/testing main$/testing main $REPO_CONTRIB $REPO_NONFREE/" /etc/apt/sources.list
 
-- make_it_not_optional:
-  - write_in:
-    - /etc/apt/apt.conf.d/00default-release
-    - |
-      APT::Default-Release "jessie";
+#- make_it_not_optional:
+#  - write_in:
+#    - /etc/apt/apt.conf.d/00default-release
+#    - |
+#      APT::Default-Release "jessie";
 
 - update_repositories:
   # Deactivate the check to make the cache system works after a while...

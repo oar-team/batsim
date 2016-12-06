@@ -69,3 +69,11 @@ deploy_code_doc:
     - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
   dependencies:
     - doc
+
+deploy_docker_snapshot:
+  stage: deploy
+  script:
+    - docker commit $CI_BUILD_REF oarteam/batsim:latest
+    - docker tag oarteam/batsim:latest oarteam/batsim:$(date --iso-8601)
+    - docker push oarteam/batsim:latest
+    - docker push oarteam/batsim:$(date --iso-8601)

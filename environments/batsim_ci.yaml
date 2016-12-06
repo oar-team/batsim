@@ -126,7 +126,7 @@ export:
       - exec_local: |
           docker import $${appliance_filename}.tar.gz oarteam/batsim_ci:latest
       - exec_local: |
-          docker tag oarteam/batsim_ci:latest oarteam/batsim_ci:$(date "+%Y%m%d")
+          docker tag oarteam/batsim_ci:latest oarteam/batsim_ci:$(date --iso-8601)
       - exec_local: |
           docker push oarteam/batsim_ci:latest
-          docker push oarteam/batsim_ci:$(date "+%Y%m%d")
+          docker push oarteam/batsim_ci:$(date --iso-8601)
