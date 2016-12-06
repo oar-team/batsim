@@ -195,16 +195,16 @@ int execute_profile(BatsimContext *context,
             argv[3] = xbt_strdup((char*) data->trace_filenames[i].c_str());
             argv[4] = xbt_strdup("0"); //
             if (i==0)
-            {    
+            {
                 MSG_process_create_with_arguments(str_pname, smpi_replay_process, sem, allocation->hosts[i], 5, argv );
             } else
             {
                 MSG_process_create_with_arguments(str_pname, smpi_replay_process, NULL, allocation->hosts[i], 5, argv );
-            }    
+            }
 
             // todo: avoid memory leaks
             free(str_pname);
-            
+
         }
         MSG_sem_acquire(sem);
         free(sem);
@@ -294,12 +294,13 @@ int lite_execute_job_process(int argc, char *argv[])
     args->context->machines.update_machines_on_job_run(job, args->allocation->machine_ids, args->context);
     if (execute_profile(args->context, job->profile, args->allocation, &remaining_time) == 1)
     {
-        XBT_INFO("Job %d finished in time", job->id);
+        XBT_INFO("Job %s finished in time", job->id.c_str());
         job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
     }
     else
     {
-        XBT_INFO("Job %d had been killed (walltime %lf reached", job->id, job->walltime);
+        XBT_INFO("Job %s had been killed (walltime %g reached)",
+                 job->id.c_str(), (double)job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
         if (args->context->trace_schedule)
             args->context->paje_tracer.add_job_kill(job, args->allocation->machine_ids, MSG_get_clock(), true);
