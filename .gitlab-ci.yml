@@ -30,7 +30,7 @@ build:
     - cmake .. -Dtreat_warnings_as_errors=ON
     - make -j$(nproc)
     - make install
-    - this line has only been added to make the build crash !!
+    - this line has only been added to make the build crash !
   artifacts:
     paths:
       - /builds/OAR/batsim/
