@@ -29,12 +29,8 @@ External References
 Build status
 ------------
 
-| [Linux (Ubuntu 14.04)][travis-history] |
-| :------------------------------------: |
-| ![][travis-build-st-last-push]         |
-
-[travis-history]: https://travis-ci.org/oar-team/batsim/builds "Travis build history"
-[travis-build-st-last-push]: https://travis-ci.org/oar-team/batsim.svg?branch=master "Travis build status (last push)"
+[![build status](https://gitlab.inria.fr/OAR/batsim/badges/master/build.svg)]
+(https://gitlab.inria.fr/OAR/batsim/commits/master)
 
 Visualisation
 -------------
