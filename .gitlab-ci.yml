@@ -23,6 +23,6 @@ test:
       done
 
     - cd /builds/OAR/batsim/build
-    - make test
+    - ctest -E smpi
   dependencies:
     - build
