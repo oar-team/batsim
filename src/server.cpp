@@ -218,7 +218,8 @@ int uds_server_process(int argc, char *argv[])
             job->state = JobState::JOB_STATE_REJECTED;
             nb_completed_jobs++;
 
-            XBT_INFO( "Job %d has been rejected", job->number);
+            XBT_INFO("Job %d (workload=%s) has been rejected",
+                     job->number, job->workload->name.c_str());
         } break; // end of case SCHED_REJECTION
 
         case IPMessageType::SCHED_NOP_ME_LATER:
