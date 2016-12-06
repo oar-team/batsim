@@ -26,3 +26,8 @@ test:
     - ctest -E smpi
   dependencies:
     - build
+  artifacts:
+    paths:
+      - /builds/OAR/batsim/Testing
+      - /tmp/batsim_tools_tests
+      - /tmp/batsim_tests
