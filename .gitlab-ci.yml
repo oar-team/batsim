@@ -44,7 +44,7 @@ doc:
     - eval "[ $(wc -c doxygen_warnings.log | cut -d ' ' -f1) -eq 0 ]"
   artifacts:
     paths:
-      - /builds/OAR/batsim/doxygen_doc/html
+      - /builds/OAR/batsim/doc/doxygen_doc/html
 
 test:
   stage: test
@@ -65,6 +65,7 @@ test:
 deploy_code_doc:
   stage: deploy
   script:
+    - cd /builds/OAR/batsim/doc
     - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
   dependencies:
     - doc
