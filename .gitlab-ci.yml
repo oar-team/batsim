@@ -8,6 +8,9 @@ build:
     - cmake .. -Dtreat_warnings_as_errors=ON
     - make -j$(nproc)
     - make install
+  artifacts:
+    paths:
+      - /builds/OAR/batsim/
 
 test:
   stage: test
@@ -21,3 +24,5 @@ test:
 
     - cd /builds/OAR/batsim/build
     - make test
+  dependencies:
+    - build
