@@ -1,0 +1,85 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# DESCRIPTION: An applicance for batsim experimentation
+#
+#==============================================================================
+
+extend: batsim_oarteam.yaml
+
+global:
+
+  locality_sched_commit: 12df12a
+  oar_commit: 2c7c4df
+  evalys_commit: fae0e04
+  batsim_experiments_commit: 5ce3017342
+
+bootstrap:
+  - "@base"
+
+setup:
+  - "@base"
+
+  #
+  # Batsim schedulers
+  #
+  - locality_scheduler:
+    - commit_hash: $$locality_sched_commit
+
+  - oar_sched:
+    - install dependencies:
+      - exec_in: apt-get -y --force-yes install python3-pip 2>&1
+    - install_oar3:
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://github.com/oar-team/oar3.git
+      - exec_in: |
+          cd $$simctn_dir/oar3
+          git checkout $$oar_commit
+          pip3 install -e .
+
+  #
+  # Visualization tools
+  #
+  - evalys
+
+  - VITE_install:
+    - install dependencies:
+      - exec_in: apt-get -y --force-yes install vite 2>&1
+      #- get_sources:
+      #- - exec_in: |
+      #-     cd $$simctn_dir
+      #-     svn checkout svn://scm.gforge.inria.fr/svnroot/vite/
+      #- install_it:
+      #- - exec_in: |
+      #-     cd $$simctn_dir/vite/trunk
+      #-     mkdir build
+      #-     cd build
+      #-     cmake ..
+      #-     make -j$(nproc)
+      #-     make install
+
+
+  #
+  # Evironement capture and sharing for runtime extraction
+  #
+  - reprozip
+
+  #
+  # Experiment inputs and launch scripts
+  #
+  - import_batsim_experiment_tools:
+    - expe_batsim_home: $$simctn_dir
+
+  #
+  # Personal customization
+  #
+
+  # Import my personal dev tools
+  - my_dev_tools
+  # set the dev git repository instead of the Read-Only ones
+  - set_dev_git_repo
+
+export:
+  - "@base"
