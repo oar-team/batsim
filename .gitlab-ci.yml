@@ -1,4 +1,4 @@
-image: oarteam/batsim:latest
+image: oarteam/batsim_ci
 
 build:
   stage: build
@@ -26,8 +26,3 @@ test:
     - ctest -E smpi
   dependencies:
     - build
-  artifacts:
-    paths:
-      - /builds/OAR/batsim/build/Testing
-      - /tmp/batsim_tools_tests
-      - /tmp/batsim_tests
