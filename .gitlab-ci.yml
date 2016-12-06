@@ -29,7 +29,7 @@ build:clang:
     - mkdir /builds/OAR/batsim/build
     - cd /builds/OAR/batsim/build
     - cmake .. -Dtreat_warnings_as_errors=ON
-    - make -j$(nproc)
+    - make
   artifacts:
     paths:
       - /builds/OAR/batsim/
@@ -42,7 +42,7 @@ build:g++:
     - mkdir /builds/OAR/batsim/build
     - cd /builds/OAR/batsim/build
     - cmake .. -Dtreat_warnings_as_errors=ON
-    - make -j$(nproc)
+    - make
 
 doc:
   stage: test
