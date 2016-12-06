@@ -20,10 +20,6 @@ before_script:
   # you will overwrite your user's SSH config.
   - mkdir -p ~/.ssh
   - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
-  # Login to docker hub to be able to push
-  - docker login -u oarteamci -p "$DOCKER_HUB_PASSWORD"
-  - docker info
-
 
 build:clang:
   stage: build
@@ -83,9 +79,3 @@ deploy_code_doc:
     - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
   dependencies:
     - doc
-
-after_script:
-  - docker commit $CI_BUILD_REF oarteam/batsim:latest
-  - docker tag oarteam/batsim:latest oarteam/batsim:$(date --iso-8601)
-  - docker push oarteam/batsim:latest
-  - docker push oarteam/batsim:$(date --iso-8601)
