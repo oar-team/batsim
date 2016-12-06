@@ -11,3 +11,4 @@ test/out
 CMakeLists.txt.user
 dump.rdb
 .sshkeys
+*.swp
