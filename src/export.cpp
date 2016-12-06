@@ -481,7 +481,7 @@ void PajeTracer::add_job_launching(const Job * job,
 void PajeTracer::register_new_job(const Job *job)
 {
     xbt_assert(_jobs.find(job) == _jobs.end(),
-               "Cannot register new job %s: it already exists", job->id);
+               "Cannot register new job %s: it already exists", job->id.c_str());
 
     const int buf_size = 256;
     int nb_printed;
