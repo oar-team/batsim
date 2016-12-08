@@ -240,7 +240,7 @@ Other options:
     {
         XBT_ERROR("--workflow-start parsing results are inconsistent: "
                   "<cut_workflow_file> and <start_time> have different "
-                  "sizes (%d and %d)", cut_workflow_files.size(),
+                  "sizes (%zu and %zu)", cut_workflow_files.size(),
                   cut_workflow_times.size());
         error = true;
     }
