@@ -17,6 +17,13 @@ fi
 
 failed=0
 
+# Let's check whether Batsim compiles
+echo "Checking whether Batsim compiles..."
+mkdir -p ${base_dir}/build
+cd ${base_dir}/build
+cmake .. -Dtreat_warnings_as_errors=ON
+make -j 4
+
 # Let's run a redis server if needed
 server_launched_by_me=0
 r=$(ps faux | grep redis-server | grep -v grep | wc -l)
@@ -33,14 +40,9 @@ fi
 
 # Let's check that tests run correctly
 echo -n "Checking whether tests pass..."
-cd ${base_dir}
-bash -e ./test/run_tests.sh >/dev/null
-
-if [ $? -ne 0 ]
-then
-    failed=1
-    echo " NOPE! :("
-fi
+cd ${base_dir}/build
+ctest -E smpi
+failed=$?
 
 # Let's stop the redis server if it has been launched by this script
 if [ $server_launched_by_me -eq 1 ]

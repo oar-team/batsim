@@ -130,7 +130,11 @@ public:
      * @param[in] pfsHostName The name of the host which should be used as the parallel filestem host
      * @param[in] limit_machine_count If set to -1, all the machines are used. If set to a strictly positive number N, only the first machines N will be used to compute jobs
      */
-    void create_machines(xbt_dynar_t hosts, const BatsimContext * context, const std::string & masterHostName, const std::string & pfsHostName, int limit_machine_count = -1);
+    void create_machines(xbt_dynar_t hosts,
+                         const BatsimContext * context,
+                         const std::string & masterHostName,
+                         const std::string & pfsHostName,
+                         int limit_machine_count = -1);
 
     /**
      * @brief Must be called when a job is executed on some machines

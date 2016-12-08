@@ -20,7 +20,7 @@ implicit_instances:
       timeout: 10
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${pybatsim_algo[name]}_${workload[name]}_${platform[name]}
-      batsim_command: batsim -c -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out -s ${output_directory}/socket -L
+      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out -s ${output_directory}/socket --mmax-workload --batexec
       sched_command: echo "I do not even exist."
 
 commands_before_instances:

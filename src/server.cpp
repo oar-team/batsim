@@ -373,7 +373,7 @@ int uds_server_process(int argc, char *argv[])
                 nb_scheduled_jobs++;
                 xbt_assert(nb_scheduled_jobs <= nb_submitted_jobs);
 
-                if (!context->allow_space_sharing)
+                if (!context->allow_time_sharing)
                 {
                     for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
                     {

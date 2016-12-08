@@ -48,7 +48,11 @@ Machines::~Machines()
 
 }
 
-void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, const string &masterHostName, const string &pfsHostName, int limit_machine_count)
+void Machines::create_machines(xbt_dynar_t hosts,
+                               const BatsimContext *context,
+                               const string &masterHostName,
+                               const string &pfsHostName,
+                               int limit_machine_count)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
 
@@ -219,7 +223,7 @@ void Machines::create_machines(xbt_dynar_t hosts, const BatsimContext *context, 
     sort_machines_by_ascending_name();
 
     // Let's limit the number of machines
-    if (limit_machine_count != -1)
+    if (limit_machine_count != 0)
     {
         int nb_machines_without_limitation = (int)_machines.size();
         xbt_assert(limit_machine_count > 0);
@@ -571,7 +575,9 @@ bool machine_comparator_name(const Machine *m1, const Machine *m2)
 }
 
 
-void create_machines(const MainArguments & main_args, BatsimContext * context, int max_nb_machines_to_use)
+void create_machines(const MainArguments & main_args,
+                     BatsimContext * context,
+                     int max_nb_machines_to_use)
 {
     XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
     XBT_INFO("The name of the master host is '%s'", main_args.master_host_name.c_str());
@@ -580,8 +586,10 @@ void create_machines(const MainArguments & main_args, BatsimContext * context, i
     MSG_create_environment(main_args.platform_filename.c_str());
 
     xbt_dynar_t hosts = MSG_hosts_as_dynar();
-    context->machines.create_machines(hosts, context, main_args.master_host_name, main_args.pfs_host_name, max_nb_machines_to_use);
+    context->machines.create_machines(hosts, context, main_args.master_host_name,
+                                      main_args.pfs_host_name, max_nb_machines_to_use);
     xbt_dynar_free(&hosts);
 
-    XBT_INFO("The machines have been created successfully. There are %d computing machines.", context->machines.nb_machines());
+    XBT_INFO("The machines have been created successfully. There are %d computing machines.",
+             context->machines.nb_machines());
 }

@@ -40,7 +40,7 @@ struct BatsimContext
     CurrentSwitches current_switches;               //!< The current switches
     RedisStorage storage;                           //!< The RedisStorage
 
-    bool terminate_with_last_workflow = false;      //!< If true, allows to ignore the jobs submitted after the last workflow termination
+    bool terminate_with_last_workflow;              //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
     Rational energy_first_job_submission = -1;      //!< The amount of consumed energy (J) when the first job is submitted
     Rational energy_last_job_completion = -1;       //!< The amount of consumed energy (J) when the last job is completed
@@ -51,10 +51,10 @@ struct BatsimContext
 
     bool energy_used;                               //!< Stores whether the energy part of Batsim should be used
     bool smpi_used;                                 //!< Stores whether SMPI should be used
-    bool allow_space_sharing;                       //!< Stores whether space sharing (using the same machines to compute different jobs) should be allowed
+    bool allow_time_sharing;                        //!< Stores whether time sharing (using the same machines to compute different jobs) should be allowed
     bool trace_schedule;                            //!< Stores whether the resulting schedule should be outputted
     bool trace_machine_states;                      //!< Stores whether the machines states should be outputted
     std::string platform_filename;                  //!< The name of the platform file
     std::string export_prefix;                      //!< The output export prefix
-    int workflow_limit = 0;                         //!< limit on workflow needs
+    int workflow_nb_concurrent_jobs_limit;          //!< Limits the number of concurrent jobs for workflows
 };

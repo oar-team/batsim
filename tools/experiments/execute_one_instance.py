@@ -49,21 +49,37 @@ def find_info_from_batsim_command(batsim_command):
                                        add_help = False)
 
     batparser.add_argument("-p", "--platform", type=str)
-    batparser.add_argument("-w", "--workload", type=str)
-    batparser.add_argument("-W", "--workflow", type=str)
+    batparser.add_argument("-w", "--workload", type=str, nargs='+')
+    batparser.add_argument("-W", "--workflow", type=str, nargs='+')
+    batparser.add_argument("--WS", "--workflow-start", type=str, nargs='+')
 
-    batparser.add_argument("-c", "--batexec", action='store_true')
     batparser.add_argument("-e", "--export", type=str, default="out")
-    batparser.add_argument("-E", "--energy-plugin", action='store_true')
-    batparser.add_argument("-h", "--allow-space-sharing", action='store_true')
-    batparser.add_argument("-l", "--limit-machine-count", type=int, default=-1)
-    batparser.add_argument("-L", "--limit-machine-count-by-workload", action='store_true')
     batparser.add_argument("-m", "--master-host", default="master_host")
-    batparser.add_argument("-q", "--quiet", action='store_true')
+    batparser.add_argument("-E", "--energy", action='store_true')
+
     batparser.add_argument("-s", "--socket", type=str, default="/tmp/bat_socket")
-    batparser.add_argument("-t", "--process-tracing", action='store_true')
-    batparser.add_argument("-T", "--disable-schedule-tracing", action='store_true')
+    batparser.add_argument("--redis-hostname", type=str, default="127.0.0.1")
+    batparser.add_argument("--redis-port", type=int, default=6379)
+
+    batparser.add_argument("--enable-sg-process-tracing", action='store_true')
+    batparser.add_argument("--disable-schedule-tracing", action='store_true')
+    batparser.add_argument("--disable-machine-state-tracing", action='store_true')
+
+    batparser.add_argument("--mmax", type=int, default=0)
+    batparser.add_argument("--mmax-workload", action='store_true')
+
     batparser.add_argument("-v", "--verbosity", type=str, default="information")
+    batparser.add_argument("-q", "--quiet", action='store_true')
+
+    batparser.add_argument("--workflow-jobs-limit", type=int, default=0)
+    batparser.add_argument("--ignore-beyond-last-workflow", action='store_true')
+
+    batparser.add_argument("--allow-time-sharing", action='store_true')
+    batparser.add_argument("--batexec", action='store_true')
+    batparser.add_argument("--pfs-host", type=str, default="pfs_host")
+
+    batparser.add_argument("-h", "--help", action='store_true')
+    batparser.add_argument("--version", action='store_true')
 
     try:
         batargs = batparser.parse_args(split_command[1:])

@@ -8,8 +8,9 @@ More information about git hooks can be found
 ## pre-commit
 The [pre-commit](pre-commit) hook is called when you want to commit something.
 
-This script checks whather the commit will fail on Travis or not. Notably, it
-checks whether:
+This script checks whether the commit will probably fail on the CI.
+Notably, it checks whether:
   - Doxygen produces warnings
-  - Input examples of execution scripts work
+  - Batsim can be built without warnings
+  - The execution scripts work
   - Tests pass

@@ -152,7 +152,7 @@ int workflow_submitter_process(int argc, char *argv[])
                "which does not exist", args->workflow_name.c_str());
     Workflow * workflow = context->workflows.at(args->workflow_name);
 
-    int limit = context->workflow_limit;
+    int limit = context->workflow_nb_concurrent_jobs_limit;
     bool not_limiting = (limit == 0);
     int current_nb = 0;
 

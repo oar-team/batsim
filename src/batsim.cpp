@@ -17,6 +17,7 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/filesystem.hpp>
 
 #include <openssl/sha.h>
 
@@ -34,9 +35,42 @@
 #include "workload.hpp"
 #include "workflow.hpp"
 
+#include "docopt/docopt.h"
+
 using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "batsim"); //!< Logging
+
+/**
+ * @brief Checks whether a file exists
+ * @param[in] filename The file whose existence is checked<
+ * @return true if and only if filename exists
+ */
+bool file_exists(const std::string & filename)
+{
+    return boost::filesystem::exists(filename);
+}
+
+/**
+ * @brief Converts a string to a VerbosityLevel
+ * @param[in] str The string
+ * @return The matching VerbosityLevel. An exception is thrown if str is invalid.
+ */
+VerbosityLevel verbosity_level_from_string(const std::string & str)
+{
+    if (str == "quiet")
+        return VerbosityLevel::QUIET;
+    else if (str == "network-only")
+        return VerbosityLevel::NETWORK_ONLY;
+    else if (str == "information")
+        return VerbosityLevel::INFORMATION;
+    else if (str == "debug")
+        return VerbosityLevel::DEBUG;
+    else
+    {
+        throw std::runtime_error("Invalid verbosity level string");
+    }
+}
 
 string generate_sha1_string(std::string string_to_hash, int output_length)
 {
@@ -65,220 +99,276 @@ string generate_sha1_string(std::string string_to_hash, int output_length)
     return result;
 }
 
-int parse_opt (int key, char *arg, struct argp_state *state)
+bool parse_main_args(int argc, char * argv[], MainArguments & main_args)
 {
-    MainArguments * main_args = (MainArguments *) state->input;
+    static const char usage[] =
+R"(A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.
 
-    switch (key)
+Usage:
+  batsim -p <platform_file> [-w <workload_file>...]
+                            [-W <workflow_file>...]
+                            [--WS (<cut_workflow_file> <start_time>)...]
+                            [options]
+  batsim --help
+
+Input options:
+  -p --platform <platform_file>     The SimGrid platform to simulate.
+  -w --workload <workload_file>     The workload JSON files to simulate.
+  -W --workflow <workflow_file>     The workflow XML files to simulate.
+  --WS --workflow-start (<cut_workflow_file> <start_time>)... The workflow XML
+                                    files to simulate, with the time at which
+                                    they should be started.
+
+Most common options:
+  -m, --master-host <name>          The name of the host in <platform_file>
+                                    which will be used as the RJMS management
+                                    host (thus NOT used to compute jobs)
+                                    [default: master_host].
+  -E --energy                       Enables the SimGrid energy plugin and
+                                    outputs energy-related files.
+
+Execution context options:
+  -s, --socket <socket_file>        The Unix Domain Socket filename
+                                    [default: /tmp/bat_socket].
+  --redis-hostname <redis_host>     The Redis server hostname
+                                    [default: 127.0.0.1]
+  --redis-port <redis_port>         The Redis server port [default: 6379].
+
+Output options:
+  -e, --export <prefix>             The export filename prefix used to generate
+                                    simulation output [default: out].
+  --enable-sg-process-tracing       Enables SimGrid process tracing
+  --disable-schedule-tracing        Disables the Pajé schedule outputting.
+  --disable-machine-state-tracing   Disables the machine state outputting.
+
+
+Platform size limit options:
+  --mmax <nb>                       Limits the number of machines to <nb>.
+                                    0 means no limit [default: 0].
+  --mmax-workload                   If set, limits the number of machines to
+                                    the 'nb_res' field of the input workloads.
+                                    If several workloads are used, the maximum
+                                    of these fields is kept.
+Verbosity options:
+  -v, --verbosity <verbosity_level> Sets the Batsim verbosity level. Available
+                                    values: quiet, network-only, information,
+                                    debug [default: information].
+  -q, --quiet                       Shortcut for --verbosity quiet
+
+Workflow options:
+  --workflow-jobs-limit <job_limit> Limits the number of possible concurrent
+                                    jobs for workflows. 0 means no limit
+                                    [default: 0].
+  --ignore-beyond-last-workflow     Ignores workload jobs that occur after all
+                                    workflows have completed.
+
+Other options:
+  --allow-time-sharing              Allows time sharing: One resource may
+                                    compute several jobs at the same time.
+  --batexec                         If set, the jobs in the workloads are
+                                    computed one by one, one after the other,
+                                    without scheduler nor Redis.
+  --pfs-host <pfs_host>             The name of the host, in <platform_file>,
+                                    which will be the parallel filesystem target
+                                    as data sink/source [default: pfs_host].
+  -h --help                         Shows this help.
+  --version                         Shows Batsim version.
+)";
+
+    map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc }, true, "2.0");
+
+    // Let's do some checks on the arguments!
+    bool error = false;
+
+    // Input files
+    // ***********
+    main_args.platform_filename = args["--platform"].asString();
+    if (!file_exists(main_args.platform_filename))
     {
-    // Mandatory parameters
-    case 'p':
-    {
-        main_args->platform_filename = arg;
-        if (access(main_args->platform_filename.c_str(), R_OK) == -1)
-        {
-            main_args->abort = true;
-            main_args->abortReason += "\n  invalid PLATFORM_FILE argument: file '" + string(main_args->platform_filename) + "' cannot be read";
-        }
-        break;
+        XBT_ERROR("Platform file '%s' cannot be read.", main_args.platform_filename.c_str());
+        error = true;
     }
-    case 'w':
+
+    // Workloads
+    vector<string> workload_files = args["--workload"].asStringList();
+    for (const string & workload_file : workload_files)
     {
-        if (access(((string) arg).c_str(), R_OK) == -1)
+        if (!file_exists(workload_file))
         {
-            main_args->abort = true;
-            main_args->abortReason += "\n  invalid WORKLOAD_FILE argument: file '" + string(arg) + "' cannot be read";
+            XBT_ERROR("Workload file '%s' cannot be read.", workload_file.c_str());
+            error = true;
         }
         else
         {
             MainArguments::WorkloadDescription desc;
-            desc.filename = absolute_filename(arg);
-            desc.name = generate_sha1_string(arg);
+            desc.filename = absolute_filename(workload_file);
+            desc.name = generate_sha1_string(desc.filename);
 
-            XBT_INFO("Workload '%s' corresponds to workload file '%s'.", desc.name.c_str(), desc.filename.c_str());
-            main_args->workload_descriptions.push_back(desc);
+            XBT_INFO("Workload '%s' corresponds to workload file '%s'.",
+                     desc.name.c_str(), desc.filename.c_str());
+            main_args.workload_descriptions.push_back(desc);
         }
-        break;
     }
-    case 'W':
-    {
-        // format:   FILENAME[:start_time]
-        vector<string> parts;
-        boost::split(parts, (const std::string)std::string(arg),
-                     boost::is_any_of(":"), boost::token_compress_on);
 
-        if (access(parts.at(0).c_str(), R_OK) == -1)
+    // Workflows (without start time)
+    vector<string> workflow_files = args["--workflow"].asStringList();
+    for (const string & workflow_file : workflow_files)
+    {
+        if (!file_exists(workflow_file))
         {
-            main_args->abort = true;
-            main_args->abortReason += "\n  invalid WORKFLOW_FILE argument: file '" + parts.at(0) + "' cannot be read";
+            XBT_ERROR("Workflow file '%s' cannot be read.", workflow_file.c_str());
+            error = true;
         }
         else
         {
-            string workflow_filename = parts.at(0).c_str();
-            double workflow_start_time = 0.0;
-
-            if (parts.size() == 2)
-                workflow_start_time = std::stod(parts.at(1));
-
             MainArguments::WorkflowDescription desc;
-            desc.filename = absolute_filename(workflow_filename);
+            desc.filename = absolute_filename(workflow_file);
             desc.name = generate_sha1_string(desc.filename);
             desc.workload_name = desc.name;
-            desc.start_time = workflow_start_time;
+            desc.start_time = 0;
 
-            XBT_INFO("Workflow '%s' corresponds to workflow file '%s'.", desc.name.c_str(), desc.filename.c_str());
-            main_args->workflow_descriptions.push_back(desc);
+            XBT_INFO("Workflow '%s' corresponds to workflow file '%s'.",
+                     desc.name.c_str(), desc.filename.c_str());
+            main_args.workflow_descriptions.push_back(desc);
         }
-        break;
     }
-    // Optional parameters:
-    case 'c':
-        main_args->program_type = ProgramType::BATEXEC;
-        break;
-    case 'e':
-        main_args->export_prefix = arg;
-        break;
-    case 'E':
-        main_args->energy_used = true;
-        break;
-    case 'h':
-        main_args->allow_space_sharing = true;
-        break;
-    case 'H':
-        main_args->redis_hostname = arg;
-        break;
-    case 'J':
-        main_args->workflow_limit = std::stod(arg);
-        break;
-    case 'k':
-    {
-        main_args->terminate_with_last_workflow = true;
-        break;
-    }
-    case 'l':
-    {
-        int ivalue = stoi(arg);
 
-        if ((ivalue < -1) || (ivalue == 0))
+    // Workflows (with start time)
+    vector<string> cut_workflow_files = args["<cut_workflow_file>"].asStringList();
+    vector<string> cut_workflow_times = args["<start_time>"].asStringList();
+    if (cut_workflow_files.size() != cut_workflow_times.size())
+    {
+        XBT_ERROR("--workflow-start parsing results are inconsistent: "
+                  "<cut_workflow_file> and <start_time> have different "
+                  "sizes (%d and %d)", cut_workflow_files.size(),
+                  cut_workflow_times.size());
+        error = true;
+    }
+    else
+    {
+        for (unsigned int i = 0; i < cut_workflow_files.size(); ++i)
         {
-            main_args->abort = true;
-            main_args->abortReason += "\n  invalid M positional argument (" + to_string(ivalue) + "): it should either be -1 or a strictly positive value";
+            const string & cut_workflow_file = cut_workflow_files[i];
+            const string & cut_workflow_time_str = cut_workflow_times[i];
+            if (!file_exists(cut_workflow_file))
+            {
+                XBT_ERROR("Cut workflow file '%s' cannot be read.", cut_workflow_file.c_str());
+                error = true;
+            }
+            else
+            {
+                MainArguments::WorkflowDescription desc;
+                desc.filename = absolute_filename(cut_workflow_file);
+                desc.name = generate_sha1_string(desc.filename);
+                desc.workload_name = desc.name;
+                try
+                {
+                    desc.start_time = std::stod(cut_workflow_time_str);
+
+                    if (desc.start_time < 0)
+                    {
+                        XBT_ERROR("<start_time> %g ('%s') should be positive.",
+                                  desc.start_time, cut_workflow_time_str.c_str());
+                        error = true;
+                    }
+                    else
+                    {
+                        XBT_INFO("Cut workflow '%s' corresponds to workflow file '%s'.",
+                                 desc.name.c_str(), desc.filename.c_str());
+                        main_args.workflow_descriptions.push_back(desc);
+                    }
+                }
+                catch (const std::exception &)
+                {
+                    XBT_ERROR("Cannot read the <start_time> '%s' as a double.",
+                              cut_workflow_time_str.c_str());
+                    error = true;
+                }
+            }
         }
-
-        main_args->limit_machines_count = ivalue;
-        break;
     }
-    case 'L':
-    {
-        main_args->limit_machines_count_by_workload = true;
-        break;
-    }
-    case 'm':
-        main_args->master_host_name = arg;
-        break;
-    case 'f':
-        main_args->pfs_host_name = arg;
-        break;
-    case 'P':
-    {
-        int ivalue = stoi(arg);
 
-        if ((ivalue <= 0) || (ivalue > 65535))
+    // Common options
+    // **************
+    main_args.master_host_name = args["--master-host"].asString();
+    main_args.energy_used = args["--energy"].asBool();
+
+    // Execution context options
+    // *************************
+    main_args.socket_filename = args["--socket"].asString();
+    main_args.redis_hostname = args["--redis-hostname"].asString();
+    try { main_args.redis_port = args["--redis-port"].asLong(); }
+    catch(const std::exception &)
+    {
+        XBT_ERROR("Cannot read the Redis port '%s' as a long integer.",
+                  args["--redis-port"].asString().c_str());
+        error = true;
+    }
+
+    // Output options
+    // **************
+    main_args.export_prefix = args["--export"].asString();
+    main_args.enable_simgrid_process_tracing = args["--enable-sg-process-tracing"].asBool();
+    main_args.enable_schedule_tracing = !args["--disable-schedule-tracing"].asBool();
+    main_args.enable_machine_state_tracing = !args["--disable-machine-state-tracing"].asBool();
+
+    // Platform size limit options
+    // ***************************
+    string m_max_str = args["--mmax"].asString();
+    try {main_args.limit_machines_count = std::stoi(m_max_str);}
+    catch (const std::exception &)
+    {
+        XBT_ERROR("Cannot read <M_max> '%s' as an integer.", m_max_str.c_str());
+        error = true;
+    }
+
+    main_args.limit_machines_count_by_workload = args["--mmax-workload"].asBool();
+
+    // Verbosity options
+    // *****************
+    try
+    {
+        main_args.verbosity = verbosity_level_from_string(args["--verbosity"].asString());
+        if (args["--quiet"].asBool())
+            main_args.verbosity = VerbosityLevel::QUIET;
+    }
+    catch (const std::exception &)
+    {
+        XBT_ERROR("Invalid <verbosity_level> '%s'.", args["--verbosity"].asString().c_str());
+        error = true;
+    }
+
+    // Workflow options
+    // ****************
+    string workflow_jobs_limit = args["--workflow-jobs-limit"].asString();
+    try
+    {
+        main_args.workflow_nb_concurrent_jobs_limit = std::stoi(workflow_jobs_limit);
+        if (main_args.workflow_nb_concurrent_jobs_limit < 0)
         {
-            main_args->abort = true;
-            main_args->abortReason += "\n  invalid PORT positional argument (" + to_string(ivalue) +
-                                     "): it should be a valid port: integer in range [1,65535].";
+            XBT_ERROR("The <workflow_limit> %d ('%s') must be positive.", main_args.workflow_nb_concurrent_jobs_limit,
+                      workflow_jobs_limit.c_str());
+            error = true;
         }
-
-        main_args->redis_port = ivalue;
-        break;
     }
-    case 'q':
-        main_args->verbosity = VerbosityLevel::QUIET;
-        break;
-    case 's':
-        main_args->socket_filename = arg;
-        break;
-    case 't':
-        main_args->enable_simgrid_process_tracing = true;
-        break;
-    case 'T':
-        main_args->enable_schedule_tracing = false;
-        break;
-    case 'U':
-        main_args->enable_machine_state_tracing = false;
-        break;
-    case 'v':
+    catch (const std::exception &)
     {
-        string sArg = arg;
-        boost::to_lower(sArg);
-        if (sArg == "quiet")
-            main_args->verbosity = VerbosityLevel::QUIET;
-        else if (sArg == "network-only")
-            main_args->verbosity = VerbosityLevel::NETWORK_ONLY;
-        else if (sArg == "information")
-            main_args->verbosity = VerbosityLevel::INFORMATION;
-        else if (sArg == "debug")
-            main_args->verbosity = VerbosityLevel::DEBUG;
-        else
-        {
-            main_args->abort = true;
-            main_args->abortReason += "\n  invalid VERBOSITY_LEVEL argument: '" + string(sArg) + "' is not in {quiet, network-only, information, debug}.";
-        }
-        break;
-    }
+        XBT_ERROR("Cannot read the <job_limit> '%s' as an integer.", workflow_jobs_limit.c_str());
+        error = true;
     }
 
-    return 0;
-}
+    main_args.terminate_with_last_workflow = args["--ignore-beyond-last-workflow"].asBool();
 
-bool parse_main_args(int argc, char * argv[], MainArguments & main_args)
-{
-    struct argp_option options[] =
-    {
-        // Required parameters (p is always required, |w| + |W] must be >= 1)
-        {"platform", 'p', "FILENAME", 0, "Platform to be simulated by SimGrid. Required.", 0},
-        {"workload", 'w', "FILENAME", 0, "Workload to be submitted to the platform. Required unless a workflow is submitted.", 0},
-        {"workflow", 'W', "FILENAME[:start_time]", 0, "Workflow to be submitted to the platform, with an optional start time. Required unless a workload is submitted.", 0},
+    // Other options
+    // *************
+    main_args.allow_time_sharing = args["--allow-time-sharing"].asBool();
+    if (args["--batexec"].asBool())
+        main_args.program_type = ProgramType::BATEXEC;
+    else
+        main_args.program_type = ProgramType::BATSIM;
+    main_args.pfs_host_name = args["--pfs-host"].asString();
 
-        // Optional parameters
-        {"batexec", 'c', 0, 0, "If set, a simpler execution of the workloads is made (this was formerly known as the batexec program)", 0},
-        {"export", 'e', "FILENAME_PREFIX", 0, "The export filename prefix used to generate simulation output. Default value: 'out'", 0},
-        {"energy-plugin", 'E', 0, 0, "Enables energy-aware experiments", 0},
-        {"allow-space-sharing", 'h', 0, 0, "Allows space sharing: the same resource can compute several jobs at the same time", 0},
-        {"redis-hostname", 'H', "HOSTNAME", 0, "Sets the host name of the remote Redis (data storage) server.", 0},
-        {"jobs_limit", 'J', "NUMBER", 0, "Number of possible concurrent jobs for workflows", 0},
-        {"ignore-workflow-beyond-last-workflow", 'k', 0, 0, "Ignore workload jobs that occur after all workflows have completed, if any, as completed", 0},
-        {"limit-machine-count", 'l', "M", 0, "Allows to limit the number of computing machines to use. If M == -1 (default), all the machines described in PLATFORM_FILE are used (but the master_host). If M >= 1, only the first M machines will be used to comupte jobs.", 0},
-        {"limit-machine-count-by-workload", 'L', 0, 0, "If set, allows to limit the number of computing machines to use. This number is read from the workload file. If both limit-machine-count and limit-machine-count-by-worload are set, the minimum of the two will be used.", 0},
-        {"master-host", 'm', "NAME", 0, "The name of the host in PLATFORM_FILE which will run SimGrid scheduling processes and won't be used to compute tasks. Default value: 'master_host'", 0},
-        {"pfs-host", 'f', "NAME", 0, "The name of the host in PLATFORM_FILE which will be the parallel filesystem target as data sink/source. Default value: 'pfs_host'", 0},
-        {"redis-port", 'P', "PORT", 0, "Sets the port of the remote Redis (data storage) server.", 0},
-        {"quiet", 'q', 0, 0, "Shortcut for --verbosity=quiet", 0},
-        {"socket", 's', "FILENAME", 0, "Unix Domain Socket filename. Default value: '/tmp/bat_socket'", 0},
-        {"process-tracing", 't', 0, 0, "Enables SimGrid process tracing (shortcut for SimGrid options ----cfg=tracing:1 --cfg=tracing/msg/process:1)", 0},
-        {"disable-schedule-tracing", 'T', 0, 0, "If set, the tracing of the schedule is disabled (the output file _schedule.trace will not be exported)", 0},
-        {"disable-machine-state-tracing", 'U', 0, 0, "If set, the tracing of the machine states is disabled (the output file _machine_states.csv will not be exported)", 0},
-        {"verbosity", 'v', "VERBOSITY_LEVEL", 0, "Sets the Batsim verbosity level. Available values are : quiet, network-only, information (default), debug.", 0},
-        {0, '\0', 0, 0, 0, 0} // The options array must be NULL-terminated
-    };
-
-    struct argp argp = {options, parse_opt, 0, "A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.", 0, 0, 0};
-    argp_parse(&argp, argc, argv, 0, 0, &main_args);
-
-    if (access(main_args.platform_filename.c_str(), R_OK) == -1)
-    {
-        main_args.abort = true;
-        main_args.abortReason += "\n  invalid PLATFORM_FILE argument: file '" + string(main_args.platform_filename) + "' cannot be read";
-    }
-
-    if (main_args.abort)
-    {
-        fprintf(stderr, "Impossible to run batsim:%s\n", main_args.abortReason.c_str());
-        return false;
-    }
-
-    return true;
+    return !error;
 }
 
 void configure_batsim_logging_output(const MainArguments & main_args)
@@ -364,7 +454,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     }
 
     // Let's compute how the number of machines to use should be limited
-    max_nb_machines_to_use = -1;
+    max_nb_machines_to_use = 0;
     if ((main_args.limit_machines_count_by_workload) && (main_args.limit_machines_count > 0))
         max_nb_machines_to_use = min(main_args.limit_machines_count, max_nb_machines_in_workloads);
     else if (main_args.limit_machines_count_by_workload)
@@ -372,7 +462,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     else if (main_args.limit_machines_count > 0)
         max_nb_machines_to_use = main_args.limit_machines_count;
 
-    if (max_nb_machines_to_use != -1)
+    if (max_nb_machines_to_use != 0)
         XBT_INFO("The maximum number of machines to use is %d.", max_nb_machines_to_use);
 }
 
@@ -448,9 +538,9 @@ int main(int argc, char * argv[])
     BatsimContext context;
     context.platform_filename = main_args.platform_filename;
     context.export_prefix = main_args.export_prefix;
-    context.workflow_limit = main_args.workflow_limit;
+    context.workflow_nb_concurrent_jobs_limit = main_args.workflow_nb_concurrent_jobs_limit;
     context.energy_used = main_args.energy_used;
-    context.allow_space_sharing = main_args.allow_space_sharing;
+    context.allow_time_sharing = main_args.allow_time_sharing;
     context.trace_schedule = main_args.enable_schedule_tracing;
     context.trace_machine_states = main_args.enable_machine_state_tracing;
     context.simulation_start_time = chrono::high_resolution_clock::now();

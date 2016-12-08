@@ -85,7 +85,9 @@ file(GLOB batsim_SRC
     "src/*.hpp"
     "src/*.cpp"
     "src/pugixml-1.7/*.hpp"
-    "src/pugixml-1.7/*.cpp")
+    "src/pugixml-1.7/*.cpp"
+    "src/docopt/*.cpp"
+    "src/docopt/*.h")
 
 # Executables
 add_executable(batsim ${batsim_SRC})
@@ -205,10 +207,10 @@ add_test(long_simulation_time
          -bod /tmp/batsim_tests/long_simulation_time
          -bwd ${CMAKE_SOURCE_DIR})
 
-add_test(space_sharing
+add_test(time_sharing
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
-         ${CMAKE_SOURCE_DIR}/test/test_space_sharing.yaml
-         -bod /tmp/batsim_tests/space_sharing
+         ${CMAKE_SOURCE_DIR}/test/test_time_sharing.yaml
+         -bod /tmp/batsim_tests/time_sharing
          -bwd ${CMAKE_SOURCE_DIR})
 
 add_test(smpi
