@@ -341,12 +341,6 @@ class BatsimLifecycleHandler(ProcessLifecycleHandler):
         self.execution_data.nb_started += 1
 
     def end(self, process):
-        # Let's write stdout and stderr to files
-        write_string_into_file(process.stdout, '{output_dir}/batsim.stdout'.format(
-                                output_dir = self.execution_data.output_directory))
-        write_string_into_file(process.stderr, '{output_dir}/batsim.stderr'.format(
-                                output_dir = self.execution_data.output_directory))
-
         # Let's check whether the process was successful
         if (process.exit_code != 0) or process.timeouted or process.killed or process.error:
             self.execution_data.failure = True
@@ -388,12 +382,6 @@ class SchedLifecycleHandler(ProcessLifecycleHandler):
         logger.info("Sched started")
         self.execution_data.nb_started += 1
     def end(self, process):
-        # Let's write stdout and stderr to files
-        write_string_into_file(process.stdout, '{output_dir}/sched.stdout'.format(
-                                output_dir = self.execution_data.output_directory))
-        write_string_into_file(process.stderr, '{output_dir}/sched.stderr'.format(
-                                output_dir = self.execution_data.output_directory))
-
         # Let's check whether the process was successful
         if (process.exit_code != 0) or process.timeouted or process.killed or process.error:
             self.execution_data.failure = True
@@ -457,21 +445,21 @@ def execute_command(command,
                           shell = True,
                           kill_subprocesses = True,
                           name = command_name,
-                          cwd = working_directory)
+                          cwd = working_directory,
+                          stdout_handlers = ['{out}/{name}.stdout'.format(
+                            out = output_script_output_dir,
+                            name = command_name)],
+                          stderr_handlers = ['{out}/{name}.stderr'.format(
+                            out = output_script_output_dir,
+                            name = command_name)])
 
     logger.info("Executing command: {cmd}".format(cmd=command))
 
+    # Let's create the script logging directory if needed
+    create_dir_if_not_exists(output_script_output_dir)
+
     # Let's start the process
     cmd_process.start().wait()
-
-    # Let's write command outputs
-    create_dir_if_not_exists(output_script_output_dir)
-    write_string_into_file(cmd_process.stdout, '{out}/{name}.stdout'.format(
-                            out = output_script_output_dir,
-                            name = command_name))
-    write_string_into_file(cmd_process.stderr, '{out}/{name}.stderr'.format(
-                            out = output_script_output_dir,
-                            name = command_name))
 
     return cmd_process.finished_ok and not cmd_process.error and cmd_process.exit_code == 0
 
@@ -488,7 +476,6 @@ def wait_for_batsim_to_open_connection(execution_data,
     while remaining_time > 0 and not socket_in_use(sock) and not execution_data.batsim_process.ended:
         time.sleep(seconds_to_sleep)
         remaining_time -= seconds_to_sleep
-        #logger.debug("Batsim stderr: {}".format(execution_data.batsim_process.stderr))
 
     return socket_in_use(sock)
 
@@ -557,7 +544,11 @@ def execute_one_instance(working_directory,
                              name = "batsim_process",
                              cwd = working_directory,
                              timeout = timeout,
-                             lifecycle_handlers = [batsim_lifecycle_handler])
+                             lifecycle_handlers = [batsim_lifecycle_handler],
+                             stdout_handlers = ['{out}/batsim.stdout'.format(
+                                out = output_directory)],
+                             stderr_handlers = ['{out}/batsim.stderr'.format(
+                                out = output_directory)])
 
     sched_process = Process(cmd = 'bash {sched_script}'.format(
                                 sched_script = sched_script_filename),
@@ -566,7 +557,11 @@ def execute_one_instance(working_directory,
                             name = "sched_process",
                             cwd = working_directory,
                             timeout = timeout,
-                            lifecycle_handlers = [sched_lifecycle_handler])
+                            lifecycle_handlers = [sched_lifecycle_handler],
+                            stdout_handlers = ['{out}/sched.stdout'.format(
+                                out = output_directory)],
+                             stderr_handlers = ['{out}/sched.stderr'.format(
+                                out = output_directory)])
 
     # Let's create a shared execution data, which will be given to LC handlers
     execution_data = InstanceExecutionData(batsim_process = batsim_process,

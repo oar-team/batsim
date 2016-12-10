@@ -262,36 +262,38 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
                     local_rank = self.local_rank,
                     cmd = instance_command))
 
+        create_dir_if_not_exists('{base_output_dir}/instances/output/'.format(
+            base_output_dir = self.data.base_output_directory))
+
         # Launching the process
         if self.hostname == 'localhost':
             process = Process(cmd = instance_command,
                               kill_subprocesses = True,
                               cwd = self.data.base_working_directory,
-                              lifecycle_handlers = [self])
+                              lifecycle_handlers = [self],
+                              stdout_handlers = ['{out}/instances/output/{iid}.stdout'.format(
+                                out = self.data.base_output_directory,
+                                iid = self.instance_id)],
+                              stderr_handlers = ['{out}/instances/output/{iid}.stderr'.format(
+                                out = self.data.base_output_directory,
+                                iid = self.instance_id)])
             process.start()
         else:
             process = SshProcess(cmd = instance_command,
                                  host = self.host,
                                  kill_subprocesses = True,
                                  cwd = self.data.base_working_directory,
-                                 lifecycle_handlers = [self])
+                                 lifecycle_handlers = [self],
+                                 stdout_handlers = ['{out}/instances/output/{iid}.stdout'.format(
+                                    out = self.data.base_output_directory,
+                                    iid = self.instance_id)],
+                                 stderr_handlers = ['{out}/instances/output/{iid}.stderr'.format(
+                                    out = self.data.base_output_directory,
+                                    iid = self.instance_id)])
             process.start()
 
     def end(self, process):
         assert(self.comb != None)
-
-        # Let's log the process's output
-        create_dir_if_not_exists('{base_output_dir}/instances/output/'.format(
-                                    base_output_dir = self.data.base_output_directory))
-
-        write_string_into_file(process.stdout,
-                               '{base_output_dir}/instances/output/{iid}.stdout'.format(
-                                base_output_dir = self.data.base_output_directory,
-                                iid = self.instance_id))
-        write_string_into_file(process.stderr,
-                               '{base_output_dir}/instances/output/{iid}.stderr'.format(
-                                base_output_dir = self.data.base_output_directory,
-                                iid = self.instance_id))
 
         # Let's mark whether the computation was successful
         if process.finished_ok:
