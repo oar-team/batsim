@@ -1,4 +1,5 @@
 #!/usr/bin/python2
+# Should now work with both python2 and python3
 
 import argparse
 from execo import *

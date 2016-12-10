@@ -1,4 +1,5 @@
 #!/usr/bin/python2
+# Should now work with both python2 and python3
 
 import argparse
 import yaml
@@ -31,7 +32,7 @@ def flatten_dict(init, lkey=''):
 
 def instance_id_from_comb(comb, hash_length):
     fdict = flatten_dict(comb)
-    return hashlib.sha1(str(fdict)).hexdigest()[:hash_length]
+    return hashlib.sha1(str(fdict).encode()).hexdigest()[:hash_length]
 
 def retrieve_dirs_from_instances(variables,
                                  variables_declaration_order,
