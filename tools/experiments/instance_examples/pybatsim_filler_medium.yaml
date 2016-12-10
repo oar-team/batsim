@@ -10,9 +10,10 @@
 output_directory: /tmp/pyfiller/medium
 
 variables:
-  platform: platforms/energy_platform_homogeneous_no_net_128.xml
-  workload: workload_profiles/batsim_paper_workload_example.json
+  platform: ${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml
+  workload: ${batsim_dir}/workload_profiles/batsim_paper_workload_example.json
   pybatsim_algo: fillerSched
+  batsim_dir: ${working_directory}
 # Some variables are automatically added into this dictionary:
 #   - working_directory
 #   - output_directory
@@ -20,4 +21,4 @@ variables:
 timeout: 15
 
 batsim_command: batsim -p ${platform} -w ${workload} -e ${output_directory}/out
-sched_command: python2 schedulers/pybatsim/launcher.py ${pybatsim_algo}
+sched_command: python2 ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo}
