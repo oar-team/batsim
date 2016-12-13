@@ -10,8 +10,8 @@ extend: default/from_image/from_docker
 
 global:
   backend: docker
-  from_docker_image: oarteam/batsim_ci:latest
-  to_docker_image: oarteam/batsim:latest
+  from_docker_image: oarteam/batsim:latest
+  to_docker_image: oarteam/batsim_mickours:latest
   simctn_dir: /root
 
   locality_sched_commit: 12df12a
