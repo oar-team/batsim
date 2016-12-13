@@ -10,5 +10,6 @@
   - exec_in: |
       cd $${expe_batsim_home}
       git clone https://github.com/oar-team/batsim-experiments.git
+      cd batsim-experiments
       git checkout $${batsim_experiments_commit}
 
