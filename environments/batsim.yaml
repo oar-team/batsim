@@ -6,30 +6,42 @@
 #
 #==============================================================================
 ---
-extend: batsim_ci.yaml
+extend: default/from_image/from_docker
 
 global:
-  batsim_commit: f1e835a7e1935  # Tue Dec 6 16:31:12 2016 +0100
+  backend: docker
+  from_docker_image: oarteam/batsim_ci:latest
+  to_docker_image: oarteam/batsim:latest
+  dir: /root
+
+  batsim_commit: cdc8769388b82e5 # Thu Dec 8 18:38:49 2016
 
 bootstrap:
   - "@base"
 
 setup:
-  - "@base"
-
   - build_and_install_batsim:
     - do_it:
       - exec_in: |
-          cd $$simctn_dir
+          cd $${dir}
           git clone https://github.com/oar-team/batsim.git
       - exec_in: |
-          cd $$simctn_dir/batsim
-          git checkout $$batsim_commit
+          cd $${dir}/batsim
+          git checkout $${batsim_commit}
           mkdir build
       - exec_in: |
-          cd $$simctn_dir/batsim/build
+          cd $${dir}/batsim/build
           cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/g++-6
           make -j$(nproc)
           make install
 export:
   - "@base"
+  - tag_and_push_image:
+    - do_tag:
+      - exec_local: |
+          docker tag oarteam/$${kameleon_recipe_name}:latest oarteam/$${kameleon_recipe_name}:$(date --iso-8601)
+    - do_push:
+      - exec_local: |
+          docker push oarteam/$${kameleon_recipe_name}:latest
+          docker push oarteam/$${kameleon_recipe_name}:$(date --iso-8601)
+

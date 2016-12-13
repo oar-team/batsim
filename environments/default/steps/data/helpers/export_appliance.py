@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 tar_formats = ('tar', 'tar.gz', 'tgz', 'tar.bz2', 'tbz', 'tar.xz', 'txz',
                'tar.lzo', 'tzo')
 
+tar_options = ["--selinux", "--xattrs", "--xattrs-include='*'", "--numeric-owner", "--one-file-system"] 
+
 disk_formats = ('qcow', 'qcow2', 'qed', 'vdi', 'raw', 'vmdk')
 
 
@@ -62,32 +64,45 @@ def tar_convert(disk, output, excludes, compression_level):
     elif output.endswith(('tar.lzo', 'tzo')):
         compr = "| %s %s -c -" % (which("lzop"), compression_level_opt)
 
-    tar_options_list = ["--selinux", "--acls", "--xattrs",
-                        "--numeric-owner", "--one-file-system"] + \
-                       ['--exclude="%s"' % s for s in excludes]
-    tar_options = ' '.join(tar_options_list)
-    directory = dir_path = os.path.dirname(os.path.realpath(disk))
-    cmds = [
-        which("mkdir") + " %s/.mnt" % directory,
-        which("guestmount") + " --ro -i -a %s %s/.mnt" % (disk, directory),
-        which("tar") + " -c %s -C %s/.mnt . %s > %s" % (tar_options, directory, compr, output),
-        which("guestunmount") + " %s/.mnt" % directory,
-        which("rmdir") + " %s/.mnt" % directory
-        ]
-    cmd = " && ".join(cmds)
     # NB: guestfish version >= 1.32 supports the special tar options, but not available in Debian stable (jessie): do not use for now
     #tar_options_list = ["selinux:true", "acls:true", "xattrs:true",
     #                    "numericowner:true",
     #                    "excludes:\"%s\"" % ' '.join(excludes)]
-    #tar_options = ' '.join(tar_options_list)
+    #tar_options_str = ' '.join(tar_options_list)
     #cmd = which("guestfish") + \
     #    " --ro -i tar-out -a %s / - %s %s > %s"
-    #cmd = cmd % (disk, tar_options, compr, output)
+    #cmd = cmd % (disk, tar_options_str, compr, output)
+    #proc = subprocess.Popen(cmd_mount_tar, env=os.environ.copy(), shell=True)
+    #proc.communicate()
+    #if proc.returncode:
+    #    raise subprocess.CalledProcessError(proc.returncode, cmd)
 
-    proc = subprocess.Popen(cmd, env=os.environ.copy(), shell=True)
+    tar_options_str = ' '.join(tar_options + ['--exclude="%s"' % s for s in excludes])
+    directory = dir_path = os.path.dirname(os.path.realpath(disk))
+    cmds = [
+        which("mkdir") + " %s/.mnt" % directory,
+        which("guestmount") + " --ro -i -a %s %s/.mnt" % (disk, directory),
+        which("tar") + " -c %s -C %s/.mnt . %s > %s" % (tar_options_str, directory, compr, output)
+        ]
+    cmd_mount_tar = " && ".join(cmds)
+    proc = subprocess.Popen(cmd_mount_tar, env=os.environ.copy(), shell=True)
     proc.communicate()
-    if proc.returncode:
-        raise subprocess.CalledProcessError(proc.returncode, cmd)
+    returncode_mount_tar = proc.returncode
+
+    # try to umount even if the previous command failed
+    cmds = [
+        which("guestunmount") + " %s/.mnt" % directory,
+        which("rmdir") + " %s/.mnt" % directory
+        ]
+    cmd_umount = " && ".join(cmds)
+    proc = subprocess.Popen(cmd_umount, env=os.environ.copy(), shell=True)
+    proc.communicate()
+    returncode_umount = proc.returncode
+
+    if returncode_mount_tar:
+        raise subprocess.CalledProcessError(returncode_mount_tar, cmd_mount_tar)
+    elif returncode_umount:
+        raise subprocess.CalledProcessError(returncode_umount, cmd_umount)
 
 
 def qemu_convert(disk, output_fmt, output_filename):

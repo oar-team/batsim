@@ -8,7 +8,7 @@
 #   simgrid_commit: 20e851bd58a0b31
 # setup:
 # - simgrid_install:
-#   - commit_hash: $$simgrid_commit
+#   - commit_hash: $${simgrid_commit}
 #   # Optional
 #   - install_prefix: /usr
 #   - work_dir: /tmp
@@ -20,15 +20,15 @@
   - exec_in: apt-get -y --force-yes install -t testing libboost-all-dev python3 2>&1
 - do_it:
   - exec_in: |
-      mkdir -p $$work_dir
-      cd $$work_dir
+      mkdir -p $${work_dir}
+      cd $${work_dir}
       git clone https://github.com/simgrid/simgrid
   - exec_in: |
-      cd $$work_dir/simgrid
-      git checkout $$commit_hash
+      cd $${work_dir}/simgrid
+      git checkout $${commit_hash}
       mkdir build
   - exec_in: |
-      cd $$work_dir/simgrid/build
-      cmake -DCMAKE_INSTALL_PREFIX=$$install_prefix -Denable_documentation=OFF -DPYTHON_EXECUTABLE=/usr/bin/python3 ../
+      cd $${work_dir}/simgrid/build
+      cmake -DCMAKE_INSTALL_PREFIX=$${install_prefix} -Denable_documentation=OFF -DPYTHON_EXECUTABLE=/usr/bin/python3 ../
       make -j$(nproc)
       make install
