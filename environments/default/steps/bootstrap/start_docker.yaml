@@ -1,0 +1,34 @@
+- clean_containers:
+  - on_checkpoint: redo
+  - on_export_clean:
+    - exec_out: echo "Stopping trailing containers"
+    - exec_out: touch CONTAINERS_TO_CLEAN
+    - exec_out: cat CONTAINERS_TO_CLEAN | xargs -I {} docker kill {}
+    - exec_out: echo "Removing trailing containers"
+    - exec_out: cat CONTAINERS_TO_CLEAN | xargs -I {} docker rm {}
+    - exec_out: rm -f CONTAINERS_TO_CLEAN
+
+- fix_docker_resolvconf:
+  - on_setup_init:
+    - exec_in: cat /etc/resolv.conf > /tmp/resolv.conf-docker
+    - exec_in: umount /etc/resolv.conf
+    - exec_in: cat /tmp/resolv.conf-docker > /etc/resolv.conf
+
+- fix_docker_etc_hosts:
+  - on_setup_init:
+    - exec_in: cat /etc/hosts > /tmp/hosts-docker
+    - exec_in: umount /etc/hosts
+    - exec_in: cat /tmp/hosts-docker > /etc/hosts
+
+- start_docker_container:
+  - on_checkpoint: redo
+  - exec_out: |
+      CID=$(docker run -d -i \
+              -h $${docker_hostname} \
+              --privileged "$${docker_image}:base" \
+              cat)
+      sleep 2
+  - exec_out: echo "$CID" >> CONTAINERS_TO_CLEAN
+  - exec_out: echo $CID > MAIN_CONTAINER_ID
+  - on_export_clean:
+    - exec_out: rm -f MAIN_CONTAINER_ID

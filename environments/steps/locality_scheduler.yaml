@@ -14,7 +14,7 @@
 # global:
 #   locality_sched_commit: 12df12a
 # setup:
-#   - commit_hash: $$locality_sched_commit
+#   - commit_hash: $${locality_sched_commit}
 #   # Optional
 #   - work_dir: /tmp
 
@@ -30,12 +30,12 @@
       2>&1
 - get_it:
   - exec_in: |
-      mkdir -p $$work_dir
-      cd $$work_dir
+      mkdir -p $${work_dir}
+      cd $${work_dir}
       git clone https://github.com/wagnerf42/batch-simulator.git
   - exec_in: |
-      cd $$work_dir/batch-simulator
-      git checkout $$commit_hash
+      cd $${work_dir}/batch-simulator
+      git checkout $${commit_hash}
       cd ProcessorRange
       perl Makefile.PL
       make

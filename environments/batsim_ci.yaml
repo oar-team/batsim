@@ -21,7 +21,7 @@ global:
   qemu_memory_size : 2048
   appliance_formats: tar.gz
   appliance_tar_compression_level: fast
-  setup_packages: git cmake build-essential e2fsprogs $$setup_packages
+  setup_packages: git cmake build-essential e2fsprogs $${setup_packages}
   default_keyboard_layout: fr
   default_timezone: Europe/Paris
   root_password: root
@@ -54,7 +54,7 @@ setup:
           update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-6 100
 
   - simgrid_install:
-    - commit_hash: $$simgrid_commit
+    - commit_hash: $${simgrid_commit}
 
   - batsim:
     # Need testing to be available
@@ -68,16 +68,16 @@ setup:
           libev-dev \
           python-yaml \
           libssl-dev 2>&1
-      # Install rapidjson (not available in jessy)
+      # Install rapidjson (not available in jessie)
       - exec_in: |
-          cd $$simctn_dir
+          cd $${simctn_dir}
           git clone https://github.com/miloyip/rapidjson.git
       - exec_in: |
-          cd $$simctn_dir/rapidjson
+          cd $${simctn_dir}/rapidjson
           git checkout 3d5848a # v1.02
           cp -a include/rapidjson /usr/include
       - exec_in: |
-          cd $$simctn_dir
+          cd $${simctn_dir}
           git clone https://github.com/hmartiro/redox.git
           cd redox
           git checkout 64becf28f3dd
@@ -93,7 +93,7 @@ setup:
       - exec_in: apt install -y -t testing python-pip valgrind python-pandas
       - exec_in: pip2 install sortedcontainers redis
       - exec_in: |
-          cd $$simctn_dir
+          cd $${simctn_dir}
           git clone https://github.com/mickours/execo.git
           cd execo
           git checkout $${execo_commit}
@@ -107,12 +107,5 @@ setup:
 
 export:
   - "@base"
-  - docker_export:
-    - do_export:
-      - exec_local: |
-          docker import $${appliance_filename}.tar.gz oarteam/$${kameleon_recipe_name}:latest
-      - exec_local: |
-          docker tag oarteam/$${kameleon_recipe_name}:latest oarteam/$${kameleon_recipe_name}:$(date --iso-8601)
-      - exec_local: |
-          docker push oarteam/$${kameleon_recipe_name}:latest
-          docker push oarteam/$${kameleon_recipe_name}:$(date --iso-8601)
+  - docker_export
+

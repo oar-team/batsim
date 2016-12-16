@@ -17,4 +17,4 @@
 - install_dependencies:
   - exec_in: apt-get install -y libsqlite3-dev python-dev python-pip gcc
 - install_reprozip:
-  - exec_in: pip install reprozip==$$reprozip_version
+  - exec_in: pip install reprozip==$${reprozip_version}

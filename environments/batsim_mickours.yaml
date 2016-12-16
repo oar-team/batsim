@@ -6,9 +6,13 @@
 #
 #==============================================================================
 
-extend: batsim_oarteam.yaml
+extend: default/from_image/from_docker
 
 global:
+  backend: docker
+  from_docker_image: oarteam/batsim:latest
+  to_docker_image: mickours/batsim:latest
+  simctn_dir: /root
 
   locality_sched_commit: 12df12a
   oar_commit: 2c7c4df
@@ -19,24 +23,25 @@ bootstrap:
   - "@base"
 
 setup:
-  - "@base"
-
+  - apt_init:
+    - do_update:
+      - exec_in: apt update -y
   #
   # Batsim schedulers
   #
   - locality_scheduler:
-    - commit_hash: $$locality_sched_commit
+    - commit_hash: $${locality_sched_commit}
 
   - oar_sched:
     - install dependencies:
-      - exec_in: apt-get -y --force-yes install python3-pip 2>&1
+      - exec_in: apt -y --force-yes install python3-pip 2>&1
     - install_oar3:
       - exec_in: |
-          cd $$simctn_dir
+          cd $${simctn_dir}
           git clone https://github.com/oar-team/oar3.git
       - exec_in: |
-          cd $$simctn_dir/oar3
-          git checkout $$oar_commit
+          cd $${simctn_dir}/oar3
+          git checkout $${oar_commit}
           pip3 install -e .
 
   #
@@ -49,11 +54,11 @@ setup:
       - exec_in: apt-get -y --force-yes install vite 2>&1
       #- get_sources:
       #- - exec_in: |
-      #-     cd $$simctn_dir
+      #-     cd $${simctn_dir}
       #-     svn checkout svn://scm.gforge.inria.fr/svnroot/vite/
       #- install_it:
       #- - exec_in: |
-      #-     cd $$simctn_dir/vite/trunk
+      #-     cd $${simctn_dir}/vite/trunk
       #-     mkdir build
       #-     cd build
       #-     cmake ..
@@ -70,7 +75,7 @@ setup:
   # Experiment inputs and launch scripts
   #
   - import_batsim_experiment_tools:
-    - expe_batsim_home: $$simctn_dir
+    - expe_batsim_home: $${simctn_dir}
 
   #
   # Personal customization
