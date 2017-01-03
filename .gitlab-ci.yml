@@ -26,35 +26,35 @@ build:clang:
   script:
     - export CC=/usr/bin/clang
     - export CXX=/usr/bin/clang++
-    - mkdir /builds/OAR/batsim/build
-    - cd /builds/OAR/batsim/build
+    - mkdir /builds/batsim/batsim/build
+    - cd /builds/batsim/batsim/build
     - cmake .. -Dtreat_warnings_as_errors=ON
     - make
   artifacts:
     paths:
-      - /builds/OAR/batsim/
+      - /builds/batsim/batsim/
 
 build:g++:
   stage: build
   script:
     - export CC=/usr/bin/gcc
     - export CXX=/usr/bin/g++
-    - mkdir /builds/OAR/batsim/build
-    - cd /builds/OAR/batsim/build
+    - mkdir /builds/batsim/batsim/build
+    - cd /builds/batsim/batsim/build
     - cmake .. -Dtreat_warnings_as_errors=ON
     - make
 
 doc:
   stage: test
   script:
-    - cd /builds/OAR/batsim/doc
+    - cd /builds/batsim/batsim/doc
     - doxygen
     - cat doxygen_warnings.log
     # The next line fails if doxygen generated warnings
     - eval "[ $(wc -c doxygen_warnings.log | cut -d ' ' -f1) -eq 0 ]"
   artifacts:
     paths:
-      - /builds/OAR/batsim/doc/doxygen_doc/html
+      - /builds/batsim/batsim/doc/doxygen_doc/html
 
 test:
   stage: test
@@ -66,7 +66,7 @@ test:
         sleep 1
       done
 
-    - cd /builds/OAR/batsim/build
+    - cd /builds/batsim/batsim/build
     - make install
     - ctest -E smpi
   dependencies:
@@ -75,7 +75,7 @@ test:
 deploy_code_doc:
   stage: deploy
   script:
-    - cd /builds/OAR/batsim/doc
+    - cd /builds/batsim/batsim/doc
     - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
   dependencies:
     - doc
