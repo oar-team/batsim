@@ -78,7 +78,7 @@ struct Job
  * @param[in] b The second job
  * @return True if and only if the first job's submission time is lower than the second job's submission time
  */
-bool job_comparator_subtime(const Job * a, const Job * b);
+bool job_comparator_subtime_number(const Job * a, const Job * b);
 
 /**
  * @brief Stores all the jobs of a workload

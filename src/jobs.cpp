@@ -150,8 +150,10 @@ int Jobs::nb_jobs() const
     return _jobs.size();
 }
 
-bool job_comparator_subtime(const Job *a, const Job *b)
+bool job_comparator_subtime_number(const Job *a, const Job *b)
 {
+    if (a->submission_time == b->submission_time)
+        return a->number < b->number;
     return a->submission_time < b->submission_time;
 }
 

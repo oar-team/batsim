@@ -87,7 +87,7 @@ int static_job_submitter_process(int argc, char *argv[])
         jobsVector.push_back(job);
     }
 
-    sort(jobsVector.begin(), jobsVector.end(), job_comparator_subtime);
+    sort(jobsVector.begin(), jobsVector.end(), job_comparator_subtime_number);
 
     XBT_INFO("taille vecteur : %d", (int) jobsVector.size() );
 
