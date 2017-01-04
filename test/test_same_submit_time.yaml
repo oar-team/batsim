@@ -1,0 +1,74 @@
+# This script should be called from Batsim's root directory
+
+# If needed, the working directory of this script can be specified within this file
+#base_working_directory: ~/proj/batsim
+
+# If needed, the output directory of this script can be specified within this file
+base_output_directory: /tmp/batsim_tests/same_submit_time
+
+base_variables:
+  batsim_dir: ${base_working_directory}
+
+implicit_instances:
+  implicit:
+    sweep:
+      platform :
+        - {"name":"small", "filename":"${batsim_dir}/platforms/small_platform.xml"}
+      workload :
+        - {"name":"same_submit_time", "filename":"${batsim_dir}/workload_profiles/same_submit_time.json"}
+      pybatsim_algo:
+        - {"name":"filler", "algo_name":"fillerSched"}
+    generic_instance:
+      timeout: 10
+      working_directory: ${base_working_directory}
+      output_directory: ${base_output_directory}/results/${instance_id}
+      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out -s ${output_directory}/socket --mmax-workload -vnetwork-only
+      sched_command: python2 ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo[algo_name]} -s ${output_directory}/socket
+
+      commands_after_execution:
+        - cat ${output_directory}/batsim.stderr | grep -o ":S:.*|\|:S:.*'" > ${output_directory}/messages.txt
+
+        # Let's check that Batsim sent the jobs in the right order
+        - |
+            #!/bin/bash
+
+            source ${output_directory}/variables.bash
+
+            cat > ${output_directory}/jobs_analysis.py <<EOF
+            #!/usr/bin/python2
+            from __future__ import print_function
+            import pandas as pd
+            import re
+            import sys
+
+            # Let's get when jobs have been released
+            jobs = pd.read_csv('${output_directory}/out_jobs.csv')
+            # Sorted by (submit_time, job_id)
+            jobs.sort_values(by=['submission_time', 'job_id'], inplace=True)
+            theoretical_order = [int(x) for x in jobs['job_id']]
+
+            # Let's now read in which order the jobs have been put into the socket
+            msg_file = open('${output_directory}/messages.txt')
+            msg_str = msg_file.read()
+
+            r = re.compile(''':S:.*?!(.*?)[|']''')
+            socket_order = [int(x) for x in r.findall(msg_str)]
+
+            print('Jobs orders:')
+            print('  Theoretical:', theoretical_order)
+            print('  Socket:', socket_order)
+
+            if socket_order != theoretical_order:
+                print('Mismatch...')
+                sys.exit(1)
+            else:
+                sys.exit(0)
+
+            EOF
+        - python2 ${output_directory}/jobs_analysis.py
+
+
+commands_before_instances:
+  - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
+  - ${batsim_dir}/test/clean_output_dir.py ${base_output_directory}
+

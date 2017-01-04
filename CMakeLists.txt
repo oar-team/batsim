@@ -231,7 +231,11 @@ add_test(batexec
          -bod /tmp/batsim_tests/batexec
          -bwd ${CMAKE_SOURCE_DIR})
 
-
+add_test(same_submit_time
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_same_submit_time.yaml
+         -bod /tmp/batsim_tests/same_submit_time
+         -bwd ${CMAKE_SOURCE_DIR})
 
 
 
