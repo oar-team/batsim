@@ -203,6 +203,7 @@ class WorkersSharedData:
         self.base_variables = base_variables
         self.generate_only = generate_only
         self.hash_length = hash_length
+        self.post_command_failed = False
 
 class WorkerLifeCycleHandler(ProcessLifecycleHandler):
     def __init__(self,
@@ -312,6 +313,7 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
                 logger.warning('However, the comb {iid} is marked as done, '
                                'because it failed in the post-commands '
                                'section.'.format(iid=self.instance_id))
+                self.data.post_command_failed = True
                 self.data.sweeper.done(self.comb)
             elif (process.exit_code != None) and \
                  ((process.exit_code >> 8) == 4) and \
@@ -676,7 +678,7 @@ def execute_instances(base_working_directory,
     logger.info('{} instances have been executed successfully'.format(len(sweeper.get_done())))
     if not success:
         logger.warning('{} instances have been skipped'.format(len(sweeper.get_skipped())))
-    return success
+    return (success, worker_shared_data.post_command_failed)
 
 def main():
     script_description = '''
@@ -907,7 +909,8 @@ can be found in the instances_examples subdirectory.
             sys.exit(0)
 
         # Instances' execution
-        if not execute_instances(base_working_directory = base_working_directory,
+        (should_continue, post_command_failed) = execute_instances(
+            base_working_directory = base_working_directory,
             base_output_directory = base_output_directory,
             base_variables = base_variables,
             host_list = host_list,
@@ -917,7 +920,8 @@ can be found in the instances_examples subdirectory.
             recompute_all_instances = recompute_all_instances,
             recompute_instances_post_commands = recompute_instances_post_commands,
             generate_only = generate_only,
-            mark_as_cancelled_lambda = mark_as_cancelled_lambda) and not recompute_already_done_post_commands:
+            mark_as_cancelled_lambda = mark_as_cancelled_lambda)
+        if not should_continue and not recompute_already_done_post_commands:
             sys.exit(2)
 
     # Commands after instances execution
@@ -952,6 +956,9 @@ can be found in the instances_examples subdirectory.
 
 
     # Everything went succesfully, let's return 0
+    if post_command_failed:
+        print('Everything went quite successfully, but some post-commands failed...')
+        sys.exit(7)
     sys.exit(0)
 
 if __name__ == '__main__':
