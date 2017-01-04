@@ -694,7 +694,7 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
 
     // write headers
-    f << "jobID,workload_name,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,consumed_energy,allocated_processors\n";
+    f << "job_id,hacky_job_id,workload_name,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,consumed_energy,allocated_processors\n";
 
     for (const auto mit : context->workloads.workloads())
     {
@@ -715,8 +715,9 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
                     int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
                     xbt_assert(job->runtime >= 0);
 
-                    int ret = asprintf(&buf, "%d,%s,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
-                                       job->number*10 + workload_num, // job_id
+                    int ret = asprintf(&buf, "%d,%d,%s,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
+                                       job->number,
+                                       job->number*10 + workload_num, // hacky_job_id
                                        workload_name.c_str(), // workload_name
                                        (double)job->submission_time, // submission_time
                                        job->required_nb_res, // requested_number_of_processors
