@@ -23,9 +23,10 @@ that is not available on classic distribution yet.
 
 To test simply test batsim you can directly run it though docker.  First run
 batsim in your container for a simple workload:
-```
+```bash
 # launch a batsim container
 docker run -ti --name batsim oarteam/batsim bash
+
 # inside the container
 cd /root/batsim
 redis-server &
@@ -34,9 +35,10 @@ batsim -p platforms/small_platform.xml \
 ```
 
 Then in an *other terminal* execute the scheduler:
-```
+```bash
 # Run an other bash in the same container
 docker exec -ti batsim bash
+
 # inside the container
 cd /root/batsim
 python2 schedulers/pybatsim/launcher.py fillerSched
@@ -140,7 +142,7 @@ simple experiments with Batsim.
 ### Batsim Usage
 Batsim usage can be shown by calling the Batsim program with the ``--help``
 option. It should display something like this:
-```bash
+```
 batsim --help
 A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.
 
