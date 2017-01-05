@@ -24,18 +24,22 @@ that is not available on classic distribution yet.
 To test simply test batsim you can directly run it though docker.  First run
 batsim in your container for a simple workload:
 ```
-docker run -ti oarteam/batsim bash
+# launch a batsim container
+docker run -ti --name batsim oarteam/batsim bash
+# inside the container
 cd /root/batsim
-batsim -w platforms/small_platform.xml \
-  workload_profiles/test_workload_profile.json
+redis-server &
+batsim -p platforms/small_platform.xml \
+  -w workload_profiles/test_workload_profile.json
 ```
 
-Then in an other terminal execute the scheduler:
+Then in an *other terminal* execute the scheduler:
 ```
+# Run an other bash in the same container
 docker exec -ti batsim bash
+# inside the container
 cd /root/batsim
-python2 schedulers/pybatsim/launcher.py fillerSched \
-  workload_profiles/test_workload_profile.json
+python2 schedulers/pybatsim/launcher.py fillerSched
 ```
 
 External References
