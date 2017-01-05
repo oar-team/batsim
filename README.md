@@ -88,7 +88,7 @@ please note it might be outdated.
 Batsim's dependencies are listed below:
 -   SimGrid (recommended commit: dccf1b41e9c7b)
 -   RapidJSON (1.02 or greater)
--   Boost 1.58 or greater (system, filesystem)
+-   Boost 1.62 or greater (system, filesystem, regex, locale)
 -   C++11 compiler
 -   Redox (and its dependencies: hiredis and libev)
 
