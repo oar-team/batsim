@@ -29,13 +29,13 @@ External References
 Build status
 ------------
 
-[![build status](https://gitlab.inria.fr/OAR/batsim/badges/master/build.svg)]
-(https://gitlab.inria.fr/OAR/batsim/commits/master)
+[![build status](https://gitlab.inria.fr/batsim/batsim/badges/master/build.svg)]
+(https://gitlab.inria.fr/batsim/batsim/commits/master)
 
 Visualisation
 -------------
 
-Batsim outpus files can be visualised using external tools:
+Batsim output files can be visualised using external tools:
 
 -   [Evalys] can be used to visualise Gantt chart from the Batsim job.csv files
     and SWF files
@@ -70,14 +70,23 @@ batsim
 Installation
 ------------
 
-As Batsim and its dependencies are installed and built by Travis, you can find
-an example on how to do it in [this Travis script](.travis.yml).
+Batsim uses [Kameleon](http://kameleon.imag.fr/index.html) to build controlled
+environments. These environments allow us to generate Docker containers, which
+are used by [our CI](https://gitlab.inria.fr/batsim/batsim/pipelines) to test
+whether Batsim can be built correctly and whether some integration tests pass.
+
+Thus, the most up-to-date information about how to build Batsim's dependencies
+and Batsim itself can be found in our Kameleon recipes:
+  - [batsim_ci.yaml](environments/batsim_ci.yaml), for the dependencies (Debian)
+  - [batsim.yaml](environments/batsim.yaml), for Batsim (Debian)
+
+However, some information is also written below for simplicity's sake, but
+please note it might be outdated.
 
 ### Dependencies
 
 Batsim's dependencies are listed below:
--   SimGrid (we recommend the batsim-compatible branch of our fork:
-    https://github.com/oar-team/simgrid-batsim/tree/batsim-compatible)
+-   SimGrid (recommended commit: dccf1b41e9c7b)
 -   RapidJSON (1.02 or greater)
 -   Boost 1.58 or greater (system, filesystem)
 -   C++11 compiler
