@@ -78,7 +78,9 @@ whether Batsim can be built correctly and whether some integration tests pass.
 Thus, the most up-to-date information about how to build Batsim's dependencies
 and Batsim itself can be found in our Kameleon recipes:
   - [batsim_ci.yaml](environments/batsim_ci.yaml), for the dependencies (Debian)
-  - [batsim.yaml](environments/batsim.yaml), for Batsim (Debian)
+  - [batsim.yaml](environments/batsim.yaml), for Batsim itself (Debian)
+  - Please note that [the steps directory](environments/steps/) contain
+    subcommands that can be used by the recipes.
 
 However, some information is also written below for simplicity's sake, but
 please note it might be outdated.
