@@ -218,21 +218,6 @@ Other options:
 
 ```
 
-#### Display information control
-
-Batsim has its own set of options but it can also handle standard SimGrid ones.
-The end-of-options delimiter "--" must then be used to use SimGrid options.
-
-``` bash
-# Display Batsim options/help
-batsim --help
-```
-
-``` bash
-# Display SimGrid options/help
-batsim -- --help
-```
-
 #### Executing complete experiments
 If you want to run more complex scenarios, giving a look at our
 [experiment tools](./tools/experiments) may save you some time!
