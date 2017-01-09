@@ -673,11 +673,28 @@ def execute_instances(base_working_directory,
     while worker_shared_data.nb_workers_finished < nb_workers:
         sleep(0.5)
 
+    # Let's compute which instances failed
+    done_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
+                             'status':'done'} for x in sweeper.get_done()])
+    skipped_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
+                             'status':'skipped'} for x in sweeper.get_skipped()])
+    status_df = pd.concat([done_df, skipped_df])
+
+    # Let's log this into the CSV file
+    joined_df = pd.merge(instances_df, status_df, on='instance_id')
+    joined_df.to_csv('{base_output_dir}/instances/instances_info.csv'.format(
+                        base_output_dir = base_output_directory),
+                     index = False, na_rep = 'NA')
+
+
     # Let's check that all instances have been executed successfully
     success = len(sweeper.get_skipped()) == 0
     logger.info('{} instances have been executed successfully'.format(len(sweeper.get_done())))
     if not success:
         logger.warning('{} instances have been skipped'.format(len(sweeper.get_skipped())))
+        logger.warning('Information about these instances can be found in file {}'.format(
+            '{base_output_dir}/instances/instances_info.csv'.format(
+                            base_output_dir = base_output_directory)))
     return (success, worker_shared_data.post_command_failed)
 
 def main():
