@@ -216,10 +216,12 @@ def check_variables(variables):
         in_depth_values = find_all_values(variables[var_name])
         logger.debug("in_depth_values of {}: {}".format(var_name, in_depth_values))
         for potential_dependency_name in variables:
-            substr = '${' + potential_dependency_name
+            r = re.compile('.*\${' + potential_dependency_name + '[\[}].*')
             for depth_value in in_depth_values:
-                if substr in depth_value:
+                if r.match(depth_value):
                     dependencies[var_name].add(potential_dependency_name)
+
+    logger.debug('Dependencies : {}'.format(dependencies))
 
     # Let's sort the variables by ascending number of dependencies
     ordered = [(len(dependencies[var_name]), var_name, dependencies[var_name]) for var_name in dependencies]
