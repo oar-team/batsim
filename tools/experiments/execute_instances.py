@@ -10,6 +10,7 @@ from execo_engine import *
 from execute_one_instance import *
 import pandas as pd
 import hashlib
+import signal
 
 class hashabledict(dict):
     def __hash__(self):
@@ -28,6 +29,30 @@ def flatten_dict(init, lkey=''):
         else:
             ret[key] = val
     return ret
+
+# This function uses ugly globals (search for the 'global' keyword to find them)
+def signal_handler(signal, frame):
+    print('Interruption signal received!')
+
+    if len(instances_df) > 0:
+        print('Saving current status in {}'.format(instances_df_filename))
+
+        done_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
+                                 'status':'done'} for x in sweeper.get_done()])
+        skipped_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
+                                    'status':'skipped'} for x in sweeper.get_skipped()])
+        remaining_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
+                                    'status':'remaining'} for x in sweeper.get_remaining()])
+        inprogress_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
+                                    'status':'inprogress'} for x in sweeper.get_inprogress()])
+
+        status_df = pd.concat([done_df, skipped_df, remaining_df, inprogress_df])
+
+        joined_df = pd.merge(instances_df, status_df, on='instance_id')
+        joined_df.to_csv(instances_df_filename, index = False, na_rep = 'NA')
+
+    print('Aborting.')
+    sys.exit(1)
 
 def instance_id_from_comb(comb, hash_length):
     fdict = flatten_dict(comb)
@@ -550,6 +575,7 @@ def execute_instances(base_working_directory,
     # Let's generate all instances that should be executed
     combs = generate_instances_combs(implicit_instances = implicit_instances,
                                      explicit_instances = explicit_instances)
+    global sweeper
     sweeper = ParamSweeper('{out}/sweeper'.format(out = base_output_directory),
                            combs)
 
@@ -557,6 +583,7 @@ def execute_instances(base_working_directory,
     all_combs = sweeper.get_remaining() | sweeper.get_done() | \
                 sweeper.get_skipped() | sweeper.get_inprogress()
 
+    global hash_length
     hash_length = 8
     rows_list = []
     for comb in all_combs:
@@ -566,6 +593,11 @@ def execute_instances(base_working_directory,
         rows_list.append(row_dict)
 
     # Let's generate the instances data frame
+    global instances_df
+    global instances_df_filename
+    instances_df_filename = '{base_output_dir}/instances/instances_info.csv'.format(
+                                base_output_dir = base_output_directory)
+
     instances_df = pd.DataFrame(rows_list)
 
     # Let's check that instance ids are unique
@@ -577,10 +609,7 @@ def execute_instances(base_working_directory,
     # Let's save the dataframe into a csv file
     create_dir_if_not_exists('{base_output_dir}/instances'.format(
                                   base_output_dir = base_output_directory))
-    instances_df.to_csv('{base_output_dir}/instances/instances_info.csv'.format(
-                            base_output_dir = base_output_directory),
-                        index = False, na_rep = 'NA')
-
+    instances_df.to_csv(instances_df_filename, index = False, na_rep = 'NA')
 
     if mark_as_cancelled_lambda == '':
         if len(sweeper.get_done()) > 0:
@@ -682,9 +711,7 @@ def execute_instances(base_working_directory,
 
     # Let's log this into the CSV file
     joined_df = pd.merge(instances_df, status_df, on='instance_id')
-    joined_df.to_csv('{base_output_dir}/instances/instances_info.csv'.format(
-                        base_output_dir = base_output_directory),
-                     index = False, na_rep = 'NA')
+    joined_df.to_csv(instances_df_filename, index = False, na_rep = 'NA')
 
 
     # Let's check that all instances have been executed successfully
@@ -707,6 +734,8 @@ more details.
 These instances can also be grouped into one YAML file. Examples of such files
 can be found in the instances_examples subdirectory.
 '''
+
+    signal.signal(signal.SIGINT, signal_handler)
 
     # Program parameters parsing
     p = argparse.ArgumentParser(description = script_description)
