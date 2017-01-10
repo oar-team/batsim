@@ -84,6 +84,12 @@ std::string ipMessageTypeToString(IPMessageType type)
         case IPMessageType::SCHED_TELL_ME_ENERGY:
             s = "SCHED_TELL_ME_ENERGY";
             break;
+        case IPMessageType::SCHED_WAIT_ANSWER:
+            s = "SCHED_WAIT_ANSWER";
+            break;
+        case IPMessageType::WAIT_QUERY:
+            s = "WAIT_QUERY";
+            break;
         case IPMessageType::SCHED_READY:
             s = "SCHED_READY";
             break;
@@ -162,6 +168,16 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
         {
+        } break;
+        case IPMessageType::WAIT_QUERY:
+        {
+            WaitQueryMessage * msg = (WaitQueryMessage *) data;
+            delete msg;
+        } break;
+        case IPMessageType::SCHED_WAIT_ANSWER:
+        {
+            SchedWaitAnswerMessage * msg = (SchedWaitAnswerMessage *) data;
+            delete msg;	  
         } break;
         case IPMessageType::SCHED_READY:
         {

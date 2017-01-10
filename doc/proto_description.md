@@ -57,6 +57,8 @@ the job ID of the job which just completed. This part is not mandatory, it depen
 |        3+       |   Z   | Batsim->Sched | No content                      | Batsim tells the scheduler that the simulation is about to end (all jobs have been submitted and completed/rejected)
 |        3+       |   F   | Batsim->Sched | MID1,MID2,MIDn                  | Batsim tells the scheduler that the given machines are in a failure state (crashed, no jobs can be computed on them). Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
 |        3+       |   f   | Batsim->Sched | MID1,MID2,MIDn                  | Batsim tells the scheduler that the given machines are no longer in a failure state (jobs can now be computed on them). Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
+|        4+       |   Q   | Batsim->Sched | REQ1[;...]                      | Batsim queries the scheduler about potential waiting times for requested number of processors.
+|        4+       |   W   | Sched->Batsim | REQ1=WAIT1[;...]                | Scheduler notifies Batsim about potential waiting times for requested number of processors.
 
 # Message Examples #
 

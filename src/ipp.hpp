@@ -58,6 +58,8 @@ enum class IPMessageType
     ,SCHED_NOP              //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a NOP message).
     ,SCHED_NOP_ME_LATER     //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a NOP_ME_LATTER message).
     ,SCHED_TELL_ME_ENERGY   //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a TELL_ME_CONSUMED_ENERGY message).
+    ,SCHED_WAIT_ANSWER      //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a WAIT_ANSWER message).
+    ,WAIT_QUERY             //!< Server -> SchedulerHandler. The scheduler handler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,SCHED_READY            //!< SchedulerHandler -> Server. The scheduler handler tells the server that the scheduler is ready (messages can be sent to it).
     ,WAITING_DONE           //!< Waiter -> server. The waiter tells the server that the target time has been reached.
     ,SUBMITTER_HELLO        //!< Submitter -> Server. The submitter tells it starts submitting to the server.
@@ -151,6 +153,23 @@ struct PStateModificationMessage
 struct NOPMeLaterMessage
 {
     double target_time; //!< The time at which Batsim should send a NOP message to the decision real process
+};
+
+/**
+ * @brief The content of the WaitQuery message
+ */
+struct WaitQueryMessage
+{
+    int nb_resources; //!< The number of resources for which we would like to know the waiting time
+};
+
+/**
+ * @brief The content of the SchedWaitAnswer message
+ */
+struct SchedWaitAnswerMessage
+{
+    int nb_resources; //!< The number of resources for which we would like to know the waiting time
+    double expected_time; //!< The expected waiting time supplied by the scheduler
 };
 
 /**

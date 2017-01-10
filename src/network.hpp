@@ -24,7 +24,9 @@ enum NetworkStamp : char
     ,NOP_ME_LATER = 'n' //!< Decision -> Batsim. The Decision real process wants to be awaken at a future simulation time
     ,TELL_ME_CONSUMED_ENERGY = 'E' //!< Decision -> Batsim. The Decision real process wants to know how much energy has been consumed on computing machines since the beginning of the simulation
     ,PSTATE_HAS_BEEN_SET = 'p' //!< Batsim -> Decision. Batsim acknowledges that the power state of one of several machines has been changed
+    ,QUERY_WAIT = 'Q' //!< Batsim -> Decision. Batsim queries the Decision process on the waiting time to get a given amount of resources
     ,CONSUMED_ENERGY = 'e' //!< Batsim -> Decision. Batsim tells the Decision process how much energy has been used since the beginning of the simulation
+    ,ANSWER_WAIT = 'W' //!< Decision -> Batsim. The Decision process answers to Batsim on the waiting time to get a given amount of resources
 };
 
 /**
