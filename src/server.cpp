@@ -429,6 +429,18 @@ int uds_server_process(int argc, char *argv[])
 
         } break; // end of case SCHED_READY
 
+        case IPMessageType::SCHED_WAIT_ANSWER:
+        {
+            xbt_assert(false, "The server received a SCHED_WAIT_ANSWER message, which should not happen");
+	  
+        } break; // end of case SCHED_WAIT_ANSWER
+
+        case IPMessageType::WAIT_QUERY:
+        {
+            xbt_assert(false, "The server received a WAIT_QUERY message, which should not happen");
+
+        } break; // end of case WAIT_QUERY
+
         case IPMessageType::SWITCHED_ON:
         {
             xbt_assert(task_data->data != nullptr);
