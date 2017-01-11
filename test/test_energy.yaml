@@ -19,7 +19,6 @@ implicit_instances:
         - {"name":"medium", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example.json"}
       pybatsim_algo:
         - {"name":"filler", "algo_name":"fillerSched"}
-        - {"name":"easy", "algo_name":"easyBackfillNotopo"}
     generic_instance:
       timeout: 10
       working_directory: ${base_working_directory}

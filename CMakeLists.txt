@@ -237,8 +237,8 @@ add_test(same_submit_time
          -bod /tmp/batsim_tests/same_submit_time
          -bwd ${CMAKE_SOURCE_DIR})
 
-
-
-
-
-
+add_test(pybatsim_tests
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/pybatsim_tests.yaml
+         -bod /tmp/pybatsim_tests
+         -bwd ${CMAKE_SOURCE_DIR})

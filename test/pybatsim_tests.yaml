@@ -1,10 +1,4 @@
-# This script should be called from Batsim's root directory
-
-# If needed, the working directory of this script can be specified within this file
-#base_working_directory: ~/proj/batsim
-
-# If needed, the output directory of this script can be specified within this file
-base_output_directory: /tmp/batsim_tests/no_energy
+base_output_directory: /tmp/pybatsim_tests/
 
 base_variables:
   batsim_dir: ${base_working_directory}
@@ -19,11 +13,15 @@ implicit_instances:
         - {"name":"medium", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example.json"}
       pybatsim_algo:
         - {"name":"filler", "algo_name":"fillerSched"}
+        - {"name":"easy", "algo_name":"easyBackfill"}
+        - {"name":"easy_no_topo", "algo_name":"easyBackfillNotopo"}
+      energy_string: ['', '-E']
+
     generic_instance:
       timeout: 10
       working_directory: ${base_working_directory}
-      output_directory: ${base_output_directory}/results/${pybatsim_algo[name]}_${workload[name]}_${platform[name]}
-      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out -s ${output_directory}/socket --mmax-workload
+      output_directory: ${base_output_directory}/results/${instance_id}
+      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out -s ${output_directory}/socket --mmax-workload ${energy_string}
       sched_command: python2 ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo[algo_name]} -s ${output_directory}/socket
 
 commands_before_instances:
