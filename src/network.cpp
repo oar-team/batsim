@@ -460,8 +460,8 @@ int request_reply_scheduler_process(int argc, char *argv[])
 
             case ANSWER_WAIT:
             {
-                xbt_assert(parts2.size() == 2, "Invalid event received ('%s'): messages to ask the consumed energy must be composed of 2 parts separated by ':'",
-                           event_string.c_str());
+                xbt_assert(parts2.size() == 2, "Invalid event received ('%s'): messages to ask the waiting time must be composed of 2 parts separated by ':'",
+                           event_string.c_str()); // TODO: do something meaningful here !
                 send_message("server", IPMessageType::SCHED_WAIT_ANSWER);
             } break; // End of case received_stamp == ANSWER_WAIT
 
