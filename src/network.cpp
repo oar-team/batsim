@@ -460,9 +460,26 @@ int request_reply_scheduler_process(int argc, char *argv[])
 
             case ANSWER_WAIT:
             {
-                xbt_assert(parts2.size() == 2, "Invalid event received ('%s'): messages to ask the waiting time must be composed of 2 parts separated by ':'",
-                           event_string.c_str()); // TODO: do something meaningful here !
-                send_message("server", IPMessageType::SCHED_WAIT_ANSWER);
+                xbt_assert(parts2.size() == 3, "Invalid event received ('%s'): messages to ask the waiting time must be composed of 3 parts separated by ':'",
+                           event_string.c_str());
+
+		SchedWaitAnswerMessage * message = new SchedWaitAnswerMessage;
+
+                vector<string> parts3;
+                boost::split(parts3, parts2[2], boost::is_any_of(","), boost::token_compress_on);
+                xbt_assert(parts3.size() == 3, "Invalid event received ('%s'): invalid wait answer message content ('%s'): it must be"
+                           " formated like R,T,W where R is the number of requested resource, T the requested walltime and W the waiting time",
+                           event_string.c_str(), parts2[2].c_str());
+
+                int nb_resources = std::stoi(parts3[0]);
+		double processing_time = std::stod(parts3[1]);
+		double expected_time = std::stod(parts3[2]);
+
+		message->nb_resources = nb_resources;
+		message->processing_time = processing_time;
+		message->expected_time = expected_time;
+		
+                send_message("server", IPMessageType::SCHED_WAIT_ANSWER, (void*) message);
             } break; // End of case received_stamp == ANSWER_WAIT
 
             default:

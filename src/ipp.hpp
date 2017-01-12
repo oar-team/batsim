@@ -161,7 +161,7 @@ struct NOPMeLaterMessage
 struct WaitQueryMessage
 {
     int nb_resources;    //!< The number of resources for which we would like to know the waiting time
-    int processing_time; //!< The duration for which the resources would be used
+    double processing_time; //!< The duration for which the resources would be used
 };
 
 /**
@@ -169,6 +169,8 @@ struct WaitQueryMessage
  */
 struct SchedWaitAnswerMessage
 {
+    int nb_resources;    //!< The number of resources for which we would like to know the waiting time
+    double processing_time; //!< The duration for which the resources would be used
     double expected_time; //!< The expected waiting time supplied by the scheduler
 };
 
