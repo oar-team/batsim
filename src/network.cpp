@@ -467,14 +467,15 @@ int request_reply_scheduler_process(int argc, char *argv[])
 
                 vector<string> parts3;
                 boost::split(parts3, parts2[2], boost::is_any_of(","), boost::token_compress_on);
-                xbt_assert(parts3.size() == 3, "Invalid event received ('%s'): invalid wait answer message content ('%s'): it must be"
-                           " formated like R,T,W where R is the number of requested resource, T the requested walltime and W the waiting time",
-                           event_string.c_str(), parts2[2].c_str());
+		//                xbt_assert(parts3.size() == 3, "Invalid event received ('%s'): invalid wait answer message content ('%s'): it must be"
+		//                           " formated like R,T,W where R is the number of requested resource, T the requested walltime and W the waiting time",
+		//                           event_string.c_str(), parts2[2].c_str());
 
-                int nb_resources = std::stoi(parts3[0]);
-		double processing_time = std::stod(parts3[1]);
-		double expected_time = std::stod(parts3[2]);
+                int nb_resources = std::stoi(parts3[1]);
+		double processing_time = std::stod(parts3[2]);
+		double expected_time = std::stod(parts3[3]);
 
+		message->submitter_name = parts3[0];
 		message->nb_resources = nb_resources;
 		message->processing_time = processing_time;
 		message->expected_time = expected_time;
