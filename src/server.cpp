@@ -50,8 +50,11 @@ int uds_server_process(int argc, char *argv[])
 
     map<string, Submitter*> submitters;
 
-    // Let's store the origin or some jobs
+    // Let's store the origin of some jobs
     map<JobIdentifier, Submitter*> origin_of_jobs;
+
+    // Let's store the origin of wait queries
+    map<std::pair<int,double>, Submitter*> origin_of_wait_queries;
 
     string send_buffer;
 
@@ -431,10 +434,16 @@ int uds_server_process(int argc, char *argv[])
 
         case IPMessageType::SCHED_WAIT_ANSWER:
         {
-	  SchedWaitAnswerMessage  * message = (SchedWaitAnswerMessage *) task_data->data;
-            xbt_assert(false, "The server received a SCHED_WAIT_ANSWER message, which should not happen");
-	    // TODO: send the relevant info to the submitter
+	  SchedWaitAnswerMessage * message = new SchedWaitAnswerMessage;
+	  *message = *( (SchedWaitAnswerMessage *) task_data->data);
+
+	  Submitter * submitter = origin_of_wait_queries.at({message->nb_resources,message->processing_time});
+
 	  
+	  dsend_message(submitter->mailbox, IPMessageType::SCHED_WAIT_ANSWER, (void*) message);
+
+	  origin_of_wait_queries.erase({message->nb_resources,message->processing_time});
+
         } break; // end of case SCHED_WAIT_ANSWER
 
         case IPMessageType::WAIT_QUERY:
@@ -444,9 +453,12 @@ int uds_server_process(int argc, char *argv[])
 	  //	  XBT_INFO("received : %s , %s\n", to_string(message->nb_resources).c_str(), to_string(message->processing_time).c_str());
 	  send_buffer += "|" + std::to_string(MSG_get_clock()) + ":Q:"
 	    + to_string(message->nb_resources).c_str() + ","
-	    + to_string(message->processing_time).c_str();
+	    + boost::lexical_cast<string>(message->processing_time).c_str();
 	  //	  XBT_INFO("INFO!!! Message to send to scheduler : '%s'", send_buffer.c_str());
-		
+
+	  Submitter * submitter = submitters.at(message->submitter_name);
+	  origin_of_wait_queries[{message->nb_resources,message->processing_time}] = submitter;
+	  
         } break; // end of case WAIT_QUERY
 
         case IPMessageType::SWITCHED_ON:

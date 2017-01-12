@@ -134,6 +134,7 @@ int static_job_submitter_process(int argc, char *argv[])
 
 static string submit_workflow_task_as_job(BatsimContext *context, string workflow_name, string submitter_name, Task *task);
 static string wait_for_job_completion(string submitter_name);
+static std::tuple<int,double,double> wait_for_query_answer(string submitter_name);
 
 /* Ugly Global */
 std::map<std::string, int> task_id_counters;
@@ -304,6 +305,18 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     msg->job_id.job_number = job_number;
     send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
 
+    // Test Wait Query    
+    WaitQueryMessage * message = new WaitQueryMessage;
+    message->submitter_name = submitter_name;
+    message->nb_resources = task->num_procs;
+    message->processing_time = walltime;		
+    send_message("server", IPMessageType::WAIT_QUERY, (void*)message);
+
+    // Test Answer
+    std::tuple<int,double,double> answer;
+    answer = wait_for_query_answer(submitter_name);
+    XBT_INFO("Got my answer : %f", std::get<2>(answer));
+    
     // Create an ID to return
     string id_to_return = workload_name + "!" + std::to_string(job_number);
 
@@ -328,5 +341,24 @@ static string wait_for_job_completion(string submitter_name) {
 
     return  notification_data->job_id.workload_name + "!" +
             std::to_string(notification_data->job_id.job_number);
+
+}
+
+/**
+ * @brief TODO
+ * @param submitter_name TODO
+ * @return TODO
+ */
+static std::tuple<int,double,double> wait_for_query_answer(string submitter_name) {
+    msg_task_t task_notification = NULL;
+    IPMessage *task_notification_data;
+    MSG_task_receive(&(task_notification), submitter_name.c_str());
+    task_notification_data = (IPMessage *) MSG_task_get_data(task_notification);
+    SchedWaitAnswerMessage *res =
+        (SchedWaitAnswerMessage *) task_notification_data->data;
+
+    XBT_INFO("Returning : %d  %f  %f", res->nb_resources, res->processing_time, res->expected_time);
+    
+    return {res->nb_resources, res->processing_time, res->expected_time};
 
 }

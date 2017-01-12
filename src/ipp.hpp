@@ -160,6 +160,7 @@ struct NOPMeLaterMessage
  */
 struct WaitQueryMessage
 {
+    std::string submitter_name; //!< The name of the submitter which submitted the job.
     int nb_resources;    //!< The number of resources for which we would like to know the waiting time
     double processing_time; //!< The duration for which the resources would be used
 };
