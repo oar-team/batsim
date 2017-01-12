@@ -431,14 +431,22 @@ int uds_server_process(int argc, char *argv[])
 
         case IPMessageType::SCHED_WAIT_ANSWER:
         {
+	  SchedWaitAnswerMessage  * message = (SchedWaitAnswerMessage *) task_data->data;
             xbt_assert(false, "The server received a SCHED_WAIT_ANSWER message, which should not happen");
+	    // TODO: send the relevant info to the submitter
 	  
         } break; // end of case SCHED_WAIT_ANSWER
 
         case IPMessageType::WAIT_QUERY:
         {
-            xbt_assert(false, "The server received a WAIT_QUERY message, which should not happen");
+	  WaitQueryMessage  * message = (WaitQueryMessage *) task_data->data;
 
+	  //	  XBT_INFO("received : %s , %s\n", to_string(message->nb_resources).c_str(), to_string(message->processing_time).c_str());
+	  send_buffer += "|" + std::to_string(MSG_get_clock()) + ":Q:"
+	    + to_string(message->nb_resources).c_str() + ","
+	    + to_string(message->processing_time).c_str();
+	  //	  XBT_INFO("INFO!!! Message to send to scheduler : '%s'", send_buffer.c_str());
+		
         } break; // end of case WAIT_QUERY
 
         case IPMessageType::SWITCHED_ON:
