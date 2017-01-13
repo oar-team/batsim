@@ -29,7 +29,7 @@ global:
   simctn_dir: /root
 
   simgrid_commit: dccf1b41e9c7b # Wed Nov 30 14:08:01 2016
-  execo_commit: 725fddc
+  execo_commit: 406f4fa06 # 2016-12-09 19:00. Process cwd parameter.
 
 bootstrap:
   - "@base"
@@ -94,7 +94,8 @@ setup:
       - exec_in: pip2 install sortedcontainers redis
       - exec_in: |
           cd $${simctn_dir}
-          git clone https://github.com/mickours/execo.git
+          # fork kept as long as the cwd commit is not merged upstream
+          git clone https://github.com/mpoquet/execo.git
           cd execo
           git checkout $${execo_commit}
           pip install -e .
