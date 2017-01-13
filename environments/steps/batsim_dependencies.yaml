@@ -1,0 +1,47 @@
+- work_dir: /root
+
+# Need testing to be available
+- install dependencies:
+  - exec_in: |
+      apt-get -y -t testing install \
+      libboost-all-dev \
+      libgmp-dev \
+      redis-server \
+      libhiredis-dev \
+      libev-dev \
+      python-yaml \
+      libssl-dev 2>&1
+  # Install rapidjson (not available in jessie)
+  - exec_in: |
+      cd $${work_dir}
+      git clone https://github.com/miloyip/rapidjson.git
+  - exec_in: |
+      cd $${work_dir}/rapidjson
+      git checkout 3d5848a # v1.02
+      cp -a include/rapidjson /usr/include
+  - exec_in: |
+      cd $${work_dir}
+      git clone https://github.com/hmartiro/redox.git
+      cd redox
+      git checkout $${simgrid_commit}
+      mkdir build
+      cd build
+      cmake .. -DCMAKE_INSTALL_PREFIX=../install
+      make -j $(nproc)
+      make install
+      cd ../install
+      mv -f lib64 lib
+      sudo cp -r ./* /usr/
+- install_test_dependencies:
+  - exec_in: apt install -y -t testing python-pip valgrind python-pandas
+  - exec_in: pip2 install sortedcontainers redis
+  - exec_in: |
+      cd $${work_dir}
+      git clone https://github.com/mickours/execo.git
+      cd execo
+      git checkout $${execo_commit}
+      pip install -e .
+- install_doc_dependencies:
+  - exec_in: apt install -y -t testing doxygen graphviz
+
+

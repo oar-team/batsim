@@ -14,26 +14,14 @@ global:
   to_docker_image: oarteam/batsim:latest
   dir: /root
 
-  batsim_commit: 9a300be66 # Mon Jan 9 16:17:09 2017
+  batsim_commit: c9542e1c3ff5ffff
 
 bootstrap:
   - "@base"
 
 setup:
-  - build_and_install_batsim:
-    - do_it:
-      - exec_in: |
-          cd $${dir}
-          git clone https://github.com/oar-team/batsim.git
-      - exec_in: |
-          cd $${dir}/batsim
-          git checkout $${batsim_commit}
-          mkdir build
-      - exec_in: |
-          cd $${dir}/batsim/build
-          cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/g++-6
-          make -j$(nproc)
-          make install
+  - batsim_build_and_install
+
 export:
   - "@base"
   - tag_and_push_image:
