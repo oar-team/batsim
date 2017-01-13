@@ -29,7 +29,7 @@ global:
   work_dir: /root
 
   simgrid_commit: dccf1b41e9c7b # Wed Nov 30 14:08:01 2016
-  execo_commit: 725fddc
+  execo_commit: 75d668d
 
 bootstrap:
   - "@base"
