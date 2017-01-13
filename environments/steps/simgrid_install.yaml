@@ -25,7 +25,7 @@
       git clone https://github.com/simgrid/simgrid.git
   - exec_in: |
       cd $${work_dir}/simgrid
-      git checkout $${commit_hash}
+      git checkout $${simgrid_commit}
       mkdir build
   - exec_in: |
       cd $${work_dir}/simgrid/build

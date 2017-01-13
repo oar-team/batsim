@@ -1,14 +1,14 @@
 - clone:
   - exec_in: |
-      cd $${dir}
+      cd $${work_dir}
       git clone https://github.com/oar-team/batsim.git
   - exec_in: |
-      cd $${dir}/batsim
+      cd $${work_dir}/batsim
       git checkout $${batsim_commit}
       mkdir build
 - make_and_install:
   - exec_in: |
-      cd $${dir}/batsim/build
+      cd $${work_dir}/batsim/build
       cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/g++-6
       make -j$(nproc)
       make install

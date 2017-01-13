@@ -31,7 +31,7 @@
       make install
       cd ../install
       mv -f lib64 lib
-      sudo cp -r ./* /usr/
+      cp -r ./* /usr/
 - install_test_dependencies:
   - exec_in: apt install -y -t testing python-pip valgrind python-pandas
   - exec_in: pip2 install sortedcontainers redis
