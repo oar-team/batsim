@@ -1,0 +1,29 @@
+# A C++ Batch Scheduler for Batsim
+#
+# You have to specify the desired "commit_hash" to be built.
+# Optionally you can specify the working directory.
+#
+# Usage example:
+# global:
+#   batsched_commit: 1a2e210e
+# setup:
+#   - commit_hash: $${batsched_commit}
+#   # Optional
+#   - work_dir: /tmp
+
+- work_dir: /root
+
+# Same dependencies as Batsim
+- get_it:
+  - exec_in: |
+      mkdir -p $${work_dir}
+      cd $${work_dir}
+      git clone git@gitlab.inria.fr:batsim/batsched.git
+  - exec_in: |
+      cd $${work_dir}/batsched
+      git checkout $${commit_hash}
+      mkdir -p build
+      cd build
+      cmake -DCMAKE_BUILD_TYPE=DEBUG ..
+      make
+      make install
