@@ -3,7 +3,7 @@ Experiment tools
 
 This directory contains scripts that can be used to make experimenting with Batsim easier.
 
-These scripts are written in Python 2 (because Execo does not handle python 3 yet).
+These scripts are written in Python 2 but should be compatible with Python 3.
 
 Dependencies
 ------------
@@ -18,9 +18,9 @@ the moment.
 
 #### Installation
 ``` bash
-git clone https://github.com/mickours/execo.git
+cd $${simctn_dir}
 cd execo
-git checkout 725fddc # cwd support
+git checkout 406f4fa06 # cwd support
 # Make sure you have no execo already installed before the next step
 # Otherwise, conflicts might occur (try pip2 uninstall execo)
 pip2 install --user .
