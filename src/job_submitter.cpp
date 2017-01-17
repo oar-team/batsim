@@ -305,17 +305,17 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     msg->job_id.job_number = job_number;
     send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
 
-    // Test Wait Query    
-    WaitQueryMessage * message = new WaitQueryMessage;
-    message->submitter_name = submitter_name;
-    message->nb_resources = task->num_procs;
-    message->processing_time = walltime;		
-    send_message("server", IPMessageType::WAIT_QUERY, (void*)message);
+    // HOWTO Test Wait Query    
+    // WaitQueryMessage * message = new WaitQueryMessage;
+    // message->submitter_name = submitter_name;
+    // message->nb_resources = task->num_procs;
+    // message->processing_time = walltime;		
+    // send_message("server", IPMessageType::WAIT_QUERY, (void*)message);
 
-    // Test Answer
-    std::tuple<int,double,double> answer;
-    answer = wait_for_query_answer(submitter_name);
-    XBT_INFO("Got my answer : %f", std::get<2>(answer));
+    // HOWTO Test Answer
+    // std::tuple<int,double,double> answer;
+    // answer = wait_for_query_answer(submitter_name);
+    // XBT_INFO("Got my answer : %f", std::get<2>(answer));
     
     // Create an ID to return
     string id_to_return = workload_name + "!" + std::to_string(job_number);
