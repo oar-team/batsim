@@ -169,7 +169,7 @@ for event in events:
 ##############
 
 writer = csv.DictWriter(args.outputCSV,
-                        fieldnames=["jobID",
+                        fieldnames=["job_id",
                         			"submission_time",
                         			"requested_number_of_processors",
                         			"requested_time",
@@ -187,7 +187,7 @@ writer.writeheader()
 for job_id in jobs:
 	job = jobs[job_id]
 
-	d = {"jobID" : job.job_id,
+	d = {"job_id" : job.job_id,
 		 "submission_time" : job.submit_time,
 		 "requested_number_of_processors" : job.nb_res,
 		 "requested_time" : job.wall_time,

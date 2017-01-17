@@ -88,7 +88,7 @@ jobs = {}
 reader = csv.DictReader(args.inputCSV)
 
 for row in reader:
-	job_id = int(row["jobID"])
+	job_id = int(row["job_id"])
 	submit_time = float(row["submission_time"])
 	nb_res = int(row["requested_number_of_processors"])
 	wall_time = float(row["requested_time"])
