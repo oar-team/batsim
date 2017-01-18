@@ -317,6 +317,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     // std::tuple<int,double,double> answer;
     // answer = wait_for_query_answer(submitter_name);
     // XBT_INFO("Got my answer : %f", std::get<2>(answer));
+    (void)wait_for_query_answer; // Horrible hack to silence "unused" warning.
 
     // Create an ID to return
     string id_to_return = workload_name + "!" + std::to_string(job_number);
