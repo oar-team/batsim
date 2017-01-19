@@ -22,7 +22,7 @@
   - exec_in: |
       mkdir -p $${work_dir}
       cd $${work_dir}
-      git clone https://github.com/simgrid/simgrid.git
+      git clone https://github.com/mpoquet/simgrid.git
   - exec_in: |
       cd $${work_dir}/simgrid
       git checkout $${simgrid_commit}

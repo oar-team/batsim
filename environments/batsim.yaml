@@ -12,7 +12,7 @@ global:
   backend: docker
   from_docker_image: oarteam/batsim_ci:latest
   to_docker_image: oarteam/batsim:latest
-  dir: /root
+  work_dir: /root
 
   batsim_commit: c9542e1c3ff5ffff
 

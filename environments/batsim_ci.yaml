@@ -28,7 +28,7 @@ global:
   hostname: batsim
   work_dir: /root
 
-  simgrid_commit: dccf1b41e9c7b # Wed Nov 30 14:08:01 2016
+  simgrid_commit: 587483ebe7882e # Fri Jan 6 15:45:05 2017
   execo_commit: 75d668d
 
 bootstrap:

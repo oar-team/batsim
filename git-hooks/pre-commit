@@ -41,7 +41,7 @@ fi
 # Let's check that tests run correctly
 echo -n "Checking whether tests pass..."
 cd ${base_dir}/build
-ctest -E smpi
+ctest
 failed=$?
 
 # Let's stop the redis server if it has been launched by this script
