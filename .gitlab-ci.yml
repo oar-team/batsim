@@ -68,7 +68,7 @@ test:
 
     - cd /builds/batsim/batsim/build
     - make install
-    - ctest
+    - ctest -V
   dependencies:
     - build:clang
 
