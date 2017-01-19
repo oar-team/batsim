@@ -135,6 +135,7 @@ int static_job_submitter_process(int argc, char *argv[])
 
 static string submit_workflow_task_as_job(BatsimContext *context, string workflow_name, string submitter_name, Task *task);
 static string wait_for_job_completion(string submitter_name);
+static std::tuple<int,double,double> wait_for_query_answer(string submitter_name);
 
 /* Ugly Global */
 std::map<std::string, int> task_id_counters;
@@ -159,7 +160,7 @@ int workflow_submitter_process(int argc, char *argv[])
     const string submitter_name = args->workflow_name + "_submitter";
 
     XBT_INFO("New Workflow submitter for workflow %s (start time = %lf)!",
-             args->workflow_name.c_str(),workflow->start_time);
+                  args->workflow_name.c_str(),workflow->start_time);
 
     /* Initializing my task_id counter */
     task_id_counters[workflow->name] = 0;
@@ -178,7 +179,7 @@ int workflow_submitter_process(int argc, char *argv[])
 
     /* Wait until the workflow start-time */
     if (workflow->start_time > MSG_get_clock()) {
-        XBT_INFO("Warning: already past workflow start time! (%lf)", workflow->start_time);
+      XBT_INFO("Warning: already past workflow start time! (%lf)", workflow->start_time);
     }
     MSG_process_sleep(MAX(0.0, workflow->start_time - MSG_get_clock()));
 
@@ -199,14 +200,14 @@ int workflow_submitter_process(int argc, char *argv[])
 
             /* Insert the task into the submitted_tasks map */
             submitted_tasks[job_key] = task;
-            current_nb++;
+	    current_nb++;
         }
 
         if(!submitted_tasks.empty()) /* we are done submitting tasks, wait for one to complete */
         {
             /* Wait for callback */
             string completed_job_key = wait_for_job_completion(submitter_name);
-            current_nb--;
+	    current_nb--;
 
             //XBT_INFO("TASK # %s has completed!!!\n", completed_job_key.c_str());
 
@@ -238,7 +239,7 @@ int workflow_submitter_process(int argc, char *argv[])
     XBT_INFO("WORKFLOW_MAKESPAN %s %lf  (depth = %d)\n", workflow->filename.c_str(), makespan, workflow->get_maximum_depth());
     // This is a TERRIBLE exit, but the goal is to stop the simulation (don't keep simulated the workload beyond
     // the worflow completion). This is much more brutal than the -k option. To be removed/commented-out later, but right
-    // now it saves a lot of time, and was obviously easy to implement.
+    // now it saves a lot of time, and was obviously easy to implement. 
     exit(0);
 
     /* Goodbye */
@@ -305,6 +306,19 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     msg->job_id.job_number = job_number;
     send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
 
+    // HOWTO Test Wait Query    
+    // WaitQueryMessage * message = new WaitQueryMessage;
+    // message->submitter_name = submitter_name;
+    // message->nb_resources = task->num_procs;
+    // message->processing_time = walltime;		
+    // send_message("server", IPMessageType::WAIT_QUERY, (void*)message);
+
+    // HOWTO Test Answer
+    // std::tuple<int,double,double> answer;
+    // answer = wait_for_query_answer(submitter_name);
+    // XBT_INFO("Got my answer : %f", std::get<2>(answer));
+    (void)wait_for_query_answer; // Horrible hack to silence "unused" warning.
+
     // Create an ID to return
     string id_to_return = workload_name + "!" + std::to_string(job_number);
 
@@ -329,8 +343,27 @@ static string wait_for_job_completion(string submitter_name) {
 
     return  notification_data->job_id.workload_name + "!" +
             std::to_string(notification_data->job_id.job_number);
+}
+
+/**
+ * @brief TODO
+ * @param submitter_name TODO
+ * @return TODO
+ */
+static std::tuple<int,double,double> wait_for_query_answer(string submitter_name) {
+    msg_task_t task_notification = NULL;
+    IPMessage *task_notification_data;
+    MSG_task_receive(&(task_notification), submitter_name.c_str());
+    task_notification_data = (IPMessage *) MSG_task_get_data(task_notification);
+    SchedWaitAnswerMessage *res =
+        (SchedWaitAnswerMessage *) task_notification_data->data;
+
+    XBT_INFO("Returning : %d  %f  %f", res->nb_resources, res->processing_time, res->expected_time);
+    
+    return {res->nb_resources, res->processing_time, res->expected_time};
 
 }
+
 
 int job_launcher_process(int argc, char *argv[])
 {
