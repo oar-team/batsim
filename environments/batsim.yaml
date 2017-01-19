@@ -14,7 +14,7 @@ global:
   to_docker_image: oarteam/batsim:latest
   work_dir: /root
 
-  batsim_commit: c9542e1c3ff5ffff
+  batsim_commit: 78465ddfc48e1
 
 bootstrap:
   - "@base"
