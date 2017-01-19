@@ -109,7 +109,7 @@ please note it might be outdated.
 ### Dependencies
 
 Batsim's dependencies are listed below:
--   SimGrid. dev version is recommended (dccf1b41e9c7 for example).
+-   SimGrid. dev version is recommended (203ec9f99 for example).
     To use SMPI jobs, use commit 587483ebe of
     [mpoquet's fork](https://github.com/mpoquet/simgrid/)
 -   RapidJSON (1.02 or greater)
