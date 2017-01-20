@@ -15,9 +15,10 @@ implicit_instances:
       platform :
         - {"name":"small", "filename":"${batsim_dir}/platforms/small_platform.xml"}
       workload :
-        - {"name":"compute", "filename":"${batsim_dir}/workload_profiles/test_smpi_compute_only.json"}
+        - {"name":"compute",  "filename":"${batsim_dir}/workload_profiles/test_smpi_compute_only.json"}
         - {"name":"compute2", "filename":"${batsim_dir}/workload_profiles/test_smpi_compute_only_2_jobs.json"}
-        - {"name":"mixed", "filename":"${batsim_dir}/workload_profiles/test_smpi_mixed_comp_comm.json"}
+        - {"name":"compute4", "filename":"${batsim_dir}/workload_profiles/test_smpi_compute_only_multijobs.json"}
+        - {"name":"mixed",    "filename":"${batsim_dir}/workload_profiles/test_smpi_mixed_comp_comm.json"}
       pybatsim_algo:
         - {"name":"filler", "algo_name":"fillerSched"}
     generic_instance:
