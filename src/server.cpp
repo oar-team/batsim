@@ -40,6 +40,7 @@ int server_process(int argc, char *argv[])
     const int protocol_version = 3;
     bool sched_ready = true;
     bool all_jobs_submitted_and_completed = false;
+    bool end_of_simulation_sent = false;
 
     // Let's store some information about the submitters
     struct Submitter
@@ -529,7 +530,7 @@ int server_process(int argc, char *argv[])
         delete task_data;
         MSG_task_destroy(task_received);
 
-        if (sched_ready && !send_buffer.empty())
+        if (sched_ready && !send_buffer.empty() && !end_of_simulation_sent)
         {
             RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
             req_rep_args->context = context;
@@ -538,6 +539,8 @@ int server_process(int argc, char *argv[])
 
             MSG_process_create("Scheduler REQ-REP", request_reply_scheduler_process, (void*)req_rep_args, MSG_host_self());
             sched_ready = false;
+            if (all_jobs_submitted_and_completed)
+                end_of_simulation_sent = true;
         }
 
     } // end of while
