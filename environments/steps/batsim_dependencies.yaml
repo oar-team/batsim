@@ -9,7 +9,9 @@
       redis-server \
       libhiredis-dev \
       libev-dev \
+      libzmq3-dev \
       python-yaml \
+      python-zmq \
       libssl-dev 2>&1
   # Install rapidjson (not available in jessie)
   - exec_in: |
