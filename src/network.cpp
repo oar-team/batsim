@@ -168,17 +168,28 @@ int request_reply_scheduler_process(int argc, char *argv[])
                "buffer size is %d. Since information will be lost now or in a near "
                "future, the simulation is aborted.",
                nb_printed_char, date_buf_size);
-    char *sendBuf = (char*) args->send_buffer.c_str();
-    XBT_DEBUG("Buffer received in REQ-REP: '%s'", sendBuf);
+    char *send_buf = (char*) args->send_buffer.c_str();
+    XBT_DEBUG("Buffer received in REQ-REP: '%s'", send_buf);
 
-    context->socket.send(sendBuf);
+    // Let's make sure the message is sent as UTF-8
+    string utf8_message = boost::locale::conv::to_utf<char>(send_buf, "UTF-8");
+
+    // Send the message
+    XBT_INFO("Sending '%s'", utf8_message.c_str());
+    context->zmq_socket->send(utf8_message.data(), utf8_message.size());
 
     auto start = chrono::steady_clock::now();
     string message_received;
 
     try
     {
-         message_received = context->socket.receive();
+        // Get the reply
+        zmq::message_t reply;
+        context->zmq_socket->recv(&reply);
+
+        string raw_message_received((char *)reply.data(), reply.size());
+        message_received = boost::locale::conv::from_utf(raw_message_received, "UTF-8");
+        XBT_INFO("Received '%s'", message_received.c_str());
     }
     catch(const std::runtime_error & error)
     {
@@ -464,23 +475,23 @@ int request_reply_scheduler_process(int argc, char *argv[])
                 xbt_assert(parts2.size() == 3, "Invalid event received ('%s'): messages to ask the waiting time must be composed of 3 parts separated by ':'",
                            event_string.c_str());
 
-		SchedWaitAnswerMessage * message = new SchedWaitAnswerMessage;
+        SchedWaitAnswerMessage * message = new SchedWaitAnswerMessage;
 
                 vector<string> parts3;
                 boost::split(parts3, parts2[2], boost::is_any_of(","), boost::token_compress_on);
-		//                xbt_assert(parts3.size() == 3, "Invalid event received ('%s'): invalid wait answer message content ('%s'): it must be"
-		//                           " formated like R,T,W where R is the number of requested resource, T the requested walltime and W the waiting time",
-		//                           event_string.c_str(), parts2[2].c_str());
+        //                xbt_assert(parts3.size() == 3, "Invalid event received ('%s'): invalid wait answer message content ('%s'): it must be"
+        //                           " formated like R,T,W where R is the number of requested resource, T the requested walltime and W the waiting time",
+        //                           event_string.c_str(), parts2[2].c_str());
 
                 int nb_resources = std::stoi(parts3[1]);
-		double processing_time = std::stod(parts3[2]);
-		double expected_time = std::stod(parts3[3]);
+        double processing_time = std::stod(parts3[2]);
+        double expected_time = std::stod(parts3[3]);
 
-		message->submitter_name = parts3[0];
-		message->nb_resources = nb_resources;
-		message->processing_time = processing_time;
-		message->expected_time = expected_time;
-		
+        message->submitter_name = parts3[0];
+        message->nb_resources = nb_resources;
+        message->processing_time = processing_time;
+        message->expected_time = expected_time;
+
                 send_message("server", IPMessageType::SCHED_WAIT_ANSWER, (void*) message);
             } break; // End of case received_stamp == ANSWER_WAIT
 

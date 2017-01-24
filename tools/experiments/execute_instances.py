@@ -416,13 +416,18 @@ def prepare_implicit_instance(implicit_instances,
         else:
             instance['variables'][var_name] = var_val
 
-    # Let's add the base_variables into the instance's variables
+    # Let's add the base_variables into the instance variables
     instance['variables'].update(base_variables)
 
-    # Let's add the instance_id into the instance's variables
+    # Let's add the instance_id into the instance variables
     instance_id = instance_id_from_comb(comb, hash_length)
     dict_iid = {'instance_id': instance_id}
     instance['variables'].update(dict_iid)
+
+    # Let's add the instance_number into the instance variables
+    instance_number = instance_id_to_instance_number[instance_id]
+    dict_inum = {'instance_number': instance_number}
+    instance['variables'].update(dict_inum)
 
     # Let's generate a combname
     combname = 'implicit'
@@ -482,13 +487,18 @@ def prepare_explicit_instance(explicit_instances,
     if not 'variables' in instance:
         instance['variables'] = {}
 
-    # Let's add the base_variables into the instance's variables
+    # Let's add the base_variables into the instance variables
     instance['variables'].update(base_variables)
 
-    # Let's add the instance_id into the instance's variables
+    # Let's add the instance_id into the instance variables
     instance_id = instance_id_from_comb(comb, hash_length)
     dict_iid = {'instance_id': instance_id}
     instance['variables'].update(dict_iid)
+
+    # Let's add the instance_number into the instance variables
+    instance_number = instance_id_to_instance_number[instance_id]
+    dict_inum = {'instance_number': instance_number}
+    instance['variables'].update(dict_inum)
 
     # Let's write a YAML description file corresponding to the instance
     desc_dir = '{out}/instances'.format(out = base_output_directory)
@@ -586,14 +596,21 @@ def execute_instances(base_working_directory,
     all_combs = sweeper.get_remaining() | sweeper.get_done() | \
                 sweeper.get_skipped() | sweeper.get_inprogress()
 
+    global instance_id_to_instance_number
+    instance_id_to_instance_number = dict()
+
     global hash_length
     hash_length = 8
     rows_list = []
+    instance_number = 0
     for comb in all_combs:
         row_dict = flatten_dict(comb)
         row_dict['instance_id'] = instance_id_from_comb(comb, hash_length)
+        row_dict['instance_number'] = instance_number
+        instance_id_to_instance_number[row_dict['instance_id']] = instance_number
 
         rows_list.append(row_dict)
+        instance_number = instance_number + 1
 
     # Let's generate the instances data frame
     global instances_df

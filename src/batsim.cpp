@@ -128,11 +128,12 @@ Most common options:
                                     outputs energy-related files.
 
 Execution context options:
-  -s, --socket <socket_file>        The Unix Domain Socket filename
-                                    [default: /tmp/bat_socket].
+  -s, --socket-endpoint <endpoint>  The Decision process socket endpoint
+                                    Decision process [default: tcp://localhost:5555].
   --redis-hostname <redis_host>     The Redis server hostname
                                     [default: 127.0.0.1]
   --redis-port <redis_port>         The Redis server port [default: 6379].
+  --redis-prefix <prefix>           The Redis prefix [default: default].
 
 Output options:
   -e, --export <prefix>             The export filename prefix used to generate
@@ -295,7 +296,7 @@ Other options:
 
     // Execution context options
     // *************************
-    main_args.socket_filename = args["--socket"].asString();
+    main_args.socket_endpoint = args["--socket-endpoint"].asString();
     main_args.redis_hostname = args["--redis-hostname"].asString();
     try { main_args.redis_port = args["--redis-port"].asLong(); }
     catch(const std::exception &)
@@ -304,6 +305,7 @@ Other options:
                   args["--redis-port"].asString().c_str());
         error = true;
     }
+    main_args.redis_prefix = args["--redis-prefix"].asString();
 
     // Output options
     // **************
@@ -504,13 +506,12 @@ void start_initial_simulation_processes(const MainArguments & main_args,
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
-
     if (!is_batexec)
     {
         XBT_DEBUG("Creating the 'server' process...");
         ServerProcessArguments * server_args = new ServerProcessArguments;
         server_args->context = context;
-        MSG_process_create("server", uds_server_process, (void*)server_args, master_machine->host);
+        MSG_process_create("server", server_process, (void*)server_args, master_machine->host);
         XBT_INFO("The process 'server' has been created.");
     }
 }
@@ -576,13 +577,12 @@ int main(int argc, char * argv[])
     if (main_args.program_type == ProgramType::BATSIM)
     {
         // Let's prepare Redis's connection
-        context.storage.set_instance_key_prefix(absolute_filename(main_args.socket_filename)); // TODO: main argument?
+        context.storage.set_instance_key_prefix(main_args.redis_prefix);
         context.storage.connect_to_server(main_args.redis_hostname, main_args.redis_port);
 
         // Let's create the socket
-        // TODO: check that the socket is not currently being used
-        context.socket.create_socket(main_args.socket_filename);
-        context.socket.accept_pending_connection();
+        context.zmq_socket = new zmq::socket_t(context.zmq_context, ZMQ_REQ);
+        context.zmq_socket->connect(main_args.socket_endpoint);
 
         // Let's store some metadata about the current instance in the data storage
         context.storage.set("nb_res", std::to_string(context.machines.nb_machines()));
@@ -598,6 +598,9 @@ int main(int argc, char * argv[])
 
     // Simulation main loop, handled by MSG
     msg_error_t res = MSG_main();
+
+    delete context.zmq_socket;
+    context.zmq_socket = nullptr;
 
     // If SMPI had been used, it should be finalized
     if (context.smpi_used)

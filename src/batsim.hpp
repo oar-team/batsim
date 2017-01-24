@@ -67,7 +67,7 @@ struct MainArguments
     bool energy_used;                                       //!< True if and only if the SimGrid energy plugin should be used.
 
     // Execution context
-    std::string socket_filename;                            //!< The Unix Domain Socket filename
+    std::string socket_endpoint;                            //!< The Decision process socket endpoint
     std::string redis_hostname;                             //!< The Redis (data storage) server host name
     int redis_port;                                         //!< The Redis (data storage) server port
     std::string redis_prefix;                               //!< The Redis (data storage) instance prefix

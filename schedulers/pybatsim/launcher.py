@@ -4,15 +4,17 @@
 Run PyBatsim Sschedulers.
 
 Usage:
-    launcher.py <scheduler> [-p] [-v] [-s <socket>] [-r <redis port number>] [-o <options>]
+    launcher.py <scheduler> [-o <options_string>] [options]
 
 Options:
-    -h --help                                      Show this help message and exit.
-    -v --verbose                                   Be verbose.
-    -p --protect                                   Protect the scheduler using a validating machine.
-    -s --socket=<socket>                           Socket to use [default: /tmp/bat_socket]
-    -r --redisport=<port number>                   Redis server port number
-    -o --options=<options>                         A Json string to pass to the scheduler [default: {}]
+    -h --help                           Show this help message and exit.
+    -v --verbose                        Be verbose.
+    -p --protect                        Protect the scheduler using a validating machine.
+    -s --socket-endpoint=<endpoint>     Batsim socket endpoint to use [default: tcp://*:5555]
+    --redis-hostname=<hostname>         Redis server hostname [default: 127.0.0.1]
+    --redis-port=<port>                 Redis server port number [default: 6379]
+    --redis-prefix=<prefix>             Redis prefix [default: default]
+    -o --options=<options_string>       A Json string to pass to the scheduler [default: {}]
 '''
 
 
@@ -59,6 +61,7 @@ def instanciate_scheduler(name, options):
 if __name__ == "__main__":
     #Retrieve arguments
     arguments = docopt(__doc__, version='1.0.0rc2')
+
     if arguments['--verbose']:
         verbose=999
     else:
@@ -72,15 +75,12 @@ if __name__ == "__main__":
     options = json.loads(arguments['--options'])
 
     scheduler_filename = arguments['<scheduler>']
-    socket = arguments['--socket']
+    socket_endpoint = arguments['--socket-endpoint']
 
-    # Redis port
-    if arguments['--redisport']:
-    	redisport = int(arguments['--redisport'])
-    else:
-	redisport = 6379
-
-    # TODO: add Redis arguments (hostname, prefix)
+    # Redis
+    redis_hostname = str(arguments['--redis-hostname'])
+    redis_port = int(arguments['--redis-port'])
+    redis_prefix = str(arguments['--redis-prefix'])
 
     print "Starting simulation..."
     print "Scheduler:", scheduler_filename
@@ -88,7 +88,9 @@ if __name__ == "__main__":
     time_start = time.time()
     scheduler = instanciate_scheduler(scheduler_filename, options=options)
 
-    bs = Batsim(scheduler, validatingmachine=vm, server_address=socket, verbose=verbose, redis_port=redisport)
+    bs = Batsim(scheduler, validatingmachine=vm, socket_endpoint=socket_endpoint,
+                verbose=verbose, redis_hostname=redis_hostname,
+                redis_port=redis_port, redis_prefix=redis_prefix)
 
     bs.start()
     time_ran = str(timedelta(seconds=time.time()-time_start))

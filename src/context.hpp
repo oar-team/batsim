@@ -8,6 +8,8 @@
 #include <chrono>
 #include <vector>
 
+#include <zmq.hpp>
+
 #include "exact_numbers.hpp"
 #include "export.hpp"
 #include "jobs.hpp"
@@ -29,7 +31,9 @@ typedef std::chrono::time_point<std::chrono::high_resolution_clock> my_timestamp
  */
 struct BatsimContext
 {
-    UnixDomainSocket socket;                        //!< The UnixDomainSocket
+    zmq::context_t zmq_context;                     //!< The Zero MQ context
+    zmq::socket_t * zmq_socket = nullptr;           //!< The Zero MQ socket (REQ)
+
     Machines machines;                              //!< The machines
     Workloads workloads;                            //!< The workloads
     Workflows workflows;                            //!< The workflows

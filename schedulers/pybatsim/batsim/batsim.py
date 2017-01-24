@@ -6,21 +6,19 @@ import json
 import os
 import re
 import redis
-import socket
 import struct
 import sys
+import zmq
 
 class Batsim(object):
 
-    def __init__(self, scheduler, redis_prefix = None,
+    def __init__(self, scheduler, redis_prefix = 'default',
                  redis_hostname = 'localhost', redis_port = 6379,
                  validatingmachine = None,
-                 server_address = '/tmp/bat_socket', verbose=0):
-        self.server_address = server_address
+                 socket_endpoint = 'tcp://*:5555', verbose=0):
+        self.socket_endpoint = socket_endpoint
         self.verbose = verbose
 
-        if redis_prefix == None:
-            redis_prefix = os.path.abspath(server_address)
         self.redis = DataStorage(redis_prefix, redis_hostname, redis_port)
         self.jobs = dict()
 
@@ -32,15 +30,10 @@ class Batsim(object):
             self.scheduler = validatingmachine(scheduler)
 
         #open connection
-        self._connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        print("[BATSIM]: connecting to %r" % server_address)
-        try:
-            self._connection.connect(server_address)
-            if self.verbose > 1: print('[BATSIM]: connected')
-        except socket.error:
-            print("[BATSIM]: socket error")
-            raise
-
+        self._context = zmq.Context()
+        self._connection = self._context.socket(zmq.REP)
+        print("[BATSIM]: binding to {addr}".format(addr=self.socket_endpoint))
+        self._connection.bind(self.socket_endpoint)
 
         #initialize some public attributes
         self.last_msg_recv_time = -1
@@ -145,14 +138,8 @@ class Batsim(object):
         return('%.*f' % (6, t))
 
     def _read_bat_msg(self):
-        lg_str = self._connection.recv(4)
+        msg = self._connection.recv().decode()
 
-        if not lg_str:
-            print("[BATSIM]: connection closed by batsim core")
-            return False
-
-        lg = struct.unpack("I",lg_str)[0]
-        msg = self._connection.recv(lg).decode()
         if self.verbose > 0: print('[BATSIM]: from batsim (%r) : %r' % (lg, msg))
         sub_msgs = msg.split('|')
         data = sub_msgs[0].split(":")
@@ -167,13 +154,15 @@ class Batsim(object):
 
         # TODO: handle Z, f and F messages.
 
+        finished_received = False
+
         for i in range(1, len(sub_msgs)):
             data = sub_msgs[i].split(':')
             if data[1] == 'A':
                 self.nb_res = int(self.redis.get('nb_res'))
             elif data[1] == 'Z':
                 print("All jobs have been submitted and completed!")
-                print("TODO: inform schedulers about it...")
+                finished_received = True
             elif data[1] == 'R':
                 self.scheduler.onJobRejection()
             elif data[1] == 'N':
@@ -218,10 +207,8 @@ class Batsim(object):
             msg +=  self._time_to_str(self.time()) +":N"
 
         if self.verbose > 0: print("[BATSIM]:  to  batsim : %r" % msg)
-        lg = struct.pack("i",int(len(msg)))
-        self._connection.sendall(lg)
-        self._connection.sendall(msg.encode())
-        return True
+        self._connection.send(msg.encode())
+        return not finished_received
 
 # High-level access to the Redis data storage system
 class DataStorage(object):

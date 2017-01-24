@@ -76,6 +76,10 @@ include_directories(${HIREDIS_INCLUDE_DIRS})
 find_package(libev REQUIRED)
 include_directories(${LIBEV_INCLUDE_DIRS})
 
+# ZeroMQ dependency
+find_package(ZMQ REQUIRED)
+include_directories(${ZMQ_INCLUDE_DIRS})
+
 ################
 # Source files #
 ################
@@ -103,7 +107,8 @@ target_link_libraries(batsim
                       ${OPENSSL_LIBRARIES}
                       ${REDOX_LIBRARY}
                       ${LIBEV_LIBRARY}
-                      ${HIREDIS_LIBRARY})
+                      ${HIREDIS_LIBRARY}
+                      ${ZMQ_LIBRARIES})
 
 ################
 # Installation #

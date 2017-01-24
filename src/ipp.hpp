@@ -218,7 +218,7 @@ struct RequestReplyProcessArguments
 };
 
 /**
- * @brief The arguments of the uds_server_process process
+ * @brief The arguments of the server_process process
  */
 struct ServerProcessArguments
 {

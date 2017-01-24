@@ -58,9 +58,10 @@ def find_info_from_batsim_command(batsim_command):
     batparser.add_argument("-m", "--master-host", default="master_host")
     batparser.add_argument("-E", "--energy", action='store_true')
 
-    batparser.add_argument("-s", "--socket", type=str, default="/tmp/bat_socket")
+    batparser.add_argument("-s", "--socket-endpoint", type=str, default="tcp://localhost:5555")
     batparser.add_argument("--redis-hostname", type=str, default="127.0.0.1")
     batparser.add_argument("--redis-port", type=int, default=6379)
+    batparser.add_argument("--redis-prefix", type=str, default='default')
 
     batparser.add_argument("--enable-sg-process-tracing", action='store_true')
     batparser.add_argument("--disable-schedule-tracing", action='store_true')
@@ -88,7 +89,7 @@ def find_info_from_batsim_command(batsim_command):
         if batargs.batexec:
             is_batexec = True
 
-        return (batargs.socket, is_batexec)
+        return (batargs.socket_endpoint, is_batexec)
     except ArgumentParserError as e:
         logger.error("Could not retrieve Batsim's socket from Batsim's command "
                      "'{}'. Parsing error: '{}'".format(batsim_command, e))
@@ -325,12 +326,13 @@ def create_file_from_command(command,
 
 class InstanceExecutionData:
     def __init__(self, batsim_process, batsim_socket, sched_process,
-                 timeout, output_directory):
+                 timeout, output_directory, nb_processes):
         self.batsim_process = batsim_process
         self.sched_process = sched_process
         self.batsim_socket = batsim_socket
         self.timeout = timeout
         self.output_directory = output_directory
+        self.nb_processes = nb_processes
         self.nb_started = 0
         self.nb_finished = 0
         self.failure = False
@@ -566,11 +568,14 @@ def execute_one_instance(working_directory,
                                 out = output_directory)])
 
     # Let's create a shared execution data, which will be given to LC handlers
+    nb_processes = 1 + int(not is_batexec)
+
     execution_data = InstanceExecutionData(batsim_process = batsim_process,
                                            sched_process = sched_process,
                                            batsim_socket = batsim_socket,
                                            timeout = timeout,
-                                           output_directory = output_directory)
+                                           output_directory = output_directory,
+                                           nb_processes = nb_processes)
 
     batsim_lifecycle_handler.set_execution_data(execution_data)
     sched_lifecycle_handler.set_execution_data(execution_data)
@@ -578,33 +583,18 @@ def execute_one_instance(working_directory,
     # Batsim starts
     batsim_process.start()
 
-    # Wait for Batsim to create the socket
-    logger.info("Waiting for socket {} to open".format(execution_data.batsim_socket))
-    if wait_for_batsim_to_open_connection(execution_data,
-                                          timeout = execution_data.timeout,
-                                          sock = execution_data.batsim_socket):
-        # Launches the scheduler
-        logger.info("Batsim's socket {} is now opened".format(execution_data.batsim_socket))
-        execution_data.sched_process.start()
+    # Launches the scheduler (unless batexec is enabled)
+    if not is_batexec:
+        sched_process.start()
 
-        # Wait for processes' termination
-        while (execution_data.failure == False) and (execution_data.nb_finished < 2):
-            sleep(0.2)
+    # Let's wait until completion
+    batsim_process.wait()
 
-        while (execution_data.nb_finished < execution_data.nb_started):
-            sleep(0.2)
+    if not is_batexec:
+        sched_process.wait()
 
-    elif is_batexec:
-        success = True
-    else:
-        execution_data.failure = True
-
-    if execution_data != None:
-        success = not execution_data.failure
-    else:
-        success = True
-
-    return success
+    # Return whether the execution has been successful
+    return not execution_data.failure
 
 def main():
     script_description = '''

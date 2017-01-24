@@ -11,4 +11,4 @@
  * @param[in] argv The arguments' values
  * @return 0
  */
-int uds_server_process(int argc, char *argv[]);
+int server_process(int argc, char *argv[]);
