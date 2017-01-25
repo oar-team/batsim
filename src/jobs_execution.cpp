@@ -174,10 +174,30 @@ int execute_profile(BatsimContext *context,
         SmpiProfileData * data = (SmpiProfileData *) profile->data;
         msg_sem_t sem = MSG_sem_init(1);
 
-        for (int i = 0; i < nb_res; ++i)
+        int nb_ranks = data->trace_filenames.size();
+
+        // Let's use the default mapping is none is provided (round-robin on hosts, as we do not
+        // know the number of cores on each host)
+        if (job->smpi_ranks_to_hosts_mapping.empty())
+        {
+            job->smpi_ranks_to_hosts_mapping.resize(nb_ranks);
+            int host_to_use = 0;
+            for (int i = 0; i < nb_ranks; ++i)
+            {
+                job->smpi_ranks_to_hosts_mapping[i] = host_to_use;
+                ++host_to_use %= job->required_nb_res; // ++ is done first
+            }
+        }
+
+        xbt_assert(nb_ranks == (int) job->smpi_ranks_to_hosts_mapping.size(),
+                   "Invalid job %s: SMPI ranks_to_host mapping has an invalid size, as it should "
+                   "use %d MPI ranks but the ranking states that there are %d ranks.",
+                   job->id, nb_ranks, (int) job->smpi_ranks_to_hosts_mapping.size());
+
+        for (int i = 0; i < nb_ranks; ++i)
         {
             char *str_instance_id = NULL;
-            int ret = asprintf(&str_instance_id, "%d", job->number);
+            int ret = asprintf(&str_instance_id, "%s!%d", job->workload->name.c_str(), job->number);
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
             char *str_rank_id  = NULL;
@@ -194,13 +214,17 @@ int execute_profile(BatsimContext *context,
             argv[2] = str_rank_id;     // Rank Id
             argv[3] = xbt_strdup((char*) data->trace_filenames[i].c_str());
             argv[4] = xbt_strdup("0"); //
-            if (i==0)
-            {
-                MSG_process_create_with_arguments(str_pname, smpi_replay_process, sem, allocation->hosts[i], 5, argv );
-            } else
-            {
-                MSG_process_create_with_arguments(str_pname, smpi_replay_process, NULL, allocation->hosts[i], 5, argv );
-            }
+
+            msg_host_t host_to_use = allocation->hosts[job->smpi_ranks_to_hosts_mapping[i]];
+            msg_sem_t sem_to_use = NULL;
+
+            XBT_INFO("Hello!");
+
+            if (i == 0)
+                sem_to_use = sem;
+
+            MSG_process_create_with_arguments(str_pname, smpi_replay_process, sem_to_use,
+                                              host_to_use, 5, argv);
 
             // todo: avoid memory leaks
             free(str_pname);

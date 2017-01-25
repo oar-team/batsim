@@ -224,6 +224,12 @@ add_test(smpi
          -bod /tmp/batsim_tests/smpi
          -bwd ${CMAKE_SOURCE_DIR})
 
+add_test(smpi_mapping
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_smpi_mapping.yaml
+         -bod /tmp/batsim_tests/smpi_mapping
+         -bwd ${CMAKE_SOURCE_DIR})
+
 add_test(smpi_batexec
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_smpi_batexec.yaml

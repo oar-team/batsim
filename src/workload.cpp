@@ -86,9 +86,16 @@ void Workload::register_smpi_applications()
     for (auto mit : jobs->jobs())
     {
         Job * job = mit.second;
-        string job_id_str = to_string(job->number);
-        XBT_INFO("Registering app. instance='%s', nb_process=%d", job_id_str.c_str(), job->required_nb_res);
-        SMPI_app_instance_register(job_id_str.c_str(), smpi_replay_process, job->required_nb_res);
+        Profile * profile = (*profiles)[job->profile];
+
+        if (profile->type == ProfileType::SMPI)
+        {
+            SmpiProfileData * data = (SmpiProfileData *) profile->data;
+
+            string job_id_str = name + "!" + to_string(job->number);
+            XBT_INFO("Registering app. instance='%s', nb_process=%d", job_id_str.c_str(), data->trace_filenames.size());
+            SMPI_app_instance_register(job_id_str.c_str(), smpi_replay_process, data->trace_filenames.size());
+        }
     }
 
     XBT_INFO("SMPI applications of workload '%s' have been registered.", name.c_str());

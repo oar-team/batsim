@@ -237,6 +237,30 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
                "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
                "The output JSON '%s' has a non-string 'id' field.", j->json_description.c_str());
 
+    if (json_desc.HasMember("smpi_ranks_to_hosts_mapping"))
+    {
+        xbt_assert(json_desc["smpi_ranks_to_hosts_mapping"].IsArray(),
+                "Invalid JSON: job %d has a non-array 'smpi_ranks_to_hosts_mapping' field",
+                j->number);
+
+        const auto & mapping_array = json_desc["smpi_ranks_to_hosts_mapping"];
+        j->smpi_ranks_to_hosts_mapping.resize(mapping_array.Size());
+
+        for (unsigned int i = 0; i < mapping_array.Size(); ++i)
+        {
+            xbt_assert(mapping_array[i].IsInt(),
+                       "Invalid JSON: job %d has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
+                       "%d does not point to an integral number", j->number, i);
+            int host_number = mapping_array[i].GetInt();
+            xbt_assert(host_number >= 0 && host_number < j->required_nb_res,
+                       "Invalid JSON: job %d has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
+                       "%d has an invalid value %d : should be in [0,%d[", j->number, i,
+                       host_number, j->required_nb_res);
+
+            j->smpi_ranks_to_hosts_mapping[i] = host_number;
+        }
+    }
+
     XBT_DEBUG("Loaded job %d from workload %s", (int) j->number, j->workload->name.c_str() );
 
     return j;

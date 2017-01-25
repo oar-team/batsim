@@ -49,6 +49,7 @@ struct Job
     Rational starting_time; //!< The time at which the job starts to be executed.
     Rational runtime; //!< The amount of time during which the job has been executed
     MachineRange allocation; //!< The machines on which the job has been executed.
+    std::vector<int> smpi_ranks_to_hosts_mapping; //!< If the job uses a SMPI profile, stores which host number each MPI rank should use. These numbers must be in [0,required_nb_res[.
     JobState state; //!< The current state of the job
 
     /**
