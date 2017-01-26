@@ -192,7 +192,7 @@ int execute_profile(BatsimContext *context,
         xbt_assert(nb_ranks == (int) job->smpi_ranks_to_hosts_mapping.size(),
                    "Invalid job %s: SMPI ranks_to_host mapping has an invalid size, as it should "
                    "use %d MPI ranks but the ranking states that there are %d ranks.",
-                   job->id, nb_ranks, (int) job->smpi_ranks_to_hosts_mapping.size());
+                   job->id.c_str(), nb_ranks, (int) job->smpi_ranks_to_hosts_mapping.size());
 
         for (int i = 0; i < nb_ranks; ++i)
         {
