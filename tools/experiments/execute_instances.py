@@ -218,7 +218,8 @@ class WorkersSharedData:
                  base_output_directory,
                  base_variables,
                  generate_only,
-                 hash_length):
+                 hash_length,
+                 instances_subset_to_recompute):
         self.sweeper = sweeper
         self.instances_post_cmds_only = instances_post_cmds_only
         self.implicit_instances = implicit_instances
@@ -230,6 +231,7 @@ class WorkersSharedData:
         self.generate_only = generate_only
         self.hash_length = hash_length
         self.post_command_failed = False
+        self.instances_subset_to_recompute = instances_subset_to_recompute
 
 class WorkerLifeCycleHandler(ProcessLifecycleHandler):
     def __init__(self,
@@ -245,39 +247,56 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
 
     def execute_next_instance(self):
         assert(self.comb == None)
-        if len(self.data.sweeper.get_remaining()) > 0:
+
+        while len(self.data.sweeper.get_remaining()) > 0:
             # Let's get the next instance to compute
             self.comb = self.data.sweeper.get_next()
-            logger.info('Worker ({hostname}, {local_rank}) got comb : {comb}'.format(
-                    hostname = self.hostname,
-                    local_rank = self.local_rank,
-                    comb = self.comb))
 
-            if self.comb != None:
-                (desc_filename, instance_id, combname, command) = prepare_instance(
-                    comb = self.comb,
-                    explicit_instances = self.data.explicit_instances,
-                    implicit_instances = self.data.implicit_instances,
-                    base_working_directory = self.data.base_working_directory,
-                    base_output_directory = self.data.base_output_directory,
-                    base_variables = self.data.base_variables,
-                    post_commands_only = self.comb in self.data.instances_post_cmds_only,
-                    generate_only = self.data.generate_only,
-                    hash_length = self.data.hash_length)
-                self.combname = combname
-                self.instance_id = instance_id
-                self._launch_process(instance_command = command)
-            else:
+            if self.comb == None:
                 logger.info('Worker ({hostname}, {local_rank}) finished'.format(
-                    hostname = self.hostname,
-                    local_rank = self.local_rank))
+                        hostname = self.hostname,
+                        local_rank = self.local_rank))
                 self.data.nb_workers_finished += 1
+                return
+            else:
+                compute_comb = True
+                if self.data.instances_subset_to_recompute != None:
+                    compute_comb = self.comb in self.data.instances_subset_to_recompute
+
+                if compute_comb:
+                    logger.info('Worker ({hostname}, {local_rank}) got comb : {comb}'.format(
+                            hostname = self.hostname,
+                            local_rank = self.local_rank,
+                            comb = self.comb))
+
+                    (desc_filename, instance_id, combname, command) = prepare_instance(
+                        comb = self.comb,
+                        explicit_instances = self.data.explicit_instances,
+                        implicit_instances = self.data.implicit_instances,
+                        base_working_directory = self.data.base_working_directory,
+                        base_output_directory = self.data.base_output_directory,
+                        base_variables = self.data.base_variables,
+                        post_commands_only = self.comb in self.data.instances_post_cmds_only,
+                        generate_only = self.data.generate_only,
+                        hash_length = self.data.hash_length)
+                    self.combname = combname
+                    self.instance_id = instance_id
+                    self._launch_process(instance_command = command)
+                    return
+                else:
+                    logger.info('Worker (${hostname}, {local_rank}) skipped comb ${comb}'.format(
+                        hostname = self.hostname,
+                        local_rank = self.local_rank,
+                        comb = self.comb))
+                    self.data.sweeper.skip(self.comb)
+                    self.comb = None
         else:
             # If there is no more work to do, this worker stops
             logger.info('Worker ({hostname}, {local_rank}) finished'.format(
-                    hostname = self.hostname,
-                    local_rank = self.local_rank))
+                            hostname = self.hostname,
+                            local_rank = self.local_rank))
             self.data.nb_workers_finished += 1
+            return
 
     def _launch_process(self,
                         instance_command):
@@ -584,7 +603,8 @@ def execute_instances(base_working_directory,
                       recompute_all_instances,
                       recompute_instances_post_commands,
                       generate_only = False,
-                      mark_as_cancelled_lambda = None):
+                      mark_as_cancelled_lambda = None,
+                      only_compute_marked_cancelled = False):
     # Let's generate all instances that should be executed
     combs = generate_instances_combs(implicit_instances = implicit_instances,
                                      explicit_instances = explicit_instances)
@@ -631,6 +651,8 @@ def execute_instances(base_working_directory,
                                   base_output_dir = base_output_directory))
     instances_df.to_csv(instances_df_filename, index = False, na_rep = 'NA')
 
+    instances_subset_to_recompute = None
+
     if mark_as_cancelled_lambda == '':
         if len(sweeper.get_done()) > 0:
             logger.info('The first finished combination is shown below.')
@@ -669,6 +691,9 @@ def execute_instances(base_working_directory,
         else:
             logger.info('Aborted. No instance has been marked as cancelled')
 
+        if only_compute_marked_cancelled:
+            instances_subset_to_recompute = combs_to_mark
+
     # Let's mark all inprogress values as todo
     for comb in sweeper.get_inprogress():
         sweeper.cancel(comb)
@@ -694,7 +719,8 @@ def execute_instances(base_working_directory,
                                            base_output_directory = base_output_directory,
                                            base_variables = base_variables,
                                            generate_only = generate_only,
-                                           hash_length = hash_length)
+                                           hash_length = hash_length,
+                                           instances_subset_to_recompute = instances_subset_to_recompute)
 
     # Let's create all workers
     nb_workers = min(len(combs), len(host_list) * nb_workers_per_host)
@@ -795,22 +821,39 @@ can be found in the instances_examples subdirectory.
                           'either absolute or relative to the working directory. '
                           ' If unset, the working directory is used instead')
 
-    p.add_argument('-m', '--mark_instances_as_cancelled',
-                   type = str,
-                   default = None,
-                   help = 'Allows to mark some instances as cancelled, which '
-                          'will force them to be recomputed. The parameter '
-                          'is a lambda expression used to filter which '
-                          'instances should be recomputed. If the parameter '
-                          'is empty, a combination example is displayed. '
-                          'The lambda parameter is named "x".')
+    gm = p.add_mutually_exclusive_group()
+    gm.add_argument('-m', '--mark_instances_as_cancelled',
+                    type = str,
+                    default = None,
+                    help = 'Allows to mark some instances as cancelled, which '
+                           'will force them to be recomputed. The parameter '
+                           'is a lambda expression used to filter which '
+                           'instances should be recomputed. If the parameter '
+                           'is empty, a combination example is displayed. '
+                           'The lambda parameter is named "x".')
 
+    gm.add_argument('-M', '--recompute_some_instances_only',
+                    type = str,
+                    default = None,
+                    help = 'Quite the same as -m, but this parameter limits the '
+                           'parameter space to the one described in this '
+                           'parameter.')
+
+    p.add_argument('--skip_global_pre',
+                   action = 'store_true',
+                   help = 'If set, skips the commands which should be executed '
+                          'before running any instance.')
+
+    p.add_argument('--skip_global_post',
+                   action = 'store_true',
+                   help = 'If set, skips the commands which should be executed '
+                          'after running all the instances.')
 
     g = p.add_mutually_exclusive_group()
 
     g.add_argument('--pre_only',
                    action = 'store_true',
-                   help = "If set, only the commands which precede instances' "
+                   help = "If set, only the commands which precede instances "
                           'executions will be executed.')
 
     g.add_argument('--post_only',
@@ -877,8 +920,12 @@ can be found in the instances_examples subdirectory.
         generate_only = True
 
     mark_as_cancelled_lambda = None
+    only_compute_marked_cancelled = False
     if args.mark_instances_as_cancelled != None:
         mark_as_cancelled_lambda = args.mark_instances_as_cancelled
+    elif args.recompute_some_instances_only != None:
+        mark_as_cancelled_lambda = args.recompute_some_instances_only
+        only_compute_marked_cancelled = True
 
     host_list = ['localhost']
     if args.mpi_hostfile:
@@ -943,7 +990,7 @@ can be found in the instances_examples subdirectory.
 
     if not args.post_only:
         # Commands before instances execution
-        if len(commands_before_instances) > 0:
+        if len(commands_before_instances) > 0 and not args.skip_global_pre:
             pre_commands_dir = '{bod}/pre_commands'.format(
                 bod = base_output_directory)
             pre_commands_output_dir = '{bod}/out'.format(
@@ -986,13 +1033,15 @@ can be found in the instances_examples subdirectory.
             recompute_all_instances = recompute_all_instances,
             recompute_instances_post_commands = recompute_instances_post_commands,
             generate_only = generate_only,
-            mark_as_cancelled_lambda = mark_as_cancelled_lambda)
+            mark_as_cancelled_lambda = mark_as_cancelled_lambda,
+            only_compute_marked_cancelled = only_compute_marked_cancelled)
         if not should_continue and not recompute_already_done_post_commands:
             sys.exit(2)
 
     # Commands after instances execution
     if len(commands_after_instances) > 0 and \
-       (not generate_only or recompute_already_done_post_commands):
+       (not generate_only or recompute_already_done_post_commands) and \
+       not args.skip_global_pre:
         post_commands_dir = '{bod}/post_commands'.format(
             bod = base_output_directory)
         post_commands_output_dir = '{bod}/out'.format(
