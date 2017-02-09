@@ -284,7 +284,7 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
                     self._launch_process(instance_command = command)
                     return
                 else:
-                    logger.info('Worker (${hostname}, {local_rank}) skipped comb ${comb}'.format(
+                    logger.info('Worker ({hostname}, {local_rank}) skipped comb ${comb}'.format(
                         hostname = self.hostname,
                         local_rank = self.local_rank,
                         comb = self.comb))
@@ -294,7 +294,7 @@ class WorkerLifeCycleHandler(ProcessLifecycleHandler):
             # If there is no more work to do, this worker stops
             logger.info('Worker ({hostname}, {local_rank}) finished'.format(
                             hostname = self.hostname,
-                            local_rank = self.local_rank))
+                             local_rank = self.local_rank))
             self.data.nb_workers_finished += 1
             return
 
@@ -987,6 +987,8 @@ can be found in the instances_examples subdirectory.
 
     if 'explicit_instances' in desc_data:
         explicit_instances = desc_data['explicit_instances']
+
+    post_command_failed = False
 
     if not args.post_only:
         # Commands before instances execution
