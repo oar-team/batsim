@@ -21,7 +21,7 @@ implicit_instances:
         - {"name":"filler", "algo_name":"fillerSched"}
     generic_instance:
       variables:
-        socket_port: "$((${instance_number} + 5000))"
+        socket_port: "$((${instance_number} + 28000))"
       timeout: 10
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${pybatsim_algo[name]}_${workload[name]}_${platform[name]}

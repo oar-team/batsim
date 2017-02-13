@@ -58,7 +58,7 @@ def find_info_from_batsim_command(batsim_command):
     batparser.add_argument("-m", "--master-host", default="master_host")
     batparser.add_argument("-E", "--energy", action='store_true')
 
-    batparser.add_argument("-s", "--socket-endpoint", type=str, default="tcp://localhost:5555")
+    batparser.add_argument("-s", "--socket-endpoint", type=str, default="tcp://localhost:28000")
     batparser.add_argument("--redis-hostname", type=str, default="127.0.0.1")
     batparser.add_argument("--redis-port", type=int, default=6379)
     batparser.add_argument("--redis-prefix", type=str, default='default')
@@ -467,27 +467,28 @@ def execute_command(command,
 
     return cmd_process.finished_ok and not cmd_process.error and cmd_process.exit_code == 0
 
+g_port_regex = re.compile('.*:(\d+)')
+
 def socket_in_use(sock):
-    return sock in open('/proc/net/unix').read()
+    # Let's check whether the socket uses a port
+    m = g_port_regex.match(sock)
+    if m:
+        port = int(m.group(1))
+        cmd = "ss -ln | grep ':{port}'".format(port=port)
 
-def wait_for_batsim_to_open_connection(execution_data,
-                                       sock='/tmp/bat_socket',
-                                       timeout=60,
-                                       seconds_to_sleep=0.1):
-    if timeout == None:
-        timeout = 3600
-    remaining_time = timeout
-    while remaining_time > 0 and not socket_in_use(sock) and not execution_data.batsim_process.ended:
-        time.sleep(seconds_to_sleep)
-        remaining_time -= seconds_to_sleep
+        p = Process(cmd, shell=True)
+        p.nolog_exit_code = True
+        ss_output = (p.run().stdout)
+        print('ss output: "{}"'.format(ss_output))
+        return len(ss_output) > 0
 
-    return socket_in_use(sock)
+    return False
 
-def wait_for_batsim_socket_to_be_usable(sock = '/tmp/bat_socket',
+def wait_for_batsim_socket_to_be_usable(sock = 'tcp://localhost:28000',
                                         timeout = 60,
                                         seconds_to_sleep = 0.1):
     if timeout == None:
-        timeout = 3600
+        timeout = 60
     remaining_time = timeout
     while remaining_time > 0 and socket_in_use(sock):
         time.sleep(seconds_to_sleep)

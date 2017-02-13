@@ -15,7 +15,7 @@ class Batsim(object):
     def __init__(self, scheduler, redis_prefix = 'default',
                  redis_hostname = 'localhost', redis_port = 6379,
                  validatingmachine = None,
-                 socket_endpoint = 'tcp://*:5555', verbose=0):
+                 socket_endpoint = 'tcp://*:28000', verbose=0):
         self.socket_endpoint = socket_endpoint
         self.verbose = verbose
 

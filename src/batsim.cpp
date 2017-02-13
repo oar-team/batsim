@@ -129,7 +129,7 @@ Most common options:
 
 Execution context options:
   -s, --socket-endpoint <endpoint>  The Decision process socket endpoint
-                                    Decision process [default: tcp://localhost:5555].
+                                    Decision process [default: tcp://localhost:28000].
   --redis-hostname <redis_host>     The Redis server hostname
                                     [default: 127.0.0.1]
   --redis-port <redis_port>         The Redis server port [default: 6379].

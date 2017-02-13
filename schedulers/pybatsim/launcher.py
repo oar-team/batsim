@@ -10,7 +10,7 @@ Options:
     -h --help                           Show this help message and exit.
     -v --verbose                        Be verbose.
     -p --protect                        Protect the scheduler using a validating machine.
-    -s --socket-endpoint=<endpoint>     Batsim socket endpoint to use [default: tcp://*:5555]
+    -s --socket-endpoint=<endpoint>     Batsim socket endpoint to use [default: tcp://*:28000]
     --redis-hostname=<hostname>         Redis server hostname [default: 127.0.0.1]
     --redis-port=<port>                 Redis server port number [default: 6379]
     --redis-prefix=<prefix>             Redis prefix [default: default]
