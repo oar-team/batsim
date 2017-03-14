@@ -12,10 +12,10 @@ import zmq
 
 class Batsim(object):
 
-    def __init__(self, scheduler, redis_prefix = 'default',
-                 redis_hostname = 'localhost', redis_port = 6379,
-                 validatingmachine = None,
-                 socket_endpoint = 'tcp://*:28000', verbose=0):
+    def __init__(self, scheduler, redis_prefix='default',
+                 redis_hostname='localhost', redis_port=6379,
+                 validatingmachine=None,
+                 socket_endpoint='tcp://*:28000', verbose=0):
         self.socket_endpoint = socket_endpoint
         self.verbose = verbose
 
@@ -82,7 +82,7 @@ class Batsim(object):
                 msg += str(j.id) + "="
                 for r in res[j.id]:
                     msg += str(r) + ","
-                msg = msg[:-1] + ";" # replace last comma by semicolon separtor between jobs
+                msg = msg[:-1] + ";" # replace last comma by a semicolon separator between jobs
             msg = msg[:-1] # remove last semicolon
             self._msgs_to_send.append( ( self.time(), msg ) )
 
@@ -99,7 +99,7 @@ class Batsim(object):
                 if ps == pe:
                     parts.append( str(ps) + "=" + str(new_pstate))
                 else:
-                    parts.append( str(ps)+"-"+str(pe) + "=" + str(new_pstate))
+                    parts.append( str(ps) + "-" + str(pe) + "=" + str(new_pstate))
             for part in parts:
                 self._msgs_to_send.append( ( self.time(), "P:" + part ) )
 
@@ -138,7 +138,7 @@ class Batsim(object):
         return('%.*f' % (6, t))
 
     def _read_bat_msg(self):
-        msg = self._connection.recv().decode()
+        msg = self._connection.recv().decode('utf-8')
 
         if self.verbose > 0: print('[BATSIM]: from batsim (%r) : %r' % (lg, msg))
         sub_msgs = msg.split('|')
@@ -147,7 +147,8 @@ class Batsim(object):
         self.last_msg_recv_time = float(data[1])
         self._current_time = float(data[1])
 
-        if self.verbose > 1: print("[BATSIM]: version: %r  now: %r" % (version, self.time()))
+        if self.verbose > 1:
+            print("[BATSIM]: version: %r  now: %r" % (version, self.time()))
 
         # [ (timestamp, txtDATA), ...]
         self._msgs_to_send = []
@@ -186,17 +187,17 @@ class Batsim(object):
                 elif len(nodes) == 2:
                     nodeInterval = (int(nodes[0]), int(nodes[1]))
                 else:
-                    raise False, "Not supported"
+                    raise Exception("Not supported")
                 self.scheduler.onMachinePStateChanged(nodeInterval, int(opts[1]))
             elif data[1] == 'e':
                 consumed_energy = float(data[2])
                 self.scheduler.onReportEnergyConsumed(consumed_energy)
             elif data[1] == 'J' or data[1] == 'P' or data[1] == 'E':
-                raise "Only the server can receive this kind of message"
+                raise Exception("Only the server can receive this kind of message")
             else:
                 raise Exception("Unknow submessage type " + data[1] )
 
-        msg = "0:" + self._time_to_str(self.last_msg_recv_time) + "|"
+        msg = "0:" + self._time_to_str(self._current_time) + "|"
         if len(self._msgs_to_send) > 0:
             #sort msgs by timestamp
             self._msgs_to_send = sorted(self._msgs_to_send, key=lambda m: m[0])
@@ -206,7 +207,8 @@ class Batsim(object):
         else:
             msg +=  self._time_to_str(self.time()) +":N"
 
-        if self.verbose > 0: print("[BATSIM]:  to  batsim : %r" % msg)
+        if self.verbose > 0:
+            print("[BATSIM]:  to  batsim : %r" % msg)
         self._connection.send(msg.encode())
         return not finished_received
 
@@ -226,9 +228,9 @@ class DataStorage(object):
     def get_job(self, job_id):
         key = 'job_{job_id}'.format(job_id = job_id)
         job_str = self.get(key)
-	print("====> ", job_str)
+        #print("====> ", job_str)
 
-        json_dict = json.loads(job_str)
+        json_dict = json.loads(job_str.decode('utf-8'))
         return Job(json_dict["id"], json_dict["subtime"], json_dict["walltime"],
                    json_dict["res"], json_dict["profile"])
 
@@ -257,14 +259,14 @@ class BatsimScheduler(object):
         #You now have access to self.bs and all other functions
         pass
     def onJobRejection(self):
-        raise "not implemented"
+        raise Exception("not implemented")
     def onNOP(self):
-        raise "not implemented"
+        raise Exception("not implemented")
     def onJobSubmission(self, job):
-        raise "not implemented"
+        raise Exception("not implemented")
     def onJobCompletion(self, job):
-        raise "not implemented"
+        raise Exception("not implemented")
     def onMachinePStateChanged(self, nodeid, pstate):
-        raise "not implemented"
+        raise Exception("not implemented")
     def onReportEnergyConsumed(self, consumed_energy):
-        raise "not implemented"
+        raise Exception("not implemented")
