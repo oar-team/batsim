@@ -61,6 +61,10 @@ parser.add_argument('-i', '--indent', type=int, default=None,
 parser.add_argument('-t', '--translate_submit_times',
                     action="store_true",
                     help="If set, the jobs' submit times will be translated towards 0")
+parser.add_argument('--keep_only',
+                    type=str,
+                    default=None,
+                    help='If set, this parameter is evaluated to choose which jobs should be kept')
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument("-v", "--verbose", action="store_true")
@@ -116,10 +120,15 @@ for line in args.inputSWF:
 # Let's generate a list of dictionaries for the jobs
 djobs = list()
 for (job_id, nb_res, run_time, submit_time, profile, walltime) in jobs:
-	djobs.append({'id':job_id,
-	             'subtime':submit_time - minimum_observed_submit_time,
-	             'walltime':walltime, 'res':nb_res,
-	             'profile': str(profile)})
+	use_job = True
+	if args.keep_only != None:
+		use_job = eval(args.keep_only)
+
+	if use_job:
+		djobs.append({'id':job_id,
+					 'subtime':submit_time - minimum_observed_submit_time,
+					 'walltime':walltime, 'res':nb_res,
+					 'profile': str(profile)})
 
 # Let's generate a dict of dictionaries for the profiles
 dprofs = {}
@@ -143,10 +152,11 @@ data = {
 	'description':'this workload had been automatically generated',
 	'nb_res': platform_size,
 	'jobs':djobs,
-	'profiles':dprofs }
+	'profiles':dprofs}
 
 try:
 	outFile = open(args.outputJSON, 'w')
+
 	json.dump(data, outFile, indent=args.indent, sort_keys=True)
 
 	if not args.quiet:
