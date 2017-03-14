@@ -36,45 +36,42 @@ Workflow::~Workflow()
 void Workflow::load_from_xml(const std::string &xml_filename)
 {
     XBT_INFO("Loading XML workflow '%s'...", xml_filename.c_str());
+
     // XML document creation
     xml_parse_result result = dax_tree.load_file(xml_filename.c_str());
-
     xbt_assert(result, "Invalid XML file");
 
     xml_node dag = dax_tree.child("adag");
-
-
-
     for (xml_node job = dag.child("job"); job; job = job.next_sibling("job"))
-      {
-	// Parse the number of processors, if any
-	int num_procs = 1;
-	if (job.attribute("num_procs")) {
-  	  num_procs = (int)strtol(job.attribute("num_procs").value(),NULL,10);
- 	}
-	if (num_procs <= 0) {
-          num_procs = 1;
-	}
+    {
+        // Parse the number of processors, if any
+        int num_procs = 1;
+        if (job.attribute("num_procs")) {
+            num_procs = (int)strtol(job.attribute("num_procs").value(),NULL,10);
+        }
+        if (num_procs <= 0) {
+            num_procs = 1;
+        }
 
-        Task *task = new Task (num_procs, strtod(job.attribute("runtime").value(),NULL), job.attribute("id").value());
+        Task *task = new Task (num_procs, strtod(job.attribute("runtime").value(),NULL),
+                               job.attribute("id").value());
+        add_task(*task);
+    }
 
-	add_task(*task);
-
-      }
-
-    for (xml_node edge_bottom = dag.child("child"); edge_bottom; edge_bottom = edge_bottom.next_sibling("child"))
-      {
+    for (xml_node edge_bottom = dag.child("child"); edge_bottom;
+         edge_bottom = edge_bottom.next_sibling("child"))
+    {
         Task *dest = get_task(edge_bottom.attribute("ref").value());
 
-	for (xml_node edge_top = edge_bottom.child("parent"); edge_top; edge_top = edge_top.next_sibling("parent"))
-	  {
-	    Task *source = get_task(edge_top.attribute("ref").value());
-	    
-	    //std::cout << "Test : " << source->id << " --> " << dest->id << std::endl;
-	    
-	    add_edge(*source,*dest);
-	  }
-      }
+        for (xml_node edge_top = edge_bottom.child("parent"); edge_top;
+             edge_top = edge_top.next_sibling("parent"))
+        {
+            Task *source = get_task(edge_top.attribute("ref").value());
+
+            //std::cout << "Test : " << source->id << " --> " << dest->id << std::endl;
+            add_edge(*source,*dest);
+        }
+    }
 
     /* Testing things
     std::cout << get_source_tasks().size() << std::endl;
@@ -85,10 +82,10 @@ void Workflow::load_from_xml(const std::string &xml_filename)
     std::cout << stuff1->execution_time << std::endl;
 
     add_edge(*stuff1,*stuff2);
-    
+
     std::cout << get_sink_tasks().size() << std::endl;
     */
-    
+
     /*
     // Let's try to read the number of machines in the XML document
     xbt_assert(doc.HasMember("nb_res"), "Invalid XML file '%s': the 'nb_res' field is missing", xml_filename.c_str());
@@ -112,64 +109,65 @@ void Workflow::load_from_xml(const std::string &xml_filename)
 
 void Workflow::check_validity()
 {
-  // Likely not needed, so it doesn't do anything for now
-  return;
+    // Likely not needed, so it doesn't do anything for now
+    return;
 }
 
 void Workflow::add_task(Task &task) {
-  this->tasks[task.id] = &task;
+    this->tasks[task.id] = &task;
 }
 
 Task * Workflow::get_task(std::string id) {
-	  return this->tasks[id];
+    // Potential bug: may crash if id does not exist
+    return this->tasks[id];
 }
 
 void Workflow::add_edge(Task &parent, Task &child)
 {
-  if(std::find(child.parents.begin(), child.parents.end(), &parent) != child.parents.end()) {
-    // Edge already there, no hyperedge
-  } else {
-    child.parents.push_back(&parent);
-  } 
+    if(std::find(child.parents.begin(), child.parents.end(), &parent) != child.parents.end()) {
+        // Edge already there, no hyperedge
+    } else {
+        child.parents.push_back(&parent);
+    }
 
-  if(std::find(parent.children.begin(), parent.children.end(), &parent) != parent.children.end()) {
-    // Edge already there, no hyperedge
-  } else {
-    parent.children.push_back(&child);
-  } 
+    if(std::find(parent.children.begin(), parent.children.end(), &parent) != parent.children.end()) {
+        // Edge already there, no hyperedge
+    } else {
+        parent.children.push_back(&child);
+    }
 }
 
 
 std::vector<Task *> Workflow::get_source_tasks() {
-  std::vector<Task *> task_list;
-  for(std::map<std::string, Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
-    if ((it->second)->parents.empty()) {
-      task_list.push_back(it->second);
+    std::vector<Task *> task_list;
+    for(std::map<std::string, Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+        if ((it->second)->parents.empty()) {
+            task_list.push_back(it->second);
+        }
     }
-  }
-  return task_list;
+    return task_list;
 }
 
 std::vector<Task *> Workflow::get_sink_tasks() {
-  std::vector<Task *> task_list;
-  for(std::map<std::string, Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
-    if ((it->second)->children.empty()) {
-      task_list.push_back(it->second);
+    std::vector<Task *> task_list;
+    for(std::map<std::string, Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
+        if ((it->second)->children.empty()) {
+            task_list.push_back(it->second);
+        }
     }
-  }
-  return task_list;
+    return task_list;
 }
 
 
 int Workflow::get_maximum_depth() {
-  int max_depth = -1;
-  std::vector<Task *> sinks = this->get_sink_tasks();
-  for (std::vector<Task*>::iterator it = sinks.begin(); it != sinks.end(); ++it) {
-    if ((max_depth == -1) || ((*it)->depth > max_depth)) {
-      max_depth = (*it)->depth;
+    int max_depth = -1;
+    std::vector<Task *> sinks = this->get_sink_tasks();
+    for (std::vector<Task*>::iterator it = sinks.begin(); it != sinks.end(); ++it) {
+        if ((max_depth == -1) || ((*it)->depth > max_depth)) {
+            max_depth = (*it)->depth;
+        }
     }
-  } 
-  return max_depth;
+    return max_depth;
 }
 
 
@@ -194,8 +192,7 @@ Task::~Task()
 
 void Task::set_batsim_job(Job batsim_job)
 {
-  this->batsim_job = &batsim_job;
-
+    this->batsim_job = &batsim_job; // Probably a bug (address of local copy)!
 }
 
 
@@ -206,12 +203,12 @@ Workflows::Workflows()
 
 Workflows::~Workflows()
 {
-  for (auto mit : _workflows)
+    for (auto mit : _workflows)
     {
-      Workflow * workflow = mit.second;
-      delete workflow;
+        Workflow * workflow = mit.second;
+        delete workflow;
     }
-  _workflows.clear();
+    _workflows.clear();
 }
 
 Workflow *Workflows::operator[](const std::string &workflow_name)
@@ -251,24 +248,24 @@ void Workflows::insert_workflow(const std::string &workflow_name, Workflow *work
 
 bool Workflows::exists(const std::string &workflow_name) const
 {
-  //xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
-  //return workflow_name == "mmh";
+    //xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
+    //return workflow_name == "mmh";
     return _workflows.count(workflow_name) == 1;
 }
 
 bool Workflows::size() const
 {
-	return _workflows.size();
+    return _workflows.size();
 }
 
 
 std::map<std::string, Workflow *> &Workflows::workflows()
 {
-  return _workflows;
+    return _workflows;
 }
 
 const std::map<std::string, Workflow *> &Workflows::workflows() const
 {
-  return _workflows;
+    return _workflows;
 }
 

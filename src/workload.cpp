@@ -22,14 +22,14 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(workload, "workload"); //!< Logging
 
-Workload::Workload(std::string arg_name)
+Workload::Workload(const string & workload_name)
 {
     jobs = new Jobs;
     profiles = new Profiles;
 
     jobs->setProfiles(profiles);
     jobs->setWorkload(this);
-    this->name = arg_name;
+    this->name = workload_name;
 }
 
 Workload::~Workload()

@@ -22,8 +22,9 @@ class Workload
 public:
     /**
      * @brief Builds an empty Workload
+     * @param[in] workload_name The workload name
      */
-  Workload(std::string workload_name);
+    Workload(const std::string & workload_name);
 
     /**
      * @brief Destroys a Workload

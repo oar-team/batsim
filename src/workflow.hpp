@@ -26,6 +26,7 @@ class Workflow
 public:
     /**
      * @brief Builds an empty Workflow
+     * @param[in] name The Workflow name
      */
     Workflow(const std::string & name);
 
@@ -47,31 +48,39 @@ public:
 
     /**
      * @brief Adds a task to the workflow
+     * @param[in] task The task to add into the Workflow
      */
     void add_task(Task &task);
 
     /**
-     * @brief Get a task based on its ID
+     * @brief Gets a task based on its ID
+     * @param[in] id The task id
+     * @return The task corresponding to the given id
      */
     Task *get_task(std::string id);
 
     /**
      * @brief Add an edge between a parent task and a child task
+     * @param[in,out] parent The parent task
+     * @param[in,out] child The child task
      */
     void add_edge(Task &parent, Task &child);
 
     /**
-     * @brief Get source tasks
+     * @brief Gets source tasks
+     * @return The source tasks
      */
-    std::vector<Task *>  get_source_tasks();
+    std::vector<Task *> get_source_tasks();
 
     /**
-     * @brief Get sink tasks
+     * @brief Gets the sink tasks
+     * @return The sink tasks
      */
     std::vector<Task *> get_sink_tasks();
 
     /**
-     * @brief Get the maximum depth
+     * @brief Gets the maximum depth
+     * @return The maximum depth
      */
     int get_maximum_depth();
 
@@ -94,6 +103,9 @@ class Task
 public:
     /**
      * @brief Constructor
+     * @param[in] num_procs The number of processors needed for the task
+     * @param[in] execution_time The execution time of the task
+     * @param[in] id The task id
      */
     Task(const int num_procs, const double execution_time, std::string id);
 
@@ -103,7 +115,8 @@ public:
     ~Task();
 
     /**
-     * @brief Associates a batsim Job to the task
+     * @brief Associates a Batsim Job to the task
+     * @param[in] batsim_job The Batsim Job
      */
     void set_batsim_job(Job batsim_job);
 
