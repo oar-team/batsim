@@ -118,7 +118,7 @@ public:
      * @brief Associates a Batsim Job to the task
      * @param[in] batsim_job The Batsim Job
      */
-    void set_batsim_job(Job batsim_job);
+    void set_batsim_job(Job * batsim_job);
 
 
 public:

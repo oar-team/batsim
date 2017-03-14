@@ -118,7 +118,8 @@ void Workflow::add_task(Task &task) {
 }
 
 Task * Workflow::get_task(std::string id) {
-    // Potential bug: may crash if id does not exist
+    xbt_assert(this->tasks.count(id) == 1,
+               "Invalid Workflow::get_task call: id '%s' does not exist", id.c_str());
     return this->tasks[id];
 }
 
@@ -190,9 +191,9 @@ Task::~Task()
 
 
 
-void Task::set_batsim_job(Job batsim_job)
+void Task::set_batsim_job(Job * batsim_job)
 {
-    this->batsim_job = &batsim_job; // Probably a bug (address of local copy)!
+    this->batsim_job = batsim_job;
 }
 
 
