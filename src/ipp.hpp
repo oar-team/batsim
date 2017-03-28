@@ -13,6 +13,7 @@
 #include "machine_range.hpp"
 
 struct BatsimContext;
+struct Job;
 
 /**
  * @brief A simple structure used to identify one job
@@ -200,7 +201,7 @@ struct SwitchOFFMessage
  */
 struct KillingDoneMessage
 {
-    std::vector<std::string> jobs_ids; //!< The IDs of the jobs which have been killed
+    std::vector<JobIdentifier> jobs_ids; //!< The IDs of the jobs which have been killed
 };
 
 /**
@@ -285,7 +286,17 @@ struct WaiterProcessArguments
  */
 struct KillerProcessArguments
 {
-    std::vector<std::string> jobs_ids; //!< The ids of the jobs to kill
+    BatsimContext * context;           //!< The BatsimContext
+    std::vector<JobIdentifier> jobs_ids; //!< The ids of the jobs to kill
+};
+
+/**
+ * @brief The arguments of the smpi_replay_process process
+ */
+struct SMPIReplayProcessArguments
+{
+    msg_sem_t semaphore; //!< The semaphore used to know when all executors have finished
+    Job * job; //!< The job the smpi_replay_process is working on
 };
 
 /**

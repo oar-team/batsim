@@ -415,8 +415,11 @@ int server_process(int argc, char *argv[])
                 ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
                 exec_args->context = context;
                 exec_args->allocation = allocation;
-                string pname = "job" + to_string(job->number);
-                MSG_process_create(pname.c_str(), execute_job_process, (void*)exec_args, context->machines[allocation->machine_ids.first_element()]->host);
+                string pname = "job_" + job->id;
+                msg_process_t process = MSG_process_create(pname.c_str(), execute_job_process,
+                    (void*)exec_args,
+                    context->machines[allocation->machine_ids.first_element()]->host);
+                job->execution_processes.insert(MSG_process_get_PID(process));
             }
 
         } break; // end of case SCHED_ALLOCATION

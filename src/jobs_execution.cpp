@@ -17,19 +17,20 @@ using namespace std;
 
 int smpi_replay_process(int argc, char *argv[])
 {
-   /* for(int index = 0; index < argc; index++)
-        XBT_DEBUG("smpi_replay_process, arg %d = '%s'", index, argv[index]);*/
-    msg_sem_t sem = (msg_sem_t) MSG_process_get_data(MSG_process_self());
-    if (sem != NULL)
-    {
-        MSG_sem_acquire(sem);
-    }
+    SMPIReplayProcessArguments * args = (SMPIReplayProcessArguments *) MSG_process_get_data(MSG_process_self());
+
+    if (args->semaphore != NULL)
+        MSG_sem_acquire(args->semaphore);
+
     XBT_INFO("Launching smpi_replay_run");
     smpi_replay_run(&argc, &argv);
     XBT_INFO("smpi_replay_run finished");
-    if (sem != NULL) {
-        MSG_sem_release(sem);
-    }
+
+    if (args->semaphore != NULL)
+        MSG_sem_release(args->semaphore);
+
+    args->job->execution_processes.erase(MSG_process_get_PID(MSG_process_self()));
+    delete args;
     return 0;
 }
 
@@ -216,15 +217,18 @@ int execute_profile(BatsimContext *context,
             argv[4] = xbt_strdup("0"); //
 
             msg_host_t host_to_use = allocation->hosts[job->smpi_ranks_to_hosts_mapping[i]];
-            msg_sem_t sem_to_use = NULL;
+            SMPIReplayProcessArguments * message = new SMPIReplayProcessArguments;
+            message->semaphore = NULL;
+            message->job = job;
 
             XBT_INFO("Hello!");
 
             if (i == 0)
-                sem_to_use = sem;
+                message->semaphore = sem;
 
-            MSG_process_create_with_arguments(str_pname, smpi_replay_process, sem_to_use,
-                                              host_to_use, 5, argv);
+            msg_process_t process = MSG_process_create_with_arguments(str_pname, smpi_replay_process,
+                                                                      message, host_to_use, 5, argv);
+            job->execution_processes.insert(MSG_process_get_PID(process));
 
             // todo: avoid memory leaks
             free(str_pname);
@@ -327,6 +331,7 @@ int lite_execute_job_process(int argc, char *argv[])
         XBT_INFO("Job %s had been killed (walltime %g reached)",
                  job->id.c_str(), (double)job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
+        job->kill_reason = "Walltime reached";
         if (args->context->trace_schedule)
             args->context->paje_tracer.add_job_kill(job, args->allocation->machine_ids, MSG_get_clock(), true);
     }
@@ -337,6 +342,7 @@ int lite_execute_job_process(int argc, char *argv[])
     delete args->allocation;
     delete args;
 
+    job->execution_processes.erase(MSG_process_get_PID(MSG_process_self()));
     return 0;
 }
 
@@ -384,6 +390,7 @@ int execute_job_process(int argc, char *argv[])
         XBT_INFO("Job %s had been killed (walltime %g reached)",
                  job->id.c_str(), (double) job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
+        job->kill_reason = "Walltime reached";
         if (args->context->trace_schedule)
             args->context->paje_tracer.add_job_kill(job,
                                                     args->allocation->machine_ids,
@@ -432,6 +439,7 @@ int execute_job_process(int argc, char *argv[])
     delete args->allocation;
     delete args;
 
+    job->execution_processes.erase(MSG_process_get_PID(MSG_process_self()));
     return 0;
 }
 
@@ -470,8 +478,15 @@ int killer_process(int argc, char *argv[])
 
     KillerProcessArguments * args = (KillerProcessArguments *) MSG_process_get_data(MSG_process_self());
 
-    // TODO
-    xbt_assert(false, "Not implemented");
+    for (const JobIdentifier & job_id : args->jobs_ids)
+    {
+        Job * job = args->context->workloads.job_at(job_id);
+        Profile * profile = args->context->workloads.at(job_id.workload_name)->profiles->at(job->profile);
+        (void) profile;
+
+        // TODO
+        xbt_assert(false, "Not implemented");
+    }
 
     KillingDoneMessage * message = new KillingDoneMessage;
     message->jobs_ids = args->jobs_ids;

@@ -375,10 +375,12 @@ int job_launcher_process(int argc, char *argv[])
 
     Workload * workload = context->workloads.at(args->workload_name);
 
-    const auto & jobs = workload->jobs->jobs();
-    for (const auto & mit : jobs)
+    auto & jobs = workload->jobs->jobs();
+    for (auto & mit : jobs)
     {
-        const Job * job = mit.second;
+        Job * job = mit.second;
+        JobIdentifier id(workload->name, job->number);
+        job->id = id.to_string();
 
         int nb_res = job->required_nb_res;
 
@@ -400,8 +402,9 @@ int job_launcher_process(int argc, char *argv[])
         exec_args->context = context;
         exec_args->allocation = alloc;
         string pname = "job" + job->id;
-        MSG_process_create(pname.c_str(), lite_execute_job_process, (void*) exec_args,
-                           context->machines[alloc->machine_ids.first_element()]->host);
+        msg_process_t process = MSG_process_create(pname.c_str(), lite_execute_job_process,
+            (void*) exec_args, context->machines[alloc->machine_ids.first_element()]->host);
+        job->execution_processes.insert(MSG_process_get_PID(process));
     }
 
     return 0;

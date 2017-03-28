@@ -145,6 +145,11 @@ const std::map<int, Job* > &Jobs::jobs() const
     return _jobs;
 }
 
+std::map<int, Job *> &Jobs::jobs()
+{
+    return _jobs;
+}
+
 int Jobs::nb_jobs() const
 {
     return _jobs.size();
@@ -155,6 +160,13 @@ bool job_comparator_subtime_number(const Job *a, const Job *b)
     if (a->submission_time == b->submission_time)
         return a->number < b->number;
     return a->submission_time < b->submission_time;
+}
+
+Job::~Job()
+{
+    xbt_assert(execution_processes.size() == 0,
+               "Internal error: job %s has %d execution processes on destruction (should be 0).",
+               this->id.c_str(), (int)execution_processes.size());
 }
 
 Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)

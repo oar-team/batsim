@@ -10,6 +10,8 @@
 
 #include <rapidjson/document.h>
 
+#include <simgrid/msg.h>
+
 #include "exact_numbers.hpp"
 #include "machine_range.hpp"
 
@@ -25,7 +27,7 @@ enum class JobState
     ,JOB_STATE_SUBMITTED              //!< The job has been submitted, it can now be scheduled.
     ,JOB_STATE_RUNNING                //!< The job has been scheduled and is currently being processed.
     ,JOB_STATE_COMPLETED_SUCCESSFULLY //!< The job execution finished before its walltime.
-    ,JOB_STATE_COMPLETED_KILLED       //!< The job execution time was longer than its walltime so the job had been killed.
+    ,JOB_STATE_COMPLETED_KILLED       //!< The job has been killed.
     ,JOB_STATE_REJECTED               //!< The job has been rejected by the scheduler.
 };
 
@@ -34,6 +36,8 @@ enum class JobState
  */
 struct Job
 {
+    ~Job();
+
     Workload * workload = nullptr; //!< The workload the job belongs to
     int number; //!< The job unique number within its workload
     std::string id; //!< The job unique identifier
@@ -41,6 +45,9 @@ struct Job
     Rational submission_time; //!< The job submission time: The time at which the becomes available
     Rational walltime; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed
     int required_nb_res; //!< The number of resources the job is requested to be executed on
+    std::string kill_reason; //!< If the job has been killed, the kill reason is stored in this variable
+
+    std::set<int> execution_processes; //!< The processes involved in running the job
 
     std::string json_description; //!< The JSON description of the job
 
@@ -174,6 +181,12 @@ public:
      * @return A copy of the std::map which contains the jobs
      */
     const std::map<int, Job*> & jobs() const;
+
+    /**
+     * @brief Returns a reference to the std::map which contains the jobs
+     * @return A reference to the std::map which contains the jobs
+     */
+    std::map<int, Job*> & jobs();
 
     /**
      * @brief Returns the number of jobs of the Jobs instance
