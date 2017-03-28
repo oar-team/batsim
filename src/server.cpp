@@ -172,7 +172,6 @@ int server_process(int argc, char *argv[])
                 send_buffer += "|" + std::to_string(MSG_get_clock()) + ":Z";
                 XBT_DEBUG( "Message to send to scheduler: %s", send_buffer.c_str());
             }
-
         } break; // end of case JOB_COMPLETED
 
         case IPMessageType::JOB_SUBMITTED:
@@ -439,32 +438,27 @@ int server_process(int argc, char *argv[])
 
         case IPMessageType::SCHED_WAIT_ANSWER:
         {
-      SchedWaitAnswerMessage * message = new SchedWaitAnswerMessage;
-      *message = *( (SchedWaitAnswerMessage *) task_data->data);
+            SchedWaitAnswerMessage * message = new SchedWaitAnswerMessage;
+            *message = *( (SchedWaitAnswerMessage *) task_data->data);
 
-      //	  Submitter * submitter = origin_of_wait_queries.at({message->nb_resources,message->processing_time});
-
-
-      dsend_message(message->submitter_name, IPMessageType::SCHED_WAIT_ANSWER, (void*) message);
-
-      //	  origin_of_wait_queries.erase({message->nb_resources,message->processing_time});
-
+            //	  Submitter * submitter = origin_of_wait_queries.at({message->nb_resources,message->processing_time});
+            dsend_message(message->submitter_name, IPMessageType::SCHED_WAIT_ANSWER, (void*) message);
+            //	  origin_of_wait_queries.erase({message->nb_resources,message->processing_time});
         } break; // end of case SCHED_WAIT_ANSWER
 
         case IPMessageType::WAIT_QUERY:
         {
-      WaitQueryMessage  * message = (WaitQueryMessage *) task_data->data;
+            WaitQueryMessage  * message = (WaitQueryMessage *) task_data->data;
 
-      //	  XBT_INFO("received : %s , %s\n", to_string(message->nb_resources).c_str(), to_string(message->processing_time).c_str());
-      send_buffer += "|" + std::to_string(MSG_get_clock()) + ":Q:"
-        + message->submitter_name.c_str() + ","
-        + to_string(message->nb_resources).c_str() + ","
-        + boost::lexical_cast<string>(message->processing_time).c_str();
-      //	  XBT_INFO("INFO!!! Message to send to scheduler : '%s'", send_buffer.c_str());
+            //	  XBT_INFO("received : %s , %s\n", to_string(message->nb_resources).c_str(), to_string(message->processing_time).c_str());
+            send_buffer += "|" + std::to_string(MSG_get_clock()) + ":Q:"
+                    + message->submitter_name.c_str() + ","
+                    + to_string(message->nb_resources).c_str() + ","
+                    + boost::lexical_cast<string>(message->processing_time).c_str();
+            //	  XBT_INFO("INFO!!! Message to send to scheduler : '%s'", send_buffer.c_str());
 
-      //Submitter * submitter = submitters.at(message->submitter_name);
-      //origin_of_wait_queries[{message->nb_resources,message->processing_time}] = submitter;
-
+            //Submitter * submitter = submitters.at(message->submitter_name);
+            //origin_of_wait_queries[{message->nb_resources,message->processing_time}] = submitter;
         } break; // end of case WAIT_QUERY
 
         case IPMessageType::SWITCHED_ON:
