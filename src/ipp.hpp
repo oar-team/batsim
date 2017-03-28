@@ -51,7 +51,7 @@ bool operator<(const JobIdentifier & ji1, const JobIdentifier & ji2);
 enum class IPMessageType
 {
     JOB_SUBMITTED           //!< Submitter -> Server. The submitter tells the server a new job has been submitted.
-    ,JOB_COMPLETED          //!< Launcher/killer -> Server. The launcher tells the server a job has been completed.
+    ,JOB_COMPLETED          //!< Launcher -> Server. The launcher tells the server a job has been completed.
     ,PSTATE_MODIFICATION    //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a pstate modification).
     ,SCHED_ALLOCATION       //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job allocation).
     ,SCHED_REJECTION        //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job rejection).
@@ -61,7 +61,8 @@ enum class IPMessageType
     ,SCHED_WAIT_ANSWER      //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,WAIT_QUERY             //!< Server -> SchedulerHandler. The scheduler handler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,SCHED_READY            //!< SchedulerHandler -> Server. The scheduler handler tells the server that the scheduler is ready (messages can be sent to it).
-    ,WAITING_DONE           //!< Waiter -> server. The waiter tells the server that the target time has been reached.
+    ,WAITING_DONE           //!< Waiter -> Server. The waiter tells the server that the target time has been reached.
+    ,KILLING_DONE           //!< Killer -> Server. The killer tells the server that all the jobs have been killed.
     ,SUBMITTER_HELLO        //!< Submitter -> Server. The submitter tells it starts submitting to the server.
     ,SUBMITTER_CALLBACK     //!< Server -> Submitter. The server sends a message to the Submitter. This message is initiated when a Job which has been submitted by the submitter has completed. The submitter must have said that it wanted to be called back when he said hello.
     ,SUBMITTER_BYE          //!< Submitter -> Server. The submitter tells it stops submitting to the server.
@@ -195,6 +196,14 @@ struct SwitchOFFMessage
 };
 
 /**
+ * @brief The content of the KillingDone message
+ */
+struct KillingDoneMessage
+{
+    std::vector<std::string> jobs_ids; //!< The IDs of the jobs which have been killed
+};
+
+/**
  * @brief The base struct sent in inter-process messages
  */
 struct IPMessage
@@ -269,6 +278,14 @@ struct WorkflowSubmitterProcessArguments
 struct WaiterProcessArguments
 {
     double target_time; //!< The time at which the waiter should stop waiting
+};
+
+/**
+ * @brief The arguments of the killer_process process
+ */
+struct KillerProcessArguments
+{
+    std::vector<std::string> jobs_ids; //!< The ids of the jobs to kill
 };
 
 /**

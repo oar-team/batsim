@@ -462,3 +462,21 @@ int waiter_process(int argc, char *argv[])
 
     return 0;
 }
+
+int killer_process(int argc, char *argv[])
+{
+    (void) argc;
+    (void) argv;
+
+    KillerProcessArguments * args = (KillerProcessArguments *) MSG_process_get_data(MSG_process_self());
+
+    // TODO
+    xbt_assert(false, "Not implemented");
+
+    KillingDoneMessage * message = new KillingDoneMessage;
+    message->jobs_ids = args->jobs_ids;
+    send_message("server", IPMessageType::KILLING_DONE, (void*)message);
+    delete args;
+
+    return 0;
+}

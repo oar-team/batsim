@@ -60,3 +60,11 @@ int execute_job_process(int argc, char *argv[]);
  * @return 0
  */
 int waiter_process(int argc, char *argv[]);
+
+/**
+ * @brief The process in charge of killing a given job
+ * @param[in] argc The number of arguments
+ * @param[in] argv The arguments values
+ * @return 0
+ */
+int killer_process(int argc, char *argv[]);

@@ -111,6 +111,9 @@ std::string ipMessageTypeToString(IPMessageType type)
         case IPMessageType::SWITCHED_OFF:
             s = "SWITCHED_OFF";
             break;
+        case IPMessageType::KILLING_DONE:
+            s = "KILLING_ON";
+            break;
     }
 
     return s;
@@ -177,7 +180,7 @@ IPMessage::~IPMessage()
         case IPMessageType::SCHED_WAIT_ANSWER:
         {
             SchedWaitAnswerMessage * msg = (SchedWaitAnswerMessage *) data;
-            delete msg;	  
+            delete msg;
         } break;
         case IPMessageType::SCHED_READY:
         {
@@ -209,6 +212,11 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::WAITING_DONE:
         {
+        } break;
+        case IPMessageType::KILLING_DONE:
+        {
+            KillingDoneMessage * msg = (KillingDoneMessage *) data;
+            delete msg;
         } break;
     }
 

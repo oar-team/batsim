@@ -525,6 +525,12 @@ int server_process(int argc, char *argv[])
         {
             xbt_assert(false, "The server received a SUBMITTER_CALLBACK message, which should not happen");
         } break; // end of case SUBMITTER_CALLBACK
+
+        case IPMessageType::KILLING_DONE:
+        {
+            // TODO
+            xbt_assert(false, "Not implemented");
+        } break; // end of case KILLING_DONE
         } // end of switch
 
         delete task_data;
