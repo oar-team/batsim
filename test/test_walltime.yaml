@@ -23,14 +23,14 @@ implicit_instances:
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${pybatsim_algo[name]}_${workload[name]}_${platform[name]}
       batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out --redis-prefix ${instance_id} --mmax-workload
-      sched_command: python2 ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo[algo_name]} --redis-prefix ${instance_id}
+      sched_command: python ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo[algo_name]} --redis-prefix ${instance_id}
 
       commands_after_execution:
         - |
             #!/bin/bash
 
             cat > ${output_directory}/jobs_analysis.py <<EOF
-            #!/usr/bin/python2
+            #!/usr/bin/env python
             import pandas as pd
             import sys
 
@@ -58,7 +58,7 @@ implicit_instances:
                 sys.exit(0)
 
             EOF
-        - python2 ${output_directory}/jobs_analysis.py
+        - python ${output_directory}/jobs_analysis.py
 
 commands_before_instances:
   - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
