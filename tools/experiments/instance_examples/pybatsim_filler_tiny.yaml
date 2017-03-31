@@ -30,11 +30,11 @@ commands_before_execution:
   - echo $(pwd) > ${output_directory}/.pwd
   - cp ${output_directory}/.pwd ${output_directory}/crap_file
   - |
-    #!/usr/bin/python2
+    #!/usr/bin/env python
     import os
     fname = os.environ['output_directory'] + '/python_output'
     f = open(fname, 'w')
-    f.write("Hello from python2!\n")
+    f.write("Hello from python!\n")
     f.close()
 
 # These commands will be executed after the instance, in this order

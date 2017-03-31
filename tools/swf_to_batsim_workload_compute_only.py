@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # Dependency : sortedcontainers
 #    - installation: pip install sortedcontainers
