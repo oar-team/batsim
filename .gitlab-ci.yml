@@ -67,7 +67,7 @@ test:
       done
 
     - cd /builds/batsim/batsim
-    - git submodule update
+    - git submodule update --init
     - cd build
     - make install
     - ctest -V
