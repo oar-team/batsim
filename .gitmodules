@@ -1,0 +1,3 @@
+[submodule "schedulers/pybatsim"]
+	path = schedulers/pybatsim
+	url = git@gitlab.inria.fr:batsim/pybatsim.git
