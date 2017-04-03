@@ -27,7 +27,7 @@ implicit_instances:
 
       commands_after_execution:
         - |
-            #!/bin/bash
+            #!/usr/bin/env bash
 
             cat > ${output_directory}/jobs_analysis.py <<EOF
             #!/usr/bin/env python

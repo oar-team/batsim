@@ -315,7 +315,7 @@ def variable_to_text(variables, var_name):
 def put_variables_in_file(variables,
                           variables_declaration_order,
                           output_filename):
-    text_to_write = "#!/bin/bash\n"
+    text_to_write = "#!/usr/bin/env bash\n"
 
     # Let's define all variables in the specified order
     text_to_write += "\n# Variables definition\n"
@@ -336,7 +336,7 @@ def put_variables_in_file(variables,
 def create_file_from_command(command,
                              output_filename,
                              variables_definition_filename):
-    text_to_write = "#!/bin/bash\n"
+    text_to_write = "#!/usr/bin/env bash\n"
 
     # Let's define all variables
     text_to_write += "\n# Variables definition\n"

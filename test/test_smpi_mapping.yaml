@@ -28,7 +28,7 @@ implicit_instances:
       commands_after_execution:
         # Let's check that the jobs have consistent execution times
         - |
-            #!/bin/bash
+            #!/usr/bin/env bash
 
             source ${output_directory}/variables.bash
 

@@ -30,7 +30,7 @@ implicit_instances:
 
         # Let's check that Batsim sent the jobs in the right order
         - |
-            #!/bin/bash
+            #!/usr/bin/env bash
 
             source ${output_directory}/variables.bash
 
