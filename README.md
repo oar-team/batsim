@@ -17,7 +17,7 @@ Here is an overview of how Batsim works compared to real executions.
 Run batsim example
 ------------------
 
-*Important note*: It is highly recommended to use batsim with the provided
+**Important note**: It is highly recommended to use batsim with the provided
 container. It use really up-to-date version of some packages (like boost)
 that is not available on classic distribution yet.
 
@@ -41,9 +41,8 @@ docker exec -ti batsim bash
 
 # inside the container
 cd /root/batsim
-python2 schedulers/pybatsim/launcher.py fillerSched
+python schedulers/pybatsim/launcher.py fillerSched
 ```
-
 External References
 -------------------
 * Batsim scientific publication pre-print is available on HAL:
@@ -62,12 +61,37 @@ Build status
 [![build status](https://gitlab.inria.fr/batsim/batsim/badges/master/build.svg)]
 (https://gitlab.inria.fr/batsim/batsim/commits/master)
 
+Development environment
+-------------------------
+
+If you need to change te code of batsim you can use the docker environment ``oarteam/batsim_ci``
+and use the docker volumes to make your batsim version of the code inside the container.
+```bash
+# launch a batsim container
+docker run -ti -v /home/myuser/mybatrepo:/root/batsim --name batsim_dev oarteam/batsim_ci bash
+
+# inside the container
+cd /root/batsim
+rm -rf build
+mkdir build
+cd build
+cmake ..
+
+# Second step: run make
+make -j $(nproc)
+make install
+make test
+```
+With this setting you can use your own development tools outside the
+container to hack the batsim code and use the container to only to build
+and test your your code.
+
 Visualisation
 -------------
 
 Batsim output files can be visualised using external tools:
 
--   [Evalys] can be used to visualise Gantt chart from the Batsim job.csv files
+-   [Evalys](http://evalys.readthedocs.io) can be used to visualise Gantt chart from the Batsim job.csv files
     and SWF files
 -   [Vite] for the Pajé traces
 
@@ -90,6 +114,9 @@ scheduling policy in Python. See the [pybatsim folder] for more details.
 
 Installation
 ------------
+
+**Important note**: It is highly recommended to use the method describe in the 
+[Development environment](#development-environment) section.
 
 Batsim uses [Kameleon](http://kameleon.imag.fr/index.html) to build controlled
 environments. These environments allow us to generate Docker containers, which
