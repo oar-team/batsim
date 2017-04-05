@@ -638,11 +638,10 @@ def execute_one_instance(working_directory,
     if not is_batexec:
         sched_process.start()
 
-    # Let's wait until completion
-    batsim_process.wait(timeout=timeout)
-
-    if not is_batexec:
-        sched_process.wait(timeout=timeout)
+    while (execution_data.nb_started <= 0 and not execution_data.failure):
+        time.sleep(0.2)
+    while (execution_data.nb_finished < execution_data.nb_started):
+        time.sleep(0.2)
 
     # Return whether the execution has been successful
     return not execution_data.failure
