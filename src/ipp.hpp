@@ -52,6 +52,7 @@ bool operator<(const JobIdentifier & ji1, const JobIdentifier & ji2);
 enum class IPMessageType
 {
     JOB_SUBMITTED           //!< Submitter -> Server. The submitter tells the server a new job has been submitted.
+    ,JOB_SUBMITTED_BY_DP    //!< SchedulerHandler -> Server. The scheduler handler tells the server that the decision process wants to submit a job
     ,JOB_COMPLETED          //!< Launcher -> Server. The launcher tells the server a job has been completed.
     ,PSTATE_MODIFICATION    //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a pstate modification).
     ,SCHED_ALLOCATION       //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job allocation).
@@ -104,6 +105,16 @@ struct JobSubmittedMessage
 {
     std::string submitter_name; //!< The name of the submitter which submitted the job.
     JobIdentifier job_id; //!< The JobIdentifier
+};
+
+/**
+ * @brief The content of the JobSubmittedByDP message
+ */
+struct JobSubmittedByDPMessage
+{
+    JobIdentifier job_id; //!< The JobIdentifier of the new job
+    std::string job_description; //!< The job description string
+    std::string job_profile; //!< The profile of the job (can me empty if the job uses an existing profile)
 };
 
 /**

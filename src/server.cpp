@@ -212,6 +212,41 @@ int server_process(int argc, char *argv[])
 
         } break; // end of case JOB_SUBMITTED
 
+        case IPMessageType::JOB_SUBMITTED_BY_DP:
+        {
+            xbt_assert(task_data->data != nullptr);
+            JobSubmittedByDPMessage * message = (JobSubmittedByDPMessage *) task_data->data;
+
+            xbt_assert(!context->workloads.job_exists(message->job_id),
+                       "Bad job submission received from the decision process: job %s already exists.",
+                       message->job_id.to_string().c_str());
+
+            // Let's create the workload if it doesn't exist, or retrieve it otherwise
+            Workload * workload = nullptr;
+            if (context->workloads.exists(message->job_id.workload_name))
+                workload = context->workloads.at(message->job_id.workload_name);
+            else
+            {
+                workload = new Workload(message->job_id.workload_name);
+                context->workloads.insert_workload(workload->name, workload);
+            }
+
+            // Let's parse the user-submitted job
+            XBT_INFO("Parsing user-submitted job %s", message->job_id.to_string().c_str());
+            Job * job = Job::from_json(message->job_description, workload);
+            workload->jobs->add_job(job);
+
+            // Let's parse the profile if needed
+            if (!workload->profiles->exists(job->profile))
+            {
+                XBT_INFO("The profile of user-submitted job '%s' does not exist. Parsing the user-submitted profile",
+                         job->profile.c_str(), message->job_id.to_string().c_str());
+                Profile * profile = Profile::from_json(job->profile, message->job_profile);
+                workload->profiles->add_profile(job->profile, profile);
+            }
+
+        } break; // end of case JOB_SUBMITTED_BY_DP
+
         case IPMessageType::SCHED_REJECTION:
         {
             xbt_assert(task_data->data != nullptr);
@@ -526,7 +561,7 @@ int server_process(int argc, char *argv[])
         case IPMessageType::KILLING_DONE:
         {
             // TODO
-            xbt_assert(false, "Not implemented");
+            xbt_assert(false, "Not implemented yet, let's do this when the JSON protocol will work!");
         } break; // end of case KILLING_DONE
         } // end of switch
 

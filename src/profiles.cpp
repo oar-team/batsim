@@ -303,6 +303,9 @@ Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Va
                    profile_name.c_str());
         const string trace_filename = json_desc["trace"].GetString();
 
+        xbt_assert(json_filename != "not_a_real_file",
+                   "Trying to create a SMPI profile from another source than a file workload, which is not implemented at the moment.");
+
         filesystem::path base_dir(json_filename);
         base_dir = base_dir.parent_path();
         XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
