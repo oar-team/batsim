@@ -418,7 +418,7 @@ int server_process(int argc, char *argv[])
                 msg_process_t process = MSG_process_create(pname.c_str(), execute_job_process,
                     (void*)exec_args,
                     context->machines[allocation->machine_ids.first_element()]->host);
-                job->execution_processes.insert(MSG_process_get_PID(process));
+                job->execution_processes.insert(process);
             }
 
         } break; // end of case SCHED_ALLOCATION

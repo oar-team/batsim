@@ -29,7 +29,7 @@ int smpi_replay_process(int argc, char *argv[])
     if (args->semaphore != NULL)
         MSG_sem_release(args->semaphore);
 
-    args->job->execution_processes.erase(MSG_process_get_PID(MSG_process_self()));
+    args->job->execution_processes.erase(MSG_process_self());
     delete args;
     return 0;
 }
@@ -247,7 +247,7 @@ int execute_profile(BatsimContext *context,
 
             msg_process_t process = MSG_process_create_with_arguments(str_pname, smpi_replay_process,
                                                                       message, host_to_use, 5, argv);
-            job->execution_processes.insert(MSG_process_get_PID(process));
+            job->execution_processes.insert(process);
 
             // todo: avoid memory leaks
             free(str_pname);
@@ -363,7 +363,7 @@ int lite_execute_job_process(int argc, char *argv[])
     delete args->allocation;
     delete args;
 
-    job->execution_processes.erase(MSG_process_get_PID(MSG_process_self()));
+    job->execution_processes.erase(MSG_process_self());
     return 0;
 }
 
@@ -462,7 +462,7 @@ int execute_job_process(int argc, char *argv[])
     delete args->allocation;
     delete args;
 
-    job->execution_processes.erase(MSG_process_get_PID(MSG_process_self()));
+    job->execution_processes.erase(MSG_process_self());
     return 0;
 }
 
@@ -521,8 +521,50 @@ int killer_process(int argc, char *argv[])
         Profile * profile = args->context->workloads.at(job_id.workload_name)->profiles->at(job->profile);
         (void) profile;
 
-        // TODO
-        xbt_assert(false, "Not implemented");
+        xbt_assert(job->state == JobState::JOB_STATE_RUNNING ||
+                   job->state == JobState::JOB_STATE_COMPLETED_KILLED ||
+                   job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY,
+                   "Bad kill: job %s is not running", job->id.c_str());
+
+        if (job->state == JobState::JOB_STATE_RUNNING)
+        {
+            // Let's kill all the involved processes
+            xbt_assert(job->execution_processes.size() > 0);
+            for (msg_process_t process : job->execution_processes)
+            {
+                MSG_process_kill(process);
+            }
+
+            // Let's update the job information
+            job->state = JobState::JOB_STATE_COMPLETED_KILLED;
+            job->kill_reason = "Killed from killer_process (probably requested by the decision process)";
+
+            job->runtime = (Rational)MSG_get_clock() - job->starting_time;
+
+            xbt_assert(job->runtime > 0, "The execution of job '%s' resulted in a null execution time. "
+                       "This might be caused by MSG_clock() precision but also by a bad job profile.",
+                       job->id.c_str());
+
+            // If energy is enabled, let us compute the energy used by the machines after running the job
+            if (args->context->energy_used)
+            {
+                long double consumed_energy_before = job->consumed_energy;
+                job->consumed_energy = 0;
+
+                for (auto it = job->allocation.elements_begin(); it != job->allocation.elements_end(); ++it)
+                {
+                    int machine_id = *it;
+                    Machine * machine = args->context->machines[machine_id];
+                    job->consumed_energy += sg_host_get_consumed_energy(machine->host);
+                }
+
+                // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
+                job->consumed_energy = job->consumed_energy - consumed_energy_before;
+
+                // Let's trace the consumed energy
+                args->context->energy_tracer.add_job_end(MSG_get_clock(), job->number);
+            }
+        }
     }
 
     KillingDoneMessage * message = new KillingDoneMessage;

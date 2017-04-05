@@ -401,7 +401,7 @@ int job_launcher_process(int argc, char *argv[])
         string pname = "job" + job->id;
         msg_process_t process = MSG_process_create(pname.c_str(), lite_execute_job_process,
             (void*) exec_args, context->machines[alloc->machine_ids.first_element()]->host);
-        job->execution_processes.insert(MSG_process_get_PID(process));
+        job->execution_processes.insert(process);
     }
 
     return 0;
