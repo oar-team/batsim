@@ -37,6 +37,7 @@ int smpi_replay_process(int argc, char *argv[])
 int execute_profile(BatsimContext *context,
                     const std::string & profile_name,
                     const SchedulingAllocation * allocation,
+                    CleanExecuteProfileData * cleanup_data,
                     double * remaining_time)
 {
     Workload * workload = context->workloads.at(allocation->job_id.workload_name);
@@ -57,6 +58,9 @@ int execute_profile(BatsimContext *context,
         if(com != 0.0)
             communication_amount = xbt_new(double, nb_res*nb_res);
 
+        // If the process gets killed, the following data must be freed
+        cleanup_data->computation_amount = computation_amount;
+        cleanup_data->communication_amount = communication_amount;
 
         // Let us fill the local computation and communication matrices
         int k = 0;
@@ -87,6 +91,10 @@ int execute_profile(BatsimContext *context,
         msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
 
+        // The task has been executed, the data does need to be freed in the clenaup function anymore
+        cleanup_data->computation_amount = nullptr;
+        cleanup_data->communication_amount = nullptr;
+
         int ret = 1;
         if (err == MSG_OK) {}
         else if (err == MSG_TIMEOUT)
@@ -106,9 +114,16 @@ int execute_profile(BatsimContext *context,
         double * computation_amount = xbt_new(double, nb_res);
         double * communication_amount = xbt_new(double, nb_res*nb_res);
 
+        // If the process gets killed, the following data must be freed
+        cleanup_data->computation_amount = computation_amount;
+        cleanup_data->communication_amount = communication_amount;
+
         // Let us retrieve the matrices from the profile
         memcpy(computation_amount, data->cpu, sizeof(double) * nb_res);
         memcpy(communication_amount, data->com, sizeof(double) * nb_res * nb_res);
+
+        cleanup_data->computation_amount = computation_amount;
+        cleanup_data->communication_amount = communication_amount;
 
         string task_name = "p " + to_string(job->number) + "'" + job->profile + "'";
         XBT_INFO("Creating task '%s'", task_name.c_str());
@@ -122,6 +137,10 @@ int execute_profile(BatsimContext *context,
         XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
         msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
+
+        // The task has been executed, the data does need to be freed in the clenaup function anymore
+        cleanup_data->computation_amount = nullptr;
+        cleanup_data->communication_amount = nullptr;
 
         int ret = 1;
         if (err == MSG_OK) {}
@@ -143,7 +162,7 @@ int execute_profile(BatsimContext *context,
         {
             for (unsigned int j = 0; j < data->sequence.size(); j++)
             {
-                if (execute_profile(context, data->sequence[j], allocation, remaining_time) == 0)
+                if (execute_profile(context, data->sequence[j], allocation, cleanup_data, remaining_time) == 0)
                     return 0;
             }
         }
@@ -321,7 +340,9 @@ int lite_execute_job_process(int argc, char *argv[])
 
     // Job computation
     args->context->machines.update_machines_on_job_run(job, args->allocation->machine_ids, args->context);
-    if (execute_profile(args->context, job->profile, args->allocation, &remaining_time) == 1)
+    CleanExecuteProfileData * cleanup_data = new CleanExecuteProfileData;
+    SIMIX_process_on_exit(MSG_process_self(), execute_profile_cleanup, cleanup_data);
+    if (execute_profile(args->context, job->profile, args->allocation, cleanup_data, &remaining_time) == 1)
     {
         XBT_INFO("Job %s finished in time", job->id.c_str());
         job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
@@ -380,7 +401,9 @@ int execute_job_process(int argc, char *argv[])
     args->context->machines.update_machines_on_job_run(job,
                                                        args->allocation->machine_ids,
                                                        args->context);
-    if (execute_profile(args->context, job->profile, args->allocation, &remaining_time) == 1)
+    CleanExecuteProfileData * cleanup_data = new CleanExecuteProfileData;
+    SIMIX_process_on_exit(MSG_process_self(), execute_profile_cleanup, cleanup_data);
+    if (execute_profile(args->context, job->profile, args->allocation, cleanup_data, &remaining_time) == 1)
     {
         XBT_INFO("Job %s finished in time", job->id.c_str());
         job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
@@ -467,6 +490,20 @@ int waiter_process(int argc, char *argv[])
 
     send_message("server", IPMessageType::WAITING_DONE);
     delete args;
+
+    return 0;
+}
+
+int execute_profile_cleanup(void * unknown, void * data)
+{
+    (void) unknown;
+
+    CleanExecuteProfileData * cleanup_data = (CleanExecuteProfileData *) data;
+    xbt_assert(cleanup_data != nullptr);
+
+    xbt_free(cleanup_data->computation_amount);
+    xbt_free(cleanup_data->communication_amount);
+    delete cleanup_data;
 
     return 0;
 }
