@@ -239,7 +239,7 @@ int server_process(int argc, char *argv[])
             // Let's parse the profile if needed
             if (!workload->profiles->exists(job->profile))
             {
-                XBT_INFO("The profile of user-submitted job '%s' does not exist. Parsing the user-submitted profile",
+                XBT_INFO("The profile of user-submitted job '%s' does not exist. Parsing the user-submitted profile '%s'",
                          job->profile.c_str(), message->job_id.to_string().c_str());
                 Profile * profile = Profile::from_json(job->profile, message->job_profile);
                 workload->profiles->add_profile(job->profile, profile);
