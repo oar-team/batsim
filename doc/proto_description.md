@@ -1,119 +1,231 @@
-# Introduction #
+# Introduction
 
 Batsim is run as a process and communicates with a scheduler via a socket.
-This socket is an Unix Domain Socket one in STREAM mode.
+This socket is a ZMQ REQ socket and the decision process implements a ZMQ
+REP socket so they communicate with a simple request reply pattern.
 
-Since the C++ version (commit b9b5e8543c3b6172 of the C++ branch, 2015-11-20),
-Batsim handles the server side of the socket (previously, Batsim was client-sided).
+The used protocol is a simple synchronous with JSON based message.
+Its behaviour may be summarized by a request-reply protocol. When Batsim
+needs a scheduling decision, the following events occur:
 
-Batsim opens a server socket on a file (not on a port since Unix Domain Sockets are used).
-Batsim then listens for 1 client socket and accepts its connection.
-
-The used protocol is a simple synchronous semi-textual protocol. Its behaviour may be summarized
-by a request-reply protocol. When Batsim needs a scheduling decision, the following events occur:
-
-1. Batsim stops the simulation.
-2. Batsim sends a request to the scheduler.
-3. Batsim waits for a reply from the scheduler.
-4. Batsim receives and reads the reply.
-5. Batsim resumes the simulation.
+1. Batsim suspend the simulation
+2. Batsim sends a request to the scheduler
+3. Batsim waits for a reply from the scheduler
+4. Batsim receives and reads the reply
+5. Batsim resumes the simulation
 
 This protocol is used for synchronization purpose. Metadata associated to the
 jobs are shared via Redis, as described [here](data_storage_description.md)
 
-# Message Composition #
+# Message Composition
 
-All messages sent in this protocol are assumed to have the format MSG_SIZE MSG_CONTENT where:
-- MSG_SIZE is a 32-bit native-endianness unsigned integer, which stores the number of bytes of the MSG_CONTENT part.
-- MSG_CONTENT is the real message content. It is a (non null-terminated) string: a sequence of bytes interpreted as characters thanks to the ASCII table.
+It is a JSON object that looks like this:
 
-Each MSG_CONTENT follows this syntax:
+```json
+{
+  "now": 1024.24
+  "events": [
+    {
+      "timestamp": 1000,
+      "type": "EXEC",
+      "data": {
+        "job_id": "workload!job_1234",
+        "alloc": "1 2 4-8",
+      }
+    },
+    {
+      "timestamp": 1012,
+      "type": "EXEC",
+      "data": {
+        "job_id": "workload!job_1235",
+        "alloc": "12-100",
+      }
+    }
+  ]
+}
+
 ```
-{PROTO_VERSION}:{TIME_MSG}|{TIME_EVENT1}:{STAMP1}[:{STAMP_DEPENDENT_CONTENT1}][|{TIME_EVENT2}:{STAMP2}[:{STAMP_DEPENDENT_CONTENT2}][...]]
+
+The ``now`` field define the current simulation time. In a request coming
+from Batsim to the scheduler it means that the scheduler cannot take a
+decision before this time. In the reply from the scheduler it inform Batsim
+the time for the scheduler to take the decision.
+
+
+## Constraints
+
+Constraints on the message format are define here:
+
+- the message timestamp now MUST be equal or greater than each event timestamp
+- events timestamps MUST be ordered: event[i].timestamp <= event[i+1].timestamp
+- mandatory fields:
+    - now (type: float)
+    - events: (type array (can be empty))
+        - timestamp (type: float)
+        - type (type: string as defined below)
+        - data (type: dict (can be empty))
+
+## Event type
+
+Event types that can be send in both ways:
 ```
-with :
-- PROTO_VERSION is the protocol version used in the message
-- TIME_MSG is the simulation time at which the message has been sent by the scheduler
-- TIME_EVENT1, TIME_EVENT2, ... TIME_EVENTn are the simulation times at which the events were supposed to be sent to the scheduler. These values must be lower than or equal to the corresponding TIME_MSG simulation time. Furthermore, all events must be in chronological order.
-- STAMP1, STAMP2, ... STAMPn are the stamps of each event: They allow to know what event type should be parsed. They are 1-character long.
-- STAMP_DEPENDENT_CONTENT1, STAMP_DEPENDENT_CONTENT2, ... STAMP_DEPENDENT_CONTENTn store additional information about the events. For example, when a job is completed, this field stores
-the job ID of the job which just completed. This part is not mandatory, it depends on the used stamp.
+BATSIM <---> DECISION
+```
 
-# Message Stamps #
+### NOP
 
-| Proto. version  | Stamp | Direction     | Content syntax                  | Meaning
-|---------------- |-------|-------------- |-------------------------------- |-------------
-|        2+       |   S   | Bastim->Sched | WLOAD!JOB_ID                    | Job submission: job JOB_ID of workload WLOAD is available and can now be allocated to resources.
-|        2+       |   C   | Batsim->Sched | WLOAD!JOB_ID                    | Job completion: job JOB_ID of workload WLOAD finished its execution.
-|        2+       |   J   | Sched->Batsim | WLOAD!JID1=MID1,MID2,MIDn[;...] | Job allocation: tells to put job JID1 of workload WLOAD on machines MID1, ..., MIDn. Many jobs might be allocated in the same event. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
-|        0+       |   N   | Both          | No content                      | NOP: tells to do nothing / nothing happened.
-|        1+       |   P   | Sched->Batsim | MID1,MID2,MIDn=PSTATE           | Asks to change the power state of some machines. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
-|        1+       |   p   | Batsim->Sched | MID1,MID2,MIDn=PSTATE           | Tells the scheduler that the power state of one or several machines has changed. Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb. There is one and only one 'p' message for each 'P' message.
-|        2+       |   R   | Sched->Batsim | WLOAD!JOB_ID                    | Job rejection: the scheduler tells that one (static) job will not be computed.
-|        1+       |   n   | Sched->Batsim | TIME                            | NOP me later: the scheduler asks to be awaken at the given simulation time TIME.
-|        1+       |   E   | Sched->Batsim | No content                      | Asks Batsim about the total consumed energy (from time 0 to now) in Joules. Works only in energy mode.
-|        1+       |   e   | Batsim->Sched | CONSUMED_ENERGY                 | Batsim tells the total consumed energy (from time 0 to now) in Joules. Works only in energy mode. There is one and only one 'e' message for each 'E' message.
-|        3+       |   A   | Batsim->Sched | No content                      | Batsim tells the scheduler that the simulation is about to begin (the Scheduler can now read information from Redis). This is the first message Batsim sends.
-|        3+       |   Z   | Batsim->Sched | No content                      | Batsim tells the scheduler that the simulation is about to end (all jobs have been submitted and completed/rejected)
-|        3+       |   F   | Batsim->Sched | MID1,MID2,MIDn                  | Batsim tells the scheduler that the given machines are in a failure state (crashed, no jobs can be computed on them). Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
-|        3+       |   f   | Batsim->Sched | MID1,MID2,MIDn                  | Batsim tells the scheduler that the given machines are no longer in a failure state (jobs can now be computed on them). Each MIDk part can be a single machine ID or a closed interval MIDa-MIDb where MIDa <= MIDb
-|        4+       |   Q   | Batsim->Sched | SUB,REQ,TIME                        | Batsim queries the scheduler about potential waiting time for requested number of processors, for a given walltime. SUB is the submitter.
-|        4+       |   W   | Sched->Batsim | SUB,REQ,TIME,WAIT                   | Scheduler notifies Batsim about potential waiting time for requested number of processors and walltime. SUB is the submitter.
+The simplest message is just for doing nothing.
 
-# Message Examples #
+- **data**: empty
+- **example**:
+```json
+{}
+```
 
-## Simulation starts ##
-    Batsim -> Scheduler
-    3:0.000000|0.000000:A
+Message from Batsim to the decision process (a.k.a. the scheduler):
+```
+BATSIM ---> DECISION
+```
 
-## Simulation ends ##
-    Batsim -> Scheduler
-    3:46.556835|46.556835:C:workload_profiles/test_workload_profile.json!2|46.556835:Z
+### JOB_SUBMITTED
 
-## Static Job Submission ##
-    Batsim -> Scheduler
-    0:10.000015|10.000015:S:static!1
-    0:13|12:S:static!2|12.5:S:static!3|13:S:static!4
+Some jobs was submitted to Batsim.
 
-## Static Job Completion ##
-    Batsim -> Scheduler
-    0:15.836694|15.836694:C:static!1
-    0:40.001320|25:C:static!2|38.002565:C:static!3
+- **data**: list of job id
+- **example**:
+```json
+{
+  "timestamp: 10.0,
+  "type": "JOB_SUBMITTED",
+  "data": {
+    "job_ids": ["w0!1", "w0!2"]
+  }
+}
+```
 
-## Static Job Allocation ##
-    Scheduler -> Batsim
-    0:15.000015|15.000015:J:static!1=1,2,0,3;static!2=3
-    0:45.00132|45.00132:J:static!4=3,1,2,0
+### JOB_COMPLETED
 
-## NOP ##
-    Scheduler -> Batsim or Batsim -> Scheduler
-    0:2|2:N
-    0:42|10:N|20:N|30:N|40:N
+A job has completed its execution.
 
-## PState Modification Request ##
-    Scheduler -> Batsim
-    1:50|50:P:0=2
-    1:70|60:P:0-2=0
+- **data**: a job id string with a status string (TIMEOUT, SUCCESS)
+- **example**:
+```json
+{
+  "timestamp: 10.0,
+  "type": "JOB_COMPLETED",
+  "data": {"job_id": "w0!1", "status": "SUCCESS"}
+}
+```
 
-## PState Modification Acknowledgement ##
-    Batsim -> Scheduler
-    1:50.5|50.5:p:0=2
-    1:60.5|60.5:p:0-2=0
+### RESOURCE_STATE_CHANGED
 
-## Static Job Rejection ##
-    Scheduler -> Batsim
-    0:50|50:R:static!5
+The state of some resources has changed.
 
-## NOP Me Later ##
-    Scheduler -> Batsim
-    1:100|100:n:142
+- **data**: an interval set of resource id and the new state
+- **example**:
+```json
+{
+  "timestamp: 10.0,
+  "type": "RESOURCE_STATE_CHANGED",
+  "data": {"resources": "1 2 3-5", "state": "42"}
+}
+```
 
-    Expected result (Batsim -> Scheduler):
-        1:142.000001|142.000001:N
+### QUERY_REPLY
 
-## Ask about energy consumption ##
-    Scheduler -> Batsim
-    1:60|60:E
+This is a reply to a ``QUERY_REQUEST`` message.
 
-    Expected result (Batsim -> Scheduler)
-        1:60.000001|60.000001:e:960000
+- **data**: can be anything
+- **example**:
+```json
+{
+  "timestamp: 10.0,
+  "type": "QUERY_REPLY",
+  "data": {"redis_keys": "/my/key/path0" }
+}
+```
+
+
+Message from the decision process to Batsim:
+```
+BATSIM <--- DECISION
+```
+
+### QUERY_REQUEST
+
+This is a query sent to Batsim to get information about the simulation
+state (or whatever you want to know...).
+
+- **data**: This will defined elsewhere...
+- **example**:
+```json
+{
+  "timestamp: 10.0,
+  "type": "QUERY_REQUEST",
+  "data": {
+    "reply_type": "redis",
+    "requests": {"energy_consumed": {}}
+  }
+}
+```
+
+### REJECT_JOB
+
+Reject a job that was submitted before.
+
+- **data**: A job id
+- **example**:
+```json
+{
+  "timestamp: 10.0,
+  "type": "REJECT_JOB",
+  "data": { "job_id": "w12!45" }
+}
+```
+
+### EXECUTE_JOB
+
+Execute a job on a given set of resources. An optional mapping can be
+added to tell Batsim how to map executors to resources: where the
+executors will be placed inside my allocation (resource numbers are shifted
+to 0). It only works for SMPI for now.
+
+The following example overrides the default round robin mapping to put the
+first two rank (0,1) on the first allocated machine (0 which stands for
+resource id 2), and the two last rank (2,3) on the second machine (1 which
+stands for resource id 3).
+
+- **data**: A job id, an allocation and a mapping (optional)
+- **example**:
+```json
+{
+  "timestamp: 10.0,
+  "type": "EXECUTE_JOB",
+  "data": {
+    "job_id": "w12!45",
+    "alloc": "2-3",
+    mapping: {"0": "0", "1": "0", "2": "1", "3": "1"}
+  }
+}
+```
+
+### CALL_ME_LATER
+
+Ask for Batsim to wake the scheduler up later on time.
+
+- **data**: future timestamp float
+- **example**:
+```json
+{
+  "timestamp: 10.0,
+  "type": "CALL_ME_LATER",
+  "data": {"timestamp": 25.5}
+}
+```
+
+
+### KILL_JOB
+
+### SUBMIT_JOB
+
+### SET_RESOURCE_STATE
