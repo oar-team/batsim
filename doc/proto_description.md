@@ -1,18 +1,19 @@
 # Introduction
+A Batsim simulation consists in two processes:
+- Batsim itself, in charge of simulating what happens on the platform
+- A *Decision Process* (or more simply scheduler), in charge of making decisions
 
-Batsim is run as a process and communicates with a scheduler via a socket.
-This socket is a ZMQ REQ socket and the decision process implements a ZMQ
-REP socket so they communicate with a simple request reply pattern.
-
-The used protocol is a simple synchronous with JSON based message.
-Its behaviour may be summarized by a request-reply protocol. When Batsim
-needs a scheduling decision, the following events occur:
-
-1. Batsim suspend the simulation
-2. Batsim sends a request to the scheduler
+The two processes communicate via a socket with the protocol explained in the present document.
+The protocol is synchronous and follows a simple request-reply pattern.
+Whenever an event which may require making decision occurs in Batsim in the simulation, the following
+steps occur:
+1. Batsim suspends the simulation
+2. Batsim sends a request to the scheduler (telling it what happened on the platform)
 3. Batsim waits for a reply from the scheduler
-4. Batsim receives and reads the reply
-5. Batsim resumes the simulation
+4. Batsim receives the reply
+5. Batsim resumes the simulation, applying the decision which have been made
+
+ZeroMQ is used in both processes (Batsim uses a ZMQ REQ socket, the scheduler a ZMQ REP one).
 
 This protocol is used for synchronization purpose. Metadata associated to the
 jobs are shared via Redis, as described [here](data_storage_description.md)
@@ -46,50 +47,50 @@ It is a JSON object that looks like this:
 
 ```
 
-The ``now`` field define the current simulation time. In a request coming
-from Batsim to the scheduler it means that the scheduler cannot take a
-decision before this time. In the reply from the scheduler it inform Batsim
-the time for the scheduler to take the decision.
+The ``now`` field defines the current simulation time.
+- If the message comes from Batsim, it means that the scheduler cannot make decisions before ```now``` (time travel is forbidden)
+- If the message comes from the scheduler, it tells Batsim that the scheduler finished making its decisions at timestamp ```now```. It is used by Batsim to know when the scheduler will be available for making new decisions.
 
 
 ## Constraints
 
-Constraints on the message format are define here:
+Constraints on the message format are defined here:
 
-- the message timestamp now MUST be equal or greater than each event timestamp
-- events timestamps MUST be ordered: event[i].timestamp <= event[i+1].timestamp
+- the message timestamp ```now``` MUST be greater than or equal to every event ```timestamp```
+- events timestamps MUST be in ascending order: event[i].timestamp <= event[i+1].timestamp
 - mandatory fields:
-    - now (type: float)
-    - events: (type array (can be empty))
-        - timestamp (type: float)
-        - type (type: string as defined below)
-        - data (type: dict (can be empty))
+    - ```now``` (type: float)
+    - ```events```: (type array (can be empty))
+        - ```timestamp``` (type: float)
+        - ```type``` (type: string as defined below)
+        - ```data``` (type: dict (can be empty))
 
-## Event type
+## Bidirectional events
 
-Event types that can be send in both ways:
+These events can be sent from Batsim to the scheduler, or in the opposite direction.
 ```
 BATSIM <---> DECISION
 ```
 
 ### NOP
 
-The simplest message is just for doing nothing.
+The simplest message, stands either for: "nothing happened" if sent by Batsim, or "do nothing" if sent by the scheduler.
 
 - **data**: empty
 - **example**:
 ```json
 {}
 ```
+## Batsim to Scheduler events
 
-Message from Batsim to the decision process (a.k.a. the scheduler):
+These events are sent by Batsim to the scheduler.
 ```
 BATSIM ---> DECISION
 ```
 
 ### JOB_SUBMITTED
 
-Some jobs was submitted to Batsim.
+Some jobs have been submitted within Batsim. It is sent whenever a job coming from Batsim inputs (workloads and workflows) are submitted. It is also sent as a reply to a ```SUBMIT_JOB``` message if and only if an acknowledgement has been requested.
 
 - **data**: list of job id
 - **example**:
@@ -105,7 +106,7 @@ Some jobs was submitted to Batsim.
 
 ### JOB_COMPLETED
 
-A job has completed its execution.
+A job has completed its execution. It acknowledges that the actions coming from a previous ```EXECUTE_JOB``` message have been done (successfully or not, depending on whether the job completed without reaching timeout).
 
 - **data**: a job id string with a status string (TIMEOUT, SUCCESS)
 - **example**:
@@ -117,9 +118,23 @@ A job has completed its execution.
 }
 ```
 
+### JOB_KILLED
+
+Some jobs have been killed. It acknowledges that the actions coming from a previous ```KILL_JOB``` message have been done.
+
+- **data**: A list of job ids
+- **example**:
+```json
+{
+  "timestamp: 10.0,
+  "type": "JOB_KILLED",
+  "data": {"job_ids": ["w0!1", "w0!2"]}
+}
+```
+
 ### RESOURCE_STATE_CHANGED
 
-The state of some resources has changed.
+The state of some resources has changed. It acknowledges that the actions coming from a previous ```SET_RESOURCE_STATE``` message have been done.
 
 - **data**: an interval set of resource id and the new state
 - **example**:
@@ -145,8 +160,8 @@ This is a reply to a ``QUERY_REQUEST`` message.
 }
 ```
 
-
-Message from the decision process to Batsim:
+## Scheduler to Batsim events
+These events are sent by the scheduler to Batsim.
 ```
 BATSIM <--- DECISION
 ```
@@ -187,12 +202,12 @@ Reject a job that was submitted before.
 
 Execute a job on a given set of resources. An optional mapping can be
 added to tell Batsim how to map executors to resources: where the
-executors will be placed inside my allocation (resource numbers are shifted
+executors will be placed inside the allocation (resource numbers are shifted
 to 0). It only works for SMPI for now.
 
 The following example overrides the default round robin mapping to put the
-first two rank (0,1) on the first allocated machine (0 which stands for
-resource id 2), and the two last rank (2,3) on the second machine (1 which
+first two ranks (0 and 1) on the first allocated machine (0, which stands for
+resource id 2), and the last two ranks (2 and 3) on the second machine (1, which
 stands for resource id 3).
 
 - **data**: A job id, an allocation and a mapping (optional)
@@ -211,7 +226,7 @@ stands for resource id 3).
 
 ### CALL_ME_LATER
 
-Ask for Batsim to wake the scheduler up later on time.
+Asks Batsim to call the scheduler later on, at a given timestamp.
 
 - **data**: future timestamp float
 - **example**:
@@ -225,7 +240,67 @@ Ask for Batsim to wake the scheduler up later on time.
 
 
 ### KILL_JOB
+Kills some jobs (almost instantaneously).
+
+- **data**: A list of job ids
+- **example**:
+```json
+{
+  "timestamp: 10.0,
+  "type": "KILL_JOB",
+  "data": {"job_ids": ["w0!1", "w0!2"]}
+}
+```
 
 ### SUBMIT_JOB
 
+Submits a job (from the scheduler).
+
+- **data**: A job id (job id duplication is forbidden), the submission type (either "redis" or "protocol"), classical job and profile information (optional), whether to acknowledge submission or not (optional, submission is acknowledged by default)
+- **example redis** : the job description (and the profile description if it unknown to Batsim yet) must have been pushed into redis by the scheduler before sending this message
+```json
+{
+  "timestamp: 10.0,
+  "type": "SUBMIT_JOB",
+  "data": {
+    "job_id": "w12!45",
+    "submit_type": "redis",
+    "acknowledge": false
+  }
+}
+```
+- **example without redis** : the whole job description goes through the protocol. "profile_description" is optional if the newly submitted job uses an already existing profile.
+```json
+{
+  "timestamp: 10.0,
+  "type": "SUBMIT_JOB",
+  "data": {
+    "job_id": "dyn!my_new_job",
+    "submit_type": "protocol",
+    "job_description":{
+      "profile": "delay_10s",
+      "res": 1,
+      "id": "my_new_job",
+      "walltime": 12.0
+    },
+    "profile_description":{
+      "type": "delay",
+      "delay": 10
+    }
+  }
+}
+```
+
 ### SET_RESOURCE_STATE
+
+Sets some resources into a state.
+
+- **data**: an interval set of resource id, and the new state
+- **example**:
+```json
+{
+  "timestamp: 10.0,
+  "type": "SET_RESOURCE_STATE",
+  "data": {"resources": "1 2 3-5", "state": "42"}
+}
+```
