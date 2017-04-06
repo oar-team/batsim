@@ -474,8 +474,8 @@ async def execute_command_inner(command, stdout_file, stderr_file, timeout=None)
     proc = await create
 
     # Wait for the subprocess exit
-    # await proc.wait()
-    await proc.wait_for(timeout)
+    await proc.wait()
+    #await proc.wait_for(timeout)
 
     return proc
 
@@ -517,7 +517,7 @@ def execute_command(command,
 
     if (proc.returncode != None) and (proc.returncode >= 0):
         return True
-    else
+    else:
         logger.warning("Command '{cmd}' failed.".format(cmd=cmd))
         return False
 
@@ -750,8 +750,8 @@ Examples of such input files can be found in the subdirectory instance_examples.
     if args.do_not_execute:
         do_not_execute = True
 
-    global_loop = asyncio.get_event_loop()
     global global_loop
+    global_loop = asyncio.get_event_loop()
 
     # Let's add some variables
     variables['working_directory'] = working_directory
