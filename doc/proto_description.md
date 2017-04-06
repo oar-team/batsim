@@ -88,6 +88,32 @@ These events are sent by Batsim to the scheduler.
 BATSIM ---> DECISION
 ```
 
+### SIMULATION_STARTS
+Sent at the beginning of the simulation. Once it has been sent, metainformation can be read from Redis.
+
+- **data**: empty
+- **example**:
+```json
+{
+  "timestamp: 0.0,
+  "type": "SIMULATION_STARTS",
+  "data": {}
+}
+```
+
+### SIMULATION_ENDS
+Sent once all jobs have been submitted and have completed.
+
+- **data**: empty
+- **example**:
+```json
+{
+  "timestamp: 100.0,
+  "type": "SIMULATION_ENDS",
+  "data": {}
+}
+```
+
 ### JOB_SUBMITTED
 
 Some jobs have been submitted within Batsim. It is sent whenever a job coming from Batsim inputs (workloads and workflows) are submitted. It is also sent as a reply to a ```SUBMIT_JOB``` message if and only if an acknowledgement has been requested.
@@ -302,5 +328,36 @@ Sets some resources into a state.
   "timestamp: 10.0,
   "type": "SET_RESOURCE_STATE",
   "data": {"resources": "1 2 3-5", "state": "42"}
+}
+```
+
+### SCHEDULER_MAY_SUBMIT_JOBS
+
+The scheduler tells Batsim that dynamic job submissions (coming from the scheduler) can be done in the current simulation.
+If dynamic jobs must be enabled, **this message should be sent as soon as possible**, preferably as a reply to ```SIMULATION_STARTS```.
+
+The scheduler **must** send a ```SCHEDULER_FINISHED_SUBMITTING_JOBS``` once it has finished submitting jobs. Otherwise, deadlocks are very likely to happen.
+
+- **data**: empty
+- **example**:
+```json
+{
+  "timestamp: 0.0,
+  "type": "SCHEDULER_MAY_SUBMIT_JOBS",
+  "data": {}
+}
+```
+
+### SCHEDULER_FINISHED_SUBMITTING_JOBS
+The scheduler tells Batsim that it will not any other job submission until the simulation is over.
+This message **must** be sent if ```SCHEDULER_MAY_SUBMIT_JOBS``` has been sent in the simulation.
+
+- **data**: empty
+- **example**:
+```json
+{
+  "timestamp: 42.0,
+  "type": "SCHEDULER_FINISHED_SUBMITTING_JOBS",
+  "data": {}
 }
 ```
