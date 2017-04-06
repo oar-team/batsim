@@ -39,7 +39,7 @@ public:
      * @param[in] executor_to_allocated_resource_mapping Optional.
      *            Allows to give a custom mapping from executors to allocated resources.
      *            By default, the number of allocated resources must equals
-     *            the job size, and executor #i is launched on allocated resource #i.
+     *            the job size, and executor i is launched on allocated resource i.
      */
     virtual void append_execute_job(const std::string & job_id,
                                     const MachineRange & allocated_resources,
@@ -176,6 +176,9 @@ public:
     virtual std::string generate_current_message(double date) = 0;
 };
 
+/**
+ * @brief The JSON implementation of the AbstractProtocolWriter
+ */
 class JsonProtocolWriter : public AbstractProtocolWriter
 {
 public:
@@ -207,7 +210,7 @@ public:
      * @param[in] executor_to_allocated_resource_mapping Optional.
      *            Allows to give a custom mapping from executors to allocated resources.
      *            By default, the number of allocated resources must equals
-     *            the job size, and executor #i is launched on allocated resource #i.
+     *            the job size, and executor i is launched on allocated resource i.
      */
     void append_execute_job(const std::string & job_id,
                             const MachineRange & allocated_resources,
