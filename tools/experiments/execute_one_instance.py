@@ -2,6 +2,7 @@
 # Should now work with both python2 and python3
 
 import argparse
+import asyncio.subprocess
 from execo import *
 import math
 import os
@@ -420,6 +421,19 @@ class SchedLifecycleHandler(ProcessLifecycleHandler):
             logger.info("Sched ended successfully")
         self.execution_data.nb_finished += 1
 
+async def execute_command_inner(command, stdout_file, stderr_file, timeout=None):
+    create = asyncio.create_subprocess_shell(command,
+                                             stdout=stdout_file,
+                                             stderr=stderr_file)
+    # Wait for the subprocess creation
+    proc = await create
+
+    # Wait for the subprocess exit
+    # await proc.wait()
+    await proc.wait_for(timeout)
+
+    return proc
+
 def execute_command(command,
                     working_directory,
                     variables_filename,
@@ -429,7 +443,8 @@ def execute_command(command,
                     command_name):
 
     # If the command is composed of different lines,
-    # a corresponding script file will be created
+    # a corresponding subscript file will be created.
+    # Otherwise, only one script will be created.
     if '\n' in command:
         multiline_command = True
         write_string_into_file(command, output_subscript_filename)
@@ -444,28 +459,23 @@ def execute_command(command,
                                  output_filename = output_script_filename,
                                  variables_definition_filename = variables_filename)
 
-    # Let's create the execo process
-    cmd_process = Process(cmd = 'bash {f}'.format(f=output_script_filename),
-                          shell = True,
-                          kill_subprocesses = True,
-                          name = command_name,
-                          cwd = working_directory,
-                          stdout_handlers = ['{out}/{name}.stdout'.format(
-                            out = output_script_output_dir,
-                            name = command_name)],
-                          stderr_handlers = ['{out}/{name}.stderr'.format(
-                            out = output_script_output_dir,
-                            name = command_name)])
-
-    logger.info("Executing command: {cmd}".format(cmd=command))
-
-    # Let's create the script logging directory if needed
     create_dir_if_not_exists(output_script_output_dir)
 
-    # Let's start the process
-    cmd_process.start().wait()
+    # Let's prepare the real command call
+    cmd = 'bash {f}'.format(f=output_script_filename)
+    stdout_file = open('{out}/{name}.stdout'.format(out = output_script_output_dir,
+                                                    name = command_name), 'wb')
+    stderr_file = open('{out}/{name}.stderr'.format(out = output_script_output_dir,
+                                                    name = command_name), 'wb')
 
-    return cmd_process.finished_ok and not cmd_process.error and cmd_process.exit_code == 0
+    # Let's run the command (synchronously)
+    proc = global_loop.run_until_complete(execute_command_inner(cmd, stdout_file, stderr_file))
+
+    if (proc.returncode != None) and (proc.returncode >= 0):
+        return True
+    else
+        logger.warning("Command '{cmd}' failed.".format(cmd=cmd))
+        return False
 
 g_port_regex = re.compile('.*:(\d+)')
 
@@ -690,6 +700,8 @@ Examples of such input files can be found in the subdirectory instance_examples.
     if args.do_not_execute:
         do_not_execute = True
 
+    global_loop = asyncio.get_event_loop()
+    global global_loop
 
     # Let's add some variables
     variables['working_directory'] = working_directory
