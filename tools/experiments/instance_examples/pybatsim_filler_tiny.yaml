@@ -20,7 +20,7 @@ output_directory: /tmp/pyfiller/tiny
 
 # The commands
 batsim_command: batsim -p ${platform["filename"]} -w ${workload["filename"]} -e ${output_directory}/out
-sched_command: python2 ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo}
+sched_command: python ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo}
 
 # These commands will be executed before the instance, in this order
 # One-line commands will be executed in a bash environment.
@@ -30,18 +30,18 @@ commands_before_execution:
   - echo $(pwd) > ${output_directory}/.pwd
   - cp ${output_directory}/.pwd ${output_directory}/crap_file
   - |
-    #!/usr/bin/python2
+    #!/usr/bin/env python
     import os
     fname = os.environ['output_directory'] + '/python_output'
     f = open(fname, 'w')
-    f.write("Hello from python2!\n")
+    f.write("Hello from python!\n")
     f.close()
 
 # These commands will be executed after the instance, in this order
 commands_after_execution:
   - cat ${output_directory}/crap_file
   - |
-    #!/bin/bash
+    #!/usr/bin/env bash
     cat ${output_directory}/out_schedule.csv | cut -d',' -f6 | tail -n 1 > ${output_directory}/makespan
 
 # An upper bound on the instance's execution time can be set if needed

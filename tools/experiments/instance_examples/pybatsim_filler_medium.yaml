@@ -21,4 +21,4 @@ variables:
 timeout: 60
 
 batsim_command: batsim -p ${platform} -w ${workload} -e ${output_directory}/out
-sched_command: python2 ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo}
+sched_command: python ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo}
