@@ -30,62 +30,6 @@ enum NetworkStamp : char
 };
 
 /**
- * @brief Handles the socket used in the network protocol
- */
-class UnixDomainSocket
-{
-public:
-    /**
-     * @brief Creates a UnixDomainSocket, whose internal sockets do not exist
-     */
-    UnixDomainSocket();
-
-    /**
-     * @brief Creates a UnixDomainSocket, whose internal server socket is created via create_socket
-     * @param[in] filename The name of the file that is used as the Unix Domain Socket
-     */
-    UnixDomainSocket(const std::string & filename);
-
-    /**
-     * @brief Destroys a UnixDomainSocket, closing open sockets
-     */
-    ~UnixDomainSocket();
-
-    /**
-     * @brief Creates the server socket
-     * @brief This method unlinks the file, creates a socket, binds it and starts listening on it
-     * @param[in] filename The name of the file that is used as the Unix Domain Socket
-     */
-    void create_socket(const std::string & filename);
-
-    /**
-     * @brief Accept one pending connection (wait for it if none has been done yet)
-     */
-    void accept_pending_connection();
-
-    /**
-     * @brief Closes the internal sockets
-     */
-    void close();
-
-    /**
-     * @brief Waits for a message on the client socket (from the Decision real process) then returns it
-     * @return The message received on the client socket
-     */
-    std::string receive();
-
-    /**
-     * @brief Sends a message on the client socket (to the Decision real process)
-     * @param[in] message The message to send
-     */
-    void send(const std::string & message);
-
-private:
-    int _server_socket = -1; //!< The server-side socket
-    int _client_socket = -1; //!< The client-side socket
-};
-
-/**
  * @brief The process in charge of doing a Request-Reply iteration with the Decision real process
  * @details This process sends a message to the Decision real process (Request) then waits for the answered message (Reply)
  * @param[in] argc The number of arguments
