@@ -516,7 +516,7 @@ def execute_command(command,
     # Let's run the command (synchronously)
     proc = global_loop.run_until_complete(execute_command_inner(cmd, stdout_file, stderr_file))
 
-    if (proc.returncode != None) and (proc.returncode >= 0):
+    if (proc.returncode is not None) and (proc.returncode >= 0):
         return True
     else:
         logger.warning("Command '{cmd}' failed.".format(cmd=cmd))
