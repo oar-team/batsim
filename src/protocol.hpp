@@ -1,11 +1,14 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 #include <string>
+#include <map>
 
 #include <rapidjson/document.h>
 
 #include "machine_range.hpp"
+#include "ipp.hpp"
 
 /**
  * @brief Does the interface between protocol semantics and message representation.
@@ -16,7 +19,7 @@ public:
     /**
      * @brief Destructor
      */
-    virtual ~AbstractProtocolWriter() {};
+    virtual ~AbstractProtocolWriter() {}
 
     // Bidirectional messages
     /**
@@ -400,6 +403,7 @@ private:
     rapidjson::Document _doc;
     rapidjson::Document::AllocatorType & _alloc;
     rapidjson::Value _events = rapidjson::Value(rapidjson::kArrayType);
+    const std::vector<std::string> accepted_statuses = {"SUCCESS", "TIMEOUT"};
 };
 
 
@@ -408,3 +412,61 @@ private:
  * @return Whether the JsonProtocolWriter behaves as expected
  */
 bool test_json_writer();
+
+/**
+ * @brief In charge of parsing a protocol message and injecting internal messages into the simulation
+ */
+class AbstractProtocolReader
+{
+public:
+    /**
+     * @brief Destructor
+     */
+    virtual ~AbstractProtocolReader() {}
+
+    /**
+     * @brief Parses a message and injects events in the simulation
+     * @param[in] message The protocol message
+     */
+    virtual void parse_and_apply_message(const std::string & message) = 0;
+};
+
+/**
+ * @brief In charge of parsing a JSON message and injecting messages into the simulation
+ */
+class JsonProtocolReader : public AbstractProtocolReader
+{
+public:
+    /**
+     * @brief Destructor
+     */
+    ~JsonProtocolReader();
+
+    /**
+     * @brief Parses a message and injects events in the simulation
+     * @param[in] message The protocol message
+     */
+    void parse_and_apply_message(const std::string & message);
+
+    /**
+     * @brief Parses an event and injects it in the simulation
+     * @param[in] event_object The event (JSON object)
+     * @param[in] event_number The event number in [0,nb_events[.
+     * @param[in] now The message timestamp
+     */
+    void parse_and_apply_event(const rapidjson::Value & event_object, int event_number, double now);
+
+    /**
+     * @brief Handles a QUERY_REQUEST event
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_query_request(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+private:
+    void send_message(double when, const std::string & destination_mailbox, IPMessageType type, void * data = nullptr) const;
+
+private:
+    std::map<std::string, std::function<void(JsonProtocolReader*, int, double, const rapidjson::Value&)>> _type_to_handler_map;
+    std::vector<std::string> accepted_requests = {"consumed_energy"};
+};

@@ -184,8 +184,6 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
       "data": {"job_id": "w0!1", "status": "SUCCESS"}
     } */
 
-    const static vector<string> accepted_statuses = {"SUCCESS", "TIMEOUT"};
-
     xbt_assert(date >= _last_date, "Date inconsistency");
     xbt_assert(std::find(accepted_statuses.begin(), accepted_statuses.end(), job_status) != accepted_statuses.end(),
                "Unsupported job status '%s'!", job_status.c_str());
@@ -344,4 +342,92 @@ bool test_json_writer()
     delete proto_writer;
 
     return true;
+}
+
+
+
+JsonProtocolReader::~JsonProtocolReader()
+{
+
+}
+
+void JsonProtocolReader::parse_and_apply_message(const string &message)
+{
+    rapidjson::Document doc;
+    doc.Parse(message.c_str());
+
+    xbt_assert(doc.IsObject(), "Invalid JSON message: not a JSON object");
+
+    xbt_assert(doc.HasMember("now"), "Invalid JSON message: no 'now' key");
+    xbt_assert(doc["now"].IsDouble(), "Invalid JSON message: 'now' value should be a double.");
+    double now = doc["now"].GetDouble();
+
+    xbt_assert(doc.HasMember("events"), "Invalid JSON message: no 'events' key");
+    const auto & events_array = doc["events"];
+    xbt_assert(events_array.IsArray(), "Invalid JSON message: 'events' value should be an array.");
+
+    for (unsigned int i = 0; i < events_array.Size(); ++i)
+    {
+        const auto & event_object = events_array[i];
+        parse_and_apply_event(event_object, i, now);
+    }
+}
+
+void JsonProtocolReader::parse_and_apply_event(const Value & event_object,
+                                               int event_number,
+                                               double now)
+{
+    xbt_assert(event_object.IsObject(), "Invalid JSON message: event %d should be an object.", event_number);
+
+    xbt_assert(event_object.HasMember("timestamp"), "Invalid JSON message: event %d should have a 'timestamp' key.", event_number);
+    xbt_assert(event_object["timestamp"].IsDouble(), "Invalid JSON message: timestamp of event %d should be a double", event_number);
+    double timestamp = event_object["timestamp"].GetDouble();
+    xbt_assert(timestamp <= now, "Invalid JSON message: timestamp %g of event %d should be lower than or equal to now=%g.", timestamp, event_number, now);
+
+    xbt_assert(event_object.HasMember("type"), "Invalid JSON message: event %d should have a 'type' key.", event_number);
+    xbt_assert(event_object["type"].IsString(), "Invalid JSON message: event %d 'type' value should be a String", event_number);
+    string type = event_object["type"].GetString();
+    xbt_assert(_type_to_handler_map.find(type) != _type_to_handler_map.end(), "Invalid JSON message: event %d has an unknown 'type' value '%s'", event_number, type.c_str());
+
+    xbt_assert(event_object.HasMember("data"), "Invalid JSON message: event %d should have a 'data' key.", event_number);
+    const Value & data_object = event_object["data"];
+
+    auto handler_function = _type_to_handler_map[type];
+    handler_function(this, event_number, timestamp, data_object);
+}
+
+void JsonProtocolReader::handle_query_request(int event_number, double timestamp, const Value &data_object)
+{
+    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (QUERY_REQUEST) should be an object", event_number);
+    xbt_assert(data_object.MemberCount() > 0, "Invalid JSON message: the 'data' value of event %d (QUERY_REQUEST) cannot be empty (size=%d)", event_number, (int)data_object.MemberCount());
+
+    for (auto it = data_object.MemberBegin(); it != data_object.MemberEnd(); ++it)
+    {
+        const auto & key_value = it->name;
+        const auto & value_object = it->value;
+
+        xbt_assert(key_value.IsString(), "Invalid JSON message: a key within the 'data' object of event %d (QUERY_REQUEST) is not a string", event_number);
+        string key = key_value.GetString();
+        xbt_assert(std::find(accepted_requests.begin(), accepted_requests.end(), key) != accepted_requests.end(), "Invalid JSON message: Unknown QUERY_REQUEST '%s' of event %d", key.c_str(), event_number);
+
+        xbt_assert(value_object.IsObject(), "Invalid JSON message: the value of '%s' inside 'data' object of event %d (QUERY_REQUEST) is not an object", key.c_str(), event_number);
+
+        if (key == "consumed_energy")
+        {
+            xbt_assert(value_object.ObjectEmpty(), "Invalid JSON message: the value of '%s' inside 'data' object of event %d (QUERY_REQUEST) should be empty", key.c_str(), event_number);
+            send_message(timestamp, "server", IPMessageType::SCHED_TELL_ME_ENERGY);
+        }
+    }
+}
+
+void JsonProtocolReader::send_message(double when,
+                                      const string &destination_mailbox,
+                                      IPMessageType type,
+                                      void *data) const
+{
+    double current_time = MSG_get_clock();
+    if (when > current_time)
+        MSG_process_sleep(when - current_time);
+
+    ::send_message(destination_mailbox, type, data);
 }
