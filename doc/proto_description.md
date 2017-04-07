@@ -90,11 +90,10 @@ BATSIM <---> DECISION
 ### NOP
 
 The simplest message, stands either for: "nothing happened" if sent by
-Batsim, or "do nothing" if sent by the scheduler.
+Batsim, or "do nothing" if sent by the scheduler. It means that the
+events list is empty: ``"events": []``
 
-This is not a *real* event: It is not implemented as an event with a custom type,
-but a message with an empty ``events`` list can be considered as a NOP.
-
+- **data**: N/A
 - **full message example**:
 ```json
 {
@@ -112,17 +111,19 @@ These events are sent by Batsim to the scheduler.
 BATSIM ---> DECISION
 ```
 
-### SIMULATION_STARTS
+### SIMULATION_BEGINS
 Sent at the beginning of the simulation. Once it has been sent,
-metainformation can be read from Redis.
+and if redis is enabled, meta-information can be read from Redis.
 
-- **data**: empty
+- **data**: the number of resources
 - **example**:
 ```json
 {
   "timestamp": 0.0,
-  "type": "SIMULATION_STARTS",
-  "data": {}
+  "type": "SIMULATION_BEGINS",
+  "data": {
+    "nb_resources": 60
+  }
 }
 ```
 
@@ -144,20 +145,37 @@ Sent once all jobs have been submitted and have completed.
 Some jobs have been submitted within Batsim. It is sent whenever a job
 coming from Batsim inputs (workloads and workflows) are submitted. It is
 also sent as a reply to a ```SUBMIT_JOB``` message if and only if an
-acknowledgement has been requested.
+acknowledgement has been requested. Without Redis enabled the job 
+description and optionnaly the profile are also transmitted.
 
 - **data**: list of job id
-- **example**:
+- **example without redis**:
+```json
+{
+  "timestamp": 10.0,
+  "type": "JOB_SUBMITTED",
+  "data": {"job_id": "w0!1"}
+}
+```
+- **example with redis**:
 ```json
 {
   "timestamp": 10.0,
   "type": "JOB_SUBMITTED",
   "data": {
-    "job_ids": ["w0!1", "w0!2"]
-  }
+    "job_id": "dyn!my_new_job",
+    "job": {
+      "profile": "delay_10s",
+      "res": 1,
+      "id": "my_new_job",
+      "walltime": 12.0
+    },
+    "profile":{
+      "type": "delay",
+      "delay": 10
+    }
 }
 ```
-
 ### JOB_COMPLETED
 
 A job has completed its execution. It acknowledges that the actions coming
@@ -213,7 +231,7 @@ put directly in the message. See [Configuration documentation](./configuration)
 for more details.
 
 
-- **data**: can be anything
+- **data**: See [QUERY_REQUEST](#query_request) documentation 
 - **example**:
 ```json
 {
@@ -227,7 +245,7 @@ or
 {
   "timestamp": 10.0,
   "type": "QUERY_REPLY",
-  "data": {"energy_consumed": "12500" }
+  "data": {"consumed_energy": "12500" }
 }
 ```
 
@@ -243,10 +261,9 @@ BATSIM <--- DECISION
 
 This is a query sent to Batsim to get information about the simulation
 state (or whatever you want to know...). The supported requests are:
-- "energy_consumed" with no argument that asks Batsim about the total
+- "consumed_energy" with no argument that asks Batsim about the total
   consumed energy (from time 0 to now) in Joules. Works only in energy
   mode.
-- "waiting_time".
 
 - **data**: a dictionnary of requests.
 - **example**:
@@ -255,7 +272,7 @@ state (or whatever you want to know...). The supported requests are:
   "timestamp": 10.0,
   "type": "QUERY_REQUEST",
   "data": {
-    "requests": {"energy_consumed": {}}
+    "requests": {"consumed_energy": {}}
   }
 }
 ```
@@ -330,8 +347,8 @@ Kills some jobs (almost instantaneously).
 
 ### SUBMIT_JOB
 
-Submits a job (from the scheduler).This submission is acknowledged by
-default). See [Configuration documentation](./configuration) for more
+Submits a job (from the scheduler). The submission is acknowledged by
+default. See [Configuration documentation](./configuration.md) for more
 details.
 
 - **data**: A job id (job id duplication is forbidden), classical job and
@@ -356,13 +373,13 @@ details.
   "type": "SUBMIT_JOB",
   "data": {
     "job_id": "dyn!my_new_job",
-    "job_description":{
+    "job":{
       "profile": "delay_10s",
       "res": 1,
       "id": "my_new_job",
       "walltime": 12.0
     },
-    "profile_description":{
+    "profile":{
       "type": "delay",
       "delay": 10
     }
@@ -388,7 +405,7 @@ Sets some resources into a state.
 The scheduler notify Batsim of something. For example, that job submission
 from the scheduler is over, so Batsim is able to stop the simulation.  This
 message **must** be sent if ``"scheduler_submission": {"enabled": false}``
-is configured. See [Configuration documentation](./configuration) for more
+is configured. See [Configuration documentation](./configuration.md) for more
 details.
 
 - **data**: empty
