@@ -12,3 +12,4 @@ CMakeLists.txt.user
 dump.rdb
 .sshkeys
 *.swp
+*.dia~
