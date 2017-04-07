@@ -92,10 +92,15 @@ BATSIM <---> DECISION
 The simplest message, stands either for: "nothing happened" if sent by
 Batsim, or "do nothing" if sent by the scheduler.
 
-- **data**: empty
-- **example**:
+This is not a *real* event: It is not implemented as an event with a custom type,
+but a message with an empty ``events`` list can be considered as a NOP.
+
+- **full message example**:
 ```json
-{}
+{
+  "now": 1024.24,
+  "events": []
+}
 ```
 
 ---
