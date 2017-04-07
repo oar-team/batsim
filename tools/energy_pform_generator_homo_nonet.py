@@ -1,6 +1,7 @@
-#!/usr/bin/python2
+#!/usr/bin/env python3
 
 import argparse
+
 
 def generate_flat_platform(nb_hosts, output_file):
 
@@ -9,19 +10,19 @@ def generate_flat_platform(nb_hosts, output_file):
 
     #on Taurus with TimeNasEP_C
     freqs = [
-    {"freq":2301000,    "maxWatt":203.12,   "moyWatt":190.738,  "time":28.2},
-    {"freq":2300000,    "maxWatt":180.5,    "moyWatt":171.02,   "time":31.7},
-    {"freq":2200000,    "maxWatt":174.0,    "moyWatt":165.62,   "time":33.7},
-    {"freq":2100000,    "maxWatt":169.25,   "moyWatt":160.47,   "time":35.0},
-    {"freq":2000000,    "maxWatt":163.5,    "moyWatt":155.729,  "time":37.0},
-    {"freq":1900000,    "maxWatt":158.12,   "moyWatt":151.30,   "time":38.9},
-    {"freq":1800000,    "maxWatt":153.88,   "moyWatt":146.92,   "time":41.0},
-    {"freq":1700000,    "maxWatt":149.25,   "moyWatt":142.95,   "time":43.6},
-    {"freq":1600000,    "maxWatt":145.25,   "moyWatt":138.928,  "time":46.4},
-    {"freq":1500000,    "maxWatt":141.0,    "moyWatt":135.368,  "time":48.1},
-    {"freq":1400000,    "maxWatt":137.5,    "moyWatt":132.519,  "time":56.3},
-    {"freq":1300000,    "maxWatt":133.5,    "moyWatt":128.87,   "time":57.3},
-    {"freq":1200000,    "maxWatt":130.25,   "moyWatt":125.88,   "time":62.7}
+        {"freq":2301000,    "maxWatt":203.12,   "moyWatt":190.738,  "time":28.2},
+        {"freq":2300000,    "maxWatt":180.5,    "moyWatt":171.02,   "time":31.7},
+        {"freq":2200000,    "maxWatt":174.0,    "moyWatt":165.62,   "time":33.7},
+        {"freq":2100000,    "maxWatt":169.25,   "moyWatt":160.47,   "time":35.0},
+        {"freq":2000000,    "maxWatt":163.5,    "moyWatt":155.729,  "time":37.0},
+        {"freq":1900000,    "maxWatt":158.12,   "moyWatt":151.30,   "time":38.9},
+        {"freq":1800000,    "maxWatt":153.88,   "moyWatt":146.92,   "time":41.0},
+        {"freq":1700000,    "maxWatt":149.25,   "moyWatt":142.95,   "time":43.6},
+        {"freq":1600000,    "maxWatt":145.25,   "moyWatt":138.928,  "time":46.4},
+        {"freq":1500000,    "maxWatt":141.0,    "moyWatt":135.368,  "time":48.1},
+        {"freq":1400000,    "maxWatt":137.5,    "moyWatt":132.519,  "time":56.3},
+        {"freq":1300000,    "maxWatt":133.5,    "moyWatt":128.87,   "time":57.3},
+        {"freq":1200000,    "maxWatt":130.25,   "moyWatt":125.88,   "time":62.7}
 
     ]
     maxx = freqs[0]["time"]
