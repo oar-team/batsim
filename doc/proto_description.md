@@ -202,7 +202,9 @@ coming from a previous ```SET_RESOURCE_STATE``` message have been done.
 This is a reply to a ``QUERY_REQUEST`` message. It depends on the
 configuration of Batsim: if ``"redis": { "enabled": true }`` the reply will
 go in redis and only the key will be given. Otherwise, the response will be
-put directly in the message.
+put directly in the message. See [Configuration documentation](./configuration)
+for more details.
+
 
 - **data**: can be anything
 - **example**:
@@ -321,29 +323,32 @@ Kills some jobs (almost instantaneously).
 
 ### SUBMIT_JOB
 
-Submits a job (from the scheduler).
+Submits a job (from the scheduler).This submission is acknowledged by
+default). See [Configuration documentation](./configuration) for more
+details.
 
-- **data**: A job id (job id duplication is forbidden), the submission type (either "redis" or "protocol"), classical job and profile information (optional), whether to acknowledge submission or not (optional, submission is acknowledged by default)
-- **example redis** : the job description (and the profile description if it unknown to Batsim yet) must have been pushed into redis by the scheduler before sending this message
+- **data**: A job id (job id duplication is forbidden), classical job and
+  profile information (optional).
+
+- **example redis** : the job description, and the profile description if
+  it unknown to Batsim yet, must have been pushed into redis by the
+  scheduler before sending this message
 ```json
 {
   "timestamp": 10.0,
   "type": "SUBMIT_JOB",
   "data": {
     "job_id": "w12!45",
-    "submit_type": "redis",
-    "acknowledge": false
   }
 }
 ```
-- **example without redis** : the whole job description goes through the protocol. "profile_description" is optional if the newly submitted job uses an already existing profile.
+- **example without redis** : the whole job description goes through the protocol.
 ```json
 {
   "timestamp": 10.0,
   "type": "SUBMIT_JOB",
   "data": {
     "job_id": "dyn!my_new_job",
-    "submit_type": "protocol",
     "job_description":{
       "profile": "delay_10s",
       "res": 1,
@@ -373,9 +378,11 @@ Sets some resources into a state.
 ```
 
 ### NOTIFY
-The scheduler notify Batsim of something. For example, that it will not any
-other job submission until the simulation is over.  This message **must**
-be sent if ```SCHEDULER_MAY_SUBMIT_JOBS``` is configured in the simulation.
+The scheduler notify Batsim of something. For example, that job submission
+from the scheduler is over, so Batsim is able to stop the simulation.  This
+message **must** be sent if ``"scheduler_submission": {"enabled": false}``
+is configured. See [Configuration documentation](./configuration) for more
+details.
 
 - **data**: empty
 - **example**:
