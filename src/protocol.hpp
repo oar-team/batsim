@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 
+#include <rapidjson/document.h>
+
 #include "machine_range.hpp"
 
 /**
@@ -11,6 +13,18 @@
 class AbstractProtocolWriter
 {
 public:
+    /**
+     * @brief Destructor
+     */
+    virtual ~AbstractProtocolWriter() {};
+
+    // Bidirectional messages
+    /**
+     * @brief Appends a NOP message.
+     * @param[in] date The event date. Must be greater than or equal to the previous event.
+     */
+    virtual void append_nop(double date) = 0;
+
     // Messages from the Scheduler to Batsim
     /**
      * @brief Appends a SUBMIT_JOB event.
@@ -124,15 +138,17 @@ public:
      * @param[in] job_ids The identifiers of the submitted jobs.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_job_submitted(std::vector<std::string> job_ids,
+    virtual void append_job_submitted(const std::vector<std::string> & job_ids,
                                       double date) = 0;
 
     /**
      * @brief Appends a JOB_COMPLETED event.
      * @param[in] job_id The identifier of the job that has completed.
+     * @param[in] job_status The job status
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_job_completed(const std::string & job_id,
+                                      const std::string & job_status,
                                       double date) = 0;
 
     /**
@@ -140,7 +156,7 @@ public:
      * @param[in] job_ids The identifiers of the jobs that have been killed.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_job_killed(std::vector<std::string> job_ids,
+    virtual void append_job_killed(const std::vector<std::string> & job_ids,
                                    double date) = 0;
 
     /**
@@ -154,12 +170,12 @@ public:
                                                double date) = 0;
 
     /**
-     * @brief Appends a QUERY_REPLY event.
-     * @param[in] anything ...
+     * @brief Appends a QUERY_REPLY (energy) event.
+     * @param[in] consumed_energy The total consumed energy in joules
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_query_reply(void * anything,
-                                    double date) = 0;
+    virtual void append_query_reply_energy(double consumed_energy,
+                                           double date) = 0;
 
     // Management functions
     /**
@@ -174,6 +190,12 @@ public:
      * @return A string representation of the events added since the last call to clear.
      */
     virtual std::string generate_current_message(double date) = 0;
+
+    /**
+     * @brief Returns whether the Writer has content
+     * @return Whether the Writer has content
+     */
+    virtual bool is_empty() = 0;
 };
 
 /**
@@ -182,6 +204,24 @@ public:
 class JsonProtocolWriter : public AbstractProtocolWriter
 {
 public:
+    /**
+     * @brief Creates an empty JsonProtocolWriter
+     */
+    JsonProtocolWriter();
+
+    /**
+     * @brief Destroys a JsonProtocolWriter
+     */
+    ~JsonProtocolWriter();
+
+
+    // Bidirectional messages
+    /**
+     * @brief Appends a NOP message.
+     * @param[in] date The event date. Must be greater than or equal to the previous event.
+     */
+    void append_nop(double date);
+
     // Messages from the Scheduler to Batsim
     /**
      * @brief Appends a SUBMIT_JOB event.
@@ -295,15 +335,17 @@ public:
      * @param[in] job_ids The identifiers of the submitted jobs.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_job_submitted(std::vector<std::string> job_ids,
+    void append_job_submitted(const std::vector<std::string> & job_ids,
                               double date);
 
     /**
      * @brief Appends a JOB_COMPLETED event.
      * @param[in] job_id The identifier of the job that has completed.
+     * @param[in] job_status The job status
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_job_completed(const std::string & job_id,
+                              const std::string & job_status,
                               double date);
 
     /**
@@ -311,7 +353,7 @@ public:
      * @param[in] job_ids The identifiers of the jobs that have been killed.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_job_killed(std::vector<std::string> job_ids,
+    void append_job_killed(const std::vector<std::string> & job_ids,
                            double date);
 
     /**
@@ -325,12 +367,12 @@ public:
                                        double date);
 
     /**
-     * @brief Appends a QUERY_REPLY event.
-     * @param[in] anything ...
+     * @brief Appends a QUERY_REPLY (energy) event.
+     * @param[in] consumed_energy The total consumed energy in joules
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_query_reply(void * anything,
-                            double date);
+    void append_query_reply_energy(double consumed_energy,
+                                   double date);
 
     // Management functions
     /**
@@ -345,4 +387,24 @@ public:
      * @return A string representation of the events added since the last call to clear.
      */
     std::string generate_current_message(double date);
+
+    /**
+     * @brief Returns whether the Writer has content
+     * @return Whether the Writer has content
+     */
+    bool is_empty() { return _is_empty; }
+
+private:
+    bool _is_empty = true;
+    double _last_date = -1;
+    rapidjson::Document _doc;
+    rapidjson::Document::AllocatorType & _alloc;
+    rapidjson::Value _events = rapidjson::Value(rapidjson::kArrayType);
 };
+
+
+/**
+ * @brief Tests whether the JsonProtocolWriter behaves correctly
+ * @return Whether the JsonProtocolWriter behaves as expected
+ */
+bool test_json_writer();
