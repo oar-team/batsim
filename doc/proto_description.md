@@ -107,15 +107,17 @@ BATSIM ---> DECISION
 
 ### SIMULATION_BEGINS
 Sent at the beginning of the simulation. Once it has been sent,
-metainformation can be read from Redis.
+and if redis is enabled, meta-information can be read from Redis.
 
-- **data**: empty
+- **data**: the number of resources
 - **example**:
 ```json
 {
   "timestamp": 0.0,
   "type": "SIMULATION_BEGINS",
-  "data": {}
+  "data": {
+    "nb_resources": 60
+  }
 }
 ```
 
