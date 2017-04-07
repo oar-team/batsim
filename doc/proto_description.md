@@ -223,7 +223,7 @@ put directly in the message. See [Configuration documentation](./configuration)
 for more details.
 
 
-- **data**: can be anything
+- **data**: See [QUERY_REQUEST](#query_request) documentation 
 - **example**:
 ```json
 {
@@ -237,7 +237,7 @@ or
 {
   "timestamp": 10.0,
   "type": "QUERY_REPLY",
-  "data": {"energy_consumed": "12500" }
+  "data": {"consumed_energy": "12500" }
 }
 ```
 
@@ -253,10 +253,9 @@ BATSIM <--- DECISION
 
 This is a query sent to Batsim to get information about the simulation
 state (or whatever you want to know...). The supported requests are:
-- "energy_consumed" with no argument that asks Batsim about the total
+- "consumed_energy" with no argument that asks Batsim about the total
   consumed energy (from time 0 to now) in Joules. Works only in energy
   mode.
-- "waiting_time".
 
 - **data**: a dictionnary of requests.
 - **example**:
@@ -265,7 +264,7 @@ state (or whatever you want to know...). The supported requests are:
   "timestamp": 10.0,
   "type": "QUERY_REQUEST",
   "data": {
-    "requests": {"energy_consumed": {}}
+    "requests": {"consumed_energy": {}}
   }
 }
 ```
