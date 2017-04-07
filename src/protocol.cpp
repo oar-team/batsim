@@ -108,11 +108,11 @@ void JsonProtocolWriter::append_query_request(void *anything,
 
 
 
-void JsonProtocolWriter::append_simulation_starts(double date)
+void JsonProtocolWriter::append_simulation_begins(double date)
 {
     /* {
       "timestamp": 0.0,
-      "type": "SIMULATION_STARTS",
+      "type": "SIMULATION_BEGINS",
       "data": {}
     } */
 
@@ -121,7 +121,7 @@ void JsonProtocolWriter::append_simulation_starts(double date)
 
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);
-    event.AddMember("type", Value().SetString("SIMULATION_STARTS"), _alloc);
+    event.AddMember("type", Value().SetString("SIMULATION_BEGINS"), _alloc);
     event.AddMember("data", Value().SetObject(), _alloc);
 
     _events.PushBack(event, _alloc);
@@ -313,12 +313,12 @@ bool test_json_writer()
     printf("NOP content:\n%s\n", proto_writer->generate_current_message(42).c_str());
     proto_writer->clear();
 
-    proto_writer->append_simulation_starts(10);
-    printf("SIM_START content:\n%s\n", proto_writer->generate_current_message(42).c_str());
+    proto_writer->append_simulation_begins(10);
+    printf("SIM_BEGINS content:\n%s\n", proto_writer->generate_current_message(42).c_str());
     proto_writer->clear();
 
     proto_writer->append_simulation_ends(10);
-    printf("SIM_END content:\n%s\n", proto_writer->generate_current_message(42).c_str());
+    printf("SIM_ENDS content:\n%s\n", proto_writer->generate_current_message(42).c_str());
     proto_writer->clear();
 
     proto_writer->append_job_submitted({"w0!j0", "w0!j1"}, 10);

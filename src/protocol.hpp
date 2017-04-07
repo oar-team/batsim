@@ -125,7 +125,7 @@ public:
      * @brief Appends a SIMULATION_STARTS event.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_simulation_starts(double date) = 0;
+    virtual void append_simulation_begins(double date) = 0;
 
     /**
      * @brief Appends a SIMULATION_ENDS event.
@@ -322,7 +322,7 @@ public:
      * @brief Appends a SIMULATION_STARTS event.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_simulation_starts(double date);
+    void append_simulation_begins(double date);
 
     /**
      * @brief Appends a SIMULATION_ENDS event.
