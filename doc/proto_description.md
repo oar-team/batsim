@@ -395,3 +395,20 @@ details.
   "data": { "type": "submission_finished" }
 }
 ```
+
+# Use cases
+The way to do some operations with the protocol is shown in this section.
+
+## Executing jobs
+![executing_jobs_figure](protocol_img/job_submission_and_execution.png)
+
+## Dynamic submission of jobs
+Jobs are in most cases submitted within Batsim. It is however possible to submit
+jobs from the scheduler. The following two figures described how it should be
+done, depending is Redis is used or not.
+
+### Without Redis
+![dynamic_submission](protocol_img/dynamic_job_submission.png)
+
+### With Redis
+![dynamic_submission_redis](protocol_img/dynamic_job_submission_redis.png)
