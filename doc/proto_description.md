@@ -13,6 +13,8 @@ steps occur:
 4. Batsim receives the reply
 5. Batsim resumes the simulation, applying the decision which have been made
 
+![protocol_overview_figure](protocol_img/request_reply.png)
+
 ZeroMQ is used in both processes (Batsim uses a ZMQ REQ socket, the scheduler a ZMQ REP one).
 
 This protocol is used for synchronization purpose. Metadata associated to the
