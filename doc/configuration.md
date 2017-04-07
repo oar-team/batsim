@@ -10,7 +10,7 @@ default configuration:
   },
   "scheduler_submission": {
     "enabled": false,
-    "acknoledge": true
+    "acknowledge": true
   }
 }
 ```
