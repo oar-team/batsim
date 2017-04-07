@@ -107,7 +107,7 @@ These events are sent by Batsim to the scheduler.
 BATSIM ---> DECISION
 ```
 
-### SIMULATION_STARTS
+### SIMULATION_BEGINS
 Sent at the beginning of the simulation. Once it has been sent,
 metainformation can be read from Redis.
 
@@ -116,7 +116,7 @@ metainformation can be read from Redis.
 ```json
 {
   "timestamp": 0.0,
-  "type": "SIMULATION_STARTS",
+  "type": "SIMULATION_BEGINS",
   "data": {}
 }
 ```
