@@ -5,6 +5,10 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
+#include "context.hpp"
+#include "jobs.hpp"
+#include "network.hpp"
+
 using namespace rapidjson;
 using namespace std;
 
@@ -398,13 +402,21 @@ void JsonProtocolReader::parse_and_apply_event(const Value & event_object,
 
 void JsonProtocolReader::handle_query_request(int event_number, double timestamp, const Value &data_object)
 {
+    /* {
+      "timestamp": 10.0,
+      "type": "QUERY_REQUEST",
+      "data": {
+        "requests": {"consumed_energy": {}}
+      }
+    } */
+
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (QUERY_REQUEST) should be an object", event_number);
     xbt_assert(data_object.MemberCount() > 0, "Invalid JSON message: the 'data' value of event %d (QUERY_REQUEST) cannot be empty (size=%d)", event_number, (int)data_object.MemberCount());
 
     for (auto it = data_object.MemberBegin(); it != data_object.MemberEnd(); ++it)
     {
-        const auto & key_value = it->name;
-        const auto & value_object = it->value;
+        const Value & key_value = it->name;
+        const Value & value_object = it->value;
 
         xbt_assert(key_value.IsString(), "Invalid JSON message: a key within the 'data' object of event %d (QUERY_REQUEST) is not a string", event_number);
         string key = key_value.GetString();
@@ -418,6 +430,40 @@ void JsonProtocolReader::handle_query_request(int event_number, double timestamp
             send_message(timestamp, "server", IPMessageType::SCHED_TELL_ME_ENERGY);
         }
     }
+}
+
+void JsonProtocolReader::handle_reject_job(int event_number, double timestamp, const Value &data_object)
+{
+    /* {
+      "timestamp": 10.0,
+      "type": "REJECT_JOB",
+      "data": { "job_id": "w12!45" }
+    } */
+
+    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (REJECT_JOB) should be an object", event_number);
+    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (REJECT_JOB) should be of size 1 (size=%d)", event_number, (int)data_object.MemberCount());
+
+    xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (REJECT_JOB) should contain a 'job_id' key.", event_number);
+    const Value & job_id_value = data_object["job_id"];
+    xbt_assert(job_id_value.IsString(), "Invalid JSON message: the 'job_id' value in the 'data' value of event %d (REJECT_JOB) should be a string.", event_number);
+    string job_id = job_id_value.GetString();
+
+    JobRejectedMessage * message = new JobRejectedMessage;
+    if (!identify_job_from_string(context, job_id, message->job_id))
+    {
+        xbt_assert(false, "Invalid job rejection received: The job identifier '%s' is not valid. "
+                          "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
+                          "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
+                          "Furthermore, the corresponding job must exist.", job_id.c_str());
+    }
+
+    Job * job = context->workloads.job_at(message->job_id);
+    xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
+               "Invalid rejection received: job %s cannot be rejected at the present time."
+               "For being rejected, a job must be submitted and not allocated yet.",
+               job->id.c_str());
+
+    send_message(timestamp, "server", IPMessageType::SCHED_REJECTION, (void*) message);
 }
 
 void JsonProtocolReader::send_message(double when,

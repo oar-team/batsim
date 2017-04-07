@@ -10,6 +10,8 @@
 #include "machine_range.hpp"
 #include "ipp.hpp"
 
+struct BatsimContext;
+
 /**
  * @brief Does the interface between protocol semantics and message representation.
  */
@@ -463,10 +465,18 @@ public:
      */
     void handle_query_request(int event_number, double timestamp, const rapidjson::Value & data_object);
 
+    /**
+     * @brief Handles a QUERY_REQUEST event
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_reject_job(int event_number, double timestamp, const rapidjson::Value & data_object);
+
 private:
     void send_message(double when, const std::string & destination_mailbox, IPMessageType type, void * data = nullptr) const;
 
 private:
     std::map<std::string, std::function<void(JsonProtocolReader*, int, double, const rapidjson::Value&)>> _type_to_handler_map;
     std::vector<std::string> accepted_requests = {"consumed_energy"};
+    BatsimContext * context = nullptr; // TODO
 };
