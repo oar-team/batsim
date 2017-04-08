@@ -141,10 +141,10 @@ public:
 
     /**
      * @brief Appends a JOB_SUBMITTED event.
-     * @param[in] job_ids The identifiers of the submitted jobs.
+     * @param[in] job_id The identifier of the submitted job.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_job_submitted(const std::vector<std::string> & job_ids,
+    virtual void append_job_submitted(const std::string & job_id,
                                       double date) = 0;
 
     /**
@@ -339,10 +339,10 @@ public:
 
     /**
      * @brief Appends a JOB_SUBMITTED event.
-     * @param[in] job_ids The identifiers of the submitted jobs.
+     * @param[in] job_id The identifier of the submitted job.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_job_submitted(const std::vector<std::string> & job_ids,
+    void append_job_submitted(const std::string & job_id,
                               double date);
 
     /**

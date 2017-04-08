@@ -208,7 +208,7 @@ int server_process(int argc, char *argv[])
             XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far",
                      message->job_id.to_string().c_str(), nb_submitted_jobs);
 
-            context->proto_writer->append_job_submitted({job->id}, MSG_get_clock());
+            context->proto_writer->append_job_submitted(job->id, MSG_get_clock());
         } break; // end of case JOB_SUBMITTED
 
         case IPMessageType::JOB_SUBMITTED_BY_DP:
@@ -466,7 +466,6 @@ int server_process(int argc, char *argv[])
         case IPMessageType::SCHED_READY:
         {
             sched_ready = true;
-
         } break; // end of case SCHED_READY
 
         case IPMessageType::SCHED_WAIT_ANSWER:

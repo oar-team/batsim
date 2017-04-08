@@ -124,6 +124,7 @@ void JsonProtocolWriter::append_simulation_begins(int nb_resources, double date)
 
     xbt_assert(date >= _last_date, "Date inconsistency");
     _last_date = date;
+    _is_empty = false;
 
     Value data(rapidjson::kObjectType);
     data.AddMember("nb_resources", Value().SetInt(nb_resources), _alloc);
@@ -146,6 +147,7 @@ void JsonProtocolWriter::append_simulation_ends(double date)
 
     xbt_assert(date >= _last_date, "Date inconsistency");
     _last_date = date;
+    _is_empty = false;
 
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);
@@ -155,7 +157,7 @@ void JsonProtocolWriter::append_simulation_ends(double date)
     _events.PushBack(event, _alloc);
 }
 
-void JsonProtocolWriter::append_job_submitted(const vector<string> & job_ids,
+void JsonProtocolWriter::append_job_submitted(const string & job_id,
                                               double date)
 {
     /* {
@@ -168,17 +170,15 @@ void JsonProtocolWriter::append_job_submitted(const vector<string> & job_ids,
 
     xbt_assert(date >= _last_date, "Date inconsistency");
     _last_date = date;
+    _is_empty = false;
+
+    Value data(rapidjson::kObjectType);
+    data.AddMember("job_id", Value().SetString(job_id.c_str(), _alloc), _alloc);
 
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);
     event.AddMember("type", Value().SetString("JOB_SUBMITTED"), _alloc);
-
-    Value jobs(rapidjson::kArrayType);
-    jobs.Reserve(job_ids.size(), _alloc);
-    for (const string & job_id : job_ids)
-        jobs.PushBack(Value().SetString(job_id.c_str(), _alloc), _alloc);
-
-    event.AddMember("data", Value().SetObject().AddMember("job_ids", jobs, _alloc), _alloc);
+    event.AddMember("data", data, _alloc);
 
     _events.PushBack(event, _alloc);
 }
@@ -197,6 +197,7 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
     xbt_assert(std::find(accepted_completion_statuses.begin(), accepted_completion_statuses.end(), job_status) != accepted_completion_statuses.end(),
                "Unsupported job status '%s'!", job_status.c_str());
     _last_date = date;
+    _is_empty = false;
 
     Value data(rapidjson::kObjectType);
     data.AddMember("job_id", Value().SetString(job_id.c_str(), _alloc), _alloc);
@@ -221,6 +222,7 @@ void JsonProtocolWriter::append_job_killed(const vector<string> & job_ids,
 
     xbt_assert(date >= _last_date, "Date inconsistency");
     _last_date = date;
+    _is_empty = false;
 
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);
@@ -248,6 +250,7 @@ void JsonProtocolWriter::append_resource_state_changed(const MachineRange & reso
 
     xbt_assert(date >= _last_date, "Date inconsistency");
     _last_date = date;
+    _is_empty = false;
 
     Value data(rapidjson::kObjectType);
     data.AddMember("resources",
@@ -273,6 +276,7 @@ void JsonProtocolWriter::append_query_reply_energy(double consumed_energy,
 
     xbt_assert(date >= _last_date, "Date inconsistency");
     _last_date = date;
+    _is_empty = false;
 
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);
@@ -705,5 +709,5 @@ void JsonProtocolReader::dsend_message(double when,
         MSG_process_sleep(when - current_time);
 
     // Let's actually send the message
-    ::dsend_message(destination_mailbox, type, data);
+    ::send_message(destination_mailbox, type, data);
 }
