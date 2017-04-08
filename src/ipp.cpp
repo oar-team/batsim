@@ -18,7 +18,10 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(ipp, "ipp"); //!< Logging
  * @param data TODO
  * @param detached TODO
  */
-void generic_send_message(const std::string & destination_mailbox, IPMessageType type, void * data, bool detached)
+void generic_send_message(const std::string & destination_mailbox,
+                          IPMessageType type,
+                          void * data,
+                          bool detached)
 {
     IPMessage * message = new IPMessage;
     message->type = type;

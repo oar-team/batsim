@@ -31,6 +31,7 @@
 #include "machines.hpp"
 #include "network.hpp"
 #include "profiles.hpp"
+#include "protocol.hpp"
 #include "server.hpp"
 #include "workload.hpp"
 #include "workflow.hpp"
@@ -584,6 +585,10 @@ int main(int argc, char * argv[])
         context.zmq_socket = new zmq::socket_t(context.zmq_context, ZMQ_REQ);
         context.zmq_socket->connect(main_args.socket_endpoint);
 
+        // Let's create the protocol reader and writer
+        context.proto_reader = new JsonProtocolReader(&context);
+        context.proto_writer = new JsonProtocolWriter;
+
         // Let's store some metadata about the current instance in the data storage
         context.storage.set("nb_res", std::to_string(context.machines.nb_machines()));
 
@@ -601,6 +606,12 @@ int main(int argc, char * argv[])
 
     delete context.zmq_socket;
     context.zmq_socket = nullptr;
+
+    delete context.proto_reader;
+    context.proto_reader = nullptr;
+
+    delete context.proto_writer;
+    context.proto_writer = nullptr;
 
     // If SMPI had been used, it should be finalized
     if (context.smpi_used)

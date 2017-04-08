@@ -667,7 +667,7 @@ void JsonProtocolReader::handle_set_resource_state(int event_number, double time
 
 void JsonProtocolReader::handle_notify(int event_number, double timestamp, const Value &data_object)
 {
-    xbt_assert(false, "Unimplemented");
+    xbt_assert(false, "Unimplemented! TODO");
     (void) event_number;
     (void) timestamp;
     (void) data_object;
@@ -675,7 +675,7 @@ void JsonProtocolReader::handle_notify(int event_number, double timestamp, const
 
 void JsonProtocolReader::handle_submit_job(int event_number, double timestamp, const Value &data_object)
 {
-    xbt_assert(false, "Unimplemented");
+    xbt_assert(false, "Unimplemented! TODO");
     (void) event_number;
     (void) timestamp;
     (void) data_object;
@@ -683,7 +683,7 @@ void JsonProtocolReader::handle_submit_job(int event_number, double timestamp, c
 
 void JsonProtocolReader::handle_kill_job(int event_number, double timestamp, const Value &data_object)
 {
-    xbt_assert(false, "Unimplemented");
+    xbt_assert(false, "Unimplemented! TODO");
     (void) event_number;
     (void) timestamp;
     (void) data_object;

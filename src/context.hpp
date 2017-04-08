@@ -16,6 +16,7 @@
 #include "machines.hpp"
 #include "network.hpp"
 #include "profiles.hpp"
+#include "protocol.hpp"
 #include "pstate.hpp"
 #include "storage.hpp"
 #include "workflow.hpp"
@@ -33,6 +34,8 @@ struct BatsimContext
 {
     zmq::context_t zmq_context;                     //!< The Zero MQ context
     zmq::socket_t * zmq_socket = nullptr;           //!< The Zero MQ socket (REQ)
+    AbstractProtocolReader * proto_reader = nullptr;//!< The protocol reader
+    AbstractProtocolWriter * proto_writer = nullptr;//!< The protocol writer
 
     Machines machines;                              //!< The machines
     Workloads workloads;                            //!< The workloads
