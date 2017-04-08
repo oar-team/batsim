@@ -440,6 +440,12 @@ class JsonProtocolReader : public AbstractProtocolReader
 {
 public:
     /**
+     * @brief Constructor
+     * @param[in] context The BatsimContext
+     */
+    JsonProtocolReader(BatsimContext * context);
+
+    /**
      * @brief Destructor
      */
     ~JsonProtocolReader();
@@ -492,6 +498,27 @@ public:
      * @param[in] data_object The data associated with the event (JSON object)
      */
     void handle_set_resource_state(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
+     * @brief Handles a NOTIFY event
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_notify(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
+     * @brief Handles a SUBMIT_JOB event
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_submit_job(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
+     * @brief Handles a KILL_JOB event
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_kill_job(int event_number, double timestamp, const rapidjson::Value & data_object);
 
 private:
     /**

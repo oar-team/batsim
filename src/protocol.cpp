@@ -352,9 +352,21 @@ bool test_json_writer()
 
 
 
+JsonProtocolReader::JsonProtocolReader(BatsimContext *context) :
+    context(context)
+{
+    _type_to_handler_map["QUERY_REQUEST"] = &JsonProtocolReader::handle_query_request;
+    _type_to_handler_map["REJECT_JOB"] = &JsonProtocolReader::handle_reject_job;
+    _type_to_handler_map["EXECUTE_JOB"] = &JsonProtocolReader::handle_execute_job;
+    _type_to_handler_map["CALL_ME_LATER"] = &JsonProtocolReader::handle_call_me_later;
+    _type_to_handler_map["KILL_JOB"] = &JsonProtocolReader::handle_kill_job;
+    _type_to_handler_map["SUBMIT_JOB"] = &JsonProtocolReader::handle_submit_job;
+    _type_to_handler_map["SET_RESOURCE_STATE"] = &JsonProtocolReader::handle_set_resource_state;
+    _type_to_handler_map["NOTIFY"] = &JsonProtocolReader::handle_notify;
+}
+
 JsonProtocolReader::~JsonProtocolReader()
 {
-
 }
 
 void JsonProtocolReader::parse_and_apply_message(const string &message)
@@ -651,6 +663,30 @@ void JsonProtocolReader::handle_set_resource_state(int event_number, double time
     }
 
     dsend_message(timestamp, "server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
+}
+
+void JsonProtocolReader::handle_notify(int event_number, double timestamp, const Value &data_object)
+{
+    xbt_assert(false, "Unimplemented");
+    (void) event_number;
+    (void) timestamp;
+    (void) data_object;
+}
+
+void JsonProtocolReader::handle_submit_job(int event_number, double timestamp, const Value &data_object)
+{
+    xbt_assert(false, "Unimplemented");
+    (void) event_number;
+    (void) timestamp;
+    (void) data_object;
+}
+
+void JsonProtocolReader::handle_kill_job(int event_number, double timestamp, const Value &data_object)
+{
+    xbt_assert(false, "Unimplemented");
+    (void) event_number;
+    (void) timestamp;
+    (void) data_object;
 }
 
 void JsonProtocolReader::dsend_message(double when,
