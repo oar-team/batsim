@@ -400,12 +400,12 @@ public:
     bool is_empty() { return _is_empty; }
 
 private:
-    bool _is_empty = true;
-    double _last_date = -1;
-    rapidjson::Document _doc;
-    rapidjson::Document::AllocatorType & _alloc;
-    rapidjson::Value _events = rapidjson::Value(rapidjson::kArrayType);
-    const std::vector<std::string> accepted_statuses = {"SUCCESS", "TIMEOUT"};
+    bool _is_empty = true; //!< Stores whether events have been pushed into the writer since last clear.
+    double _last_date = -1; //!< The date of the latest pushed event/message
+    rapidjson::Document _doc; //!< A rapidjson document
+    rapidjson::Document::AllocatorType & _alloc; //!< The allocated of _doc
+    rapidjson::Value _events = rapidjson::Value(rapidjson::kArrayType); //!< A rapidjson array in which the events are pushed
+    const std::vector<std::string> accepted_completion_statuses = {"SUCCESS", "TIMEOUT"}; //!< The list of accepted statuses for the JOB_COMPLETED message
 };
 
 
@@ -466,6 +466,7 @@ public:
 
     /**
      * @brief Handles a QUERY_REQUEST event
+     * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
@@ -473,6 +474,7 @@ public:
 
     /**
      * @brief Handles a QUERY_REQUEST event
+     * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
@@ -480,6 +482,7 @@ public:
 
     /**
      * @brief Handles an EXECUTE_JOB event
+     * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
@@ -487,6 +490,7 @@ public:
 
     /**
      * @brief Handles a CALL_ME_LATER event
+     * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
@@ -494,6 +498,7 @@ public:
 
     /**
      * @brief Handles a SET_RESOURCE_STATE event
+     * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
@@ -501,6 +506,7 @@ public:
 
     /**
      * @brief Handles a NOTIFY event
+     * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
@@ -508,6 +514,7 @@ public:
 
     /**
      * @brief Handles a SUBMIT_JOB event
+     * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
@@ -515,6 +522,7 @@ public:
 
     /**
      * @brief Handles a KILL_JOB event
+     * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
@@ -534,7 +542,8 @@ private:
                       void * data = nullptr) const;
 
 private:
+    //! Maps message types to their handler functions
     std::map<std::string, std::function<void(JsonProtocolReader*, int, double, const rapidjson::Value&)>> _type_to_handler_map;
-    std::vector<std::string> accepted_requests = {"consumed_energy"};
-    BatsimContext * context = nullptr; // TODO
+    std::vector<std::string> accepted_requests = {"consumed_energy"}; //!< The currently acceptes requests for the QUERY_REQUEST message
+    BatsimContext * context = nullptr; //!< The BatsimContext
 };

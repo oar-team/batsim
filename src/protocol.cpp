@@ -191,7 +191,7 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
     } */
 
     xbt_assert(date >= _last_date, "Date inconsistency");
-    xbt_assert(std::find(accepted_statuses.begin(), accepted_statuses.end(), job_status) != accepted_statuses.end(),
+    xbt_assert(std::find(accepted_completion_statuses.begin(), accepted_completion_statuses.end(), job_status) != accepted_completion_statuses.end(),
                "Unsupported job status '%s'!", job_status.c_str());
     _last_date = date;
 
