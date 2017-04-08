@@ -208,7 +208,10 @@ public:
      * @param[in] error_prefix The error prefix (used to output errors)
      * @return The MachineRange which corresponds to a hyphenized string
      */
-    static MachineRange from_string_hyphen(const std::string & str, const std::string & sep = ",", const std::string & joiner = "-", const std::string & error_prefix = "Invalid machine range string");
+    static MachineRange from_string_hyphen(const std::string & str,
+                                           const std::string & sep = ",",
+                                           const std::string & joiner = "-",
+                                           const std::string & error_prefix = "Invalid machine range string");
 
 private:
     Set set; //!< The internal set of machines

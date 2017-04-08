@@ -146,7 +146,10 @@ string MachineRange::to_string_elements(const string &sep) const
     return boost::algorithm::join(machine_id_strings, sep);
 }
 
-MachineRange MachineRange::from_string_hyphen(const string &str, const string &sep, const string &joiner, const string & error_prefix)
+MachineRange MachineRange::from_string_hyphen(const string &str,
+                                              const string &sep,
+                                              const string &joiner,
+                                              const string & error_prefix)
 {
     (void) error_prefix; // Avoids a warning if assertions are ignored
     MachineRange res;

@@ -451,7 +451,8 @@ void JsonProtocolReader::handle_reject_job(int event_number, double timestamp, c
     JobRejectedMessage * message = new JobRejectedMessage;
     if (!identify_job_from_string(context, job_id, message->job_id))
     {
-        xbt_assert(false, "Invalid job rejection received: The job identifier '%s' is not valid. "
+        xbt_assert(false, "Invalid JSON message: "
+                          "Invalid job rejection received: The job identifier '%s' is not valid. "
                           "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
                           "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
                           "Furthermore, the corresponding job must exist.", job_id.c_str());
@@ -459,6 +460,7 @@ void JsonProtocolReader::handle_reject_job(int event_number, double timestamp, c
 
     Job * job = context->workloads.job_at(message->job_id);
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
+               "Invalid JSON message: "
                "Invalid rejection received: job %s cannot be rejected at the present time."
                "For being rejected, a job must be submitted and not allocated yet.",
                job->id.c_str());
@@ -466,14 +468,139 @@ void JsonProtocolReader::handle_reject_job(int event_number, double timestamp, c
     send_message(timestamp, "server", IPMessageType::SCHED_REJECTION, (void*) message);
 }
 
+void JsonProtocolReader::handle_execute_job(int event_number, double timestamp, const Value &data_object)
+{
+    /* {
+      "timestamp": 10.0,
+      "type": "EXECUTE_JOB",
+      "data": {
+        "job_id": "w12!45",
+        "alloc": "2-3",
+        "mapping": {"0": "0", "1": "0", "2": "1", "3": "1"}
+      }
+    } */
+
+    SchedulingAllocationMessage * message = new SchedulingAllocationMessage;
+    SchedulingAllocation * sched_alloc = new SchedulingAllocation;
+    message->allocations.push_back(sched_alloc);
+
+    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should be an object", event_number);
+
+    // *************************
+    // Job identifier management
+    // *************************
+    // Let's read it from the JSON message
+    xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should contain a 'job_id' key.", event_number);
+    const Value & job_id_value = data_object["job_id"];
+    xbt_assert(job_id_value.IsString(), "Invalid JSON message: the 'job_id' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
+    string job_id = job_id_value.GetString();
+
+    // Let's retrieve the job identifier
+    if (!identify_job_from_string(context, job_id, sched_alloc->job_id))
+    {
+        xbt_assert(false, "Invalid JSON message: in event %d (EXECUTE_JOB): "
+                          "The job identifier '%s' is not valid. "
+                          "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
+                          "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
+                          "Furthermore, the corresponding job must exist.",
+                   event_number, job_id.c_str());
+    }
+
+    // Let's make sure the job is submitted
+    Job * job = context->workloads.job_at(sched_alloc->job_id);
+    xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
+               "Invalid JSON message: in event %d (EXECUTE_JOB): "
+               "Invalid state of job %s: It cannot be executed now",
+               event_number, job->id.c_str());
+
+    // *********************
+    // Allocation management
+    // *********************
+    // Let's read it from the JSON message
+    xbt_assert(data_object.HasMember("alloc"), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should contain a 'alloc' key.", event_number);
+    const Value & alloc_value = data_object["alloc"];
+    xbt_assert(alloc_value.IsString(), "Invalid JSON message: the 'alloc' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
+    string alloc = alloc_value.GetString();
+
+    sched_alloc->machine_ids = MachineRange::from_string_hyphen(alloc, " ", "-", "Invalid JSON message: ");
+    int nb_allocated_resources = sched_alloc->machine_ids.size();
+    xbt_assert(nb_allocated_resources > 0, "Invalid JSON message: in event %d (EXECUTE_JOB): the number of allocated resources should be strictly positive (got %d).", event_number, nb_allocated_resources);
+
+    // *****************************
+    // Mapping management (optional)
+    // *****************************
+    if (data_object.HasMember("mapping"))
+    {
+        const Value & mapping_value = data_object["mapping"];
+        xbt_assert(mapping_value.IsObject(), "Invalid JSON message: the 'mapping' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
+        xbt_assert(mapping_value.MemberCount() > 0, "Invalid JSON: the 'mapping' value in the 'data' value of event %d (EXECUTE_JOB) must be a non-empty object", event_number);
+        map<int,int> mapping_map;
+
+        // Let's fill the map from the JSON description
+        for (auto it = mapping_value.MemberBegin(); it != mapping_value.MemberEnd(); ++it)
+        {
+            const Value & key_value = it->name;
+            const Value & value_value = it->value;
+
+            xbt_assert(key_value.IsInt() || key_value.IsString(), "Invalid JSON message: Invalid 'mapping' of event %d (EXECUTE_JOB): a key is not an integer nor a string", event_number);
+            xbt_assert(value_value.IsInt() || value_value.IsString(), "Invalid JSON message: Invalid 'mapping' of event %d (EXECUTE_JOB): a value is not an integer nor a string", event_number);
+
+            int executor;
+            int resource;
+
+            try
+            {
+                if (key_value.IsInt())
+                    executor = key_value.GetInt();
+                else
+                    executor = std::stoi(key_value.GetString());
+
+                if (value_value.IsInt())
+                    resource = value_value.GetInt();
+                else
+                    resource = std::stoi(key_value.GetString());
+            }
+            catch (const exception & e)
+            {
+                xbt_assert(false, "Invalid JSON message: Invalid 'mapping' object of event %d (EXECUTE_JOB): all keys and values must be integers (or strings representing integers)", event_number);
+            }
+
+            mapping_map[executor] = resource;
+        }
+
+        // Let's write the mapping as a vector (keys will be implicit between 0 and nb_executor-1)
+        sched_alloc->mapping.reserve(mapping_map.size());
+        auto mit = mapping_map.begin();
+        int nb_inserted = 0;
+
+        xbt_assert(mit->first == nb_inserted, "Invalid JSON message: Invalid 'mapping' object of event %d (EXECUTE_JOB): no resource associated to executor %d.", event_number, nb_inserted);
+        xbt_assert(mit->second >= 0 && mit->second < nb_allocated_resources, "Invalid JSON message: Invalid 'mapping' object of evend %d (EXECUTE_JOB): the %d-th resource within the allocation is told to be used, but there are only %d allocated resources.", event_number, mit->second, nb_allocated_resources);
+        sched_alloc->mapping.push_back(mit->second);
+
+        for (++mit, ++nb_inserted; mit != mapping_map.end(); ++mit, ++nb_inserted)
+        {
+            xbt_assert(mit->first == nb_inserted, "Invalid JSON message: Invalid 'mapping' object of event %d (EXECUTE_JOB): no resource associated to executor %d.", event_number, nb_inserted);
+            xbt_assert(mit->second >= 0 && mit->second < nb_allocated_resources, "Invalid JSON message: Invalid 'mapping' object of evend %d (EXECUTE_JOB): the %d-th resource within the allocation is told to be used, but there are only %d allocated resources.", event_number, mit->second, nb_allocated_resources);
+            sched_alloc->mapping.push_back(mit->second);
+        }
+
+        xbt_assert(sched_alloc->mapping.size() == mapping_map.size());
+    }
+
+    // Everything has been parsed correctly, let's inject the message into the simulation.
+    send_message(timestamp, "server", IPMessageType::SCHED_ALLOCATION, (void*) message);
+}
+
 void JsonProtocolReader::send_message(double when,
                                       const string &destination_mailbox,
                                       IPMessageType type,
                                       void *data) const
 {
+    // Let's wait until "when" time is reached
     double current_time = MSG_get_clock();
     if (when > current_time)
         MSG_process_sleep(when - current_time);
 
+    // Let's actually send the message
     ::send_message(destination_mailbox, type, data);
 }

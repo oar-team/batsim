@@ -51,7 +51,7 @@ public:
                                    bool acknowledge_submission = false) = 0;
 
     /**
-     * @brief Appends a EXECUTE_JOB event.
+     * @brief Appends an EXECUTE_JOB event.
      * @param[in] job_id The job identifier. It must be known by Batsim.
      * @param[in] allocated_resources The resources on which the job should be executed.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
@@ -127,7 +127,7 @@ public:
 
     // Messages from Batsim to the Scheduler
     /**
-     * @brief Appends a SIMULATION_STARTS event.
+     * @brief Appends a SIMULATION_BEGINS event.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_simulation_begins(double date) = 0;
@@ -184,7 +184,7 @@ public:
 
     // Management functions
     /**
-     * @brief Clears inner content. Is called directly after generate_current_message.
+     * @brief Clears inner content. Should called directly after generate_current_message.
      */
     virtual void clear() = 0;
 
@@ -248,7 +248,7 @@ public:
                            bool acknowledge_submission = false);
 
     /**
-     * @brief Appends a EXECUTE_JOB event.
+     * @brief Appends an EXECUTE_JOB event.
      * @param[in] job_id The job identifier. It must be known by Batsim.
      * @param[in] allocated_resources The resources on which the job should be executed.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
@@ -381,7 +381,7 @@ public:
 
     // Management functions
     /**
-     * @brief Clears inner content. Is called directly after generate_current_message.
+     * @brief Clears inner content. Should be called directly after generate_current_message.
      */
     void clear();
 
@@ -472,8 +472,25 @@ public:
      */
     void handle_reject_job(int event_number, double timestamp, const rapidjson::Value & data_object);
 
+    /**
+     * @brief Handles an EXECUTE_JOB event
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_execute_job(int event_number, double timestamp, const rapidjson::Value & data_object);
+
 private:
-    void send_message(double when, const std::string & destination_mailbox, IPMessageType type, void * data = nullptr) const;
+    /**
+     * @brief Sends a message at a given time, sleeping to reach the given time if needed
+     * @param[in] when The date at which the message should be sent
+     * @param[in] destination_mailbox The destination mailbox
+     * @param[in] type The message type
+     * @param[in] data The message data
+     */
+    void send_message(double when,
+                      const std::string & destination_mailbox,
+                      IPMessageType type,
+                      void * data = nullptr) const;
 
 private:
     std::map<std::string, std::function<void(JsonProtocolReader*, int, double, const rapidjson::Value&)>> _type_to_handler_map;

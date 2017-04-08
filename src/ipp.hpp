@@ -140,6 +140,7 @@ struct SchedulingAllocation
 {
     JobIdentifier job_id; //!< The JobIdentifier
     MachineRange machine_ids; //!< The IDs of the machines on which the job should be allocated
+    std::vector<int> mapping; //!< The mapping from executors (~=ranks) to resource ids. Can be empty, in which case it will NOT be used (a round robin will be used instead). If not empty, must be of the same size of the job, and each value must be in [0,nb_allocated_res[.
     std::vector<msg_host_t> hosts;  //!< The corresponding SimGrid hosts
 };
 
@@ -148,6 +149,7 @@ struct SchedulingAllocation
  */
 struct SchedulingAllocationMessage
 {
+    // TODO:remove vector?
     std::vector<SchedulingAllocation *> allocations;  //!< Possibly several allocations
 };
 
