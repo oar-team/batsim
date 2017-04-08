@@ -479,6 +479,20 @@ public:
      */
     void handle_execute_job(int event_number, double timestamp, const rapidjson::Value & data_object);
 
+    /**
+     * @brief Handles a CALL_ME_LATER event
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_call_me_later(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
+     * @brief Handles a SET_RESOURCE_STATE event
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_set_resource_state(int event_number, double timestamp, const rapidjson::Value & data_object);
+
 private:
     /**
      * @brief Sends a message at a given time, sleeping to reach the given time if needed
@@ -487,7 +501,7 @@ private:
      * @param[in] type The message type
      * @param[in] data The message data
      */
-    void send_message(double when,
+    void dsend_message(double when,
                       const std::string & destination_mailbox,
                       IPMessageType type,
                       void * data = nullptr) const;

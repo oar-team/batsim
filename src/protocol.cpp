@@ -12,6 +12,8 @@
 using namespace rapidjson;
 using namespace std;
 
+XBT_LOG_NEW_DEFAULT_CATEGORY(protocol, "protocol"); //!< Logging
+
 JsonProtocolWriter::JsonProtocolWriter() :
     _alloc(_doc.GetAllocator())
 {
@@ -427,7 +429,7 @@ void JsonProtocolReader::handle_query_request(int event_number, double timestamp
         if (key == "consumed_energy")
         {
             xbt_assert(value_object.ObjectEmpty(), "Invalid JSON message: the value of '%s' inside 'data' object of event %d (QUERY_REQUEST) should be empty", key.c_str(), event_number);
-            send_message(timestamp, "server", IPMessageType::SCHED_TELL_ME_ENERGY);
+            dsend_message(timestamp, "server", IPMessageType::SCHED_TELL_ME_ENERGY);
         }
     }
 }
@@ -465,7 +467,7 @@ void JsonProtocolReader::handle_reject_job(int event_number, double timestamp, c
                "For being rejected, a job must be submitted and not allocated yet.",
                job->id.c_str());
 
-    send_message(timestamp, "server", IPMessageType::SCHED_REJECTION, (void*) message);
+    dsend_message(timestamp, "server", IPMessageType::SCHED_REJECTION, (void*) message);
 }
 
 void JsonProtocolReader::handle_execute_job(int event_number, double timestamp, const Value &data_object)
@@ -588,10 +590,70 @@ void JsonProtocolReader::handle_execute_job(int event_number, double timestamp, 
     }
 
     // Everything has been parsed correctly, let's inject the message into the simulation.
-    send_message(timestamp, "server", IPMessageType::SCHED_ALLOCATION, (void*) message);
+    dsend_message(timestamp, "server", IPMessageType::SCHED_ALLOCATION, (void*) message);
 }
 
-void JsonProtocolReader::send_message(double when,
+void JsonProtocolReader::handle_call_me_later(int event_number, double timestamp, const Value &data_object)
+{
+    /* {
+      "timestamp": 10.0,
+      "type": "CALL_ME_LATER",
+      "data": {"timestamp": 25.5}
+    } */
+
+    NOPMeLaterMessage * message = new NOPMeLaterMessage;
+
+    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (CALL_ME_LATER) should be an object", event_number);
+    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (CALL_ME_LATER) should be of size 1 (size=%d)", event_number, (int)data_object.MemberCount());
+
+    xbt_assert(data_object.HasMember("timestamp"), "Invalid JSON message: the 'data' value of event %d (CALL_ME_LATER) should contain a 'timestamp' key.", event_number);
+    const Value & timestamp_value = data_object["timestamp"];
+    xbt_assert(timestamp_value.IsDouble(), "Invalid JSON message: the 'timestamp' value in the 'data' value of event %d (CALL_ME_LATER) should be a double.", event_number);
+    message->target_time = timestamp_value.GetDouble();
+
+    if (message->target_time < MSG_get_clock())
+        XBT_WARN("Event %d (CALL_ME_LATER) asks to be called at time %g but it is already reached", event_number, message->target_time);
+
+    dsend_message(timestamp, "server", IPMessageType::SCHED_NOP_ME_LATER, (void*) message);
+}
+
+void JsonProtocolReader::handle_set_resource_state(int event_number, double timestamp, const Value &data_object)
+{
+    /* {
+      "timestamp": 10.0,
+      "type": "SET_RESOURCE_STATE",
+      "data": {"resources": "1 2 3-5", "state": "42"}
+    } */
+    PStateModificationMessage * message = new PStateModificationMessage;
+
+    // ********************
+    // Resources management
+    // ********************
+    // Let's read it from the JSON message
+    xbt_assert(data_object.HasMember("resources"), "Invalid JSON message: the 'data' value of event %d (SET_RESOURCE_STATE) should contain a 'resources' key.", event_number);
+    const Value & resources_value = data_object["resources"];
+    xbt_assert(resources_value.IsString(), "Invalid JSON message: the 'resources' value in the 'data' value of event %d (SET_RESOURCE_STATE) should be a string.", event_number);
+    string resources = resources_value.GetString();
+
+    message->machine_ids = MachineRange::from_string_hyphen(resources, " ", "-", "Invalid JSON message: ");
+    int nb_allocated_resources = message->machine_ids.size();
+    xbt_assert(nb_allocated_resources > 0, "Invalid JSON message: in event %d (SET_RESOURCE_STATE): the number of allocated resources should be strictly positive (got %d).", event_number, nb_allocated_resources);
+
+    // State management
+    xbt_assert(data_object.HasMember("state"), "Invalid JSON message: the 'data' value of event %d (SET_RESOURCE_STATE) should contain a 'state' key.", event_number);
+    const Value & state_value = data_object["state"];
+    xbt_assert(state_value.IsString(), "Invalid JSON message: the 'state' value in the 'data' value of event %d (SET_RESOURCE_STATE) should be a string.", event_number);
+    string state_value_string = state_value.GetString();
+    try { message->new_pstate = std::stoi(state_value_string); }
+    catch(const exception &)
+    {
+        xbt_assert(false, "Invalid JSON message: the 'state' value in the 'data' value of event %d (SET_RESOURCE_STATE) should be a string corresponding to an integer (got '%s')", event_number, state_value_string.c_str());
+    }
+
+    dsend_message(timestamp, "server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
+}
+
+void JsonProtocolReader::dsend_message(double when,
                                       const string &destination_mailbox,
                                       IPMessageType type,
                                       void *data) const
@@ -602,5 +664,5 @@ void JsonProtocolReader::send_message(double when,
         MSG_process_sleep(when - current_time);
 
     // Let's actually send the message
-    ::send_message(destination_mailbox, type, data);
+    ::dsend_message(destination_mailbox, type, data);
 }

@@ -167,6 +167,7 @@ struct PStateModificationMessage
  */
 struct NOPMeLaterMessage
 {
+    // TODO: rename struct?
     double target_time; //!< The time at which Batsim should send a NOP message to the decision real process
 };
 
