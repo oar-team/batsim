@@ -389,6 +389,8 @@ void JsonProtocolReader::parse_and_apply_message(const string &message)
         const auto & event_object = events_array[i];
         parse_and_apply_event(event_object, i, now);
     }
+
+    dsend_message(now, "server", IPMessageType::SCHED_READY);
 }
 
 void JsonProtocolReader::parse_and_apply_event(const Value & event_object,
