@@ -114,7 +114,7 @@ void JsonProtocolWriter::append_query_request(void *anything,
 
 
 
-void JsonProtocolWriter::append_simulation_begins(double date)
+void JsonProtocolWriter::append_simulation_begins(int nb_resources, double date)
 {
     /* {
       "timestamp": 0.0,
@@ -125,10 +125,13 @@ void JsonProtocolWriter::append_simulation_begins(double date)
     xbt_assert(date >= _last_date, "Date inconsistency");
     _last_date = date;
 
+    Value data(rapidjson::kObjectType);
+    data.AddMember("nb_resources", Value().SetInt(nb_resources), _alloc);
+
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);
     event.AddMember("type", Value().SetString("SIMULATION_BEGINS"), _alloc);
-    event.AddMember("data", Value().SetObject(), _alloc);
+    event.AddMember("data", data, _alloc);
 
     _events.PushBack(event, _alloc);
 }
@@ -317,7 +320,7 @@ bool test_json_writer()
     printf("NOP content:\n%s\n", proto_writer->generate_current_message(42).c_str());
     proto_writer->clear();
 
-    proto_writer->append_simulation_begins(10);
+    proto_writer->append_simulation_begins(4, 10);
     printf("SIM_BEGINS content:\n%s\n", proto_writer->generate_current_message(42).c_str());
     proto_writer->clear();
 
