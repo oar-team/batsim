@@ -227,11 +227,11 @@ coming from a previous ```SET_RESOURCE_STATE``` message have been done.
 This is a reply to a ``QUERY_REQUEST`` message. It depends on the
 configuration of Batsim: if ``"redis": { "enabled": true }`` the reply will
 go in redis and only the key will be given. Otherwise, the response will be
-put directly in the message. See [Configuration documentation](./configuration)
-for more details.
+put directly in the message.
+See [Configuration documentation](./configuration.md) for more details.
 
 
-- **data**: See [QUERY_REQUEST](#query_request) documentation 
+- **data**: See [QUERY_REQUEST](#query_request) documentation
 - **example**:
 ```json
 {
@@ -422,12 +422,17 @@ details.
 The way to do some operations with the protocol is shown in this section.
 
 ## Executing jobs
+Depending on the [configuration](./configuration.md), job information might
+either be transmitted through the protocol or Redis.
 ![executing_jobs_figure](protocol_img/job_submission_and_execution.png)
 
 ## Dynamic submission of jobs
 Jobs are in most cases submitted within Batsim. It is however possible to submit
 jobs from the scheduler. The following two figures described how it should be
-done, depending is Redis is used or not.
+done, depending on whether Redis is enabled in the
+[configuration](./configuration.md). The acknowledgement of dynamic job
+submissions can be enabled or disabled in the
+[configuration](./configuration.md).
 
 ### Without Redis
 ![dynamic_submission](protocol_img/dynamic_job_submission.png)
