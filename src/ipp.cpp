@@ -64,11 +64,11 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::PSTATE_MODIFICATION:
             s = "PSTATE_MODIFICATION";
             break;
-        case IPMessageType::SCHED_ALLOCATION:
-            s = "SCHED_ALLOCATION";
+        case IPMessageType::SCHED_EXECUTE_JOB:
+            s = "SCHED_EXECUTE_JOB";
             break;
-        case IPMessageType::SCHED_REJECTION:
-            s = "SCHED_REJECTION";
+        case IPMessageType::SCHED_REJECT_JOB:
+            s = "SCHED_REJECT_JOB";
             break;
         case IPMessageType::SCHED_CALL_ME_LATER:
             s = "SCHED_CALL_ME_LATER";
@@ -147,13 +147,13 @@ IPMessage::~IPMessage()
             PStateModificationMessage * msg = (PStateModificationMessage *) data;
             delete msg;
         } break;
-        case IPMessageType::SCHED_ALLOCATION:
+        case IPMessageType::SCHED_EXECUTE_JOB:
         {
             SchedulingAllocationMessage * msg = (SchedulingAllocationMessage *) data;
             // The Allocations themselves are not memory-deallocated there but at the end of the job execution.
             delete msg;
         } break;
-        case IPMessageType::SCHED_REJECTION:
+        case IPMessageType::SCHED_REJECT_JOB:
         {
             JobRejectedMessage * msg = (JobRejectedMessage *) data;
             delete msg;

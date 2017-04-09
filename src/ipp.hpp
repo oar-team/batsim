@@ -52,16 +52,16 @@ bool operator<(const JobIdentifier & ji1, const JobIdentifier & ji2);
 enum class IPMessageType
 {
     JOB_SUBMITTED           //!< Submitter -> Server. The submitter tells the server a new job has been submitted.
-    ,JOB_SUBMITTED_BY_DP    //!< SchedulerHandler -> Server. The scheduler handler tells the server that the decision process wants to submit a job
-    ,JOB_COMPLETED          //!< Launcher -> Server. The launcher tells the server a job has been completed.
-    ,PSTATE_MODIFICATION    //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a pstate modification).
-    ,SCHED_ALLOCATION       //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job allocation).
-    ,SCHED_REJECTION        //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job rejection).
-    ,SCHED_CALL_ME_LATER    //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a CALL_ME_LATER message).
-    ,SCHED_TELL_ME_ENERGY   //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a TELL_ME_CONSUMED_ENERGY message).
-    ,SCHED_WAIT_ANSWER      //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a WAIT_ANSWER message).
-    ,WAIT_QUERY             //!< Server -> SchedulerHandler. The scheduler handler tells the server a scheduling event occured (a WAIT_ANSWER message).
-    ,SCHED_READY            //!< SchedulerHandler -> Server. The scheduler handler tells the server that the scheduler is ready (messages can be sent to it).
+    ,JOB_SUBMITTED_BY_DP    //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to submit a job
+    ,JOB_COMPLETED          //!< Launcher -> Server. The job launcher tells the server a job has been completed.
+    ,PSTATE_MODIFICATION    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (modify the state of some resources).
+    ,SCHED_EXECUTE_JOB      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (execute a job).
+    ,SCHED_REJECT_JOB       //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (reject a job).
+    ,SCHED_CALL_ME_LATER    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to be called in the future).
+    ,SCHED_TELL_ME_ENERGY   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform consumed energy).
+    ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
+    ,WAIT_QUERY             //!< Server -> Scheduler. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
+    ,SCHED_READY            //!< Scheduler -> Server. The scheduler tells the server that the scheduler is ready (the scheduler is ready, messages can be sent to it).
     ,WAITING_DONE           //!< Waiter -> Server. The waiter tells the server that the target time has been reached.
     ,KILLING_DONE           //!< Killer -> Server. The killer tells the server that all the jobs have been killed.
     ,SUBMITTER_HELLO        //!< Submitter -> Server. The submitter tells it starts submitting to the server.
