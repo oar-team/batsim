@@ -504,8 +504,7 @@ void JsonProtocolReader::handle_execute_job(int event_number, double timestamp, 
     } */
 
     SchedulingAllocationMessage * message = new SchedulingAllocationMessage;
-    SchedulingAllocation * sched_alloc = new SchedulingAllocation;
-    message->allocations.push_back(sched_alloc);
+    message->allocation = new SchedulingAllocation;
 
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should be an object", event_number);
 
@@ -519,7 +518,7 @@ void JsonProtocolReader::handle_execute_job(int event_number, double timestamp, 
     string job_id = job_id_value.GetString();
 
     // Let's retrieve the job identifier
-    if (!identify_job_from_string(context, job_id, sched_alloc->job_id))
+    if (!identify_job_from_string(context, job_id, message->allocation->job_id))
     {
         xbt_assert(false, "Invalid JSON message: in event %d (EXECUTE_JOB): "
                           "The job identifier '%s' is not valid. "
@@ -530,7 +529,7 @@ void JsonProtocolReader::handle_execute_job(int event_number, double timestamp, 
     }
 
     // Let's make sure the job is submitted
-    Job * job = context->workloads.job_at(sched_alloc->job_id);
+    Job * job = context->workloads.job_at(message->allocation->job_id);
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Invalid JSON message: in event %d (EXECUTE_JOB): "
                "Invalid state of job %s: It cannot be executed now",
@@ -545,8 +544,8 @@ void JsonProtocolReader::handle_execute_job(int event_number, double timestamp, 
     xbt_assert(alloc_value.IsString(), "Invalid JSON message: the 'alloc' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
     string alloc = alloc_value.GetString();
 
-    sched_alloc->machine_ids = MachineRange::from_string_hyphen(alloc, " ", "-", "Invalid JSON message: ");
-    int nb_allocated_resources = sched_alloc->machine_ids.size();
+    message->allocation->machine_ids = MachineRange::from_string_hyphen(alloc, " ", "-", "Invalid JSON message: ");
+    int nb_allocated_resources = message->allocation->machine_ids.size();
     xbt_assert(nb_allocated_resources > 0, "Invalid JSON message: in event %d (EXECUTE_JOB): the number of allocated resources should be strictly positive (got %d).", event_number, nb_allocated_resources);
 
     // *****************************
@@ -592,22 +591,22 @@ void JsonProtocolReader::handle_execute_job(int event_number, double timestamp, 
         }
 
         // Let's write the mapping as a vector (keys will be implicit between 0 and nb_executor-1)
-        sched_alloc->mapping.reserve(mapping_map.size());
+        message->allocation->mapping.reserve(mapping_map.size());
         auto mit = mapping_map.begin();
         int nb_inserted = 0;
 
         xbt_assert(mit->first == nb_inserted, "Invalid JSON message: Invalid 'mapping' object of event %d (EXECUTE_JOB): no resource associated to executor %d.", event_number, nb_inserted);
         xbt_assert(mit->second >= 0 && mit->second < nb_allocated_resources, "Invalid JSON message: Invalid 'mapping' object of evend %d (EXECUTE_JOB): the %d-th resource within the allocation is told to be used, but there are only %d allocated resources.", event_number, mit->second, nb_allocated_resources);
-        sched_alloc->mapping.push_back(mit->second);
+        message->allocation->mapping.push_back(mit->second);
 
         for (++mit, ++nb_inserted; mit != mapping_map.end(); ++mit, ++nb_inserted)
         {
             xbt_assert(mit->first == nb_inserted, "Invalid JSON message: Invalid 'mapping' object of event %d (EXECUTE_JOB): no resource associated to executor %d.", event_number, nb_inserted);
             xbt_assert(mit->second >= 0 && mit->second < nb_allocated_resources, "Invalid JSON message: Invalid 'mapping' object of evend %d (EXECUTE_JOB): the %d-th resource within the allocation is told to be used, but there are only %d allocated resources.", event_number, mit->second, nb_allocated_resources);
-            sched_alloc->mapping.push_back(mit->second);
+            message->allocation->mapping.push_back(mit->second);
         }
 
-        xbt_assert(sched_alloc->mapping.size() == mapping_map.size());
+        xbt_assert(message->allocation->mapping.size() == mapping_map.size());
     }
 
     // Everything has been parsed correctly, let's inject the message into the simulation.

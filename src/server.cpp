@@ -399,62 +399,59 @@ int server_process(int argc, char *argv[])
         {
             xbt_assert(task_data->data != nullptr);
             SchedulingAllocationMessage * message = (SchedulingAllocationMessage *) task_data->data;
+            SchedulingAllocation * allocation = message->allocation;
 
-            for (SchedulingAllocation * allocation : message->allocations)
+            Job * job = context->workloads.job_at(allocation->job_id);
+            job->state = JobState::JOB_STATE_RUNNING;
+
+            nb_running_jobs++;
+            xbt_assert(nb_running_jobs <= nb_submitted_jobs);
+            nb_scheduled_jobs++;
+            xbt_assert(nb_scheduled_jobs <= nb_submitted_jobs);
+
+            if (!context->allow_time_sharing)
             {
-                Job * job = context->workloads.job_at(allocation->job_id);
-                job->state = JobState::JOB_STATE_RUNNING;
-
-                nb_running_jobs++;
-                xbt_assert(nb_running_jobs <= nb_submitted_jobs);
-                nb_scheduled_jobs++;
-                xbt_assert(nb_scheduled_jobs <= nb_submitted_jobs);
-
-                if (!context->allow_time_sharing)
+                for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
                 {
-                    for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
-                    {
-                        int machine_id = *machine_id_it;
-                        const Machine * machine = context->machines[machine_id];
-                        (void) machine; // Avoids a warning if assertions are ignored
-                        xbt_assert(machine->jobs_being_computed.empty(),
-                                   "Invalid job allocation: machine %d ('%s') is currently computing jobs (these ones:"
-                                   " {%s}) whereas space sharing is forbidden. Space sharing can be enabled via an option,"
-                                   " try --help to display the available options", machine->id, machine->name.c_str(),
-                                   machine->jobs_being_computed_as_string().c_str());
-                    }
+                    int machine_id = *machine_id_it;
+                    const Machine * machine = context->machines[machine_id];
+                    (void) machine; // Avoids a warning if assertions are ignored
+                    xbt_assert(machine->jobs_being_computed.empty(),
+                               "Invalid job allocation: machine %d ('%s') is currently computing jobs (these ones:"
+                               " {%s}) whereas space sharing is forbidden. Space sharing can be enabled via an option,"
+                               " try --help to display the available options", machine->id, machine->name.c_str(),
+                               machine->jobs_being_computed_as_string().c_str());
                 }
-
-                if (context->energy_used)
-                {
-                    // Check that every machine is in a computation pstate
-                    for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
-                    {
-                        int machine_id = *machine_id_it;
-                        Machine * machine = context->machines[machine_id];
-                        int ps = MSG_host_get_pstate(machine->host);
-                        (void) ps; // Avoids a warning if assertions are ignored
-                        xbt_assert(machine->has_pstate(ps));
-                        xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
-                                   "Invalid job allocation: machine %d ('%s') is not in a computation pstate (ps=%d)",
-                                   machine->id, machine->name.c_str(), ps);
-                        xbt_assert(machine->state == MachineState::COMPUTING || machine->state == MachineState::IDLE,
-                                   "Invalid job allocation: machine %d ('%s') cannot compute jobs now (the machine is"
-                                   " neither computing nor being idle)", machine->id, machine->name.c_str());
-                    }
-
-                }
-
-                ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
-                exec_args->context = context;
-                exec_args->allocation = allocation;
-                string pname = "job_" + job->id;
-                msg_process_t process = MSG_process_create(pname.c_str(), execute_job_process,
-                    (void*)exec_args,
-                    context->machines[allocation->machine_ids.first_element()]->host);
-                job->execution_processes.insert(process);
             }
 
+            if (context->energy_used)
+            {
+                // Check that every machine is in a computation pstate
+                for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
+                {
+                    int machine_id = *machine_id_it;
+                    Machine * machine = context->machines[machine_id];
+                    int ps = MSG_host_get_pstate(machine->host);
+                    (void) ps; // Avoids a warning if assertions are ignored
+                    xbt_assert(machine->has_pstate(ps));
+                    xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
+                               "Invalid job allocation: machine %d ('%s') is not in a computation pstate (ps=%d)",
+                               machine->id, machine->name.c_str(), ps);
+                    xbt_assert(machine->state == MachineState::COMPUTING || machine->state == MachineState::IDLE,
+                               "Invalid job allocation: machine %d ('%s') cannot compute jobs now (the machine is"
+                               " neither computing nor being idle)", machine->id, machine->name.c_str());
+                }
+
+            }
+
+            ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
+            exec_args->context = context;
+            exec_args->allocation = allocation;
+            string pname = "job_" + job->id;
+            msg_process_t process = MSG_process_create(pname.c_str(), execute_job_process,
+                                                       (void*)exec_args,
+                                                       context->machines[allocation->machine_ids.first_element()]->host);
+            job->execution_processes.insert(process);
         } break; // end of case SCHED_ALLOCATION
 
         case IPMessageType::WAITING_DONE:

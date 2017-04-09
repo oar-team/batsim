@@ -149,8 +149,7 @@ struct SchedulingAllocation
  */
 struct SchedulingAllocationMessage
 {
-    // TODO:remove vector?
-    std::vector<SchedulingAllocation *> allocations;  //!< Possibly several allocations
+    SchedulingAllocation * allocation; //!< The allocation itself
 };
 
 /**
