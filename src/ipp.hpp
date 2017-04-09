@@ -57,6 +57,7 @@ enum class IPMessageType
     ,PSTATE_MODIFICATION    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (modify the state of some resources).
     ,SCHED_EXECUTE_JOB      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (execute a job).
     ,SCHED_REJECT_JOB       //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (reject a job).
+    ,SCHED_KILL_JOB         //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (kill a job).
     ,SCHED_CALL_ME_LATER    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to be called in the future).
     ,SCHED_TELL_ME_ENERGY   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform consumed energy).
     ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
@@ -144,11 +145,19 @@ struct SchedulingAllocation
 };
 
 /**
- * @brief The content of the JobSubmitted message
+ * @brief The content of the EXECUTE_JOB message
  */
-struct SchedulingAllocationMessage
+struct ExecuteJobMessage
 {
     SchedulingAllocation * allocation; //!< The allocation itself
+};
+
+/**
+ * @brief The content of the KILL_JOB message
+ */
+struct KillJobMessage
+{
+    std::vector<JobIdentifier> jobs_ids; //!< The ids of the jobs to kill
 };
 
 /**

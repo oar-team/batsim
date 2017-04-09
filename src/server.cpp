@@ -246,7 +246,7 @@ int server_process(int argc, char *argv[])
 
         } break; // end of case JOB_SUBMITTED_BY_DP
 
-        case IPMessageType::SCHED_REJECTION:
+        case IPMessageType::SCHED_REJECT_JOB:
         {
             xbt_assert(task_data->data != nullptr);
             JobRejectedMessage * message = (JobRejectedMessage *) task_data->data;
@@ -258,6 +258,18 @@ int server_process(int argc, char *argv[])
             XBT_INFO("Job %d (workload=%s) has been rejected",
                      job->number, job->workload->name.c_str());
         } break; // end of case SCHED_REJECTION
+
+        case IPMessageType::SCHED_KILL_JOB:
+        {
+            xbt_assert(task_data->data != nullptr);
+            KillJobMessage * message = (KillJobMessage *) task_data->data;
+
+            KillerProcessArguments * args = new KillerProcessArguments;
+            args->context = context;
+            args->jobs_ids = message->jobs_ids;
+
+            MSG_process_create("killer_process", killer_process, (void *) args, MSG_host_self());
+        } break; // end of case SCHED_KILL_JOB
 
         case IPMessageType::SCHED_CALL_ME_LATER:
         {
@@ -363,10 +375,10 @@ int server_process(int argc, char *argv[])
 
         } break; // end of case PSTATE_MODIFICATION
 
-        case IPMessageType::SCHED_ALLOCATION:
+        case IPMessageType::SCHED_EXECUTE_JOB:
         {
             xbt_assert(task_data->data != nullptr);
-            SchedulingAllocationMessage * message = (SchedulingAllocationMessage *) task_data->data;
+            ExecuteJobMessage * message = (ExecuteJobMessage *) task_data->data;
             SchedulingAllocation * allocation = message->allocation;
 
             Job * job = context->workloads.job_at(allocation->job_id);
