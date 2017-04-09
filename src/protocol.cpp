@@ -397,7 +397,7 @@ void JsonProtocolReader::parse_and_apply_message(const string &message)
         parse_and_apply_event(event_object, i, now);
     }
 
-    dsend_message(now, "server", IPMessageType::SCHED_READY);
+    send_message(now, "server", IPMessageType::SCHED_READY);
 }
 
 void JsonProtocolReader::parse_and_apply_event(const Value & event_object,
@@ -450,12 +450,14 @@ void JsonProtocolReader::handle_query_request(int event_number, double timestamp
         if (key == "consumed_energy")
         {
             xbt_assert(value_object.ObjectEmpty(), "Invalid JSON message: the value of '%s' inside 'data' object of event %d (QUERY_REQUEST) should be empty", key.c_str(), event_number);
-            dsend_message(timestamp, "server", IPMessageType::SCHED_TELL_ME_ENERGY);
+            send_message(timestamp, "server", IPMessageType::SCHED_TELL_ME_ENERGY);
         }
     }
 }
 
-void JsonProtocolReader::handle_reject_job(int event_number, double timestamp, const Value &data_object)
+void JsonProtocolReader::handle_reject_job(int event_number,
+                                           double timestamp,
+                                           const Value &data_object)
 {
     /* {
       "timestamp": 10.0,
@@ -488,10 +490,12 @@ void JsonProtocolReader::handle_reject_job(int event_number, double timestamp, c
                "For being rejected, a job must be submitted and not allocated yet.",
                job->id.c_str());
 
-    dsend_message(timestamp, "server", IPMessageType::SCHED_REJECTION, (void*) message);
+    send_message(timestamp, "server", IPMessageType::SCHED_REJECTION, (void*) message);
 }
 
-void JsonProtocolReader::handle_execute_job(int event_number, double timestamp, const Value &data_object)
+void JsonProtocolReader::handle_execute_job(int event_number,
+                                            double timestamp,
+                                            const Value &data_object)
 {
     /* {
       "timestamp": 10.0,
@@ -610,10 +614,12 @@ void JsonProtocolReader::handle_execute_job(int event_number, double timestamp, 
     }
 
     // Everything has been parsed correctly, let's inject the message into the simulation.
-    dsend_message(timestamp, "server", IPMessageType::SCHED_ALLOCATION, (void*) message);
+    send_message(timestamp, "server", IPMessageType::SCHED_ALLOCATION, (void*) message);
 }
 
-void JsonProtocolReader::handle_call_me_later(int event_number, double timestamp, const Value &data_object)
+void JsonProtocolReader::handle_call_me_later(int event_number,
+                                              double timestamp,
+                                              const Value &data_object)
 {
     /* {
       "timestamp": 10.0,
@@ -621,7 +627,7 @@ void JsonProtocolReader::handle_call_me_later(int event_number, double timestamp
       "data": {"timestamp": 25.5}
     } */
 
-    NOPMeLaterMessage * message = new NOPMeLaterMessage;
+    CallMeLaterMessage * message = new CallMeLaterMessage;
 
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (CALL_ME_LATER) should be an object", event_number);
     xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (CALL_ME_LATER) should be of size 1 (size=%d)", event_number, (int)data_object.MemberCount());
@@ -634,10 +640,12 @@ void JsonProtocolReader::handle_call_me_later(int event_number, double timestamp
     if (message->target_time < MSG_get_clock())
         XBT_WARN("Event %d (CALL_ME_LATER) asks to be called at time %g but it is already reached", event_number, message->target_time);
 
-    dsend_message(timestamp, "server", IPMessageType::SCHED_NOP_ME_LATER, (void*) message);
+    send_message(timestamp, "server", IPMessageType::SCHED_CALL_ME_LATER, (void*) message);
 }
 
-void JsonProtocolReader::handle_set_resource_state(int event_number, double timestamp, const Value &data_object)
+void JsonProtocolReader::handle_set_resource_state(int event_number,
+                                                   double timestamp,
+                                                   const Value &data_object)
 {
     /* {
       "timestamp": 10.0,
@@ -670,10 +678,12 @@ void JsonProtocolReader::handle_set_resource_state(int event_number, double time
         xbt_assert(false, "Invalid JSON message: the 'state' value in the 'data' value of event %d (SET_RESOURCE_STATE) should be a string corresponding to an integer (got '%s')", event_number, state_value_string.c_str());
     }
 
-    dsend_message(timestamp, "server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
+    send_message(timestamp, "server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
 }
 
-void JsonProtocolReader::handle_notify(int event_number, double timestamp, const Value &data_object)
+void JsonProtocolReader::handle_notify(int event_number,
+                                       double timestamp,
+                                       const Value &data_object)
 {
     xbt_assert(false, "Unimplemented! TODO");
     (void) event_number;
@@ -681,7 +691,9 @@ void JsonProtocolReader::handle_notify(int event_number, double timestamp, const
     (void) data_object;
 }
 
-void JsonProtocolReader::handle_submit_job(int event_number, double timestamp, const Value &data_object)
+void JsonProtocolReader::handle_submit_job(int event_number,
+                                           double timestamp,
+                                           const Value &data_object)
 {
     xbt_assert(false, "Unimplemented! TODO");
     (void) event_number;
@@ -689,7 +701,9 @@ void JsonProtocolReader::handle_submit_job(int event_number, double timestamp, c
     (void) data_object;
 }
 
-void JsonProtocolReader::handle_kill_job(int event_number, double timestamp, const Value &data_object)
+void JsonProtocolReader::handle_kill_job(int event_number,
+                                         double timestamp,
+                                         const Value &data_object)
 {
     xbt_assert(false, "Unimplemented! TODO");
     (void) event_number;
@@ -697,10 +711,11 @@ void JsonProtocolReader::handle_kill_job(int event_number, double timestamp, con
     (void) data_object;
 }
 
-void JsonProtocolReader::dsend_message(double when,
+void JsonProtocolReader::send_message(double when,
                                       const string &destination_mailbox,
                                       IPMessageType type,
-                                      void *data) const
+                                      void *data,
+                                      bool detached) const
 {
     // Let's wait until "when" time is reached
     double current_time = MSG_get_clock();
@@ -708,5 +723,5 @@ void JsonProtocolReader::dsend_message(double when,
         MSG_process_sleep(when - current_time);
 
     // Let's actually send the message
-    ::send_message(destination_mailbox, type, data);
+    generic_send_message(destination_mailbox, type, data, detached);
 }

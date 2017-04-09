@@ -537,11 +537,13 @@ private:
      * @param[in] destination_mailbox The destination mailbox
      * @param[in] type The message type
      * @param[in] data The message data
+     * @param[in] detached Whether the send should be detached
      */
-    void dsend_message(double when,
+    void send_message(double when,
                       const std::string & destination_mailbox,
                       IPMessageType type,
-                      void * data = nullptr) const;
+                      void * data = nullptr,
+                      bool detached = false) const;
 
 private:
     //! Maps message types to their handler functions

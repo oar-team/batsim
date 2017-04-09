@@ -79,7 +79,7 @@ int server_process(int argc, char *argv[])
         MSG_task_receive(&(task_received), "server");
         task_data = (IPMessage *) MSG_task_get_data(task_received);
 
-        XBT_INFO( "Server received a message of type %s:", ipMessageTypeToString(task_data->type).c_str());
+        XBT_INFO( "Server received a message of type %s:", ip_message_type_to_string(task_data->type).c_str());
 
         switch (task_data->type)
         {
@@ -259,10 +259,10 @@ int server_process(int argc, char *argv[])
                      job->number, job->workload->name.c_str());
         } break; // end of case SCHED_REJECTION
 
-        case IPMessageType::SCHED_NOP_ME_LATER:
+        case IPMessageType::SCHED_CALL_ME_LATER:
         {
             xbt_assert(task_data->data != nullptr);
-            NOPMeLaterMessage * message = (NOPMeLaterMessage *) task_data->data;
+            CallMeLaterMessage * message = (CallMeLaterMessage *) task_data->data;
 
             xbt_assert(message->target_time > MSG_get_clock(), "You asked to be awaken in the past! (you ask: %f, it is: %f)", message->target_time, MSG_get_clock());
 
@@ -272,7 +272,7 @@ int server_process(int argc, char *argv[])
             string pname = "waiter " + to_string(message->target_time);
             MSG_process_create(pname.c_str(), waiter_process, (void*) args, context->machines.master_machine()->host);
             ++nb_waiters;
-        } break; // end of case SCHED_NOP_ME_LATER
+        } break; // end of case SCHED_CALL_ME_LATER
 
         case IPMessageType::PSTATE_MODIFICATION:
         {
@@ -362,38 +362,6 @@ int server_process(int argc, char *argv[])
                 context->machine_state_tracer.write_machine_states(MSG_get_clock());
 
         } break; // end of case PSTATE_MODIFICATION
-
-        case IPMessageType::SCHED_NOP:
-        {
-            XBT_INFO("Nothing to do received.");
-            if ((nb_running_jobs == 0) && (nb_scheduled_jobs < nb_submitted_jobs) && (nb_switching_machines == 0) && (nb_waiters == 0))
-            {
-                XBT_INFO("Nothing to do received while nothing is currently happening (no job is running, no machine is switching state, no wake-up timer is active) and some jobs are waiting to be scheduled... This might cause a deadlock!");
-
-                // Let us display the available jobs (to help in the scheduler debugging)
-                vector<string> submittedJobs;
-
-                for (auto const workload_mit : context->workloads.workloads())
-                {
-                    const string & workload_name = workload_mit.first;
-                    Workload * workload = workload_mit.second;
-                    if (workload->jobs)
-                    {
-                        for (auto & job_mit : workload->jobs->jobs())
-                        {
-                            const Job * job = job_mit.second;
-                            if (job->state == JobState::JOB_STATE_SUBMITTED)
-                                submittedJobs.push_back(workload_name + '!' + std::to_string(job->number));
-                        }
-                    }
-                }
-
-                string submittedJobsString = boost::algorithm::join(submittedJobs, ", ");
-
-                XBT_INFO( "The available jobs are [%s]", submittedJobsString.c_str());
-            }
-
-        } break; // end of case SCHED_NOP
 
         case IPMessageType::SCHED_ALLOCATION:
         {

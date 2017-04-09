@@ -11,13 +11,6 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(ipp, "ipp"); //!< Logging
 
-/**
- * @brief TODO
- * @param destination_mailbox TODO
- * @param type TODO
- * @param data TODO
- * @param detached TODO
- */
 void generic_send_message(const std::string & destination_mailbox,
                           IPMessageType type,
                           void * data,
@@ -31,20 +24,16 @@ void generic_send_message(const std::string & destination_mailbox,
 
     XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p",
               MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
-              ipMessageTypeToString(type).c_str(), data);
+              ip_message_type_to_string(type).c_str(), data);
 
     if (detached)
-    {
         MSG_task_dsend(task_to_send, destination_mailbox.c_str(), NULL);
-    }
     else
-    {
         MSG_task_send(task_to_send, destination_mailbox.c_str());
-    }
 
     XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p done",
               MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
-              ipMessageTypeToString(type).c_str(), data);
+              ip_message_type_to_string(type).c_str(), data);
 }
 
 void send_message(const std::string & destination_mailbox, IPMessageType type, void * data)
@@ -57,7 +46,7 @@ void dsend_message(const std::string & destination_mailbox, IPMessageType type, 
   generic_send_message(destination_mailbox, type, data, true);
 }
 
-std::string ipMessageTypeToString(IPMessageType type)
+std::string ip_message_type_to_string(IPMessageType type)
 {
     string s;
 
@@ -81,11 +70,8 @@ std::string ipMessageTypeToString(IPMessageType type)
         case IPMessageType::SCHED_REJECTION:
             s = "SCHED_REJECTION";
             break;
-        case IPMessageType::SCHED_NOP:
-            s = "SCHED_NOP";
-            break;
-        case IPMessageType::SCHED_NOP_ME_LATER:
-            s = "SCHED_NOP_ME_LATER";
+        case IPMessageType::SCHED_CALL_ME_LATER:
+            s = "SCHED_CALL_ME_LATER";
             break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
             s = "SCHED_TELL_ME_ENERGY";
@@ -172,13 +158,10 @@ IPMessage::~IPMessage()
             JobRejectedMessage * msg = (JobRejectedMessage *) data;
             delete msg;
         } break;
-        case IPMessageType::SCHED_NOP_ME_LATER:
+        case IPMessageType::SCHED_CALL_ME_LATER:
         {
-            NOPMeLaterMessage * msg = (NOPMeLaterMessage*) data;
+            CallMeLaterMessage * msg = (CallMeLaterMessage*) data;
             delete msg;
-        } break;
-        case IPMessageType::SCHED_NOP:
-        {
         } break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
         {

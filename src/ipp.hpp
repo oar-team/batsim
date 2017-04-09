@@ -57,8 +57,7 @@ enum class IPMessageType
     ,PSTATE_MODIFICATION    //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a pstate modification).
     ,SCHED_ALLOCATION       //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job allocation).
     ,SCHED_REJECTION        //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a job rejection).
-    ,SCHED_NOP              //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a NOP message).
-    ,SCHED_NOP_ME_LATER     //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a NOP_ME_LATTER message).
+    ,SCHED_CALL_ME_LATER    //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a CALL_ME_LATER message).
     ,SCHED_TELL_ME_ENERGY   //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a TELL_ME_CONSUMED_ENERGY message).
     ,SCHED_WAIT_ANSWER      //!< SchedulerHandler -> Server. The scheduler handler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,WAIT_QUERY             //!< Server -> SchedulerHandler. The scheduler handler tells the server a scheduling event occured (a WAIT_ANSWER message).
@@ -162,12 +161,11 @@ struct PStateModificationMessage
 };
 
 /**
- * @brief The content of the NOPMeLater message
+ * @brief The content of the CallMeLater message
  */
-struct NOPMeLaterMessage
+struct CallMeLaterMessage
 {
-    // TODO: rename struct?
-    double target_time; //!< The time at which Batsim should send a NOP message to the decision real process
+    double target_time; //!< The time at which Batsim should send a message to the decision real process
 };
 
 /**
@@ -315,6 +313,17 @@ struct SMPIReplayProcessArguments
 /**
  * @brief Sends a message from the given process to the given mailbox
  * @param[in] destination_mailbox The destination mailbox
+ * @param[in] type The type of the message to send
+ * @param[in] data The data associated with the message
+ * @param[in] detached Whether the send should be detached (MSG_task_send or MSG_task_dsend)
+ */
+void generic_send_message(const std::string & destination_mailbox,
+                          IPMessageType type,
+                          void * data,
+                          bool detached);
+/**
+ * @brief Sends a message from the given process to the given mailbox
+ * @param[in] destination_mailbox The destination mailbox
  * @param[in] type The type of message to send
  * @param[in] data The data associated to the message
  */
@@ -349,4 +358,4 @@ void dsend_message(const char * destination_mailbox, IPMessageType type, void * 
  * @param[in] type The IPMessageType
  * @return The std::string corresponding to the type
  */
-std::string ipMessageTypeToString(IPMessageType type);
+std::string ip_message_type_to_string(IPMessageType type);
