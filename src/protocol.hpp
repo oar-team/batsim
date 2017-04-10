@@ -20,9 +20,19 @@ template<typename OutputStream>
 class Writer : public rapidjson::Writer<OutputStream>
 {
 public:
+    /**
+     * @brief Constructor
+     * @param[in,out] os The output stream
+     */
     Writer(OutputStream& os) : rapidjson::Writer<OutputStream>(os), os_(&os)
     {
     }
+
+    /**
+     * @brief Adds a double in the output stream
+     * @param[in] d The double to add in the stream
+     * @return true on success, false otherwise
+     */
     bool Double(double d)
     {
         this->Prefix(rapidjson::kNumberType);
@@ -41,7 +51,7 @@ public:
     }
 
 private:
-    OutputStream* os_;
+    OutputStream* os_; //!< The output stream
 };
 
 /**

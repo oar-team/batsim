@@ -64,7 +64,7 @@ public:
      * @brief Marks that one machine switched its power state
      * @param[in] machine_id The unique number of the machine that just switched power state
      * @param[in] target_pstate The number of the power state into the machine just switched
-     * @param[out] reply_message_content all_machines The machines considered by the switch
+     * @param[out] all_machines The machines considered by the switch
      * @param[in,out] context The Batsim context, which may be used to logging purpose
      * @return true if the machine was the last remaining one of the switch, false otherwise
      */
