@@ -34,7 +34,7 @@ It is a JSON object that looks like this:
   "events": [
     {
       "timestamp": 1000,
-      "type": "EXEC",
+      "type": "EXECUTE_JOB",
       "data": {
         "job_id": "workload!job_1234",
         "alloc": "1 2 4-8",
@@ -42,7 +42,7 @@ It is a JSON object that looks like this:
     },
     {
       "timestamp": 1012,
-      "type": "EXEC",
+      "type": "EXECUTE_JOB",
       "data": {
         "job_id": "workload!job_1235",
         "alloc": "12-100",
