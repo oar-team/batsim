@@ -733,13 +733,6 @@ void JsonProtocolReader::handle_kill_job(int event_number,
         const Value & job_id_value = job_ids_array[i];
         if (!identify_job_from_string(context, job_id_value.GetString(), message->jobs_ids[i]))
             xbt_assert(false, "Invalid JSON message: in event %d (KILL_JOB): job_id %d ('%s') is invalid.", event_number, i, message->jobs_ids[i].to_string().c_str());
-
-        Job * job = context->workloads.job_at(message->jobs_ids[i]);
-        xbt_assert(job->state == JobState::JOB_STATE_RUNNING ||
-                   job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
-                   job->state == JobState::JOB_STATE_COMPLETED_KILLED,
-                   "Invalid JSON message: in event %d (KILL_JOB): job_id %d ('%s') refers to a job not being executed nor completed.",
-                   event_number, i, message->jobs_ids[i].to_string().c_str());
     }
 
     send_message(timestamp, "server", IPMessageType::SCHED_KILL_JOB, (void *) message);

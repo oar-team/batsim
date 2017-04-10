@@ -37,6 +37,7 @@ int server_process(int argc, char *argv[])
     int nb_running_jobs = 0;
     int nb_switching_machines = 0;
     int nb_waiters = 0;
+    int nb_killers = 0;
     bool sched_ready = true;
     bool all_jobs_submitted_and_completed = false;
     bool end_of_simulation_sent = false;
@@ -71,7 +72,7 @@ int server_process(int argc, char *argv[])
     // Simulation loop
     while ((nb_submitters == 0) || (nb_submitters_finished < nb_submitters) ||
           (nb_completed_jobs < nb_submitted_jobs) || (!sched_ready) ||
-          (nb_switching_machines > 0) || (nb_waiters > 0))
+          (nb_switching_machines > 0) || (nb_waiters > 0) || (nb_killers > 0))
     {
         // Let's wait a message from a node or the request-reply process...
         msg_task_t task_received = NULL;
@@ -151,6 +152,7 @@ int server_process(int argc, char *argv[])
             nb_running_jobs--;
             xbt_assert(nb_running_jobs >= 0);
             nb_completed_jobs++;
+            xbt_assert(nb_completed_jobs + nb_running_jobs <= nb_submitted_jobs);
             Job * job = context->workloads.job_at(message->job_id);
 
             XBT_INFO("Job %s!%d COMPLETED. %d jobs completed so far",
@@ -268,7 +270,18 @@ int server_process(int argc, char *argv[])
             args->context = context;
             args->jobs_ids = message->jobs_ids;
 
+            for (const JobIdentifier & job_id : args->jobs_ids)
+            {
+                Job * job = context->workloads.job_at(job_id);
+                xbt_assert(job->state == JobState::JOB_STATE_RUNNING ||
+                           job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
+                           job->state == JobState::JOB_STATE_COMPLETED_KILLED,
+                           "Invalid KILL_JOB: job_id '%s' refers to a job not being executed nor completed.",
+                           job_id.to_string().c_str());
+            }
+
             MSG_process_create("killer_process", killer_process, (void *) args, MSG_host_self());
+            ++nb_killers;
         } break; // end of case SCHED_KILL_JOB
 
         case IPMessageType::SCHED_CALL_ME_LATER:
@@ -539,8 +552,46 @@ int server_process(int argc, char *argv[])
 
         case IPMessageType::KILLING_DONE:
         {
-            // TODO
-            xbt_assert(false, "Not implemented yet, let's do this when the JSON protocol will work!");
+            xbt_assert(task_data->data != nullptr);
+            KillingDoneMessage * message = (KillingDoneMessage *) task_data->data;
+
+            vector<string> job_ids_str;
+            vector<string> really_killed_job_ids_str;
+            job_ids_str.reserve(message->jobs_ids.size());
+
+            for (const JobIdentifier & job_id : message->jobs_ids)
+            {
+                job_ids_str.push_back(job_id.to_string());
+
+                const Job * job = context->workloads.job_at(job_id);
+                if (job->state == JobState::JOB_STATE_COMPLETED_KILLED &&
+                    job->kill_reason == "Killed from killer_process (probably requested by the decision process)")
+                {
+                    nb_running_jobs--;
+                    xbt_assert(nb_running_jobs >= 0);
+                    nb_completed_jobs++;
+                    xbt_assert(nb_completed_jobs + nb_running_jobs <= nb_submitted_jobs);
+
+                    really_killed_job_ids_str.push_back(job_id.to_string());
+                }
+            }
+
+            XBT_INFO("Jobs {%s} have been killed (the following ones have REALLY been killed: {%s})",
+                     boost::algorithm::join(job_ids_str, ",").c_str(),
+                     boost::algorithm::join(really_killed_job_ids_str, ",").c_str());
+
+            context->proto_writer->append_job_killed(job_ids_str, MSG_get_clock());
+            --nb_killers;
+
+            if (!all_jobs_submitted_and_completed &&
+                nb_completed_jobs == nb_submitted_jobs &&
+                nb_submitters_finished == nb_submitters)
+            {
+                all_jobs_submitted_and_completed = true;
+                XBT_INFO("It seems that all jobs have been submitted and completed!");
+
+                context->proto_writer->append_simulation_ends(MSG_get_clock());
+            }
         } break; // end of case KILLING_DONE
         } // end of switch
 
@@ -564,7 +615,7 @@ int server_process(int argc, char *argv[])
 
     XBT_INFO("Simulation is finished!");
     bool simulation_is_completed = all_jobs_submitted_and_completed;
-    xbt_assert(simulation_is_completed, "Left simulation loop but it seems that not all that should have completed has!");
+    xbt_assert(simulation_is_completed, "Left simulation loop, but the simulation does NOT seem finished...");
 
     delete args;
     return 0;

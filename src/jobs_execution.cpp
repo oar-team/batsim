@@ -439,7 +439,6 @@ int execute_job_process(int argc, char *argv[])
         long double consumed_energy_before = job->consumed_energy;
         job->consumed_energy = 0;
 
-
         for (auto it = job->allocation.elements_begin(); it != job->allocation.elements_end(); ++it)
         {
             int machine_id = *it;
@@ -534,11 +533,15 @@ int killer_process(int argc, char *argv[])
             {
                 MSG_process_kill(process);
             }
+            job->execution_processes.clear();
 
             // Let's update the job information
             job->state = JobState::JOB_STATE_COMPLETED_KILLED;
             job->kill_reason = "Killed from killer_process (probably requested by the decision process)";
 
+            args->context->machines.update_machines_on_job_end(job,
+                                                               job->allocation,
+                                                               args->context);
             job->runtime = (Rational)MSG_get_clock() - job->starting_time;
 
             xbt_assert(job->runtime > 0, "The execution of job '%s' resulted in a null execution time. "
