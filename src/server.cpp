@@ -324,12 +324,13 @@ int server_process(int argc, char *argv[])
                         MSG_host_set_pstate(machine->host, message->new_pstate);
                         xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
 
-                        string reply_message_content;
+                        MachineRange all_switched_machines;
                         if (context->current_switches.mark_switch_as_done(machine->id, message->new_pstate,
-                                                                          reply_message_content, context))
+                                                                          all_switched_machines, context))
                         {
-                            xbt_assert(false, "Unimplemented! TODO");
-                            //context->proto_writer->append_resource_state_changed();
+                            context->proto_writer->append_resource_state_changed(all_switched_machines,
+                                                                                 std::to_string(message->new_pstate),
+                                                                                 MSG_get_clock());
                         }
                     }
                     else if (machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
@@ -485,15 +486,16 @@ int server_process(int argc, char *argv[])
             (void) machine; // Avoids a warning if assertions are ignored
             xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
 
-            string reply_message_content;
+            MachineRange all_switched_machines;
             if (context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate,
-                                                              reply_message_content, context))
+                                                              all_switched_machines, context))
             {
                 if (context->trace_machine_states)
                     context->machine_state_tracer.write_machine_states(MSG_get_clock());
 
-                xbt_assert(false, "Unimplemented! TODO");
-                //context->proto_writer->append_resource_state_changed();
+                context->proto_writer->append_resource_state_changed(all_switched_machines,
+                                                                     std::to_string(message->new_pstate),
+                                                                     MSG_get_clock());
             }
 
             --nb_switching_machines;
@@ -509,15 +511,16 @@ int server_process(int argc, char *argv[])
             (void) machine; // Avoids a warning if assertions are ignored
             xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
 
-            string reply_message_content;
+            MachineRange all_switched_machines;
             if (context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate,
-                                                              reply_message_content, context))
+                                                              all_switched_machines, context))
             {
                 if (context->trace_machine_states)
                     context->machine_state_tracer.write_machine_states(MSG_get_clock());
 
-                xbt_assert(false, "Unimplemented! TODO");
-                //context->proto_writer->append_resource_state_changed();
+                context->proto_writer->append_resource_state_changed(all_switched_machines,
+                                                                     std::to_string(message->new_pstate),
+                                                                     MSG_get_clock());
             }
 
             --nb_switching_machines;
