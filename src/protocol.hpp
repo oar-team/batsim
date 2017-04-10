@@ -6,11 +6,43 @@
 #include <map>
 
 #include <rapidjson/document.h>
+#include <rapidjson/writer.h>
 
 #include "machine_range.hpp"
 #include "ipp.hpp"
 
 struct BatsimContext;
+
+/**
+ * @brief Custom rapidjson Writer to force fixed float writing precision
+ */
+template<typename OutputStream>
+class Writer : public rapidjson::Writer<OutputStream>
+{
+public:
+    Writer(OutputStream& os) : rapidjson::Writer<OutputStream>(os), os_(&os)
+    {
+    }
+    bool Double(double d)
+    {
+        this->Prefix(rapidjson::kNumberType);
+
+        const int buf_size = 32;
+        char buffer[buf_size];
+
+        int ret = snprintf(buffer, sizeof(buffer), "%6f", d);
+        RAPIDJSON_ASSERT(ret >= 1);
+        const char * end = buffer + ret;
+
+        for (char* p = buffer; p != end; ++p)
+            os_->Put(*p);
+
+        return ret < (buf_size - 1);
+    }
+
+private:
+    OutputStream* os_;
+};
 
 /**
  * @brief Does the interface between protocol semantics and message representation.

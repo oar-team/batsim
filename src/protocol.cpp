@@ -3,7 +3,6 @@
 #include <xbt.h>
 
 #include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
 
 #include "context.hpp"
 #include "jobs.hpp"
@@ -307,7 +306,7 @@ string JsonProtocolWriter::generate_current_message(double date)
 
     // Dumping the content to a buffer
     StringBuffer buffer;
-    Writer<rapidjson::StringBuffer> writer(buffer);
+    ::Writer<rapidjson::StringBuffer> writer(buffer);
     _doc.Accept(writer);
 
     // Returning the buffer as a string
