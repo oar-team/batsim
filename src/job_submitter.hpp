@@ -27,4 +27,4 @@ int workflow_submitter_process(int argc, char *argv[]);
  * @param[in] argv The argument values
  * @return 0
  */
-int job_launcher_process(int argc, char *argv[]);
+int batexec_job_launcher_process(int argc, char *argv[]);
