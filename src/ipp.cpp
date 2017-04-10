@@ -107,7 +107,7 @@ std::string ip_message_type_to_string(IPMessageType type)
             s = "SWITCHED_OFF";
             break;
         case IPMessageType::KILLING_DONE:
-            s = "KILLING_ON";
+            s = "KILLING_DONE";
             break;
     }
 
