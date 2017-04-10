@@ -726,7 +726,7 @@ void JsonProtocolReader::handle_kill_job(int event_number,
     const Value & job_ids_array = data_object["job_ids"];
     xbt_assert(job_ids_array.IsArray(), "Invalid JSON message: the 'job_ids' value in the 'data' value of event %d (KILL_JOB) should be an array.", event_number);
     xbt_assert(job_ids_array.Size() > 0, "Invalid JSON message: the 'job_ids' array in the 'data' value of event %d (KILL_JOB) should be non-empty.", event_number);
-    message->jobs_ids.reserve(job_ids_array.Size());
+    message->jobs_ids.resize(job_ids_array.Size());
 
     for (unsigned int i = 0; i < job_ids_array.Size(); ++i)
     {
