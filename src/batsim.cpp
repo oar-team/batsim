@@ -488,7 +488,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
             MSG_process_create(submitter_instance_name.c_str(), static_job_submitter_process,
                                (void*) submitter_args, master_machine->host);
         else
-            MSG_process_create(submitter_instance_name.c_str(), job_launcher_process,
+            MSG_process_create(submitter_instance_name.c_str(), batexec_job_launcher_process,
                                (void*) submitter_args, master_machine->host);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }

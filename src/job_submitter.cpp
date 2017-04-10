@@ -362,7 +362,7 @@ static std::tuple<int,double,double> wait_for_query_answer(string submitter_name
 }
 
 
-int job_launcher_process(int argc, char *argv[])
+int batexec_job_launcher_process(int argc, char *argv[])
 {
     (void) argc;
     (void) argv;
