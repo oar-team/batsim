@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# Should now work with both python2 and python3
+#!/usr/bin/env python3
 
 import argparse
 import yaml
