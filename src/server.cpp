@@ -421,7 +421,16 @@ int server_process(int argc, char *argv[])
                                "Invalid job allocation: machine %d ('%s') cannot compute jobs now (the machine is"
                                " neither computing nor being idle)", machine->id, machine->name.c_str());
                 }
+            }
 
+            // Let's generate the hosts used by the job
+            allocation->hosts.clear();
+            allocation->hosts.reserve(allocation->machine_ids.size());
+            int host_i = 0;
+            for (auto machine_it = allocation->machine_ids.elements_begin(); machine_it != allocation->machine_ids.elements_end(); ++machine_it,++host_i)
+            {
+                int machine_id = *machine_it;
+                allocation->hosts[host_i] = context->machines[machine_id]->host;
             }
 
             ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
