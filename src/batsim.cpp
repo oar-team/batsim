@@ -735,9 +735,58 @@ void set_configuration(BatsimContext *context,
 
     // Let's write the values into the document to make sure they are all present
 
-
     context->redis_enabled = redis_enabled;
     context->submission_forward_profiles = submission_forward_profiles;
     context->submission_sched_enabled = submission_sched_enabled;
     context->submission_sched_ack = submission_sched_ack;
+
+    // *******************************************************************************
+    // Let's write the output config file (the one that will be sent to the scheduler)
+    // *******************************************************************************
+    auto & alloc = context->config_file.GetAllocator();
+
+    // Let's retrieve all data specified in the input config file (to let the user give custom info to the scheduler)
+    context->config_file.CopyFrom(main_args.config_file, alloc);
+
+    // Let's make sure all used data is written too.
+    // redis
+    auto mit_redis = context->config_file.FindMember("redis");
+    if (mit_redis == context->config_file.MemberEnd())
+    {
+        context->config_file.AddMember("redis", Value().SetObject(), alloc);
+        mit_redis = context->config_file.FindMember("redis");
+    }
+
+    // redis->enabled
+    if (mit_redis->value.FindMember("enabled") == mit_redis->value.MemberEnd())
+        mit_redis->value.AddMember("enabled", Value().SetBool(redis_enabled), alloc);
+
+    // job_submission
+    auto mit_job_submission = context->config_file.FindMember("job_submission");
+    if (mit_job_submission == context->config_file.MemberEnd())
+    {
+        context->config_file.AddMember("job_submission", Value().SetObject(), alloc);
+        mit_job_submission = context->config_file.FindMember("job_submission");
+    }
+
+    // job_submission->forward_profiles
+    if (mit_job_submission->value.FindMember("forward_profiles") == mit_job_submission->value.MemberEnd())
+        mit_job_submission->value.AddMember("forward_profiles", Value().SetBool(submission_forward_profiles), alloc);
+
+    // job_submission->from_scheduler
+    auto mit_job_submission_from_sched = mit_job_submission->value.FindMember("from_scheduler");
+    if (mit_job_submission_from_sched == mit_job_submission->value.MemberEnd())
+    {
+        mit_job_submission->value.AddMember("from_scheduler", Value().SetObject(), alloc);
+        mit_job_submission_from_sched = mit_job_submission->value.FindMember("from_scheduler");
+    }
+    Value & from_sched_value = mit_job_submission_from_sched->value;
+
+    // job_submission_from_scheduler->enabled
+    if (from_sched_value.FindMember("enabled") == from_sched_value.MemberEnd())
+        from_sched_value.AddMember("enabled", Value().SetBool(submission_sched_enabled), alloc);
+
+    // job_submission_from_scheduler->acknowledge
+    if (from_sched_value.FindMember("acknowledge") == from_sched_value.MemberEnd())
+        from_sched_value.AddMember("acknowledge", Value().SetBool(submission_sched_ack), alloc);
 }

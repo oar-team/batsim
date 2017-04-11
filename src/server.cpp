@@ -58,7 +58,7 @@ int server_process(int argc, char *argv[])
     map<std::pair<int,double>, Submitter*> origin_of_wait_queries;
 
     // Let's tell the Decision process that the simulation is about to begin (and that some data can be read from the data storage)
-    context->proto_writer->append_simulation_begins(context->machines.nb_machines(), MSG_get_clock());
+    context->proto_writer->append_simulation_begins(context->machines.nb_machines(), context->config_file, MSG_get_clock());
 
     RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
     req_rep_args->context = context;

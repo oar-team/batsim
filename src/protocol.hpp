@@ -171,9 +171,12 @@ public:
     /**
      * @brief Appends a SIMULATION_BEGINS event.
      * @param[in] nb_resources The number of simulated resources
+     * @param[in] configuration The simulation configuration
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_simulation_begins(int nb_resources, double date) = 0;
+    virtual void append_simulation_begins(int nb_resources,
+                                          const rapidjson::Document & configuration,
+                                          double date) = 0;
 
     /**
      * @brief Appends a SIMULATION_ENDS event.
@@ -367,11 +370,14 @@ public:
 
     // Messages from Batsim to the Scheduler
     /**
-     * @brief Appends a SIMULATION_STARTS event.
+     * @brief Appends a SIMULATION_BEGINS event.
      * @param[in] nb_resources The number of simulated resources
+     * @param[in] configuration The simulation configuration
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_simulation_begins(int nb_resources, double date);
+    void append_simulation_begins(int nb_resources,
+                                  const rapidjson::Document & configuration,
+                                  double date);
 
     /**
      * @brief Appends a SIMULATION_ENDS event.
