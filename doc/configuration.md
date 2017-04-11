@@ -8,9 +8,12 @@ default configuration:
   "redis": {
     "enabled": true
   },
-  "scheduler_submission": {
-    "enabled": false,
-    "acknowledge": true
+  "job_submission": {
+    "forward_profiles": true,
+    "from_scheduler": {
+      "enabled": false,
+      "acknowledge": true
+    }
   }
 }
 ```

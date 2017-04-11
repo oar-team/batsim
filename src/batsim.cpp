@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include <string>
+#include <fstream>
 
 #include <simgrid/msg.h>
 #include <smpi/smpi.h>
@@ -129,6 +130,7 @@ Most common options:
                                     outputs energy-related files.
 
 Execution context options:
+  --config-file <cfg_file>          Configuration file name (optional). [default: None]
   -s, --socket-endpoint <endpoint>  The Decision process socket endpoint
                                     Decision process [default: tcp://localhost:28000].
   --redis-hostname <redis_host>     The Redis server hostname
@@ -297,6 +299,35 @@ Other options:
 
     // Execution context options
     // *************************
+    string config_filename = args["--config-file"].asString();
+    if (config_filename != "None")
+    {
+        XBT_INFO("Reading configuration file '%s'", config_filename.c_str());
+
+        ifstream file(config_filename);
+        string file_content((istreambuf_iterator<char>(file)),
+                            istreambuf_iterator<char>());
+        main_args.config_file.Parse(file_content.c_str());
+    }
+    else
+    {
+        string default_configuration = R"({
+                                       "redis": {
+                                         "enabled": true
+                                       },
+                                       "job_submission": {
+                                         "forward_profiles": true,
+                                         "from_scheduler": {
+                                           "enabled": false,
+                                           "acknowledge": true
+                                         }
+                                       }
+                                     })";
+
+        main_args.config_file.Parse(default_configuration.c_str());
+    }
+
+
     main_args.socket_endpoint = args["--socket-endpoint"].asString();
     main_args.redis_hostname = args["--redis-hostname"].asString();
     try { main_args.redis_port = args["--redis-port"].asLong(); }
@@ -307,6 +338,7 @@ Other options:
         error = true;
     }
     main_args.redis_prefix = args["--redis-prefix"].asString();
+
 
     // Output options
     // **************
@@ -538,16 +570,7 @@ int main(int argc, char * argv[])
 
     // Let's create the BatsimContext, which stores information about the current instance
     BatsimContext context;
-    context.platform_filename = main_args.platform_filename;
-    context.export_prefix = main_args.export_prefix;
-    context.workflow_nb_concurrent_jobs_limit = main_args.workflow_nb_concurrent_jobs_limit;
-    context.energy_used = main_args.energy_used;
-    context.allow_time_sharing = main_args.allow_time_sharing;
-    context.trace_schedule = main_args.enable_schedule_tracing;
-    context.trace_machine_states = main_args.enable_machine_state_tracing;
-    context.simulation_start_time = chrono::high_resolution_clock::now();
-
-    context.terminate_with_last_workflow = main_args.terminate_with_last_workflow;
+    set_configuration(&context, main_args);
 
     // Let's load the workloads and workflows
     int max_nb_machines_to_use = -1;
@@ -624,4 +647,97 @@ int main(int argc, char * argv[])
         return 0;
     else
         return 1;
+}
+
+void set_configuration(BatsimContext *context,
+                       const MainArguments &main_args)
+{
+    context->platform_filename = main_args.platform_filename;
+    context->export_prefix = main_args.export_prefix;
+    context->workflow_nb_concurrent_jobs_limit = main_args.workflow_nb_concurrent_jobs_limit;
+    context->energy_used = main_args.energy_used;
+    context->allow_time_sharing = main_args.allow_time_sharing;
+    context->trace_schedule = main_args.enable_schedule_tracing;
+    context->trace_machine_states = main_args.enable_machine_state_tracing;
+    context->simulation_start_time = chrono::high_resolution_clock::now();
+
+    context->terminate_with_last_workflow = main_args.terminate_with_last_workflow;
+
+    // Let's read the JSON configuration
+    /* {
+      "redis": {
+        "enabled": true
+      },
+      "job_submission": {
+        "forward_profiles": true,
+        "from_scheduler": {
+          "enabled": false,
+          "acknowledge": true
+        }
+      }
+    } */
+
+    // Default values
+    bool redis_enabled = true;
+    bool submission_forward_profiles = true;
+    bool submission_sched_enabled = false;
+    bool submission_sched_ack = true;
+
+    using namespace rapidjson;
+
+    const Value & main_object = main_args.config_file;
+    xbt_assert(main_object.IsObject(), "Invalid JSON configuration: not an object.");
+
+    if(main_object.HasMember("redis"))
+    {
+        const Value & redis_object = main_object["redis"];
+        xbt_assert(redis_object.IsObject(), "Invalid JSON configuration: 'redis' value should be an object.");
+
+        if (redis_object.HasMember("enabled"))
+        {
+            const Value & redis_enabled_value = redis_object["enabled"];
+            xbt_assert(redis_enabled_value.IsBool(), "Invalid JSON configuration: 'redis'['enabled'] should be a boolean.");
+            redis_enabled = redis_enabled_value.GetBool();
+        }
+    }
+    if (main_object.HasMember("job_submission"))
+    {
+        const Value & job_submission_object = main_object["job_submission"];
+        xbt_assert(job_submission_object.IsObject(), "Invalid JSON configuration: 'redis'['job_submission'] should be an object.");
+
+        if (job_submission_object.HasMember("forward_profiles"))
+        {
+            const Value & forward_profiles_value = job_submission_object["forward_profiles"];
+            xbt_assert(forward_profiles_value.IsBool(), "Invalid JSON configuration: 'redis'['job_submission']['forward_profiles'] should be a boolean.");
+            submission_forward_profiles = forward_profiles_value.GetBool();
+        }
+
+        if (job_submission_object.HasMember("from_scheduler"))
+        {
+            const Value & from_sched_object = job_submission_object["from_scheduler"];
+            xbt_assert(from_sched_object.IsObject(), "Invalid JSON configuration: 'redis'['job_submission']['from_scheduler'] should be an object.");
+
+            if (from_sched_object.HasMember("enabled"))
+            {
+                const Value & submission_sched_enabled_value = from_sched_object["enabled"];
+                xbt_assert(submission_sched_enabled_value.IsBool(), "Invalid JSON configuration: 'redis'['job_submission']['enabled'] should be a boolean.");
+                submission_sched_enabled = submission_sched_enabled_value.GetBool();
+            }
+
+            if (from_sched_object.HasMember("acknowledge"))
+            {
+                const Value & submission_sched_ack_value = from_sched_object["acknowledge"];
+                xbt_assert(submission_sched_ack_value.IsBool(), "Invalid JSON configuration: 'redis'['job_submission']['acknowledge'] should be a boolean.");
+                submission_sched_ack = submission_sched_ack_value.GetBool();
+            }
+        }
+    }
+
+    // Let's write the values into the document to make sure they are all present
+
+
+    context->redis_enabled = redis_enabled;
+    context->submission_forward_profiles = submission_forward_profiles;
+    context->submission_sched_enabled = submission_sched_enabled;
+    context->submission_sched_ack = submission_sched_ack;
 }

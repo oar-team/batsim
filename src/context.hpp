@@ -45,7 +45,13 @@ struct BatsimContext
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
     MachineStateTracer machine_state_tracer;        //!< The MachineStateTracer
     CurrentSwitches current_switches;               //!< The current switches
+
     RedisStorage storage;                           //!< The RedisStorage
+
+    bool redis_enabled;                             //!< Stores whether Redis should be used
+    bool submission_forward_profiles;               //!< Stores whether the profile information of jobs should be sent to the scheduler
+    bool submission_sched_enabled;                  //!< Stores whether the scheduler will be able to send jobs along the simulation
+    bool submission_sched_ack;                      //!< Stores whether Batsim will acknowledge dynamic job submission (emit JOB_SUBMITTED events)
 
     bool terminate_with_last_workflow;              //!< If true, allows to ignore the jobs submitted after the last workflow termination
 

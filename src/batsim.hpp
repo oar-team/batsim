@@ -3,6 +3,8 @@
 #include <string>
 #include <list>
 
+#include <rapidjson/document.h>
+
 struct BatsimContext;
 
 /**
@@ -33,7 +35,7 @@ enum class ProgramType
 std::string generate_sha1_string(std::string string_to_hash, int output_length = 6);
 
 /**
- * @brief Stores Batsim's arguments, a.k.a. the main function arguments
+ * @brief Stores Batsim arguments, a.k.a. the main function arguments
  */
 struct MainArguments
 {
@@ -59,14 +61,15 @@ struct MainArguments
 
     // Input
     std::string platform_filename;                          //!< The SimGrid platform filename
-    std::list<WorkloadDescription> workload_descriptions;   //!< The workloads' descriptions
-    std::list<WorkflowDescription> workflow_descriptions;   //!< The workflows' descriptions
+    std::list<WorkloadDescription> workload_descriptions;   //!< The workloads descriptions
+    std::list<WorkflowDescription> workflow_descriptions;   //!< The workflows descriptions
 
     // Common
     std::string master_host_name;                           //!< The name of the SimGrid host which runs scheduler processes and not user tasks
     bool energy_used;                                       //!< True if and only if the SimGrid energy plugin should be used.
 
     // Execution context
+    rapidjson::Document config_file;                        //!< The configuration file
     std::string socket_endpoint;                            //!< The Decision process socket endpoint
     std::string redis_hostname;                             //!< The Redis (data storage) server host name
     int redis_port;                                         //!< The Redis (data storage) server port
@@ -96,40 +99,40 @@ struct MainArguments
 };
 
 /**
- * @brief Parses Batsim's command-line arguments
+ * @brief Parses Batsim command-line arguments
  * @param[in] argc The number of arguments given to the main function
  * @param[in] argv The values of arguments given to the main function
- * @param[out] main_args Batsim's usable arguments
+ * @param[out] main_args Batsim usable arguments
  * @return true on success, false otherwise
  */
 bool parse_main_args(int argc, char * argv[], MainArguments & main_args);
 
 /**
  * @brief Configures how the simulation should be logged
- * @param[in,out] main_args Batsim's arguments
+ * @param[in,out] main_args Batsim arguments
  */
 void configure_batsim_logging_output(const MainArguments & main_args);
 
 /**
  * @brief Initializes SimGrid
- * @param[in] main_args Batsim's arguments
+ * @param[in] main_args Batsim arguments
  * @param[in] argc The number of arguments given to the main function
  * @param[in] argv The values of arguments given to the main function
  */
 void initialize_msg(const MainArguments & main_args, int argc, char * argv[]);
 
 /**
- * @brief Loads the workloads defined in Batsim's arguments
- * @param[in] main_args Batsim's arguments
+ * @brief Loads the workloads defined in Batsim arguments
+ * @param[in] main_args Batsim arguments
  * @param[in,out] context The BatsimContext
  * @param[out] max_nb_machines_to_use The maximum number of machines that should be used in the simulation.
- *             This number is computed from Batsim's arguments but depends on Workloads' content. -1 means no limitation.
+ *             This number is computed from Batsim arguments but depends on Workloads content. -1 means no limitation.
  */
 void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext * context, int & max_nb_machines_to_use);
 
 /**
  * @brief Starts the SimGrid processes that should be executed at the beginning of the simulation
- * @param[in] main_args Batsim's arguments
+ * @param[in] main_args Batsim arguments
  * @param[in] context The BatsimContext
  * @param[in] is_batexec If set to true, only workloads are handled, the server is not launched
  *            and simpler workload submitters are used
@@ -137,3 +140,11 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
 void start_initial_simulation_processes(const MainArguments & main_args,
                                         BatsimContext * context,
                                         bool is_batexec = false);
+
+/**
+ * @brief Sets the simulation configuration
+ * @param[in,out] context The BatsimContext
+ * @param[in] main_args Batsim arguments
+ */
+void set_configuration(BatsimContext * context,
+                       const MainArguments & main_args);
