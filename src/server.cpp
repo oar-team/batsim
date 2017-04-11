@@ -68,7 +68,6 @@ int server_process(int argc, char *argv[])
     MSG_process_create("Scheduler REQ-REP", request_reply_scheduler_process, (void*)req_rep_args, MSG_host_self());
     sched_ready = false;
 
-
     // Simulation loop
     while ((nb_submitters == 0) || (nb_submitters_finished < nb_submitters) ||
           (nb_completed_jobs < nb_submitted_jobs) || (!sched_ready) ||
@@ -80,7 +79,7 @@ int server_process(int argc, char *argv[])
         MSG_task_receive(&(task_received), "server");
         task_data = (IPMessage *) MSG_task_get_data(task_received);
 
-        XBT_INFO( "Server received a message of type %s:", ip_message_type_to_string(task_data->type).c_str());
+        XBT_INFO("Server received a message of type %s:", ip_message_type_to_string(task_data->type).c_str());
 
         switch (task_data->type)
         {
@@ -201,7 +200,8 @@ int server_process(int argc, char *argv[])
 
             // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
             XBT_INFO("GOT JOB: %s %d\n", message->job_id.workload_name.c_str(), message->job_id.job_number);
-            Job * job = context->workloads.add_job_if_not_exists(message->job_id, context);
+            xbt_assert(context->workloads.job_exists(message->job_id));
+            Job * job = context->workloads.job_at(message->job_id);
             job->id = message->job_id.to_string();
 
             // Update control information
@@ -210,7 +210,16 @@ int server_process(int argc, char *argv[])
             XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far",
                      message->job_id.to_string().c_str(), nb_submitted_jobs);
 
-            context->proto_writer->append_job_submitted(job->id, MSG_get_clock());
+            string job_json_description, profile_json_description;
+
+            if (!context->redis_enabled)
+            {
+                job_json_description = job->json_description;
+                if (context->submission_forward_profiles)
+                    profile_json_description = job->workload->profiles->at(job->profile)->json_description;
+            }
+
+            context->proto_writer->append_job_submitted(job->id, job_json_description, profile_json_description, MSG_get_clock());
         } break; // end of case JOB_SUBMITTED
 
         case IPMessageType::JOB_SUBMITTED_BY_DP:

@@ -147,4 +147,4 @@ void start_initial_simulation_processes(const MainArguments & main_args,
  * @param[in] main_args Batsim arguments
  */
 void set_configuration(BatsimContext * context,
-                       const MainArguments & main_args);
+                       MainArguments & main_args);

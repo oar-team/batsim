@@ -239,6 +239,9 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
     // Let's check that the new description is a valid JSON string
     rapidjson::Document check_doc;
     check_doc.Parse(j->json_description.c_str());
+    xbt_assert(!check_doc.HasParseError(),
+               "A problem occured when replacing the job_id by its WLOAD!job_number counterpart:"
+               "The output string '%s' is not valid JSON.", j->json_description.c_str());
     xbt_assert(check_doc.IsObject(),
                "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
                "The output string '%s' is not valid JSON.", j->json_description.c_str());
@@ -282,6 +285,7 @@ Job * Job::from_json(const std::string & json_str, Workload *workload)
 {
     Document doc;
     doc.Parse(json_str.c_str());
+    xbt_assert(!doc.HasParseError());
 
     return Job::from_json(doc, workload);
 }

@@ -13,8 +13,8 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(protocol, "protocol"); //!< Logging
 
-JsonProtocolWriter::JsonProtocolWriter() :
-    _alloc(_doc.GetAllocator())
+JsonProtocolWriter::JsonProtocolWriter(BatsimContext * context) :
+    _context(context), _alloc(_doc.GetAllocator())
 {
     _doc.SetObject();
 }
@@ -163,14 +163,32 @@ void JsonProtocolWriter::append_simulation_ends(double date)
 }
 
 void JsonProtocolWriter::append_job_submitted(const string & job_id,
+                                              const string & job_json_description,
+                                              const string & profile_json_description,
                                               double date)
 {
-    /* {
+    /* "with_redis": {
       "timestamp": 10.0,
       "type": "JOB_SUBMITTED",
       "data": {
         "job_ids": ["w0!1", "w0!2"]
       }
+    },
+    "without_redis": {
+      "timestamp": 10.0,
+      "type": "JOB_SUBMITTED",
+      "data": {
+        "job_id": "dyn!my_new_job",
+        "job": {
+          "profile": "delay_10s",
+          "res": 1,
+          "id": "my_new_job",
+          "walltime": 12.0
+        },
+        "profile":{
+          "type": "delay",
+          "delay": 10
+        }
     } */
 
     xbt_assert(date >= _last_date, "Date inconsistency");
@@ -179,6 +197,24 @@ void JsonProtocolWriter::append_job_submitted(const string & job_id,
 
     Value data(rapidjson::kObjectType);
     data.AddMember("job_id", Value().SetString(job_id.c_str(), _alloc), _alloc);
+
+    if (!_context->redis_enabled)
+    {
+        Document job_description_doc;
+        job_description_doc.Parse(job_json_description.c_str());
+        xbt_assert(!job_description_doc.HasParseError());
+
+        data.AddMember("job", Value().CopyFrom(job_description_doc, _alloc), _alloc);
+
+        if (_context->submission_forward_profiles)
+        {
+            Document profile_description_doc;
+            profile_description_doc.Parse(profile_json_description.c_str());
+            xbt_assert(!profile_description_doc.HasParseError());
+
+            data.AddMember("profile", Value().CopyFrom(profile_description_doc, _alloc), _alloc);
+        }
+    }
 
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);
@@ -319,49 +355,6 @@ string JsonProtocolWriter::generate_current_message(double date)
     return string(buffer.GetString());
 }
 
-bool test_json_writer()
-{
-    AbstractProtocolWriter * proto_writer = new JsonProtocolWriter;
-    printf("EMPTY content:\n%s\n", proto_writer->generate_current_message(0).c_str());
-    proto_writer->clear();
-
-    proto_writer->append_nop(0);
-    printf("NOP content:\n%s\n", proto_writer->generate_current_message(42).c_str());
-    proto_writer->clear();
-
-//    proto_writer->append_simulation_begins(4, 10);
-//    printf("SIM_BEGINS content:\n%s\n", proto_writer->generate_current_message(42).c_str());
-//    proto_writer->clear();
-
-    proto_writer->append_simulation_ends(10);
-    printf("SIM_ENDS content:\n%s\n", proto_writer->generate_current_message(42).c_str());
-    proto_writer->clear();
-
-    proto_writer->append_job_submitted({"w0!j0", "w0!j1"}, 10);
-    printf("JOB_SUBMITTED content:\n%s\n", proto_writer->generate_current_message(42).c_str());
-    proto_writer->clear();
-
-    proto_writer->append_job_completed("w0!j0", "SUCCESS", 10);
-    printf("JOB_COMPLETED content:\n%s\n", proto_writer->generate_current_message(42).c_str());
-    proto_writer->clear();
-
-    proto_writer->append_job_killed({"w0!j0", "w0!j1"}, 10);
-    printf("JOB_KILLED content:\n%s\n", proto_writer->generate_current_message(42).c_str());
-    proto_writer->clear();
-
-    proto_writer->append_resource_state_changed(MachineRange::from_string_hyphen("1,3-5"), "42", 10);
-    printf("RESOURCE_STATE_CHANGED content:\n%s\n", proto_writer->generate_current_message(42).c_str());
-    proto_writer->clear();
-
-    proto_writer->append_query_reply_energy(65535, 10);
-    printf("QUERY_REPLY (energy) content:\n%s\n", proto_writer->generate_current_message(42).c_str());
-    proto_writer->clear();
-
-    delete proto_writer;
-
-    return true;
-}
-
 
 
 JsonProtocolReader::JsonProtocolReader(BatsimContext *context) :
@@ -386,6 +379,7 @@ void JsonProtocolReader::parse_and_apply_message(const string &message)
     rapidjson::Document doc;
     doc.Parse(message.c_str());
 
+    xbt_assert(!doc.HasParseError(), "Invalid JSON message: could not be parsed");
     xbt_assert(doc.IsObject(), "Invalid JSON message: not a JSON object");
 
     xbt_assert(doc.HasMember("now"), "Invalid JSON message: no 'now' key");

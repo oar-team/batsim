@@ -155,7 +155,7 @@ acknowledgement has been requested. Without Redis enabled the job
 description and optionnaly the profile are also transmitted.
 
 - **data**: list of job id
-- **example without redis**:
+- **example with redis**:
 ```json
 {
   "timestamp": 10.0,
@@ -163,7 +163,7 @@ description and optionnaly the profile are also transmitted.
   "data": {"job_id": "w0!1"}
 }
 ```
-- **example with redis**:
+- **example without redis**:
 ```json
 {
   "timestamp": 10.0,
@@ -360,7 +360,7 @@ details.
 - **data**: A job id (job id duplication is forbidden), classical job and
   profile information (optional).
 
-- **example redis** : the job description, and the profile description if
+- **example with redis** : the job description, and the profile description if
   it unknown to Batsim yet, must have been pushed into redis by the
   scheduler before sending this message
 ```json

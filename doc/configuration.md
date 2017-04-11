@@ -6,7 +6,10 @@ default configuration:
 ```json
 {
   "redis": {
-    "enabled": true
+    "enabled": true,
+    "hostname": "127.0.0.1",
+    "port": 6379,
+    "prefix": "default"
   },
   "job_submission": {
     "forward_profiles": true,
