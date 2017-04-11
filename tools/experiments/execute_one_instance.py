@@ -64,6 +64,7 @@ def find_info_from_batsim_command(batsim_command):
     batparser.add_argument("-m", "--master-host", default="master_host")
     batparser.add_argument("-E", "--energy", action='store_true')
 
+    batparser.add_argument('--config-file', type=str, default="None")
     batparser.add_argument("-s", "--socket-endpoint",
                            type=str, default="tcp://localhost:28000")
     batparser.add_argument("--redis-hostname", type=str, default="127.0.0.1")
