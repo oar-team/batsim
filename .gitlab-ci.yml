@@ -1,5 +1,5 @@
 image: oarteam/batsim_ci
- 
+
 # The before_script part above is done in order to push Batsim's code doc
 # onto the gforge website.
 # Information found on https://docs.gitlab.com/ee/ci/ssh_keys/README.html
@@ -67,7 +67,9 @@ build:g++:no_assert:
 build:batsched:
   stage: build
   script:
+    - cd /builds/batsim/batsim
     - git submodule update --init schedulers/batsched
+
     - cd /builds/batsim/batsim/schedulers/batsched
     - mkdir build
     - cd build
