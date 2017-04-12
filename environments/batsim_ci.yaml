@@ -28,8 +28,12 @@ global:
   hostname: batsim
   work_dir: /root
 
+  simgrid_remote: https://github.com/mpoquet/simgrid.git
   simgrid_commit: 587483ebe7882e # Fri Jan 6 15:45:05 2017
-  execo_commit: 75d668d
+
+  #execo_remote: https://github.com/mickours/execo.git
+  execo_remote: https://github.com/mpoquet/execo.git
+  execo_commit: 406f4fa06
 
 bootstrap:
   - "@base"

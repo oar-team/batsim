@@ -40,10 +40,15 @@
   - exec_in: pip3 install sortedcontainers redis
   - exec_in: |
       cd $${work_dir}
-      git clone https://github.com/mickours/execo.git
-      cd execo
+      git clone $${execo_remote} execo
+
+  - exec_in: |
+      cd $${work_dir}/execo
       git checkout $${execo_commit}
+
+  -exec_in: |
       pip install -e .
+
 - install_doc_dependencies:
   - exec_in: apt install -y -t testing doxygen graphviz
 
