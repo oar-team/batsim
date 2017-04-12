@@ -47,7 +47,7 @@
       git checkout $${execo_commit}
 
   -exec_in: |
-      pip install -e .
+      pip3 install -e .
 
 - install_doc_dependencies:
   - exec_in: apt install -y -t testing doxygen graphviz
