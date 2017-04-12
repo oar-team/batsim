@@ -21,7 +21,7 @@ before_script:
   - mkdir -p ~/.ssh
   - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
 
-build:clang:
+build_clang:
   stage: build
   script:
     - export CC=/usr/bin/clang
@@ -34,7 +34,7 @@ build:clang:
     paths:
       - /builds/batsim/batsim/
 
-build:clang:no_assert:
+build_clang_no_assert:
   stage: build
   script:
     - export CC=/usr/bin/clang
@@ -44,7 +44,7 @@ build:clang:no_assert:
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON -Dignore_assertions=ON
     - make
 
-build:g++:
+build_g++:
   stage: build
   script:
     - export CC=/usr/bin/gcc
@@ -54,7 +54,7 @@ build:g++:
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
 
-build:g++:no_assert:
+build_g++_no_assert:
   stage: build
   script:
     - export CC=/usr/bin/gcc
@@ -64,7 +64,7 @@ build:g++:no_assert:
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON -Dignore_assertions=ON
     - make
 
-build:batsched:
+build_batsched:
   stage: build
   script:
     - cd /builds/batsim/batsim
@@ -79,7 +79,7 @@ build:batsched:
     paths:
       - /builds/batsim/batsim/schedulers/batsched/build
 
-test:doc:
+test_doc:
   stage: test
   script:
     - cd /builds/batsim/batsim/doc
@@ -91,7 +91,7 @@ test:doc:
     paths:
       - /builds/batsim/batsim/doc/doxygen_doc/html
 
-test:test:
+test_test:
   stage: test
   script:
     # Let's run the redis server
