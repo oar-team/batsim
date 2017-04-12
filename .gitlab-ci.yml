@@ -21,12 +21,6 @@ before_script:
   - mkdir -p ~/.ssh
   - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
 
-stages:
-  - build
-  - build_schedulers
-  - test
-  - deploy
-
 build:clang:
   stage: build
   script:
@@ -71,20 +65,17 @@ build:g++:no_assert:
     - make
 
 build:batsched:
-  stage: build_schedulers
+  stage: build
   script:
-    - git submodule init
-    - git submodule update
+    - git submodule update --init
     - cd /builds/batsim/batsim/schedulers/batsched
     - mkdir build
     - cd build
-    - ccmake ..
+    - cmake ..
     - make
   artifacts:
     paths:
       - /builds/batsim/batsim/schedulers/batsched/build
-  dependencies:
-    - build:clang
 
 test:doc:
   stage: test
