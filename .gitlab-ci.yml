@@ -70,13 +70,11 @@ build_g++_no_assert:
 build_batsched:
   stage: build
   script:
-    - cd /builds/batsim/batsim/schedulers/batsched
-    - mkdir build
-    - cd build
-    - cmake ..
+    - cd /builds/batsim/batsim/schedulers
+    - mkdir batsched_build
+    - cd batsched_build
+    - cmake /builds/batsim/batsim/schedulers/batsched
     - make
-    - cd /builds/batsim/batsim
-    - mv /builds/batsim/batsim/schedulers/batsched/build /builds/batsim/batsim/schedulers/batsched_build
   artifacts:
     paths:
       - /builds/batsim/batsim/schedulers/batsched_build
