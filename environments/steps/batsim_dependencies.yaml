@@ -10,8 +10,8 @@
       libhiredis-dev \
       libev-dev \
       libzmq3-dev \
-      python-yaml \
-      python-zmq \
+      python3-yaml \
+      python3-zmq \
       libssl-dev 2>&1
   # Install rapidjson (not available in jessie)
   - exec_in: |
@@ -34,9 +34,10 @@
       cd ../install
       mv -f lib64 lib
       cp -r ./* /usr/
+
 - install_test_dependencies:
-  - exec_in: apt install -y -t testing python-pip valgrind python-pandas
-  - exec_in: pip2 install sortedcontainers redis
+  - exec_in: apt install -y -t testing python3-pip valgrind python3-pandas
+  - exec_in: pip3 install sortedcontainers redis
   - exec_in: |
       cd $${work_dir}
       git clone https://github.com/mickours/execo.git

@@ -58,8 +58,8 @@ setup:
 
   - batsim_dependencies
 
-  - reprozip:
-    - reprozip_version: 1.0.8
+  #- reprozip:
+  #  - reprozip_version: 1.0.8
 
 export:
   - "@base"
