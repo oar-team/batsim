@@ -45,7 +45,7 @@
   - exec_in: |
       cd $${work_dir}/execo
       git checkout $${execo_commit}
-  -exec_in: |
+  - exec_in: |
       cd $${work_dir}/execo
       pip3 install -e .
 
