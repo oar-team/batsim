@@ -1,5 +1,8 @@
 image: oarteam/batsim_ci
 
+variables:
+  GIT_SUBMODULE_STRATEGY: normal
+
 # The before_script part above is done in order to push Batsim's code doc
 # onto the gforge website.
 # Information found on https://docs.gitlab.com/ee/ci/ssh_keys/README.html
@@ -67,9 +70,6 @@ build_g++_no_assert:
 build_batsched:
   stage: build
   script:
-    - cd /builds/batsim/batsim
-    - git submodule update --init schedulers/batsched
-
     - cd /builds/batsim/batsim/schedulers/batsched
     - mkdir build
     - cd build
@@ -100,9 +100,6 @@ test_test:
       while ! nc -z localhost 6379; do
         sleep 1
       done
-
-    - cd /builds/batsim/batsim
-    - git submodule update --init schedulers/pybatsim
 
     - cd /builds/batsim/batsim/build
     - make install
