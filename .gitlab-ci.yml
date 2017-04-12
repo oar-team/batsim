@@ -113,8 +113,8 @@ test_test:
     - cd /builds/batsim/batsim/build
     - ctest -V
   dependencies:
-    - build:clang
-    - build:batsched
+    - build_clang
+    - build_batsched
 
 deploy_code_doc:
   stage: deploy
@@ -122,4 +122,4 @@ deploy_code_doc:
     - cd /builds/batsim/batsim/doc
     - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
   dependencies:
-    - test:doc
+    - test_doc
