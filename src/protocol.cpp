@@ -536,8 +536,8 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     Job * job = context->workloads.job_at(message->allocation->job_id);
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Invalid JSON message: in event %d (EXECUTE_JOB): "
-               "Invalid state of job %s: It cannot be executed now",
-               event_number, job->id.c_str());
+               "Invalid state of job %s ('%d'): It cannot be executed now",
+               event_number, job->id.c_str(), (int)job->state);
 
     // *********************
     // Allocation management
@@ -690,20 +690,105 @@ void JsonProtocolReader::handle_notify(int event_number,
                                        double timestamp,
                                        const Value &data_object)
 {
-    xbt_assert(false, "Unimplemented! TODO");
-    (void) event_number;
+    /* {
+      "timestamp": 42.0,
+      "type": "NOTIFY",
+      "data": { "type": "submission_finished" }
+    } */
+
+    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (NOTIFY) should be an object", event_number);
+
+    xbt_assert(data_object.HasMember("type"), "Invalid JSON message: the 'data' value of event %d (NOTIFY) should have a 'type' key", event_number);
+    const Value & notify_type_value = data_object["type"];
+    xbt_assert(notify_type_value.IsString(), "Invalid JSON message: in event %d (NOTIFY): ['data']['type'] should be a string", event_number);
+    string notify_type = notify_type_value.GetString();
+
+    if (notify_type == "submission_finished")
+        context->submission_sched_finished = true;
+    else
+        xbt_assert(false, "Unknown NOTIFY type received ('%s').", notify_type.c_str());
+
     (void) timestamp;
-    (void) data_object;
 }
 
 void JsonProtocolReader::handle_submit_job(int event_number,
                                            double timestamp,
                                            const Value &data_object)
 {
-    xbt_assert(false, "Unimplemented! TODO");
-    (void) event_number;
-    (void) timestamp;
-    (void) data_object;
+    /* "with_redis": {
+      "timestamp": 10.0,
+      "type": "SUBMIT_JOB",
+      "data": {
+        "job_id": "w12!45",
+      }
+    },
+    "without_redis": {
+      "timestamp": 10.0,
+      "type": "SUBMIT_JOB",
+      "data": {
+        "job_id": "dyn!my_new_job",
+        "job":{
+          "profile": "delay_10s",
+          "res": 1,
+          "id": "my_new_job",
+          "walltime": 12.0
+        },
+        "profile":{
+          "type": "delay",
+          "delay": 10
+        }
+      }
+    } */
+
+    JobSubmittedByDPMessage * message = new JobSubmittedByDPMessage;
+
+    xbt_assert(context->submission_sched_enabled, "Invalid JSON message: dynamic job submission received but the option seems disabled...");
+
+    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (SUBMIT_JOB) should be an object", event_number);
+
+    xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (SUBMIT_JOB) should have a 'job_id' key", event_number);
+    const Value & job_id_value = data_object["job_id"];
+    xbt_assert(job_id_value.IsString(), "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['job_id'] should be a string", event_number);
+    string job_id = job_id_value.GetString();
+
+    if (!identify_job_from_string(context, job_id, message->job_id, false))
+        xbt_assert(false, "Invalid JSON message: in event %d (SUBMIT_JOB): job_id '%s' seems invalid (already exists?)", event_number, job_id.c_str());
+
+    if (data_object.HasMember("job"))
+    {
+        const Value & job_object = data_object["job"];
+        xbt_assert(job_object.IsObject(), "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['job'] should be an object", event_number);
+
+        xbt_assert(!context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): 'job' object is given but redis seems disabled...", event_number);
+
+        StringBuffer buffer;
+        ::Writer<rapidjson::StringBuffer> writer(buffer);
+
+        job_object.Accept(writer);
+
+        message->job_description = string(buffer.GetString());
+    }
+    else
+        xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['job'] is unset but redis seems enabled...", event_number);
+
+    if (data_object.HasMember("profile"))
+    {
+        const Value & profile_object = data_object["profile"];
+        xbt_assert(profile_object.IsObject(), "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['profile'] should be an object", event_number);
+
+        xbt_assert(!context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): 'profile' object is given but redis seems disabled...", event_number);
+
+        StringBuffer buffer;
+        ::Writer<rapidjson::StringBuffer> writer(buffer);
+
+        profile_object.Accept(writer);
+
+        message->job_profile = string(buffer.GetString());
+    }
+    else
+        xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['profile'] is unset but redis seems enabled...", event_number);
+
+    send_message(timestamp, "server", IPMessageType::JOB_SUBMITTED_BY_DP, (void *) message);
 }
 
 void JsonProtocolReader::handle_kill_job(int event_number,

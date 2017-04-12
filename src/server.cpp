@@ -30,7 +30,6 @@ int server_process(int argc, char *argv[])
 
     int nb_completed_jobs = 0;
     int nb_submitted_jobs = 0;
-    int nb_scheduled_jobs = 0;
     int nb_submitters = 0;
     int nb_submitters_finished = 0;
     int nb_workflow_submitters_finished = 0;
@@ -71,7 +70,8 @@ int server_process(int argc, char *argv[])
     // Simulation loop
     while ((nb_submitters == 0) || (nb_submitters_finished < nb_submitters) ||
           (nb_completed_jobs < nb_submitted_jobs) || (!sched_ready) ||
-          (nb_switching_machines > 0) || (nb_waiters > 0) || (nb_killers > 0))
+          (nb_switching_machines > 0) || (nb_waiters > 0) || (nb_killers > 0) ||
+          (context->submission_sched_enabled && !context->submission_sched_finished))
     {
         // Let's wait a message from a node or the request-reply process...
         msg_task_t task_received = NULL;
@@ -121,7 +121,8 @@ int server_process(int argc, char *argv[])
 
             if (!all_jobs_submitted_and_completed &&
                 nb_completed_jobs == nb_submitted_jobs &&
-                nb_submitters_finished == nb_submitters)
+                nb_submitters_finished == nb_submitters &&
+                (!context->submission_sched_enabled || context->submission_sched_finished))
             {
                 all_jobs_submitted_and_completed = true;
                 XBT_INFO("It seems that all jobs have been submitted and completed!");
@@ -167,7 +168,8 @@ int server_process(int argc, char *argv[])
 
             if (!all_jobs_submitted_and_completed &&
                 nb_completed_jobs == nb_submitted_jobs &&
-                nb_submitters_finished == nb_submitters)
+                nb_submitters_finished == nb_submitters &&
+                (!context->submission_sched_enabled || context->submission_sched_finished))
             {
                 all_jobs_submitted_and_completed = true;
                 XBT_INFO("It seems that all jobs have been submitted and completed!");
@@ -227,6 +229,11 @@ int server_process(int argc, char *argv[])
             xbt_assert(task_data->data != nullptr);
             JobSubmittedByDPMessage * message = (JobSubmittedByDPMessage *) task_data->data;
 
+            xbt_assert(context->submission_sched_enabled,
+                       "Job submission coming from the decision process received but the option "
+                       "seems disabled... It can be activated by specifying a configuration file "
+                       "to Batsim.");
+
             xbt_assert(!context->workloads.job_exists(message->job_id),
                        "Bad job submission received from the decision process: job %s already exists.",
                        message->job_id.to_string().c_str());
@@ -245,6 +252,7 @@ int server_process(int argc, char *argv[])
             XBT_INFO("Parsing user-submitted job %s", message->job_id.to_string().c_str());
             Job * job = Job::from_json(message->job_description, workload);
             workload->jobs->add_job(job);
+            job->id = JobIdentifier(workload->name, job->number).to_string();
 
             // Let's parse the profile if needed
             if (!workload->profiles->exists(job->profile))
@@ -253,6 +261,26 @@ int server_process(int argc, char *argv[])
                          job->profile.c_str(), message->job_id.to_string().c_str());
                 Profile * profile = Profile::from_json(job->profile, message->job_profile);
                 workload->profiles->add_profile(job->profile, profile);
+            }
+
+            // Let's set the job state
+            job->state = JobState::JOB_STATE_SUBMITTED;
+
+            // Let's update global states
+            ++nb_submitted_jobs;
+
+            if (context->submission_sched_ack)
+            {
+                string job_json_description, profile_json_description;
+
+                if (!context->redis_enabled)
+                {
+                    job_json_description = job->json_description;
+                    if (context->submission_forward_profiles)
+                        profile_json_description = job->workload->profiles->at(job->profile)->json_description;
+                }
+
+                context->proto_writer->append_job_submitted(job->id, job_json_description, profile_json_description, MSG_get_clock());
             }
 
         } break; // end of case JOB_SUBMITTED_BY_DP
@@ -409,8 +437,6 @@ int server_process(int argc, char *argv[])
 
             nb_running_jobs++;
             xbt_assert(nb_running_jobs <= nb_submitted_jobs);
-            nb_scheduled_jobs++;
-            xbt_assert(nb_scheduled_jobs <= nb_submitted_jobs);
 
             if (!context->allow_time_sharing)
             {
@@ -594,7 +620,8 @@ int server_process(int argc, char *argv[])
 
             if (!all_jobs_submitted_and_completed &&
                 nb_completed_jobs == nb_submitted_jobs &&
-                nb_submitters_finished == nb_submitters)
+                nb_submitters_finished == nb_submitters &&
+                (!context->submission_sched_enabled || context->submission_sched_finished))
             {
                 all_jobs_submitted_and_completed = true;
                 XBT_INFO("It seems that all jobs have been submitted and completed!");

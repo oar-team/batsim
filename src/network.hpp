@@ -51,8 +51,12 @@ std::string absolute_filename(const std::string & filename);
  * @param[in] context The BatsimContext
  * @param[in] job_identifier_string The input job identifier string
  * @param[out] job_id The output JobIdentifier
- * @return true if the info has been retrieved successfully and that the job exists, false otherwise
+ * @param[in] should_exist Whether the job should exist or not
+ * @return true if the info has been retrieved successfully and that the job exists or not
+ *         (depending on should_exist), false otherwise
  */
 bool identify_job_from_string(BatsimContext * context,
                               const std::string & job_identifier_string,
-                              JobIdentifier & job_id);
+                              JobIdentifier & job_id,
+                              bool should_exist = true);
+

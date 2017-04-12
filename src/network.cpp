@@ -94,7 +94,7 @@ std::string absolute_filename(const std::string & filename)
 
 bool identify_job_from_string(BatsimContext * context,
                               const std::string & job_identifier_string,
-                              JobIdentifier & job_id)
+                              JobIdentifier & job_id, bool should_exist)
 {
     // Let's split the job_identifier by '!'
     vector<string> job_identifier_parts;
@@ -114,5 +114,8 @@ bool identify_job_from_string(BatsimContext * context,
     else
         return false;
 
-    return context->workloads.job_exists(job_id);
+    if (should_exist)
+        return context->workloads.job_exists(job_id);
+    else
+        return !context->workloads.job_exists(job_id);
 }
