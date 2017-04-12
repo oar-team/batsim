@@ -35,7 +35,7 @@ build_clang:
     - make
   artifacts:
     paths:
-      - /builds/batsim/batsim/
+      - /builds/batsim/batsim/build
 
 build_clang_no_assert:
   stage: build
