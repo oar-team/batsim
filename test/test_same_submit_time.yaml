@@ -23,7 +23,7 @@ implicit_instances:
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${instance_id}
       batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out --redis-prefix ${instance_id} --mmax-workload -vnetwork-only
-      sched_command: python ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo[algo_name]} --redis-prefix ${instance_id}
+      sched_command: ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo[algo_name]} --redis-prefix ${instance_id}
 
       commands_after_execution:
         - cat ${output_directory}/batsim.stderr | grep -o ":S:.*|\|:S:.*'" > ${output_directory}/messages.txt
@@ -35,7 +35,7 @@ implicit_instances:
             source ${output_directory}/variables.bash
 
             cat > ${output_directory}/jobs_analysis.py <<EOF
-            #!/usr/bin/env python
+            #!/usr/bin/env python3
             from __future__ import print_function
             import pandas as pd
             import re
@@ -65,7 +65,8 @@ implicit_instances:
                 sys.exit(0)
 
             EOF
-        - python ${output_directory}/jobs_analysis.py
+        - chmod +x ${output_directory}/jobs_analysis.py
+        - ${output_directory}/jobs_analysis.py
 
 
 commands_before_instances:
