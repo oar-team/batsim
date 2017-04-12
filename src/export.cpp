@@ -202,6 +202,7 @@ void PajeTracer::initialize(const BatsimContext *context, double time)
     // The buffer used to write lines in the file
     const int buf_size = 8 * 1024;
     int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Coudln't allocate memory");
 
@@ -408,6 +409,7 @@ void PajeTracer::finalize(const BatsimContext * context, double time)
 
     const int buf_size = 256;
     int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
@@ -457,6 +459,7 @@ void PajeTracer::add_job_launching(const Job * job,
 
     const int buf_size = 256;
     int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
@@ -485,6 +488,7 @@ void PajeTracer::register_new_job(const Job *job)
 
     const int buf_size = 256;
     int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
@@ -507,6 +511,7 @@ void PajeTracer::set_machine_idle(int machine_id, double time)
 {
     const int buf_size = 256;
     int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
@@ -532,6 +537,7 @@ void PajeTracer::set_machine_as_computing_job(int machine_id, const Job * job, d
 
     const int buf_size = 256;
     int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
@@ -554,6 +560,7 @@ void PajeTracer::add_job_kill(const Job *job, const MachineRange & used_machine_
 
     const int buf_size = 256;
     int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
@@ -592,6 +599,7 @@ void PajeTracer::add_global_utilization(double utilization, double time)
 
     const int buf_size = 256;
     int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
@@ -614,6 +622,7 @@ void PajeTracer::generate_colors(int color_count)
     double h, s=1, v=1, r, g, b;
     const int buf_size = 256;
     int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
@@ -904,6 +913,7 @@ void PStateChangeTracer::add_pstate_change(double time, MachineRange machines, i
 
     const int buf_size = 256;
     int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
@@ -1009,6 +1019,7 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
 
     const int buf_size = 256;
     int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
@@ -1080,6 +1091,7 @@ void MachineStateTracer::write_machine_states(double date)
 
     const int buf_size = 256;
     int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 

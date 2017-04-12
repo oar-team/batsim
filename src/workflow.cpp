@@ -39,6 +39,7 @@ void Workflow::load_from_xml(const std::string &xml_filename)
 
     // XML document creation
     xml_parse_result result = dax_tree.load_file(xml_filename.c_str());
+    (void) result; // Avoids a warning if assertions are ignored
     xbt_assert(result, "Invalid XML file");
 
     xml_node dag = dax_tree.child("adag");

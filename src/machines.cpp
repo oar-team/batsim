@@ -97,6 +97,7 @@ void Machines::create_machines(xbt_dynar_t hosts,
 
                     int sleep_ps, on_ps, off_ps;
                     bool conversion_succeeded = true;
+                    (void) conversion_succeeded; // Avoids a warning if assertions are ignored
                     try
                     {
                         boost::trim(pstates[0]);

@@ -310,6 +310,7 @@ int server_process(int argc, char *argv[])
             for (const JobIdentifier & job_id : args->jobs_ids)
             {
                 Job * job = context->workloads.job_at(job_id);
+                (void) job; // Avoids a warning if assertions are ignored
                 xbt_assert(job->state == JobState::JOB_STATE_RUNNING ||
                            job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
                            job->state == JobState::JOB_STATE_COMPLETED_KILLED,
@@ -651,6 +652,7 @@ int server_process(int argc, char *argv[])
 
     XBT_INFO("Simulation is finished!");
     bool simulation_is_completed = all_jobs_submitted_and_completed;
+    (void) simulation_is_completed; // Avoids a warning if assertions are ignored
     xbt_assert(simulation_is_completed, "Left simulation loop, but the simulation does NOT seem finished...");
 
     delete args;

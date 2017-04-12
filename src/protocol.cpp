@@ -409,6 +409,7 @@ void JsonProtocolReader::parse_and_apply_event(const Value & event_object,
     xbt_assert(event_object["timestamp"].IsDouble(), "Invalid JSON message: timestamp of event %d should be a double", event_number);
     double timestamp = event_object["timestamp"].GetDouble();
     xbt_assert(timestamp <= now, "Invalid JSON message: timestamp %g of event %d should be lower than or equal to now=%g.", timestamp, event_number, now);
+    (void) now; // Avoids a warning if assertions are ignored
 
     xbt_assert(event_object.HasMember("type"), "Invalid JSON message: event %d should have a 'type' key.", event_number);
     xbt_assert(event_object["type"].IsString(), "Invalid JSON message: event %d 'type' value should be a String", event_number);
@@ -424,6 +425,7 @@ void JsonProtocolReader::parse_and_apply_event(const Value & event_object,
 
 void JsonProtocolReader::handle_query_request(int event_number, double timestamp, const Value &data_object)
 {
+    (void) event_number; // Avoids a warning if assertions are ignored
     /* {
       "timestamp": 10.0,
       "type": "QUERY_REQUEST",
@@ -439,6 +441,7 @@ void JsonProtocolReader::handle_query_request(int event_number, double timestamp
     {
         const Value & key_value = it->name;
         const Value & value_object = it->value;
+        (void) value_object; // Avoids a warning if assertions are ignored
 
         xbt_assert(key_value.IsString(), "Invalid JSON message: a key within the 'data' object of event %d (QUERY_REQUEST) is not a string", event_number);
         string key = key_value.GetString();
@@ -458,6 +461,7 @@ void JsonProtocolReader::handle_reject_job(int event_number,
                                            double timestamp,
                                            const Value &data_object)
 {
+    (void) event_number; // Avoids a warning if assertions are ignored
     /* {
       "timestamp": 10.0,
       "type": "REJECT_JOB",
@@ -483,6 +487,7 @@ void JsonProtocolReader::handle_reject_job(int event_number,
     }
 
     Job * job = context->workloads.job_at(message->job_id);
+    (void) job; // Avoids a warning if assertions are ignored
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Invalid JSON message: "
                "Invalid rejection received: job %s cannot be rejected at the present time."
@@ -496,6 +501,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
                                             double timestamp,
                                             const Value &data_object)
 {
+    (void) event_number; // Avoids a warning if assertions are ignored
     /* {
       "timestamp": 10.0,
       "type": "EXECUTE_JOB",
@@ -534,6 +540,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
 
     // Let's make sure the job is submitted
     Job * job = context->workloads.job_at(message->allocation->job_id);
+    (void) job; // Avoids a warning if assertions are ignored
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Invalid JSON message: in event %d (EXECUTE_JOB): "
                "Invalid state of job %s ('%d'): It cannot be executed now",
@@ -550,6 +557,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
 
     message->allocation->machine_ids = MachineRange::from_string_hyphen(alloc, " ", "-", "Invalid JSON message: ");
     int nb_allocated_resources = message->allocation->machine_ids.size();
+    (void) nb_allocated_resources; // Avoids a warning if assertions are ignored
     xbt_assert(nb_allocated_resources > 0, "Invalid JSON message: in event %d (EXECUTE_JOB): the number of allocated resources should be strictly positive (got %d).", event_number, nb_allocated_resources);
 
     // *****************************
@@ -648,6 +656,7 @@ void JsonProtocolReader::handle_set_resource_state(int event_number,
                                                    double timestamp,
                                                    const Value &data_object)
 {
+    (void) event_number; // Avoids a warning if assertions are ignored
     /* {
       "timestamp": 10.0,
       "type": "SET_RESOURCE_STATE",
@@ -669,6 +678,7 @@ void JsonProtocolReader::handle_set_resource_state(int event_number,
 
     message->machine_ids = MachineRange::from_string_hyphen(resources, " ", "-", "Invalid JSON message: ");
     int nb_allocated_resources = message->machine_ids.size();
+    (void) nb_allocated_resources; // Avoids a warning if assertions are ignored
     xbt_assert(nb_allocated_resources > 0, "Invalid JSON message: in event %d (SET_RESOURCE_STATE): the number of allocated resources should be strictly positive (got %d).", event_number, nb_allocated_resources);
 
     // State management
@@ -690,6 +700,7 @@ void JsonProtocolReader::handle_notify(int event_number,
                                        double timestamp,
                                        const Value &data_object)
 {
+    (void) event_number; // Avoids a warning if assertions are ignored
     /* {
       "timestamp": 42.0,
       "type": "NOTIFY",
@@ -715,6 +726,7 @@ void JsonProtocolReader::handle_submit_job(int event_number,
                                            double timestamp,
                                            const Value &data_object)
 {
+    (void) event_number; // Avoids a warning if assertions are ignored
     /* "with_redis": {
       "timestamp": 10.0,
       "type": "SUBMIT_JOB",
@@ -795,6 +807,7 @@ void JsonProtocolReader::handle_kill_job(int event_number,
                                          double timestamp,
                                          const Value &data_object)
 {
+    (void) event_number; // Avoids a warning if assertions are ignored
     /* {
       "timestamp": 10.0,
       "type": "KILL_JOB",

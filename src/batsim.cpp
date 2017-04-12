@@ -106,6 +106,7 @@ string generate_sha1_string(std::string string_to_hash, int output_length)
     for (int i = 0; i < SHA_DIGEST_LENGTH; ++i)
     {
         int nb_printed_char = snprintf(output_buf + 2*i, 3, "%02x", sha1_buf[i]);
+        (void) nb_printed_char; // Avoids a warning if assertions are ignored
         xbt_assert(nb_printed_char == 2, "Fix me :(");
     }
 
