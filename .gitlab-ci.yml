@@ -28,11 +28,21 @@ build:clang:
     - export CXX=/usr/bin/clang++
     - mkdir /builds/batsim/batsim/build
     - cd /builds/batsim/batsim/build
-    - cmake .. -Dtreat_warnings_as_errors=ON
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
   artifacts:
     paths:
       - /builds/batsim/batsim/
+
+build:clang:no_assert:
+  stage: build
+  script:
+    - export CC=/usr/bin/clang
+    - export CXX=/usr/bin/clang++
+    - mkdir /builds/batsim/batsim/build
+    - cd /builds/batsim/batsim/build
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON -Dignore_assertions=ON
+    - make
 
 build:g++:
   stage: build
@@ -41,10 +51,36 @@ build:g++:
     - export CXX=/usr/bin/g++
     - mkdir /builds/batsim/batsim/build
     - cd /builds/batsim/batsim/build
-    - cmake .. -Dtreat_warnings_as_errors=ON
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
 
-doc:
+build:g++:no_assert:
+  stage: build
+  script:
+    - export CC=/usr/bin/gcc
+    - export CXX=/usr/bin/g++
+    - mkdir /builds/batsim/batsim/build
+    - cd /builds/batsim/batsim/build
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON -Dignore_assertions=ON
+    - make
+
+build:batsched:
+  stage: build
+  script:
+    - git submodule init
+    - git submodule update
+    - cd /builds/batsim/batsim/schedulers/batsched
+    - mkdir build
+    - cd build
+    - ccmake ..
+    - make
+  artifacts:
+    paths:
+      - /builds/batsim/batsim/schedulers/batsched/build
+  dependencies:
+    - build:clang
+
+test:doc:
   stage: test
   script:
     - cd /builds/batsim/batsim/doc
@@ -56,7 +92,7 @@ doc:
     paths:
       - /builds/batsim/batsim/doc/doxygen_doc/html
 
-test:
+test:test:
   stage: test
   script:
     # Let's run the redis server
@@ -68,11 +104,18 @@ test:
 
     - cd /builds/batsim/batsim
     - git submodule update --init
-    - cd build
+
+    - cd /builds/batsim/batsim/build
     - make install
+
+    - cd /builds/batsim/batsim/schedulers/batsched/build
+    - make install
+
+    - cd /builds/batsim/batsim/build
     - ctest -V
   dependencies:
     - build:clang
+    - build:batsched
 
 deploy_code_doc:
   stage: deploy
