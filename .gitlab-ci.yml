@@ -75,11 +75,9 @@ build_batsched:
     - cd build
     - cmake ..
     - make
-    - cd /builds/batsim/batsim
-    - mv /builds/batsim/batsim/schedulers/batsched/build /builds/batsim/batsim/schedulers/batsched_build
   artifacts:
     paths:
-      - /builds/batsim/batsim/schedulers/batsched_build
+      - /builds/batsim/batsim/schedulers/batsched/build
 
 test_doc:
   stage: test
@@ -109,7 +107,7 @@ test_test:
     - cd /builds/batsim/batsim/build
     - make install
 
-    - cd /builds/batsim/batsim/schedulers/batsched_build
+    - cd /builds/batsim/batsim/schedulers/batsched/build
     - make install
 
     - cd /builds/batsim/batsim/build
