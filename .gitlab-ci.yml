@@ -21,6 +21,12 @@ before_script:
   - mkdir -p ~/.ssh
   - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
 
+stages:
+  - build
+  - build_schedulers
+  - test
+  - deploy
+
 build:clang:
   stage: build
   script:
@@ -65,7 +71,7 @@ build:g++:no_assert:
     - make
 
 build:batsched:
-  stage: build
+  stage: build_schedulers
   script:
     - git submodule init
     - git submodule update
@@ -123,4 +129,4 @@ deploy_code_doc:
     - cd /builds/batsim/batsim/doc
     - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
   dependencies:
-    - doc
+    - test:doc
