@@ -67,7 +67,7 @@ build:g++:no_assert:
 build:batsched:
   stage: build
   script:
-    - git submodule update --init
+    - git submodule update --init schedulers/batsched
     - cd /builds/batsim/batsim/schedulers/batsched
     - mkdir build
     - cd build
@@ -100,7 +100,7 @@ test:test:
       done
 
     - cd /builds/batsim/batsim
-    - git submodule update --init
+    - git submodule update --init schedulers/pybatsim
 
     - cd /builds/batsim/batsim/build
     - make install
