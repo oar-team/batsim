@@ -115,6 +115,11 @@ BATSIM ---> DECISION
 Sent at the beginning of the simulation. Once it has been sent,
 and if redis is enabled, meta-information can be read from Redis.
 
+Batsim configuration is sent through the ``config`` object (in ``data``).
+Any custom information can be added into the
+[Batsim configuration](./configuration.md), which gives a generic way to give
+metainformation from Batsim to any scheduler at runtime.
+
 - **data**: the number of resources
 - **example**:
 ```json
@@ -122,7 +127,8 @@ and if redis is enabled, meta-information can be read from Redis.
   "timestamp": 0.0,
   "type": "SIMULATION_BEGINS",
   "data": {
-    "nb_resources": 60
+    "nb_resources": 60,
+    "config":{}
   }
 }
 ```
@@ -145,11 +151,11 @@ Sent once all jobs have been submitted and have completed.
 Some jobs have been submitted within Batsim. It is sent whenever a job
 coming from Batsim inputs (workloads and workflows) are submitted. It is
 also sent as a reply to a ```SUBMIT_JOB``` message if and only if an
-acknowledgement has been requested. Without Redis enabled the job 
+acknowledgement has been requested. Without Redis enabled the job
 description and optionnaly the profile are also transmitted.
 
 - **data**: list of job id
-- **example without redis**:
+- **example with redis**:
 ```json
 {
   "timestamp": 10.0,
@@ -157,7 +163,7 @@ description and optionnaly the profile are also transmitted.
   "data": {"job_id": "w0!1"}
 }
 ```
-- **example with redis**:
+- **example without redis**:
 ```json
 {
   "timestamp": 10.0,
@@ -354,7 +360,7 @@ details.
 - **data**: A job id (job id duplication is forbidden), classical job and
   profile information (optional).
 
-- **example redis** : the job description, and the profile description if
+- **example with redis** : the job description, and the profile description if
   it unknown to Batsim yet, must have been pushed into redis by the
   scheduler before sending this message
 ```json

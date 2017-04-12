@@ -22,12 +22,12 @@
   - exec_in: |
       mkdir -p $${work_dir}
       cd $${work_dir}
-      git clone https://github.com/mpoquet/simgrid.git
+      git clone $${simgrid_remote} simgrid
   - exec_in: |
       cd $${work_dir}/simgrid
       git checkout $${simgrid_commit}
-      mkdir build
   - exec_in: |
+      mkdir $${work_dir}/simgrid/build
       cd $${work_dir}/simgrid/build
       cmake -DCMAKE_INSTALL_PREFIX=$${install_prefix} -Denable_documentation=OFF -DPYTHON_EXECUTABLE=/usr/bin/python3 ../
       make -j$(nproc)

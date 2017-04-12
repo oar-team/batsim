@@ -1,5 +1,8 @@
 image: oarteam/batsim_ci
 
+variables:
+  GIT_SUBMODULE_STRATEGY: normal
+
 # The before_script part above is done in order to push Batsim's code doc
 # onto the gforge website.
 # Information found on https://docs.gitlab.com/ee/ci/ssh_keys/README.html
@@ -21,30 +24,62 @@ before_script:
   - mkdir -p ~/.ssh
   - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
 
-build:clang:
+build_clang:
   stage: build
   script:
     - export CC=/usr/bin/clang
     - export CXX=/usr/bin/clang++
     - mkdir /builds/batsim/batsim/build
     - cd /builds/batsim/batsim/build
-    - cmake .. -Dtreat_warnings_as_errors=ON
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
   artifacts:
     paths:
-      - /builds/batsim/batsim/
+      - /builds/batsim/batsim/build
 
-build:g++:
+build_clang_no_assert:
+  stage: build
+  script:
+    - export CC=/usr/bin/clang
+    - export CXX=/usr/bin/clang++
+    - mkdir /builds/batsim/batsim/build
+    - cd /builds/batsim/batsim/build
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON -Dignore_assertions=ON
+    - make
+
+build_g++:
   stage: build
   script:
     - export CC=/usr/bin/gcc
     - export CXX=/usr/bin/g++
     - mkdir /builds/batsim/batsim/build
     - cd /builds/batsim/batsim/build
-    - cmake .. -Dtreat_warnings_as_errors=ON
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
 
-doc:
+build_g++_no_assert:
+  stage: build
+  script:
+    - export CC=/usr/bin/gcc
+    - export CXX=/usr/bin/g++
+    - mkdir /builds/batsim/batsim/build
+    - cd /builds/batsim/batsim/build
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON -Dignore_assertions=ON
+    - make
+
+build_batsched:
+  stage: build
+  script:
+    - cd /builds/batsim/batsim/schedulers
+    - mkdir batsched_build
+    - cd batsched_build
+    - cmake /builds/batsim/batsim/schedulers/batsched
+    - make
+  artifacts:
+    paths:
+      - /builds/batsim/batsim/schedulers/batsched_build
+
+test_doc:
   stage: test
   script:
     - cd /builds/batsim/batsim/doc
@@ -56,7 +91,7 @@ doc:
     paths:
       - /builds/batsim/batsim/doc/doxygen_doc/html
 
-test:
+test_test:
   stage: test
   script:
     # Let's run the redis server
@@ -66,13 +101,17 @@ test:
         sleep 1
       done
 
-    - cd /builds/batsim/batsim
-    - git submodule update --init
-    - cd build
+    - cd /builds/batsim/batsim/build
     - make install
+
+    - cd /builds/batsim/batsim/schedulers/batsched_build
+    - make install
+
+    - cd /builds/batsim/batsim/build
     - ctest -V
   dependencies:
-    - build:clang
+    - build_clang
+    - build_batsched
 
 deploy_code_doc:
   stage: deploy
@@ -80,4 +119,4 @@ deploy_code_doc:
     - cd /builds/batsim/batsim/doc
     - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
   dependencies:
-    - doc
+    - test_doc

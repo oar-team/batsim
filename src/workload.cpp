@@ -59,6 +59,7 @@ void Workload::load_from_json(const std::string &json_filename, int &nb_machines
     // JSON document creation
     Document doc;
     doc.Parse(content.c_str());
+    xbt_assert(!doc.HasParseError(), "Invalid JSON file '%s': could not be parsed", json_filename.c_str());
     xbt_assert(doc.IsObject(), "Invalid JSON file '%s': not a JSON object", json_filename.c_str());
 
     // Let's try to read the number of machines in the JSON document
@@ -262,72 +263,6 @@ bool Workloads::job_exists(const std::string &workload_name, const int job_numbe
 bool Workloads::job_exists(const JobIdentifier &job_id)
 {
     return job_exists(job_id.workload_name, job_id.job_number);
-}
-
-Job *Workloads::add_job_if_not_exists(const JobIdentifier &job_id, BatsimContext *context)
-{
-    xbt_assert(this == &context->workloads,
-               "Bad Workloads::add_job_if_not_exists call: The given context "
-               "does not match the Workloads instance (this=%p, &context->workloads=%p",
-               this, &context->workloads);
-
-    // If the job already exists, let's just return it
-    if (job_exists(job_id)) {
-        return job_at(job_id);
-    }
-
-
-    // Let's create a Workload if needed
-    Workload * workload = nullptr;
-    if (!exists(job_id.workload_name))
-    {
-      workload = new Workload(job_id.workload_name);
-      //        workload->name = job_id.workload_name;
-        insert_workload(job_id.workload_name, workload);
-    }
-    else
-        workload = at(job_id.workload_name);
-
-
-    // Let's retrieve the job information from the data storage
-    string job_key = RedisStorage::job_key(job_id);
-    string job_json_description = context->storage.get(job_key);
-    XBT_INFO("JOB INFO: %s", job_json_description.c_str());
-
-    // Let's create a Job if needed
-    Job * job = nullptr;
-    if (!workload->jobs->exists(job_id.job_number))
-    {
-        XBT_INFO("CREATING JOB %d FOR WORKLOAD %s",job_id.job_number, workload->name.c_str());
-        job = Job::from_json(job_json_description, workload);
-        xbt_assert(job_id.job_number == job->number,
-                   "Cannot add dynamic job %s!%d: JSON job number mismatch (%d)",
-                   job_id.workload_name.c_str(), job_id.job_number, job->number);
-
-        // Let's insert the Job in the data structure
-        workload->jobs->add_job(job);
-    }
-    else
-        job = workload->jobs->at(job_id.job_number);
-
-    // Let's retrieve the profile information from the data storage
-    string profile_key = RedisStorage::profile_key(workload->name, job->profile);
-    string profile_json_description = context->storage.get(profile_key);
-
-    // Let's create a Profile if needed
-    Profile * profile = nullptr;
-    if (!workload->profiles->exists(job->profile))
-    {
-        profile = Profile::from_json(job->profile, profile_json_description);
-
-        // Let's insert the Profile in the data structure
-        workload->profiles->add_profile(job->profile, profile);
-    }
-    else
-        profile = workload->profiles->at(job->profile);
-
-    // TODO: check job & profile consistency (nb_res, etc.)
-    return job;
 }
 
 std::map<std::string, Workload *> &Workloads::workloads()

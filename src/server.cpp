@@ -30,7 +30,6 @@ int server_process(int argc, char *argv[])
 
     int nb_completed_jobs = 0;
     int nb_submitted_jobs = 0;
-    int nb_scheduled_jobs = 0;
     int nb_submitters = 0;
     int nb_submitters_finished = 0;
     int nb_workflow_submitters_finished = 0;
@@ -58,7 +57,7 @@ int server_process(int argc, char *argv[])
     map<std::pair<int,double>, Submitter*> origin_of_wait_queries;
 
     // Let's tell the Decision process that the simulation is about to begin (and that some data can be read from the data storage)
-    context->proto_writer->append_simulation_begins(context->machines.nb_machines(), MSG_get_clock());
+    context->proto_writer->append_simulation_begins(context->machines.nb_machines(), context->config_file, MSG_get_clock());
 
     RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
     req_rep_args->context = context;
@@ -68,11 +67,11 @@ int server_process(int argc, char *argv[])
     MSG_process_create("Scheduler REQ-REP", request_reply_scheduler_process, (void*)req_rep_args, MSG_host_self());
     sched_ready = false;
 
-
     // Simulation loop
     while ((nb_submitters == 0) || (nb_submitters_finished < nb_submitters) ||
           (nb_completed_jobs < nb_submitted_jobs) || (!sched_ready) ||
-          (nb_switching_machines > 0) || (nb_waiters > 0) || (nb_killers > 0))
+          (nb_switching_machines > 0) || (nb_waiters > 0) || (nb_killers > 0) ||
+          (context->submission_sched_enabled && !context->submission_sched_finished))
     {
         // Let's wait a message from a node or the request-reply process...
         msg_task_t task_received = NULL;
@@ -80,7 +79,7 @@ int server_process(int argc, char *argv[])
         MSG_task_receive(&(task_received), "server");
         task_data = (IPMessage *) MSG_task_get_data(task_received);
 
-        XBT_INFO( "Server received a message of type %s:", ip_message_type_to_string(task_data->type).c_str());
+        XBT_INFO("Server received a message of type %s:", ip_message_type_to_string(task_data->type).c_str());
 
         switch (task_data->type)
         {
@@ -122,7 +121,8 @@ int server_process(int argc, char *argv[])
 
             if (!all_jobs_submitted_and_completed &&
                 nb_completed_jobs == nb_submitted_jobs &&
-                nb_submitters_finished == nb_submitters)
+                nb_submitters_finished == nb_submitters &&
+                (!context->submission_sched_enabled || context->submission_sched_finished))
             {
                 all_jobs_submitted_and_completed = true;
                 XBT_INFO("It seems that all jobs have been submitted and completed!");
@@ -168,7 +168,8 @@ int server_process(int argc, char *argv[])
 
             if (!all_jobs_submitted_and_completed &&
                 nb_completed_jobs == nb_submitted_jobs &&
-                nb_submitters_finished == nb_submitters)
+                nb_submitters_finished == nb_submitters &&
+                (!context->submission_sched_enabled || context->submission_sched_finished))
             {
                 all_jobs_submitted_and_completed = true;
                 XBT_INFO("It seems that all jobs have been submitted and completed!");
@@ -201,7 +202,8 @@ int server_process(int argc, char *argv[])
 
             // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
             XBT_INFO("GOT JOB: %s %d\n", message->job_id.workload_name.c_str(), message->job_id.job_number);
-            Job * job = context->workloads.add_job_if_not_exists(message->job_id, context);
+            xbt_assert(context->workloads.job_exists(message->job_id));
+            Job * job = context->workloads.job_at(message->job_id);
             job->id = message->job_id.to_string();
 
             // Update control information
@@ -210,13 +212,27 @@ int server_process(int argc, char *argv[])
             XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far",
                      message->job_id.to_string().c_str(), nb_submitted_jobs);
 
-            context->proto_writer->append_job_submitted(job->id, MSG_get_clock());
+            string job_json_description, profile_json_description;
+
+            if (!context->redis_enabled)
+            {
+                job_json_description = job->json_description;
+                if (context->submission_forward_profiles)
+                    profile_json_description = job->workload->profiles->at(job->profile)->json_description;
+            }
+
+            context->proto_writer->append_job_submitted(job->id, job_json_description, profile_json_description, MSG_get_clock());
         } break; // end of case JOB_SUBMITTED
 
         case IPMessageType::JOB_SUBMITTED_BY_DP:
         {
             xbt_assert(task_data->data != nullptr);
             JobSubmittedByDPMessage * message = (JobSubmittedByDPMessage *) task_data->data;
+
+            xbt_assert(context->submission_sched_enabled,
+                       "Job submission coming from the decision process received but the option "
+                       "seems disabled... It can be activated by specifying a configuration file "
+                       "to Batsim.");
 
             xbt_assert(!context->workloads.job_exists(message->job_id),
                        "Bad job submission received from the decision process: job %s already exists.",
@@ -236,6 +252,7 @@ int server_process(int argc, char *argv[])
             XBT_INFO("Parsing user-submitted job %s", message->job_id.to_string().c_str());
             Job * job = Job::from_json(message->job_description, workload);
             workload->jobs->add_job(job);
+            job->id = JobIdentifier(workload->name, job->number).to_string();
 
             // Let's parse the profile if needed
             if (!workload->profiles->exists(job->profile))
@@ -244,6 +261,26 @@ int server_process(int argc, char *argv[])
                          job->profile.c_str(), message->job_id.to_string().c_str());
                 Profile * profile = Profile::from_json(job->profile, message->job_profile);
                 workload->profiles->add_profile(job->profile, profile);
+            }
+
+            // Let's set the job state
+            job->state = JobState::JOB_STATE_SUBMITTED;
+
+            // Let's update global states
+            ++nb_submitted_jobs;
+
+            if (context->submission_sched_ack)
+            {
+                string job_json_description, profile_json_description;
+
+                if (!context->redis_enabled)
+                {
+                    job_json_description = job->json_description;
+                    if (context->submission_forward_profiles)
+                        profile_json_description = job->workload->profiles->at(job->profile)->json_description;
+                }
+
+                context->proto_writer->append_job_submitted(job->id, job_json_description, profile_json_description, MSG_get_clock());
             }
 
         } break; // end of case JOB_SUBMITTED_BY_DP
@@ -273,6 +310,7 @@ int server_process(int argc, char *argv[])
             for (const JobIdentifier & job_id : args->jobs_ids)
             {
                 Job * job = context->workloads.job_at(job_id);
+                (void) job; // Avoids a warning if assertions are ignored
                 xbt_assert(job->state == JobState::JOB_STATE_RUNNING ||
                            job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
                            job->state == JobState::JOB_STATE_COMPLETED_KILLED,
@@ -400,8 +438,6 @@ int server_process(int argc, char *argv[])
 
             nb_running_jobs++;
             xbt_assert(nb_running_jobs <= nb_submitted_jobs);
-            nb_scheduled_jobs++;
-            xbt_assert(nb_scheduled_jobs <= nb_submitted_jobs);
 
             if (!context->allow_time_sharing)
             {
@@ -585,7 +621,8 @@ int server_process(int argc, char *argv[])
 
             if (!all_jobs_submitted_and_completed &&
                 nb_completed_jobs == nb_submitted_jobs &&
-                nb_submitters_finished == nb_submitters)
+                nb_submitters_finished == nb_submitters &&
+                (!context->submission_sched_enabled || context->submission_sched_finished))
             {
                 all_jobs_submitted_and_completed = true;
                 XBT_INFO("It seems that all jobs have been submitted and completed!");
@@ -615,6 +652,7 @@ int server_process(int argc, char *argv[])
 
     XBT_INFO("Simulation is finished!");
     bool simulation_is_completed = all_jobs_submitted_and_completed;
+    (void) simulation_is_completed; // Avoids a warning if assertions are ignored
     xbt_assert(simulation_is_completed, "Left simulation loop, but the simulation does NOT seem finished...");
 
     delete args;

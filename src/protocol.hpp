@@ -171,9 +171,12 @@ public:
     /**
      * @brief Appends a SIMULATION_BEGINS event.
      * @param[in] nb_resources The number of simulated resources
+     * @param[in] configuration The simulation configuration
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_simulation_begins(int nb_resources, double date) = 0;
+    virtual void append_simulation_begins(int nb_resources,
+                                          const rapidjson::Document & configuration,
+                                          double date) = 0;
 
     /**
      * @brief Appends a SIMULATION_ENDS event.
@@ -184,9 +187,14 @@ public:
     /**
      * @brief Appends a JOB_SUBMITTED event.
      * @param[in] job_id The identifier of the submitted job.
+     * @param[in] job_json_description The job JSON description (optional if redis is enabled)
+     * @param[in] profile_json_description The profile JSON description (optional if redis is
+     *            disabled or if profiles are not forwarded)
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_job_submitted(const std::string & job_id,
+                                      const std::string & job_json_description,
+                                      const std::string & profile_json_description,
                                       double date) = 0;
 
     /**
@@ -254,8 +262,9 @@ class JsonProtocolWriter : public AbstractProtocolWriter
 public:
     /**
      * @brief Creates an empty JsonProtocolWriter
+     * @param[in,out] context The BatsimContext
      */
-    JsonProtocolWriter();
+    JsonProtocolWriter(BatsimContext * context);
 
     /**
      * @brief Destroys a JsonProtocolWriter
@@ -367,11 +376,14 @@ public:
 
     // Messages from Batsim to the Scheduler
     /**
-     * @brief Appends a SIMULATION_STARTS event.
+     * @brief Appends a SIMULATION_BEGINS event.
      * @param[in] nb_resources The number of simulated resources
+     * @param[in] configuration The simulation configuration
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_simulation_begins(int nb_resources, double date);
+    void append_simulation_begins(int nb_resources,
+                                  const rapidjson::Document & configuration,
+                                  double date);
 
     /**
      * @brief Appends a SIMULATION_ENDS event.
@@ -382,9 +394,14 @@ public:
     /**
      * @brief Appends a JOB_SUBMITTED event.
      * @param[in] job_id The identifier of the submitted job.
+     * @param[in] job_json_description The job JSON description (optional if redis is enabled)
+     * @param[in] profile_json_description The profile JSON description (optional if redis is
+     *            disabled or if profiles are not forwarded)
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_job_submitted(const std::string & job_id,
+                              const std::string & job_json_description,
+                              const std::string & profile_json_description,
                               double date);
 
     /**
@@ -444,6 +461,7 @@ public:
     bool is_empty() { return _is_empty; }
 
 private:
+    BatsimContext * _context; //!< The BatsimContext
     bool _is_empty = true; //!< Stores whether events have been pushed into the writer since last clear.
     double _last_date = -1; //!< The date of the latest pushed event/message
     rapidjson::Document _doc; //!< A rapidjson document
@@ -453,11 +471,6 @@ private:
 };
 
 
-/**
- * @brief Tests whether the JsonProtocolWriter behaves correctly
- * @return Whether the JsonProtocolWriter behaves as expected
- */
-bool test_json_writer();
 
 /**
  * @brief In charge of parsing a protocol message and injecting internal messages into the simulation
@@ -507,6 +520,7 @@ public:
      * @param[in] now The message timestamp
      */
     void parse_and_apply_event(const rapidjson::Value & event_object, int event_number, double now);
+
 
     /**
      * @brief Handles a QUERY_REQUEST event

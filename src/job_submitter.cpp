@@ -107,8 +107,13 @@ int static_job_submitter_process(int argc, char *argv[])
             string job_key = RedisStorage::job_key(job_id);
             string profile_key = RedisStorage::profile_key(workload->name, job->profile);
             XBT_INFO("IN STATIC JOB SUBMITTER: '%s'", job->json_description.c_str());
-            context->storage.set(job_key, job->json_description);
-            context->storage.set(profile_key, workload->profiles->at(job->profile)->json_description);
+
+            if (context->redis_enabled)
+            {
+                context->storage.set(job_key, job->json_description);
+                if (context->submission_forward_profiles)
+                    context->storage.set(profile_key, workload->profiles->at(job->profile)->json_description);
+            }
 
             // Let's now continue the simulation
             JobSubmittedMessage * msg = new JobSubmittedMessage;
@@ -284,7 +289,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
 
     // Create JSON description of Job corresponding to Task
     double walltime = task->execution_time + 10.0;
-    string json_description = std::string() + "{" +
+    string job_json_description = std::string() + "{" +
             "\"id\": \"" + workload_name + "!" + std::to_string(job_number) +  "\", " +
             "\"subtime\":" + std::to_string(MSG_get_clock()) + ", " +
             "\"walltime\":" + std::to_string(walltime) + ", " +
@@ -292,12 +297,24 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
             "\"profile\": \"" + profile_name + "\"" +
             "}";
 
-    // Put the metadata about the job into the data storage
-    JobIdentifier job_id(workload_name, job_number);
-    string job_key = RedisStorage::job_key(job_id);
-    string profile_key = RedisStorage::profile_key(workflow_name, profile_name);
-    context->storage.set(job_key, json_description);
-    context->storage.set(profile_key, profile->json_description);
+    // Puts the job into memory
+    Job * job = Job::from_json(job_json_description, context->workloads.at(workload_name));
+    context->workloads.at(workload_name)->jobs->add_job(job);
+
+    if (context->redis_enabled)
+    {
+        // Put the metadata about the job into the data storage
+        JobIdentifier job_id(workload_name, job_number);
+
+        string job_key = RedisStorage::job_key(job_id);
+        context->storage.set(job_key, job_json_description);
+
+        if (context->submission_forward_profiles)
+        {
+            string profile_key = RedisStorage::profile_key(workflow_name, profile_name);
+            context->storage.set(profile_key, profile->json_description);
+        }
+    }
 
     // Submit the job
     JobSubmittedMessage * msg = new JobSubmittedMessage;

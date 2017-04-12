@@ -349,6 +349,7 @@ Profile *Profile::from_json(const std::string & profile_name, const std::string 
 {
     Document doc;
     doc.Parse(json_str.c_str());
+    xbt_assert(!doc.HasParseError());
 
     return Profile::from_json(profile_name, doc, "not_a_real_file");
 }

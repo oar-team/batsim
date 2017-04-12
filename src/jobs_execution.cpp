@@ -218,6 +218,7 @@ int execute_profile(BatsimContext *context,
         {
             char *str_instance_id = NULL;
             int ret = asprintf(&str_instance_id, "%s!%d", job->workload->name.c_str(), job->number);
+            (void) ret; // Avoids a warning if assertions are ignored
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
             char *str_rank_id  = NULL;
