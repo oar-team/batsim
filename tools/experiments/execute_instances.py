@@ -280,23 +280,35 @@ async def instance_runner(data, hostname, local_rank):
                     host=hostname, rank=local_rank, iid=instance_id))
                 data.sweeper.done(comb)
             else:
-                logger.error('Worker ({host},{rank}) finished {iid} '
-                             '(returncode={code})'.format(
-                                host=hostname, rank=local_rank,
-                                iid=instance_id, code=p.returncode))
+                show_instance_details = True
 
                 if (p.returncode == 3):
-                    logger.warning('However, the comb {iid} is marked as done, '
-                                   'because it failed in the post-commands '
-                                   'section.'.format(iid=instance_id))
+                    logger.error('Worker ({host},{rank}) finished {iid} '
+                                 '(returncode={code}). Instance is marked as '
+                                 'done because it failed in the post-commands '
+                                 'section.'.format(
+                                    host=hostname, rank=local_rank,
+                                    iid=instance_id, code=p.returncode))
                     data.post_command_failed = True
                     data.sweeper.done(comb)
                 elif (p.returncode == 4) and data.generate_only:
-                    logger.warning('However, this is not a problem because not '
-                                   'executing the instance has been asked.')
+                    logger.info('Worker ({host},{rank}) finished {iid} '
+                                '(returncode={code} expected, as not executing '
+                                'the instance has been asked.)'.format(
+                                    host=hostname, rank=local_rank,
+                                    iid=instance_id, code=p.returncode))
                     data.sweeper.skip(comb)
+                    show_instance_details = False
                 else:
                     data.sweeper.skip(comb)
+
+                if show_instance_details:
+                    logger.info('----- begin of instance {iid} log -----'.format(
+                                    iid=instance_id))
+                    display_process_output_on_error(instance_id,
+                                    stdout_file, stderr_file)
+                    logger.info('----- end of instance {iid} log -----'.format(
+                                    iid=instance_id))
         else:
             logger.info('Worker ({host},{rank}) skipped {iid}'.format(
                     host=hostname, rank=local_rank, iid=instance_id))
