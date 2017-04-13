@@ -358,7 +358,7 @@ def create_file_from_command(command,
 
 
 def display_process_output_on_error(process_name, stdout_file, stderr_file,
-                                    max_lines = 20):
+                                    max_lines = 42):
     if (stdout_file is None) and (stderr_file is None):
         logger.error("Cannot retrieve any log about the failed process")
         return
