@@ -42,7 +42,7 @@ def flatten_dict(init, lkey=''):
 def signal_handler(signal, frame):
     print('Interruption signal received!')
 
-    if len(instances_df) > 0:
+    if ('instances_df' in globals()) and (len(instances_df) > 0):
         print('Saving current status in {}'.format(instances_df_filename))
 
         done_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
@@ -799,10 +799,10 @@ def execute_instances(base_working_directory,
 
     # Let's check that all instances have been executed successfully
     success = len(sweeper.get_skipped()) == 0
-    logger.info('{} instances have been executed successfully'.format(
+    logger.info('Number of successfully executed instances: {}'.format(
         len(sweeper.get_done())))
     if not success:
-        logger.warning('{} instances have been skipped'.format(
+        logger.warning('Number of skipped instances: {}'.format(
             len(sweeper.get_skipped())))
         logger.warning('Information about these instances can be found in file {}'.format(
             '{base_output_dir}/instances/instances_info.csv'.format(
