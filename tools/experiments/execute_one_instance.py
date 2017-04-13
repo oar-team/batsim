@@ -435,12 +435,6 @@ async def await_with_timeout(future, timeout=None):
         return future
 
 
-async def kill_wait(proc):
-    proc.kill()
-    await proc
-    return proc
-
-
 def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
                          timeout=None):
     proc_set = set()
@@ -468,7 +462,7 @@ def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
 
     if len(proc_set) > 0:
         logger.error("Killing remaining processes")
-        kill_tasks = asyncio.gather(*[execute_command_inner('pkill -P {}'.format(p.pid), None, None) for p in proc_set])
+        kill_tasks = asyncio.gather(*[execute_command_inner('pkill -9 -P {}'.format(p.pid), None, None) for p in proc_set])
         global_loop.run_until_complete(kill_tasks)
 
     return False
