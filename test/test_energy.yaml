@@ -24,7 +24,7 @@ implicit_instances:
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${pybatsim_algo[name]}_${workload[name]}_${platform[name]}
       batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -E -e ${output_directory}/out --mmax-workload --redis-prefix ${instance_id}
-      sched_command: python ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo[algo_name]} --redis-prefix ${instance_id}
+      sched_command: ${batsim_dir}/schedulers/pybatsim/launcher.py ${pybatsim_algo[algo_name]} --redis-prefix ${instance_id}
 
 commands_before_instances:
   - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}

@@ -2,7 +2,9 @@
 
 import argparse
 import asyncio.subprocess
-from execo import logger, Process, ProcessLifecycleHandler
+import async_timeout
+import subprocess
+from execo import logger, Process
 import math
 import os
 import random
@@ -355,130 +357,221 @@ def create_file_from_command(command,
     make_file_executable(output_filename)
 
 
-class InstanceExecutionData:
+def display_process_output_on_error(process_name, stdout_file, stderr_file,
+                                    max_lines = 20):
+    if (stdout_file is None) and (stderr_file is None):
+        logger.error("Cannot retrieve any log about the failed process")
+        return
 
-    def __init__(self, batsim_process, batsim_socket, sched_process,
-                 timeout, output_directory, nb_processes):
-        self.batsim_process = batsim_process
-        self.sched_process = sched_process
-        self.batsim_socket = batsim_socket
-        self.timeout = timeout
-        self.output_directory = output_directory
-        self.nb_processes = nb_processes
-        self.nb_started = 0
-        self.nb_finished = 0
-        self.failure = False
+    for filename, fname in [(stdout_file.name, "stdout"),
+                            (stderr_file.name, "stderr")]:
+        if filename is not None:
+            # Let's retrieve the file length (ugly.)
+            cmd_wc = "wc -l {}".format(filename)
+            p = Process(cmd_wc, shell=True)
+            p.nolog_exit_code = True
+            p.run()
+            nb_lines = int(str(p.stdout).split(' ')[0])
 
+            if nb_lines > 0:
+                # Let's read the whole file if it is small
+                if nb_lines <= max_lines:
+                    with open(filename, 'r') as f:
+                        logger.error('Failed process {}:\n{}'.format(fname,
+                                                                     f.read()))
+                # Let's read the first and last lines of the file
+                else:
+                    cmd_head = "head -n {} {}".format(max_lines//2, filename)
+                    cmd_tail = "tail -n {} {}".format(max_lines//2, filename)
 
-class BatsimLifecycleHandler(ProcessLifecycleHandler):
+                    p_head = Process(cmd_head, shell=True)
+                    p_tail = Process(cmd_tail, shell=True)
 
-    def set_execution_data(self, execution_data):
-        self.execution_data = execution_data
+                    p_head.nolog_exit_code = True
+                    p_tail.nolog_exit_code = True
 
-    def start(self, process):
-        logger.info("Batsim started")
-        self.execution_data.nb_started += 1
+                    p_head.run()
+                    p_tail.run()
 
-    def end(self, process):
-        # Let's check whether the process was successful
-        if (process.exit_code != 0) or process.timeouted or process.killed or process.error:
-            self.execution_data.failure = True
+                    logger.error('Failed process {}:\n{}\n...\n...\n... (truncated... whole log in {})\n...\n...\n{}'.format(
+                        fname, p_head.stdout, filename, p_tail.stdout))
 
-            if process.killed:
-                logger.error("Batsim ended unsucessfully (killed)")
-            elif process.error:
-                logger.error("Batsim ended unsucessfully (error: {})".format(
-                    process.error_reason))
-            elif process.timeouted:
-                logger.error("Batsim ended unsucessfully (reached timeout)")
-            elif process.exit_code != 0:
-                logger.error(
-                    "Batsim ended unsucessfully (exit_code = {})".format(process.exit_code))
-            else:
-                logger.error("Batsim ended unsucessfully (unknown reason)")
-
-            for (stream, sname) in [(process.stdout, 'stdout'),
-                                    (process.stderr, 'stderr')]:
-                if stream != '':
-                    max_nb_lines = 10
-                    lines = stream.split('\n')
-                    head = '\n'
-                    if len(lines) > max_nb_lines:
-                        head = '[... only the last {} lines are shown]\n'.format(
-                            max_nb_lines)
-                    logger.info('Batsim {s}:\n{h}{l}'.format(s=sname,
-                                                             h=head,
-                                                             l='\n'.join(lines)))
-
-            if self.execution_data.sched_process.running:
-                logger.warning("Killing Sched")
-                self.execution_data.sched_process.kill(
-                    auto_force_kill_timeout=30)
-        else:
-            logger.info("Batsim ended successfully")
-        self.execution_data.nb_finished += 1
-
-
-class SchedLifecycleHandler(ProcessLifecycleHandler):
-
-    def set_execution_data(self, execution_data):
-        self.execution_data = execution_data
-
-    def start(self, process):
-        logger.info("Sched started")
-        self.execution_data.nb_started += 1
-
-    def end(self, process):
-        # Let's check whether the process was successful
-        if (process.exit_code != 0) or process.timeouted or process.killed or process.error:
-            self.execution_data.failure = True
-
-            if process.killed:
-                logger.error("Sched ended unsucessfully (killed)")
-            elif process.error:
-                logger.error("Sched ended unsucessfully (error: {})".format(
-                    process.error_reason))
-            elif process.timeouted:
-                logger.error("Sched ended unsucessfully (reached timeout)")
-            elif process.exit_code != 0:
-                logger.error(
-                    "Sched ended unsucessfully (exit_code = {})".format(process.exit_code))
-            else:
-                logger.error("Sched ended unsucessfully (unknown reason)")
-
-            for (stream, sname) in [(process.stdout, 'stdout'),
-                                    (process.stderr, 'stderr')]:
-                if stream != '':
-                    max_nb_lines = 10
-                    lines = stream.split('\n')
-                    head = '\n'
-                    if len(lines) > max_nb_lines:
-                        head = '[... only the last {} lines are shown]\n'.format(
-                            max_nb_lines)
-                    logger.info('Sched {s}:\n{h}{l}'.format(s=sname,
-                                                            h=head,
-                                                            l='\n'.join(lines)))
-
-            if self.execution_data.batsim_process.running:
-                logger.warning("Killing Batsim")
-                self.execution_data.batsim_process.kill(
-                    auto_force_kill_timeout=30)
-        else:
-            logger.info("Sched ended successfully")
-        self.execution_data.nb_finished += 1
-
-async def execute_command_inner(command, stdout_file, stderr_file, timeout=None):
+async def execute_command_inner(command, stdout_file=None, stderr_file=None,
+                                timeout=None, process_name=None,
+                                where_to_append_proc=None):
     create = asyncio.create_subprocess_shell(command,
                                              stdout=stdout_file,
                                              stderr=stderr_file)
     # Wait for the subprocess creation
     proc = await create
 
-    # Wait for the subprocess exit
-    await proc.wait()
-    #await proc.wait_for(timeout)
+    if where_to_append_proc is not None:
+        where_to_append_proc.add(proc)
 
+    with async_timeout.timeout(timeout):
+        # Wait for subprocess termination
+        await proc.wait()
+
+    return proc, process_name
+
+
+async def run_wait_any(batsim_command, sched_command,
+                       batsim_stdout_file, batsim_stderr_file,
+                       sched_stdout_file, sched_stderr_file,
+                       timeout=None, where_to_append_proc=None):
+    done, pending = await asyncio.wait([execute_command_inner(batsim_command,
+                                        batsim_stdout_file, batsim_stderr_file,
+                                        timeout, "Batsim", where_to_append_proc),
+                                        execute_command_inner(sched_command,
+                                        sched_stdout_file, sched_stderr_file,
+                                        timeout, "Sched", where_to_append_proc)],
+                                        return_when=asyncio.FIRST_COMPLETED)
+    return done, pending
+
+
+async def await_with_timeout(future, timeout=None):
+    with async_timeout.timeout(timeout):
+        await future
+        return future
+
+
+async def kill_wait(proc):
+    proc.kill()
+    await proc
     return proc
+
+
+def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
+                         timeout=None):
+    proc_set = set()
+    try:
+        out_files={'Batsim': (batsim_stdout_file, batsim_stderr_file)}
+        proc, pname = global_loop.run_until_complete(execute_command_inner(
+                                        batsim_command, batsim_stdout_file,
+                                        batsim_stderr_file, timeout, "Batsim",
+                                        proc_set))
+        proc_set.remove(proc)
+        if proc.returncode == 0:
+            logger.info("{} finished".format(pname))
+            return True
+        else:
+            logger.error("{} finished (returncode={})".format(pname,
+                                                              proc.returncode))
+            display_process_output_on_error(pname, *out_files[pname])
+            return False
+    except asyncio.TimeoutError:
+        logger.error("Timeout reached!")
+    except Exception as e:
+        logger.error('Exception caught ({}): {}'.format(type(e), e))
+    except:
+        logger.error("Another exception caught!")
+
+    if len(proc_set) > 0:
+        logger.error("Killing remaining processes")
+        kill_tasks = asyncio.gather(*[execute_command_inner('pkill -P {}'.format(p.pid), None, None) for p in proc_set])
+        global_loop.run_until_complete(kill_tasks)
+
+    return False
+
+def execute_batsim_and_sched(batsim_command, sched_command,
+                             batsim_stdout_file, batsim_stderr_file,
+                             sched_stdout_file, sched_stderr_file,
+                             timeout=None, wait_timeout_on_success=5):
+    proc_set = set()
+    try:
+        out_files={'Batsim': (batsim_stdout_file, batsim_stderr_file),
+                   'Sched': (sched_stdout_file, sched_stderr_file)}
+        logger.info("Running Batsim and Sched")
+        done, pending = global_loop.run_until_complete(run_wait_any(
+                                batsim_command, sched_command,
+                                batsim_stdout_file, batsim_stderr_file,
+                                sched_stdout_file, sched_stderr_file,
+                                timeout, proc_set))
+        finished_tuples = [finished.result() for finished in done]
+        assert(len(finished_tuples) in {1,2})
+
+        if (len(done) == 2):
+            logger.info("Both processes finished at the same time!")
+            all_ok = True
+            for finished_tuple in finished_tuples:
+                if finished_tuple[0].returncode != 0:
+                    all_ok = False
+                    logger.error("{} finished (returncode={})".format(
+                                    finished_tuple[1],
+                                    finished_tuple[0].returncode))
+                    display_process_output_on_error(finished_tuple[1],
+                                                    *out_files[finished_tuple[1]])
+                else:
+                    logger.info("{} finished".format(finished_tuple[1]))
+            return all_ok
+
+        # One (and only one) process finished.
+        finished_proc, finished_pname = finished_tuples[0]
+        finished_ok = finished_proc.returncode == 0
+        proc_set.remove(finished_proc)
+
+        if finished_ok:
+            logger.info("{} finished".format(finished_pname))
+            logger.info("Waiting for clean termination... (timeout={})".format(
+                            wait_timeout_on_success))
+
+            pending_future = next(iter(pending))
+            finished = global_loop.run_until_complete(await_with_timeout(
+                                pending_future, wait_timeout_on_success))
+            finished_proc, finished_pname = finished.result()
+            proc_set.remove(finished_proc)
+
+            if finished_proc.returncode == 0:
+                logger.info("{} finished".format(finished_pname))
+                return True
+            else:
+                logger.error("{} finished (returncode={})".format(
+                                finished_pname, finished_proc.returncode))
+                display_process_output_on_error(finished_pname,
+                                                *out_files[finished_pname])
+                return False
+        else:
+            logger.error("{} finished (returncode={})".format(
+                                finished_pname, finished_proc.returncode))
+            display_process_output_on_error(finished_pname,
+                                            *out_files[finished_pname])
+    except asyncio.TimeoutError:
+        logger.error("Timeout reached!")
+    except Exception as e:
+        logger.error('Exception caught ({}): {}'.format(type(e), e))
+    except:
+        logger.error("Another exception caught!")
+
+    if len(proc_set) > 0:
+        logger.error("Killing remaining processes")
+        kill_tasks = asyncio.gather(*[execute_command_inner('pkill -P {}'.format(p.pid), None, None) for p in proc_set])
+        global_loop.run_until_complete(kill_tasks)
+
+    return False
+
+
+def execute_command_synchronous(command, stdout_file=None, stderr_file=None,
+                                timeout=None, throw_on_error=False):
+    try:
+        proc,_ = global_loop.run_until_complete(execute_command_inner(command,
+                                        stdout_file, stderr_file, timeout))
+    except asyncio.TimeoutError:
+        logger.error("Command '{cmd}' reached timeout.".format(cmd=cmd))
+        if throw_on_error:
+            raise Exception("Command '{cmd}' reached timeout.".format(cmd=cmd))
+        return False
+    except:
+        logger.error('Unhandled exception caught.')
+        return False
+
+    if (proc.returncode is not None) and (proc.returncode >= 0):
+        return True
+    else:
+        logger.warning("Command '{cmd}' failed.".format(cmd=cmd))
+        if throw_on_error:
+            raise Exception("Command '{cmd}' failed.".format(cmd=cmd))
+        return False
+
 
 def execute_command(command,
                     working_directory,
@@ -486,7 +579,8 @@ def execute_command(command,
                     output_script_filename,
                     output_subscript_filename,
                     output_script_output_dir,
-                    command_name):
+                    command_name,
+                    timeout=None):
 
     # If the command is composed of different lines,
     # a corresponding subscript file will be created.
@@ -514,14 +608,7 @@ def execute_command(command,
                                                     name = command_name), 'wb')
 
     # Let's run the command (synchronously)
-    proc = global_loop.run_until_complete(execute_command_inner(cmd, stdout_file, stderr_file))
-
-    if (proc.returncode is not None) and (proc.returncode >= 0):
-        return True
-    else:
-        logger.warning("Command '{cmd}' failed.".format(cmd=cmd))
-        return False
-
+    return execute_command_synchronous(cmd, stdout_file, stderr_file, timeout)
 
 g_port_regex = re.compile('.*:(\d+)')
 
@@ -536,7 +623,6 @@ def socket_in_use(sock):
         p = Process(cmd, shell=True)
         p.nolog_exit_code = True
         ss_output = (p.run().stdout)
-        print('ss output: "{}"'.format(ss_output))
         return len(ss_output) > 0
 
     return False
@@ -564,11 +650,10 @@ def execute_one_instance(working_directory,
     if timeout is None:
         timeout = 3600
 
-    logger.info('Batsim command: "{}"'.format(batsim_command))
-    logger.info('Sched command: "{}"'.format(sched_command))
-
     # Let's create the output directory if it does not exist
     create_dir_if_not_exists(output_directory)
+
+    (batsim_socket, is_batexec) = find_info_from_batsim_command(batsim_command)
 
     # Let's wrap the two commands into files
     batsim_script_filename = '{output_dir}/batsim_command.sh'.format(
@@ -576,11 +661,14 @@ def execute_one_instance(working_directory,
     sched_script_filename = '{output_dir}/sched_command.sh'.format(
         output_dir=output_directory)
 
+    logger.info('Batsim command: "{}"'.format(batsim_command))
     create_file_from_command(command=batsim_command,
                              output_filename=batsim_script_filename,
                              variables_definition_filename=variables_filename)
 
-    create_file_from_command(command=sched_command,
+    if not is_batexec:
+        logger.info('Sched command: "{}"'.format(sched_command))
+        create_file_from_command(command=sched_command,
                              output_filename=sched_script_filename,
                              variables_definition_filename=variables_filename)
 
@@ -589,73 +677,35 @@ def execute_one_instance(working_directory,
                     'do_not_execute is True.')
         sys.exit(4)
 
-    # Let's create lifecycle handlers, which will manage what to do on
-    # process's events
-    batsim_lifecycle_handler = BatsimLifecycleHandler()
-    sched_lifecycle_handler = SchedLifecycleHandler()
+    # Let's prepare the commands execution
+    batsim_command = 'bash {script}'.format(script=batsim_script_filename)
+    sched_command = 'bash {script}'.format(script=sched_script_filename)
 
-    # If batsim's socket is still opened, let's wait for it to close
-    (batsim_socket, is_batexec) = find_info_from_batsim_command(batsim_command)
-    socket_usable = wait_for_batsim_socket_to_be_usable(sock=batsim_socket,
-                                                        timeout=timeout)
-    assert(socket_usable)
-    logger.info("Socket {sock} is now usable".format(sock=batsim_socket))
+    batsim_stdout_filename = '{out}/batsim.stdout'.format(out=output_directory)
+    batsim_stderr_filename = '{out}/batsim.stderr'.format(out=output_directory)
+    sched_stdout_filename = '{out}/sched.stdout'.format(out=output_directory)
+    sched_stderr_filename = '{out}/sched.stderr'.format(out=output_directory)
 
-    # Let's create the execo processes
-    batsim_process = Process(cmd='bash {batsim_script}'.format(
-        batsim_script=batsim_script_filename),
-        shell=True,
-        kill_subprocesses=True,
-        name="batsim_process",
-        cwd=working_directory,
-        timeout=timeout,
-        lifecycle_handlers=[batsim_lifecycle_handler],
-        stdout_handlers=['{out}/batsim.stdout'.format(
-            out=output_directory)],
-        stderr_handlers=['{out}/batsim.stderr'.format(
-            out=output_directory)])
+    batsim_stdout_file = open(batsim_stdout_filename, 'wb')
+    batsim_stderr_file = open(batsim_stderr_filename, 'wb')
 
-    sched_process = Process(cmd='bash {sched_script}'.format(
-        sched_script=sched_script_filename),
-        shell=True,
-        kill_subprocesses=True,
-        name="sched_process",
-        cwd=working_directory,
-        timeout=timeout,
-        lifecycle_handlers=[sched_lifecycle_handler],
-        stdout_handlers=['{out}/sched.stdout'.format(
-            out=output_directory)],
-        stderr_handlers=['{out}/sched.stderr'.format(
-            out=output_directory)])
-
-    # Let's create a shared execution data, which will be given to LC handlers
-    nb_processes = 1 + int(not is_batexec)
-
-    execution_data = InstanceExecutionData(batsim_process=batsim_process,
-                                           sched_process=sched_process,
-                                           batsim_socket=batsim_socket,
-                                           timeout=timeout,
-                                           output_directory=output_directory,
-                                           nb_processes=nb_processes)
-
-    batsim_lifecycle_handler.set_execution_data(execution_data)
-    sched_lifecycle_handler.set_execution_data(execution_data)
-
-    # Batsim starts
-    batsim_process.start()
-
-    # Launches the scheduler (unless batexec is enabled)
     if not is_batexec:
-        sched_process.start()
+        sched_stdout_file = open(sched_stdout_filename, 'wb')
+        sched_stderr_file = open(sched_stderr_filename, 'wb')
 
-    while (execution_data.nb_started <= 0 and not execution_data.failure):
-        time.sleep(0.2)
-    while (execution_data.nb_finished < execution_data.nb_started):
-        time.sleep(0.2)
+        # If batsim's socket is still opened, let's wait for it to close
+        socket_usable = wait_for_batsim_socket_to_be_usable(sock=batsim_socket,
+                                                        timeout=timeout)
+        assert(socket_usable)
+        logger.info("Socket {sock} is now usable".format(sock=batsim_socket))
 
-    # Return whether the execution has been successful
-    return not execution_data.failure
-
+        return execute_batsim_and_sched(batsim_command, sched_command,
+                                        batsim_stdout_file, batsim_stderr_file,
+                                        sched_stdout_file, sched_stderr_file,
+                                        timeout)
+    else:
+        return execute_batsim_alone(batsim_command, batsim_stdout_file,
+                                    batsim_stderr_file, timeout)
 
 def main():
     script_description = '''
@@ -770,7 +820,7 @@ Examples of such input files can be found in the subdirectory instance_examples.
     variables['working_directory'] = working_directory = wd
     variables['output_directory'] = output_directory = od
 
-    print("Variables = {}".format(variables))
+    logger.info("Variables = {}".format(variables))
 
     # Let's create the directories if needed
     create_dir_if_not_exists(working_directory)
