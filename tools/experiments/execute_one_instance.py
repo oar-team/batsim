@@ -629,10 +629,11 @@ def socket_in_use(sock):
 
 
 def wait_for_batsim_socket_to_be_usable(sock='tcp://localhost:28000',
-                                        timeout=60,
+                                        timeout=5,
                                         seconds_to_sleep=0.1):
+    logger.info("Waiting for socket '{}' to be usable".format(sock))
     if timeout is None:
-        timeout = 60
+        timeout = 5
     remaining_time = timeout
     while remaining_time > 0 and socket_in_use(sock):
         time.sleep(seconds_to_sleep)
@@ -694,11 +695,15 @@ def execute_one_instance(working_directory,
         sched_stderr_file = open(sched_stderr_filename, 'wb')
 
         # If batsim's socket is still opened, let's wait for it to close
+        socket_wait_timeout = 5
         socket_usable = wait_for_batsim_socket_to_be_usable(sock=batsim_socket,
-                                                        timeout=timeout)
-        assert(socket_usable)
-        logger.info("Socket {sock} is now usable".format(sock=batsim_socket))
+                                                    timeout=socket_wait_timeout)
+        if not socket_usable:
+            logger.error("Socket {} is still busy (after timeout={})".format(
+                            batsim_socket, socket_wait_timeout))
+            return False
 
+        logger.info("Socket {sock} is now usable".format(sock=batsim_socket))
         return execute_batsim_and_sched(batsim_command, sched_command,
                                         batsim_stdout_file, batsim_stderr_file,
                                         sched_stdout_file, sched_stderr_file,
