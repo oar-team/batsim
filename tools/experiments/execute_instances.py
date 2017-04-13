@@ -10,6 +10,7 @@ from execo_engine import *
 from execute_one_instance import *
 import pandas as pd
 import signal
+import subprocess
 
 
 class hashabledict(dict):
@@ -99,14 +100,9 @@ def retrieve_dirs_from_instances(variables,
     f.close()
 
     # Let's execute the script
-    p = Process(cmd='bash {f}'.format(f=script_filename),
-                shell=True,
-                name="Preparation command",
-                kill_subprocesses=True,
-                cwd=working_directory)
-
-    p.start().wait()
-    assert(p.finished_ok and not p.error)
+    p = subprocess.run('bash {f}'.format(f=script_filename), shell=True,
+                       stdout=subprocess.PIPE)
+    assert(p.returncode == 0)
 
     # Let's get the working directory
     f = open(working_dir_filename, 'r')
