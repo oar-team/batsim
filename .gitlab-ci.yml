@@ -34,7 +34,7 @@ build_clang:
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
   artifacts:
-    paths: 
+    paths:
       - /builds/batsim/batsim/build
 
 build_clang_no_assert:
@@ -45,16 +45,6 @@ build_clang_no_assert:
     - mkdir /builds/batsim/batsim/build
     - cd /builds/batsim/batsim/build
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON -Dignore_assertions=ON
-    - make
-
-build_g++:
-  stage: build
-  script:
-    - export CC=/usr/bin/gcc
-    - export CXX=/usr/bin/g++
-    - mkdir /builds/batsim/batsim/build
-    - cd /builds/batsim/batsim/build
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
 
 build_g++_no_assert:
