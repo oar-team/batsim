@@ -455,7 +455,7 @@ def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
 
     if len(proc_set) > 0:
         logger.error("Killing remaining processes")
-        kill_tasks = asyncio.gather(*[execute_command_inner('pkill -9 -P {}'.format(p.pid), None, None) for p in proc_set])
+        kill_tasks = asyncio.gather(*[execute_command_inner("kill -9 $(pstree {} -p -a -l | cut -d',' -f2 | cut -d' ' -f1)".format(p.pid), None, None) for p in proc_set])
         loop.run_until_complete(kill_tasks)
 
     return False
