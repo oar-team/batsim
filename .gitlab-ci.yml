@@ -34,7 +34,7 @@ build_clang:
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
   artifacts:
-    paths:
+    paths: 
       - /builds/batsim/batsim/build
 
 build_clang_no_assert:
