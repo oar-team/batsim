@@ -583,13 +583,17 @@ def execute_command(command,
                                                     name = command_name), 'wb')
 
     # Let's run the command
+    logger.info("Executing command '{}'".format(command_name))
     p = subprocess.run(cmd, shell=True, stdout=stdout_file, stderr=stderr_file)
 
     if p.returncode == 0:
+        logger.info("{} finished".format(command_name))
         return True
     else:
-        logger.error("Command in '{}' failed. Content: {}".format(cmd, command))
-        display_process_output_on_error("command", stdout_file, stderr_file)
+        logger.error("Command '{name}' failed.\n--- begin of {name} ---\n"
+                     "{content}\n--- end of {name} ---".format(
+                        name=command_name, content=command))
+        display_process_output_on_error(command_name, stdout_file, stderr_file)
         return False
 
 g_port_regex = re.compile('.*:(\d+)')
