@@ -357,6 +357,45 @@ def create_file_from_command(command,
     make_file_executable(output_filename)
 
 
+def display_process_output_on_error(process_name, stdout_file, stderr_file,
+                                    max_lines = 20):
+    if (stdout_file is None) and (stderr_file is None):
+        logger.error("Cannot retrieve any log about the failed process")
+        return
+
+    for filename, fname in [(stdout_file.name, "stdout"),
+                            (stderr_file.name, "stderr")]:
+        if filename is not None:
+            # Let's retrieve the file length (ugly.)
+            cmd_wc = "wc -l {}".format(filename)
+            p = Process(cmd_wc, shell=True)
+            p.nolog_exit_code = True
+            p.run()
+            nb_lines = int(str(p.stdout).split(' ')[0])
+
+            if nb_lines > 0:
+                # Let's read the whole file if it is small
+                if nb_lines <= max_lines:
+                    with open(filename, 'r') as f:
+                        logger.error('Failed process {}:\n{}'.format(fname,
+                                                                     f.read()))
+                # Let's read the first and last lines of the file
+                else:
+                    cmd_head = "head -n {} {}".format(max_lines//2, filename)
+                    cmd_tail = "tail -n {} {}".format(max_lines//2, filename)
+
+                    p_head = Process(cmd_head, shell=True)
+                    p_tail = Process(cmd_tail, shell=True)
+
+                    p_head.nolog_exit_code = True
+                    p_tail.nolog_exit_code = True
+
+                    p_head.run()
+                    p_tail.run()
+
+                    logger.error('Failed process {}:\n{}\n...\n...\n... (truncated... whole log in {})\n...\n...\n{}'.format(
+                        fname, p_head.stdout, filename, p_tail.stdout))
+
 async def execute_command_inner(command, stdout_file=None, stderr_file=None,
                                 timeout=None, process_name=None,
                                 where_to_append_proc=None):
@@ -406,6 +445,7 @@ def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
                          timeout=None):
     proc_set = set()
     try:
+        out_files={'Batsim': (batsim_stdout_file, batsim_stderr_file)}
         proc, pname = global_loop.run_until_complete(execute_command_inner(
                                         batsim_command, batsim_stdout_file,
                                         batsim_stderr_file, timeout, "Batsim",
@@ -417,6 +457,7 @@ def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
         else:
             logger.error("{} finished (returncode={})".format(pname,
                                                               proc.returncode))
+            display_process_output_on_error(pname, *out_files[pname])
             return False
     except asyncio.TimeoutError:
         logger.error("Timeout reached!")
@@ -438,6 +479,8 @@ def execute_batsim_and_sched(batsim_command, sched_command,
                              timeout=None, wait_timeout_on_success=5):
     proc_set = set()
     try:
+        out_files={'Batsim': (batsim_stdout_file, batsim_stderr_file),
+                   'Sched': (sched_stdout_file, sched_stderr_file)}
         logger.info("Running Batsim and Sched")
         done, pending = global_loop.run_until_complete(run_wait_any(
                                 batsim_command, sched_command,
@@ -456,6 +499,8 @@ def execute_batsim_and_sched(batsim_command, sched_command,
                     logger.error("{} finished (returncode={})".format(
                                     finished_tuple[1],
                                     finished_tuple[0].returncode))
+                    display_process_output_on_error(finished_tuple[1],
+                                                    *out_files[finished_tuple[1]])
                 else:
                     logger.info("{} finished".format(finished_tuple[1]))
             return all_ok
@@ -482,10 +527,14 @@ def execute_batsim_and_sched(batsim_command, sched_command,
             else:
                 logger.error("{} finished (returncode={})".format(
                                 finished_pname, finished_proc.returncode))
+                display_process_output_on_error(finished_pname,
+                                                *out_files[finished_pname])
                 return False
         else:
             logger.error("{} finished (returncode={})".format(
                                 finished_pname, finished_proc.returncode))
+            display_process_output_on_error(finished_pname,
+                                            *out_files[finished_pname])
     except asyncio.TimeoutError:
         logger.error("Timeout reached!")
     except Exception as e:
