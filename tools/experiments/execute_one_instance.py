@@ -15,8 +15,6 @@ import sys
 import time
 import yaml
 
-global_loop = asyncio.get_event_loop()
-
 class ArgumentParserError(Exception):
     pass
 
@@ -431,10 +429,11 @@ async def await_with_timeout(future, timeout=None):
 
 def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
                          timeout=None):
+    loop = asyncio.get_event_loop()
     proc_set = set()
     try:
         out_files={'Batsim': (batsim_stdout_file, batsim_stderr_file)}
-        proc, pname = global_loop.run_until_complete(execute_command_inner(
+        proc, pname = loop.run_until_complete(execute_command_inner(
                                         batsim_command, batsim_stdout_file,
                                         batsim_stderr_file, timeout, "Batsim",
                                         proc_set))
@@ -457,7 +456,7 @@ def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
     if len(proc_set) > 0:
         logger.error("Killing remaining processes")
         kill_tasks = asyncio.gather(*[execute_command_inner('pkill -9 -P {}'.format(p.pid), None, None) for p in proc_set])
-        global_loop.run_until_complete(kill_tasks)
+        loop.run_until_complete(kill_tasks)
 
     return False
 
@@ -465,12 +464,13 @@ def execute_batsim_and_sched(batsim_command, sched_command,
                              batsim_stdout_file, batsim_stderr_file,
                              sched_stdout_file, sched_stderr_file,
                              timeout=None, wait_timeout_on_success=5):
+    loop = asyncio.get_event_loop()
     proc_set = set()
     try:
         out_files={'Batsim': (batsim_stdout_file, batsim_stderr_file),
                    'Sched': (sched_stdout_file, sched_stderr_file)}
         logger.info("Running Batsim and Sched")
-        done, pending = global_loop.run_until_complete(run_wait_any(
+        done, pending = loop.run_until_complete(run_wait_any(
                                 batsim_command, sched_command,
                                 batsim_stdout_file, batsim_stderr_file,
                                 sched_stdout_file, sched_stderr_file,
@@ -504,7 +504,7 @@ def execute_batsim_and_sched(batsim_command, sched_command,
                             wait_timeout_on_success))
 
             pending_future = next(iter(pending))
-            finished = global_loop.run_until_complete(await_with_timeout(
+            finished = loop.run_until_complete(await_with_timeout(
                                 pending_future, wait_timeout_on_success))
             finished_proc, finished_pname = finished.result()
             proc_set.remove(finished_proc)
@@ -533,7 +533,7 @@ def execute_batsim_and_sched(batsim_command, sched_command,
     if len(proc_set) > 0:
         logger.error("Killing remaining processes")
         kill_tasks = asyncio.gather(*[execute_command_inner('pkill -P {}'.format(p.pid), None, None) for p in proc_set])
-        global_loop.run_until_complete(kill_tasks)
+        loop.run_until_complete(kill_tasks)
 
     return False
 
@@ -541,7 +541,8 @@ def execute_batsim_and_sched(batsim_command, sched_command,
 def execute_command_synchronous(command, stdout_file=None, stderr_file=None,
                                 timeout=None, throw_on_error=False):
     try:
-        proc,_ = global_loop.run_until_complete(execute_command_inner(command,
+        loop = asyncio.get_event_loop()
+        proc,_ = loop.run_until_complete(execute_command_inner(command,
                                         stdout_file, stderr_file, timeout))
     except asyncio.TimeoutError:
         logger.error("Command '{cmd}' reached timeout.".format(cmd=cmd))
