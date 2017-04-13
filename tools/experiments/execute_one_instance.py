@@ -447,6 +447,7 @@ def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
     proc_set = set()
     try:
         out_files={'Batsim': (batsim_stdout_file, batsim_stderr_file)}
+        logger.info("Running Batsim")
         proc, pname = loop.run_until_complete(execute_command_inner(
                                         batsim_command, batsim_stdout_file,
                                         batsim_stderr_file, timeout, "Batsim",
