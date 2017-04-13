@@ -548,30 +548,6 @@ def execute_batsim_and_sched(batsim_command, sched_command,
     return False
 
 
-def execute_command_synchronous(command, stdout_file=None, stderr_file=None,
-                                timeout=None, throw_on_error=False):
-    try:
-        loop = asyncio.get_event_loop()
-        proc,_ = loop.run_until_complete(execute_command_inner(command,
-                                        stdout_file, stderr_file, timeout))
-    except asyncio.TimeoutError:
-        logger.error("Command '{cmd}' reached timeout.".format(cmd=cmd))
-        if throw_on_error:
-            raise Exception("Command '{cmd}' reached timeout.".format(cmd=cmd))
-        return False
-    except:
-        logger.error('Unhandled exception caught.')
-        return False
-
-    if (proc.returncode is not None) and (proc.returncode >= 0):
-        return True
-    else:
-        logger.warning("Command '{cmd}' failed.".format(cmd=cmd))
-        if throw_on_error:
-            raise Exception("Command '{cmd}' failed.".format(cmd=cmd))
-        return False
-
-
 def execute_command(command,
                     working_directory,
                     variables_filename,
@@ -606,8 +582,15 @@ def execute_command(command,
     stderr_file = open('{out}/{name}.stderr'.format(out = output_script_output_dir,
                                                     name = command_name), 'wb')
 
-    # Let's run the command (synchronously)
-    return execute_command_synchronous(cmd, stdout_file, stderr_file, timeout)
+    # Let's run the command
+    p = subprocess.run(cmd, shell=True, stdout=stdout_file, stderr=stderr_file)
+
+    if p.returncode == 0:
+        return True
+    else:
+        logger.error("Command in '{}' failed. Content: {}".format(cmd, command))
+        display_process_output_on_error("command", stdout_file, stderr_file)
+        return False
 
 g_port_regex = re.compile('.*:(\d+)')
 
