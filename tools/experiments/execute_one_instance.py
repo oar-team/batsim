@@ -4,7 +4,7 @@ import argparse
 import asyncio.subprocess
 import async_timeout
 import subprocess
-from execo import logger, Process
+from execo import logger
 import math
 import os
 import random
@@ -175,14 +175,9 @@ def retrieve_info_from_instance(variables,
     f.close()
 
     # Let's execute the script
-    p = Process(cmd='bash {f}'.format(f=script_filename),
-                shell=True,
-                name="Preparation command",
-                kill_subprocesses=True,
-                cwd=working_directory)
-
-    p.start().wait()
-    assert(p.finished_ok and not p.error)
+    p = subprocess.run('bash {f}'.format(f=script_filename),
+                       shell=True, stdout=subprocess.PIPE)
+    assert(p.returncode == 0)
 
     # Let's get the working directory
     f = open(working_dir_filename, 'r')
@@ -368,10 +363,9 @@ def display_process_output_on_error(process_name, stdout_file, stderr_file,
         if filename is not None:
             # Let's retrieve the file length (ugly.)
             cmd_wc = "wc -l {}".format(filename)
-            p = Process(cmd_wc, shell=True)
-            p.nolog_exit_code = True
-            p.run()
-            nb_lines = int(str(p.stdout).split(' ')[0])
+            p = subprocess.run(cmd_wc, shell=True, stdout=subprocess.PIPE)
+            assert(p.returncode == 0)
+            nb_lines = int(str(p.stdout.decode('utf-8')).split(' ')[0])
 
             if nb_lines > 0:
                 # Let's read the whole file if it is small
@@ -384,17 +378,17 @@ def display_process_output_on_error(process_name, stdout_file, stderr_file,
                     cmd_head = "head -n {} {}".format(max_lines//2, filename)
                     cmd_tail = "tail -n {} {}".format(max_lines//2, filename)
 
-                    p_head = Process(cmd_head, shell=True)
-                    p_tail = Process(cmd_tail, shell=True)
+                    p_head = subprocess.run(cmd_head, shell=True,
+                                            stdout=subprocess.PIPE)
+                    p_tail = subprocess.run(cmd_tail, shell=True,
+                                            stdout=subprocess.PIPE)
 
-                    p_head.nolog_exit_code = True
-                    p_tail.nolog_exit_code = True
-
-                    p_head.run()
-                    p_tail.run()
+                    assert(p_head.returncode == 0)
+                    assert(p_tail.returncode == 0)
 
                     logger.error('Failed process {}:\n{}\n...\n...\n... (truncated... whole log in {})\n...\n...\n{}'.format(
-                        fname, p_head.stdout, filename, p_tail.stdout))
+                        fname, str(p_head.stdout.decode('utf-8')), filename,
+                        str(p_tail.stdout.decode('utf-8'))))
 
 async def execute_command_inner(command, stdout_file=None, stderr_file=None,
                                 timeout=None, process_name=None,
@@ -614,10 +608,8 @@ def socket_in_use(sock):
         port = int(m.group(1))
         cmd = "ss -ln | grep ':{port}'".format(port=port)
 
-        p = Process(cmd, shell=True)
-        p.nolog_exit_code = True
-        ss_output = (p.run().stdout)
-        return len(ss_output) > 0
+        p = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
+        return len(p.stdout.decode('utf-8')) > 0
 
     return False
 
