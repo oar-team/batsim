@@ -300,14 +300,18 @@ async def instance_runner(data, hostname, local_rank):
                     data.sweeper.skip(comb)
                     show_instance_details = False
                 else:
+                    logger.error('Worker ({host},{rank}) finished {iid} '
+                                 '(returncode={code}).'.format(
+                                    host=hostname, rank=local_rank,
+                                    iid=instance_id, code=p.returncode))
                     data.sweeper.skip(comb)
 
                 if show_instance_details:
-                    logger.info('----- begin of instance {iid} log -----'.format(
+                    logger.info('\n\n----- begin of instance {iid} log -----'.format(
                                     iid=instance_id))
                     display_process_output_on_error(instance_id,
                                     stdout_file, stderr_file)
-                    logger.info('----- end of instance {iid} log -----'.format(
+                    logger.info('----- end of instance {iid} log -----\n\n'.format(
                                     iid=instance_id))
         else:
             logger.info('Worker ({host},{rank}) skipped {iid}'.format(
