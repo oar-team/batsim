@@ -426,6 +426,20 @@ async def await_with_timeout(future, timeout=None):
         await future
         return future
 
+def kill_processes_and_all_descendants(proc_set):
+    pids_to_kill = set()
+    for proc in proc_set:
+        cmd = "pstree {} -p -a -l | cut -d',' -f2 | cut -d' ' -f1".format(proc.pid)
+        p = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
+        for pid in [int(pid_str) for pid_str in p.stdout.decode('utf-8').replace('\n', ' ').strip().split(' ')]:
+            pids_to_kill.add(pid)
+
+    assert(os.getpid() not in pids_to_kill)
+    logger.error("Killing remaining processes (pids_to_kill={})".format(pids_to_kill))
+    kill_tasks = asyncio.gather(*[execute_command_inner("kill -9 {}".format(pid), None, None) for pid in pids_to_kill])
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(kill_tasks)
+
 
 def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
                          timeout=None):
@@ -454,19 +468,7 @@ def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
         logger.error("Another exception caught!")
 
     if len(proc_set) > 0:
-        # Let's get the pid of all descendants
-        pids_to_kill = set()
-
-        for proc in proc_set:
-            cmd = "pstree {} -p -a -l | cut -d',' -f2 | cut -d' ' -f1".format(proc.pid)
-            p = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
-            for pid in [int(pid_str) for pid_str in p.stdout.decode('utf-8').replace('\n', ' ').strip().split(' ')]:
-                pids_to_kill.add(pid)
-
-        assert(os.getpid() not in pids_to_kill)
-        logger.error("Killing remaining processes (pids_to_kill={})".format(pids_to_kill))
-        kill_tasks = asyncio.gather(*[execute_command_inner("kill -9 {}".format(pid), None, None) for pid in pids_to_kill])
-        loop.run_until_complete(kill_tasks)
+        kill_processes_and_all_descendants(proc_set)
 
     return False
 
@@ -541,9 +543,7 @@ def execute_batsim_and_sched(batsim_command, sched_command,
         logger.error("Another exception caught!")
 
     if len(proc_set) > 0:
-        logger.error("Killing remaining processes")
-        kill_tasks = asyncio.gather(*[execute_command_inner('pkill -P {}'.format(p.pid), None, None) for p in proc_set])
-        loop.run_until_complete(kill_tasks)
+        kill_processes_and_all_descendants(proc_set)
 
     return False
 
