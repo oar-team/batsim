@@ -248,6 +248,18 @@ add_test(same_submit_time
          -bod /tmp/batsim_tests/same_submit_time
          -bwd ${CMAKE_SOURCE_DIR})
 
+add_test(no_redis
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_no_redis.yaml
+         -bod /tmp/batsim_tests/no_redis
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(dynamic_submit
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_dynamic_submit.yaml
+         -bod /tmp/batsim_tests/dynamic_submit
+         -bwd ${CMAKE_SOURCE_DIR})
+
 add_test(pybatsim_tests
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/pybatsim_tests.yaml
