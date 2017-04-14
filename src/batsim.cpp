@@ -816,16 +816,25 @@ void set_configuration(BatsimContext *context,
         mit_redis->value.AddMember("enabled", Value().SetBool(redis_enabled), alloc);
 
     // redis->hostname
-    if (mit_redis->value.FindMember("hostname") == mit_redis->value.MemberEnd())
+    Value::MemberIterator mit_redis_hostname = mit_redis->value.FindMember("hostname");
+    if (mit_redis_hostname == mit_redis->value.MemberEnd())
         mit_redis->value.AddMember("hostname", Value().SetString(redis_hostname.c_str(), alloc), alloc);
+    else
+        mit_redis_hostname->value.SetString(redis_hostname.c_str(), alloc);
 
     // redis->port
-    if (mit_redis->value.FindMember("port") == mit_redis->value.MemberEnd())
+    Value::MemberIterator mit_redis_port = mit_redis->value.FindMember("port");
+    if (mit_redis_port == mit_redis->value.MemberEnd())
         mit_redis->value.AddMember("port", Value().SetInt(redis_port), alloc);
+    else
+        mit_redis_port->value.SetInt(redis_port);
 
     // redis->prefix
-    if (mit_redis->value.FindMember("prefix") == mit_redis->value.MemberEnd())
+    Value::MemberIterator mit_redis_prefix = mit_redis->value.FindMember("prefix");
+    if (mit_redis_prefix == mit_redis->value.MemberEnd())
         mit_redis->value.AddMember("prefix", Value().SetString(redis_prefix.c_str(), alloc), alloc);
+    else
+        mit_redis_prefix->value.SetString(redis_prefix.c_str(), alloc);
 
 
     // job_submission

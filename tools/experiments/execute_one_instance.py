@@ -4,7 +4,7 @@ import argparse
 import asyncio.subprocess
 import async_timeout
 import subprocess
-from execo import logger, Process
+from execo import logger
 import math
 import os
 import random
@@ -14,8 +14,6 @@ import stat
 import sys
 import time
 import yaml
-
-global_loop = asyncio.get_event_loop()
 
 class ArgumentParserError(Exception):
     pass
@@ -175,14 +173,9 @@ def retrieve_info_from_instance(variables,
     f.close()
 
     # Let's execute the script
-    p = Process(cmd='bash {f}'.format(f=script_filename),
-                shell=True,
-                name="Preparation command",
-                kill_subprocesses=True,
-                cwd=working_directory)
-
-    p.start().wait()
-    assert(p.finished_ok and not p.error)
+    p = subprocess.run('bash {f}'.format(f=script_filename),
+                       shell=True, stdout=subprocess.PIPE)
+    assert(p.returncode == 0)
 
     # Let's get the working directory
     f = open(working_dir_filename, 'r')
@@ -358,7 +351,7 @@ def create_file_from_command(command,
 
 
 def display_process_output_on_error(process_name, stdout_file, stderr_file,
-                                    max_lines = 20):
+                                    max_lines = 42):
     if (stdout_file is None) and (stderr_file is None):
         logger.error("Cannot retrieve any log about the failed process")
         return
@@ -368,33 +361,33 @@ def display_process_output_on_error(process_name, stdout_file, stderr_file,
         if filename is not None:
             # Let's retrieve the file length (ugly.)
             cmd_wc = "wc -l {}".format(filename)
-            p = Process(cmd_wc, shell=True)
-            p.nolog_exit_code = True
-            p.run()
-            nb_lines = int(str(p.stdout).split(' ')[0])
+            p = subprocess.run(cmd_wc, shell=True, stdout=subprocess.PIPE)
+            assert(p.returncode == 0)
+            nb_lines = int(str(p.stdout.decode('utf-8')).split(' ')[0])
 
             if nb_lines > 0:
                 # Let's read the whole file if it is small
                 if nb_lines <= max_lines:
                     with open(filename, 'r') as f:
-                        logger.error('Failed process {}:\n{}'.format(fname,
+                        logger.error('{} {}:\n{}'.format(process_name, fname,
                                                                      f.read()))
                 # Let's read the first and last lines of the file
                 else:
                     cmd_head = "head -n {} {}".format(max_lines//2, filename)
                     cmd_tail = "tail -n {} {}".format(max_lines//2, filename)
 
-                    p_head = Process(cmd_head, shell=True)
-                    p_tail = Process(cmd_tail, shell=True)
+                    p_head = subprocess.run(cmd_head, shell=True,
+                                            stdout=subprocess.PIPE)
+                    p_tail = subprocess.run(cmd_tail, shell=True,
+                                            stdout=subprocess.PIPE)
 
-                    p_head.nolog_exit_code = True
-                    p_tail.nolog_exit_code = True
+                    assert(p_head.returncode == 0)
+                    assert(p_tail.returncode == 0)
 
-                    p_head.run()
-                    p_tail.run()
-
-                    logger.error('Failed process {}:\n{}\n...\n...\n... (truncated... whole log in {})\n...\n...\n{}'.format(
-                        fname, p_head.stdout, filename, p_tail.stdout))
+                    logger.error('{} {}:\n{}\n...\n...\n... (truncated... whole log in {})\n...\n...\n{}'.format(
+                        process_name,
+                        fname, str(p_head.stdout.decode('utf-8')), filename,
+                        str(p_tail.stdout.decode('utf-8'))))
 
 async def execute_command_inner(command, stdout_file=None, stderr_file=None,
                                 timeout=None, process_name=None,
@@ -434,19 +427,28 @@ async def await_with_timeout(future, timeout=None):
         await future
         return future
 
+def kill_processes_and_all_descendants(proc_set):
+    pids_to_kill = set()
+    for proc in proc_set:
+        cmd = "pstree {} -pal | cut -d',' -f2 | cut -d' ' -f1 | cut -d')' -f1".format(proc.pid)
+        p = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
+        for pid in [int(pid_str) for pid_str in p.stdout.decode('utf-8').replace('\n', ' ').strip().split(' ')]:
+            pids_to_kill.add(pid)
 
-async def kill_wait(proc):
-    proc.kill()
-    await proc
-    return proc
+    assert(os.getpid() not in pids_to_kill)
+    logger.error("Killing remaining processes {}".format(pids_to_kill))
+    cmd = "kill -9 {}".format(' '.join([str(pid) for pid in pids_to_kill]))
+    p = subprocess.run(cmd, shell=True)
 
 
 def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
                          timeout=None):
+    loop = asyncio.get_event_loop()
     proc_set = set()
     try:
         out_files={'Batsim': (batsim_stdout_file, batsim_stderr_file)}
-        proc, pname = global_loop.run_until_complete(execute_command_inner(
+        logger.info("Running Batsim")
+        proc, pname = loop.run_until_complete(execute_command_inner(
                                         batsim_command, batsim_stdout_file,
                                         batsim_stderr_file, timeout, "Batsim",
                                         proc_set))
@@ -467,9 +469,7 @@ def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
         logger.error("Another exception caught!")
 
     if len(proc_set) > 0:
-        logger.error("Killing remaining processes")
-        kill_tasks = asyncio.gather(*[execute_command_inner('pkill -P {}'.format(p.pid), None, None) for p in proc_set])
-        global_loop.run_until_complete(kill_tasks)
+        kill_processes_and_all_descendants(proc_set)
 
     return False
 
@@ -477,12 +477,13 @@ def execute_batsim_and_sched(batsim_command, sched_command,
                              batsim_stdout_file, batsim_stderr_file,
                              sched_stdout_file, sched_stderr_file,
                              timeout=None, wait_timeout_on_success=5):
+    loop = asyncio.get_event_loop()
     proc_set = set()
     try:
         out_files={'Batsim': (batsim_stdout_file, batsim_stderr_file),
                    'Sched': (sched_stdout_file, sched_stderr_file)}
         logger.info("Running Batsim and Sched")
-        done, pending = global_loop.run_until_complete(run_wait_any(
+        done, pending = loop.run_until_complete(run_wait_any(
                                 batsim_command, sched_command,
                                 batsim_stdout_file, batsim_stderr_file,
                                 sched_stdout_file, sched_stderr_file,
@@ -516,7 +517,7 @@ def execute_batsim_and_sched(batsim_command, sched_command,
                             wait_timeout_on_success))
 
             pending_future = next(iter(pending))
-            finished = global_loop.run_until_complete(await_with_timeout(
+            finished = loop.run_until_complete(await_with_timeout(
                                 pending_future, wait_timeout_on_success))
             finished_proc, finished_pname = finished.result()
             proc_set.remove(finished_proc)
@@ -543,34 +544,9 @@ def execute_batsim_and_sched(batsim_command, sched_command,
         logger.error("Another exception caught!")
 
     if len(proc_set) > 0:
-        logger.error("Killing remaining processes")
-        kill_tasks = asyncio.gather(*[execute_command_inner('pkill -P {}'.format(p.pid), None, None) for p in proc_set])
-        global_loop.run_until_complete(kill_tasks)
+        kill_processes_and_all_descendants(proc_set)
 
     return False
-
-
-def execute_command_synchronous(command, stdout_file=None, stderr_file=None,
-                                timeout=None, throw_on_error=False):
-    try:
-        proc,_ = global_loop.run_until_complete(execute_command_inner(command,
-                                        stdout_file, stderr_file, timeout))
-    except asyncio.TimeoutError:
-        logger.error("Command '{cmd}' reached timeout.".format(cmd=cmd))
-        if throw_on_error:
-            raise Exception("Command '{cmd}' reached timeout.".format(cmd=cmd))
-        return False
-    except:
-        logger.error('Unhandled exception caught.')
-        return False
-
-    if (proc.returncode is not None) and (proc.returncode >= 0):
-        return True
-    else:
-        logger.warning("Command '{cmd}' failed.".format(cmd=cmd))
-        if throw_on_error:
-            raise Exception("Command '{cmd}' failed.".format(cmd=cmd))
-        return False
 
 
 def execute_command(command,
@@ -607,8 +583,19 @@ def execute_command(command,
     stderr_file = open('{out}/{name}.stderr'.format(out = output_script_output_dir,
                                                     name = command_name), 'wb')
 
-    # Let's run the command (synchronously)
-    return execute_command_synchronous(cmd, stdout_file, stderr_file, timeout)
+    # Let's run the command
+    logger.info("Executing command '{}'".format(command_name))
+    p = subprocess.run(cmd, shell=True, stdout=stdout_file, stderr=stderr_file)
+
+    if p.returncode == 0:
+        logger.info("{} finished".format(command_name))
+        return True
+    else:
+        logger.error("Command '{name}' failed.\n--- begin of {name} ---\n"
+                     "{content}\n--- end of {name} ---".format(
+                        name=command_name, content=command))
+        display_process_output_on_error(command_name, stdout_file, stderr_file)
+        return False
 
 g_port_regex = re.compile('.*:(\d+)')
 
@@ -620,19 +607,18 @@ def socket_in_use(sock):
         port = int(m.group(1))
         cmd = "ss -ln | grep ':{port}'".format(port=port)
 
-        p = Process(cmd, shell=True)
-        p.nolog_exit_code = True
-        ss_output = (p.run().stdout)
-        return len(ss_output) > 0
+        p = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
+        return len(p.stdout.decode('utf-8')) > 0
 
     return False
 
 
 def wait_for_batsim_socket_to_be_usable(sock='tcp://localhost:28000',
-                                        timeout=60,
+                                        timeout=5,
                                         seconds_to_sleep=0.1):
+    logger.info("Waiting for socket '{}' to be usable".format(sock))
     if timeout is None:
-        timeout = 60
+        timeout = 5
     remaining_time = timeout
     while remaining_time > 0 and socket_in_use(sock):
         time.sleep(seconds_to_sleep)
@@ -694,11 +680,15 @@ def execute_one_instance(working_directory,
         sched_stderr_file = open(sched_stderr_filename, 'wb')
 
         # If batsim's socket is still opened, let's wait for it to close
+        socket_wait_timeout = 5
         socket_usable = wait_for_batsim_socket_to_be_usable(sock=batsim_socket,
-                                                        timeout=timeout)
-        assert(socket_usable)
-        logger.info("Socket {sock} is now usable".format(sock=batsim_socket))
+                                                    timeout=socket_wait_timeout)
+        if not socket_usable:
+            logger.error("Socket {} is still busy (after timeout={})".format(
+                            batsim_socket, socket_wait_timeout))
+            return False
 
+        logger.info("Socket {sock} is now usable".format(sock=batsim_socket))
         return execute_batsim_and_sched(batsim_command, sched_command,
                                         batsim_stdout_file, batsim_stderr_file,
                                         sched_stdout_file, sched_stderr_file,

@@ -37,7 +37,7 @@
 
 - install_test_dependencies:
   - exec_in: apt install -y -t testing python3-pip valgrind python3-pandas
-  - exec_in: pip3 install sortedcontainers redis
+  - exec_in: pip3 install sortedcontainers redis async_timeout
 
   - exec_in: |
       cd $${work_dir}

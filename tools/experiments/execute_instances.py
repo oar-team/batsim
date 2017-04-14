@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
+import asyncio.subprocess
+import async_timeout
+import collections
 import yaml
 import os
 import sys
@@ -10,6 +13,7 @@ from execo_engine import *
 from execute_one_instance import *
 import pandas as pd
 import signal
+import subprocess
 
 
 class hashabledict(dict):
@@ -41,7 +45,7 @@ def flatten_dict(init, lkey=''):
 def signal_handler(signal, frame):
     print('Interruption signal received!')
 
-    if len(instances_df) > 0:
+    if ('instances_df' in globals()) and (len(instances_df) > 0):
         print('Saving current status in {}'.format(instances_df_filename))
 
         done_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
@@ -65,6 +69,7 @@ def signal_handler(signal, frame):
 
 def instance_id_from_comb(comb, hash_length):
     fdict = flatten_dict(comb)
+    fdict = collections.OrderedDict(sorted(fdict.items()))
     return hashlib.sha1(str(fdict).encode()).hexdigest()[:hash_length]
 
 
@@ -99,14 +104,9 @@ def retrieve_dirs_from_instances(variables,
     f.close()
 
     # Let's execute the script
-    p = Process(cmd='bash {f}'.format(f=script_filename),
-                shell=True,
-                name="Preparation command",
-                kill_subprocesses=True,
-                cwd=working_directory)
-
-    p.start().wait()
-    assert(p.finished_ok and not p.error)
+    p = subprocess.run('bash {f}'.format(f=script_filename), shell=True,
+                       stdout=subprocess.PIPE)
+    assert(p.returncode == 0)
 
     # Let's get the working directory
     f = open(working_dir_filename, 'r')
@@ -233,6 +233,97 @@ def get_script_path():
     return os.path.dirname(os.path.realpath(sys.argv[0]))
 
 
+async def instance_runner(data, hostname, local_rank):
+    loop = asyncio.get_event_loop()
+    assert(hostname=='localhost'), 'unhandled atm'
+    while len(data.sweeper.get_remaining()) > 0:
+        comb = data.sweeper.get_next()
+        if comb == None:
+            break
+        compute_comb = True
+        if data.instances_subset_to_recompute is not None:
+            compute_comb = comb in data.instances_subset_to_recompute
+
+        if compute_comb:
+            (desc_filename, instance_id, combname, command) = prepare_instance(
+                comb=comb,
+                explicit_instances=data.explicit_instances,
+                implicit_instances=data.implicit_instances,
+                base_working_directory=data.base_working_directory,
+                base_output_directory=data.base_output_directory,
+                base_variables=data.base_variables,
+                post_commands_only=comb in data.instances_post_cmds_only,
+                generate_only=data.generate_only,
+                hash_length=data.hash_length)
+
+            logger.info('Worker ({host},{rank}) got {iid} ({comb})'.format(
+                            host=hostname, rank=local_rank,
+                            iid=instance_id, comb=comb))
+
+            # Preparing the launch
+            create_dir_if_not_exists('{base_output_dir}/instances/output/'.format(
+                base_output_dir=data.base_output_directory))
+            stdout_filename = '{out}/instances/output/{iid}.stdout'.format(
+                                          out=data.base_output_directory,
+                                          iid=instance_id)
+            stderr_filename = '{out}/instances/output/{iid}.stderr'.format(
+                                          out=data.base_output_directory,
+                                          iid=instance_id)
+
+            stdout_file = open(stdout_filename, 'wb')
+            stderr_file = open(stderr_filename, 'wb')
+
+            # Launch the instance
+            logger.info('Worker ({host},{rank}) runs {iid}'.format(
+                    host=hostname, rank=local_rank, iid=instance_id))
+            p,_ = await execute_command_inner(command, stdout_file, stderr_file)
+            if p.returncode == 0:
+                logger.info('Worker ({host},{rank}) finished {iid}'.format(
+                    host=hostname, rank=local_rank, iid=instance_id))
+                data.sweeper.done(comb)
+            else:
+                show_instance_details = True
+
+                if (p.returncode == 3):
+                    logger.error('Worker ({host},{rank}) finished {iid} '
+                                 '(returncode={code}). Instance is marked as '
+                                 'done because it failed in the post-commands '
+                                 'section.'.format(
+                                    host=hostname, rank=local_rank,
+                                    iid=instance_id, code=p.returncode))
+                    data.post_command_failed = True
+                    data.sweeper.done(comb)
+                elif (p.returncode == 4) and data.generate_only:
+                    logger.info('Worker ({host},{rank}) finished {iid} '
+                                '(returncode={code} expected, as not executing '
+                                'the instance has been asked.)'.format(
+                                    host=hostname, rank=local_rank,
+                                    iid=instance_id, code=p.returncode))
+                    data.sweeper.skip(comb)
+                    show_instance_details = False
+                else:
+                    logger.error('Worker ({host},{rank}) finished {iid} '
+                                 '(returncode={code}).'.format(
+                                    host=hostname, rank=local_rank,
+                                    iid=instance_id, code=p.returncode))
+                    data.sweeper.skip(comb)
+
+                if show_instance_details:
+                    logger.info('\n\n----- begin of instance {iid} log -----'.format(
+                                    iid=instance_id))
+                    display_process_output_on_error('Instance ' + instance_id,
+                                    stdout_file, stderr_file)
+                    logger.info('----- end of instance {iid} log -----\n\n'.format(
+                                    iid=instance_id))
+        else:
+            logger.info('Worker ({host},{rank}) skipped {iid}'.format(
+                    host=hostname, rank=local_rank, iid=instance_id))
+            data.sweeper.skip(comb)
+
+    logger.info('Worker ({host},{rank}) finished'.format(
+                    host=hostname, rank=local_rank))
+
+
 class WorkersSharedData:
 
     def __init__(self,
@@ -259,153 +350,6 @@ class WorkersSharedData:
         self.hash_length = hash_length
         self.post_command_failed = False
         self.instances_subset_to_recompute = instances_subset_to_recompute
-
-
-class WorkerLifeCycleHandler(ProcessLifecycleHandler):
-
-    def __init__(self,
-                 hostname,
-                 local_rank,
-                 data):
-        self.hostname = hostname
-        self.host = Host(address=hostname)
-        self.local_rank = local_rank
-        self.data = data
-        self.comb = None
-        self.comb_basename = None
-
-    def execute_next_instance(self):
-        assert(self.comb == None)
-
-        while len(self.data.sweeper.get_remaining()) > 0:
-            # Let's get the next instance to compute
-            self.comb = self.data.sweeper.get_next()
-
-            if self.comb == None:
-                logger.info('Worker ({hostname}, {local_rank}) finished'.format(
-                    hostname=self.hostname,
-                    local_rank=self.local_rank))
-                self.data.nb_workers_finished += 1
-                return
-            else:
-                compute_comb = True
-                if self.data.instances_subset_to_recompute is not None:
-                    compute_comb = self.comb in self.data.instances_subset_to_recompute
-
-                if compute_comb:
-                    logger.info('Worker ({hostname}, {local_rank}) got comb : {comb}'.format(
-                        hostname=self.hostname,
-                        local_rank=self.local_rank,
-                        comb=self.comb))
-
-                    (desc_filename, instance_id, combname, command) = prepare_instance(
-                        comb=self.comb,
-                        explicit_instances=self.data.explicit_instances,
-                        implicit_instances=self.data.implicit_instances,
-                        base_working_directory=self.data.base_working_directory,
-                        base_output_directory=self.data.base_output_directory,
-                        base_variables=self.data.base_variables,
-                        post_commands_only=self.comb in self.data.instances_post_cmds_only,
-                        generate_only=self.data.generate_only,
-                        hash_length=self.data.hash_length)
-                    self.combname = combname
-                    self.instance_id = instance_id
-                    self._launch_process(instance_command=command)
-                    return
-                else:
-                    logger.info('Worker ({hostname}, {local_rank}) skipped comb ${comb}'.format(
-                        hostname=self.hostname,
-                        local_rank=self.local_rank,
-                        comb=self.comb))
-                    self.data.sweeper.skip(self.comb)
-                    self.comb = None
-        else:
-            # If there is no more work to do, this worker stops
-            logger.info('Worker ({hostname}, {local_rank}) finished'.format(
-                hostname=self.hostname,
-                local_rank=self.local_rank))
-            self.data.nb_workers_finished += 1
-            return
-
-    def _launch_process(self,
-                        instance_command):
-        assert(self.comb is not None)
-        # Logging
-        logger.info('Worker ({hostname}, {local_rank}) launches command {cmd}'.format(
-                    hostname=self.hostname,
-                    local_rank=self.local_rank,
-                    cmd=instance_command))
-
-        create_dir_if_not_exists('{base_output_dir}/instances/output/'.format(
-            base_output_dir=self.data.base_output_directory))
-
-        # Launching the process
-        if self.hostname == 'localhost':
-            process = Process(cmd=instance_command,
-                              kill_subprocesses=True,
-                              cwd=self.data.base_working_directory,
-                              lifecycle_handlers=[self],
-                              stdout_handlers=['{out}/instances/output/{iid}.stdout'.format(
-                                  out=self.data.base_output_directory,
-                                  iid=self.instance_id)],
-                              stderr_handlers=['{out}/instances/output/{iid}.stderr'.format(
-                                  out=self.data.base_output_directory,
-                                  iid=self.instance_id)])
-            process.start()
-        else:
-            process = SshProcess(cmd=instance_command,
-                                 host=self.host,
-                                 kill_subprocesses=True,
-                                 cwd=self.data.base_working_directory,
-                                 lifecycle_handlers=[self],
-                                 stdout_handlers=['{out}/instances/output/{iid}.stdout'.format(
-                                     out=self.data.base_output_directory,
-                                     iid=self.instance_id)],
-                                 stderr_handlers=['{out}/instances/output/{iid}.stderr'.format(
-                                     out=self.data.base_output_directory,
-                                     iid=self.instance_id)])
-            process.start()
-
-    def end(self, process):
-        assert(self.comb is not None)
-
-        # Let's mark whether the computation was successful
-        if process.finished_ok:
-            self.data.sweeper.done(self.comb)
-            # Logging
-            logger.info('Worker ({hostname}, {local_rank}) finished comb {iid} '
-                        'successfully\n'.format(
-                            hostname=self.hostname,
-                            local_rank=self.local_rank,
-                            iid=self.instance_id))
-        else:
-            logger.warning('Worker ({hostname}, {local_rank}) finished comb '
-                           '{iid} unsuccessfully\n'.format(
-                               hostname=self.hostname,
-                               local_rank=self.local_rank,
-                               iid=self.instance_id))
-            # http://stackoverflow.com/questions/7616187/python-error-codes-are-upshifted
-            if (process.exit_code is not None) and ((process.exit_code >> 8) == 3):
-                logger.warning('However, the comb {iid} is marked as done, '
-                               'because it failed in the post-commands '
-                               'section.'.format(iid=self.instance_id))
-                self.data.post_command_failed = True
-                self.data.sweeper.done(self.comb)
-            elif (process.exit_code is not None) and \
-                ((process.exit_code >> 8) == 4) and \
-                    self.data.generate_only:
-                logger.warning('However, this is not a problem because not '
-                               'executing the instance has been asked.')
-                self.data.sweeper.skip(self.comb)
-            else:
-                self.data.sweeper.skip(self.comb)
-
-        # Let's clear current instance variables
-        self.comb = None
-        self.instance_id = None
-        self.combname = None
-
-        self.execute_next_instance()
 
 
 def prepare_instance(comb,
@@ -775,20 +719,16 @@ def execute_instances(base_working_directory,
         for hostname in host_list:
             if len(workers) >= nb_workers:
                 break
-            worker = WorkerLifeCycleHandler(hostname=hostname,
-                                            local_rank=local_rank,
-                                            data=worker_shared_data)
+            worker = (hostname, local_rank)
             workers.append(worker)
 
     assert(len(workers) == nb_workers)
 
-    # Let's start an instance on each worker
-    for worker in workers:
-        worker.execute_next_instance()
-
-    # Let's wait for the completion of all workers
-    while worker_shared_data.nb_workers_finished < nb_workers:
-        sleep(0.5)
+    # Let's run all the workers, and wait for them to finish
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(asyncio.gather(
+        *[instance_runner(worker_shared_data, host, rank)
+          for (host, rank) in workers]))
 
     # Let's compute which instances failed
     done_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
@@ -803,10 +743,10 @@ def execute_instances(base_working_directory,
 
     # Let's check that all instances have been executed successfully
     success = len(sweeper.get_skipped()) == 0
-    logger.info('{} instances have been executed successfully'.format(
+    logger.info('Number of successfully executed instances: {}'.format(
         len(sweeper.get_done())))
     if not success:
-        logger.warning('{} instances have been skipped'.format(
+        logger.warning('Number of skipped instances: {}'.format(
             len(sweeper.get_skipped())))
         logger.warning('Information about these instances can be found in file {}'.format(
             '{base_output_dir}/instances/instances_info.csv'.format(
