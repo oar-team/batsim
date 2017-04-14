@@ -196,6 +196,8 @@ Profile *Profile::from_json(const string & profile_name,
                             bool is_from_a_file,
                             const string & filename)
 {
+    (void) error_prefix; // Avoids a warning if assertions are ignored
+
     Profile * profile = new Profile;
 
     xbt_assert(json_desc.IsObject(), "%s: profile '%s' value must be an object",
@@ -344,6 +346,7 @@ Profile *Profile::from_json(const string & profile_name,
 
         xbt_assert(is_from_a_file, "Trying to create a SMPI profile from another source than "
                    "a file workload, which is not implemented at the moment.");
+        (void) is_from_a_file; // Avoids a warning if assertions are ignored
 
         filesystem::path base_dir(filename);
         base_dir = base_dir.parent_path();
