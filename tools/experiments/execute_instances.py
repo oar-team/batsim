@@ -3,6 +3,7 @@
 import argparse
 import asyncio.subprocess
 import async_timeout
+import collections
 import yaml
 import os
 import sys
@@ -68,6 +69,7 @@ def signal_handler(signal, frame):
 
 def instance_id_from_comb(comb, hash_length):
     fdict = flatten_dict(comb)
+    fdict = collections.OrderedDict(sorted(fdict.items()))
     return hashlib.sha1(str(fdict).encode()).hexdigest()[:hash_length]
 
 
