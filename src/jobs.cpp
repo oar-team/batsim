@@ -171,9 +171,10 @@ Job::~Job()
                this->id.c_str(), (int)execution_processes.size());
 }
 
+// Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
 Job * Job::from_json(const rapidjson::Value & json_desc,
                      Workload * workload,
-                     const string & error_prefix)
+                     const std::string & error_prefix)
 {
     Job * j = new Job;
     j->workload = workload;
@@ -295,9 +296,10 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
     return j;
 }
 
+// Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
 Job * Job::from_json(const std::string & json_str,
                      Workload * workload,
-                     const string & error_prefix)
+                     const std::string & error_prefix)
 {
     Document doc;
     doc.Parse(json_str.c_str());

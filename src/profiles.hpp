@@ -43,6 +43,7 @@ struct Profile
      * @param[in] profile_name The name of the profile
      * @param[in] json_desc The JSON description
      * @param[in] json_filename The JSON file name
+     * @param[in] is_from_a_file Whether the JSON job comes from a file
      * @param[in] error_prefix The prefix to display when an error occurs
      * @return The new-allocated Profile
      * @pre The JSON description is valid
@@ -51,7 +52,7 @@ struct Profile
                                const rapidjson::Value & json_desc,
                                const std::string & error_prefix = "Invalid JSON profile",
                                bool is_from_a_file = true,
-                               const std::string & filename = "unset");
+                               const std::string & json_filename = "unset");
 
     /**
      * @brief Creates a new-allocated Profile from a JSON description

@@ -190,11 +190,12 @@ Profile::~Profile()
         XBT_ERROR("Deletion of an unknown profile type (%d)", type);
 }
 
-Profile *Profile::from_json(const string & profile_name,
+// Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
+Profile *Profile::from_json(const std::string & profile_name,
                             const rapidjson::Value & json_desc,
-                            const string & error_prefix,
+                            const std::string & error_prefix,
                             bool is_from_a_file,
-                            const string & filename)
+                            const std::string & json_filename)
 {
     (void) error_prefix; // Avoids a warning if assertions are ignored
 
@@ -348,7 +349,7 @@ Profile *Profile::from_json(const string & profile_name,
                    "a file workload, which is not implemented at the moment.");
         (void) is_from_a_file; // Avoids a warning if assertions are ignored
 
-        filesystem::path base_dir(filename);
+        filesystem::path base_dir(json_filename);
         base_dir = base_dir.parent_path();
         XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
         xbt_assert(filesystem::exists(base_dir) && filesystem::is_directory(base_dir));
@@ -387,9 +388,10 @@ Profile *Profile::from_json(const string & profile_name,
     return profile;
 }
 
-Profile *Profile::from_json(const string & profile_name,
-                            const string & json_str,
-                            const string & error_prefix)
+// Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
+Profile *Profile::from_json(const std::string & profile_name,
+                            const std::string & json_str,
+                            const std::string & error_prefix)
 {
     Document doc;
     doc.Parse(json_str.c_str());
