@@ -298,7 +298,8 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
             "}";
 
     // Puts the job into memory
-    Job * job = Job::from_json(job_json_description, context->workloads.at(workload_name));
+    Job * job = Job::from_json(job_json_description, context->workloads.at(workload_name),
+                               "Invalid workflow-injected JSON job");
     context->workloads.at(workload_name)->jobs->add_job(job);
 
     if (context->redis_enabled)

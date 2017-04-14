@@ -38,26 +38,29 @@ Profiles::~Profiles()
 
 void Profiles::load_from_json(const Document &doc, const string & filename)
 {
-    xbt_assert(doc.IsObject(), "Invalid JSON file '%s': not a JSON object", filename.c_str());
-    xbt_assert(doc.HasMember("profiles"), "Invalid JSON file '%s': the 'profiles' object is missing", filename.c_str());
+    string error_prefix = "Invalid JSON file '" + filename + "'";
+
+    xbt_assert(doc.IsObject(), "%s: not a JSON object", error_prefix.c_str());
+    xbt_assert(doc.HasMember("profiles"), "%s: the 'profiles' object is missing",
+               error_prefix.c_str());
     const Value & profiles = doc["profiles"];
-    xbt_assert(profiles.IsObject(), "Invalid JSON file '%s': the 'profiles' member is not an object", filename.c_str());
+    xbt_assert(profiles.IsObject(), "%s: the 'profiles' member is not an object",
+               error_prefix.c_str());
 
     for (Value::ConstMemberIterator it = profiles.MemberBegin(); it != profiles.MemberEnd(); ++it)
     {
         const Value & key = it->name;
         const Value & value = it->value;
 
-        xbt_assert(key.IsString(),
-                   "Invalid JSON file '%s': all children of the 'profiles' object must have a string key",
-                   filename.c_str());
+        xbt_assert(key.IsString(), "%s: all children of the 'profiles' object must have a "
+                   "string key", error_prefix.c_str());
         string profile_name = key.GetString();
 
-        Profile * profile = Profile::from_json(profile_name, value, filename);
+        Profile * profile = Profile::from_json(profile_name, value, error_prefix,
+                                               true, filename);
 
-        xbt_assert(!exists(string(key.GetString())),
-                   "Invalid JSON file '%s': duplication of profile name '%s'",
-                   filename.c_str(), key.GetString());
+        xbt_assert(!exists(string(key.GetString())), "%s: duplication of profile name '%s'",
+                   error_prefix.c_str(), key.GetString());
         _profiles[string(key.GetString())] = profile;
     }
 }
@@ -187,14 +190,20 @@ Profile::~Profile()
         XBT_ERROR("Deletion of an unknown profile type (%d)", type);
 }
 
-Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Value &json_desc,
-                            const std::string & json_filename)
+Profile *Profile::from_json(const string & profile_name,
+                            const rapidjson::Value & json_desc,
+                            const string & error_prefix,
+                            bool is_from_a_file,
+                            const string & filename)
 {
     Profile * profile = new Profile;
 
-    xbt_assert(json_desc.IsObject(), "Invalid JSON: profile '%s' value must be an object", profile_name.c_str());
-    xbt_assert(json_desc.HasMember("type"), "Invalid JSON: profile '%s' has no 'type' field", profile_name.c_str());
-    xbt_assert(json_desc["type"].IsString(), "Invalid JSON: profile '%s' has a non-string 'type' field", profile_name.c_str());
+    xbt_assert(json_desc.IsObject(), "%s: profile '%s' value must be an object",
+               error_prefix.c_str(), profile_name.c_str());
+    xbt_assert(json_desc.HasMember("type"), "%s: profile '%s' has no 'type' field",
+               error_prefix.c_str(), profile_name.c_str());
+    xbt_assert(json_desc["type"].IsString(), "%s: profile '%s' has a non-string 'type' field",
+               error_prefix.c_str(), profile_name.c_str());
 
     string profile_type = json_desc["type"].GetString();
     if (profile_type == "delay")
@@ -202,12 +211,14 @@ Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Va
         profile->type = ProfileType::DELAY;
         DelayProfileData * data = new DelayProfileData;
 
-        xbt_assert(json_desc.HasMember("delay"), "Invalid JSON: profile '%s' has no 'delay' field", profile_name.c_str());
-        xbt_assert(json_desc["delay"].IsNumber(), "Invalid JSON: profile '%s' has a non-number 'delay' field", profile_name.c_str());
+        xbt_assert(json_desc.HasMember("delay"), "%s: profile '%s' has no 'delay' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["delay"].IsNumber(), "%s: profile '%s' has a non-number 'delay' field",
+                   error_prefix.c_str(), profile_name.c_str());
         data->delay = json_desc["delay"].GetDouble();
 
-        xbt_assert(data->delay > 0, "Invalid JSON: profile '%s' has a non-strictly-positive 'delay' field (%g)",
-                   profile_name.c_str(), data->delay);
+        xbt_assert(data->delay > 0, "%s: profile '%s' has a non-strictly-positive 'delay' field (%g)",
+                   error_prefix.c_str(), profile_name.c_str(), data->delay);
 
         profile->data = data;
     }
@@ -216,30 +227,44 @@ Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Va
         profile->type = ProfileType::MSG_PARALLEL;
         MsgParallelProfileData * data = new MsgParallelProfileData;
 
-        xbt_assert(json_desc.HasMember("cpu"), "Invalid JSON: profile '%s' has no 'cpu' field", profile_name.c_str());
+        xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
+                   error_prefix.c_str(), profile_name.c_str());
         const Value & cpu = json_desc["cpu"];
-        xbt_assert(cpu.IsArray(), "Invalid JSON: profile '%s' has a non-array 'cpu' field", profile_name.c_str());
+        xbt_assert(cpu.IsArray(), "%s: profile '%s' has a non-array 'cpu' field",
+                   error_prefix.c_str(), profile_name.c_str());
         data->nb_res = cpu.Size();
-        xbt_assert(data->nb_res > 0, "Invalid JSON: profile '%s' has an invalid-sized array 'cpu' (size=%d): must be strictly positive", profile_name.c_str(), (int)cpu.Size());
-        xbt_assert((int)cpu.Size() == data->nb_res, "Invalid JSON : profile '%s' is incoherent: cpu array has size %d whereas nb_res is %d", profile_name.c_str(), cpu.Size(), data->nb_res);
+        xbt_assert(data->nb_res > 0, "%s: profile '%s' has an invalid-sized array 'cpu' (size=%d): "
+                   "must be strictly positive",
+                   error_prefix.c_str(), profile_name.c_str(), (int) cpu.Size());
+        xbt_assert((int)cpu.Size() == data->nb_res, "%s: profile '%s' is incoherent: cpu array has "
+                   "size %d whereas nb_res is %d",
+                   error_prefix.c_str(), profile_name.c_str(), cpu.Size(), data->nb_res);
         data->cpu = new double[data->nb_res];
         for (unsigned int i = 0; i < cpu.Size(); ++i)
         {
-            xbt_assert(cpu[i].IsNumber(), "Invalid JSON: profile '%s' computation array is invalid: all elements must be numbers", profile_name.c_str());
+            xbt_assert(cpu[i].IsNumber(), "%s: profile '%s' computation array is invalid: all "
+                       "elements must be numbers", error_prefix.c_str(), profile_name.c_str());
             data->cpu[i] = cpu[i].GetDouble();
-            xbt_assert(data->cpu[i] >= 0, "Invalid JSON: profile '%s' computation array is invalid: all elements must be non-negative", profile_name.c_str());
+            xbt_assert(data->cpu[i] >= 0, "%s: profile '%s' computation array is invalid: all "
+                       "elements must be non-negative", error_prefix.c_str(), profile_name.c_str());
         }
 
-        xbt_assert(json_desc.HasMember("com"), "Invalid JSON: profile '%s' has no 'com' field", profile_name.c_str());
+        xbt_assert(json_desc.HasMember("com"), "%s: profile '%s' has no 'com' field",
+                   error_prefix.c_str(), profile_name.c_str());
         const Value & com = json_desc["com"];
-        xbt_assert(com.IsArray(), "Invalid JSON: profile '%s' has a non-array 'com' field", profile_name.c_str());
-        xbt_assert((int)com.Size() == data->nb_res * data->nb_res, "Invalid JSON : profile '%s' is incoherent: com array has size %d whereas nb_res is %d", profile_name.c_str(), com.Size(), data->nb_res);
+        xbt_assert(com.IsArray(), "%s: profile '%s' has a non-array 'com' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert((int)com.Size() == data->nb_res * data->nb_res, "%s: profile '%s' is incoherent:"
+                   "com array has size %d whereas nb_res is %d",
+                   error_prefix.c_str(), profile_name.c_str(), com.Size(), data->nb_res);
         data->com = new double[data->nb_res * data->nb_res];
         for (unsigned int i = 0; i < com.Size(); ++i)
         {
-            xbt_assert(com[i].IsNumber(), "Invalid JSON: profile '%s' communication array is invalid: all elements must be numbers", profile_name.c_str());
+            xbt_assert(com[i].IsNumber(), "%s: profile '%s' communication array is invalid: all "
+                       "elements must be numbers", error_prefix.c_str(), profile_name.c_str());
             data->com[i] = com[i].GetDouble();
-            xbt_assert(data->com[i] >= 0, "Invalid JSON: profile '%s' communication array is invalid: all elements must be non-negative", profile_name.c_str());
+            xbt_assert(data->com[i] >= 0, "%s: profile '%s' communication array is invalid: all "
+                       "elements must be non-negative", error_prefix.c_str(), profile_name.c_str());
         }
 
         profile->data = data;
@@ -249,15 +274,21 @@ Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Va
         profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS;
         MsgParallelHomogeneousProfileData * data = new MsgParallelHomogeneousProfileData;
 
-        xbt_assert(json_desc.HasMember("cpu"), "Invalid JSON: profile '%s' has no 'cpu' field", profile_name.c_str());
-        xbt_assert(json_desc["cpu"].IsNumber(), "Invalid JSON: profile '%s' has a non-number 'cpu' field", profile_name.c_str());
+        xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["cpu"].IsNumber(), "%s: profile '%s' has a non-number 'cpu' field",
+                   error_prefix.c_str(), profile_name.c_str());
         data->cpu = json_desc["cpu"].GetDouble();
-        xbt_assert(data->cpu >= 0, "Invalid JSON: profile '%s' has a non-positive 'cpu' field (%g)", profile_name.c_str(), data->cpu);
+        xbt_assert(data->cpu >= 0, "%s: profile '%s' has a non-positive 'cpu' field (%g)",
+                   error_prefix.c_str(), profile_name.c_str(), data->cpu);
 
-        xbt_assert(json_desc.HasMember("com"), "Invalid JSON: profile '%s' has no 'com' field", profile_name.c_str());
-        xbt_assert(json_desc["com"].IsNumber(), "Invalid JSON: profile '%s' has a non-number 'com' field", profile_name.c_str());
+        xbt_assert(json_desc.HasMember("com"), "%s: profile '%s' has no 'com' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["com"].IsNumber(), "%s: profile '%s' has a non-number 'com' field",
+                   error_prefix.c_str(), profile_name.c_str());
         data->com = json_desc["com"].GetDouble();
-        xbt_assert(data->com >= 0, "Invalid JSON: profile '%s' has a non-positive 'com' field (%g)", profile_name.c_str(), data->com);
+        xbt_assert(data->com >= 0, "%s: profile '%s' has a non-positive 'com' field (%g)",
+                   error_prefix.c_str(), profile_name.c_str(), data->com);
 
         profile->data = data;
     }
@@ -266,15 +297,21 @@ Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Va
         profile->type = ProfileType::SEQUENCE;
         SequenceProfileData * data = new SequenceProfileData;
 
-        xbt_assert(json_desc.HasMember("nb"), "Invalid JSON: profile '%s' has no 'nb' field", profile_name.c_str());
-        xbt_assert(json_desc["nb"].IsInt(), "Invalid JSON: profile '%s' has a non-integral 'nb' field", profile_name.c_str());
+        xbt_assert(json_desc.HasMember("nb"), "%s: profile '%s' has no 'nb' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["nb"].IsInt(), "%s: profile '%s' has a non-integral 'nb' field",
+                   error_prefix.c_str(), profile_name.c_str());
         data->repeat = json_desc["nb"].GetInt();
-        xbt_assert(data->repeat > 0, "Invalid JSON: profile '%s' has a non-strictly-positive 'nb' field (%d)", profile_name.c_str(), data->repeat);
+        xbt_assert(data->repeat > 0, "%s: profile '%s' has a non-strictly-positive 'nb' field (%d)",
+                   error_prefix.c_str(), profile_name.c_str(), data->repeat);
 
-        xbt_assert(json_desc.HasMember("seq"), "Invalid JSON: profile '%s' has no 'seq' field", profile_name.c_str());
-        xbt_assert(json_desc["seq"].IsArray(), "Invalid JSON: profile '%s' has a non-array 'seq' field", profile_name.c_str());
+        xbt_assert(json_desc.HasMember("seq"), "%s: profile '%s' has no 'seq' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["seq"].IsArray(), "%s: profile '%s' has a non-array 'seq' field",
+                   error_prefix.c_str(), profile_name.c_str());
         const Value & seq = json_desc["seq"];
-        xbt_assert(seq.Size() > 0, "Invalid JSON: profile '%s' has an invalid array 'seq': its size must be strictly positive", profile_name.c_str());
+        xbt_assert(seq.Size() > 0, "%s: profile '%s' has an invalid array 'seq': its size must be "
+                   "strictly positive", error_prefix.c_str(), profile_name.c_str());
         for (unsigned int i = 0; i < seq.Size(); ++i)
 
             profile->data = data;
@@ -284,10 +321,13 @@ Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Va
         profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS0;
         MsgParallelHomogeneousPFS0ProfileData * data = new MsgParallelHomogeneousPFS0ProfileData;
 
-        xbt_assert(json_desc.HasMember("size"), "Invalid JSON: profile '%s' has no 'size' field", profile_name.c_str());
-        xbt_assert(json_desc["size"].IsNumber(), "Invalid JSON: profile '%s' has a non-number 'size' field", profile_name.c_str());
+        xbt_assert(json_desc.HasMember("size"), "%s: profile '%s' has no 'size' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["size"].IsNumber(), "%s: profile '%s' has a non-number 'size' field",
+                   error_prefix.c_str(), profile_name.c_str());
         data->size = json_desc["size"].GetDouble();
-        xbt_assert(data->size >= 0, "Invalid JSON: profile '%s' has a non-positive 'size' field (%g)", profile_name.c_str(), data->size);
+        xbt_assert(data->size >= 0, "%s: profile '%s' has a non-positive 'size' field (%g)",
+                   error_prefix.c_str(), profile_name.c_str(), data->size);
 
         profile->data = data;
     }
@@ -296,17 +336,16 @@ Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Va
         profile->type = ProfileType::SMPI;
         SmpiProfileData * data = new SmpiProfileData;
 
-        xbt_assert(json_desc.HasMember("trace"), "Invalid JSON: profile '%s' has no 'trace' field",
-                   profile_name.c_str());
-        xbt_assert(json_desc["trace"].IsString(),
-                   "Invalid JSON: profile '%s' has a non-string 'trace' field",
-                   profile_name.c_str());
+        xbt_assert(json_desc.HasMember("trace"), "%s: profile '%s' has no 'trace' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["trace"].IsString(), "%s: profile '%s' has a non-string 'trace' field",
+                   error_prefix.c_str(), profile_name.c_str());
         const string trace_filename = json_desc["trace"].GetString();
 
-        xbt_assert(json_filename != "not_a_real_file",
-                   "Trying to create a SMPI profile from another source than a file workload, which is not implemented at the moment.");
+        xbt_assert(is_from_a_file, "Trying to create a SMPI profile from another source than "
+                   "a file workload, which is not implemented at the moment.");
 
-        filesystem::path base_dir(json_filename);
+        filesystem::path base_dir(filename);
         base_dir = base_dir.parent_path();
         XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
         xbt_assert(filesystem::exists(base_dir) && filesystem::is_directory(base_dir));
@@ -345,11 +384,14 @@ Profile *Profile::from_json(const std::string &profile_name, const rapidjson::Va
     return profile;
 }
 
-Profile *Profile::from_json(const std::string & profile_name, const std::string & json_str)
+Profile *Profile::from_json(const string & profile_name,
+                            const string & json_str,
+                            const string & error_prefix)
 {
     Document doc;
     doc.Parse(json_str.c_str());
-    xbt_assert(!doc.HasParseError());
+    xbt_assert(!doc.HasParseError(), "%s: Cannot be parsed. Content (between '##'):\n#%s#",
+               error_prefix.c_str(), json_str.c_str());
 
-    return Profile::from_json(profile_name, doc, "not_a_real_file");
+    return Profile::from_json(profile_name, doc, error_prefix, false);
 }

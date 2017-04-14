@@ -43,22 +43,27 @@ struct Profile
      * @param[in] profile_name The name of the profile
      * @param[in] json_desc The JSON description
      * @param[in] json_filename The JSON file name
+     * @param[in] error_prefix The prefix to display when an error occurs
      * @return The new-allocated Profile
      * @pre The JSON description is valid
      */
     static Profile * from_json(const std::string & profile_name,
                                const rapidjson::Value & json_desc,
-                               const std::string &json_filename);
+                               const std::string & error_prefix = "Invalid JSON profile",
+                               bool is_from_a_file = true,
+                               const std::string & filename = "unset");
 
     /**
      * @brief Creates a new-allocated Profile from a JSON description
      * @param[in] profile_name The name of the profile
      * @param[in] json_str The JSON description (as a string)
+     * @param[in] error_prefix The prefix to display when an error occurs
      * @return The new-allocated Profile
      * @pre The JSON description is valid
      */
     static Profile * from_json(const std::string & profile_name,
-                               const std::string & json_str);
+                               const std::string & json_str,
+                               const std::string & error_prefix = "Invalid JSON profile");
 };
 
 /**

@@ -53,19 +53,21 @@ void Jobs::setWorkload(Workload *workload)
 
 void Jobs::load_from_json(const Document &doc, const string &filename)
 {
-    (void) filename; // Avoids a warning if assertions are ignored
-    xbt_assert(doc.IsObject(), "Invalid JSON file '%s': not a JSON object", filename.c_str());
-    xbt_assert(doc.HasMember("jobs"), "Invalid JSON file '%s': the 'jobs' array is missing", filename.c_str());
+    string error_prefix = "Invalid JSON file '" + filename + "'";
+
+    xbt_assert(doc.IsObject(), "%s: not a JSON object", error_prefix.c_str());
+    xbt_assert(doc.HasMember("jobs"), "%s: the 'jobs' array is missing", error_prefix.c_str());
     const Value & jobs = doc["jobs"];
-    xbt_assert(jobs.IsArray(), "Invalid JSON file '%s': the 'jobs' member is not an array", filename.c_str());
+    xbt_assert(jobs.IsArray(), "%s: the 'jobs' member is not an array", error_prefix.c_str());
 
     for (SizeType i = 0; i < jobs.Size(); i++) // Uses SizeType instead of size_t
     {
         const Value & job_json_description = jobs[i];
 
-        Job * j = Job::from_json(job_json_description, _workload);
+        Job * j = Job::from_json(job_json_description, _workload, error_prefix);
 
-        xbt_assert(!exists(j->number), "Invalid JSON file '%s': duplication of job id %d", filename.c_str(), j->number);
+        xbt_assert(!exists(j->number), "%s: duplication of job id %d",
+                   error_prefix.c_str(), j->number);
         _jobs[j->number] = j;
     }
 }
@@ -169,7 +171,9 @@ Job::~Job()
                this->id.c_str(), (int)execution_processes.size());
 }
 
-Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
+Job * Job::from_json(const rapidjson::Value & json_desc,
+                     Workload * workload,
+                     const string & error_prefix)
 {
     Job * j = new Job;
     j->workload = workload;
@@ -179,10 +183,9 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
     j->consumed_energy = -1;
     string workload_name;
 
-    xbt_assert(json_desc.IsObject(), "Invalid JSON: one job is not an object");
+    xbt_assert(json_desc.IsObject(), "%s: one job is not an object", error_prefix.c_str());
 
-    xbt_assert(json_desc.HasMember("id"), "Invalid JSON: one job has no 'id' field");
-
+    xbt_assert(json_desc.HasMember("id"), "%s: one job has no 'id' field", error_prefix.c_str());
     if (json_desc["id"].IsInt())
     {
         j->number = json_desc["id"].GetInt();
@@ -195,37 +198,47 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
         vector<string> job_identifier_parts;
         boost::split(job_identifier_parts, job_id_str, boost::is_any_of("!"), boost::token_compress_on);
         xbt_assert(job_identifier_parts.size() == 2,
-                   "Invalid string job identifier '%s': should be formatted as two '!'-separated "
+                   "%s: Invalid string job identifier '%s': should be formatted as two '!'-separated "
                    "parts, the second one being an integral number. Example: 'some_text!42'.",
-                   job_id_str.c_str());
+                   error_prefix.c_str(), job_id_str.c_str());
 
         workload_name = job_identifier_parts[0];
-        XBT_INFO("========  %s : %s", workload->name.c_str(), workload_name.c_str());
+        XBT_DEBUG("========  %s : %s", workload->name.c_str(), workload_name.c_str());
         j->number = std::stoi(job_identifier_parts[1]);
     }
     else
     {
-        XBT_ERROR("Invalid JSON: job %d id is neither a string nor an integer", j->number);
+        XBT_ERROR("%s: job %d id is neither a string nor an integer",
+                  error_prefix.c_str(), j->number);
         xbt_abort();
     }
 
-    xbt_assert(json_desc.HasMember("subtime"), "Invalid JSON: job %d has no 'subtime' field", j->number);
-    xbt_assert(json_desc["subtime"].IsNumber(), "Invalid JSON: job %d has a non-number 'subtime' field", j->number);
+    xbt_assert(json_desc.HasMember("subtime"), "%s: job %d has no 'subtime' field",
+               error_prefix.c_str(), j->number);
+    xbt_assert(json_desc["subtime"].IsNumber(), "%s: job %d has a non-number 'subtime' field",
+               error_prefix.c_str(), j->number);
     j->submission_time = json_desc["subtime"].GetDouble();
 
-    xbt_assert(json_desc.HasMember("walltime"), "Invalid JSON: job %d has no 'walltime' field", j->number);
-    xbt_assert(json_desc["walltime"].IsNumber(), "Invalid JSON: job %d has a non-number 'walltime' field", j->number);
+    xbt_assert(json_desc.HasMember("walltime"), "%s: job %d has no 'walltime' field",
+               error_prefix.c_str(), j->number);
+    xbt_assert(json_desc["walltime"].IsNumber(), "%s: job %d has a non-number 'walltime' field",
+               error_prefix.c_str(), j->number);
     j->walltime = json_desc["walltime"].GetDouble();
 
-    xbt_assert(json_desc.HasMember("res"), "Invalid JSON: job %d has no 'res' field", j->number);
-    xbt_assert(json_desc["res"].IsInt(), "Invalid JSON: job %d has a non-number 'res' field", j->number);
+    xbt_assert(json_desc.HasMember("res"), "%s: job %d has no 'res' field",
+               error_prefix.c_str(), j->number);
+    xbt_assert(json_desc["res"].IsInt(), "%s: job %d has a non-number 'res' field",
+               error_prefix.c_str(), j->number);
     j->required_nb_res = json_desc["res"].GetInt();
 
-    xbt_assert(json_desc.HasMember("profile"), "Invalid JSON: job %d has no 'profile' field", j->number);
-    xbt_assert(json_desc["profile"].IsString(), "Invalid JSON: job %d has a non-string 'profile' field", j->number);
+    xbt_assert(json_desc.HasMember("profile"), "%s: job %d has no 'profile' field",
+               error_prefix.c_str(), j->number);
+    xbt_assert(json_desc["profile"].IsString(), "%s: job %d has a non-string 'profile' field",
+               error_prefix.c_str(), j->number);
     j->profile = json_desc["profile"].GetString();
 
-    // Let's get the JSON string which originally described the job (to conserve potential fields unused by Batsim)
+    // Let's get the JSON string which originally described the job
+    // (to conserve potential fields unused by Batsim)
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     json_desc.Accept(writer);
@@ -255,8 +268,8 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
     if (json_desc.HasMember("smpi_ranks_to_hosts_mapping"))
     {
         xbt_assert(json_desc["smpi_ranks_to_hosts_mapping"].IsArray(),
-                "Invalid JSON: job %d has a non-array 'smpi_ranks_to_hosts_mapping' field",
-                j->number);
+                "%s: job %d has a non-array 'smpi_ranks_to_hosts_mapping' field",
+                error_prefix.c_str(), j->number);
 
         const auto & mapping_array = json_desc["smpi_ranks_to_hosts_mapping"];
         j->smpi_ranks_to_hosts_mapping.resize(mapping_array.Size());
@@ -264,28 +277,33 @@ Job * Job::from_json(const rapidjson::Value & json_desc, Workload * workload)
         for (unsigned int i = 0; i < mapping_array.Size(); ++i)
         {
             xbt_assert(mapping_array[i].IsInt(),
-                       "Invalid JSON: job %d has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
-                       "%d does not point to an integral number", j->number, i);
+                       "%s: job %d has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
+                       "%d does not point to an integral number",
+                       error_prefix.c_str(), j->number, i);
             int host_number = mapping_array[i].GetInt();
             xbt_assert(host_number >= 0 && host_number < j->required_nb_res,
-                       "Invalid JSON: job %d has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
-                       "%d has an invalid value %d : should be in [0,%d[", j->number, i,
-                       host_number, j->required_nb_res);
+                       "%s: job %d has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
+                       "%d has an invalid value %d : should be in [0,%d[",
+                       error_prefix.c_str(), j->number, i, host_number, j->required_nb_res);
 
             j->smpi_ranks_to_hosts_mapping[i] = host_number;
         }
     }
 
-    XBT_DEBUG("Loaded job %d from workload %s", (int) j->number, j->workload->name.c_str() );
+    XBT_DEBUG("Loaded job %d from workload %s", (int) j->number, j->workload->name.c_str());
 
     return j;
 }
 
-Job * Job::from_json(const std::string & json_str, Workload *workload)
+Job * Job::from_json(const std::string & json_str,
+                     Workload * workload,
+                     const string & error_prefix)
 {
     Document doc;
     doc.Parse(json_str.c_str());
-    xbt_assert(!doc.HasParseError());
+    xbt_assert(!doc.HasParseError(),
+               "%s: Cannot be parsed. Content (between '##'):\n#%s#",
+               error_prefix.c_str(), json_str.c_str());
 
-    return Job::from_json(doc, workload);
+    return Job::from_json(doc, workload, error_prefix);
 }

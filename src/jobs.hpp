@@ -63,21 +63,25 @@ struct Job
      * @brief Creates a new-allocated Job from a JSON description
      * @param[in] json_desc The JSON description of the job
      * @param[in] workload The Workload the job is in
+     * @param[in] error_prefix The prefix to display when an error occurs
      * @return The newly allocated Job
      * @pre The JSON description of the job is valid
      */
     static Job * from_json(const rapidjson::Value & json_desc,
-                           Workload * workload);
+                           Workload * workload,
+                           const std::string & error_prefix = "Invalid JSON job");
 
     /**
      * @brief Creates a new-allocated Job from a JSON description
      * @param[in] json_str The JSON description of the job (as a string)
      * @param[in] workload The Workload the job is in
+     * @param[in] error_prefix The prefix to display when an error occurs
      * @return The newly allocated Job
      * @pre The JSON description of the job is valid
      */
     static Job * from_json(const std::string & json_str,
-                           Workload * workload);
+                           Workload * workload,
+                           const std::string & error_prefix = "Invalid JSON job");
 };
 
 /**
