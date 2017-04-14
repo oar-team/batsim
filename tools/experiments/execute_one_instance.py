@@ -430,7 +430,7 @@ async def await_with_timeout(future, timeout=None):
 def kill_processes_and_all_descendants(proc_set):
     pids_to_kill = set()
     for proc in proc_set:
-        cmd = "pstree {} -p -a -l | cut -d',' -f2 | cut -d' ' -f1".format(proc.pid)
+        cmd = "pstree {} -pal | cut -d',' -f2 | cut -d' ' -f1 | cut -d')' -f1".format(proc.pid)
         p = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
         for pid in [int(pid_str) for pid_str in p.stdout.decode('utf-8').replace('\n', ' ').strip().split(' ')]:
             pids_to_kill.add(pid)
