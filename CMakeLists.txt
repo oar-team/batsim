@@ -260,6 +260,12 @@ add_test(dynamic_submit
          -bod /tmp/batsim_tests/dynamic_submit
          -bwd ${CMAKE_SOURCE_DIR})
 
+add_test(kill
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_kill.yaml
+         -bod /tmp/batsim_tests/kill
+         -bwd ${CMAKE_SOURCE_DIR})
+
 add_test(pybatsim_tests
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/pybatsim_tests.yaml
