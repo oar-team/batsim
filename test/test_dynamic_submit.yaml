@@ -41,6 +41,38 @@ implicit_instances:
               }
               EOF
 
+      commands_after_execution:
+        # There should be 10 'dynamic' jobs
+        - |
+            #!/usr/bin/env bash
+            source ${output_directory}/variables.bash
+
+            cat > ${output_directory}/jobs_analysis.py <<EOF
+            #!/usr/bin/env python3
+            from __future__ import print_function
+            import json
+            import pandas as pd
+            import sys
+
+            # Let's get when jobs have been released
+            jobs = pd.read_csv('${output_directory}/out_jobs.csv')
+
+            nb_expected_dynamic_jobs = 10
+            dynamic_jobs = jobs.loc[jobs['workload_name'] == 'dynamic']
+
+            if len(dynamic_jobs) == nb_expected_dynamic_jobs:
+                print("There are {} dynamic jobs (as expected)".format(
+                    nb_expected_dynamic_jobs))
+                sys.exit(0)
+            else:
+                print("Expecting {} dynamic jobs but {} have been found".format(
+                    nb_expected_dynamic_jobs, len(dynamic_jobs)))
+                print(dynamic_jobs)
+                sys.exit(1)
+            EOF
+        - chmod +x ${output_directory}/jobs_analysis.py
+        - ${output_directory}/jobs_analysis.py
+
 commands_before_instances:
   - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
   - ${batsim_dir}/test/clean_output_dir.py ${base_output_directory}
