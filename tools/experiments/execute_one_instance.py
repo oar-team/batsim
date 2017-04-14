@@ -436,10 +436,9 @@ def kill_processes_and_all_descendants(proc_set):
             pids_to_kill.add(pid)
 
     assert(os.getpid() not in pids_to_kill)
-    logger.error("Killing remaining processes (pids_to_kill={})".format(pids_to_kill))
-    kill_tasks = asyncio.gather(*[execute_command_inner("kill -9 {}".format(pid), None, None) for pid in pids_to_kill])
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(kill_tasks)
+    logger.error("Killing remaining processes {}".format(pids_to_kill))
+    cmd = "kill -9 {}".format(' '.join([str(pid) for pid in pids_to_kill]))
+    p = subprocess.run(cmd, shell=True)
 
 
 def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
