@@ -245,7 +245,7 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
     json_desc.Accept(writer);
 
     // Let's replace the job ID by its WLOAD!NUMBER counterpart
-    string json_description_tmp = buffer.GetString();
+    string json_description_tmp(buffer.GetString(), buffer.GetSize());
     boost::regex r("\"id\"\\s*:\\s*(?:\".+\"|\\d+)\\s*");
     string replacement_str = "\"id\":\"" + workload_name + "!" + std::to_string(j->number) + "\"";
     j->json_description = boost::regex_replace(json_description_tmp, r, replacement_str);

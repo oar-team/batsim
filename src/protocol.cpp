@@ -352,7 +352,7 @@ string JsonProtocolWriter::generate_current_message(double date)
     _doc.Accept(writer);
 
     // Returning the buffer as a string
-    return string(buffer.GetString());
+    return string(buffer.GetString(), buffer.GetSize());
 }
 
 
@@ -775,10 +775,9 @@ void JsonProtocolReader::handle_submit_job(int event_number,
 
         StringBuffer buffer;
         ::Writer<rapidjson::StringBuffer> writer(buffer);
-
         job_object.Accept(writer);
 
-        message->job_description = string(buffer.GetString());
+        message->job_description = string(buffer.GetString(), buffer.GetSize());
     }
     else
         xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['job'] is unset but redis seems enabled...", event_number);
@@ -792,10 +791,9 @@ void JsonProtocolReader::handle_submit_job(int event_number,
 
         StringBuffer buffer;
         ::Writer<rapidjson::StringBuffer> writer(buffer);
-
         profile_object.Accept(writer);
 
-        message->job_profile = string(buffer.GetString());
+        message->job_profile_description = string(buffer.GetString(), buffer.GetSize());
     }
     else
         xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['profile'] is unset but redis seems enabled...", event_number);

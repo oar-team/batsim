@@ -383,7 +383,7 @@ Profile *Profile::from_json(const std::string & profile_name,
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     json_desc.Accept(writer);
-    profile->json_description = buffer.GetString();
+    profile->json_description = string(buffer.GetString(), buffer.GetSize());
 
     return profile;
 }
