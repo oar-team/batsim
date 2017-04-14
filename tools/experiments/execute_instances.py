@@ -309,7 +309,7 @@ async def instance_runner(data, hostname, local_rank):
                 if show_instance_details:
                     logger.info('\n\n----- begin of instance {iid} log -----'.format(
                                     iid=instance_id))
-                    display_process_output_on_error(instance_id,
+                    display_process_output_on_error('Instance ' + instance_id,
                                     stdout_file, stderr_file)
                     logger.info('----- end of instance {iid} log -----\n\n'.format(
                                     iid=instance_id))

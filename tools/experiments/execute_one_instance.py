@@ -369,7 +369,7 @@ def display_process_output_on_error(process_name, stdout_file, stderr_file,
                 # Let's read the whole file if it is small
                 if nb_lines <= max_lines:
                     with open(filename, 'r') as f:
-                        logger.error('Failed process {}:\n{}'.format(fname,
+                        logger.error('{} {}:\n{}'.format(process_name, fname,
                                                                      f.read()))
                 # Let's read the first and last lines of the file
                 else:
@@ -384,7 +384,8 @@ def display_process_output_on_error(process_name, stdout_file, stderr_file,
                     assert(p_head.returncode == 0)
                     assert(p_tail.returncode == 0)
 
-                    logger.error('Failed process {}:\n{}\n...\n...\n... (truncated... whole log in {})\n...\n...\n{}'.format(
+                    logger.error('{} {}:\n{}\n...\n...\n... (truncated... whole log in {})\n...\n...\n{}'.format(
+                        process_name,
                         fname, str(p_head.stdout.decode('utf-8')), filename,
                         str(p_tail.stdout.decode('utf-8'))))
 
