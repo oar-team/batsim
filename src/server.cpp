@@ -250,18 +250,23 @@ int server_process(int argc, char *argv[])
 
             // Let's parse the user-submitted job
             XBT_INFO("Parsing user-submitted job %s", message->job_id.to_string().c_str());
-            Job * job = Job::from_json(message->job_description, workload);
+            Job * job = Job::from_json(message->job_description, workload,
+                                       "Invalid JSON job submitted by the scheduler");
             workload->jobs->add_job(job);
             job->id = JobIdentifier(workload->name, job->number).to_string();
 
             // Let's parse the profile if needed
             if (!workload->profiles->exists(job->profile))
             {
-                XBT_INFO("The profile of user-submitted job '%s' does not exist. Parsing the user-submitted profile '%s'",
-                         job->profile.c_str(), message->job_id.to_string().c_str());
-                Profile * profile = Profile::from_json(job->profile, message->job_profile);
+                XBT_INFO("The profile of user-submitted job '%s' does not exist yet.",
+                         job->profile.c_str());
+
+                Profile * profile = Profile::from_json(job->profile,
+                                                       message->job_profile_description,
+                                                       "Invalid JSON profile received from the scheduler");
                 workload->profiles->add_profile(job->profile, profile);
             }
+            // TODO? check profile collisions otherwise
 
             // Let's set the job state
             job->state = JobState::JOB_STATE_SUBMITTED;

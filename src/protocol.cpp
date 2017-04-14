@@ -768,10 +768,10 @@ void JsonProtocolReader::handle_submit_job(int event_number,
 
     if (data_object.HasMember("job"))
     {
+        xbt_assert(!context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): 'job' object is given but redis seems disabled...", event_number);
+
         const Value & job_object = data_object["job"];
         xbt_assert(job_object.IsObject(), "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['job'] should be an object", event_number);
-
-        xbt_assert(!context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): 'job' object is given but redis seems disabled...", event_number);
 
         StringBuffer buffer;
         ::Writer<rapidjson::StringBuffer> writer(buffer);
@@ -784,10 +784,10 @@ void JsonProtocolReader::handle_submit_job(int event_number,
 
     if (data_object.HasMember("profile"))
     {
+        xbt_assert(!context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): 'profile' object is given but redis seems disabled...", event_number);
+
         const Value & profile_object = data_object["profile"];
         xbt_assert(profile_object.IsObject(), "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['profile'] should be an object", event_number);
-
-        xbt_assert(!context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): 'profile' object is given but redis seems disabled...", event_number);
 
         StringBuffer buffer;
         ::Writer<rapidjson::StringBuffer> writer(buffer);
