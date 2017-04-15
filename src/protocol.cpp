@@ -784,6 +784,28 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     if (!identify_job_from_string(context, job_id, message->job_id, false))
         xbt_assert(false, "Invalid JSON message: in event %d (SUBMIT_JOB): job_id '%s' seems invalid (already exists?)", event_number, job_id.c_str());
 
+    static int job_received = 0;
+    int buf_size = 128;
+
+    char * buf_job = new char[buf_size];
+    int nb_chars = snprintf(buf_job, buf_size,
+             R"foo({"id":%d, "subtime":%g, "walltime":%g, "res":%d, "profile":"%s"})foo",
+             job_received, MSG_get_clock(), 50.0, 1, "bouh");
+    xbt_assert(nb_chars < buf_size - 1);
+
+    message->job_description = buf_job;
+    delete[] buf_job;
+
+    char * buf_profile = new char[buf_size];
+    nb_chars = snprintf(buf_profile, buf_size,
+            R"foo({"type": "delay", "delay": %g})foo", 42.0);
+    xbt_assert(nb_chars < buf_size - 1);
+
+    message->job_profile_description = buf_profile;
+    delete[] buf_profile;
+
+    ++job_received;
+
     if (data_object.HasMember("job"))
     {
         xbt_assert(!context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): 'job' object is given but redis seems disabled...", event_number);
@@ -791,11 +813,11 @@ void JsonProtocolReader::handle_submit_job(int event_number,
         const Value & job_object = data_object["job"];
         xbt_assert(job_object.IsObject(), "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['job'] should be an object", event_number);
 
-        StringBuffer buffer;
+        /*StringBuffer buffer;
         ::Writer<rapidjson::StringBuffer> writer(buffer);
         job_object.Accept(writer);
 
-        message->job_description = string(buffer.GetString(), buffer.GetSize());
+        message->job_description = string(buffer.GetString(), buffer.GetSize());*/
     }
     else
         xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['job'] is unset but redis seems enabled...", event_number);
@@ -807,11 +829,11 @@ void JsonProtocolReader::handle_submit_job(int event_number,
         const Value & profile_object = data_object["profile"];
         xbt_assert(profile_object.IsObject(), "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['profile'] should be an object", event_number);
 
-        StringBuffer buffer;
+        /*StringBuffer buffer;
         ::Writer<rapidjson::StringBuffer> writer(buffer);
         profile_object.Accept(writer);
 
-        message->job_profile_description = string(buffer.GetString(), buffer.GetSize());
+        message->job_profile_description = string(buffer.GetString(), buffer.GetSize());*/
     }
     else
         xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['profile'] is unset but redis seems enabled...", event_number);
