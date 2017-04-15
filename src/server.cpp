@@ -248,6 +248,16 @@ int server_process(int argc, char *argv[])
                 context->workloads.insert_workload(workload->name, workload);
             }
 
+            // If redis is enabled, the job description must be retrieved from it
+            if (context->redis_enabled)
+            {
+                xbt_assert(message->job_description.empty(), "Internal error");
+                string job_key = RedisStorage::job_key(message->job_id);
+                message->job_description = context->storage.get(job_key);
+            }
+            else
+                xbt_assert(!message->job_description.empty(), "Internal error");
+
             // Let's parse the user-submitted job
             XBT_INFO("Parsing user-submitted job %s", message->job_id.to_string().c_str());
             Job * job = Job::from_json(message->job_description, workload,
@@ -260,6 +270,17 @@ int server_process(int argc, char *argv[])
             {
                 XBT_INFO("The profile of user-submitted job '%s' does not exist yet.",
                          job->profile.c_str());
+
+                // If redis is enabled, the profile description must be retrieved from it
+                if (context->redis_enabled)
+                {
+                    xbt_assert(message->job_profile_description.empty(), "Internal error");
+                    string profile_key = RedisStorage::profile_key(message->job_id.workload_name,
+                                                                   job->profile);
+                    message->job_profile_description = context->storage.get(profile_key);
+                }
+                else
+                    xbt_assert(!message->job_profile_description.empty(), "Internal error");
 
                 Profile * profile = Profile::from_json(job->profile,
                                                        message->job_profile_description,
