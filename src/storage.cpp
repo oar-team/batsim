@@ -56,7 +56,7 @@ std::string RedisStorage::get(const std::string & key)
 {
     xbt_assert(_is_connected, "Bad RedisStorage::get call: Not connected");
 
-    string real_key = boost::locale::conv::to_utf<char>(build_key(key), "UTF-8");
+    string real_key = build_key(key);
 
     try
     {
@@ -72,8 +72,8 @@ std::string RedisStorage::get(const std::string & key)
 
 bool RedisStorage::set(const std::string &key, const std::string &value)
 {
-    string real_key = boost::locale::conv::to_utf<char>(build_key(key), "UTF-8");
-    string real_value = boost::locale::conv::to_utf<char>(value, "UTF-8");
+    string real_key = build_key(key);
+    string real_value = value;
 
     xbt_assert(_is_connected, "Bad RedisStorage::get call: Not connected");
     bool ret = _redox.set(real_key, real_value);
