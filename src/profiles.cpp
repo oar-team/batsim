@@ -315,9 +315,11 @@ Profile *Profile::from_json(const std::string & profile_name,
         const Value & seq = json_desc["seq"];
         xbt_assert(seq.Size() > 0, "%s: profile '%s' has an invalid array 'seq': its size must be "
                    "strictly positive", error_prefix.c_str(), profile_name.c_str());
+        data->sequence.reserve(seq.Size());
         for (unsigned int i = 0; i < seq.Size(); ++i)
+            data->sequence.push_back(string(seq[i].GetString()));
 
-            profile->data = data;
+        profile->data = data;
     }
     else if (profile_type == "msg_par_hg_pfs0")
     {

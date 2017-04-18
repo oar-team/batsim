@@ -248,6 +248,12 @@ add_test(same_submit_time
          -bod /tmp/batsim_tests/same_submit_time
          -bwd ${CMAKE_SOURCE_DIR})
 
+add_test(sequence_delay
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_sequence_delay.yaml
+         -bod /tmp/batsim_tests/sequence_delay
+         -bwd ${CMAKE_SOURCE_DIR})
+
 add_test(no_redis
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_no_redis.yaml

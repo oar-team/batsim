@@ -155,14 +155,14 @@ int execute_profile(BatsimContext *context,
     }
     else if (profile->type == ProfileType::SEQUENCE)
     {
-        xbt_die("Unhandled sequence profile type");
         SequenceProfileData * data = (SequenceProfileData *) profile->data;
 
         for (int i = 0; i < data->repeat; i++)
         {
             for (unsigned int j = 0; j < data->sequence.size(); j++)
             {
-                if (execute_profile(context, data->sequence[j], allocation, cleanup_data, remaining_time) == 0)
+                if (execute_profile(context, data->sequence[j], allocation,
+                                    cleanup_data, remaining_time) == 0)
                     return 0;
             }
         }
