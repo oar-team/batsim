@@ -182,6 +182,7 @@ description and optionnaly the profile are also transmitted.
     }
 }
 ```
+
 ### JOB_COMPLETED
 
 A job has completed its execution. It acknowledges that the actions coming
