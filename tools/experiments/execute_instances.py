@@ -235,7 +235,7 @@ def get_script_path():
 
 async def instance_runner(data, hostname, local_rank):
     loop = asyncio.get_event_loop()
-    assert(hostname=='localhost'), 'unhandled atm'
+
     while len(data.sweeper.get_remaining()) > 0:
         comb = data.sweeper.get_next()
         if comb == None:
@@ -261,6 +261,8 @@ async def instance_runner(data, hostname, local_rank):
                             iid=instance_id, comb=comb))
 
             # Preparing the launch
+            command = """ssh {host} '{command}'""".format(host=hostname,
+                                                          command=command)
             create_dir_if_not_exists('{base_output_dir}/instances/output/'.format(
                 base_output_dir=data.base_output_directory))
             stdout_filename = '{out}/instances/output/{iid}.stdout'.format(
