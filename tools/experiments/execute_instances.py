@@ -260,9 +260,14 @@ async def instance_runner(data, hostname, local_rank):
                             host=hostname, rank=local_rank,
                             iid=instance_id, comb=comb))
 
+            # Remote launch via taktuk
+            rmt = """ssh {host} '{cmd}'""".format(host=hostname,
+                                                  cmd=command)
+
             # Preparing the launch
-            command = """ssh {host} '{command}'""".format(host=hostname,
-                                                          command=command)
+            if hostname != 'localhost':
+                command = rmt
+
             create_dir_if_not_exists('{base_output_dir}/instances/output/'.format(
                 base_output_dir=data.base_output_directory))
             stdout_filename = '{out}/instances/output/{iid}.stdout'.format(
