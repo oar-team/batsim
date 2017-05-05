@@ -500,7 +500,7 @@ int server_process(int argc, char *argv[])
 
         case IPMessageType::WAITING_DONE:
         {
-            context->proto_writer->append_nop(MSG_get_clock());
+            context->proto_writer->append_requested_call(MSG_get_clock());
             --nb_waiters;
         } break; // end of case WAITING_DONE
 

@@ -24,11 +24,24 @@ JsonProtocolWriter::~JsonProtocolWriter()
 
 }
 
-void JsonProtocolWriter::append_nop(double date)
+void JsonProtocolWriter::append_requested_call(double date)
 {
+    /* {
+      "timestamp": 25.5,
+      "type": "REQUESTED_CALL",
+      "data": {}
+    } */
+
     xbt_assert(date >= _last_date, "Date inconsistency");
-   _last_date = date;
-   _is_empty = false;
+    _last_date = date;
+    _is_empty = false;
+
+    Value event(rapidjson::kObjectType);
+    event.AddMember("timestamp", Value().SetDouble(date), _alloc);
+    event.AddMember("type", Value().SetString("REQUESTED_CALL"), _alloc);
+    event.AddMember("data", Value().SetObject(), _alloc);
+
+    _events.PushBack(event, _alloc);
 }
 
 void JsonProtocolWriter::append_submit_job(const string &job_id,

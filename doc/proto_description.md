@@ -256,6 +256,19 @@ or
 }
 ```
 
+### REQUESTED_CALL
+This message is a response to the [CALL_ME_LATER](#call_me_later) message.
+
+- **data**: empty
+- **example**:
+```json
+{
+  "timestamp": 25.5,
+  "type": "REQUESTED_CALL",
+  "data": {}
+}
+```
+
 ---
 
 ## Scheduler to Batsim events
