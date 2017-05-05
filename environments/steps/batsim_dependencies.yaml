@@ -13,6 +13,7 @@
       python3-yaml \
       python3-zmq \
       libssl-dev 2>&1
+
   # Install rapidjson (not available in jessie)
   - exec_in: |
       cd $${work_dir}
@@ -20,14 +21,20 @@
   - exec_in: |
       cd $${work_dir}/rapidjson
       git checkout 3d5848a # v1.02
+  - exec_in: |
+      cd $${work_dir}/rapidjson
       cp -a include/rapidjson /usr/include
+
+  # Install redox
   - exec_in: |
       cd $${work_dir}
       git clone https://github.com/hmartiro/redox.git
-      cd redox
-      git checkout $${simgrid_commit}
-      mkdir build
-      cd build
+  - exec_in: |
+      cd $${work_dir}/redox
+      git checkout 520fe0c2bfb
+  - exec_in: |
+      mkdir $${work_dir}/redox/build
+      cd $${work_dir}/redox/build
       cmake .. -DCMAKE_INSTALL_PREFIX=../install
       make -j $(nproc)
       make install
@@ -38,7 +45,6 @@
 - install_test_dependencies:
   - exec_in: apt install -y -t testing python3-pip valgrind python3-pandas
   - exec_in: pip3 install sortedcontainers redis async_timeout
-
   - exec_in: |
       cd $${work_dir}
       git clone $${execo_remote} execo
