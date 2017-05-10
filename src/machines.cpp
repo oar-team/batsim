@@ -313,6 +313,21 @@ long double Machines::total_consumed_energy(const BatsimContext *context) const
     return total_consumed_energy;
 }
 
+long double Machines::total_wattmin(const BatsimContext *context) const
+{
+    long double total_wattmin = 0;
+
+    if (context->energy_used)
+    {
+        for (const Machine * m : _machines)
+            total_wattmin += sg_host_get_wattmin_at(m->host, sg_host_get_pstate(m->host));
+    }
+    else
+        total_wattmin = -1;
+
+    return total_wattmin;
+}
+
 int Machines::nb_machines() const
 {
     return _machines.size();

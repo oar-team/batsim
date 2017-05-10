@@ -221,6 +221,13 @@ public:
     long double total_consumed_energy(const BatsimContext * context) const;
 
     /**
+     * @brief total_wattmin Computes and returns the total wattmin (minimum power) of all the computing machines
+     * @param[in] context The BatsimContext
+     * @return The total wattmin (minimum power) of all the computing machines
+     */
+    long double total_wattmin(const BatsimContext * context) const;
+
+    /**
      * @brief Returns the number of computing machines
      * @return The number of computing machines
      */

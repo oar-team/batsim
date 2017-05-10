@@ -969,7 +969,7 @@ void EnergyConsumptionTracer::set_filename(const string &filename)
     xbt_assert(_wbuf == nullptr, "Double call of EnergyConsumptionTracer::set_filename");
     _wbuf = new WriteBuffer(filename);
 
-    _wbuf->append_text("time,energy,event_type,epower\n");
+    _wbuf->append_text("time,energy,event_type,wattmin,epower\n");
 }
 
 void EnergyConsumptionTracer::add_job_start(double date, int job_id)
@@ -1011,6 +1011,7 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     xbt_assert(_wbuf != nullptr);
 
     long double energy = _context->machines.total_consumed_energy(_context);
+    long double wattmin = _context->machines.total_wattmin(_context);
 
     Rational time_diff = (Rational)date - _last_entry_date;
     Rational energy_diff = Rational(energy) - _last_entry_energy;
@@ -1026,11 +1027,11 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
     if (epower != -1)
-        nb_printed = snprintf(buf, buf_size, "%g,%Lg,%c,%g\n",
-                              date, energy, event_type, (double)epower);
+        nb_printed = snprintf(buf, buf_size, "%g,%Lg,%c,%Lg,%g\n",
+                              date, energy, event_type, wattmin, (double)epower);
     else
-        nb_printed = snprintf(buf, buf_size, "%g,%Lg,%c,NA\n",
-                              date, energy, event_type);
+        nb_printed = snprintf(buf, buf_size, "%g,%Lg,%c,%Lg,NA\n",
+                              date, energy, event_type, wattmin);
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
