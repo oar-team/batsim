@@ -853,6 +853,8 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     Rational total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
     output_map["consumed_joules"] = to_string((double) total_consumed_energy);
 
+    output_map["nb_machine_switches"] = to_string(context->nb_machine_switches);
+    output_map["nb_grouped_switches"] = to_string(context->nb_grouped_switches);
 
     // Let's compute machine-related metrics
     map<MachineState, Rational> time_spent_in_each_state;

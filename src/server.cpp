@@ -363,6 +363,10 @@ int server_process(int argc, char *argv[])
             context->pstate_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids,
                                                      transition_state);
 
+            // Let's mark that some switches have been requested
+            context->nb_grouped_switches++;
+            context->nb_machine_switches += message->machine_ids.size();
+
             for (auto machine_it = message->machine_ids.elements_begin();
                  machine_it != message->machine_ids.elements_end();
                  ++machine_it)
