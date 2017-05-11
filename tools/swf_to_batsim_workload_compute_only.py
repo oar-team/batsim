@@ -160,9 +160,11 @@ try:
 	json.dump(data, outFile, indent=args.indent, sort_keys=True)
 
 	if not args.quiet:
-		print('{} jobs and {} profiles had been created'.format(len(jobs),
-		                                                        len(profiles)))
+		print('{} jobs and {} profiles had been created'.format(len(djobs),
+		                                                        len(dprofs)))
 		print('{} jobs have been discarded'.format(nb_jobs_discarded))
+		if args.keep_only:
+			print('{} jobs have been removed by keep_only'.format(len(jobs) - len(djobs)))
 
 except IOError:
 	print('Cannot write file', outputJsonFilename)
