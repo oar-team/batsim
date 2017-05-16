@@ -396,7 +396,7 @@ void JsonProtocolReader::parse_and_apply_message(const string &message)
     xbt_assert(doc.IsObject(), "Invalid JSON message: not a JSON object");
 
     xbt_assert(doc.HasMember("now"), "Invalid JSON message: no 'now' key");
-    xbt_assert(doc["now"].IsDouble(), "Invalid JSON message: 'now' value should be a double.");
+    xbt_assert(doc["now"].IsNumber(), "Invalid JSON message: 'now' value should be a number.");
     double now = doc["now"].GetDouble();
 
     xbt_assert(doc.HasMember("events"), "Invalid JSON message: no 'events' key");
@@ -419,7 +419,7 @@ void JsonProtocolReader::parse_and_apply_event(const Value & event_object,
     xbt_assert(event_object.IsObject(), "Invalid JSON message: event %d should be an object.", event_number);
 
     xbt_assert(event_object.HasMember("timestamp"), "Invalid JSON message: event %d should have a 'timestamp' key.", event_number);
-    xbt_assert(event_object["timestamp"].IsDouble(), "Invalid JSON message: timestamp of event %d should be a double", event_number);
+    xbt_assert(event_object["timestamp"].IsNumber(), "Invalid JSON message: timestamp of event %d should be a number", event_number);
     double timestamp = event_object["timestamp"].GetDouble();
     xbt_assert(timestamp <= now, "Invalid JSON message: timestamp %g of event %d should be lower than or equal to now=%g.", timestamp, event_number, now);
     (void) now; // Avoids a warning if assertions are ignored
@@ -656,7 +656,7 @@ void JsonProtocolReader::handle_call_me_later(int event_number,
 
     xbt_assert(data_object.HasMember("timestamp"), "Invalid JSON message: the 'data' value of event %d (CALL_ME_LATER) should contain a 'timestamp' key.", event_number);
     const Value & timestamp_value = data_object["timestamp"];
-    xbt_assert(timestamp_value.IsDouble(), "Invalid JSON message: the 'timestamp' value in the 'data' value of event %d (CALL_ME_LATER) should be a double.", event_number);
+    xbt_assert(timestamp_value.IsNumber(), "Invalid JSON message: the 'timestamp' value in the 'data' value of event %d (CALL_ME_LATER) should be a number.", event_number);
     message->target_time = timestamp_value.GetDouble();
 
     if (message->target_time < MSG_get_clock())
