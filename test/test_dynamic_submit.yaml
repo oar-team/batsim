@@ -9,7 +9,8 @@ implicit_instances:
     sweep:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
-      workload_nb : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99]
+      #nb_dyn_jobs : [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99]
+      nb_dyn_jobs: [0,1]
       algo:
         - {"name":"submitter", "sched_name":"submitter"}
       redis_enabled: ["false"]
@@ -18,8 +19,8 @@ implicit_instances:
       timeout: 3600
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${instance_id}
-      batsim_command: batsim -p ${platform[filename]} -w ${batsim_dir}/workload_profiles/debug/workload${workload_nb}.json -E -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vnetwork-only
-      sched_command: batsched -v ${algo[sched_name]}
+      batsim_command: batsim -p ${platform[filename]} -w ${batsim_dir}/workload_profiles/one_delay_job.json -E -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vnetwork-only
+      sched_command: batsched -v ${algo[sched_name]} --variant_options_filepath ${output_directory}/sched_input.json
       commands_before_execution:
         # Generate Batsim config file
         - |
@@ -30,7 +31,7 @@ implicit_instances:
                   "enabled": ${redis_enabled}
                 },
                 "job_submission": {
-                  "forward_profiles": true,
+                  "forward_profiles": false,
                   "from_scheduler":{
                     "enabled": true,
                     "acknowledge": ${dynamic_submit_ack}
@@ -38,6 +39,14 @@ implicit_instances:
                 }
               }
               EOF
+        # Generate sched input
+        - |
+            #!/bin/bash
+            cat > ${output_directory}/sched_input.json << EOF
+            {
+              "nb_jobs_to_submit": ${nb_dyn_jobs}
+            }
+            EOF
 
       commands_after_execution:
         # There should be 10 'dynamic' jobs
@@ -55,7 +64,7 @@ implicit_instances:
             # Let's get when jobs have been released
             jobs = pd.read_csv('${output_directory}/out_jobs.csv')
 
-            nb_expected_dynamic_jobs = 10
+            nb_expected_dynamic_jobs = ${nb_dyn_jobs}
             dynamic_jobs = jobs.loc[jobs['workload_name'] == 'dynamic']
 
             if len(dynamic_jobs) == nb_expected_dynamic_jobs:
