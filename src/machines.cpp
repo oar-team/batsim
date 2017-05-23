@@ -288,13 +288,15 @@ const std::vector<Machine *> &Machines::machines() const
 
 const Machine *Machines::master_machine() const
 {
-    xbt_assert(_pfs_machine != nullptr, "Trying to access the master machine, which does not exist.");
+    xbt_assert(_master_machine != nullptr,
+               "Trying to access the master machine, which does not exist.");
     return _master_machine;
 }
 
 const Machine *Machines::pfs_machine() const
 {
-    xbt_assert(_pfs_machine != nullptr, "Trying to access the PFS machine, which does not exist.");
+    xbt_assert(_pfs_machine != nullptr,
+               "Trying to access the PFS machine, which does not exist.");
     return _pfs_machine;
 }
 
