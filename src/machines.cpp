@@ -194,7 +194,6 @@ void Machines::create_machines(xbt_dynar_t hosts,
 
         if ((machine->name != master_host_name) && (machine->name != pfs_host_name))
         {
-
             machine->id = id;
             ++id;
             _machines.push_back(machine);

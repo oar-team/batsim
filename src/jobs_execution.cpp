@@ -54,9 +54,9 @@ int execute_profile(BatsimContext *context,
 
         // These amounts are deallocated by SG
         double * computation_amount = xbt_new(double, nb_res);
-        double * communication_amount = NULL;
-        if(com != 0.0)
-            communication_amount = xbt_new(double, nb_res*nb_res);
+        double * communication_amount = nullptr;
+        if(com > 0)
+            communication_amount = xbt_new(double, nb_res * nb_res);
 
         // If the process gets killed, the following data must be freed
         cleanup_data->computation_amount = computation_amount;
@@ -67,7 +67,8 @@ int execute_profile(BatsimContext *context,
         for (int y = 0; y < nb_res; ++y)
         {
             computation_amount[y] = cpu;
-            if(communication_amount != NULL) {
+            if(communication_amount != nullptr)
+            {
                 for (int x = 0; x < nb_res; ++x)
                 {
                     if (x == y)
@@ -263,31 +264,34 @@ int execute_profile(BatsimContext *context,
     {
         MsgParallelHomogeneousPFS0ProfileData * data = (MsgParallelHomogeneousPFS0ProfileData *)profile->data;
 
-        double cpu = 0.0;
+        double cpu = 0;
         double size = data->size;
         std::vector<msg_host_t> hosts_pfs0(allocation->hosts);
+
+        // The PFS machine will also be used
+        nb_res = nb_res + 1;
+        int pfs_id = nb_res - 1;
 
         // Add the pfs_machine
         hosts_pfs0.push_back((context->machines.pfs_machine())->host);
 
-        nb_res = nb_res + 1;
-
         // These amounts are deallocated by SG
         double * computation_amount = xbt_new(double, nb_res);
-        double * communication_amount = NULL;
-        if(size != 0.0)
+        double * communication_amount = nullptr;
+        if(size > 0)
             communication_amount = xbt_new(double, nb_res*nb_res);
-
 
         // Let us fill the local computation and communication matrices
         int k = 0;
         for (int y = 0; y < nb_res; ++y)
         {
             computation_amount[y] = cpu;
-            if(communication_amount != NULL) {
+            if(communication_amount != nullptr)
+            {
                 for (int x = 0; x < nb_res; ++x)
                 {
-                    if ((x != nb_res-1) || (x == y))
+                    // Communications are done towards the PFS host, which is the last resource
+                    if (x != pfs_id)
                         communication_amount[k++] = 0;
                     else
                         communication_amount[k++] = size;
