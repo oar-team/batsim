@@ -1,4 +1,4 @@
-base_output_directory: /tmp/batsim_tests/no_redis
+base_output_directory: /tmp/batsim_tests/redis
 
 base_variables:
     batsim_dir: ${base_working_directory}
@@ -16,7 +16,7 @@ implicit_instances:
         - {"name":"easy_bf", "sched_name":"easy_bf"}
         - {"name":"filler", "sched_name":"filler"}
         - {"name":"conservative_bf", "sched_name":"conservative_bf"}
-      redis_enabled: ["false"]
+      redis_enabled: ["false", "true"]
     generic_instance:
       timeout: 3600
       working_directory: ${base_working_directory}
