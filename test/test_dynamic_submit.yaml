@@ -19,7 +19,7 @@ implicit_instances:
       timeout: 3600
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${instance_id}
-      batsim_command: batsim -p ${platform[filename]} -w ${batsim_dir}/workload_profiles/one_delay_job.json -E -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vnetwork-only
+      batsim_command: batsim -p ${platform[filename]} -w ${batsim_dir}/workload_profiles/one_delay_job.json -E -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vdebug
       sched_command: batsched -v ${algo[sched_name]} --variant_options_filepath ${output_directory}/sched_input.json
       commands_before_execution:
         # Generate Batsim config file
