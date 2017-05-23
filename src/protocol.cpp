@@ -746,10 +746,7 @@ void JsonProtocolReader::handle_notify(int event_number,
     string notify_type = notify_type_value.GetString();
 
     if (notify_type == "submission_finished")
-    {
-        context->submission_sched_finished = true;
-        XBT_INFO("Notification received: end of dynamic job submissions");
-    }
+        send_message(timestamp, "server", IPMessageType::END_DYNAMIC_SUBMIT);
     else
         xbt_assert(false, "Unknown NOTIFY type received ('%s').", notify_type.c_str());
 

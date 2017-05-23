@@ -115,6 +115,8 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::KILLING_DONE:
             s = "KILLING_DONE";
             break;
+        case IPMessageType::END_DYNAMIC_SUBMIT:
+            s = "END_DYNAMIC_SUBMIT";
     }
 
     return s;
@@ -225,6 +227,9 @@ IPMessage::~IPMessage()
         {
             KillingDoneMessage * msg = (KillingDoneMessage *) data;
             delete msg;
+        } break;
+        case IPMessageType::END_DYNAMIC_SUBMIT:
+        {
         } break;
     }
 

@@ -309,7 +309,6 @@ int server_process(int argc, char *argv[])
                 context->proto_writer->append_job_submitted(job->id, job_json_description,
                                                             profile_json_description,
                                                             MSG_get_clock());
-
             }
         } break; // end of case JOB_SUBMITTED_BY_DP
 
@@ -662,6 +661,10 @@ int server_process(int argc, char *argv[])
                 context->proto_writer->append_simulation_ends(MSG_get_clock());
             }
         } break; // end of case KILLING_DONE
+        case IPMessageType::END_DYNAMIC_SUBMIT:
+        {
+            context->submission_sched_finished = true;
+        } // end of case END_DYNAMIC_SUBMIT
         } // end of switch
 
         delete task_data;
