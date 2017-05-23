@@ -208,7 +208,7 @@ int server_process(int argc, char *argv[])
 
             // Update control information
             job->state = JobState::JOB_STATE_SUBMITTED;
-            nb_submitted_jobs++;
+            ++nb_submitted_jobs;
             XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far",
                      message->job_id.to_string().c_str(), nb_submitted_jobs);
 
@@ -306,9 +306,11 @@ int server_process(int argc, char *argv[])
                         profile_json_description = job->workload->profiles->at(job->profile)->json_description;
                 }
 
-                context->proto_writer->append_job_submitted(job->id, job_json_description, profile_json_description, MSG_get_clock());
-            }
+                context->proto_writer->append_job_submitted(job->id, job_json_description,
+                                                            profile_json_description,
+                                                            MSG_get_clock());
 
+            }
         } break; // end of case JOB_SUBMITTED_BY_DP
 
         case IPMessageType::SCHED_REJECT_JOB:
@@ -665,7 +667,7 @@ int server_process(int argc, char *argv[])
         delete task_data;
         MSG_task_destroy(task_received);
 
-        if (sched_ready && !context->proto_writer->is_empty() && !end_of_simulation_sent)
+        if (sched_ready && !end_of_simulation_sent && !context->proto_writer->is_empty())
         {
             RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
             req_rep_args->context = context;
