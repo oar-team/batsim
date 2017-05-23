@@ -303,7 +303,7 @@ int execute_profile(BatsimContext *context,
         XBT_INFO("Creating task '%s'", task_name.c_str());
 
         msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(),
-                                         nb_res, allocation->hosts.data(),
+                                         nb_res, hosts_pfs0.data(),
                                          computation_amount,
                                          communication_amount, NULL);
 
