@@ -46,13 +46,13 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "batsim"); //!< Logging
 //! Batsim default JSON configuration
 string default_configuration = R"({
                                "redis": {
-                                 "enabled": true,
+                                 "enabled": false,
                                  "hostname": "127.0.0.1",
                                  "port": 6379,
                                  "prefix": "default"
                                },
                                "job_submission": {
-                                 "forward_profiles": true,
+                                 "forward_profiles": false,
                                  "from_scheduler": {
                                    "enabled": false,
                                    "acknowledge": true

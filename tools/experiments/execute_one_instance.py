@@ -629,6 +629,7 @@ def wait_for_batsim_socket_to_be_usable(sock='tcp://localhost:28000',
 def execute_one_instance(working_directory,
                          output_directory,
                          batsim_command,
+                         interpreted_batsim_command,
                          sched_command,
                          variables_filename,
                          timeout=None,
@@ -639,7 +640,7 @@ def execute_one_instance(working_directory,
     # Let's create the output directory if it does not exist
     create_dir_if_not_exists(output_directory)
 
-    (batsim_socket, is_batexec) = find_info_from_batsim_command(batsim_command)
+    (batsim_socket, is_batexec) = find_info_from_batsim_command(interpreted_batsim_command)
 
     # Let's wrap the two commands into files
     batsim_script_filename = '{output_dir}/batsim_command.sh'.format(
@@ -801,7 +802,7 @@ Examples of such input files can be found in the subdirectory instance_examples.
         sys.exit(-2)
 
     # Let's correctly interpret the working_dir and output_dir values
-    (wd, od, batsim_command) = retrieve_info_from_instance(variables,
+    (wd, od, interpreted_batsim_command) = retrieve_info_from_instance(variables,
                                                            var_decl_order,
                                                            "/tmp",
                                                            batsim_command)
@@ -863,6 +864,7 @@ Examples of such input files can be found in the subdirectory instance_examples.
         if not execute_one_instance(working_directory=working_directory,
                                     output_directory=output_directory,
                                     batsim_command=batsim_command,
+                                    interpreted_batsim_command=interpreted_batsim_command,
                                     sched_command=sched_command,
                                     variables_filename=variables_filename,
                                     timeout=timeout,

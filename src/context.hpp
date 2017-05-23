@@ -66,6 +66,9 @@ struct BatsimContext
     my_timestamp simulation_start_time;             //!< The moment in time at which the simulation has started
     my_timestamp simulation_end_time;               //!< The moment in time at which the simulation has ended
 
+    unsigned long long nb_machine_switches = 0;     //!< The number of machine switches done in the simulation (should be greater or equal to SET_RESOURCE_STATE events. Equal if all requested switches only concern single machines). Does not count transition states.
+    unsigned long long nb_grouped_switches = 0;     //!< The number of switches done in the simulation (should equal to the number of received SET_RESOURCE_STATE events). Does not count transition states.
+
     bool energy_used;                               //!< Stores whether the energy part of Batsim should be used
     bool smpi_used;                                 //!< Stores whether SMPI should be used
     bool allow_time_sharing;                        //!< Stores whether time sharing (using the same machines to compute different jobs) should be allowed

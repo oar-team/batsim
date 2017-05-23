@@ -235,7 +235,7 @@ def get_script_path():
 
 async def instance_runner(data, hostname, local_rank):
     loop = asyncio.get_event_loop()
-    assert(hostname=='localhost'), 'unhandled atm'
+
     while len(data.sweeper.get_remaining()) > 0:
         comb = data.sweeper.get_next()
         if comb == None:
@@ -260,7 +260,14 @@ async def instance_runner(data, hostname, local_rank):
                             host=hostname, rank=local_rank,
                             iid=instance_id, comb=comb))
 
+            # Remote launch via taktuk
+            rmt = """ssh {host} '{cmd}'""".format(host=hostname,
+                                                  cmd=command)
+
             # Preparing the launch
+            if hostname != 'localhost':
+                command = rmt
+
             create_dir_if_not_exists('{base_output_dir}/instances/output/'.format(
                 base_output_dir=data.base_output_directory))
             stdout_filename = '{out}/instances/output/{iid}.stdout'.format(

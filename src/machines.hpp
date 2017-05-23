@@ -126,14 +126,14 @@ public:
      * @brief Fill the Machines with SimGrid hosts
      * @param[in] hosts The SimGrid hosts
      * @param[in] context The Batsim Context
-     * @param[in] masterHostName The name of the host which should be used as the Master host
-     * @param[in] pfsHostName The name of the host which should be used as the parallel filestem host
+     * @param[in] master_host_name The name of the host which should be used as the Master host
+     * @param[in] pfs_host_name The name of the host which should be used as the parallel filestem host
      * @param[in] limit_machine_count If set to -1, all the machines are used. If set to a strictly positive number N, only the first machines N will be used to compute jobs
      */
     void create_machines(xbt_dynar_t hosts,
                          const BatsimContext * context,
-                         const std::string & masterHostName,
-                         const std::string & pfsHostName,
+                         const std::string & master_host_name,
+                         const std::string & pfs_host_name,
                          int limit_machine_count = -1);
 
     /**
@@ -219,6 +219,13 @@ public:
      * @return The total consumed energy of all the computing machines
      */
     long double total_consumed_energy(const BatsimContext * context) const;
+
+    /**
+     * @brief total_wattmin Computes and returns the total wattmin (minimum power) of all the computing machines
+     * @param[in] context The BatsimContext
+     * @return The total wattmin (minimum power) of all the computing machines
+     */
+    long double total_wattmin(const BatsimContext * context) const;
 
     /**
      * @brief Returns the number of computing machines

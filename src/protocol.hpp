@@ -68,10 +68,10 @@ public:
 
     // Bidirectional messages
     /**
-     * @brief Appends a NOP message.
+     * @brief Appends a REQUESTED_CALL message.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_nop(double date) = 0;
+    virtual void append_requested_call(double date) = 0;
 
     // Messages from the Scheduler to Batsim
     /**
@@ -275,10 +275,10 @@ public:
 
     // Bidirectional messages
     /**
-     * @brief Appends a NOP message.
+     * @brief Appends a REQUESTED_CALL message.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_nop(double date);
+    void append_requested_call(double date);
 
     // Messages from the Scheduler to Batsim
     /**

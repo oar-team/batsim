@@ -376,7 +376,7 @@ static std::tuple<int,double,double> wait_for_query_answer(string submitter_name
 
     XBT_INFO("Returning : %d  %f  %f", res->nb_resources, res->processing_time, res->expected_time);
 
-    return {res->nb_resources, res->processing_time, res->expected_time};
+    return std::tuple<int, double, double>(res->nb_resources, res->processing_time, res->expected_time);
 }
 
 
@@ -387,7 +387,6 @@ int batexec_job_launcher_process(int argc, char *argv[])
 
     JobSubmitterProcessArguments * args = (JobSubmitterProcessArguments *) MSG_process_get_data(MSG_process_self());
     BatsimContext * context = args->context;
-
     Workload * workload = context->workloads.at(args->workload_name);
 
     auto & jobs = workload->jobs->jobs();

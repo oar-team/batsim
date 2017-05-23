@@ -148,22 +148,44 @@ Sent once all jobs have been submitted and have completed.
 
 ### JOB_SUBMITTED
 
-Some jobs have been submitted within Batsim. It is sent whenever a job
-coming from Batsim inputs (workloads and workflows) are submitted. It is
-also sent as a reply to a ```SUBMIT_JOB``` message if and only if an
-acknowledgement has been requested. Without Redis enabled the job
-description and optionnaly the profile are also transmitted.
+The content of this message depends on the
+[Batsim configuration](./configuration.md).
 
-- **data**: list of job id
-- **example with redis**:
+This event means that one job has been submitted within Batsim.
+It is sent whenever a job coming from Batsim inputs (workloads and workflows)
+has been submitted.
+If the configuration contains
+``{"job_submission": { "from_scheduler": {"enabled": true}}}``, this message is
+also sent as a reply to a ```SUBMIT_JOB``` message.
+
+The ``job_id`` field is always sent and contains a unique job identifier.
+If redis is enabled (``{"redis": {"enabled": true}}``),
+``job_id`` is the only forwarded field.
+Otherwise (if redis is disabled), a JSON description of the job is forwarded
+in the ``job`` field. Please notice that the ``id`` field
+within the ``job`` object is the id within the workload, not the unique one.
+A JSON description of the job profile is sent if and only if
+profiles forwarding is enabled
+(``{"job_submission": {"forward_profiles": true}}``).
+
+- **data**: a job id and optional information depending on the configuration
+- **example without redis and without forwarded profiles**:
 ```json
 {
   "timestamp": 10.0,
   "type": "JOB_SUBMITTED",
-  "data": {"job_id": "w0!1"}
+  "data": {
+    "job_id": "dyn!my_new_job",
+    "job": {
+      "profile": "delay_10s",
+      "res": 1,
+      "id": "my_new_job",
+      "walltime": 12.0
+    }
+  }
 }
 ```
-- **example without redis**:
+- **example without redis and with forwarded profiles**:
 ```json
 {
   "timestamp": 10.0,
@@ -180,8 +202,18 @@ description and optionnaly the profile are also transmitted.
       "type": "delay",
       "delay": 10
     }
+  }
 }
 ```
+- **example with redis**:
+```json
+{
+  "timestamp": 10.0,
+  "type": "JOB_SUBMITTED",
+  "data": {"job_id": "w0!1"}
+}
+```
+
 ### JOB_COMPLETED
 
 A job has completed its execution. It acknowledges that the actions coming
@@ -252,6 +284,19 @@ or
   "timestamp": 10.0,
   "type": "QUERY_REPLY",
   "data": {"consumed_energy": "12500" }
+}
+```
+
+### REQUESTED_CALL
+This message is a response to the [CALL_ME_LATER](#call_me_later) message.
+
+- **data**: empty
+- **example**:
+```json
+{
+  "timestamp": 25.5,
+  "type": "REQUESTED_CALL",
+  "data": {}
 }
 ```
 
@@ -353,9 +398,12 @@ Kills some jobs (almost instantaneously).
 
 ### SUBMIT_JOB
 
-Submits a job (from the scheduler). The submission is acknowledged by
-default. See [Configuration documentation](./configuration.md) for more
-details.
+Submits a job (from the scheduler). Job submissions from the scheduler must
+be enabled in the [configuration](./configuration.md)
+(``{"job_submission": {"from_scheduler": {"enabled": true}}``).
+The submission is acknowledged by default, but acknowledgements can be disabled
+in the configuration
+(``{"job_submission": {"from_scheduler": {"acknowledge": false}}``).
 
 - **data**: A job id (job id duplication is forbidden), classical job and
   profile information (optional).
