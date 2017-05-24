@@ -208,7 +208,7 @@ int server_process(int argc, char *argv[])
 
             // Update control information
             job->state = JobState::JOB_STATE_SUBMITTED;
-            nb_submitted_jobs++;
+            ++nb_submitted_jobs;
             XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far",
                      message->job_id.to_string().c_str(), nb_submitted_jobs);
 
@@ -248,6 +248,16 @@ int server_process(int argc, char *argv[])
                 context->workloads.insert_workload(workload->name, workload);
             }
 
+            // If redis is enabled, the job description must be retrieved from it
+            if (context->redis_enabled)
+            {
+                xbt_assert(message->job_description.empty(), "Internal error");
+                string job_key = RedisStorage::job_key(message->job_id);
+                message->job_description = context->storage.get(job_key);
+            }
+            else
+                xbt_assert(!message->job_description.empty(), "Internal error");
+
             // Let's parse the user-submitted job
             XBT_INFO("Parsing user-submitted job %s", message->job_id.to_string().c_str());
             Job * job = Job::from_json(message->job_description, workload,
@@ -260,6 +270,17 @@ int server_process(int argc, char *argv[])
             {
                 XBT_INFO("The profile of user-submitted job '%s' does not exist yet.",
                          job->profile.c_str());
+
+                // If redis is enabled, the profile description must be retrieved from it
+                if (context->redis_enabled)
+                {
+                    xbt_assert(message->job_profile_description.empty(), "Internal error");
+                    string profile_key = RedisStorage::profile_key(message->job_id.workload_name,
+                                                                   job->profile);
+                    message->job_profile_description = context->storage.get(profile_key);
+                }
+                else
+                    xbt_assert(!message->job_profile_description.empty(), "Internal error");
 
                 Profile * profile = Profile::from_json(job->profile,
                                                        message->job_profile_description,
@@ -285,9 +306,10 @@ int server_process(int argc, char *argv[])
                         profile_json_description = job->workload->profiles->at(job->profile)->json_description;
                 }
 
-                context->proto_writer->append_job_submitted(job->id, job_json_description, profile_json_description, MSG_get_clock());
+                context->proto_writer->append_job_submitted(job->id, job_json_description,
+                                                            profile_json_description,
+                                                            MSG_get_clock());
             }
-
         } break; // end of case JOB_SUBMITTED_BY_DP
 
         case IPMessageType::SCHED_REJECT_JOB:
@@ -442,7 +464,15 @@ int server_process(int argc, char *argv[])
             ExecuteJobMessage * message = (ExecuteJobMessage *) task_data->data;
             SchedulingAllocation * allocation = message->allocation;
 
+            xbt_assert(context->workloads.job_exists(allocation->job_id),
+                       "Trying to execute job '%s', which does NOT exist!",
+                       allocation->job_id.to_string().c_str());
+
             Job * job = context->workloads.job_at(allocation->job_id);
+            xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
+                       "Cannot execute job '%s': its state (%d) is not JOB_STATE_SUBMITTED.",
+                       job->id.c_str(), job->state);
+
             job->state = JobState::JOB_STATE_RUNNING;
 
             nb_running_jobs++;
@@ -639,12 +669,16 @@ int server_process(int argc, char *argv[])
                 context->proto_writer->append_simulation_ends(MSG_get_clock());
             }
         } break; // end of case KILLING_DONE
+        case IPMessageType::END_DYNAMIC_SUBMIT:
+        {
+            context->submission_sched_finished = true;
+        } // end of case END_DYNAMIC_SUBMIT
         } // end of switch
 
         delete task_data;
         MSG_task_destroy(task_received);
 
-        if (sched_ready && !context->proto_writer->is_empty() && !end_of_simulation_sent)
+        if (sched_ready && !end_of_simulation_sent && !context->proto_writer->is_empty())
         {
             RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
             req_rep_args->context = context;

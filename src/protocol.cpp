@@ -541,7 +541,8 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     string job_id = job_id_value.GetString();
 
     // Let's retrieve the job identifier
-    if (!identify_job_from_string(context, job_id, message->allocation->job_id))
+    if (!identify_job_from_string(context, job_id, message->allocation->job_id,
+                                  IdentifyJobReturnCondition::STRING_VALID))
     {
         xbt_assert(false, "Invalid JSON message: in event %d (EXECUTE_JOB): "
                           "The job identifier '%s' is not valid. "
@@ -550,14 +551,6 @@ void JsonProtocolReader::handle_execute_job(int event_number,
                           "Furthermore, the corresponding job must exist.",
                    event_number, job_id.c_str());
     }
-
-    // Let's make sure the job is submitted
-    Job * job = context->workloads.job_at(message->allocation->job_id);
-    (void) job; // Avoids a warning if assertions are ignored
-    xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
-               "Invalid JSON message: in event %d (EXECUTE_JOB): "
-               "Invalid state of job %s ('%d'): It cannot be executed now",
-               event_number, job->id.c_str(), (int)job->state);
 
     // *********************
     // Allocation management
@@ -728,7 +721,7 @@ void JsonProtocolReader::handle_notify(int event_number,
     string notify_type = notify_type_value.GetString();
 
     if (notify_type == "submission_finished")
-        context->submission_sched_finished = true;
+        send_message(timestamp, "server", IPMessageType::END_DYNAMIC_SUBMIT);
     else
         xbt_assert(false, "Unknown NOTIFY type received ('%s').", notify_type.c_str());
 
@@ -776,7 +769,8 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     xbt_assert(job_id_value.IsString(), "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['job_id'] should be a string", event_number);
     string job_id = job_id_value.GetString();
 
-    if (!identify_job_from_string(context, job_id, message->job_id, false))
+    if (!identify_job_from_string(context, job_id, message->job_id,
+                                  IdentifyJobReturnCondition::STRING_VALID__JOB_DOES_NOT_EXISTS))
         xbt_assert(false, "Invalid JSON message: in event %d (SUBMIT_JOB): job_id '%s' seems invalid (already exists?)", event_number, job_id.c_str());
 
     if (data_object.HasMember("job"))

@@ -29,7 +29,13 @@ void generic_send_message(const std::string & destination_mailbox,
     if (detached)
         MSG_task_dsend(task_to_send, destination_mailbox.c_str(), NULL);
     else
-        MSG_task_send(task_to_send, destination_mailbox.c_str());
+    {
+        msg_error_t err = MSG_task_send(task_to_send, destination_mailbox.c_str());
+        xbt_assert(err == MSG_OK,
+                   "Sending message from '%s' to '%s' of type '%s' with data %p FAILED!",
+                   MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
+                   ip_message_type_to_string(type).c_str(), data);
+    }
 
     XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p done",
               MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
@@ -38,12 +44,12 @@ void generic_send_message(const std::string & destination_mailbox,
 
 void send_message(const std::string & destination_mailbox, IPMessageType type, void * data)
 {
-  generic_send_message(destination_mailbox, type, data, false);
+    generic_send_message(destination_mailbox, type, data, false);
 }
 
 void dsend_message(const std::string & destination_mailbox, IPMessageType type, void * data)
 {
-  generic_send_message(destination_mailbox, type, data, true);
+    generic_send_message(destination_mailbox, type, data, true);
 }
 
 std::string ip_message_type_to_string(IPMessageType type)
@@ -109,6 +115,8 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::KILLING_DONE:
             s = "KILLING_DONE";
             break;
+        case IPMessageType::END_DYNAMIC_SUBMIT:
+            s = "END_DYNAMIC_SUBMIT";
     }
 
     return s;
@@ -219,6 +227,9 @@ IPMessage::~IPMessage()
         {
             KillingDoneMessage * msg = (KillingDoneMessage *) data;
             delete msg;
+        } break;
+        case IPMessageType::END_DYNAMIC_SUBMIT:
+        {
         } break;
     }
 

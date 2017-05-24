@@ -192,6 +192,18 @@ void Machines::create_machines(xbt_dynar_t hosts,
             }
         }
 
+        if (context->submission_sched_enabled)
+        {
+            // Because of one pernicious bug (https://github.com/oar-team/batsim/issues/21),
+            // let's check that the machine contains no energy information if dynamic submissions
+            // are enabled.
+            const char * sleep_states_cstr = MSG_host_get_property_value(machine->host, "sleep_pstates");
+            bool contains_sleep_pstates = (sleep_states_cstr != NULL);
+            xbt_assert(!contains_sleep_pstates,
+                       "Using dynamic job submissions AND plaforms with energy information "
+                       "is currently forbidden (https://github.com/oar-team/batsim/issues/21).");
+        }
+
         if ((machine->name != master_host_name) && (machine->name != pfs_host_name))
         {
             machine->id = id;

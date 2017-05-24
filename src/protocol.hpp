@@ -38,15 +38,16 @@ public:
         this->Prefix(rapidjson::kNumberType);
 
         const int buf_size = 32;
-        char buffer[buf_size];
+        char * buffer = new char[buf_size];
 
-        int ret = snprintf(buffer, sizeof(buffer), "%6f", d);
+        int ret = snprintf(buffer, buf_size, "%6f", d);
         RAPIDJSON_ASSERT(ret >= 1);
-        const char * end = buffer + ret;
+        RAPIDJSON_ASSERT(ret < buf_size - 1);
 
-        for (char* p = buffer; p != end; ++p)
-            os_->Put(*p);
+        for (int i = 0; i < ret; ++i)
+            os_->Put(buffer[i]);
 
+        delete[] buffer;
         return ret < (buf_size - 1);
     }
 

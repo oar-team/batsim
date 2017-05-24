@@ -8,20 +8,23 @@ implicit_instances:
   noparam:
     sweep:
       platform :
-        - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
-      workload :
-        - {"name":"hello", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
-        - {"name":"medium_late", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example_late_job.json"}
+        - {"name":"homo1", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_1.xml", "master_node":"master_host"}
+        - {"name":"small", "filename":"${batsim_dir}/platforms/small_platform.xml", "master_node":"master_host"}
+        - {"name":"cluster", "filename":"${batsim_dir}/platforms/cluster512.xml", "master_node":"master_host0"}
+      nb_dyn_jobs: [0,1,10,50,1000]
+      energy:
+        #- {"name": "enabled", "option":"-E "}
+        - {"name": "disabled", "option":""}
       algo:
         - {"name":"submitter", "sched_name":"submitter"}
-      redis_enabled: ["false"]
-      dynamic_submit_ack: ["true"]
+      redis_enabled: ["true", "false"]
+      dynamic_submit_ack: ["true", "false"]
     generic_instance:
       timeout: 3600
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${instance_id}
-      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -E -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vnetwork-only
-      sched_command: batsched -v ${algo[sched_name]}
+      batsim_command: batsim -p ${platform[filename]} -w ${batsim_dir}/workload_profiles/one_delay_job.json ${energy[option]} -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vdebug -m ${platform[master_node]}
+      sched_command: batsched -v ${algo[sched_name]} --variant_options_filepath ${output_directory}/sched_input.json
       commands_before_execution:
         # Generate Batsim config file
         - |
@@ -32,7 +35,7 @@ implicit_instances:
                   "enabled": ${redis_enabled}
                 },
                 "job_submission": {
-                  "forward_profiles": true,
+                  "forward_profiles": false,
                   "from_scheduler":{
                     "enabled": true,
                     "acknowledge": ${dynamic_submit_ack}
@@ -40,39 +43,99 @@ implicit_instances:
                 }
               }
               EOF
+        # Generate sched input
+        - |
+            #!/bin/bash
+            cat > ${output_directory}/sched_input.json << EOF
+            {
+              "nb_jobs_to_submit": ${nb_dyn_jobs}
+            }
+            EOF
 
       commands_after_execution:
-        # There should be 10 'dynamic' jobs
+        # Checks whether:
+        #  - the number of dynamic jobs is fine
+        #  - the dynamic jobs have correct execution time
         - |
             #!/usr/bin/env bash
             source ${output_directory}/variables.bash
 
-            cat > ${output_directory}/jobs_analysis.py <<EOF
-            #!/usr/bin/env python3
-            from __future__ import print_function
-            import json
-            import pandas as pd
-            import sys
+            cat > ${output_directory}/jobs_analysis.R <<EOF
+            #!/usr/bin/Rscript
+            library(dplyr)
 
             # Let's get when jobs have been released
-            jobs = pd.read_csv('${output_directory}/out_jobs.csv')
+            jobs = read.csv('${output_directory}/out_jobs.csv')
 
-            nb_expected_dynamic_jobs = 10
-            dynamic_jobs = jobs.loc[jobs['workload_name'] == 'dynamic']
+            nb_expected_dynamic_jobs = ${nb_dyn_jobs}
+            dynamic_jobs = jobs %>% filter(workload_name == 'dynamic')
 
-            if len(dynamic_jobs) == nb_expected_dynamic_jobs:
-                print("There are {} dynamic jobs (as expected)".format(
-                    nb_expected_dynamic_jobs))
-                sys.exit(0)
-            else:
-                print("Expecting {} dynamic jobs but {} have been found".format(
-                    nb_expected_dynamic_jobs, len(dynamic_jobs)))
-                print(dynamic_jobs)
-                sys.exit(1)
+            # Let's check the number of dynamic jobs
+            if (nrow(dynamic_jobs) != nb_expected_dynamic_jobs) {
+                stop(sprintf("Expecting %d dynamic jobs but %d have been found", nb_expected_dynamic_jobs, nrow(dynamic_jobs)))
+            } else {
+                sprintf("There are %d dynamic jobs (as expected)", nb_expected_dynamic_jobs)
+            }
+
+            # Let's check the dynamic jobs execution times
+            dynamic_jobs['expected_execution_time'] = dynamic_jobs['job_id'] * 10 + 1
+            ok_runtime = dynamic_jobs %>% filter(execution_time == expected_execution_time)
+            bad_runtime = dynamic_jobs %>% filter(execution_time != expected_execution_time)
+            if (nrow(bad_runtime) > 0) {
+                print("Some jobs do NOT match their expected execution time")
+                print(bad_runtime %>% select(-requested_number_of_processors,
+                                             -success,
+                                             -waiting_time,
+                                             -stretch,
+                                             -allocated_processors,
+                                             -hacky_job_id,
+                                             -submission_time,
+                                             -requested_time,
+                                             -starting_time,
+                                             -finish_time,
+                                             -turnaround_time,
+                                             -consumed_energy))
+                stop("Aborting")
+            } else {
+                sprintf("All the jobs match their expected execution time")
+            }
+
             EOF
-        - chmod +x ${output_directory}/jobs_analysis.py
-        - ${output_directory}/jobs_analysis.py
+        - chmod +x ${output_directory}/jobs_analysis.R
+        - ${output_directory}/jobs_analysis.R
 
 commands_before_instances:
   - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
   - ${batsim_dir}/test/clean_output_dir.py ${base_output_directory}
+
+commands_after_instances:
+  - |
+      #!/usr/bin/env bash
+      source ${base_output_directory}/variables.bash
+
+      cat > ${base_output_directory}/instances_analysis.R <<EOF
+      #!/usr/bin/Rscript
+      library(dplyr)
+      instances = read.csv("/tmp/batsim_tests/dynamic_submit/instances/instances_info.csv")
+
+      # Remove garbage
+      instances = instances %>% select(-platform__master_node, -platform__filename,
+                                       -instance_number, -instance_name,
+                                       -explicit, -algo__name, -algo__sched_name,
+                                       -energy__option)
+
+      # Sort
+      instances = instances %>% arrange(platform__name, nb_dyn_jobs,
+                                        dynamic_submit_ack, redis_enabled)
+
+      works = instances %>% filter(status == 'done')
+      crashes = instances %>% filter(status != 'done')
+
+      print("WORKS:")
+      print(works)
+
+      print("CRASHES:")
+      print(crashes)
+      EOF
+  - chmod +x ${base_output_directory}/instances_analysis.R
+  - ${base_output_directory}/instances_analysis.R
