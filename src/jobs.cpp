@@ -205,6 +205,7 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
 
         workload_name = job_identifier_parts[0];
         XBT_DEBUG("========  %s : %s", workload->name.c_str(), workload_name.c_str());
+        xbt_assert(workload_name == workload->name);
         j->number = std::stoi(job_identifier_parts[1]);
     }
     else
@@ -244,9 +245,9 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     json_desc.Accept(writer);
 
-    // Let's replace the job ID by its WLOAD!NUMBER counterpart
+    // Let's replace the job ID by its WLOAD!NUMBER counterpart if needed
     string json_description_tmp(buffer.GetString(), buffer.GetSize());
-    boost::regex r("\"id\"\\s*:\\s*(?:\".+\"|\\d+)\\s*");
+    boost::regex r(R"foo("id"\s*:\s*(?:\d+)\s*)foo");
     string replacement_str = "\"id\":\"" + workload_name + "!" + std::to_string(j->number) + "\"";
     j->json_description = boost::regex_replace(json_description_tmp, r, replacement_str);
 
@@ -265,6 +266,22 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
     xbt_assert(check_doc["id"].IsString(),
                "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
                "The output JSON '%s' has a non-string 'id' field.", j->json_description.c_str());
+    xbt_assert(check_doc.HasMember("subtime") && check_doc["subtime"].IsNumber(),
+               "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
+               "The output JSON '%s' has no 'subtime' field (or it is not a number)",
+               j->json_description.c_str());
+    xbt_assert(check_doc.HasMember("walltime") && check_doc["walltime"].IsNumber(),
+               "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
+               "The output JSON '%s' has no 'walltime' field (or it is not a number)",
+               j->json_description.c_str());
+    xbt_assert(check_doc.HasMember("res") && check_doc["res"].IsInt(),
+               "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
+               "The output JSON '%s' has no 'res' field (or it is not an integer)",
+               j->json_description.c_str());
+    xbt_assert(check_doc.HasMember("profile") && check_doc["profile"].IsString(),
+               "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
+               "The output JSON '%s' has no 'profile' field (or it is not a string)",
+               j->json_description.c_str());
 
     if (json_desc.HasMember("smpi_ranks_to_hosts_mapping"))
     {
@@ -292,7 +309,6 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
     }
 
     XBT_DEBUG("Loaded job %d from workload %s", (int) j->number, j->workload->name.c_str());
-
     return j;
 }
 
