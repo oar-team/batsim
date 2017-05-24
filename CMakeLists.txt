@@ -116,8 +116,6 @@ target_link_libraries(batsim
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim
         DESTINATION bin)
 
-set(CMAKE_CXX_FLAGS "-fstack-protector -fstack-protector-all")
-
 # Let's enable warnings if needed
 if (enable_warnings)
     set(warning_flags " -Wall -Wextra")
