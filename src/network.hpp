@@ -46,17 +46,26 @@ int request_reply_scheduler_process(int argc, char *argv[]);
 std::string absolute_filename(const std::string & filename);
 
 /**
+ * @brief Controls the return value of function identify_job_from_string
+ */
+enum class IdentifyJobReturnCondition
+{
+    STRING_VALID__JOB_EXISTS            //!< The string must be valid AND the corresponding job has to exist.
+    ,STRING_VALID__JOB_DOES_NOT_EXISTS  //!< The string must be valid AND the corresponding job has to NOT exist.
+    ,STRING_VALID                   //!< The string must be valid. Not affected by job existence.
+};
+
+/**
  * @brief Retrieves the workload_name and the job_id from a job_identifier
  * @details Job identifiers are in the form [WORKLOAD_NAME!]JOB_ID
  * @param[in] context The BatsimContext
  * @param[in] job_identifier_string The input job identifier string
  * @param[out] job_id The output JobIdentifier
- * @param[in] should_exist Whether the job should exist or not
- * @return true if the info has been retrieved successfully and that the job exists or not
- *         (depending on should_exist), false otherwise
+ * @param[in] return_condition Specifies what the function should return
+ * @return Depends on return_condition
  */
 bool identify_job_from_string(BatsimContext * context,
                               const std::string & job_identifier_string,
                               JobIdentifier & job_id,
-                              bool should_exist = true);
+                              IdentifyJobReturnCondition return_condition = IdentifyJobReturnCondition::STRING_VALID__JOB_EXISTS);
 

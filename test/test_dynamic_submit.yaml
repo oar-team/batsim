@@ -18,7 +18,7 @@ implicit_instances:
       algo:
         - {"name":"submitter", "sched_name":"submitter"}
       redis_enabled: ["false"]
-      dynamic_submit_ack: ["true"]
+      dynamic_submit_ack: ["true", "false"]
     generic_instance:
       timeout: 3600
       working_directory: ${base_working_directory}
@@ -53,7 +53,7 @@ implicit_instances:
             EOF
 
       commands_after_execution:
-        # There should be 10 'dynamic' jobs
+        # Checks whether the number of dynamic jobs is fine
         - |
             #!/usr/bin/env bash
             source ${output_directory}/variables.bash
@@ -87,3 +87,35 @@ implicit_instances:
 commands_before_instances:
   - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
   - ${batsim_dir}/test/clean_output_dir.py ${base_output_directory}
+
+commands_after_instances:
+  - |
+      #!/usr/bin/env bash
+      source ${base_output_directory}/variables.bash
+
+      cat > ${base_output_directory}/instances_analysis.R <<EOF
+      #!/usr/bin/Rscript
+      library(dplyr)
+      instances = read.csv("/tmp/batsim_tests/dynamic_submit/instances/instances_info.csv")
+
+      # Remove garbage
+      instances = instances %>% select(-platform__master_node, -platform__filename,
+                                       -instance_number, -instance_name,
+                                       -explicit, -algo__name, -algo__sched_name,
+                                       -energy__option)
+
+      # Sort
+      instances = instances %>% arrange(platform__name, nb_dyn_jobs,
+                                        dynamic_submit_ack)
+
+      works = instances %>% filter(status == 'done')
+      crashes = instances %>% filter(status != 'done')
+
+      print("WORKS:")
+      print(works)
+
+      print("CRASHES:")
+      print(crashes)
+      EOF
+  - chmod +x ${base_output_directory}/instances_analysis.R
+  - ${base_output_directory}/instances_analysis.R

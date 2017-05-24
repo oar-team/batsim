@@ -464,7 +464,15 @@ int server_process(int argc, char *argv[])
             ExecuteJobMessage * message = (ExecuteJobMessage *) task_data->data;
             SchedulingAllocation * allocation = message->allocation;
 
+            xbt_assert(context->workloads.job_exists(allocation->job_id),
+                       "Trying to execute job '%s', which does NOT exist!",
+                       allocation->job_id.to_string().c_str());
+
             Job * job = context->workloads.job_at(allocation->job_id);
+            xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
+                       "Cannot execute job '%s': its state (%d) is not JOB_STATE_SUBMITTED.",
+                       job->id.c_str(), job->state);
+
             job->state = JobState::JOB_STATE_RUNNING;
 
             nb_running_jobs++;

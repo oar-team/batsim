@@ -94,7 +94,8 @@ std::string absolute_filename(const std::string & filename)
 
 bool identify_job_from_string(BatsimContext * context,
                               const std::string & job_identifier_string,
-                              JobIdentifier & job_id, bool should_exist)
+                              JobIdentifier & job_id,
+                              IdentifyJobReturnCondition return_condition)
 {
     // Let's split the job_identifier by '!'
     vector<string> job_identifier_parts;
@@ -114,8 +115,12 @@ bool identify_job_from_string(BatsimContext * context,
     else
         return false;
 
-    if (should_exist)
+    if (return_condition == IdentifyJobReturnCondition::STRING_VALID)
+        return true;
+    else if (return_condition == IdentifyJobReturnCondition::STRING_VALID__JOB_EXISTS)
         return context->workloads.job_exists(job_id);
-    else
+    else if (return_condition == IdentifyJobReturnCondition::STRING_VALID__JOB_DOES_NOT_EXISTS)
         return !context->workloads.job_exists(job_id);
+    else
+        xbt_assert(0, "Unhandled IdentifyJobReturnCondition value");
 }
