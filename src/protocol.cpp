@@ -432,26 +432,8 @@ void JsonProtocolReader::parse_and_apply_event(const Value & event_object,
     xbt_assert(event_object.HasMember("data"), "Invalid JSON message: event %d should have a 'data' key.", event_number);
     const Value & data_object = event_object["data"];
 
-    /*auto handler_function = _type_to_handler_map[type];
-    handler_function(this, event_number, timestamp, data_object);*/
-    if (type == "QUERY_REQUEST")
-        handle_query_request(event_number, timestamp, data_object);
-    else if (type == "REJECT_JOB")
-        handle_reject_job(event_number, timestamp, data_object);
-    else if (type == "EXECUTE_JOB")
-        handle_execute_job(event_number, timestamp, data_object);
-    else if (type == "CALL_ME_LATER")
-        handle_call_me_later(event_number, timestamp, data_object);
-    else if (type == "KILL_JOB")
-        handle_kill_job(event_number, timestamp, data_object);
-    else if (type == "SUBMIT_JOB")
-        handle_submit_job(event_number, timestamp, data_object);
-    else if (type == "SET_RESOURCE_STATE")
-        handle_set_resource_state(event_number, timestamp, data_object);
-    else if (type == "NOTIFY")
-        handle_notify(event_number, timestamp, data_object);
-    else
-        xbt_assert(false, "Unknown event!");
+    auto handler_function = _type_to_handler_map[type];
+    handler_function(this, event_number, timestamp, data_object);
 }
 
 void JsonProtocolReader::handle_query_request(int event_number, double timestamp, const Value &data_object)
