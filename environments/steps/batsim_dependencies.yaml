@@ -43,7 +43,10 @@
       cp -r ./* /usr/
 
 - install_test_dependencies:
-  - exec_in: apt install -y -t testing python3-pip valgrind python3-pandas
+  - exec_in: |
+      apt install -y -t testing \
+      python3-pip valgrind python3-pandas \
+      r-base r-base-dev
   - exec_in: pip3 install sortedcontainers redis async_timeout
   - exec_in: |
       cd $${work_dir}
@@ -54,6 +57,12 @@
   - exec_in: |
       cd $${work_dir}/execo
       pip3 install -e .
+  # install R packages
+  - exec_in: |
+      R --vanilla <<EOF
+      install.packages(c('ggplot2','scales','dplyr'), repos='http://cran.us.r-project.org')
+      q()
+      EOF
 
 - install_doc_dependencies:
   - exec_in: apt install -y -t testing doxygen graphviz
