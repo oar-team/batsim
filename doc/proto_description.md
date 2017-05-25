@@ -492,7 +492,7 @@ either be transmitted through the protocol or Redis.
 
 ## Dynamic submission of jobs
 Jobs are in most cases given as Batsim inputs, which are submitted within
-Batsim (the scheduler knows about them via JOB_SUBMITTED events).
+Batsim (the scheduler knows about them via [JOB_SUBMITTED](#job_submitted) events).
 
 However, jobs can also be submitted from the scheduler throughout the
 simulation. For this purpose:
