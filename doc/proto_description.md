@@ -65,7 +65,8 @@ It is a JSON object that looks like this:
 
 The ``now`` field defines the current simulation time.
 - If the message comes from Batsim, it means that the scheduler cannot make
-  decisions before ```now``` (time travel is forbidden)
+  decisions before ``now`` (time travel simulation is not supported at the
+  moment)
 - If the message comes from the scheduler, it tells Batsim that the
   scheduler finished making its decisions at timestamp ```now```. It is
   used by Batsim to know when the scheduler will be available for making
@@ -144,7 +145,10 @@ metainformation from Batsim to any scheduler at runtime.
 ```
 
 ### SIMULATION_ENDS
-Sent once all jobs have been submitted and have completed.
+Sent when Batsim thinks that the simulation is over. It means that all the jobs
+(either coming from Batsim workloads/workflows inputs, or dynamically submitted
+ones) have been submitted and executed (or rejected). The scheduler should
+answer a [NOP](#nop) to this message then close its socket and terminate.
 
 - **data**: empty
 - **example**:
@@ -164,16 +168,17 @@ The content of this message depends on the
 This event means that one job has been submitted within Batsim.
 It is sent whenever a job coming from Batsim inputs (workloads and workflows)
 has been submitted.
-If the configuration contains
-``{"job_submission": { "from_scheduler": {"enabled": true}}}``, this message is
-also sent as a reply to a ```SUBMIT_JOB``` message.
+If dynamic job submissions are enabled (the configuration contains
+``{"job_submission": { "from_scheduler": {"enabled": true}}}``), this message is
+is sent as a reply to a [SUBMIT_JOB](#submit_job) message if and only if
+dynamic job submissions acknowledgements are enabled
+(``{"job_submission": {"from_scheduler": {"acknowledge": true}}}``)
 
 The ``job_id`` field is always sent and contains a unique job identifier.
 If redis is enabled (``{"redis": {"enabled": true}}``),
 ``job_id`` is the only forwarded field.
 Otherwise (if redis is disabled), a JSON description of the job is forwarded
-in the ``job`` field. Please notice that the ``id`` field
-within the ``job`` object is the id within the workload, not the unique one.
+in the ``job`` field.
 A JSON description of the job profile is sent if and only if
 profiles forwarding is enabled
 (``{"job_submission": {"forward_profiles": true}}``).
@@ -227,8 +232,8 @@ profiles forwarding is enabled
 ### JOB_COMPLETED
 
 A job has completed its execution. It acknowledges that the actions coming
-from a previous ```EXECUTE_JOB``` message have been done (successfully or
-not, depending on whether the job completed without reaching timeout).
+from a previous [EXECUTE_JOB](#execute_job) message have been done (successfully
+or not, depending on whether the job completed without reaching timeout).
 
 - **data**: a job id string with a status string (TIMEOUT, SUCCESS)
 - **example**:
@@ -243,7 +248,7 @@ not, depending on whether the job completed without reaching timeout).
 ### JOB_KILLED
 
 Some jobs have been killed. It acknowledges that the actions coming from a
-previous ```KILL_JOB``` message have been done.
+previous [KILL_JOB](#kill_job) message have been done.
 
 - **data**: A list of job ids
 - **example**:
@@ -258,7 +263,8 @@ previous ```KILL_JOB``` message have been done.
 ### RESOURCE_STATE_CHANGED
 
 The state of some resources has changed. It acknowledges that the actions
-coming from a previous ```SET_RESOURCE_STATE``` message have been done.
+coming from a previous [SET_RESOURCE_STATE](#set_resource_state) message have
+been done.
 
 - **data**: an interval set of resource id and the new state
 - **example**:
@@ -272,12 +278,12 @@ coming from a previous ```SET_RESOURCE_STATE``` message have been done.
 
 ### QUERY_REPLY
 
-This is a reply to a ``QUERY_REQUEST`` message. It depends on the
-configuration of Batsim: if ``"redis": { "enabled": true }`` the reply will
+This is a reply to a [QUERY_REQUEST](#query_request) message. It depends on the
+The message content depends on whether redis is enabled in the
+[Batsim configuration](./configuration.md).
+If ``{"redis": { "enabled": true }}``, the reply will
 go in redis and only the key will be given. Otherwise, the response will be
 put directly in the message.
-See [Configuration documentation](./configuration.md) for more details.
-
 
 - **data**: See [QUERY_REQUEST](#query_request) documentation
 - **example**:
@@ -340,7 +346,7 @@ state (or whatever you want to know...). The supported requests are:
 
 ### REJECT_JOB
 
-Reject a job that was submitted before.
+Rejects a job that has already been submitted.
 
 - **data**: A job id
 - **example**:
@@ -413,7 +419,7 @@ be enabled in the [configuration](./configuration.md)
 (``{"job_submission": {"from_scheduler": {"enabled": true}}``).
 The submission is acknowledged by default, but acknowledgements can be disabled
 in the configuration
-(``{"job_submission": {"from_scheduler": {"acknowledge": false}}``).
+(``{"job_submission": {"from_scheduler": {"acknowledge": false}}}``).
 
 - **data**: A job id (job id duplication is forbidden), classical job and
   profile information (optional).
