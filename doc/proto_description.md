@@ -21,8 +21,18 @@ occurs in Batsim in the simulation, the following steps occur:
 ZeroMQ is used in both processes (Batsim uses a ZMQ REQ socket, the
 scheduler a ZMQ REP one).
 
-This protocol is used for synchronization purpose. Metadata associated to the
-jobs are shared via Redis, as described [here](data_storage_description.md)
+The behavior of this protocol depends on the
+[configuration](./configuration.md):
+- If Redis is enabled, job metadata is stored into a Redis server and not sent
+  through the protocol. In this case, the protocol is only used for
+  synchronization purposes. More information about Redis conventions are
+  described [there](data_storage_description.md).
+- Batsim may or may not forward job profile information to the scheduler when
+  jobs are submitted (see [JOB_SUBMITTED](#job_submitted) documentation)
+- Dynamic jobs submissions can be enabled or disabled.
+  Many parameters of job submissions can be adjusted, please refer to the
+  [Dynamic submission of jobs](#dynamic-submission-of-jobs) documentation for
+  more details.
 
 # Message Composition
 
@@ -481,12 +491,38 @@ either be transmitted through the protocol or Redis.
 ![executing_jobs_figure](protocol_img/job_submission_and_execution.png)
 
 ## Dynamic submission of jobs
-Jobs are in most cases submitted within Batsim. It is however possible to submit
-jobs from the scheduler. The following two figures described how it should be
-done, depending on whether Redis is enabled in the
-[configuration](./configuration.md). The acknowledgement of dynamic job
-submissions can be enabled or disabled in the
-[configuration](./configuration.md).
+Jobs are in most cases given as Batsim inputs, which are submitted within
+Batsim (the scheduler knows about them via JOB_SUBMITTED events).
+
+However, jobs can also be submitted from the scheduler throughout the
+simulation. For this purpose:
+- dynamic job submissions **must** be enabled in the
+  [Batsim configuration](./configuration.md)
+- the scheduler **must** tell Batsim when it has finished submitting dynamic
+  jobs (via a [NOTIFY](#notify) event).
+  Otherwise, Batsim will wait for new simulation events forever,
+  causing either a SimGrid deadlock or an infinite loop at the end of the
+  simulation.
+- the scheduler **must** make sure that Batsim has enough information to avoid
+  SimGrid deadlocks during the simulation. If at some simulation time all
+  Batsim workloads/workflows inputs have been executed and nothing is happening
+  on the platform, this might lead to a SimGrid deadlock. If the scheduler
+  knows that it will submit a dynamic job in the future, it should ask Batsim
+  to call it at this timestamp via a [CALL_ME_LATER](#call_me_later) event.
+
+The protocol behavior of dynamic submissions is customizable in the
+  [Batsim configuration](./configuration.md):
+- Batsim might or might not send acknowledgements when jobs have been submitted.
+- Metainformation are sent via Redis if Redis is enabled, or directly via the
+  protocol otherwise.
+
+A simple scheduling algorithm using dynamic job submissions can be found in
+[Batsched](https://gitlab.inria.fr/batsim/batsched/blob/master/src/algo/submitter.cpp).
+This implementation should work whether Redis is enabled and whether dynamic
+job submissions are acknowledged.
+
+The following two figures outline how submissions should be done
+(depending whether Redis is enabled).
 
 ### Without Redis
 ![dynamic_submission](protocol_img/dynamic_job_submission.png)
