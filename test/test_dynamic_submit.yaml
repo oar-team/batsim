@@ -65,7 +65,7 @@ implicit_instances:
             source ${output_directory}/variables.bash
 
             cat > ${output_directory}/jobs_analysis.R <<EOF
-            #!/usr/bin/Rscript
+            #!/usr/bin/env Rscript
             library(dplyr)
 
             # Let's get when jobs have been released
@@ -118,7 +118,7 @@ commands_after_instances:
       source ${base_output_directory}/variables.bash
 
       cat > ${base_output_directory}/instances_analysis.R <<EOF
-      #!/usr/bin/Rscript
+      #!/usr/bin/env Rscript
       library(dplyr)
       instances = read.csv("/tmp/batsim_tests/dynamic_submit/instances/instances_info.csv")
 
