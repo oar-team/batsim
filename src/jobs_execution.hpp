@@ -17,6 +17,7 @@ struct CleanExecuteProfileData
     double * computation_amount = nullptr; //!< The computation amount (may be null)
     double * communication_amount = nullptr; //!< The communication amount (may be null)
     ExecuteJobProcessArguments * exec_process_args = nullptr; //!< The ExecuteJobProcessArguments
+    msg_task_t task = nullptr; //!< The task
 };
 
 /**

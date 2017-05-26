@@ -58,10 +58,6 @@ int execute_profile(BatsimContext *context,
         if(com > 0)
             communication_amount = xbt_new(double, nb_res * nb_res);
 
-        // If the process gets killed, the following data may need to be freed
-        /*cleanup_data->computation_amount = computation_amount;
-        cleanup_data->communication_amount = communication_amount;*/
-
         // Let us fill the local computation and communication matrices
         int k = 0;
         for (int y = 0; y < nb_res; ++y)
@@ -87,14 +83,13 @@ int execute_profile(BatsimContext *context,
                                                     computation_amount,
                                                     communication_amount, NULL);
 
+        // If the process gets killed, the following data may need to be freed
+        cleanup_data->task = ptask;
+
         double timeBeforeExecute = MSG_get_clock();
         XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
         msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
-
-        // The task has been executed, the data does need to be freed in the cleanup function anymore
-        /*cleanup_data->computation_amount = nullptr;
-        cleanup_data->communication_amount = nullptr; */
 
         int ret = 1;
         if (err == MSG_OK) {}
@@ -105,6 +100,10 @@ int execute_profile(BatsimContext *context,
 
         XBT_INFO("Task '%s' finished", MSG_task_get_name(ptask));
         MSG_task_destroy(ptask);
+
+        // The task has been executed, the data does need to be freed in the cleanup function anymore
+        cleanup_data->task = nullptr;
+
         return ret;
     }
     else if (profile->type == ProfileType::MSG_PARALLEL)
@@ -114,10 +113,6 @@ int execute_profile(BatsimContext *context,
         // These amounts are deallocated by SG
         double * computation_amount = xbt_new(double, nb_res);
         double * communication_amount = xbt_new(double, nb_res*nb_res);
-
-        // If the process gets killed, the following data may need to be freed
-        /*cleanup_data->computation_amount = computation_amount;
-        cleanup_data->communication_amount = communication_amount;*/
 
         // Let us retrieve the matrices from the profile
         memcpy(computation_amount, data->cpu, sizeof(double) * nb_res);
@@ -131,14 +126,13 @@ int execute_profile(BatsimContext *context,
                                                     computation_amount,
                                                     communication_amount, NULL);
 
+        // If the process gets killed, the following data may need to be freed
+        cleanup_data->task = ptask;
+
         double timeBeforeExecute = MSG_get_clock();
         XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
         msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
-
-        // The task has been executed, the data does need to be freed in the cleanup function anymore
-        /*cleanup_data->computation_amount = nullptr;
-        cleanup_data->communication_amount = nullptr;*/
 
         int ret = 1;
         if (err == MSG_OK) {}
@@ -149,6 +143,10 @@ int execute_profile(BatsimContext *context,
 
         XBT_INFO("Task '%s' finished", MSG_task_get_name(ptask));
         MSG_task_destroy(ptask);
+
+        // The task has been executed, the data does need to be freed in the cleanup function anymore
+        cleanup_data->task = nullptr;
+
         return ret;
     }
     else if (profile->type == ProfileType::SEQUENCE)
@@ -513,6 +511,12 @@ int execute_profile_cleanup(void * unknown, void * data)
         delete cleanup_data->exec_process_args;
     }
 
+    if (cleanup_data->task != nullptr)
+    {
+        XBT_WARN("Not cleaning the task data to avoid a SG deadlock :(");
+        //MSG_task_destroy(cleanup_data->task);
+    }
+
     XBT_DEBUG("before deleting cleanup_data %p", cleanup_data);
     delete cleanup_data;
 
@@ -543,6 +547,7 @@ int killer_process(int argc, char *argv[])
             xbt_assert(job->execution_processes.size() > 0);
             for (msg_process_t process : job->execution_processes)
             {
+                XBT_INFO("Killing process '%s'", MSG_process_get_name(process));
                 MSG_process_kill(process);
             }
             job->execution_processes.clear();
