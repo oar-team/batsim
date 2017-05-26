@@ -58,9 +58,9 @@ int execute_profile(BatsimContext *context,
         if(com > 0)
             communication_amount = xbt_new(double, nb_res * nb_res);
 
-        // If the process gets killed, the following data must be freed
-        cleanup_data->computation_amount = computation_amount;
-        cleanup_data->communication_amount = communication_amount;
+        // If the process gets killed, the following data may need to be freed
+        /*cleanup_data->computation_amount = computation_amount;
+        cleanup_data->communication_amount = communication_amount;*/
 
         // Let us fill the local computation and communication matrices
         int k = 0;
@@ -92,9 +92,9 @@ int execute_profile(BatsimContext *context,
         msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
 
-        // The task has been executed, the data does need to be freed in the clenaup function anymore
-        cleanup_data->computation_amount = nullptr;
-        cleanup_data->communication_amount = nullptr;
+        // The task has been executed, the data does need to be freed in the cleanup function anymore
+        /*cleanup_data->computation_amount = nullptr;
+        cleanup_data->communication_amount = nullptr; */
 
         int ret = 1;
         if (err == MSG_OK) {}
@@ -115,16 +115,13 @@ int execute_profile(BatsimContext *context,
         double * computation_amount = xbt_new(double, nb_res);
         double * communication_amount = xbt_new(double, nb_res*nb_res);
 
-        // If the process gets killed, the following data must be freed
-        cleanup_data->computation_amount = computation_amount;
-        cleanup_data->communication_amount = communication_amount;
+        // If the process gets killed, the following data may need to be freed
+        /*cleanup_data->computation_amount = computation_amount;
+        cleanup_data->communication_amount = communication_amount;*/
 
         // Let us retrieve the matrices from the profile
         memcpy(computation_amount, data->cpu, sizeof(double) * nb_res);
         memcpy(communication_amount, data->com, sizeof(double) * nb_res * nb_res);
-
-        cleanup_data->computation_amount = computation_amount;
-        cleanup_data->communication_amount = communication_amount;
 
         string task_name = "p " + to_string(job->number) + "'" + job->profile + "'";
         XBT_INFO("Creating task '%s'", task_name.c_str());
@@ -139,9 +136,9 @@ int execute_profile(BatsimContext *context,
         msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
 
-        // The task has been executed, the data does need to be freed in the clenaup function anymore
-        cleanup_data->computation_amount = nullptr;
-        cleanup_data->communication_amount = nullptr;
+        // The task has been executed, the data does need to be freed in the cleanup function anymore
+        /*cleanup_data->computation_amount = nullptr;
+        cleanup_data->communication_amount = nullptr;*/
 
         int ret = 1;
         if (err == MSG_OK) {}
@@ -507,6 +504,8 @@ int execute_profile_cleanup(void * unknown, void * data)
 
     xbt_free(cleanup_data->computation_amount);
     xbt_free(cleanup_data->communication_amount);
+
+    XBT_DEBUG("before deleting cleanup_data %p", cleanup_data);
     delete cleanup_data;
 
     return 0;
