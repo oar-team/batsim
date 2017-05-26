@@ -112,6 +112,7 @@ int server_process(int argc, char *argv[])
             SubmitterByeMessage * message = (SubmitterByeMessage *) task_data->data;
 
             xbt_assert(submitters.count(message->submitter_name) == 1);
+            delete submitters[message->submitter_name];
             submitters.erase(message->submitter_name);
 
             nb_submitters_finished++;
