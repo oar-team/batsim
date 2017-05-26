@@ -549,9 +549,14 @@ int killer_process(int argc, char *argv[])
                                                                args->context);
             job->runtime = (Rational)MSG_get_clock() - job->starting_time;
 
-            xbt_assert(job->runtime > 0, "The execution of job '%s' resulted in a null execution time. "
-                       "This might be caused by MSG_clock() precision but also by a bad job profile.",
-                       job->id.c_str());
+            xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%g)!",
+                       job->id.c_str(), (double)job->runtime);
+            if (job->runtime == 0)
+            {
+                XBT_WARN("Killed job '%s' has a null runtime. Putting epsilon instead.",
+                         job->id.c_str());
+                job->runtime = Rational(1e-5);
+            }
 
             // If energy is enabled, let us compute the energy used by the machines after running the job
             if (args->context->energy_used)
