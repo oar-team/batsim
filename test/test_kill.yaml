@@ -4,14 +4,14 @@ base_variables:
     batsim_dir: ${base_working_directory}
 
 implicit_instances:
-  # Algorithms without parameters
-  noparam:
+  kill_each_job_after_10s:
     sweep:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
         - {"name":"hello", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
         - {"name":"medium_late", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example_late_job.json"}
+        - {"name":"same_profile", "filename":"${batsim_dir}/workload_profiles/delays_same_profile.json"}
       algo:
         - {"name":"killer", "sched_name":"killer"}
       redis_enabled: ["true", "false"]
@@ -19,7 +19,7 @@ implicit_instances:
       timeout: 3600
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${instance_id}
-      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -E -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vdebug
+      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -E -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vnetwork-only
       sched_command: batsched -v ${algo[sched_name]}
       commands_before_execution:
         # Generate Batsim config file
@@ -66,6 +66,38 @@ implicit_instances:
             EOF
         - chmod +x ${output_directory}/jobs_analysis.py
         - ${output_directory}/jobs_analysis.py
+
+  kill_when_new_job_submitted:
+    sweep:
+      platform :
+        - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
+      workload :
+        - {"name":"hello", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
+        #- {"name":"medium_late", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example_late_job.json"}
+        - {"name":"same_profile", "filename":"${batsim_dir}/workload_profiles/delays_same_profile.json"}
+      algo:
+        - {"name":"killer2", "sched_name":"killer2"}
+      redis_enabled: ["true", "false"]
+    generic_instance:
+      timeout: 3600
+      working_directory: ${base_working_directory}
+      output_directory: ${base_output_directory}/results/${instance_id}
+      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -E -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vnetwork-only
+      sched_command: batsched -v ${algo[sched_name]}
+      commands_before_execution:
+        # Generate Batsim config file
+        - |
+              #!/bin/bash
+              cat > ${output_directory}/batsim.conf << EOF
+              {
+                "redis": {
+                  "enabled": ${redis_enabled}
+                },
+                "job_submission": {
+                  "forward_profiles": true
+                }
+              }
+              EOF
 
 commands_before_instances:
   - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
