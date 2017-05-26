@@ -343,6 +343,7 @@ int lite_execute_job_process(int argc, char *argv[])
     // Job computation
     args->context->machines.update_machines_on_job_run(job, args->allocation->machine_ids, args->context);
     CleanExecuteProfileData * cleanup_data = new CleanExecuteProfileData;
+    cleanup_data->exec_process_args = args;
     SIMIX_process_on_exit(MSG_process_self(), execute_profile_cleanup, cleanup_data);
     if (execute_profile(args->context, job->profile, args->allocation, cleanup_data, &remaining_time) == 1)
     {
@@ -361,9 +362,6 @@ int lite_execute_job_process(int argc, char *argv[])
 
     args->context->machines.update_machines_on_job_end(job, args->allocation->machine_ids, args->context);
     job->runtime = MSG_get_clock() - job->starting_time;
-
-    delete args->allocation;
-    delete args;
 
     job->execution_processes.erase(MSG_process_self());
     return 0;
@@ -404,6 +402,7 @@ int execute_job_process(int argc, char *argv[])
                                                        args->allocation->machine_ids,
                                                        args->context);
     CleanExecuteProfileData * cleanup_data = new CleanExecuteProfileData;
+    cleanup_data->exec_process_args = args;
     SIMIX_process_on_exit(MSG_process_self(), execute_profile_cleanup, cleanup_data);
     if (execute_profile(args->context, job->profile, args->allocation, cleanup_data, &remaining_time) == 1)
     {
@@ -460,8 +459,6 @@ int execute_job_process(int argc, char *argv[])
     message->job_id = args->allocation->job_id;
 
     send_message("server", IPMessageType::JOB_COMPLETED, (void*)message);
-    delete args->allocation;
-    delete args;
 
     job->execution_processes.erase(MSG_process_self());
     return 0;
@@ -502,8 +499,19 @@ int execute_profile_cleanup(void * unknown, void * data)
     CleanExecuteProfileData * cleanup_data = (CleanExecuteProfileData *) data;
     xbt_assert(cleanup_data != nullptr);
 
+    XBT_DEBUG("before freeing computation amount %p", cleanup_data->computation_amount);
     xbt_free(cleanup_data->computation_amount);
+    XBT_DEBUG("before freeing communication amount %p", cleanup_data->communication_amount);
     xbt_free(cleanup_data->communication_amount);
+
+    if (cleanup_data->exec_process_args != nullptr)
+    {
+        XBT_DEBUG("before deleting exec_process_args->allocation %p",
+                  cleanup_data->exec_process_args->allocation);
+        delete cleanup_data->exec_process_args->allocation;
+        XBT_DEBUG("before deleting exec_process_args %p", cleanup_data->exec_process_args);
+        delete cleanup_data->exec_process_args;
+    }
 
     XBT_DEBUG("before deleting cleanup_data %p", cleanup_data);
     delete cleanup_data;
