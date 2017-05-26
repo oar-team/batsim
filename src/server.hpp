@@ -53,3 +53,157 @@ struct ServerData
  * @return 0
  */
 int server_process(int argc, char *argv[]);
+
+
+/**
+ * @brief Server SUBMITTER_HELLO handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_submitter_hello(ServerData * data,
+                               IPMessage * task_data);
+
+/**
+ * @brief Server SUBMITTER_BYE handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_submitter_bye(ServerData * data,
+                             IPMessage * task_data);
+
+/**
+ * @brief Server JOB_COMPLETED handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_job_completed(ServerData * data,
+                             IPMessage * task_data);
+
+/**
+ * @brief Server JOB_SUBMITTED handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_job_submitted(ServerData * data,
+                             IPMessage * task_data);
+
+/**
+ * @brief Server PSTATE_MODIFICATION handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_pstate_modification(ServerData * data,
+                                   IPMessage * task_data);
+
+/**
+ * @brief Server WAITING_DONE handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_waiting_done(ServerData * data,
+                            IPMessage * task_data);
+
+/**
+ * @brief Server SCHED_READY handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_sched_ready(ServerData * data,
+                           IPMessage * task_data);
+
+/**
+ * @brief Server SCHED_WAIT_ANSWER handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_sched_wait_answer(ServerData * data,
+                                 IPMessage * task_data);
+
+/**
+ * @brief Server SCHED_TELL_ME_ENERGY handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_sched_tell_me_energy(ServerData * data,
+                                    IPMessage * task_data);
+
+/**
+ * @brief Server WAIT_QUERY handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_wait_query(ServerData * data,
+                          IPMessage * task_data);
+
+/**
+ * @brief Server SWITCHED_ON handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_switched_on(ServerData * data,
+                           IPMessage * task_data);
+
+/**
+ * @brief Server SWITCHED_OFF handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_switched_off(ServerData * data,
+                            IPMessage * task_data);
+
+/**
+ * @brief Server KILLING_DONE handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_killing_done(ServerData * data,
+                            IPMessage * task_data);
+
+/**
+ * @brief Server END_DYNAMIC_SUBMIT handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_end_dynamic_submit(ServerData * data,
+                                  IPMessage * task_data);
+
+
+/**
+ * @brief Server JOB_SUBMITTED_BY_DP handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_submit_job(ServerData * data,
+                          IPMessage * task_data);
+
+/**
+ * @brief Server SCHED_REJECT_JOB handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_reject_job(ServerData * data,
+                          IPMessage * task_data);
+
+/**
+ * @brief Server SCHED_KILL_JOB handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_kill_jobs(ServerData * data,
+                         IPMessage * task_data);
+
+/**
+ * @brief Server SCHED_CALL_ME_LATER handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_call_me_later(ServerData * data,
+                             IPMessage * task_data);
+
+/**
+ * @brief Server SCHED_EXECUTE_JOB handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_execute_job(ServerData * data,
+                           IPMessage * task_data);
