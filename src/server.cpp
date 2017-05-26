@@ -166,16 +166,7 @@ void server_on_submitter_bye(ServerData * data,
     XBT_INFO("A submitted said goodbye. Number of finished submitters: %d",
              data->nb_submitters_finished);
 
-    if (!data->all_jobs_submitted_and_completed &&
-        data->nb_completed_jobs == data->nb_submitted_jobs &&
-        data->nb_submitters_finished == data->nb_submitters &&
-        (!data->context->submission_sched_enabled || data->context->submission_sched_finished))
-    {
-        data->all_jobs_submitted_and_completed = true;
-        XBT_INFO("It seems that all jobs have been submitted and completed!");
-
-        data->context->proto_writer->append_simulation_ends(MSG_get_clock());
-    }
+    check_submitted_and_completed(data);
 }
 
 void server_on_job_completed(ServerData * data,
@@ -214,16 +205,7 @@ void server_on_job_completed(ServerData * data,
     data->context->proto_writer->append_job_completed(message->job_id.to_string(),
                                                       status, MSG_get_clock());
 
-    if (!data->all_jobs_submitted_and_completed &&
-        data->nb_completed_jobs == data->nb_submitted_jobs &&
-        data->nb_submitters_finished == data->nb_submitters &&
-        (!data->context->submission_sched_enabled || data->context->submission_sched_finished))
-    {
-        data->all_jobs_submitted_and_completed = true;
-        XBT_INFO("It seems that all jobs have been submitted and completed!");
-
-        data->context->proto_writer->append_simulation_ends(MSG_get_clock());
-    }
+    check_submitted_and_completed(data);
 }
 
 void server_on_job_submitted(ServerData * data,
@@ -505,16 +487,7 @@ void server_on_killing_done(ServerData * data,
     data->context->proto_writer->append_job_killed(job_ids_str, MSG_get_clock());
     --data->nb_killers;
 
-    if (!data->all_jobs_submitted_and_completed &&
-        data->nb_completed_jobs == data->nb_submitted_jobs &&
-        data->nb_submitters_finished == data->nb_submitters &&
-        (!data->context->submission_sched_enabled || data->context->submission_sched_finished))
-    {
-        data->all_jobs_submitted_and_completed = true;
-        XBT_INFO("It seems that all jobs have been submitted and completed!");
-
-        data->context->proto_writer->append_simulation_ends(MSG_get_clock());
-    }
+    check_submitted_and_completed(data);
 }
 
 void server_on_end_dynamic_submit(ServerData * data,
@@ -744,4 +717,19 @@ void server_on_execute_job(ServerData * data,
                                                (void*)exec_args,
                                                data->context->machines[allocation->machine_ids.first_element()]->host);
     job->execution_processes.insert(process);
+}
+
+void check_submitted_and_completed(ServerData * data)
+{
+    if (!data->all_jobs_submitted_and_completed && // guard to prevent multiple SIMULATION_ENDS events
+        data->nb_submitters_finished == data->nb_submitters && // all submitters must have finished
+        data->nb_completed_jobs == data->nb_submitted_jobs && // all submitted jobs must have finished
+        // If dynamic submission is enabled, it must be finished
+        (!data->context->submission_sched_enabled || data->context->submission_sched_finished))
+    {
+        XBT_INFO("It seems that all jobs have been submitted and completed!");
+        data->all_jobs_submitted_and_completed = true;
+
+        data->context->proto_writer->append_simulation_ends(MSG_get_clock());
+    }
 }

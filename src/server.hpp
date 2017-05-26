@@ -47,6 +47,12 @@ struct ServerData
 };
 
 /**
+ * @brief Checks whether all jobs are submitted and completed
+ * @param[in,out] data The data associated with the server_process
+ */
+void check_submitted_and_completed(ServerData * data);
+
+/**
  * @brief Process used to orchestrate the simulation
  * @param[in] argc The number of arguments
  * @param[in] argv The arguments' values
