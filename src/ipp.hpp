@@ -200,20 +200,11 @@ struct SchedWaitAnswerMessage
 };
 
 /**
- * @brief The content of the SwitchON message
+ * @brief The content of the SwitchON/SwitchOFF message
  */
-struct SwitchONMessage
+struct SwitchMessage
 {
     int machine_id; //!< The unique number of the machine which should be switched ON
-    int new_pstate; //!< The power state the machine should be put into
-};
-
-/**
- * @brief The content of the SwitchOFF message
- */
-struct SwitchOFFMessage
-{
-    int machine_id; //!< The unique number of the machine which should be switched OFF
     int new_pstate; //!< The power state the machine should be put into
 };
 

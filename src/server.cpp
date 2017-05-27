@@ -63,8 +63,8 @@ int server_process(int argc, char *argv[])
     handler_map[IPMessageType::KILLING_DONE] = server_on_killing_done;
     handler_map[IPMessageType::SUBMITTER_HELLO] = server_on_submitter_hello;
     handler_map[IPMessageType::SUBMITTER_BYE] = server_on_submitter_bye;
-    handler_map[IPMessageType::SWITCHED_ON] = server_on_switched_on;
-    handler_map[IPMessageType::SWITCHED_OFF] = server_on_switched_off;
+    handler_map[IPMessageType::SWITCHED_ON] = server_on_switched;
+    handler_map[IPMessageType::SWITCHED_OFF] = server_on_switched;
     handler_map[IPMessageType::END_DYNAMIC_SUBMIT] = server_on_end_dynamic_submit;
 
     // Simulation loop
@@ -401,37 +401,11 @@ void server_on_wait_query(ServerData * data,
     //origin_of_wait_queries[{message->nb_resources,message->processing_time}] = submitter;
 }
 
-void server_on_switched_on(ServerData * data,
-                           IPMessage * task_data)
+void server_on_switched(ServerData * data,
+                        IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr);
-    SwitchONMessage * message = (SwitchONMessage *) task_data->data;
-
-    xbt_assert(data->context->machines.exists(message->machine_id));
-    Machine * machine = data->context->machines[message->machine_id];
-    (void) machine; // Avoids a warning if assertions are ignored
-    xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
-
-    MachineRange all_switched_machines;
-    if (data->context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate,
-                                                            all_switched_machines, data->context))
-    {
-        if (data->context->trace_machine_states)
-            data->context->machine_state_tracer.write_machine_states(MSG_get_clock());
-
-        data->context->proto_writer->append_resource_state_changed(all_switched_machines,
-                                                                   std::to_string(message->new_pstate),
-                                                                   MSG_get_clock());
-    }
-
-    --data->nb_switching_machines;
-}
-
-void server_on_switched_off(ServerData * data,
-                            IPMessage * task_data)
-{
-    xbt_assert(task_data->data != nullptr);
-    SwitchOFFMessage * message = (SwitchOFFMessage *) task_data->data;
+    SwitchMessage * message = (SwitchMessage *) task_data->data;
 
     xbt_assert(data->context->machines.exists(message->machine_id));
     Machine * machine = data->context->machines[message->machine_id];

@@ -61,7 +61,7 @@ int switch_on_machine_process(int argc, char *argv[])
 
     machine->update_machine_state(MachineState::IDLE);
 
-    SwitchONMessage * msg = new SwitchONMessage;
+    SwitchMessage * msg = new SwitchMessage;
     msg->machine_id = args->machine_id;
     msg->new_pstate = args->new_pstate;
     send_message("server", IPMessageType::SWITCHED_ON, (void *) msg);
@@ -116,7 +116,7 @@ int switch_off_machine_process(int argc, char *argv[])
 
     machine->update_machine_state(MachineState::SLEEPING);
 
-    SwitchOFFMessage * msg = new SwitchOFFMessage;
+    SwitchMessage * msg = new SwitchMessage;
     msg->machine_id = args->machine_id;
     msg->new_pstate = args->new_pstate;
     send_message("server", IPMessageType::SWITCHED_OFF, (void *) msg);

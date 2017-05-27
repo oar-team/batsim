@@ -212,12 +212,12 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SWITCHED_ON:
         {
-            SwitchONMessage * msg = (SwitchONMessage *) data;
+            SwitchMessage * msg = (SwitchMessage *) data;
             delete msg;
         } break;
         case IPMessageType::SWITCHED_OFF:
         {
-            SwitchOFFMessage * msg = (SwitchOFFMessage *) data;
+            SwitchMessage * msg = (SwitchMessage *) data;
             delete msg;
         } break;
         case IPMessageType::WAITING_DONE:

@@ -142,20 +142,12 @@ void server_on_wait_query(ServerData * data,
                           IPMessage * task_data);
 
 /**
- * @brief Server SWITCHED_ON handler
+ * @brief Server SWITCHED_ON/SWITCHED_OFF handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_switched_on(ServerData * data,
+void server_on_switched(ServerData * data,
                            IPMessage * task_data);
-
-/**
- * @brief Server SWITCHED_OFF handler
- * @param[in,out] data The data associated with the server_process
- * @param[in,out] task_data The data associated with the message the server received
- */
-void server_on_switched_off(ServerData * data,
-                            IPMessage * task_data);
 
 /**
  * @brief Server KILLING_DONE handler
