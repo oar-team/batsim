@@ -282,46 +282,6 @@ int execute_profile(BatsimContext *context,
     return 0;
 }
 
-int lite_execute_job_process(int argc, char *argv[])
-{
-    (void) argc;
-    (void) argv;
-
-    // Retrieving input parameters
-    ExecuteJobProcessArguments * args = (ExecuteJobProcessArguments *) MSG_process_get_data(MSG_process_self());
-
-    Job * job = args->context->workloads.job_at(args->allocation->job_id);
-    job->starting_time = MSG_get_clock();
-    job->allocation = args->allocation->machine_ids;
-    double remaining_time = (double) job->walltime;
-
-    // Job computation
-    args->context->machines.update_machines_on_job_run(job, args->allocation->machine_ids, args->context);
-    CleanExecuteProfileData * cleanup_data = new CleanExecuteProfileData;
-    cleanup_data->exec_process_args = args;
-    SIMIX_process_on_exit(MSG_process_self(), execute_profile_cleanup, cleanup_data);
-    if (execute_profile(args->context, job->profile, args->allocation, cleanup_data, &remaining_time) == 1)
-    {
-        XBT_INFO("Job %s finished in time", job->id.c_str());
-        job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
-    }
-    else
-    {
-        XBT_INFO("Job %s had been killed (walltime %g reached)",
-                 job->id.c_str(), (double)job->walltime);
-        job->state = JobState::JOB_STATE_COMPLETED_KILLED;
-        job->kill_reason = "Walltime reached";
-        if (args->context->trace_schedule)
-            args->context->paje_tracer.add_job_kill(job, args->allocation->machine_ids, MSG_get_clock(), true);
-    }
-
-    args->context->machines.update_machines_on_job_end(job, args->allocation->machine_ids, args->context);
-    job->runtime = MSG_get_clock() - job->starting_time;
-
-    job->execution_processes.erase(MSG_process_self());
-    return 0;
-}
-
 int execute_job_process(int argc, char *argv[])
 {
     (void) argc;
@@ -363,23 +323,18 @@ int execute_job_process(int argc, char *argv[])
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
         job->kill_reason = "Walltime reached";
         if (args->context->trace_schedule)
-            args->context->paje_tracer.add_job_kill(job,
-                                                    args->allocation->machine_ids,
-                                                    MSG_get_clock(),
-                                                    true);
+            args->context->paje_tracer.add_job_kill(job, args->allocation->machine_ids,
+                                                    MSG_get_clock(), true);
     }
 
-    args->context->machines.update_machines_on_job_end(job,
-                                                       args->allocation->machine_ids,
+    args->context->machines.update_machines_on_job_end(job, args->allocation->machine_ids,
                                                        args->context);
-    job->runtime = (Rational)MSG_get_clock() - job->starting_time;
-    // dirty hack, should be removed once SMPI works correctly
-    if (workload->profiles->at(job->profile)->type == ProfileType::SMPI)
-        job->runtime = max(job->runtime, Rational(1e-5));
-
-    xbt_assert(job->runtime > 0, "The execution of job '%s' resulted in a null execution time. "
-               "This might be caused by MSG_clock() precision but also by a bad job profile.",
-               job->id.c_str());
+    job->runtime = MSG_get_clock() - job->starting_time;
+    if (job->runtime == 0)
+    {
+        XBT_WARN("Job '%s' computed in null time. Putting epsilon instead.", job->id.c_str());
+        job->runtime = Rational(1e-5);
+    }
 
     // If energy is enabled, let us compute the energy used by the machines after running the job
     if (args->context->energy_used)
@@ -394,11 +349,14 @@ int execute_job_process(int argc, char *argv[])
         args->context->energy_tracer.add_job_end(MSG_get_clock(), job->number);
     }
 
-    // Let us tell the server that the job completed
-    JobCompletedMessage * message = new JobCompletedMessage;
-    message->job_id = args->allocation->job_id;
+    if (args->notify_server_at_end)
+    {
+        // Let us tell the server that the job completed
+        JobCompletedMessage * message = new JobCompletedMessage;
+        message->job_id = args->allocation->job_id;
 
-    send_message("server", IPMessageType::JOB_COMPLETED, (void*)message);
+        send_message("server", IPMessageType::JOB_COMPLETED, (void*)message);
+    }
 
     job->execution_processes.erase(MSG_process_self());
     return 0;

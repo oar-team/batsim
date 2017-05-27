@@ -254,6 +254,7 @@ struct ExecuteJobProcessArguments
 {
     BatsimContext * context;            //!< The BatsimContext
     SchedulingAllocation * allocation;  //!< The SchedulingAllocation
+    bool notify_server_at_end;          //!< Whether a message to the server must be sent after job completion
 };
 
 /**

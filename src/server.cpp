@@ -690,6 +690,7 @@ void server_on_execute_job(ServerData * data,
     ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
     exec_args->context = data->context;
     exec_args->allocation = allocation;
+    exec_args->notify_server_at_end = true;
     string pname = "job_" + job->id;
     msg_process_t process = MSG_process_create(pname.c_str(), execute_job_process,
                                                (void*)exec_args,
