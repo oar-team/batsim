@@ -677,11 +677,15 @@ void server_on_execute_job(ServerData * data,
     allocation->hosts.clear();
     allocation->hosts.reserve(allocation->machine_ids.size());
     int host_i = 0;
-    for (auto machine_it = allocation->machine_ids.elements_begin(); machine_it != allocation->machine_ids.elements_end(); ++machine_it,++host_i)
+    for (auto machine_it = allocation->machine_ids.elements_begin();
+         machine_it != allocation->machine_ids.elements_end();
+         ++machine_it, ++host_i)
     {
         int machine_id = *machine_it;
-        allocation->hosts[host_i] = data->context->machines[machine_id]->host;
+        allocation->hosts.push_back(data->context->machines[machine_id]->host);
     }
+    xbt_assert(allocation->hosts.size() == allocation->machine_ids.size(),
+               "Invalid number of hosts");
 
     ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
     exec_args->context = data->context;
