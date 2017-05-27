@@ -382,15 +382,7 @@ int execute_job_process(int argc, char *argv[])
     // If energy is enabled, let us compute the energy used by the machines before running the job
     if (args->context->energy_used)
     {
-        job->consumed_energy = 0;
-
-        for (auto it = job->allocation.elements_begin(); it != job->allocation.elements_end(); ++it)
-        {
-            int machine_id = *it;
-            Machine * machine = args->context->machines[machine_id];
-            job->consumed_energy += sg_host_get_consumed_energy(machine->host);
-        }
-
+        job->consumed_energy = consumed_energy_on_machines(args->context, job->allocation);
         // Let's trace the consumed energy
         args->context->energy_tracer.add_job_start(MSG_get_clock(), job->number);
     }
@@ -436,17 +428,10 @@ int execute_job_process(int argc, char *argv[])
     if (args->context->energy_used)
     {
         long double consumed_energy_before = job->consumed_energy;
-        job->consumed_energy = 0;
-
-        for (auto it = job->allocation.elements_begin(); it != job->allocation.elements_end(); ++it)
-        {
-            int machine_id = *it;
-            Machine * machine = args->context->machines[machine_id];
-            job->consumed_energy += sg_host_get_consumed_energy(machine->host);
-        }
+        job->consumed_energy = consumed_energy_on_machines(args->context, job->allocation);
 
         // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
-        job->consumed_energy = job->consumed_energy - consumed_energy_before;
+        job->consumed_energy -= job->consumed_energy - consumed_energy_before;
 
         // Let's trace the consumed energy
         args->context->energy_tracer.add_job_end(MSG_get_clock(), job->number);
@@ -574,14 +559,7 @@ int killer_process(int argc, char *argv[])
             if (args->context->energy_used)
             {
                 long double consumed_energy_before = job->consumed_energy;
-                job->consumed_energy = 0;
-
-                for (auto it = job->allocation.elements_begin(); it != job->allocation.elements_end(); ++it)
-                {
-                    int machine_id = *it;
-                    Machine * machine = args->context->machines[machine_id];
-                    job->consumed_energy += sg_host_get_consumed_energy(machine->host);
-                }
+                job->consumed_energy = consumed_energy_on_machines(args->context, job->allocation);
 
                 // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
                 job->consumed_energy = job->consumed_energy - consumed_energy_before;

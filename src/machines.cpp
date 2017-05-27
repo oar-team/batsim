@@ -625,3 +625,20 @@ void create_machines(const MainArguments & main_args,
     XBT_INFO("The machines have been created successfully. There are %d computing machines.",
              context->machines.nb_machines());
 }
+
+long double consumed_energy_on_machines(BatsimContext * context,
+                                        const MachineRange & machines)
+{
+    if (!context->energy_used)
+        return 0;
+
+    long double consumed_energy = 0;
+    for (auto it = machines.elements_begin(); it != machines.elements_end(); ++it)
+    {
+        int machine_id = *it;
+        Machine * machine = context->machines[machine_id];
+        consumed_energy += sg_host_get_consumed_energy(machine->host);
+    }
+
+    return consumed_energy;
+}

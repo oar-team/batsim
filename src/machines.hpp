@@ -267,4 +267,14 @@ std::string machine_state_to_string(MachineState state);
  * @param[in] context The BatsimContext
  * @param[in] max_nb_machines_to_use The maximum number of computing machines to use
  */
-void create_machines(const MainArguments & main_args, BatsimContext * context, int max_nb_machines_to_use);
+void create_machines(const MainArguments & main_args, BatsimContext * context,
+                     int max_nb_machines_to_use);
+
+/**
+ * @brief Computes the energy that has been consumed on some machines since time 0
+ * @param[in] context The BatsimContext
+ * @param[in] machines The machines whose energy must be computed
+ * @return The energy (in joules) consumed on the machines since time 0
+ */
+long double consumed_energy_on_machines(BatsimContext * context,
+                                        const MachineRange & machines);
