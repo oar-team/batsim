@@ -45,94 +45,115 @@ int execute_profile(BatsimContext *context,
     Profile * profile = workload->profiles->at(profile_name);
     int nb_res = job->required_nb_res;
 
-    if (profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS)
+    if (profile->type == ProfileType::MSG_PARALLEL ||
+        profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS ||
+        profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS0)
     {
-        MsgParallelHomogeneousProfileData * data = (MsgParallelHomogeneousProfileData *)profile->data;
-
-        double cpu = data->cpu;
-        double com = data->com;
-
-        // These amounts are deallocated by SG
-        double * computation_amount = xbt_new(double, nb_res);
+        double * computation_amount = nullptr;
         double * communication_amount = nullptr;
-        if(com > 0)
-            communication_amount = xbt_new(double, nb_res * nb_res);
+        string task_name_prefix;
+        std::vector<msg_host_t> hosts_to_use = allocation->hosts;
 
-        // Let us fill the local computation and communication matrices
-        int k = 0;
-        for (int y = 0; y < nb_res; ++y)
+        if (profile->type == ProfileType::MSG_PARALLEL)
         {
-            computation_amount[y] = cpu;
-            if(communication_amount != nullptr)
+            task_name_prefix = "p ";
+            MsgParallelProfileData * data = (MsgParallelProfileData *)profile->data;
+
+            // These amounts are deallocated by SG
+            computation_amount = xbt_new(double, nb_res);
+            communication_amount = xbt_new(double, nb_res*nb_res);
+
+            // Let us retrieve the matrices from the profile
+            memcpy(computation_amount, data->cpu, sizeof(double) * nb_res);
+            memcpy(communication_amount, data->com, sizeof(double) * nb_res * nb_res);
+        }
+        else if (profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS)
+        {
+            task_name_prefix = "phg ";
+            MsgParallelHomogeneousProfileData * data = (MsgParallelHomogeneousProfileData *)profile->data;
+
+            double cpu = data->cpu;
+            double com = data->com;
+
+            // These amounts are deallocated by SG
+            computation_amount = xbt_new(double, nb_res);
+            communication_amount = nullptr;
+            if(com > 0)
+                communication_amount = xbt_new(double, nb_res * nb_res);
+
+            // Let us fill the local computation and communication matrices
+            int k = 0;
+            for (int y = 0; y < nb_res; ++y)
             {
-                for (int x = 0; x < nb_res; ++x)
+                computation_amount[y] = cpu;
+                if(communication_amount != nullptr)
                 {
-                    if (x == y)
-                        communication_amount[k++] = 0;
-                    else
-                        communication_amount[k++] = com;
+                    for (int x = 0; x < nb_res; ++x)
+                    {
+                        if (x == y)
+                            communication_amount[k++] = 0;
+                        else
+                            communication_amount[k++] = com;
+                    }
+                }
+            }
+        }
+        else if (profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS0)
+        {
+            task_name_prefix = "pfs0 ";
+            MsgParallelHomogeneousPFS0ProfileData * data = (MsgParallelHomogeneousPFS0ProfileData *)profile->data;
+
+            double cpu = 0;
+            double size = data->size;
+
+            // The PFS machine will also be used
+            nb_res = nb_res + 1;
+            int pfs_id = nb_res - 1;
+
+            // Add the pfs_machine
+            hosts_to_use.push_back(context->machines.pfs_machine()->host);
+
+            // These amounts are deallocated by SG
+            computation_amount = xbt_new(double, nb_res);
+            communication_amount = nullptr;
+            if(size > 0)
+                communication_amount = xbt_new(double, nb_res*nb_res);
+
+            // Let us fill the local computation and communication matrices
+            int k = 0;
+            for (int y = 0; y < nb_res; ++y)
+            {
+                computation_amount[y] = cpu;
+                if(communication_amount != nullptr)
+                {
+                    for (int x = 0; x < nb_res; ++x)
+                    {
+                        // Communications are done towards the PFS host, which is the last resource
+                        if (x != pfs_id)
+                            communication_amount[k++] = 0;
+                        else
+                            communication_amount[k++] = size;
+                    }
                 }
             }
         }
 
-        string task_name = "phg " + to_string(job->number) + "'" + job->profile + "'";
+        string task_name = task_name_prefix + to_string(job->number) + "'" + job->profile + "'";
         XBT_INFO("Creating task '%s'", task_name.c_str());
 
         msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(),
-                                                    nb_res, allocation->hosts.data(),
+                                                    nb_res,
+                                                    hosts_to_use.data(),
                                                     computation_amount,
                                                     communication_amount, NULL);
 
         // If the process gets killed, the following data may need to be freed
         cleanup_data->task = ptask;
 
-        double timeBeforeExecute = MSG_get_clock();
+        double time_before_execute = MSG_get_clock();
         XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
         msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
-        *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
-
-        int ret = 1;
-        if (err == MSG_OK) {}
-        else if (err == MSG_TIMEOUT)
-            ret = 0;
-        else
-            xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
-
-        XBT_INFO("Task '%s' finished", MSG_task_get_name(ptask));
-        MSG_task_destroy(ptask);
-
-        // The task has been executed, the data does need to be freed in the cleanup function anymore
-        cleanup_data->task = nullptr;
-
-        return ret;
-    }
-    else if (profile->type == ProfileType::MSG_PARALLEL)
-    {
-        MsgParallelProfileData * data = (MsgParallelProfileData *)profile->data;
-
-        // These amounts are deallocated by SG
-        double * computation_amount = xbt_new(double, nb_res);
-        double * communication_amount = xbt_new(double, nb_res*nb_res);
-
-        // Let us retrieve the matrices from the profile
-        memcpy(computation_amount, data->cpu, sizeof(double) * nb_res);
-        memcpy(communication_amount, data->com, sizeof(double) * nb_res * nb_res);
-
-        string task_name = "p " + to_string(job->number) + "'" + job->profile + "'";
-        XBT_INFO("Creating task '%s'", task_name.c_str());
-
-        msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(),
-                                                    nb_res, allocation->hosts.data(),
-                                                    computation_amount,
-                                                    communication_amount, NULL);
-
-        // If the process gets killed, the following data may need to be freed
-        cleanup_data->task = ptask;
-
-        double timeBeforeExecute = MSG_get_clock();
-        XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
-        msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
-        *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
+        *remaining_time = *remaining_time - (MSG_get_clock() - time_before_execute);
 
         int ret = 1;
         if (err == MSG_OK) {}
@@ -253,70 +274,6 @@ int execute_profile(BatsimContext *context,
         MSG_sem_acquire(sem);
         free(sem);
         return 1;
-    }
-
-    if (profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS0)
-    {
-        MsgParallelHomogeneousPFS0ProfileData * data = (MsgParallelHomogeneousPFS0ProfileData *)profile->data;
-
-        double cpu = 0;
-        double size = data->size;
-        std::vector<msg_host_t> hosts_pfs0(allocation->hosts);
-
-        // The PFS machine will also be used
-        nb_res = nb_res + 1;
-        int pfs_id = nb_res - 1;
-
-        // Add the pfs_machine
-        hosts_pfs0.push_back((context->machines.pfs_machine())->host);
-
-        // These amounts are deallocated by SG
-        double * computation_amount = xbt_new(double, nb_res);
-        double * communication_amount = nullptr;
-        if(size > 0)
-            communication_amount = xbt_new(double, nb_res*nb_res);
-
-        // Let us fill the local computation and communication matrices
-        int k = 0;
-        for (int y = 0; y < nb_res; ++y)
-        {
-            computation_amount[y] = cpu;
-            if(communication_amount != nullptr)
-            {
-                for (int x = 0; x < nb_res; ++x)
-                {
-                    // Communications are done towards the PFS host, which is the last resource
-                    if (x != pfs_id)
-                        communication_amount[k++] = 0;
-                    else
-                        communication_amount[k++] = size;
-                }
-            }
-        }
-
-        string task_name = "phg " + to_string(job->number) + "'" + job->profile + "'";
-        XBT_INFO("Creating task '%s'", task_name.c_str());
-
-        msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(),
-                                         nb_res, hosts_pfs0.data(),
-                                         computation_amount,
-                                         communication_amount, NULL);
-
-        double timeBeforeExecute = MSG_get_clock();
-        XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
-        msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
-        *remaining_time = *remaining_time - (MSG_get_clock() - timeBeforeExecute);
-
-        int ret = 1;
-        if (err == MSG_OK) {}
-        else if (err == MSG_TIMEOUT)
-            ret = 0;
-        else
-            xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
-
-        XBT_INFO("Task '%s' finished", MSG_task_get_name(ptask));
-        MSG_task_destroy(ptask);
-        return ret;
     }
     else
         xbt_die("Cannot execute job %s: the profile type '%s' is unknown",
