@@ -250,6 +250,13 @@ or not, depending on whether the job completed without reaching timeout).
 Some jobs have been killed. It acknowledges that the actions coming from a
 previous [KILL_JOB](#kill_job) message have been done.
 
+Please remark that this message does not necessarily means that all the jobs
+have been killed. It means that all the jobs have completed. Some of the jobs
+might have completed *ordinarily* before the kill.
+In this case, [JOB_COMPLETED](#job_completed) events corresponding to the
+aforementioned jobs should be received before the [JOB_KILLED](#job_killed)
+event.
+
 - **data**: A list of job ids
 - **example**:
 ```json
