@@ -481,7 +481,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
 
         int nb_machines_in_workload = -1;
         workload->load_from_json(desc.filename, nb_machines_in_workload);
-        max_nb_machines_in_workloads = max(max_nb_machines_in_workloads, nb_machines_in_workload);
+        max_nb_machines_in_workloads = std::max(max_nb_machines_in_workloads, nb_machines_in_workload);
 
         context->workloads.insert_workload(desc.name, workload);
     }
@@ -503,7 +503,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     // Let's compute how the number of machines to use should be limited
     max_nb_machines_to_use = 0;
     if ((main_args.limit_machines_count_by_workload) && (main_args.limit_machines_count > 0))
-        max_nb_machines_to_use = min(main_args.limit_machines_count, max_nb_machines_in_workloads);
+        max_nb_machines_to_use = std::min(main_args.limit_machines_count, max_nb_machines_in_workloads);
     else if (main_args.limit_machines_count_by_workload)
         max_nb_machines_to_use = max_nb_machines_in_workloads;
     else if (main_args.limit_machines_count > 0)

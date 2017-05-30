@@ -619,7 +619,6 @@ void PajeTracer::generate_colors(int color_count)
 {
     xbt_assert(color_count > 0);
 
-    double h, s=1, v=1, r, g, b;
     const int buf_size = 256;
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
@@ -629,7 +628,8 @@ void PajeTracer::generate_colors(int color_count)
     double hueFraction = 360.0 / color_count;
     for (int i = 0; i < color_count; ++i)
     {
-        h = i * hueFraction;
+        double h = i * hueFraction;
+        double s=1, v=1, r, g, b;
         hsv_to_rgb(h,s,v, r,g,b);
 
         nb_printed = snprintf(buf, buf_size, "\"%lf %lf %lf\"", r, g, b);

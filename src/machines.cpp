@@ -72,9 +72,8 @@ void Machines::create_machines(xbt_dynar_t hosts,
         if (context->energy_used)
         {
             int nb_pstates = MSG_host_get_nb_pstates(machine->host);
-            bool contains_sleep_pstates = false;
             const char * sleep_states_cstr = MSG_host_get_property_value(machine->host, "sleep_pstates");
-            contains_sleep_pstates = (sleep_states_cstr != NULL);
+            bool contains_sleep_pstates = (sleep_states_cstr != NULL);
 
             // Let the sleep_pstates property be traversed in order to find the sleep and virtual transition pstates
             if (contains_sleep_pstates)
