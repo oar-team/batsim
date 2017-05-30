@@ -1,18 +1,23 @@
 #!/usr/bin/env python
+
+"""Clean previous results of an output directory."""
 import argparse
 import os
 import shutil
-import sys
+
 
 def clean_output_directory(dir):
+    """Clean an output directory."""
     if os.path.isdir(dir):
         subdirs = [dir + '/' + x for x in ['instances', 'sweeper', 'results']]
         for subdir in subdirs:
             if os.path.isdir(subdir):
                 shutil.rmtree(subdir)
 
+
 def main():
-    parser = argparse.ArgumentParser(description = 'Cleans a batsim execN '
+    """Entry point. Parses input arguments and calls clean_output_directory."""
+    parser = argparse.ArgumentParser(description='Cleans a batsim execN '
                                      'output directory')
 
     parser.add_argument('dir',
