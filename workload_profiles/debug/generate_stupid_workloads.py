@@ -1,27 +1,36 @@
 #!/usr/bin/env python3
+
+"""Generate stupid workloads."""
 import argparse
 import json
 import random
 
+
 def generate_workload(nb_jobs, input_profiles, nb_res,
                       output_filename, indent):
-
+    """Generate a workload and writes it into output_filename."""
     profile_json = json.load(open(input_profiles, 'r'))
     profile_names = [profile for profile in profile_json['profiles']]
     walltime = 4200
 
-    content = { "nb_res": nb_res,
-                "jobs": [ {"id":i, "subtime":i, "walltime":4200, "res":1,
-                           "profile":random.choice(profile_names)}
-                          for i in range(1, nb_jobs+1)
-                ],
-                "profiles":profile_json['profiles']
-    }
+    content = {"nb_res": nb_res,
+               "jobs": [{"id": i, "subtime": i, "walltime": walltime, "res": 1,
+                         "profile": random.choice(profile_names)}
+                        for i in range(1, nb_jobs + 1)
+                        ],
+               "profiles": profile_json['profiles']
+               }
 
     with open(output_filename, 'w') as f:
         json.dump(content, f, indent=indent, sort_keys=True)
 
+
 def main():
+    """
+    Program entry point.
+
+    Parses the input arguments and call generate_workload.
+    """
     script_description = "Generates a lot of delay profiles into a file."
 
     p = argparse.ArgumentParser(description=script_description)
@@ -57,4 +66,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
