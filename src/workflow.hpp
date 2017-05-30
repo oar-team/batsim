@@ -88,7 +88,7 @@ public:
     std::string filename;  //!< The DAX filename
     std::string name; //!< The Workflow name
     std::map<std::string, Task *> tasks; //!< Hashmap of all tasks
-    double start_time; //!< Workflow start time
+    double start_time = -1; //!< Workflow start time
 
 private:
     pugi::xml_document dax_tree; //!< The DAX tree
@@ -128,7 +128,7 @@ public:
     Job *batsim_job = nullptr; //!< The batsim job created for this task
     std::vector<Task *> parents; //!< The parent
     std::vector<Task *> children; //!< The children
-    int nb_parent_completed; //!< The number of preceding tasks completed
+    int nb_parent_completed = 0; //!< The number of preceding tasks completed
     int depth = 0; //!< The task's top level
 };
 

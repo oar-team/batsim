@@ -20,9 +20,9 @@ using namespace pugi;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(workflow, "workflow"); //!< Logging
 
-Workflow::Workflow(const std::string & name)
+Workflow::Workflow(const std::string & name) :
+    name(name)
 {
-    this->name = name;
 }
 
 Workflow::~Workflow()
@@ -174,13 +174,11 @@ int Workflow::get_maximum_depth() {
 
 
 
-Task::Task(const int num_procs, const double execution_time, std::string id)
+Task::Task(const int num_procs, const double execution_time, std::string id) :
+    num_procs(num_procs),
+    execution_time(execution_time),
+    id(id)
 {
-    this->num_procs = num_procs;
-    this->execution_time = execution_time;
-    this->id = id;
-    this->batsim_job = nullptr;
-    this->nb_parent_completed = 0;
 }
 
 Task::~Task()
