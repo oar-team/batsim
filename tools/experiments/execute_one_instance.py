@@ -235,7 +235,7 @@ def check_variables(variables):
     # Let's check that they have valid bash identifier names
     for var_name in variables:
         if not is_valid_identifier(var_name):
-            logger.error("Invalid variable name '{var_name}'".format(var_name))
+            logger.error("Invalid variable name '{}'".format(var_name))
             return (False, [])
 
     # Let's check whether the dependency graph is a DAG
