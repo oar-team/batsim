@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Execute one Batsim instance."""
+
 import argparse
 import asyncio.subprocess
 import async_timeout
@@ -15,21 +17,27 @@ import sys
 import time
 import yaml
 
+
 class ArgumentParserError(Exception):
+    """A custom Exception type when parsing with argparse."""
+
     pass
 
 
 class ThrowingArgumentParser(argparse.ArgumentParser):
+    """An ArgumentParser that throws exceptions on errors."""
 
     def error(self, message):
+        """Callback function called when parsing errors arise."""
         raise ArgumentParserError(message)
 
 
 def find_info_from_batsim_command(batsim_command):
+    """Get information from the Batsim command."""
     split_command = shlex.split(batsim_command)
 
-    assert(len(split_command) > 1), "Invalid Batsim command: '{}'".format(
-                                    batsim_command)
+    assert len(split_command) > 1, "Invalid Batsim command: '{}'".format(
+        batsim_command)
 
     if 'batsim' not in split_command[0]:
         logger.warning("Batsim does not seem to be executed directly. "
@@ -102,28 +110,32 @@ def find_info_from_batsim_command(batsim_command):
 
         return (batargs.socket_endpoint, is_batexec)
     except ArgumentParserError as e:
-        logger.error("Could not retrieve Batsim's socket from Batsim's command "
-                     "'{}'. Parsing error: '{}'".format(batsim_command, e))
+        logger.error("Could not retrieve Batsim's socket from Batsim's command"
+                     " '{}'. Parsing error: '{}'".format(batsim_command, e))
         sys.exit(-1)
 
 
 def write_string_into_file(string, filename):
+    """Write a string into a file."""
     f = open(filename, 'w')
     f.write(string)
     f.close()
 
 
 def create_dir_if_not_exists(directory):
+    """Python mkdir -p."""
     if not os.path.exists(directory):
         os.makedirs(directory)
 
 
 def delete_file_if_exists(filename):
+    """Only deletes a file if it exists."""
     if os.path.exists(filename):
         os.remove(filename)
 
 
 def random_string(length=16):
+    """Generate a alphanum string."""
     assert(length > 0)
     alphanum = "abcdefghijklmnopqrstuvwxyz0123456789"
     s = ''
@@ -133,6 +145,7 @@ def random_string(length=16):
 
 
 def make_file_executable(filename):
+    """Python chmod +x."""
     st = os.stat(filename)
     os.chmod(filename, st.st_mode | stat.S_IEXEC)
 
@@ -141,6 +154,7 @@ def retrieve_info_from_instance(variables,
                                 variables_declaration_order,
                                 working_directory,
                                 batsim_command):
+    """Retrieve information from the instance."""
     filename_ok = False
     while not filename_ok:
         r = random_string()
@@ -217,6 +231,7 @@ def find_all_values(var_value):
 
 
 def check_variables(variables):
+    """Check whether variables are valid."""
     # Let's check that they have valid bash identifier names
     for var_name in variables:
         if not is_valid_identifier(var_name):
@@ -280,10 +295,12 @@ def check_variables(variables):
 
 
 def is_valid_identifier(string):
+    """Return whether a given string is a valid (variable) identifier."""
     return re.match("^[_A-Za-z][_a-zA-Z0-9]*$", string)
 
 
 def variable_to_text(variables, var_name):
+    """Generate the bash declaration of a variable."""
     text = ""
     var_value = variables[var_name]
     if isinstance(var_value, tuple) or isinstance(var_value, list):
@@ -312,6 +329,7 @@ def variable_to_text(variables, var_name):
 def put_variables_in_file(variables,
                           variables_declaration_order,
                           output_filename):
+    """Put bash declarations of variables into a file."""
     text_to_write = "#!/usr/bin/env bash\n"
 
     # Let's define all variables in the specified order
@@ -333,6 +351,7 @@ def put_variables_in_file(variables,
 def create_file_from_command(command,
                              output_filename,
                              variables_definition_filename):
+    """Generate a bash script from a string command."""
     text_to_write = "#!/usr/bin/env bash\n"
 
     # Let's define all variables
@@ -351,7 +370,8 @@ def create_file_from_command(command,
 
 
 def display_process_output_on_error(process_name, stdout_file, stderr_file,
-                                    max_lines = 42):
+                                    max_lines=42):
+    """Display process output when on error."""
     if (stdout_file is None) and (stderr_file is None):
         logger.error("Cannot retrieve any log about the failed process")
         return
@@ -370,11 +390,11 @@ def display_process_output_on_error(process_name, stdout_file, stderr_file,
                 if nb_lines <= max_lines:
                     with open(filename, 'r') as f:
                         logger.error('{} {}:\n{}'.format(process_name, fname,
-                                                                     f.read()))
+                                                         f.read()))
                 # Let's read the first and last lines of the file
                 else:
-                    cmd_head = "head -n {} {}".format(max_lines//2, filename)
-                    cmd_tail = "tail -n {} {}".format(max_lines//2, filename)
+                    cmd_head = "head -n {} {}".format(max_lines // 2, filename)
+                    cmd_tail = "tail -n {} {}".format(max_lines // 2, filename)
 
                     p_head = subprocess.run(cmd_head, shell=True,
                                             stdout=subprocess.PIPE)
@@ -392,6 +412,7 @@ def display_process_output_on_error(process_name, stdout_file, stderr_file,
 async def execute_command_inner(command, stdout_file=None, stderr_file=None,
                                 timeout=None, process_name=None,
                                 where_to_append_proc=None):
+    """Execute one command asynchronously."""
     create = asyncio.create_subprocess_shell(command,
                                              stdout=stdout_file,
                                              stderr=stderr_file)
@@ -412,25 +433,30 @@ async def run_wait_any(batsim_command, sched_command,
                        batsim_stdout_file, batsim_stderr_file,
                        sched_stdout_file, sched_stderr_file,
                        timeout=None, where_to_append_proc=None):
+    """Asynchronously waits for the termination of Batsim or Sched."""
     done, pending = await asyncio.wait([execute_command_inner(batsim_command,
-                                        batsim_stdout_file, batsim_stderr_file,
-                                        timeout, "Batsim", where_to_append_proc),
+                                                              batsim_stdout_file, batsim_stderr_file,
+                                                              timeout, "Batsim", where_to_append_proc),
                                         execute_command_inner(sched_command,
-                                        sched_stdout_file, sched_stderr_file,
-                                        timeout, "Sched", where_to_append_proc)],
-                                        return_when=asyncio.FIRST_COMPLETED)
+                                                              sched_stdout_file, sched_stderr_file,
+                                                              timeout, "Sched", where_to_append_proc)],
+                                       return_when=asyncio.FIRST_COMPLETED)
     return done, pending
 
 
 async def await_with_timeout(future, timeout=None):
+    """Await wrapper, which handles a timeout."""
     with async_timeout.timeout(timeout):
         await future
         return future
 
+
 def kill_processes_and_all_descendants(proc_set):
+    """Kill a set of processes and all their children."""
     pids_to_kill = set()
     for proc in proc_set:
-        cmd = "pstree {} -pal | cut -d',' -f2 | cut -d' ' -f1 | cut -d')' -f1".format(proc.pid)
+        cmd = "pstree {} -pal | cut -d',' -f2 | cut -d' ' -f1 | cut -d')' -f1".format(
+            proc.pid)
         p = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
         for pid in [int(pid_str) for pid_str in p.stdout.decode('utf-8').replace('\n', ' ').strip().split(' ')]:
             pids_to_kill.add(pid)
@@ -443,15 +469,16 @@ def kill_processes_and_all_descendants(proc_set):
 
 def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
                          timeout=None):
+    """Execute Batsim and wait for its termination."""
     loop = asyncio.get_event_loop()
     proc_set = set()
     try:
-        out_files={'Batsim': (batsim_stdout_file, batsim_stderr_file)}
+        out_files = {'Batsim': (batsim_stdout_file, batsim_stderr_file)}
         logger.info("Running Batsim")
         proc, pname = loop.run_until_complete(execute_command_inner(
-                                        batsim_command, batsim_stdout_file,
-                                        batsim_stderr_file, timeout, "Batsim",
-                                        proc_set))
+            batsim_command, batsim_stdout_file,
+            batsim_stderr_file, timeout, "Batsim",
+            proc_set))
         proc_set.remove(proc)
         if proc.returncode == 0:
             logger.info("{} finished".format(pname))
@@ -473,23 +500,25 @@ def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
 
     return False
 
+
 def execute_batsim_and_sched(batsim_command, sched_command,
                              batsim_stdout_file, batsim_stderr_file,
                              sched_stdout_file, sched_stderr_file,
                              timeout=None, wait_timeout_on_success=5):
+    """Execute Batsim+Sched and wait for their termination."""
     loop = asyncio.get_event_loop()
     proc_set = set()
     try:
-        out_files={'Batsim': (batsim_stdout_file, batsim_stderr_file),
-                   'Sched': (sched_stdout_file, sched_stderr_file)}
+        out_files = {'Batsim': (batsim_stdout_file, batsim_stderr_file),
+                     'Sched': (sched_stdout_file, sched_stderr_file)}
         logger.info("Running Batsim and Sched")
         done, pending = loop.run_until_complete(run_wait_any(
-                                batsim_command, sched_command,
-                                batsim_stdout_file, batsim_stderr_file,
-                                sched_stdout_file, sched_stderr_file,
-                                timeout, proc_set))
+            batsim_command, sched_command,
+            batsim_stdout_file, batsim_stderr_file,
+            sched_stdout_file, sched_stderr_file,
+            timeout, proc_set))
         finished_tuples = [finished.result() for finished in done]
-        assert(len(finished_tuples) in {1,2})
+        assert(len(finished_tuples) in {1, 2})
 
         if (len(done) == 2):
             logger.info("Both processes finished at the same time!")
@@ -498,8 +527,8 @@ def execute_batsim_and_sched(batsim_command, sched_command,
                 if finished_tuple[0].returncode != 0:
                     all_ok = False
                     logger.error("{} finished (returncode={})".format(
-                                    finished_tuple[1],
-                                    finished_tuple[0].returncode))
+                        finished_tuple[1],
+                        finished_tuple[0].returncode))
                     display_process_output_on_error(finished_tuple[1],
                                                     *out_files[finished_tuple[1]])
                 else:
@@ -514,11 +543,11 @@ def execute_batsim_and_sched(batsim_command, sched_command,
         if finished_ok:
             logger.info("{} finished".format(finished_pname))
             logger.info("Waiting for clean termination... (timeout={})".format(
-                            wait_timeout_on_success))
+                wait_timeout_on_success))
 
             pending_future = next(iter(pending))
             finished = loop.run_until_complete(await_with_timeout(
-                                pending_future, wait_timeout_on_success))
+                pending_future, wait_timeout_on_success))
             finished_proc, finished_pname = finished.result()
             proc_set.remove(finished_proc)
 
@@ -527,13 +556,13 @@ def execute_batsim_and_sched(batsim_command, sched_command,
                 return True
             else:
                 logger.error("{} finished (returncode={})".format(
-                                finished_pname, finished_proc.returncode))
+                    finished_pname, finished_proc.returncode))
                 display_process_output_on_error(finished_pname,
                                                 *out_files[finished_pname])
                 return False
         else:
             logger.error("{} finished (returncode={})".format(
-                                finished_pname, finished_proc.returncode))
+                finished_pname, finished_proc.returncode))
             display_process_output_on_error(finished_pname,
                                             *out_files[finished_pname])
     except asyncio.TimeoutError:
@@ -557,7 +586,7 @@ def execute_command(command,
                     output_script_output_dir,
                     command_name,
                     timeout=None):
-
+    """Execute a command synchronously."""
     # If the command is composed of different lines,
     # a corresponding subscript file will be created.
     # Otherwise, only one script will be created.
@@ -578,10 +607,10 @@ def execute_command(command,
 
     # Let's prepare the real command call
     cmd = 'bash {f}'.format(f=output_script_filename)
-    stdout_file = open('{out}/{name}.stdout'.format(out = output_script_output_dir,
-                                                    name = command_name), 'wb')
-    stderr_file = open('{out}/{name}.stderr'.format(out = output_script_output_dir,
-                                                    name = command_name), 'wb')
+    stdout_file = open('{out}/{name}.stdout'.format(out=output_script_output_dir,
+                                                    name=command_name), 'wb')
+    stderr_file = open('{out}/{name}.stderr'.format(out=output_script_output_dir,
+                                                    name=command_name), 'wb')
 
     # Let's run the command
     logger.info("Executing command '{}'".format(command_name))
@@ -593,7 +622,7 @@ def execute_command(command,
     else:
         logger.error("Command '{name}' failed.\n--- begin of {name} ---\n"
                      "{content}\n--- end of {name} ---".format(
-                        name=command_name, content=command))
+                         name=command_name, content=command))
         display_process_output_on_error(command_name, stdout_file, stderr_file)
         return False
 
@@ -601,6 +630,7 @@ g_port_regex = re.compile('.*:(\d+)')
 
 
 def socket_in_use(sock):
+    """Return whether the given socket is being used."""
     # Let's check whether the socket uses a port
     m = g_port_regex.match(sock)
     if m:
@@ -616,6 +646,7 @@ def socket_in_use(sock):
 def wait_for_batsim_socket_to_be_usable(sock='tcp://localhost:28000',
                                         timeout=5,
                                         seconds_to_sleep=0.1):
+    """Wait some time until the socket is available."""
     logger.info("Waiting for socket '{}' to be usable".format(sock))
     if timeout is None:
         timeout = 5
@@ -634,13 +665,15 @@ def execute_one_instance(working_directory,
                          variables_filename,
                          timeout=None,
                          do_not_execute=False):
+    """Execute one instance: Batsim(+Sched)."""
     if timeout is None:
         timeout = 3600
 
     # Let's create the output directory if it does not exist
     create_dir_if_not_exists(output_directory)
 
-    (batsim_socket, is_batexec) = find_info_from_batsim_command(interpreted_batsim_command)
+    (batsim_socket, is_batexec) = find_info_from_batsim_command(
+        interpreted_batsim_command)
 
     # Let's wrap the two commands into files
     batsim_script_filename = '{output_dir}/batsim_command.sh'.format(
@@ -656,8 +689,8 @@ def execute_one_instance(working_directory,
     if not is_batexec:
         logger.info('Sched command: "{}"'.format(sched_command))
         create_file_from_command(command=sched_command,
-                             output_filename=sched_script_filename,
-                             variables_definition_filename=variables_filename)
+                                 output_filename=sched_script_filename,
+                                 variables_definition_filename=variables_filename)
 
     if do_not_execute is True:
         logger.info('Skipping the execution of the instance because '
@@ -683,10 +716,10 @@ def execute_one_instance(working_directory,
         # If batsim's socket is still opened, let's wait for it to close
         socket_wait_timeout = 5
         socket_usable = wait_for_batsim_socket_to_be_usable(sock=batsim_socket,
-                                                    timeout=socket_wait_timeout)
+                                                            timeout=socket_wait_timeout)
         if not socket_usable:
             logger.error("Socket {} is still busy (after timeout={})".format(
-                            batsim_socket, socket_wait_timeout))
+                batsim_socket, socket_wait_timeout))
             return False
 
         logger.info("Socket {sock} is now usable".format(sock=batsim_socket))
@@ -698,13 +731,23 @@ def execute_one_instance(working_directory,
         return execute_batsim_alone(batsim_command, batsim_stdout_file,
                                     batsim_stderr_file, timeout)
 
+
 def main():
+    """
+    Script entry point.
+
+    Essentially:
+    1. Parse input arguments
+    2. (Execute pre-commands)
+    3. Execute Batsim(+Sched)
+    4. (Execute post-commands)
+    """
     script_description = '''
 Lauches one Batsim instance.
 An instance can be represented by a tuple (platform, workload, algorithm).
 It is described in a YAML file, which is the parameter of this script.
 
-Examples of such input files can be found in the subdirectory instance_examples.
+Examples of such input files can be found in subdirectory instance_examples.
 '''
 
     # Program parameters parsing
@@ -712,7 +755,7 @@ Examples of such input files can be found in the subdirectory instance_examples.
 
     p.add_argument('instance_description_filename',
                    type=str,
-                   help='The name of the YAML file which describes the instance. '
+                   help='The name of the YAML file describing the instance.'
                    'Beware, this argument is not subjected to the working '
                    'directory parameter.')
 
@@ -722,16 +765,18 @@ Examples of such input files can be found in the subdirectory instance_examples.
                    help='If set, the instance will be executed in the given '
                           'directory. This value has higher priority than the '
                           'one that might be given in the description file. '
-                          'If unset, the script working directory is used instead')
+                          'If unset, the script working directory is used '
+                          'instead')
 
     p.add_argument('-od', '--output_directory',
                    type=str,
                    default=None,
                    help='If set, the outputs of the current script will be '
-                          'put into the given directory. This value has higher '
-                          'priority than the one that might be given in the '
+                          'put into the given directory. This value has higher'
+                          ' priority than the one that might be given in the '
                           'description file. If a value is set, it might be '
-                          'either absolute or relative to the working directory. '
+                          'either absolute or relative to the working '
+                          'directory.'
                           ' If unset, the working directory is used instead')
 
     g = p.add_mutually_exclusive_group()
@@ -745,8 +790,8 @@ Examples of such input files can be found in the subdirectory instance_examples.
                    action='store_true',
                    help='If set, the Batsim+scheduler instance is not '
                    'executed, only the precommands are. The execution '
-                          'scripts should also be generated. Furthermore, post '
-                          'commands will be skipped.')
+                          'scripts should also be generated. Furthermore, post'
+                          ' commands will be skipped.')
 
     args = p.parse_args()
 
@@ -761,8 +806,8 @@ Examples of such input files can be found in the subdirectory instance_examples.
     variables = {}
     timeout = None
 
-    assert('batsim_command' in desc_data)
-    assert('sched_command' in desc_data)
+    assert 'batsim_command' in desc_data
+    assert 'sched_command' in desc_data
 
     batsim_command = str(desc_data['batsim_command'])
     sched_command = str(desc_data['sched_command'])
@@ -803,9 +848,9 @@ Examples of such input files can be found in the subdirectory instance_examples.
 
     # Let's correctly interpret the working_dir and output_dir values
     (wd, od, interpreted_batsim_command) = retrieve_info_from_instance(variables,
-                                                           var_decl_order,
-                                                           "/tmp",
-                                                           batsim_command)
+                                                                       var_decl_order,
+                                                                       "/tmp",
+                                                                       batsim_command)
 
     # Let's update those values
     variables['working_directory'] = working_directory = wd

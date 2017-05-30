@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+"""Execute several Batsim instances."""
+
 import argparse
 import asyncio.subprocess
-import async_timeout
 import collections
 import yaml
 import os
@@ -17,18 +18,23 @@ import subprocess
 
 
 class hashabledict(dict):
+    """A homemade hashable dictionary."""
 
     def __hash__(self):
+        """Constructor."""
         return hash(tuple(sorted(self.items())))
 
 
 class hashablelist(list):
+    """A homemade hashable list."""
 
     def __hash__(self):
+        """Constructor."""
         return hash(tuple(self))
 
 
 def flatten_dict(init, lkey=''):
+    """Flatten the values of a dictionary."""
     ret = {}
     for rkey, val in init.items():
         key = lkey + rkey
@@ -43,6 +49,7 @@ def flatten_dict(init, lkey=''):
 
 
 def signal_handler(signal, frame):
+    """Callback function called on interruption."""
     print('Interruption signal received!')
 
     if ('instances_df' in globals()) and (len(instances_df) > 0):
@@ -68,6 +75,7 @@ def signal_handler(signal, frame):
 
 
 def instance_id_from_comb(comb, hash_length):
+    """Return the instance id from a combination."""
     fdict = flatten_dict(comb)
     fdict = collections.OrderedDict(sorted(fdict.items()))
     return hashlib.sha1(str(fdict).encode()).hexdigest()[:hash_length]
@@ -76,6 +84,7 @@ def instance_id_from_comb(comb, hash_length):
 def retrieve_dirs_from_instances(variables,
                                  variables_declaration_order,
                                  working_directory):
+    """Retrieve the directories from instances."""
     filename_ok = False
     while not filename_ok:
         r = random_string()
@@ -129,6 +138,7 @@ def retrieve_dirs_from_instances(variables,
 
 
 def check_sweep(sweeps):
+    """Check whether the sweep parameters are valid."""
     # Let's check that sweeping values are consistent (same type, same fields)
     if not isinstance(sweeps, dict):
         logger.error("Invalid sweep: must be a dict")
@@ -230,15 +240,15 @@ def check_sweep(sweeps):
 
 
 def get_script_path():
+    """Return where the script is located."""
     return os.path.dirname(os.path.realpath(sys.argv[0]))
 
 
 async def instance_runner(data, hostname, local_rank):
-    loop = asyncio.get_event_loop()
-
+    """Runner in charge of executing instances asynchronously, one by one."""
     while len(data.sweeper.get_remaining()) > 0:
         comb = data.sweeper.get_next()
-        if comb == None:
+        if comb is None:
             break
         compute_comb = True
         if data.instances_subset_to_recompute is not None:
@@ -257,8 +267,8 @@ async def instance_runner(data, hostname, local_rank):
                 hash_length=data.hash_length)
 
             logger.info('Worker ({host},{rank}) got {iid} ({comb})'.format(
-                            host=hostname, rank=local_rank,
-                            iid=instance_id, comb=comb))
+                host=hostname, rank=local_rank,
+                iid=instance_id, comb=comb))
 
             # Remote launch via taktuk
             rmt = """ssh {host} '{cmd}'""".format(host=hostname,
@@ -271,19 +281,19 @@ async def instance_runner(data, hostname, local_rank):
             create_dir_if_not_exists('{base_output_dir}/instances/output/'.format(
                 base_output_dir=data.base_output_directory))
             stdout_filename = '{out}/instances/output/{iid}.stdout'.format(
-                                          out=data.base_output_directory,
-                                          iid=instance_id)
+                out=data.base_output_directory,
+                iid=instance_id)
             stderr_filename = '{out}/instances/output/{iid}.stderr'.format(
-                                          out=data.base_output_directory,
-                                          iid=instance_id)
+                out=data.base_output_directory,
+                iid=instance_id)
 
             stdout_file = open(stdout_filename, 'wb')
             stderr_file = open(stderr_filename, 'wb')
 
             # Launch the instance
             logger.info('Worker ({host},{rank}) runs {iid}'.format(
-                    host=hostname, rank=local_rank, iid=instance_id))
-            p,_ = await execute_command_inner(command, stdout_file, stderr_file)
+                host=hostname, rank=local_rank, iid=instance_id))
+            p, _ = await execute_command_inner(command, stdout_file, stderr_file)
             if p.returncode == 0:
                 logger.info('Worker ({host},{rank}) finished {iid}'.format(
                     host=hostname, rank=local_rank, iid=instance_id))
@@ -296,8 +306,8 @@ async def instance_runner(data, hostname, local_rank):
                                  '(returncode={code}). Instance is marked as '
                                  'done because it failed in the post-commands '
                                  'section.'.format(
-                                    host=hostname, rank=local_rank,
-                                    iid=instance_id, code=p.returncode))
+                                     host=hostname, rank=local_rank,
+                                     iid=instance_id, code=p.returncode))
                     data.post_command_failed = True
                     data.sweeper.done(comb)
                 elif (p.returncode == 4) and data.generate_only:
@@ -311,27 +321,28 @@ async def instance_runner(data, hostname, local_rank):
                 else:
                     logger.error('Worker ({host},{rank}) finished {iid} '
                                  '(returncode={code}).'.format(
-                                    host=hostname, rank=local_rank,
-                                    iid=instance_id, code=p.returncode))
+                                     host=hostname, rank=local_rank,
+                                     iid=instance_id, code=p.returncode))
                     data.sweeper.skip(comb)
 
                 if show_instance_details:
                     logger.info('\n\n----- begin of instance {iid} log -----'.format(
-                                    iid=instance_id))
+                        iid=instance_id))
                     display_process_output_on_error('Instance ' + instance_id,
-                                    stdout_file, stderr_file)
+                                                    stdout_file, stderr_file)
                     logger.info('----- end of instance {iid} log -----\n\n'.format(
-                                    iid=instance_id))
+                        iid=instance_id))
         else:
             logger.info('Worker ({host},{rank}) skipped {iid}'.format(
-                    host=hostname, rank=local_rank, iid=instance_id))
+                host=hostname, rank=local_rank, iid=instance_id))
             data.sweeper.skip(comb)
 
     logger.info('Worker ({host},{rank}) finished'.format(
-                    host=hostname, rank=local_rank))
+        host=hostname, rank=local_rank))
 
 
 class WorkersSharedData:
+    """Stores Data shared by the different workers."""
 
     def __init__(self,
                  sweeper,
@@ -345,6 +356,7 @@ class WorkersSharedData:
                  generate_only,
                  hash_length,
                  instances_subset_to_recompute):
+        """Constructor."""
         self.sweeper = sweeper
         self.instances_post_cmds_only = instances_post_cmds_only
         self.implicit_instances = implicit_instances
@@ -368,6 +380,7 @@ def prepare_instance(comb,
                      post_commands_only=False,
                      generate_only=False,
                      hash_length=8):
+    """Prepare an instance (generate scripts...)."""
     if comb['explicit']:
         return prepare_explicit_instance(explicit_instances=explicit_instances,
                                          comb=comb,
@@ -394,6 +407,7 @@ def prepare_implicit_instance(implicit_instances,
                               post_commands_only=False,
                               generate_only=False,
                               hash_length=8):
+    """Prepare an implicit instance."""
     # Let's retrieve instance
     instance = implicit_instances[comb['instance_name']]
     generic_instance = instance['generic_instance']
@@ -483,6 +497,7 @@ def prepare_explicit_instance(explicit_instances,
                               post_commands_only=False,
                               generate_only=False,
                               hash_length=8):
+    """Prepare an explicit instance."""
     # Let's retrieve the instance
     instance = explicit_instances[instance_id]
 
@@ -530,6 +545,7 @@ def prepare_explicit_instance(explicit_instances,
 
 
 def retrieve_hostlist_from_mpi_hostfile(hostfile):
+    """Return a hostlist from a MPI hostfile."""
     hosts = set()
     f = open(hostfile, 'r')
     for line in f:
@@ -541,6 +557,7 @@ def retrieve_hostlist_from_mpi_hostfile(hostfile):
 
 def generate_instances_combs(explicit_instances,
                              implicit_instances):
+    """Generate combinations of instances."""
     # Let's generate explicit instances first.
     # Theses instances are directly written in the description file
     explicit_instances_comb = []
@@ -574,9 +591,7 @@ def generate_instances_combs(explicit_instances,
                         elif isinstance(sweep_var_value[list_i], dict):
                             sweep_var_value[list_i] = hashabledict(
                                 sweep_var_value[list_i])
-                    # print('\n')
-                #print("after", sweep_var)
-                # print('\n')
+
                 sweep_var['explicit'] = [False]
                 sweep_var['instance_name'] = [implicit_instance_name]
                 implicit_instances_comb = implicit_instances_comb + \
@@ -597,6 +612,7 @@ def execute_instances(base_working_directory,
                       generate_only=False,
                       mark_as_cancelled_lambda=None,
                       only_compute_marked_cancelled=False):
+    """Execute the instances."""
     # Let's generate all instances that should be executed
     combs = generate_instances_combs(implicit_instances=implicit_instances,
                                      explicit_instances=explicit_instances)
@@ -671,8 +687,8 @@ def execute_instances(base_working_directory,
                                            eval(mark_as_cancelled_lambda),
                                            sweeper.get_done())]
 
-        logger.info('{nb} instances will be marked as cancelled. Are you sure? '
-                    'Type "yes" to confirm.'.format(nb=len(combs_to_mark)))
+        logger.info('{nb} instances will be marked as cancelled. Are you sure?'
+                    ' Type "yes" to confirm.'.format(nb=len(combs_to_mark)))
 
         input_line = sys.stdin.readline().strip().lower()
 
@@ -762,6 +778,15 @@ def execute_instances(base_working_directory,
 
 
 def main():
+    """
+    Script entry point.
+
+    Essentially:
+    1. Parse input arguments
+    2. (Execute pre-commands)
+    3. Execute all instances
+    4. (Execute post-commands)
+    """
     script_description = '''
 Lauches several Batsim instances.
 An instance can be represented by a tuple (platform, workload, algorithm).

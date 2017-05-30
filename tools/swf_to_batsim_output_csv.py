@@ -32,7 +32,7 @@ group.add_argument("-q", "--quiet", action="store_true")
 
 args = parser.parse_args()
 
-assert(args.nb_res > 0), "Invalid nb_res paramter"
+assert args.nb_res > 0, "Invalid nb_res paramter"
 
 
 element = '([-+]?\d+(?:\.\d+)?)'
@@ -90,7 +90,7 @@ events.sort()
 for i in range(len(events) - 1):
     curr_event = events[i]
     next_event = events[i + 1]
-    assert(curr_event[0] <= next_event[0])
+    assert curr_event[0] <= next_event[0]
 
 # Let's traverse the list of events to associate resources to jobs
 available_res = SortedSet(range(args.nb_res))
@@ -105,9 +105,9 @@ for event in events:
         (new_available, alloc) = take_first_resources(available_res, job.nb_res)
         available_res = new_available
         job.resources = alloc
-        assert(len(job.resources) == job.nb_res), "{}, expected {}".format(
+        assert len(job.resources) == job.nb_res, "{}, expected {}".format(
             job.resources, job.nb_res)
-        assert(len(available_res) == prev_len - job.nb_res), "{}, expected {}".format(
+        assert len(available_res) == prev_len - job.nb_res, "{}, expected {}".format(
             len(available_res), prev_len - job.nb_res)
     elif state == '0:finish':
         available_res.update(job.resources)
