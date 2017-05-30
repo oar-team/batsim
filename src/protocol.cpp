@@ -600,10 +600,10 @@ void JsonProtocolReader::handle_execute_job(int event_number,
                 else
                     resource = std::stoi(key_value.GetString());
             }
-            catch (const std::exception & e)
+            catch (const std::exception &)
             {
                 xbt_assert(false, "Invalid JSON message: Invalid 'mapping' object of event %d (EXECUTE_JOB): all keys and values must be integers (or strings representing integers)", event_number);
-                throw e;
+                throw;
             }
 
             mapping_map[executor] = resource;
@@ -693,10 +693,10 @@ void JsonProtocolReader::handle_set_resource_state(int event_number,
     xbt_assert(state_value.IsString(), "Invalid JSON message: the 'state' value in the 'data' value of event %d (SET_RESOURCE_STATE) should be a string.", event_number);
     string state_value_string = state_value.GetString();
     try { message->new_pstate = std::stoi(state_value_string); }
-    catch(const std::exception & e)
+    catch(const std::exception &)
     {
         xbt_assert(false, "Invalid JSON message: the 'state' value in the 'data' value of event %d (SET_RESOURCE_STATE) should be a string corresponding to an integer (got '%s')", event_number, state_value_string.c_str());
-        throw e;
+        throw;
     }
 
     send_message(timestamp, "server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
