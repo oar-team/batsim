@@ -118,7 +118,9 @@ bool Jobs::contains_smpi_job() const
     {
         Job * job = mit.second;
         if ((*_profiles)[job->profile]->type == ProfileType::SMPI)
+        {
             return true;
+        }
     }
     return false;
 }
@@ -160,7 +162,9 @@ int Jobs::nb_jobs() const
 bool job_comparator_subtime_number(const Job *a, const Job *b)
 {
     if (a->submission_time == b->submission_time)
+    {
         return a->number < b->number;
+    }
     return a->submission_time < b->submission_time;
 }
 

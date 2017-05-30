@@ -83,7 +83,9 @@ bool RedisStorage::set(const std::string &key, const std::string &value)
         xbt_assert(get(key) == value, "Batsim <-> Redis communications are inconsistent!");
     }
     else
+    {
         XBT_WARN("Couldn't set: '%s'='%s'", real_key.c_str(), real_value.c_str());
+    }
 
     return ret;
 }

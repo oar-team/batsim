@@ -20,14 +20,18 @@ int smpi_replay_process(int argc, char *argv[])
     SMPIReplayProcessArguments * args = (SMPIReplayProcessArguments *) MSG_process_get_data(MSG_process_self());
 
     if (args->semaphore != NULL)
+    {
         MSG_sem_acquire(args->semaphore);
+    }
 
     XBT_INFO("Launching smpi_replay_run");
     smpi_replay_run(&argc, &argv);
     XBT_INFO("smpi_replay_run finished");
 
     if (args->semaphore != NULL)
+    {
         MSG_sem_release(args->semaphore);
+    }
 
     args->job->execution_processes.erase(MSG_process_self());
     delete args;
@@ -79,7 +83,9 @@ int execute_profile(BatsimContext *context,
             computation_amount = xbt_new(double, nb_res);
             communication_amount = nullptr;
             if(com > 0)
+            {
                 communication_amount = xbt_new(double, nb_res * nb_res);
+            }
 
             // Let us fill the local computation and communication matrices
             int k = 0;
@@ -91,9 +97,13 @@ int execute_profile(BatsimContext *context,
                     for (int x = 0; x < nb_res; ++x)
                     {
                         if (x == y)
+                        {
                             communication_amount[k++] = 0;
+                        }
                         else
+                        {
                             communication_amount[k++] = com;
+                        }
                     }
                 }
             }
@@ -130,9 +140,13 @@ int execute_profile(BatsimContext *context,
                     {
                         // Communications are done towards the PFS host, which is the last resource
                         if (x != pfs_id)
+                        {
                             communication_amount[k++] = 0;
+                        }
                         else
+                        {
                             communication_amount[k++] = size;
+                        }
                     }
                 }
             }
@@ -158,9 +172,13 @@ int execute_profile(BatsimContext *context,
         int ret = 1;
         if (err == MSG_OK) {}
         else if (err == MSG_TIMEOUT)
+        {
             ret = 0;
+        }
         else
+        {
             xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
+        }
 
         XBT_INFO("Task '%s' finished", MSG_task_get_name(ptask));
         MSG_task_destroy(ptask);
@@ -180,7 +198,9 @@ int execute_profile(BatsimContext *context,
             {
                 if (execute_profile(context, data->sequence[j], allocation,
                                     cleanup_data, remaining_time) == 0)
+                {
                     return 0;
+                }
             }
         }
         return 1;
@@ -261,7 +281,9 @@ int execute_profile(BatsimContext *context,
             XBT_INFO("Hello!");
 
             if (i == 0)
+            {
                 message->semaphore = sem;
+            }
 
             msg_process_t process = MSG_process_create_with_arguments(str_pname, smpi_replay_process,
                                                                       message, host_to_use, 5, argv);

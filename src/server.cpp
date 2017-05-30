@@ -111,7 +111,9 @@ int server_process(int argc, char *argv[])
             MSG_process_create("Scheduler REQ-REP", request_reply_scheduler_process, (void*)req_rep_args, MSG_host_self());
             data->sched_ready = false;
             if (data->all_jobs_submitted_and_completed)
+            {
                 data->end_of_simulation_sent = true;
+            }
         }
 
     } // end of while
@@ -162,7 +164,9 @@ void server_on_submitter_bye(ServerData * data,
 
     data->nb_submitters_finished++;
     if (message->is_workflow_submitter)
+    {
         data->nb_workflow_submitters_finished++;
+    }
     XBT_INFO("A submitted said goodbye. Number of finished submitters: %d",
              data->nb_submitters_finished);
 
@@ -198,9 +202,13 @@ void server_on_job_completed(ServerData * data,
 
     string status = "UNKNOWN";
     if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
+    {
         status = "SUCCESS";
+    }
     else if (job->state == JobState::JOB_STATE_COMPLETED_KILLED && job->kill_reason == "Walltime reached")
+    {
         status = "TIMEOUT";
+    }
 
     data->context->proto_writer->append_job_completed(message->job_id.to_string(),
                                                       status, MSG_get_clock());
@@ -249,7 +257,9 @@ void server_on_job_submitted(ServerData * data,
     {
         job_json_description = job->json_description;
         if (data->context->submission_forward_profiles)
+        {
             profile_json_description = job->workload->profiles->at(job->profile)->json_description;
+        }
     }
 
     data->context->proto_writer->append_job_submitted(job->id, job_json_description,
@@ -271,9 +281,13 @@ void server_on_pstate_modification(ServerData * data,
     int transition_state = -42;
     Machine * first_machine = data->context->machines[message->machine_ids.first_element()];
     if (first_machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE)
+    {
         transition_state = -1; // means we are switching to a COMPUTATION_PSTATE
+    }
     else if (first_machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
+    {
         transition_state = -2; // means we are switching to a SLEEP_PSTATE
+    }
 
     // The pstate is set to an invalid one to know the machines are in transition.
     data->context->pstate_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids,
@@ -324,8 +338,10 @@ void server_on_pstate_modification(ServerData * data,
                 ++data->nb_switching_machines;
             }
             else
+            {
                 XBT_ERROR("Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %d -> %d",
                           machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
+            }
         }
         else if (machine->pstates[curr_pstate] == PStateType::SLEEP_PSTATE)
         {
@@ -345,11 +361,15 @@ void server_on_pstate_modification(ServerData * data,
             ++data->nb_switching_machines;
         }
         else
+        {
             XBT_ERROR("Machine %d ('%s') has an invalid pstate : %d", machine->id, machine->name.c_str(), curr_pstate);
+        }
     }
 
     if (data->context->trace_machine_states)
+    {
         data->context->machine_state_tracer.write_machine_states(MSG_get_clock());
+    }
 }
 
 void server_on_waiting_done(ServerData * data,
@@ -417,7 +437,9 @@ void server_on_switched(ServerData * data,
                                                             all_switched_machines, data->context))
     {
         if (data->context->trace_machine_states)
+        {
             data->context->machine_state_tracer.write_machine_states(MSG_get_clock());
+        }
 
         data->context->proto_writer->append_resource_state_changed(all_switched_machines,
                                                                    std::to_string(message->new_pstate),
@@ -489,7 +511,9 @@ void server_on_submit_job(ServerData * data,
     // Let's create the workload if it doesn't exist, or retrieve it otherwise
     Workload * workload = nullptr;
     if (data->context->workloads.exists(message->job_id.workload_name))
+    {
         workload = data->context->workloads.at(message->job_id.workload_name);
+    }
     else
     {
         workload = new Workload(message->job_id.workload_name);
@@ -504,7 +528,9 @@ void server_on_submit_job(ServerData * data,
         message->job_description = data->context->storage.get(job_key);
     }
     else
+    {
         xbt_assert(!message->job_description.empty(), "Internal error");
+    }
 
     // Let's parse the user-submitted job
     XBT_INFO("Parsing user-submitted job %s", message->job_id.to_string().c_str());
@@ -528,7 +554,9 @@ void server_on_submit_job(ServerData * data,
             message->job_profile_description = data->context->storage.get(profile_key);
         }
         else
+        {
             xbt_assert(!message->job_profile_description.empty(), "Internal error");
+        }
 
         Profile * profile = Profile::from_json(job->profile,
                                                message->job_profile_description,
@@ -551,7 +579,9 @@ void server_on_submit_job(ServerData * data,
         {
             job_json_description = job->json_description;
             if (data->context->submission_forward_profiles)
+            {
                 profile_json_description = job->workload->profiles->at(job->profile)->json_description;
+            }
         }
 
         data->context->proto_writer->append_job_submitted(job->id, job_json_description,

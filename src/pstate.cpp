@@ -166,7 +166,9 @@ bool CurrentSwitches::mark_switch_as_done(int machine_id,
                 list.erase(it);
                 // If there is no longer switches corresponding to this pstate, the pstate:list is removed from the map
                 if (list.size() == 0)
+                {
                     _switches.erase(target_pstate);
+                }
 
                 all_machines = s->all_machines;
                 context->pstate_tracer.add_pstate_change(MSG_get_clock(), s->all_machines, s->target_pstate);
@@ -176,7 +178,9 @@ bool CurrentSwitches::mark_switch_as_done(int machine_id,
                 return true;
             }
             else
+            {
                 return false;
+            }
         }
     }
 

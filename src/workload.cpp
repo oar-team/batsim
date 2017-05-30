@@ -230,7 +230,9 @@ bool Workloads::contains_smpi_job() const
     {
         Workload * workload = mit.second;
         if (workload->jobs->contains_smpi_job())
+        {
             return true;
+        }
     }
 
     return false;
@@ -248,14 +250,20 @@ void Workloads::register_smpi_applications()
 bool Workloads::job_exists(const std::string &workload_name, const int job_number)
 {
     if (!exists(workload_name))
+    {
         return false;
+    }
 
     if (!at(workload_name)->jobs->exists(job_number))
+    {
         return false;
+    }
 
     const Job * job = at(workload_name)->jobs->at(job_number);
     if (!at(workload_name)->profiles->exists(job->profile))
+    {
         return false;
+    }
 
     return true;
 }

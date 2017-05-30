@@ -47,10 +47,12 @@ void Workflow::load_from_xml(const std::string &xml_filename)
     {
         // Parse the number of processors, if any
         int num_procs = 1;
-        if (job.attribute("num_procs")) {
+        if (job.attribute("num_procs"))
+        {
             num_procs = (int)strtol(job.attribute("num_procs").value(),NULL,10);
         }
-        if (num_procs <= 0) {
+        if (num_procs <= 0)
+        {
             num_procs = 1;
         }
 
@@ -114,11 +116,13 @@ void Workflow::check_validity()
     return;
 }
 
-void Workflow::add_task(Task &task) {
+void Workflow::add_task(Task &task)
+{
     this->tasks[task.id] = &task;
 }
 
-Task * Workflow::get_task(std::string id) {
+Task * Workflow::get_task(std::string id)
+{
     xbt_assert(this->tasks.count(id) == 1,
                "Invalid Workflow::get_task call: id '%s' does not exist", id.c_str());
     return this->tasks[id];
@@ -126,34 +130,46 @@ Task * Workflow::get_task(std::string id) {
 
 void Workflow::add_edge(Task &parent, Task &child)
 {
-    if(std::find(child.parents.begin(), child.parents.end(), &parent) != child.parents.end()) {
+    if(std::find(child.parents.begin(), child.parents.end(), &parent) != child.parents.end())
+    {
         // Edge already there, no hyperedge
-    } else {
+    }
+    else
+    {
         child.parents.push_back(&parent);
     }
 
-    if(std::find(parent.children.begin(), parent.children.end(), &parent) != parent.children.end()) {
+    if(std::find(parent.children.begin(), parent.children.end(), &parent) != parent.children.end())
+    {
         // Edge already there, no hyperedge
-    } else {
+    }
+    else
+    {
         parent.children.push_back(&child);
     }
 }
 
 
-std::vector<Task *> Workflow::get_source_tasks() {
+std::vector<Task *> Workflow::get_source_tasks()
+{
     std::vector<Task *> task_list;
-    for(std::map<std::string, Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
-        if ((it->second)->parents.empty()) {
+    for(std::map<std::string, Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it)
+    {
+        if ((it->second)->parents.empty())
+        {
             task_list.push_back(it->second);
         }
     }
     return task_list;
 }
 
-std::vector<Task *> Workflow::get_sink_tasks() {
+std::vector<Task *> Workflow::get_sink_tasks()
+{
     std::vector<Task *> task_list;
-    for(std::map<std::string, Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it) {
-        if ((it->second)->children.empty()) {
+    for(std::map<std::string, Task *>::iterator it = this->tasks.begin(); it != this->tasks.end(); ++it)
+    {
+        if ((it->second)->children.empty())
+        {
             task_list.push_back(it->second);
         }
     }
@@ -161,11 +177,14 @@ std::vector<Task *> Workflow::get_sink_tasks() {
 }
 
 
-int Workflow::get_maximum_depth() {
+int Workflow::get_maximum_depth()
+{
     int max_depth = -1;
     std::vector<Task *> sinks = this->get_sink_tasks();
-    for (std::vector<Task*>::iterator it = sinks.begin(); it != sinks.end(); ++it) {
-        if ((max_depth == -1) || ((*it)->depth > max_depth)) {
+    for (std::vector<Task*>::iterator it = sinks.begin(); it != sinks.end(); ++it)
+    {
+        if ((max_depth == -1) || ((*it)->depth > max_depth))
+        {
             max_depth = (*it)->depth;
         }
     }

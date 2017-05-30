@@ -66,7 +66,9 @@ void MachineRange::clear()
 void MachineRange::insert(const MachineRange &range)
 {
     for (auto it = range.intervals_begin(); it != range.intervals_end(); ++it)
+    {
         set.insert(*it);
+    }
 }
 
 void MachineRange::insert(ClosedInterval interval)
@@ -117,10 +119,16 @@ std::string MachineRange::to_string_brackets(const std::string & union_str,
 {
     vector<string> machine_id_strings;
     for (auto it = intervals_begin(); it != intervals_end(); ++it)
+    {
         if (it->lower() == it->upper())
+        {
             machine_id_strings.push_back(opening_bracket + to_string(it->lower()) + closing_bracket);
+        }
         else
+        {
             machine_id_strings.push_back(opening_bracket + to_string(it->lower()) + sep + to_string(it->upper()) + closing_bracket);
+        }
+    }
 
     return boost::algorithm::join(machine_id_strings, union_str);
 }
@@ -129,10 +137,16 @@ std::string MachineRange::to_string_hyphen(const std::string &sep, const std::st
 {
     vector<string> machine_id_strings;
     for (auto it = intervals_begin(); it != intervals_end(); ++it)
+    {
         if (it->lower() == it->upper())
+        {
             machine_id_strings.push_back(to_string(it->lower()));
+        }
         else
+        {
             machine_id_strings.push_back(to_string(it->lower()) + joiner + to_string(it->upper()));
+        }
+    }
 
     return boost::algorithm::join(machine_id_strings, sep);
 }
@@ -141,7 +155,9 @@ string MachineRange::to_string_elements(const string &sep) const
 {
     vector<string> machine_id_strings;
     for (auto it = elements_begin(); it != elements_end(); ++it)
+    {
         machine_id_strings.push_back(to_string(*it));
+    }
 
     return boost::algorithm::join(machine_id_strings, sep);
 }

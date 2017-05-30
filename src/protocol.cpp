@@ -203,7 +203,9 @@ void JsonProtocolWriter::append_job_killed(const vector<string> & job_ids,
     Value jobs(rapidjson::kArrayType);
     jobs.Reserve(job_ids.size(), _alloc);
     for (const string & job_id : job_ids)
+    {
         jobs.PushBack(Value().SetString(job_id.c_str(), _alloc), _alloc);
+    }
 
     event.AddMember("data", Value().SetObject().AddMember("job_ids", jobs, _alloc), _alloc);
 
@@ -509,14 +511,22 @@ void JsonProtocolReader::handle_execute_job(int event_number,
             try
             {
                 if (key_value.IsInt())
+                {
                     executor = key_value.GetInt();
+                }
                 else
+                {
                     executor = std::stoi(key_value.GetString());
+                }
 
                 if (value_value.IsInt())
+                {
                     resource = value_value.GetInt();
+                }
                 else
+                {
                     resource = std::stoi(key_value.GetString());
+                }
             }
             catch (const std::exception &)
             {
@@ -571,7 +581,9 @@ void JsonProtocolReader::handle_call_me_later(int event_number,
     message->target_time = timestamp_value.GetDouble();
 
     if (message->target_time < MSG_get_clock())
+    {
         XBT_WARN("Event %d (CALL_ME_LATER) asks to be called at time %g but it is already reached", event_number, message->target_time);
+    }
 
     send_message(timestamp, "server", IPMessageType::SCHED_CALL_ME_LATER, (void*) message);
 }
@@ -610,7 +622,10 @@ void JsonProtocolReader::handle_set_resource_state(int event_number,
     const Value & state_value = data_object["state"];
     xbt_assert(state_value.IsString(), "Invalid JSON message: the 'state' value in the 'data' value of event %d (SET_RESOURCE_STATE) should be a string.", event_number);
     string state_value_string = state_value.GetString();
-    try { message->new_pstate = std::stoi(state_value_string); }
+    try
+    {
+        message->new_pstate = std::stoi(state_value_string);
+    }
     catch(const std::exception &)
     {
         xbt_assert(false, "Invalid JSON message: the 'state' value in the 'data' value of event %d (SET_RESOURCE_STATE) should be a string corresponding to an integer (got '%s')", event_number, state_value_string.c_str());
@@ -639,9 +654,13 @@ void JsonProtocolReader::handle_notify(int event_number,
     string notify_type = notify_type_value.GetString();
 
     if (notify_type == "submission_finished")
+    {
         send_message(timestamp, "server", IPMessageType::END_DYNAMIC_SUBMIT);
+    }
     else
+    {
         xbt_assert(false, "Unknown NOTIFY type received ('%s').", notify_type.c_str());
+    }
 
     (void) timestamp;
 }
@@ -689,7 +708,9 @@ void JsonProtocolReader::handle_submit_job(int event_number,
 
     if (!identify_job_from_string(context, job_id, message->job_id,
                                   IdentifyJobReturnCondition::STRING_VALID__JOB_DOES_NOT_EXISTS))
+    {
         xbt_assert(false, "Invalid JSON message: in event %d (SUBMIT_JOB): job_id '%s' seems invalid (already exists?)", event_number, job_id.c_str());
+    }
 
     if (data_object.HasMember("job"))
     {
@@ -705,7 +726,9 @@ void JsonProtocolReader::handle_submit_job(int event_number,
         message->job_description = string(buffer.GetString(), buffer.GetSize());
     }
     else
+    {
         xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['job'] is unset but redis seems enabled...", event_number);
+    }
 
     if (data_object.HasMember("profile"))
     {
@@ -721,7 +744,9 @@ void JsonProtocolReader::handle_submit_job(int event_number,
         message->job_profile_description = string(buffer.GetString(), buffer.GetSize());
     }
     else
+    {
         xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['profile'] is unset but redis seems enabled...", event_number);
+    }
 
     send_message(timestamp, "server", IPMessageType::JOB_SUBMITTED_BY_DP, (void *) message);
 }
@@ -752,7 +777,9 @@ void JsonProtocolReader::handle_kill_job(int event_number,
     {
         const Value & job_id_value = job_ids_array[i];
         if (!identify_job_from_string(context, job_id_value.GetString(), message->jobs_ids[i]))
+        {
             xbt_assert(false, "Invalid JSON message: in event %d (KILL_JOB): job_id %d ('%s') is invalid.", event_number, i, message->jobs_ids[i].to_string().c_str());
+        }
     }
 
     send_message(timestamp, "server", IPMessageType::SCHED_KILL_JOB, (void *) message);
@@ -767,7 +794,9 @@ void JsonProtocolReader::send_message(double when,
     // Let's wait until "when" time is reached
     double current_time = MSG_get_clock();
     if (when > current_time)
+    {
         MSG_process_sleep(when - current_time);
+    }
 
     // Let's actually send the message
     generic_send_message(destination_mailbox, type, data, detached);

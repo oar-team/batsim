@@ -83,7 +83,9 @@ std::string absolute_filename(const std::string & filename)
 
     // Let's assume filenames starting by "/" are absolute.
     if (filename[0] == '/')
+    {
         return filename;
+    }
 
     char cwd_buf[PATH_MAX];
     char * getcwd_ret = getcwd(cwd_buf, PATH_MAX);
@@ -113,14 +115,24 @@ bool identify_job_from_string(BatsimContext * context,
         job_id.job_number = std::stoi(job_identifier_parts[1]);
     }
     else
+    {
         return false;
+    }
 
     if (return_condition == IdentifyJobReturnCondition::STRING_VALID)
+    {
         return true;
+    }
     else if (return_condition == IdentifyJobReturnCondition::STRING_VALID__JOB_EXISTS)
+    {
         return context->workloads.job_exists(job_id);
+    }
     else if (return_condition == IdentifyJobReturnCondition::STRING_VALID__JOB_DOES_NOT_EXISTS)
+    {
         return !context->workloads.job_exists(job_id);
+    }
     else
+    {
         xbt_assert(0, "Unhandled IdentifyJobReturnCondition value");
+    }
 }

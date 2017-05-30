@@ -187,7 +187,9 @@ Profile::~Profile()
         }
     }
     else
+    {
         XBT_ERROR("Deletion of an unknown profile type (%d)", type);
+    }
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
@@ -317,7 +319,9 @@ Profile *Profile::from_json(const std::string & profile_name,
                    "strictly positive", error_prefix.c_str(), profile_name.c_str());
         data->sequence.reserve(seq.Size());
         for (unsigned int i = 0; i < seq.Size(); ++i)
+        {
             data->sequence.push_back(string(seq[i].GetString()));
+        }
 
         profile->data = data;
     }

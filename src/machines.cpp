@@ -29,22 +29,30 @@ Machines::Machines()
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
                                                  MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
     for (const MachineState & state : machine_states)
+    {
         _nb_machines_in_each_state[state] = 0;
+    }
 }
 
 Machines::~Machines()
 {
     for (Machine * machine : _machines)
+    {
         delete machine;
+    }
     _machines.clear();
 
     if (_master_machine != nullptr)
+    {
         delete _master_machine;
-    _master_machine = nullptr;
+        _master_machine = nullptr;
+    }
 
     if (_pfs_machine != nullptr)
+    {
         delete _pfs_machine;
-    _pfs_machine = nullptr;
+        _pfs_machine = nullptr;
+    }
 
 }
 
@@ -230,7 +238,9 @@ void Machines::create_machines(xbt_dynar_t hosts,
     xbt_assert(_master_machine != nullptr,
                "Cannot find the MasterHost '%s' in the platform file", master_host_name.c_str());
     if (_pfs_machine == nullptr)
+    {
          XBT_WARN("Could not find pfs_host '%s'!", pfs_host_name.c_str());
+    }
 
     sort_machines_by_ascending_name();
 
@@ -320,10 +330,14 @@ long double Machines::total_consumed_energy(const BatsimContext *context) const
     if (context->energy_used)
     {
         for (const Machine * m : _machines)
+        {
             total_consumed_energy += sg_host_get_consumed_energy(m->host);
+        }
     }
     else
+    {
         total_consumed_energy = -1;
+    }
 
     return total_consumed_energy;
 }
@@ -335,10 +349,14 @@ long double Machines::total_wattmin(const BatsimContext *context) const
     if (context->energy_used)
     {
         for (const Machine * m : _machines)
+        {
             total_wattmin += sg_host_get_wattmin_at(m->host, sg_host_get_pstate(m->host));
+        }
     }
     else
+    {
         total_wattmin = -1;
+    }
 
     return total_wattmin;
 }
@@ -371,21 +389,27 @@ void Machines::update_machines_on_job_run(const Job * job,
 
         const Job * previous_top_job = nullptr;
         if (!machine->jobs_being_computed.empty())
+        {
             previous_top_job = *machine->jobs_being_computed.begin();
+        }
 
         machine->jobs_being_computed.insert(job);
 
         if (previous_top_job == nullptr || previous_top_job != *machine->jobs_being_computed.begin())
         {
             if (_tracer != nullptr)
+            {
                 _tracer->set_machine_as_computing_job(machine->id,
                                                       *machine->jobs_being_computed.begin(),
                                                       MSG_get_clock());
+            }
         }
     }
 
     if (context->trace_machine_states)
+    {
         context->machine_state_tracer.write_machine_states(MSG_get_clock());
+    }
 }
 
 void Machines::update_machines_on_job_end(const Job * job,
@@ -409,19 +433,25 @@ void Machines::update_machines_on_job_end(const Job * job,
         {
             machine->update_machine_state(MachineState::IDLE);
             if (_tracer != nullptr)
+            {
                 _tracer->set_machine_idle(machine->id, MSG_get_clock());
+            }
         }
         else if (*machine->jobs_being_computed.begin() != previous_top_job)
         {
             if (_tracer != nullptr)
+            {
                 _tracer->set_machine_as_computing_job(machine->id,
                                                       *machine->jobs_being_computed.begin(),
                                                       MSG_get_clock());
+            }
         }
     }
 
     if (context->trace_machine_states)
+    {
         context->machine_state_tracer.write_machine_states(MSG_get_clock());
+    }
 }
 
 void Machines::sort_machines_by_ascending_name()
@@ -429,7 +459,9 @@ void Machines::sort_machines_by_ascending_name()
     std::sort(_machines.begin(), _machines.end(), machine_comparator_name);
 
     for (unsigned int i = 0; i < _machines.size(); ++i)
+    {
         _machines[i]->id = i;
+    }
 }
 
 void Machines::set_tracer(PajeTracer *tracer)
@@ -472,7 +504,9 @@ Machine::Machine(Machines *machines) :
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
                                                  MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
     for (const MachineState & state : machine_states)
+    {
         time_spent_in_each_state[state] = 0;
+    }
 }
 
 Machine::~Machine()
@@ -516,11 +550,17 @@ void Machine::display_machine(bool is_energy_used) const
         {
             pstates_vector.push_back(to_string(mit.first));
             if (mit.second == PStateType::COMPUTATION_PSTATE)
+            {
                 comp_pstates_vector.push_back(to_string(mit.first));
+            }
             else if (mit.second == PStateType::SLEEP_PSTATE)
+            {
                 sleep_pstates_vector.push_back(to_string(mit.first));
+            }
             else if (mit.second == PStateType::TRANSITION_VIRTUAL_PSTATE)
+            {
                 vt_pstates_vector.push_back(to_string(mit.first));
+            }
         }
 
         str += "  pstates  = [\n" + boost::algorithm::join(pstates_vector, ", ") + "]\n";
@@ -544,7 +584,9 @@ string Machine::jobs_being_computed_as_string() const
     vector<string> jobs_strings;
 
     for (auto & job : jobs_being_computed)
+    {
         jobs_strings.push_back(job->id);
+    }
 
     return boost::algorithm::join(jobs_strings, ", ");
 }
@@ -579,7 +621,9 @@ bool string_including_integers_comparator(const std::string & s1, const std::str
             int int2 = atoi(&s2[c2]);
 
             if (int1 != int2)
+            {
                 return int1 < int2;
+            }
 
             int int1_length = log10(int1) + 1;
             int int2_length = log10(int2) + 1;
@@ -590,7 +634,9 @@ bool string_including_integers_comparator(const std::string & s1, const std::str
         else
         {
             if (s1[c1] != s2[c2])
+            {
                 return s1[c1] < s2[c2];
+            }
 
             ++c1;
             ++c2;
@@ -629,7 +675,9 @@ long double consumed_energy_on_machines(BatsimContext * context,
                                         const MachineRange & machines)
 {
     if (!context->energy_used)
+    {
         return 0;
+    }
 
     long double consumed_energy = 0;
     for (auto it = machines.elements_begin(); it != machines.elements_end(); ++it)

@@ -27,7 +27,9 @@ void generic_send_message(const std::string & destination_mailbox,
               ip_message_type_to_string(type).c_str(), data);
 
     if (detached)
+    {
         MSG_task_dsend(task_to_send, destination_mailbox.c_str(), NULL);
+    }
     else
     {
         msg_error_t err = MSG_task_send(task_to_send, destination_mailbox.c_str());

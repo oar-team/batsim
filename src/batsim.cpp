@@ -78,13 +78,21 @@ bool file_exists(const std::string & filename)
 VerbosityLevel verbosity_level_from_string(const std::string & str)
 {
     if (str == "quiet")
+    {
         return VerbosityLevel::QUIET;
+    }
     else if (str == "network-only")
+    {
         return VerbosityLevel::NETWORK_ONLY;
+    }
     else if (str == "information")
+    {
         return VerbosityLevel::INFORMATION;
+    }
     else if (str == "debug")
+    {
         return VerbosityLevel::DEBUG;
+    }
     else
     {
         throw std::runtime_error("Invalid verbosity level string");
@@ -342,7 +350,10 @@ Other options:
 
     main_args.socket_endpoint = args["--socket-endpoint"].asString();
     main_args.redis_hostname = args["--redis-hostname"].asString();
-    try { main_args.redis_port = args["--redis-port"].asLong(); }
+    try
+    {
+        main_args.redis_port = args["--redis-port"].asLong();
+    }
     catch(const std::exception &)
     {
         XBT_ERROR("Cannot read the Redis port '%s' as a long integer.",
@@ -362,7 +373,10 @@ Other options:
     // Platform size limit options
     // ***************************
     string m_max_str = args["--mmax"].asString();
-    try {main_args.limit_machines_count = std::stoi(m_max_str);}
+    try
+    {
+        main_args.limit_machines_count = std::stoi(m_max_str);
+    }
     catch (const std::exception &)
     {
         XBT_ERROR("Cannot read <M_max> '%s' as an integer.", m_max_str.c_str());
@@ -410,9 +424,13 @@ Other options:
     // *************
     main_args.allow_time_sharing = args["--allow-time-sharing"].asBool();
     if (args["--batexec"].asBool())
+    {
         main_args.program_type = ProgramType::BATEXEC;
+    }
     else
+    {
         main_args.program_type = ProgramType::BATSIM;
+    }
     main_args.pfs_host_name = args["--pfs-host"].asString();
 
     return !error;
@@ -426,13 +444,21 @@ void configure_batsim_logging_output(const MainArguments & main_args)
     string log_threshold_to_set = "critical";
 
     if (main_args.verbosity == VerbosityLevel::QUIET || main_args.verbosity == VerbosityLevel::NETWORK_ONLY)
+    {
         log_threshold_to_set = "error";
+    }
     else if (main_args.verbosity == VerbosityLevel::DEBUG)
+    {
         log_threshold_to_set = "debug";
+    }
     else if (main_args.verbosity == VerbosityLevel::INFORMATION)
+    {
         log_threshold_to_set = "info";
+    }
     else
+    {
         xbt_assert(false, "FIXME!");
+    }
 
     for (const auto & log_cat : log_categories_to_set)
     {
@@ -442,7 +468,9 @@ void configure_batsim_logging_output(const MainArguments & main_args)
 
     // In network-only, we add a rule to display the network info
     if (main_args.verbosity == VerbosityLevel::NETWORK_ONLY)
+    {
         xbt_log_control_set("network.thresh:info");
+    }
 
     // Batsim is always set to info, to allow to trace Batsim's input easily
     xbt_log_control_set("batsim.thresh:info");
@@ -455,7 +483,9 @@ void initialize_msg(const MainArguments & main_args, int argc, char * argv[])
 {
     // Must be initialized before MSG_init
     if (main_args.energy_used)
+    {
         sg_energy_plugin_init();
+    }
 
     MSG_init(&argc, argv);
 
@@ -503,14 +533,22 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     // Let's compute how the number of machines to use should be limited
     max_nb_machines_to_use = 0;
     if ((main_args.limit_machines_count_by_workload) && (main_args.limit_machines_count > 0))
+    {
         max_nb_machines_to_use = std::min(main_args.limit_machines_count, max_nb_machines_in_workloads);
+    }
     else if (main_args.limit_machines_count_by_workload)
+    {
         max_nb_machines_to_use = max_nb_machines_in_workloads;
+    }
     else if (main_args.limit_machines_count > 0)
+    {
         max_nb_machines_to_use = main_args.limit_machines_count;
+    }
 
     if (max_nb_machines_to_use != 0)
+    {
         XBT_INFO("The maximum number of machines to use is %d.", max_nb_machines_to_use);
+    }
 }
 
 void start_initial_simulation_processes(const MainArguments & main_args,
@@ -529,11 +567,15 @@ void start_initial_simulation_processes(const MainArguments & main_args,
 
         string submitter_instance_name = "workload_submitter_" + desc.name;
         if (!is_batexec)
+        {
             MSG_process_create(submitter_instance_name.c_str(), static_job_submitter_process,
                                (void*) submitter_args, master_machine->host);
+        }
         else
+        {
             MSG_process_create(submitter_instance_name.c_str(), batexec_job_launcher_process,
                                (void*) submitter_args, master_machine->host);
+        }
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
@@ -572,7 +614,9 @@ int main(int argc, char * argv[])
     // Let's parse command-line arguments
     MainArguments main_args;
     if (!parse_main_args(argc, argv, main_args))
+    {
         return 1;
+    }
 
     // Let's configure how Batsim should be logged
     configure_batsim_logging_output(main_args);
@@ -653,15 +697,21 @@ int main(int argc, char * argv[])
 
     // If SMPI had been used, it should be finalized
     if (context.smpi_used)
+    {
         SMPI_finalize();
+    }
 
     // Let's finalize Batsim's outputs
     finalize_batsim_outputs(&context);
 
     if (res == MSG_OK)
+    {
         return 0;
+    }
     else
+    {
         return 1;
+    }
 }
 
 void set_configuration(BatsimContext *context,
@@ -813,28 +863,42 @@ void set_configuration(BatsimContext *context,
 
     // redis->enabled
     if (mit_redis->value.FindMember("enabled") == mit_redis->value.MemberEnd())
+    {
         mit_redis->value.AddMember("enabled", Value().SetBool(redis_enabled), alloc);
+    }
 
     // redis->hostname
     Value::MemberIterator mit_redis_hostname = mit_redis->value.FindMember("hostname");
     if (mit_redis_hostname == mit_redis->value.MemberEnd())
+    {
         mit_redis->value.AddMember("hostname", Value().SetString(redis_hostname.c_str(), alloc), alloc);
+    }
     else
+    {
         mit_redis_hostname->value.SetString(redis_hostname.c_str(), alloc);
+    }
 
     // redis->port
     Value::MemberIterator mit_redis_port = mit_redis->value.FindMember("port");
     if (mit_redis_port == mit_redis->value.MemberEnd())
+    {
         mit_redis->value.AddMember("port", Value().SetInt(redis_port), alloc);
+    }
     else
+    {
         mit_redis_port->value.SetInt(redis_port);
+    }
 
     // redis->prefix
     Value::MemberIterator mit_redis_prefix = mit_redis->value.FindMember("prefix");
     if (mit_redis_prefix == mit_redis->value.MemberEnd())
+    {
         mit_redis->value.AddMember("prefix", Value().SetString(redis_prefix.c_str(), alloc), alloc);
+    }
     else
+    {
         mit_redis_prefix->value.SetString(redis_prefix.c_str(), alloc);
+    }
 
 
     // job_submission
@@ -847,7 +911,9 @@ void set_configuration(BatsimContext *context,
 
     // job_submission->forward_profiles
     if (mit_job_submission->value.FindMember("forward_profiles") == mit_job_submission->value.MemberEnd())
+    {
         mit_job_submission->value.AddMember("forward_profiles", Value().SetBool(submission_forward_profiles), alloc);
+    }
 
     // job_submission->from_scheduler
     auto mit_job_submission_from_sched = mit_job_submission->value.FindMember("from_scheduler");
@@ -860,9 +926,13 @@ void set_configuration(BatsimContext *context,
 
     // job_submission_from_scheduler->enabled
     if (from_sched_value.FindMember("enabled") == from_sched_value.MemberEnd())
+    {
         from_sched_value.AddMember("enabled", Value().SetBool(submission_sched_enabled), alloc);
+    }
 
     // job_submission_from_scheduler->acknowledge
     if (from_sched_value.FindMember("acknowledge") == from_sched_value.MemberEnd())
+    {
         from_sched_value.AddMember("acknowledge", Value().SetBool(submission_sched_ack), alloc);
+    }
 }

@@ -98,7 +98,9 @@ int static_job_submitter_process(int argc, char *argv[])
         for (const Job * job : jobsVector)
         {
             if (job->submission_time > previous_submission_date)
+            {
                 MSG_process_sleep((double)(job->submission_time) - (double)(previous_submission_date));
+            }
             // Setting the mailbox
             //job->completion_notification_mailbox = "SOME_MAILBOX";
 
@@ -112,7 +114,9 @@ int static_job_submitter_process(int argc, char *argv[])
             {
                 context->storage.set(job_key, job->json_description);
                 if (context->submission_forward_profiles)
+                {
                     context->storage.set(profile_key, workload->profiles->at(job->profile)->json_description);
+                }
             }
 
             // Let's now continue the simulation
@@ -125,7 +129,9 @@ int static_job_submitter_process(int argc, char *argv[])
             previous_submission_date = MSG_get_clock();
 
             if (job == first_submitted_job)
+            {
                 context->energy_first_job_submission = context->machines.total_consumed_energy(context);
+            }
         }
     }
 
@@ -183,7 +189,8 @@ int workflow_submitter_process(int argc, char *argv[])
     std::vector<Task *> ready_tasks = workflow->get_source_tasks();
 
     /* Wait until the workflow start-time */
-    if (workflow->start_time > MSG_get_clock()) {
+    if (workflow->start_time > MSG_get_clock())
+    {
         XBT_INFO("Warning: already past workflow start time! (%lf)", workflow->start_time);
     }
     MSG_process_sleep(MAX(0.0, workflow->start_time - MSG_get_clock()));
@@ -232,7 +239,9 @@ int workflow_submitter_process(int argc, char *argv[])
             for (std::vector<Task *>::iterator kiddo=my_kids.begin(); kiddo!=my_kids.end(); ++kiddo)
             {
                 if((*kiddo)->nb_parent_completed==(int)(*kiddo)->parents.size())
+                {
                     ready_tasks.push_back(*kiddo);
+                }
             }
 
             /* Nothing left for this task */
@@ -349,7 +358,8 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
  * @param submitter_name TODO
  * @return TODO
  */
-static string wait_for_job_completion(string submitter_name) {
+static string wait_for_job_completion(string submitter_name)
+{
     msg_task_t task_notification = NULL;
     IPMessage *task_notification_data;
     MSG_task_receive(&(task_notification), submitter_name.c_str());
@@ -366,7 +376,8 @@ static string wait_for_job_completion(string submitter_name) {
  * @param submitter_name TODO
  * @return TODO
  */
-static std::tuple<int,double,double> wait_for_query_answer(string submitter_name) {
+static std::tuple<int,double,double> wait_for_query_answer(string submitter_name)
+{
     msg_task_t task_notification = NULL;
     IPMessage *task_notification_data;
     MSG_task_receive(&(task_notification), submitter_name.c_str());

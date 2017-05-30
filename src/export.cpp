@@ -61,7 +61,9 @@ void prepare_batsim_outputs(BatsimContext * context)
                 pstate_to_machine_set[pstate] = range;
             }
             else
+            {
                 pstate_to_machine_set[pstate].insert(machine_id);
+            }
         }
 
         for (auto mit : pstate_to_machine_set)
@@ -80,7 +82,9 @@ void finalize_batsim_outputs(BatsimContext * context)
 
     // Schedule (Pajé)
     if (context->trace_schedule)
+    {
         context->paje_tracer.finalize(context, MSG_get_clock());
+    }
 
     if (context->trace_machine_states)
     {
@@ -119,7 +123,9 @@ WriteBuffer::WriteBuffer(const std::string & filename, int buffer_size)
 WriteBuffer::~WriteBuffer()
 {
     if (buffer_pos > 0)
+    {
         flush_buffer();
+    }
 
     if (buffer != nullptr)
     {
@@ -184,8 +190,10 @@ PajeTracer::~PajeTracer()
     if (_wbuf != nullptr)
     {
         if (state != FINALIZED && state != UNINITIALIZED)
+        {
             fprintf(stderr, "Destruction of a PajeTracer object which has not been finalized. "
                             "The corresponding trace file may be invalid.\n");
+        }
 
         if (_wbuf != nullptr)
         {
@@ -803,9 +811,13 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
                     nb_jobs_finished++;
 
                     if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
+                    {
                         nb_jobs_success++;
+                    }
                     else
+                    {
                         nb_jobs_killed++;
+                    }
 
                     Rational waiting_time = job->starting_time - job->submission_time;
                     Rational completion_time = job->starting_time + job->runtime;
@@ -817,16 +829,24 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
                     sum_slowdown += slowdown;
 
                     if (completion_time > makespan)
+                    {
                         makespan = completion_time;
+                    }
 
                     if (waiting_time > max_waiting_time)
+                    {
                         max_waiting_time = waiting_time;
+                    }
 
                     if (turnaround_time > max_turnaround_time)
+                    {
                         max_turnaround_time = turnaround_time;
+                    }
 
                     if (slowdown > max_slowdown)
+                    {
                         max_slowdown = slowdown;
+                    }
                 }
             }
         }
@@ -863,14 +883,22 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
                                                  MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
     for (const MachineState & state : machine_states)
+    {
         time_spent_in_each_state[state] = 0;
+    }
 
     for (const Machine * machine : context->machines.machines())
+    {
         for (const MachineState & state : machine_states)
+        {
             time_spent_in_each_state[state] += machine->time_spent_in_each_state.at(state);
+        }
+    }
 
     for (const MachineState & state : machine_states)
+    {
         output_map["time_" + machine_state_to_string(state)] = to_string((double)time_spent_in_each_state[state]);
+    }
 
 
     // Let's write the output map into the file
@@ -1018,7 +1046,9 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     Rational epower = -1;
 
     if (time_diff > 0)
+    {
         epower = energy_diff / time_diff;
+    }
 
     const int buf_size = 256;
     int nb_printed;
@@ -1027,11 +1057,15 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
     if (epower != -1)
+    {
         nb_printed = snprintf(buf, buf_size, "%g,%Lg,%c,%Lg,%g\n",
                               date, energy, event_type, wattmin, (double)epower);
+    }
     else
+    {
         nb_printed = snprintf(buf, buf_size, "%g,%Lg,%c,%Lg,NA\n",
                               date, energy, event_type, wattmin);
+    }
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -1077,7 +1111,9 @@ void MachineStateTracer::set_filename(const string &filename)
                                                  MachineState::IDLE,
                                                  MachineState::COMPUTING};
     for (const MachineState & state : machine_states)
+    {
         header_substrings.push_back("nb_" + machine_state_to_string(state));
+    }
 
     string header = "time," + boost::algorithm::join(header_substrings, ",") + "\n";
 
