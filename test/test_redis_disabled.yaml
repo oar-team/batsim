@@ -11,7 +11,7 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"hello", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
+        - {"name":"case_study1", "filename":"${batsim_dir}/workload_profiles/case_study1.json"}
         - {"name":"medium_late", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example_late_job.json"}
       algo:
         - {"name":"easy_bf", "sched_name":"easy_bf"}
@@ -43,7 +43,7 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"hello", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
+        - {"name":"case_study1", "filename":"${batsim_dir}/workload_profiles/case_study1.json"}
         - {"name":"medium_late", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example_late_job.json"}
       algo:
         - {"name":"easy_bf", "sched_name":"easyBackfillNotopo"}
