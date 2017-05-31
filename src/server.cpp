@@ -602,6 +602,8 @@ void server_on_reject_job(ServerData * data,
 
     XBT_INFO("Job %d (workload=%s) has been rejected",
              job->number, job->workload->name.c_str());
+
+    check_submitted_and_completed(data);
 }
 
 void server_on_kill_jobs(ServerData * data,
