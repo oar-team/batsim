@@ -133,7 +133,7 @@ For example, imagine the same scenario as before but with a job 0 that finishes
 at time 13.1. The scheduler is making decisions at this time (until time 15).
 Hence, the scheduler will finish its decision-making procedure and then be
 called as follows:
-![case1_inner_figure](protocol_img/case1_inner.png)
+![case1_inner_past_figure](protocol_img/case1_inner_past.png)
 
 The Batsim request message would look like:
 ``` JSON
