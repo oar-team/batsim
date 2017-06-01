@@ -105,10 +105,53 @@ process role is to forward the events to the server at the right times.
 For this purpose, it sends the events in order, sleeping between events if
 needed.
 
-Once all the events have been forwarded, the **request reply** process tells the
-**server** that it has finished, which will allow the server to spawn another
-**request reply** process later on. Only one **request reply** process can be
-executing at a given time. Whenever the server receives an event which must be
-sent to the scheduler, it stores it an event queue. If the scheduler is ready,
-the message is sent immediately. Otherwise, the message will be sent as soon
-as possible, i.e. as soon as the next ``SCHED_READY`` event is received.
+Once all the events have been forwarded, the **request reply** process sends
+a ``SCHED_READY`` message to the **server**. This message means that all the
+events coming from the scheduler have been sent, and that the scheduler is
+now ready to be called if needed.
+
+Events received by the **server** that must be forwarded to the scheduler are
+queued in a data structure kept in memory.
+If the scheduler is ready, the queued event is sent immediately.
+Otherwise, the queued events will be sent as soon as possible,
+i.e. when the next ``SCHED_READY`` event will have been received.
+This mechanism ensures that scheduler calls are consistent in time:
+- if the scheduler replied at time ``t`` (``now`` field of the reply message),
+  the next call to the scheduler is ensured to occur at a time greater than or
+  equal to ``t``
+- when the scheduler is called, it is sure that all its previous decisions
+  have been initiated
+
+## What if something happened during the scheduler call?
+Please remark that this mechanism implies that schedulers (that wish to take
+scheduling time into account) may receive messages from the *past* when they are
+called. Indeed, Batsim can send messages whose events occured between the last
+call time (``now`` field of the previous request message sent by Batsim) and the
+current one (``now`` field of the current request message).
+
+For example, imagine the same scenario as before but with a job 0 that finishes
+at time 13.1. The scheduler is making decisions at this time (until time 15).
+Hence, the scheduler will finish its decision-making procedure and then be
+called as follows:
+![case1_inner_figure](protocol_img/case1_inner.png)
+
+The Batsim request message would look like:
+``` JSON
+{
+  "now": 15.001000,
+  "events": [
+    {
+      "timestamp": 13.100000,
+      "type": "JOB_COMPLETED",
+      "data": {
+        "job_id": "d4c32e!0",
+        "status": "SUCCESS"
+      }
+    }
+  ]
+}
+```
+The message means that:
+- job 0 finished at time 13.1 successfully
+- the current time is 15.001. Therefore, the scheduler can only make decisions
+  at time 15.001 or afterwards.
