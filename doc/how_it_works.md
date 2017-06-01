@@ -68,11 +68,14 @@ The scheduler answer is the following:
 ```
 
 This message means that the scheduler:
-- did something until time 13
-- first chose, at time 13, to execute job 2 on machines 0 and 1.
-- did something until time 14
-- then chose, at time 14, to execute job 3 on machines 2 and 3.
-- did something until time 15 (``"now": 15.0``) and finished making its decisions.
+- (did something until time 13, since the request has been sent at time 10
+  and that the first event is at time 13)
+- first chose, at time 13, to execute job 2 on machines 0 and 1
+- (did something until time 14, since the next event is at time 14)
+- then chose, at time 14, to execute job 3 on machines 2 and 3
+- (did something until time 15, since the reply has been received at
+  ``"now": 15.0``)
+- finally chose to stop making decisions for now, at time 15
 
 ## What happens within Batsim?
 Batsim can be seen as a distributed application composed of different processes.
@@ -95,16 +98,17 @@ it spawns a **request reply** process to forward that j1 has completed.
 
 The newly spawned **request reply** process sends a network message to
 the scheduler, forwarding that j1 has completed. The **request reply** process
-then waits for the scheduler reply, which *stops* the simulation.
+then waits for the scheduler reply (the simulation is *stopped* as long as
+the reply has not been received).
 Once the reply from the scheduler has been received, the **request reply**
-process role is to forward the events to the server at the right moments.
-For this purpose, it sends the events in order, sleeping before an event if
-it is in the future.
+process role is to forward the events to the server at the right times.
+For this purpose, it sends the events in order, sleeping between events if
+needed.
 
 Once all the events have been forwarded, the **request reply** process tells the
 **server** that it has finished, which will allow the server to spawn another
 **request reply** process later on. Only one **request reply** process can be
-executing at a given time. When the server receives an event which must be
+executing at a given time. Whenever the server receives an event which must be
 sent to the scheduler, it stores it an event queue. If the scheduler is ready,
 the message is sent immediately. Otherwise, the message will be sent as soon
-as possible (directly after receiving a ``SCHED_READY`` event).
+as possible, i.e. as soon as the next ``SCHED_READY`` event is received.
