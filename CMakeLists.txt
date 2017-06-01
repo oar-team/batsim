@@ -274,7 +274,8 @@ add_test(dynamic_submit
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_dynamic_submit.yaml
          -bod /tmp/batsim_tests/dynamic_submit
-         -bwd ${CMAKE_SOURCE_DIR})
+         -bwd ${CMAKE_SOURCE_DIR}
+         --nb_workers_per_host 2)
 
 add_test(kill
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py

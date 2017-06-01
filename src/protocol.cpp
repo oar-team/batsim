@@ -743,10 +743,6 @@ void JsonProtocolReader::handle_submit_job(int event_number,
 
         message->job_profile_description = string(buffer.GetString(), buffer.GetSize());
     }
-    else
-    {
-        xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['profile'] is unset but redis seems enabled...", event_number);
-    }
 
     send_message(timestamp, "server", IPMessageType::JOB_SUBMITTED_BY_DP, (void *) message);
 }

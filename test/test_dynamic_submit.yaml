@@ -20,19 +20,24 @@ implicit_instances:
         - {"name":"submitter", "sched_name":"submitter"}
       workload:
         - {"name":"one_job", "filename":"${batsim_dir}/workload_profiles/one_delay_job.json"}
-        - {"name":"tiny", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
+      mode:
+        - {"name":"diff_profiles", "increase_jobs_duration":"true", "send_profile_if_already_sent":"true"}
+        - {"name":"same_profiles_resend", "increase_jobs_duration":"false", "send_profile_if_already_sent":"true"}
+        - {"name":"same_profiles_no_resend", "increase_jobs_duration":"false", "send_profile_if_already_sent":"false"}
       redis_enabled: ["true", "false"]
       dynamic_submit_ack: ["true", "false"]
     generic_instance:
+      variables:
+        socket_port: "$((${instance_number} + 28000))"
       timeout: 3600
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${instance_id}
-      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} ${energy[option]} -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vdebug -m ${platform[master_node]}
-      sched_command: batsched -v ${algo[sched_name]} --variant_options_filepath ${output_directory}/sched_input.json
+      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} ${energy[option]} -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vdebug -m ${platform[master_node]} -s "tcp://localhost:${socket_port}"
+      sched_command: batsched -v ${algo[sched_name]} --variant_options_filepath ${output_directory}/sched_input.json -s "tcp://*:${socket_port}"
       commands_before_execution:
         # Generate Batsim config file
         - |
-              #!/bin/bash
+              #!/usr/bin/env bash
               cat > ${output_directory}/batsim.conf << EOF
               {
                 "redis": {
@@ -49,10 +54,13 @@ implicit_instances:
               EOF
         # Generate sched input
         - |
-            #!/bin/bash
+            #!/bin/env bash
+            source ${output_directory}/variables.bash
             cat > ${output_directory}/sched_input.json << EOF
             {
-              "nb_jobs_to_submit": ${nb_dyn_jobs}
+              "nb_jobs_to_submit": ${nb_dyn_jobs},
+              "increase_jobs_duration": ${mode[increase_jobs_duration]},
+              "send_profile_if_already_sent": ${mode[send_profile_if_already_sent]}
             }
             EOF
 
@@ -82,7 +90,13 @@ implicit_instances:
             }
 
             # Let's check the dynamic jobs execution times
-            dynamic_jobs['expected_execution_time'] = dynamic_jobs['job_id'] * 10 + 1
+            if(toupper("${mode[increase_jobs_duration]}") == TRUE) {
+                dynamic_jobs['expected_execution_time'] = dynamic_jobs['job_id'] * 10 + 1
+            } else {
+                # Using dynamic_jobs['job_id'] * 0 to conserve a vector of the good length
+                dynamic_jobs['expected_execution_time'] = dynamic_jobs['job_id'] * 0 + 1
+            }
+
             ok_runtime = dynamic_jobs %>% filter(execution_time == expected_execution_time)
             bad_runtime = dynamic_jobs %>% filter(execution_time != expected_execution_time)
             if (nrow(bad_runtime) > 0) {
