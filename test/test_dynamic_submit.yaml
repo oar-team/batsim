@@ -54,7 +54,7 @@ implicit_instances:
               EOF
         # Generate sched input
         - |
-            #!/bin/env bash
+            #!/usr/bin/env bash
             source ${output_directory}/variables.bash
             cat > ${output_directory}/sched_input.json << EOF
             {
