@@ -43,15 +43,15 @@ mkdir /root/battuto
 Both Batsim and the scheduler must be executed within the container.
 
 Batsim can be executed first (in the same terminal used before):
-```
+``` bash
 batsim -e /root/battuto/out \
        -p /root/batsim/platforms/energy_platform_homogeneous_no_net_128.xml \
        -w /root/batsim/workload_profiles/batsim_paper_workload_example.json \
        --mmax-workload
-``̀`
+```
 
 In another terminal, connect to the ``battuto``
-```
+``` bash
 # Connect to the battuto environment
 docker exec -ti battuto bash
 

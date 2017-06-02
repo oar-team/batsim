@@ -19,7 +19,7 @@ Quick links
 - The [contribute](doc/contribute.md) page gives some information about how to
   contribute to Batsim
 - Tutorials shows how to use Batsim and how it works:
-  - The [usage tutorial](doc/usage.md) explains how to execute a Batsim
+  - The [usage tutorial](doc/tuto_usage.md) explains how to execute a Batsim
     simulation, and how to setup development a docker environment
   - The [time tutorial](doc/tuto_time.md) explains how the time is managed in a
     Batsim simulation, shows essential protocol communications and gives an
