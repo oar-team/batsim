@@ -58,6 +58,8 @@ std::string ip_message_type_to_string(IPMessageType type)
 {
     string s;
 
+    // Do not remove the switch. If one adds a new IPMessageType but forgets to handle it in the
+    // switch, a compilation warning should help avoiding this bug.
     switch(type)
     {
         case IPMessageType::JOB_SUBMITTED:
@@ -138,6 +140,8 @@ void dsend_message(const char *destination_mailbox, IPMessageType type, void *da
 
 IPMessage::~IPMessage()
 {
+    // Do not remove the switch. If one adds a new IPMessageType but forgets to handle it in the
+    // switch, a compilation warning should help avoiding this bug.
     switch (type)
     {
         case IPMessageType::JOB_SUBMITTED:

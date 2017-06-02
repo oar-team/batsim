@@ -6,7 +6,7 @@ Jobs Management System (RJMS) -- is a system that manages resources in
 large-scale computing centers, notably by scheduling and placing jobs, and by
 setting up energy policies.
 
-Batsim simulates the computing center's behaviour. It is made such that any
+Batsim simulates the computing center behaviour. It is made such that any
 event-based scheduling algorithm can be plugged to it. Thus, it permits to
 compare decision algorithms coming from production and academics worlds.
 
@@ -14,12 +14,23 @@ Here is an overview of how Batsim works compared to real executions.
 
 ![Batsim vs. real]
 
+Quick links
+-----------
+- The [contribute](doc/contribute.md) page gives some information about how to
+  contribute to Batsim
+- Tutorials shows how to use Batsim and how it works:
+  - The [time tutorial](doc/tuto_time.md) explains how the time is managed in a
+    Batsim simulation, shows essential protocol communications and gives an
+    overview of how Batsim works internally
+- The [protocol documentation](doc/proto_description.md) defines the protocol
+  used between Batsim and the scheduling algorithms
+
 Run batsim example
 ------------------
 
-**Important note**: It is highly recommended to use batsim with the provided
-container. It use really up-to-date version of some packages (like boost)
-that is not available on classic distribution yet.
+**Important note**: It is highly recommended to use Batsim with the provided
+container, as up-to-date packages (like boost) that may not be easily available
+in your distribution yet.
 
 To test simply test batsim you can directly run it though docker.  First run
 batsim in your container for a simple workload:
@@ -123,19 +134,19 @@ environments. These environments allow us to generate Docker containers, which
 are used by [our CI](https://gitlab.inria.fr/batsim/batsim/pipelines) to test
 whether Batsim can be built correctly and whether some integration tests pass.
 
-Thus, the most up-to-date information about how to build Batsim's dependencies
+Thus, the most up-to-date information about how to build Batsim dependencies
 and Batsim itself can be found in our Kameleon recipes:
   - [batsim_ci.yaml](environments/batsim_ci.yaml), for the dependencies (Debian)
   - [batsim.yaml](environments/batsim.yaml), for Batsim itself (Debian)
   - Please note that [the steps directory](environments/steps/) contain
     subcommands that can be used by the recipes.
 
-However, some information is also written below for simplicity's sake, but
+However, some information is also written below for the sake of simplicity, but
 please note it might be outdated.
 
 ### Dependencies
 
-Batsim's dependencies are listed below:
+Batsim dependencies are listed below:
 -   SimGrid. dev version is recommended (203ec9f99 for example).
     To use SMPI jobs, use commit 587483ebe of
     [mpoquet's fork](https://github.com/mpoquet/simgrid/)

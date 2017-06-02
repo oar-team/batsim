@@ -1,15 +1,18 @@
-# Case study 1: j1 completion -> execute j2 and j3
-In a real system, the scheduling algorithm is called from time to time to
+In a real system, resource management procedures are called from time to time to
 make some decisions.
+This example shows how the simulation time is managed in Batsim, and stresses
+how it allows to take decision making time into account during the simulation.
+
 This case study consists in making the decision to execute two jobs (j2 and j3)
-on job j1 completion. However, the decision-making procedure takes some time and
+when job j1 completes. However, the decision-making procedure takes some time and
 makes the decision in an online fashion: the decision to execute j1 is made
 before the decision to execute j2.
 
 ![case1_overview_figure](protocol_img/case1_overview.png)
 
 ## Protocol
-In a Batsim simulation, most decisions are taken in another (Linux) process.
+Batsim simulations are composed of two (Linux processes): Batsim and another
+process in charge of making decisions.
 This decision-making process will simply be referred to as the Scheduler from now on.
 
 The two processes communicate via a protocol. In this protocol, the Scheduler
