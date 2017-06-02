@@ -240,6 +240,12 @@ add_test(batexec
          -bod /tmp/batsim_tests/batexec
          -bwd ${CMAKE_SOURCE_DIR})
 
+add_test(reject
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_reject.yaml
+         -bod /tmp/batsim_tests/reject
+         -bwd ${CMAKE_SOURCE_DIR})
+
 add_test(pfs0
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_pfs0.yaml
