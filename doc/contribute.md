@@ -3,8 +3,10 @@ Batsim uses different git repositories.
 The main repositories and their role are listed below:
 
 - [github](https://github.com/oar-team/batsim)
-  - [issues](https://github.com/oar-team/batsim/issues)
-  - [pull requests](https://github.com/oar-team/batsim/pulls)
+  - the [issues](https://github.com/oar-team/batsim/issues) stores known bugs
+    and enhancement proposals
+  - [pull requests](https://github.com/oar-team/batsim/pulls) can be done to
+    share your modification with us
 - [gitlab](https://gitlab.inria.fr/batsim/batsim):
   - the [continuous integration](https://gitlab.inria.fr/batsim/batsim/pipelines)
     is built on Gitlab CI
@@ -30,7 +32,7 @@ Furthermore, these repositories are in the Batsim ecosystem:
 # How to contribute?
 If you encounter any bug in Batsim, please open an issue
 [on github](https://github.com/oar-team/batsim/issues).
-It will allow us to know that the bug exists and help a lot resolving the
+It will allow us to know that the bug exists, and will help a lot' resolving the
 problem ;).
 
 If you want to request a new feature, you may contact us by email and/or
@@ -58,7 +60,7 @@ The existing code base tries to follow the following conventions.
 - Classes should be in UpperCamelCase. Example: ``MyBeautifulClass instance;``
 - The code should be indented respecting the
   [Allman style](https://en.wikipedia.org/wiki/Indent_style#Allman_style).
-  - Curly brackets ``{}`` should be present even for one-instruction blocks.
+  - Curly brackets ``{}`` should be present even for one-statementt blocks.
 
 ## SimGrid process spawning management
 Batsim is composed of multiple SimGrid processes. Most spawned processes have
@@ -68,6 +70,8 @@ for simple parameters**, as more arguments may arise in the long run).
 An instance of this parameters ``struct`` should be allocated dynamically
 before spawning the process, and the process should deallocate the memory of
 this instance.
+
+The following example shows the code implied in spawning the ``execute_job`` process.
 
 ``` C++
 // Arguments of the execute_job process
