@@ -32,7 +32,7 @@ Furthermore, these repositories are in the Batsim ecosystem:
 # How to contribute?
 If you encounter any bug in Batsim, please open an issue
 [on github](https://github.com/oar-team/batsim/issues).
-It will allow us to know that the bug exists, and will help a lot' resolving the
+It will allow us to know that the bug exists, and will help a lot resolving the
 problem ;).
 
 If you want to request a new feature, you may contact us by email and/or
@@ -60,12 +60,12 @@ The existing code base tries to follow the following conventions.
 - Classes should be in UpperCamelCase. Example: ``MyBeautifulClass instance;``
 - The code should be indented respecting the
   [Allman style](https://en.wikipedia.org/wiki/Indent_style#Allman_style).
-  - Curly brackets ``{}`` should be present even for one-statementt blocks.
+  - Curly brackets ``{}`` should be present even for one-statement blocks.
 
 ## SimGrid process spawning management
 Batsim is composed of multiple SimGrid processes. Most spawned processes have
-parameters. A ``struct`` should be used to store the process arguments (**even
-for simple parameters**, as more arguments may arise in the long run).
+parameters. A ``struct`` should be used to store the process arguments (even
+for simple parameters, as more arguments may arise in the long run).
 
 An instance of this parameters ``struct`` should be allocated dynamically
 before spawning the process, and the process should deallocate the memory of
@@ -115,7 +115,7 @@ int execute_job_process(int argc, char *argv[])
 In brief, if one wants to add a new process in Batsim, it should be done as follows
 - create a new function named ``int something_process(int argc, char *argv[])``
   where ``something`` should be replaced by the process name. This function
-  should return 0 and cleans its arguments memory.
+  should return 0 and deallocate the memory of its arguments.
 - create a ``struct SomethingProcessArguments`` to store the arguments of
   the process
 
@@ -137,7 +137,7 @@ enum class IPMessageType
 ```
 
 If a message has associated data, a specific ``struct`` should be defined for it
-(**even for simple parameters**, as more parameters may arise in the long run).
+(even for simple parameters, as more parameters may arise in the long run).
 
 In the following example, a job executor tells the server that the job has
 finished:
@@ -187,5 +187,5 @@ it should be done as follows:
   the message.
 - make sure the new ``SOMETHING`` enumerated value is handled correctly in the
   ``std::string ip_message_type_to_string(IPMessageType type);`` function.
-- make sure the new ``SOMETHING`` enumerated value is destroyed correctly in the
-  ``IPMessage`` destructor.
+- make sure the new message type is destroyed correctly in the ``IPMessage``
+  destructor.
