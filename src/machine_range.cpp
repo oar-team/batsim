@@ -189,8 +189,8 @@ MachineRange MachineRange::from_string_hyphen(const string & str,
         {
             if (interval_parts.size() == 1)
             {
-                    int machine_id = std::stoi(interval_parts[0]);
-                    res.insert(machine_id);
+                int machine_id = std::stoi(interval_parts[0]);
+                res.insert(machine_id);
             }
             else
             {
