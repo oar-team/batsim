@@ -162,9 +162,9 @@ string MachineRange::to_string_elements(const string &sep) const
     return boost::algorithm::join(machine_id_strings, sep);
 }
 
-MachineRange MachineRange::from_string_hyphen(const string &str,
-                                              const string &sep,
-                                              const string &joiner,
+MachineRange MachineRange::from_string_hyphen(const string & str,
+                                              const string & sep,
+                                              const string & joiner,
                                               const string & error_prefix)
 {
     (void) error_prefix; // Avoids a warning if assertions are ignored
@@ -180,25 +180,39 @@ MachineRange MachineRange::from_string_hyphen(const string &str,
         vector<string> interval_parts;
         boost::split(interval_parts, part, boost::is_any_of(joiner), boost::token_compress_on);
         xbt_assert(interval_parts.size() >= 1 && interval_parts.size() <= 2,
-                   "%s: the MIDk '%s' should either be a single machine ID"
-                   " (syntax: MID to represent the machine ID MID) or a closed interval (syntax: MIDa-MIDb to represent"
-                   " the machine interval [MIDA,MIDb])", error_prefix.c_str(), part.c_str());
+                   "%s: The part '%s' (from '%s') should either be a single machine ID "
+                   "(syntax: MID to represent the machine ID) or a closed interval "
+                   "(syntax: MIDa-MIDb to represent the machine interval [MIDA,MIDb])",
+                   error_prefix.c_str(), part.c_str(), str.c_str());
 
-        if (interval_parts.size() == 1)
+        try
         {
-            int machine_id = std::stoi(interval_parts[0]);
-            res.insert(machine_id);
+            if (interval_parts.size() == 1)
+            {
+                    int machine_id = std::stoi(interval_parts[0]);
+                    res.insert(machine_id);
+            }
+            else
+            {
+                int machineIDa = std::stoi(interval_parts[0]);
+                int machineIDb = std::stoi(interval_parts[1]);
+
+                xbt_assert(machineIDa <= machineIDb,
+                           "%s: The part '%s' (from '%s') follows the MIDa-MIDb syntax. "
+                           "However, the first value should be lesser than or equal to the second one",
+                           error_prefix.c_str(), part.c_str(), str.c_str());
+
+                res.insert(MachineRange::ClosedInterval(machineIDa, machineIDb));
+            }
         }
-        else
+        catch(const std::exception &)
         {
-            int machineIDa = std::stoi(interval_parts[0]);
-            int machineIDb = std::stoi(interval_parts[1]);
-
-            xbt_assert(machineIDa <= machineIDb, "%s: the MIDk '%s' is composed of two"
-                      " parts (1:%d and 2:%d) but the first value must be lesser than or equal to the second one",
-                      error_prefix.c_str(), part.c_str(), machineIDa, machineIDb);
-
-            res.insert(MachineRange::ClosedInterval(machineIDa, machineIDb));
+            XBT_CRITICAL("%s: Could not read integers from part '%s' (from '%s'). "
+                         "The part should either be a single machine ID "
+                         "(syntax: MID to represent the machine ID) or a closed interval "
+                         "(syntax: MIDa-MIDb to represent the machine interval [MIDA,MIDb])",
+                         error_prefix.c_str(), part.c_str(), str.c_str());
+            xbt_abort();
         }
     }
 
