@@ -47,6 +47,8 @@ struct Job
     int required_nb_res; //!< The number of resources the job is requested to be executed on
     std::string kill_reason; //!< If the job has been killed, the kill reason is stored in this variable
 
+    bool kill_requested = false; //!< Whether the job kill has been requested
+
     std::set<msg_process_t> execution_processes; //!< The processes involved in running the job
 
     std::string json_description; //!< The JSON description of the job

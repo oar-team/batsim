@@ -614,17 +614,27 @@ void server_on_kill_jobs(ServerData * data,
 
     KillerProcessArguments * args = new KillerProcessArguments;
     args->context = data->context;
-    args->jobs_ids = message->jobs_ids;
 
-    for (const JobIdentifier & job_id : args->jobs_ids)
+    for (const JobIdentifier & job_id : message->jobs_ids)
     {
         Job * job = data->context->workloads.job_at(job_id);
-        (void) job; // Avoids a warning if assertions are ignored
-        xbt_assert(job->state == JobState::JOB_STATE_RUNNING ||
-                   job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
-                   job->state == JobState::JOB_STATE_COMPLETED_KILLED,
-                   "Invalid KILL_JOB: job_id '%s' refers to a job not being executed nor completed.",
-                   job_id.to_string().c_str());
+
+        // Let's discard jobs whose kill has already been requested
+        if (!job->kill_requested)
+        {
+            // Let's check the job state
+            xbt_assert(job->state == JobState::JOB_STATE_RUNNING ||
+                       job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
+                       job->state == JobState::JOB_STATE_COMPLETED_KILLED,
+                       "Invalid KILL_JOB: job_id '%s' refers to a job not being executed nor completed.",
+                       job_id.to_string().c_str());
+
+            // Let's mark that the job kill has been requested
+            job->kill_requested = true;
+
+            // The job is included in the killer_process arguments
+            args->jobs_ids.push_back(job_id);
+        }
     }
 
     MSG_process_create("killer_process", killer_process, (void *) args, MSG_host_self());
