@@ -63,7 +63,7 @@ implicit_instances:
         # Generate plot with evalys
         - |
             ${evalys_dir}/examples/poquetm/plot_energy_info.py \
-                --gantt --energy \
+                --gantt --power \
                 -e ${output_directory}/out_consumed_energy.csv \
                 -j ${output_directory}/out_jobs.csv \
                 -p ${output_directory}/out_pstate_changes.csv \
