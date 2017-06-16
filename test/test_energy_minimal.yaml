@@ -69,7 +69,7 @@ implicit_instances:
                 -p ${output_directory}/out_pstate_changes.csv \
                 --off 13 --switchon -1 --switchoff -2 \
                 --names Example \
-                -o ${output_directory}/energy_plot.png
+                -o ${output_directory}/energy_plot.pdf
 
 commands_before_instances:
   - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}

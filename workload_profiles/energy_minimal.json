@@ -9,8 +9,8 @@
 
     "nb_res": 1,
     "jobs": [
-        {"id":0, "subtime":0, "walltime": 15, "res": 1, "profile": "msg_hg_10"},
-        {"id":1, "subtime":100, "walltime": 15, "res": 1, "profile": "msg_hg_10"}
+        {"id":0, "subtime":0, "walltime": 1000, "res": 1, "profile": "msg_hg_10"},
+        {"id":1, "subtime":100, "walltime": 1000, "res": 1, "profile": "msg_hg_10"}
     ],
 
     "profiles": {
@@ -20,7 +20,7 @@
         },
         "msg_hg_10": {
             "type": "msg_par_hg",
-            "cpu": 1e9,
+            "cpu": 4e9,
             "com": 0
         }
     }
