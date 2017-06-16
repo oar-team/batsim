@@ -214,13 +214,19 @@ def create_disk(input_, output_filename, fmt, size, filesystem, verbose):
     if proc.returncode:
         raise subprocess.CalledProcessError(proc.returncode, ' '.join(cmd))
 
+    mkfs_options = ""
+    # Fix syslinux 6.03 compat for ext4 64bit, see:
+    # http://www.syslinux.org/wiki/index.php?title=Filesystem#ext
+    if "ext4" in filesystem:
+        mkfs_options = "features:^64bit"
     # parition disk and create the filesystem
     script = """
 echo "[guestfish] Create new MBR partition table on /dev/sda"
 part-disk /dev/sda mbr
-echo "[guestfish] Create %s filesystem on /dev/sda1"
-mkfs %s /dev/sda1
-""" % (filesystem, filesystem)
+echo "[guestfish] Create {filesystem} filesystem on /dev/sda1"
+mkfs {filesystem} /dev/sda1 {mkfs_options}
+""".format(filesystem=filesystem,
+           mkfs_options=mkfs_options)
     run_guestfish_script(output_filename, script, mount=False)
 
     # Fill disk with our data
