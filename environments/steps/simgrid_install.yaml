@@ -29,6 +29,9 @@
   - exec_in: |
       mkdir $${work_dir}/simgrid/build
       cd $${work_dir}/simgrid/build
-      cmake -DCMAKE_INSTALL_PREFIX=$${install_prefix} -Denable_documentation=OFF -DPYTHON_EXECUTABLE=/usr/bin/python3 ../
+      cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 \
+            -DCMAKE_INSTALL_PREFIX=$${install_prefix} \
+            -Denable_documentation=OFF \
+            -Denable_compile_optimizations=OFF -Denable_debug=ON ../
       make -j$(nproc)
       make install
