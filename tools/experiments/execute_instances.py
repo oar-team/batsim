@@ -24,6 +24,14 @@ from execute_one_instance import execute_command_inner
 from execute_one_instance import random_string, put_variables_in_file
 
 
+# Ugly globals
+hash_length = 8
+sweeper = None
+instance_id_to_instance_number = dict()
+instances_df = None
+instances_df_filename = None
+
+
 class hashabledict(dict):
     """A homemade hashable dictionary."""
 
@@ -662,10 +670,7 @@ def execute_instances(base_working_directory,
         sweeper.get_skipped() | sweeper.get_inprogress()
 
     global instance_id_to_instance_number
-    instance_id_to_instance_number = dict()
-
     global hash_length
-    hash_length = 8
     rows_list = []
     instance_number = 0
     for comb in all_combs:
@@ -966,7 +971,7 @@ can be found in the instances_examples subdirectory.
 
     # Let's read the YAML file content to get the real parameters
     desc_file = open(args.instances_description_filename, 'r')
-    desc_data = yaml.load(desc_file)
+    desc_data = yaml.safe_load(desc_file)
 
     base_working_directory = os.getcwd()
     base_output_directory = os.getcwd()

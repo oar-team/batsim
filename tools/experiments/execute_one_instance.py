@@ -141,7 +141,7 @@ def random_string(length=16):
         raise Exception('Bad length. Expected 1 or more.')
     alphanum = "abcdefghijklmnopqrstuvwxyz0123456789"
     s = ''
-    for i in range(length):
+    for _ in range(length):
         s += random.choice(alphanum)
     return s
 
