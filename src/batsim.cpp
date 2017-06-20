@@ -391,7 +391,9 @@ Other options:
     {
         main_args.verbosity = verbosity_level_from_string(args["--verbosity"].asString());
         if (args["--quiet"].asBool())
+        {
             main_args.verbosity = VerbosityLevel::QUIET;
+        }
     }
     catch (const std::exception &)
     {
@@ -813,11 +815,17 @@ void set_configuration(BatsimContext *context,
     // Let's override configuration values from main arguments if needed
     // *****************************************************************
     if (main_args.redis_hostname != "None")
+    {
         redis_hostname = main_args.redis_hostname;
+    }
     if (main_args.redis_port != -1)
+    {
         redis_port = main_args.redis_port;
+    }
     if (main_args.redis_prefix != "None")
+    {
         redis_prefix = main_args.redis_prefix;
+    }
 
     // *************************************
     // Let's update the BatsimContext values

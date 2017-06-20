@@ -127,7 +127,9 @@ int execute_profile(BatsimContext *context,
             computation_amount = xbt_new(double, nb_res);
             communication_amount = nullptr;
             if(size > 0)
+            {
                 communication_amount = xbt_new(double, nb_res*nb_res);
+            }
 
             // Let us fill the local computation and communication matrices
             int k = 0;
@@ -345,8 +347,10 @@ int execute_job_process(int argc, char *argv[])
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
         job->kill_reason = "Walltime reached";
         if (args->context->trace_schedule)
+        {
             args->context->paje_tracer.add_job_kill(job, args->allocation->machine_ids,
                                                     MSG_get_clock(), true);
+        }
     }
 
     args->context->machines.update_machines_on_job_end(job, args->allocation->machine_ids,
@@ -404,7 +408,9 @@ int waiter_process(int argc, char *argv[])
         XBT_INFO("Sleeping done");
     }
     else
+    {
         XBT_INFO("Time %g is already reached, skipping sleep", args->target_time);
+    }
 
     send_message("server", IPMessageType::WAITING_DONE);
     delete args;
