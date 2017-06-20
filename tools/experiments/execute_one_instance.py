@@ -5,17 +5,18 @@
 import argparse
 import asyncio.subprocess
 import async_timeout
-import subprocess
-from execo import logger
 import math
 import os
 import random
 import re
 import shlex
 import stat
+import subprocess
 import sys
 import time
 import yaml
+
+from execo import logger
 
 
 class ArgumentParserError(Exception):
