@@ -17,14 +17,16 @@ from job import Job
 from swf import SwfField
 
 
-parser = argparse.ArgumentParser(
-    description='Reads a SWF (Standard Workload Format) file and transform it into a CSV Batsim jobs output')
+parser = argparse.ArgumentParser(description='Reads a SWF '
+                                             '(Standard Workload Format) file '
+                                             'and transform it into a CSV '
+                                             'Batsim jobs output')
 parser.add_argument('inputSWF', type=argparse.FileType('r'),
                     help='The input SWF file')
 parser.add_argument('outputCSV', type=argparse.FileType(
     'w'), help='The output CSV file')
-parser.add_argument('nb_res', type=int,
-                    help='The number of resources the workload has been executed on')
+parser.add_argument('nb_res', type=int, help='The number of resources the '
+                                             'workload has been executed on')
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument("-v", "--verbose", action="store_true")
@@ -32,8 +34,8 @@ group.add_argument("-q", "--quiet", action="store_true")
 
 args = parser.parse_args()
 
-assert args.nb_res > 0, "Invalid nb_res paramter"
-
+if args.nb_res <= 0:
+    raise Exception('Invalid nb_res parameter (should be 1 or more)')
 
 element = '([-+]?\d+(?:\.\d+)?)'
 r = re.compile('\s*' + (element + '\s+') * 17 + element + '\s*')
@@ -58,7 +60,10 @@ for line in args.inputSWF:
         wall_time = max(run_time, float(
             res.group(SwfField.REQUESTED_TIME.value)))
 
-        if nb_res > 0 and wall_time > run_time and run_time > 0 and submit_time >= 0:
+        if(nb_res > 0 and
+           wall_time > run_time and
+           run_time > 0 and
+           submit_time >= 0):
             job = Job(job_id=job_id,
                       nb_res=nb_res,
                       wait_time=wait_time,
@@ -90,7 +95,8 @@ events.sort()
 for i in range(len(events) - 1):
     curr_event = events[i]
     next_event = events[i + 1]
-    assert curr_event[0] <= next_event[0]
+    if curr_event[0] > next_event[0]:
+        raise Exception('Invalid event order')
 
 # Let's traverse the list of events to associate resources to jobs
 available_res = SortedSet(range(args.nb_res))
@@ -102,13 +108,18 @@ for event in events:
     job = jobs[job_id]
     if state == '1:start':
         prev_len = len(available_res)
-        (new_available, alloc) = take_first_resources(available_res, job.nb_res)
+        (new_available, alloc) = take_first_resources(
+            available_res, job.nb_res)
         available_res = new_available
         job.resources = alloc
-        assert len(job.resources) == job.nb_res, "{}, expected {}".format(
-            job.resources, job.nb_res)
-        assert len(available_res) == prev_len - job.nb_res, "{}, expected {}".format(
-            len(available_res), prev_len - job.nb_res)
+
+        if len(job.resources) != job.nb_res:
+            raise Exception('Invalid number of resources ({}, expected {})'
+                            .format(job.resources, job.nb_res))
+        if len(available_res) != prev_len - job.nb_res:
+            raise Exception('Invalid number of available resources '
+                            '({}, expected {})'
+                            .formta(len(available_res), prev_len - job.nb_res))
     elif state == '0:finish':
         available_res.update(job.resources)
 
