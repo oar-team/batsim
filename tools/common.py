@@ -6,7 +6,11 @@ from sortedcontainers import SortedSet
 
 def take_first_resources(available_res, nb_res_to_take):
     """Take the first nb_res_to_take resources into available_res."""
-    assert len(available_res) >= nb_res_to_take, 'Invalid schedule. Want to use {} resources whereas only {} are available ({})'.format(nb_res_to_take, len(available_res), available_res)
+    if nb_res_to_take > len(available_res):
+        raise Exception('Invalid schedule. Want to use {} resources whereas '
+                        'only {} are available({})'.format(nb_res_to_take,
+                                                           len(available_res),
+                                                           available_res))
     allocation = SortedSet()
     l = list(available_res)
 
@@ -18,6 +22,7 @@ def take_first_resources(available_res, nb_res_to_take):
     if len(available_res) > 0:
         min_available_res = min(available_res)
         for res in allocation:
-            assert res < min_available_res, "Invalid sort"
+            if res >= min_available_res:
+                raise Exception('Invalid sort')
 
     return (available_res, allocation)
