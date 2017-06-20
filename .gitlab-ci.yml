@@ -1,4 +1,4 @@
-image: oarteam/batsim_ci
+image: oarteam/batsim_ci:2017-05-25
 
 variables:
   GIT_SUBMODULE_STRATEGY: normal
@@ -69,7 +69,7 @@ test_test:
       redis-server>/dev/null &
       while ! nc -z localhost 6379; do
         sleep 1
-      done 
+      done
 
     - cd /builds/batsim/batsim/build
     - make install
