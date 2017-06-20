@@ -150,7 +150,9 @@ please note it might be outdated.
 Batsim dependencies are listed below:
 -   SimGrid. dev version is recommended (203ec9f99 for example).
     To use SMPI jobs, use commit 587483ebe of
-    [mpoquet's fork](https://github.com/mpoquet/simgrid/)
+    [mpoquet's fork](https://github.com/mpoquet/simgrid/).
+    To use energy, please consider using the Batsim upstream_sg branch and
+    SimGrid commit e96681fb8.
 -   RapidJSON (1.02 or greater)
 -   Boost 1.62 or greater (system, filesystem, regex, locale)
 -   C++11 compiler
