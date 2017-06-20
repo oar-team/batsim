@@ -259,7 +259,9 @@ int MachineRange::operator[](int index) const
     // TODO: avoid O(n) retrieval
     auto machine_it = this->elements_begin();
     for (int i = 0; i < index; ++i)
+    {
         ++machine_it;
+    }
 
     return *machine_it;
 }

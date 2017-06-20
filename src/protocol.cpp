@@ -560,7 +560,9 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         // Default mapping
         message->allocation->mapping.resize(nb_allocated_resources);
         for (int i = 0; i < nb_allocated_resources; ++i)
+        {
             message->allocation->mapping[i] = i;
+        }
     }
 
     // Everything has been parsed correctly, let's inject the message into the simulation.
