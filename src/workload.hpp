@@ -24,7 +24,7 @@ public:
      * @brief Builds an empty Workload
      * @param[in] workload_name The workload name
      */
-    Workload(const std::string & workload_name);
+    explicit Workload(const std::string & workload_name);
 
     /**
      * @brief Destroys a Workload

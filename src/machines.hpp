@@ -43,7 +43,7 @@ struct Machine
      * @brief Constructs a Machine
      * @param[in] machines The Machines instances the Machine is within
      */
-    Machine(Machines * machines);
+    explicit Machine(Machines * machines);
 
     /**
      * @brief Destroys a Machine

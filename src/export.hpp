@@ -122,7 +122,7 @@ public:
      * @brief Builds a PajeTracer
      * @param[in] log_launchings If set to true, job launching time will be written in the trace. This option leads to larger trace files
      */
-    PajeTracer(bool log_launchings = false);
+    explicit PajeTracer(bool log_launchings = false);
 
     /**
      * @brief Sets the filename of a PajeTracer

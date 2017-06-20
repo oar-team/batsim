@@ -24,7 +24,7 @@ public:
      * @brief Constructor
      * @param[in,out] os The output stream
      */
-    Writer(OutputStream& os) : rapidjson::Writer<OutputStream>(os), os_(&os)
+    explicit Writer(OutputStream& os) : rapidjson::Writer<OutputStream>(os), os_(&os)
     {
     }
 
@@ -45,7 +45,9 @@ public:
         RAPIDJSON_ASSERT(ret < buf_size - 1);
 
         for (int i = 0; i < ret; ++i)
+        {
             os_->Put(buffer[i]);
+        }
 
         delete[] buffer;
         return ret < (buf_size - 1);
@@ -169,7 +171,7 @@ public:
      * @brief Creates an empty JsonProtocolWriter
      * @param[in,out] context The BatsimContext
      */
-    JsonProtocolWriter(BatsimContext * context);
+    explicit JsonProtocolWriter(BatsimContext * context);
 
     /**
      * @brief Destroys a JsonProtocolWriter
@@ -308,7 +310,7 @@ public:
      * @brief Constructor
      * @param[in] context The BatsimContext
      */
-    JsonProtocolReader(BatsimContext * context);
+    explicit JsonProtocolReader(BatsimContext * context);
 
     /**
      * @brief Destructor
