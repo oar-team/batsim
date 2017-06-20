@@ -601,28 +601,6 @@ void PajeTracer::add_job_kill(const Job *job, const MachineRange & used_machine_
     free(buf);
 }
 
-void PajeTracer::add_global_utilization(double utilization, double time)
-{
-    xbt_assert(state == INITIALIZED, "Bad addJobKill call: the PajeTracer object is not initialized or had been finalized");
-
-    const int buf_size = 256;
-    int nb_printed;
-    (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Couldn't allocate memory");
-
-    // Let's set the variable state correctly
-    nb_printed = snprintf(buf, buf_size,
-                          "%d %lf %s %s %lf\n",
-                          SET_VARIABLE, time, utilizationVarType, scheduler, utilization);
-    xbt_assert(nb_printed < buf_size - 1,
-               "Writing error: buffer has been completely filled, some information might "
-               "have been lost. Please increase Batsim's output temporary buffers' size");
-    _wbuf->append_text(buf);
-
-    free(buf);
-}
-
 void PajeTracer::generate_colors(int color_count)
 {
     xbt_assert(color_count > 0);

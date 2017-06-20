@@ -198,14 +198,6 @@ public:
     void add_job_kill(const Job * job, const MachineRange & used_machine_ids,
                       double time, bool associate_kill_to_machines = false);
 
-    /**
-     * @brief Adds a global utilization value of the system.
-     * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param[in] utilization The global utilization of the system.
-     * @param[in] time The simulation time at which the system has this utilization value
-     */
-    void add_global_utilization(double utilization, double time);
-
 public:
     /**
      * @brief Give the RGB representation of a color represented in HSV
