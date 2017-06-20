@@ -753,8 +753,6 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
                     f << buf;
                     free(buf);
 
-                    xbt_assert((int)job->allocation.size() == job->required_nb_res);
-
                     f << job->allocation.to_string_hyphen(" ") << "\n";
                 }
             }

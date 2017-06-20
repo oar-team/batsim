@@ -300,3 +300,9 @@ add_test(pybatsim_tests
          ${CMAKE_SOURCE_DIR}/test/pybatsim_tests.yaml
          -bod /tmp/pybatsim_tests
          -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(fewer_resources
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_fewer_resources.yaml
+         -bod /tmp/fewer_resources
+         -bwd ${CMAKE_SOURCE_DIR})
