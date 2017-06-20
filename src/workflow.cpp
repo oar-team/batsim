@@ -193,7 +193,7 @@ int Workflow::get_maximum_depth()
 
 
 
-Task::Task(const int num_procs, const double execution_time, std::string id) :
+Task::Task(const int num_procs, const double execution_time, const string &id) :
     num_procs(num_procs),
     execution_time(execution_time),
     id(id)

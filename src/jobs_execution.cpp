@@ -402,7 +402,9 @@ int waiter_process(int argc, char *argv[])
         double time_to_wait = args->target_time - curr_time;
         // Sometimes time_to_wait is so small that it does not affect MSG_process_sleep. The value of 1e-5 have been found on trial-error.
         if(time_to_wait < 1e-5)
+        {
             time_to_wait = 1e-5;
+        }
         XBT_INFO("Sleeping %g seconds to reach time %g", time_to_wait, args->target_time);
         MSG_process_sleep(time_to_wait);
         XBT_INFO("Sleeping done");

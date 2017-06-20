@@ -28,7 +28,7 @@ public:
      * @brief Builds an empty Workflow
      * @param[in] name The Workflow name
      */
-    Workflow(const std::string & name);
+    explicit Workflow(const std::string & name);
 
     /**
      * @brief Destroys a Workflow
@@ -107,7 +107,7 @@ public:
      * @param[in] execution_time The execution time of the task
      * @param[in] id The task id
      */
-    Task(const int num_procs, const double execution_time, std::string id);
+    Task(const int num_procs, const double execution_time, const std::string & id);
 
     /**
      * @brief Destructor
