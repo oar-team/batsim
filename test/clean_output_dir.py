@@ -6,10 +6,11 @@ import os
 import shutil
 
 
-def clean_output_directory(dir):
+def clean_output_directory(directory):
     """Clean an output directory."""
-    if os.path.isdir(dir):
-        subdirs = [dir + '/' + x for x in ['instances', 'sweeper', 'results']]
+    if os.path.isdir(directory):
+        subdirs = [directory + '/' + x for x in ['instances', 'sweeper',
+                                                 'results']]
         for subdir in subdirs:
             if os.path.isdir(subdir):
                 shutil.rmtree(subdir)

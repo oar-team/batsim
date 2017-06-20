@@ -6,21 +6,22 @@ import os
 import sys
 
 
-def looks_like_batsim_dir(dir):
+def looks_like_batsim_dir(directory):
     """Return whether the directory looks like Batsim root directory."""
-    if os.path.isdir(dir):
-        subdirs = [dir + '/' + x for x in ['cmake', 'platforms',
-                                           'schedulers', 'src', 'tools']]
+    if os.path.isdir(directory):
+        subdirs = [directory + '/' + x for x in ['cmake', 'platforms',
+                                                 'schedulers', 'src', 'tools']]
         for subdir in subdirs:
             if not os.path.isdir(subdir):
                 print("Directory '{dir}' does not look like the "
                       "Batsim root one : the '{subdir}' subdirectory does not "
-                      "exist.".format(dir=dir, subdir=subdir))
+                      "exist.".format(dir=directory, subdir=subdir))
                 return False
-        print("Directory '{}' looks like the Batsim root one".format(dir))
+        print("Directory '{}' looks like the Batsim root one"
+              .format(directory))
         return True
     else:
-        print("Directory '{dir}' does not exist!", dir)
+        print("Directory '{dir}' does not exist!", dir=directory)
         return False
 
 
