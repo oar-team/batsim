@@ -46,6 +46,12 @@ public:
     WriteBuffer(const std::string & filename, int buffer_size = 64*1024);
 
     /**
+     * @brief WriteBuffers cannot be copied.
+     * @param[in] other Another instance
+     */
+    WriteBuffer(const WriteBuffer & other) = delete;
+
+    /**
      * @brief Destructor
      * @details This method flushes the buffer if it is not empty, destroys the buffer and closes the file.
      */
