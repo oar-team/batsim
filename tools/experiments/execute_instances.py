@@ -128,7 +128,7 @@ def retrieve_dirs_from_instances(variables,
     p = subprocess.run('bash {f}'.format(f=script_filename), shell=True,
                        stdout=subprocess.PIPE)
     if p.returncode != 0:
-        raise Exception('Script returned %d (expected 0)'.format(p.returncode))
+        raise Exception('Script returned {} (expected 0)'.format(p.returncode))
 
     # Let's get the working directory
     f = open(working_dir_filename, 'r')

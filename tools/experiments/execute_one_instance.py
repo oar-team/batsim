@@ -194,7 +194,7 @@ def retrieve_info_from_instance(variables,
     p = subprocess.run('bash {f}'.format(f=script_filename),
                        shell=True, stdout=subprocess.PIPE)
     if p.returncode != 0:
-        raise Exception('Script returned %d (expected 0)'.format(p.returncode))
+        raise Exception('Script returned {} (expected 0)'.format(p.returncode))
 
     # Let's get the working directory
     f = open(working_dir_filename, 'r')
@@ -392,7 +392,7 @@ def display_process_output_on_error(process_name, stdout_file, stderr_file,
             cmd_wc = "wc -l {}".format(filename)
             p = subprocess.run(cmd_wc, shell=True, stdout=subprocess.PIPE)
             if p.returncode != 0:
-                raise Exception('wc returned %d'.format(p.returncode))
+                raise Exception('wc returned {}'.format(p.returncode))
             nb_lines = int(str(p.stdout.decode('utf-8')).split(' ')[0])
 
             if nb_lines > 0:
@@ -413,10 +413,10 @@ def display_process_output_on_error(process_name, stdout_file, stderr_file,
 
                     if p_head.returncode != 0:
                         raise Exception(
-                            'head returned %d'.format(p_head.returncode))
+                            'head returned {}'.format(p_head.returncode))
                     if p_tail.returncode != 0:
                         raise Exception(
-                            'head returned %d'.format(p_tail.returncode))
+                            'head returned {}'.format(p_tail.returncode))
 
                     logger.error('{} {}:\n{}\n...\n...\n... '
                                  '(truncated... whole log in {})\n...\n...\n'
