@@ -715,19 +715,28 @@ void server_on_execute_job(ServerData * data,
         }
     }
 
+    xbt_assert((int)allocation->mapping.size() == job->required_nb_res,
+               "Invalid job %s allocation. The job requires %d machines but only %d were given (%s). "
+               "Using a different number of machines is only allowed if a custom mapping is specified. "
+               "This mapping must specify which allocated machine each executor should use.",
+               job->id.c_str(), job->required_nb_res, (int)allocation->mapping.size(),
+               allocation->machine_ids.to_string_hyphen().c_str());
+
     // Let's generate the hosts used by the job
     allocation->hosts.clear();
-    allocation->hosts.reserve(allocation->machine_ids.size());
-    int host_i = 0;
-    for (auto machine_it = allocation->machine_ids.elements_begin();
-         machine_it != allocation->machine_ids.elements_end();
-         ++machine_it, ++host_i)
+    allocation->hosts.reserve(job->required_nb_res);
+
+    for (unsigned int executor_id = 0; executor_id < allocation->mapping.size(); ++executor_id)
     {
-        int machine_id = *machine_it;
+        int machine_id_within_allocated_resources = allocation->mapping[executor_id];
+        int machine_id = allocation->machine_ids[machine_id_within_allocated_resources];
+
         allocation->hosts.push_back(data->context->machines[machine_id]->host);
     }
-    xbt_assert(allocation->hosts.size() == allocation->machine_ids.size(),
-               "Invalid number of hosts");
+
+    xbt_assert((int)allocation->hosts.size() == job->required_nb_res,
+               "Invalid number of hosts (expected %d, got %d)",
+               job->required_nb_res, (int)allocation->hosts.size());
 
     ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
     exec_args->context = data->context;

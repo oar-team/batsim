@@ -555,6 +555,13 @@ void JsonProtocolReader::handle_execute_job(int event_number,
 
         xbt_assert(message->allocation->mapping.size() == mapping_map.size());
     }
+    else
+    {
+        // Default mapping
+        message->allocation->mapping.resize(nb_allocated_resources);
+        for (int i = 0; i < nb_allocated_resources; ++i)
+            message->allocation->mapping[i] = i;
+    }
 
     // Everything has been parsed correctly, let's inject the message into the simulation.
     send_message(timestamp, "server", IPMessageType::SCHED_EXECUTE_JOB, (void*) message);

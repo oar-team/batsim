@@ -249,3 +249,17 @@ MachineRange & MachineRange::operator-=(const MachineRange &other)
     set -= other.set;
     return *this;
 }
+
+int MachineRange::operator[](int index) const
+{
+    xbt_assert(index >= 0 && index < (int)this->size(),
+               "Invalid call to MachineRange::operator[]: index (%d) should be in [0,%d[",
+               index, (int)this->size());
+
+    // TODO: avoid O(n) retrieval
+    auto machine_it = this->elements_begin();
+    for (int i = 0; i < index; ++i)
+        ++machine_it;
+
+    return *machine_it;
+}

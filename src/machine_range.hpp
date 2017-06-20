@@ -198,6 +198,13 @@ public:
      */
     MachineRange & operator-=(const MachineRange & other);
 
+    /**
+     * @brief Returns the index-th machine of the MachineRange
+     * @param[in] index The 0-based index of the machine to retrieve
+     * @return The machine at the index-th position of the MachineRange
+     */
+    int operator[](int index) const;
+
 public:
     /**
      * @brief Creates a MachineRange from a hyphenized string
