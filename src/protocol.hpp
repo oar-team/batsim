@@ -174,6 +174,12 @@ public:
     explicit JsonProtocolWriter(BatsimContext * context);
 
     /**
+     * @brief JsonProtocolWriter cannot be copied.
+     * @param[in] other Another instance
+     */
+    JsonProtocolWriter(const JsonProtocolWriter & other) = delete;
+
+    /**
      * @brief Destroys a JsonProtocolWriter
      */
     ~JsonProtocolWriter();
@@ -311,6 +317,12 @@ public:
      * @param[in] context The BatsimContext
      */
     explicit JsonProtocolReader(BatsimContext * context);
+
+    /**
+     * @brief JsonProtocolReader cannot be copied.
+     * @param[in] other Another instance
+     */
+    JsonProtocolReader(const JsonProtocolReader & other) = delete;
 
     /**
      * @brief Destructor

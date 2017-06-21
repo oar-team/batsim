@@ -31,6 +31,12 @@ public:
     explicit Workflow(const std::string & name);
 
     /**
+     * @brief Workflow cannot be copied.
+     * @param[in] other Another instance
+     */
+    Workflow(const Workflow & other) = delete;
+
+    /**
      * @brief Destroys a Workflow
      */
     ~Workflow();
@@ -110,6 +116,12 @@ public:
     Task(const int num_procs, const double execution_time, const std::string & id);
 
     /**
+     * @brief Task cannot be copied.
+     * @param[in] other Another instance
+     */
+    Task(const Task & other) = delete;
+
+    /**
      * @brief Destructor
      */
     ~Task();
@@ -143,6 +155,12 @@ public:
      * @brief Builds an empty Workflows
      */
     Workflows();
+
+    /**
+     * @brief Workflows cannot be copied.
+     * @param[in] other Another instance
+     */
+    Workflows(const Workflows & other) = delete;
 
     /**
      * @brief Destroys a Workflows

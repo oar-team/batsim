@@ -104,6 +104,13 @@ public:
      * @brief Constructs an empty Jobs
      */
     Jobs();
+
+    /**
+     * @brief Jobs cannot be copied.
+     * @param[in] other Another instance
+     */
+    Jobs(const Jobs & other) = delete;
+
     /**
      * @brief Destroys a Jobs
      * @details All Job instances will be deleted

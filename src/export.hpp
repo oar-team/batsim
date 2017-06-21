@@ -131,6 +131,12 @@ public:
     explicit PajeTracer(bool log_launchings = false);
 
     /**
+     * @brief PajeTracer cannot be copied.
+     * @param[in] other Another instance
+     */
+    PajeTracer(const PajeTracer & other) = delete;
+
+    /**
      * @brief Sets the filename of a PajeTracer
      * @param[in] filename The name of the output file
      */
@@ -269,6 +275,12 @@ public:
     PStateChangeTracer();
 
     /**
+     * @brief PStateChangeTracer cannot be copied.
+     * @param[in] other Another instance
+     */
+    PStateChangeTracer(const PStateChangeTracer & other) = delete;
+
+    /**
      * @brief Destroys a PStateChangeTracer
      * @details The output file is flushed and written
      */
@@ -312,6 +324,12 @@ public:
      * @brief Constructs a EnergyConsumptionTracer
      */
     EnergyConsumptionTracer();
+
+    /**
+     * @brief EnergyConsumptionTracer cannot be copied.
+     * @param[in] other Another instance
+     */
+    EnergyConsumptionTracer(const EnergyConsumptionTracer & other) = delete;
 
     /**
      * @brief Destroys a EnergyConsumptionTracer
@@ -390,6 +408,12 @@ public:
      * @brief Constructs a MachineStateTracer
      */
     MachineStateTracer();
+
+    /**
+     * @brief MachineStateTracer cannot be copied.
+     * @param[in] other Another instance
+     */
+    MachineStateTracer(const MachineStateTracer & other) = delete;
 
     /**
      * @brief Destroys a MachineStateTracer

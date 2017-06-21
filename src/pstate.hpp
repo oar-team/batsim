@@ -54,6 +54,20 @@ public:
 
 public:
     /**
+     * @brief Default constructor
+     */
+    CurrentSwitches()
+    {
+
+    }
+
+    /**
+     * @brief CurrentSwitches cannot be copied.
+     * @param[in] other Another instance
+     */
+    CurrentSwitches(const CurrentSwitches & other) = delete;
+
+    /**
      * @brief Adds a Switch into the CurrentSwitches
      * @param[in] machines The machines associated with the power state switch
      * @param[in] target_pstate The power states into which the machines should be put

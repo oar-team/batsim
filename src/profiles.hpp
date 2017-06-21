@@ -135,6 +135,13 @@ public:
      * @brief Creates an empty Profiles
      */
     Profiles();
+
+    /**
+     * @brief Profiles cannot be copied.
+     * @param[in] other Another instance
+     */
+    Profiles(const Profiles & other) = delete;
+
     /**
      * @brief Destroys a Profiles
      * @details All Profile elements are removed from memory

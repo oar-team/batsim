@@ -118,6 +118,12 @@ public:
     Machines();
 
     /**
+     * @brief Machines cannot be copied.
+     * @param[in] other Another instance
+     */
+    Machines(const Machines & other) = delete;
+
+    /**
      * @brief Destroys a Machines
      */
     ~Machines();

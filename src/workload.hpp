@@ -27,6 +27,12 @@ public:
     explicit Workload(const std::string & workload_name);
 
     /**
+     * @brief Workloads cannot be copied.
+     * @param[in] other Another instance
+     */
+    Workload(const Workload & other) = delete;
+
+    /**
      * @brief Destroys a Workload
      */
     ~Workload();
@@ -66,6 +72,12 @@ public:
      * @brief Builds an empty Workloads
      */
     Workloads();
+
+    /**
+     * @brief Workloads cannot be copied.
+     * @param[in] other Another instance
+     */
+    Workloads(const Workloads & other) = delete;
 
     /**
      * @brief Destroys a Workloads

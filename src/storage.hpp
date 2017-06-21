@@ -25,6 +25,13 @@ public:
      * @brief Builds a RedisStorage
      */
     RedisStorage();
+
+    /**
+     * @brief RedisStorage cannot be copied.
+     * @param[in] other Another instance
+     */
+    RedisStorage(const RedisStorage & other) = delete;
+
     /**
      * @brief Destroys a RedisStorage
      */
