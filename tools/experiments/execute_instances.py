@@ -294,7 +294,7 @@ async def instance_runner(data, hostname, local_rank):
             compute_comb = comb in data.instances_subset_to_recompute
 
         if compute_comb:
-            (desc_filename, instance_id, combname, command) = prepare_instance(
+            (_, instance_id, combname, command) = prepare_instance(
                 comb=comb,
                 explicit_instances=data.explicit_instances,
                 implicit_instances=data.implicit_instances,
@@ -629,6 +629,7 @@ def generate_instances_combs(explicit_instances,
                     if not isinstance(sweep_var_value, list):
                         raise Exception('{} is not a list!'.format(
                             sweep_var_value))
+                    # The following ugly code avoids copy!
                     for list_i in range(len(sweep_var_value)):
                         if isinstance(sweep_var_value[list_i], list):
                             sweep_var_value[list_i] = hashablelist(
@@ -1087,7 +1088,7 @@ can be found in the instances_examples subdirectory.
             nb_chars_command_ids = int(
                 1 + math.log10(len(commands_before_instances)))
 
-            for command_id in range(len(commands_before_instances)):
+            for command_id, command in enumerate(commands_before_instances):
                 command_name = 'command' + \
                     str(command_id).zfill(nb_chars_command_ids)
                 output_command_filename = '{commands_dir}/{name}.bash'.format(
@@ -1098,7 +1099,7 @@ can be found in the instances_examples subdirectory.
                     name=command_name)
 
                 if not execute_command(
-                   command=commands_before_instances[command_id],
+                   command=command,
                    working_directory=base_working_directory,
                    variables_filename=base_variables_filename,
                    output_script_filename=output_command_filename,
@@ -1142,7 +1143,7 @@ can be found in the instances_examples subdirectory.
         nb_chars_command_ids = int(
             1 + math.log10(len(commands_after_instances)))
 
-        for command_id in range(len(commands_after_instances)):
+        for command_id, command in enumerate(commands_after_instances):
             command_name = 'command' + \
                 str(command_id).zfill(nb_chars_command_ids)
             output_command_filename = '{commands_dir}/{name}.bash'.format(
@@ -1153,7 +1154,7 @@ can be found in the instances_examples subdirectory.
                 name=command_name)
 
             if not execute_command(
-               command=commands_after_instances[command_id],
+               command=command,
                working_directory=base_working_directory,
                variables_filename=base_variables_filename,
                output_script_filename=output_command_filename,

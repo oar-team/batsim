@@ -313,11 +313,11 @@ def variable_to_text(variables, var_name):
     var_value = variables[var_name]
     if isinstance(var_value, tuple) or isinstance(var_value, list):
         text += "declare -a {var_name}\n".format(var_name=var_name)
-        for element_id in range(len(var_value)):
+        for element_id, element in enumerate(var_value):
             text += '{var_name}["{id}"]="{value}"\n'.format(
                 var_name=var_name,
                 id=element_id,
-                value=var_value[element_id])
+                value=element)
         text += '\n'
     elif isinstance(var_value, dict):
         text += "declare -A {var_name}\n".format(var_name=var_name)
@@ -907,7 +907,7 @@ Examples of such input files can be found in subdirectory instance_examples.
             nb_chars_command_ids = int(
                 1 + math.log10(len(commands_before_execution)))
 
-            for command_id in range(len(commands_before_execution)):
+            for command_id, command in enumerate(commands_before_execution):
                 command_name = 'command' + \
                     str(command_id).zfill(nb_chars_command_ids)
                 output_command_filename = '{commands_dir}/{name}.bash'.format(
@@ -918,7 +918,7 @@ Examples of such input files can be found in subdirectory instance_examples.
                     name=command_name)
 
                 if not execute_command(
-                   command=commands_before_execution[command_id],
+                   command=command,
                    working_directory=working_directory,
                    variables_filename=variables_filename,
                    output_script_filename=output_command_filename,
@@ -951,7 +951,7 @@ Examples of such input files can be found in subdirectory instance_examples.
         nb_chars_command_ids = int(
             1 + math.log10(len(commands_after_execution)))
 
-        for command_id in range(len(commands_after_execution)):
+        for command_id, command in enumerate(commands_after_execution):
             command_name = 'command' + \
                 str(command_id).zfill(nb_chars_command_ids)
             output_command_filename = '{commands_dir}/{name}.bash'.format(
@@ -962,7 +962,7 @@ Examples of such input files can be found in subdirectory instance_examples.
                 name=command_name)
 
             if not execute_command(
-               command=commands_after_execution[command_id],
+               command=command,
                working_directory=working_directory,
                variables_filename=variables_filename,
                output_script_filename=output_command_filename,
