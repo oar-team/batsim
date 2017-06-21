@@ -294,7 +294,7 @@ async def instance_runner(data, hostname, local_rank):
             compute_comb = comb in data.instances_subset_to_recompute
 
         if compute_comb:
-            (_, instance_id, combname, command) = prepare_instance(
+            (_, instance_id, _, command) = prepare_instance(
                 comb=comb,
                 explicit_instances=data.explicit_instances,
                 implicit_instances=data.implicit_instances,
