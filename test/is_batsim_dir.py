@@ -21,7 +21,7 @@ def looks_like_batsim_dir(directory):
               .format(directory))
         return True
     else:
-        print("Directory '{dir}' does not exist!", dir=directory)
+        print("Directory '{}' does not exist!".format(directory))
         return False
 
 
