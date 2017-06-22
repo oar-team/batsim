@@ -48,22 +48,18 @@ setup:
   #
   # Simulator and schedulers install
   #
-  - configure_apt_testing
+  - configure_apt_repo
 
   - install_common_deps:
 
     - install_build_tools:
       - exec_in: |
-          apt-get -y -t testing install cmake gcc clang g++
+          apt-get -y install cmake gcc clang g++
           update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-6 100
 
-  - simgrid_install:
-    - commit_hash: $${simgrid_commit}
+  - simgrid:
 
   - batsim_dependencies
-
-  #- reprozip:
-  #  - reprozip_version: 1.0.8
 
 export:
   - "@base"

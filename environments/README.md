@@ -1,34 +1,45 @@
 Batsim environment recipes
 ==========================
 
-This is a Kameleon recipe for Batsim experiments. It provides several
-recipes to build Docker images (can also be configured for other format
-like VDI or QCOW2) to build, test and run Batsim.
+This directory contains several recipes that uses Batsim:
 
 - [batsim_ci](batsim_ci.yaml) contains all the dependencies to build
-  batsim install it and run tests. This recipe is updated each time
-  dependencies changes. As it is used by the Continuous integration system,
+  Batsim, to run tests and to build the documentation.
+  This recipe is updated each time dependencies changes.
+  As it is used by the Continuous integration system,
   it is always up-to-date. It is accessible on Docker Hub at
   [oarteam/batsimi_ci](https://hub.docker.com/r/oarteam/batsim_ci/).
 
-- [batsim](batsim.yaml) contains a complete appliance with batsim installed
-  and tested. It is accessible on Docker Hub at
-  [oarteam/batsim](https://hub.docker.com/r/oarteam/batsim/).
+- [batsim_g5k](batsim_g5k.yaml) builds an appliance that can be deployed on
+  Grid'5000 thanks to kadeploy. This recipe can be used as a base to setup
+  reproducible experiments with Batsim.
 
 Build images
 ------------
 
-It is recommended to run these images directly from docker, but you can build
-them from scratch if necessary
+If you only want to execute an existing image, executing it directly from
+docker is recommended.
+All the images can be built from scratch if necessary
 
 First, you need to install Kameleon:
 [http://kameleon.imag.fr/installation.html](http://kameleon.imag.fr/installation.html)
 
 You can now run Kameleon, for example:
 ```bash
-  kameleon build batsim.yaml
+  kameleon build batsim_ci.yaml
 ```
 You can find the generated images in ``build/batsim/``.
+
+If you want to use the [batsim_g5k](batsim_g5k.yaml) image,
+some configuration is needed:
+- select the base Grid'5000 debian image you want to use
+  (images can be found in ``/grid5000/images`` on Grid'5000 nodes),
+  move the base image if needed then modify the ``rootfs_archive_url``
+  variable accordingly in [batsim_g5k.yaml](batsim_g5k.yaml)
+- specify your Grid'5000 user name (``g5k_user``) and user id
+  (``g5k_user_uid``) in [batsim_g5k.yaml](batsim_g5k.yaml)
+- once a batsim_g5K image has been generated, you may need to modify the
+  yaml description file so that the paths are fine on Grid'5000
 
 Run the image with docker
 -------------------------

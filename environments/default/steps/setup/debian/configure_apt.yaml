@@ -8,10 +8,10 @@
     - |
       deb $${apt_repository} $${release} main
       deb-src $${apt_repository} $${release} main
-      
+
       deb $${apt_repository} $${release}-backports main
       deb-src $${apt_repository} $${release}-backports main
-      
+
       deb http://security.debian.org/ $${release}/updates main
       deb-src http://security.debian.org/ $${release}/updates main
 
@@ -30,10 +30,8 @@
   # Deactivate the check to make the cache system works after a while...
   - exec_in: apt-get -o Acquire::Check-Valid-Until=false -y --force-yes update
   - on_setup_clean:
-    - exec_in: apt-get -y --force-yes autoremove
-    - exec_in: apt-get -y --force-yes autoclean
-    - exec_in: apt-get -y --force-yes clean
-    - exec_in: apt-get -y --force-yes purge
-    - exec_in: rm -rf /var/lib/apt/lists/*
-
-
+    - exec_in: apt-get -y --force-yes autoremove || true
+    - exec_in: apt-get -y --force-yes autoclean || true
+    - exec_in: apt-get -y --force-yes clean || true
+    - exec_in: apt-get -y --force-yes purge || true
+    - exec_in: rm -rf /var/lib/apt/lists/* || true

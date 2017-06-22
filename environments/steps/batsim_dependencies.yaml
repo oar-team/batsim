@@ -1,70 +1,58 @@
+# Build and install most Batsim dependencies (not Simgrid)
+
+#############
+# Variables #
+#############
 - work_dir: /root
+- rapidjson_remote: https://github.com/miloyip/rapidjson.git
+- rapidjson_commit: 3d5848a
+- redox_remote: https://github.com/hmartiro/redox.git
+- redox_commit: 520fe0c2bfb
+- execo_remote: https://github.com/mpoquet/execo.git
+- execo_commit: 406f4fa06
+- install_prefix: /usr
 
-# Need testing to be available
-- install dependencies:
-  - exec_in: |
-      apt-get -y -t testing install \
-      libboost-all-dev \
-      libgmp-dev \
-      redis-server \
-      libhiredis-dev \
-      libev-dev \
-      libzmq3-dev \
-      python3-yaml \
-      python3-zmq \
-      libssl-dev 2>&1
+##########
+# Script #
+##########
 
-  # Install rapidjson (not available in jessie)
+- build:
+  # Build dependencies packaged in debian
   - exec_in: |
-      cd $${work_dir}
-      git clone https://github.com/miloyip/rapidjson.git
-  - exec_in: |
-      cd $${work_dir}/rapidjson
-      git checkout 3d5848a # v1.02
-  - exec_in: |
-      cd $${work_dir}/rapidjson
-      cp -a include/rapidjson /usr/include
+      apt-get -y install libboost-all-dev \
+                         libgmp-dev \
+                         libhiredis-dev \
+                         libev-dev \
+                         libzmq3-dev \
+                         libssl-dev 2>&1
 
-  # Install redox
+  # Install rapidjson from source
+  - exec_in: git clone $${rapidjson_remote} $${work_dir}/rapidjson
+  - exec_in: cd $${work_dir}/rapidjson && git checkout $${rapidjson_commit}
   - exec_in: |
-      cd $${work_dir}
-      git clone https://github.com/hmartiro/redox.git
-  - exec_in: |
-      cd $${work_dir}/redox
-      git checkout 520fe0c2bfb
-  - exec_in: |
-      mkdir $${work_dir}/redox/build
-      cd $${work_dir}/redox/build
-      cmake .. -DCMAKE_INSTALL_PREFIX=../install
-      make -j $(nproc)
-      make install
-      cd ../install
-      mv -f lib64 lib
-      cp -r ./* /usr/
+      cp -a $${work_dir}/rapidjson/include/rapidjson $${install_prefix}/include
 
-- install_test_dependencies:
-  - exec_in: |
-      apt install -y -t testing \
-      python3-pip valgrind python3-pandas \
-      r-base r-base-dev
-  - exec_in: pip3 install sortedcontainers redis async_timeout
-  - exec_in: |
-      cd $${work_dir}
-      git clone $${execo_remote} execo
-  - exec_in: |
-      cd $${work_dir}/execo
-      git checkout $${execo_commit}
-  - exec_in: |
-      cd $${work_dir}/execo
-      pip3 install -e .
-  # install R packages
-  - exec_in: |
-      R --vanilla <<EOF
-      install.packages(c('ggplot2','scales','dplyr'), repos='http://cran.us.r-project.org')
-      q()
-      EOF
+  # Install redox from source
+  - exec_in: git clone $${redox_remote} $${work_dir}/redox
+  - exec_in: cd $${work_dir}/redox && git checkout $${redox_commit}
+  - exec_in: >
+      mkdir $${work_dir}/redox/build &&
+      cd $${work_dir}/redox/build &&
+      cmake .. -DCMAKE_INSTALL_PREFIX=$${work_dir}/redox/install
+  - exec_in: cd $${work_dir}/redox/build && make -j $(nproc)
+  - exec_in: cd $${work_dir}/redox/build && make install
+  - exec_in: mv $${work_dir}/redox/install/lib64 $${work_dir}/redox/install/lib
+  - exec_in: cp -r $${work_dir}/redox/install/* $${install_prefix}/
 
-- install_doc_dependencies:
-  - exec_in: apt install -y -t testing doxygen graphviz
+# Dependencies for managing experiments with tools/experiment scripts
+- experiment_management:
+  - exec_in: apt install -y python3-pip psmisc
+  - exec_in: |
+      pip3 install sortedcontainers redis async_timeout pandas PyYAML pyzmq
+  - exec_in: git clone $${execo_remote} $${work_dir}/execo
+  - exec_in: cd $${work_dir}/execo && git checkout $${execo_commit}
+  - exec_in: cd $${work_dir}/execo && pip3 install -e .
 
-
+# Dependencies for building Batsim documentation
+- doc:
+  - exec_in: apt install -y doxygen graphviz
