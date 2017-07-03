@@ -10,13 +10,13 @@ Batsim simulates the computing center behaviour. It is made such that any
 event-based scheduling algorithm can be plugged to it. Thus, it permits to
 compare decision algorithms coming from production and academics worlds.
 
-And here is an overview of a Batsim simulation.
-
-![Batsim archi layer]
-
-Here is an overview of how Batsim works compared to real executions.
+Here is an overview of how Batsim works in comparison with real executions.
 
 ![Batsim vs. real]
+
+And here is a Batsim simulation overview from a different point of view.
+
+![Batsim archi layer]
 
 Quick links
 -----------
