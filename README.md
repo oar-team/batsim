@@ -74,8 +74,21 @@ External References
 Build status
 ------------
 
-[![build status](https://gitlab.inria.fr/batsim/batsim/badges/master/build.svg)]
-(https://gitlab.inria.fr/batsim/batsim/commits/master)
+
+| [master][master-link] | [upstream_sg][upstream_sg-link] |
+| :-------------------: | :-----------------------------: |
+| ![master-badge]       | ![upstream_sg-badge]            |
+
+[master-badge]: https://gitlab.inria.fr/batsim/batsim/badges/master/build.svg "Gitlab CI build status (master branch)"
+[master-link]:  https://gitlab.inria.fr/batsim/batsim/pipelines "Gitlab CI build status"
+[upstream_sg-badge]: https://gitlab.inria.fr/batsim/batsim/badges/upstream_sg/build.svg "Gitlab CI build status (upstream_sg branch)"
+[upstream_sg-link]:  https://gitlab.inria.fr/batsim/batsim/pipelines "Gitlab CI build status"
+
+Batsim uses Gitlab CI as its continuous integration system.
+Build status of the different commits can be found
+[there](https://gitlab.inria.fr/batsim/batsim/pipelines).
+More information about our CI setup can be found
+[there](./doc/continuous_integration.md)
 
 Development environment
 -------------------------
