@@ -75,9 +75,9 @@ Build status
 ------------
 
 
-| [master][master-link] | [upstream_sg][upstream_sg-link] |
-| :-------------------: | :-----------------------------: |
-| ![master-badge]       | ![upstream_sg-badge]            |
+| [master][master-link] | [upstream_sg (recent SimGrid)][upstream_sg-link] |
+| :-------------------: | :----------------------------------------------: |
+| ![master-badge]       | ![upstream_sg-badge]                             |
 
 [master-badge]: https://gitlab.inria.fr/batsim/batsim/badges/master/build.svg "Gitlab CI build status (master branch)"
 [master-link]:  https://gitlab.inria.fr/batsim/batsim/pipelines "Gitlab CI build status"
