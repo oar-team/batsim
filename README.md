@@ -10,6 +10,10 @@ Batsim simulates the computing center behaviour. It is made such that any
 event-based scheduling algorithm can be plugged to it. Thus, it permits to
 compare decision algorithms coming from production and academics worlds.
 
+And here is an overview of a Batsim simulation.
+
+![Batsim archi layer]
+
 Here is an overview of how Batsim works compared to real executions.
 
 ![Batsim vs. real]
@@ -266,6 +270,7 @@ If you want to run more complex scenarios, giving a look at our
 [experiment tools](./tools/experiments) may save you some time!
 
 [Batsim vs. real]: ./doc/batsim_overview.png
+[Batsim archi layer]: ./doc/batsim_archi_layer.png
 [./publications/Batsim\_JSSPP\_2016.pdf]: ./publications/Batsim_JSSPP_2016.pdf
 [Evalys]: https://github.com/oar-team/evalys
 [Vite]: http://vite.gforge.inria.fr/
