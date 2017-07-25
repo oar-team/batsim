@@ -2,34 +2,19 @@
 
 """Execute several Batsim instances."""
 
-import asyncio.subprocess
 import argparse
+import asyncio.subprocess
 import collections
-import hashlib
-import math
+import yaml
 import os
+import sys
+import hashlib
+from execo import *
+from execo_engine import *
+from execute_one_instance import *
+import pandas as pd
 import signal
 import subprocess
-import sys
-import yaml
-
-import pandas as pd
-
-from execo_engine import logger, ParamSweeper, sweep, HashableDict
-
-from execute_one_instance import check_variables, delete_file_if_exists
-from execute_one_instance import create_dir_if_not_exists, execute_command
-from execute_one_instance import is_valid_identifier, write_string_into_file
-from execute_one_instance import execute_command_inner
-from execute_one_instance import random_string, put_variables_in_file
-
-
-# Ugly globals
-hash_length = 8
-sweeper = None
-instance_id_to_instance_number = dict()
-instances_df = None
-instances_df_filename = None
 
 
 class hashabledict(dict):
@@ -70,18 +55,14 @@ def signal_handler(signal, frame):
     if ('instances_df' in globals()) and (len(instances_df) > 0):
         print('Saving current status in {}'.format(instances_df_filename))
 
-        done_df = pd.DataFrame([{
-            'instance_id': instance_id_from_comb(x, hash_length),
-            'status': 'done'} for x in sweeper.get_done()])
-        skipped_df = pd.DataFrame([{
-            'instance_id': instance_id_from_comb(x, hash_length),
-            'status': 'skipped'} for x in sweeper.get_skipped()])
-        remaining_df = pd.DataFrame([{
-            'instance_id': instance_id_from_comb(x, hash_length),
-            'status': 'remaining'} for x in sweeper.get_remaining()])
-        inprogress_df = pd.DataFrame([{
-            'instance_id': instance_id_from_comb(x, hash_length),
-            'status': 'inprogress'} for x in sweeper.get_inprogress()])
+        done_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
+                                 'status': 'done'} for x in sweeper.get_done()])
+        skipped_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
+                                    'status': 'skipped'} for x in sweeper.get_skipped()])
+        remaining_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
+                                      'status': 'remaining'} for x in sweeper.get_remaining()])
+        inprogress_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
+                                       'status': 'inprogress'} for x in sweeper.get_inprogress()])
 
         status_df = pd.concat(
             [done_df, skipped_df, remaining_df, inprogress_df])
@@ -107,15 +88,14 @@ def retrieve_dirs_from_instances(variables,
     filename_ok = False
     while not filename_ok:
         r = random_string()
-        script_filename = '{wd}/{rand}_script.sh'.format(
-            wd=working_directory, rand=r)
-        output_dir_filename = '{wd}/{rand}_out_dir'.format(
-            wd=working_directory, rand=r)
-        working_dir_filename = '{wd}/{rand}_working_dir'.format(
-            wd=working_directory, rand=r)
-        filename_ok = (not os.path.exists(script_filename) and
-                       not os.path.exists(output_dir_filename) and
-                       not os.path.exists(working_dir_filename))
+        script_filename = '{wd}/{rand}_script.sh'.format(wd=working_directory,
+                                                         rand=r)
+        output_dir_filename = '{wd}/{rand}_out_dir'.format(wd=working_directory,
+                                                           rand=r)
+        working_dir_filename = '{wd}/{rand}_working_dir'.format(wd=working_directory,
+                                                                rand=r)
+        filename_ok = not os.path.exists(script_filename) and not os.path.exists(
+            output_dir_filename) and not os.path.exists(working_dir_filename)
 
     put_variables_in_file(
         variables, variables_declaration_order, script_filename)
@@ -135,8 +115,7 @@ def retrieve_dirs_from_instances(variables,
     # Let's execute the script
     p = subprocess.run('bash {f}'.format(f=script_filename), shell=True,
                        stdout=subprocess.PIPE)
-    if p.returncode != 0:
-        raise Exception('Script returned {} (expected 0)'.format(p.returncode))
+    assert(p.returncode == 0)
 
     # Let's get the working directory
     f = open(working_dir_filename, 'r')
@@ -174,12 +153,12 @@ def check_sweep(sweeps):
     for var_name in sweeps:
         var_value = sweeps[var_name]
         if not isinstance(var_value, list):
-            logger.error("Invalid sweep variable {v}: associated value is not "
-                         "a list".format(v=var_name))
+            logger.error(
+                "Invalid sweep variable {v}: associated value is not a list".format(v=var_name))
             sys.exit(1)
         if len(var_value) < 1:
-            logger.error("Invalid sweep variable {v}: length of list value "
-                         "must be > 0".format(v=var_name))
+            logger.error(
+                "Invalid sweep variable {v}: length of list value must be > 0".format(v=var_name))
             sys.exit(1)
         for element in var_value:
             # Let's check that all values have the same type
@@ -187,8 +166,7 @@ def check_sweep(sweeps):
             if var_name in var_types:
                 if t != var_types[var_name]:
                     logger.error(
-                        "Invalid sweep variable {v}: all possible values are "
-                        "not of the same type".format(v=var_name))
+                        "Invalid sweep variable {v}: all possible values are not of the same type".format(v=var_name))
                     sys.exit(1)
             else:
                 var_types[var_name] = t
@@ -198,31 +176,25 @@ def check_sweep(sweeps):
                 length = len(element)
                 if var_name in list_sizes:
                     if length != list_sizes[var_name]:
-                        logger.error("Invalid sweep variable {v}: all possible"
-                                     " values must be of the same type (and "
-                                     "since they are lists, they should have "
-                                     "the same length)".format(v=var_name))
+                        logger.error(
+                            "Invalid sweep variable {v}: all possible values must be of the same type (and since they are lists, they should have the same length)".format(v=var_name))
                         sys.exit(1)
                 else:
                     list_sizes[var_name] = length
                 if length < 1:
-                    logger.error("Invalid sweep variable {v}: lists must be "
-                                 "non-empty".format(v=var_name))
+                    logger.error(
+                        "Invalid sweep variable {v}: lists must be non-empty".format(v=var_name))
                     sys.exit(1)
                 used_name = element[0]
                 if not is_valid_identifier(used_name):
-                    logger.error("Invalid sweep variable {v}: first element "
-                                 "({f}) must be a valid identifier because it "
-                                 "is used to create files".format(v=var_name,
-                                                                  f=used_name))
+                    logger.error("Invalid sweep variable {v}: first element ({f}) must be a valid identifier because it is used to create files".format(
+                        v=var_name, f=used_name))
                     sys.exit(1)
                 # Let's check that all names are unique
                 if var_name in used_identifiers:
                     if used_name in used_identifiers[var_name]:
-                        logger.error("Invalid sweep variable {v}: first "
-                                     "element value ({f}) must be "
-                                     "unique".format(v=var_name,
-                                                     f=used_name))
+                        logger.error("Invalid sweep variable {v}: first element value ({f}) must be unique".format(
+                            v=var_name, f=used_name))
                         sys.exit(1)
                     else:
                         used_identifiers[var_name].add(used_name)
@@ -233,16 +205,14 @@ def check_sweep(sweeps):
                 keys = element.keys()
                 if var_name in dict_keys:
                     if keys != dict_keys[var_name]:
-                        logger.error("Invalid sweep variable {v}: all possible"
-                                     " values must be of the same type (and"
-                                     " since they are dicts, they should have"
-                                     " the same keys".format(v=var_name))
+                        logger.error(
+                            "Invalid sweep variable {v}: all possible values must be of the same type (and since they are dicts, they should have the same keys".format(v=var_name))
                         sys.exit(1)
                 else:
                     dict_keys[var_name] = keys
                 if len(keys) < 1:
-                    logger.error("Invalid sweep variable {v}: dicts must be "
-                                 "non-empty".format(v=var_name))
+                    logger.error(
+                        "Invalid sweep variable {v}: dicts must be non-empty".format(v=var_name))
                     sys.exit(1)
                 if 'name' in element:
                     used_name = element['name']
@@ -250,23 +220,14 @@ def check_sweep(sweeps):
                     used_name = element.values()[0]
                     dicts_without_names.add(var_name)
                 if not is_valid_identifier(used_name):
-                    logger.error("Invalid sweep variable {v}: the name got "
-                                 "from dict {d} (name={n}, got either from "
-                                 "the 'name' field if it exists or the first "
-                                 "value otherwise) is not a valid identifier. "
-                                 "It must be because it is used to create "
-                                 "files.".format(v=var_name, d=element,
-                                                 n=used_name))
+                    logger.error("Invalid sweep variable {v}: the name got from dict {d} (name={n}, got either from the 'name' field if it exists or the first value otherwise) is not a valid identifier. It must be because it is used to create files.".format(
+                        v=var_name, d=element, n=used_name))
                     sys.exit(1)
                 # Let's check that all names are unique
                 if var_name in used_identifiers:
                     if used_name in used_identifiers[var_name]:
-                        logger.error("Invalid sweep variable {v}: the name "
-                                     "got from dict {d} (name={n}, got either "
-                                     "from the 'name' field if it exists or "
-                                     "the first value otherwise) must be "
-                                     "unique".format(v=var_name, d=element,
-                                                     n=used_name))
+                        logger.error("Invalid sweep variable {v}: the name got from dict {d} (name={n}, got either from the 'name' field if it exists or the first value otherwise) must be unique".format(
+                            v=var_name, d=element, n=used_name))
                         sys.exit(1)
                     else:
                         used_identifiers[var_name].add(used_name)
@@ -274,8 +235,8 @@ def check_sweep(sweeps):
                     used_identifiers[var_name] = set([used_name])
 
     if len(dicts_without_names) > 0:
-        logger.warning("Different dictionary variables do not have a "
-                       "'name' key: {d}".format(d=dicts_without_names))
+        logger.warning("Different dictionary variables do not have a 'name' key: {d}".format(
+            d=dicts_without_names))
 
 
 def get_script_path():
@@ -294,7 +255,7 @@ async def instance_runner(data, hostname, local_rank):
             compute_comb = comb in data.instances_subset_to_recompute
 
         if compute_comb:
-            (_, instance_id, _, command) = prepare_instance(
+            (desc_filename, instance_id, combname, command) = prepare_instance(
                 comb=comb,
                 explicit_instances=data.explicit_instances,
                 implicit_instances=data.implicit_instances,
@@ -317,8 +278,8 @@ async def instance_runner(data, hostname, local_rank):
             if hostname != 'localhost':
                 command = rmt
 
-            create_dir_if_not_exists('{bod}/instances/output/'.format(
-                bod=data.base_output_directory))
+            create_dir_if_not_exists('{base_output_dir}/instances/output/'.format(
+                base_output_dir=data.base_output_directory))
             stdout_filename = '{out}/instances/output/{iid}.stdout'.format(
                 out=data.base_output_directory,
                 iid=instance_id)
@@ -332,8 +293,7 @@ async def instance_runner(data, hostname, local_rank):
             # Launch the instance
             logger.info('Worker ({host},{rank}) runs {iid}'.format(
                 host=hostname, rank=local_rank, iid=instance_id))
-            p, _ = await execute_command_inner(command, stdout_file,
-                                               stderr_file)
+            p, _ = await execute_command_inner(command, stdout_file, stderr_file)
             if p.returncode == 0:
                 logger.info('Worker ({host},{rank}) finished {iid}'.format(
                     host=hostname, rank=local_rank, iid=instance_id))
@@ -352,8 +312,8 @@ async def instance_runner(data, hostname, local_rank):
                     data.sweeper.done(comb)
                 elif (p.returncode == 4) and data.generate_only:
                     logger.info('Worker ({host},{rank}) finished {iid} '
-                                '(returncode={code} expected, as not executing'
-                                ' the instance has been asked.)'.format(
+                                '(returncode={code} expected, as not executing '
+                                'the instance has been asked.)'.format(
                                     host=hostname, rank=local_rank,
                                     iid=instance_id, code=p.returncode))
                     data.sweeper.skip(comb)
@@ -366,12 +326,12 @@ async def instance_runner(data, hostname, local_rank):
                     data.sweeper.skip(comb)
 
                 if show_instance_details:
-                    logger.info('\n\n----- begin of instance {iid} log -----'
-                                .format(iid=instance_id))
+                    logger.info('\n\n----- begin of instance {iid} log -----'.format(
+                        iid=instance_id))
                     display_process_output_on_error('Instance ' + instance_id,
                                                     stdout_file, stderr_file)
-                    logger.info('----- end of instance {iid} log -----\n\n'
-                                .format(iid=instance_id))
+                    logger.info('----- end of instance {iid} log -----\n\n'.format(
+                        iid=instance_id))
         else:
             logger.info('Worker ({host},{rank}) skipped {iid}'.format(
                 host=hostname, rank=local_rank, iid=instance_id))
@@ -422,24 +382,22 @@ def prepare_instance(comb,
                      hash_length=8):
     """Prepare an instance (generate scripts...)."""
     if comb['explicit']:
-        return prepare_explicit_instance(
-            explicit_instances=explicit_instances,
-            comb=comb,
-            instance_id=comb['instance_id'],
-            base_output_directory=base_output_directory,
-            base_variables=base_variables,
-            post_commands_only=post_commands_only,
-            generate_only=generate_only,
-            hash_length=hash_length)
+        return prepare_explicit_instance(explicit_instances=explicit_instances,
+                                         comb=comb,
+                                         instance_id=comb['instance_id'],
+                                         base_output_directory=base_output_directory,
+                                         base_variables=base_variables,
+                                         post_commands_only=post_commands_only,
+                                         generate_only=generate_only,
+                                         hash_length=hash_length)
     else:
-        return prepare_implicit_instance(
-            implicit_instances=implicit_instances,
-            comb=comb,
-            base_output_directory=base_output_directory,
-            base_variables=base_variables,
-            post_commands_only=post_commands_only,
-            generate_only=generate_only,
-            hash_length=hash_length)
+        return prepare_implicit_instance(implicit_instances=implicit_instances,
+                                         comb=comb,
+                                         base_output_directory=base_output_directory,
+                                         base_variables=base_variables,
+                                         post_commands_only=post_commands_only,
+                                         generate_only=generate_only,
+                                         hash_length=hash_length)
 
 
 def prepare_implicit_instance(implicit_instances,
@@ -464,9 +422,7 @@ def prepare_implicit_instance(implicit_instances,
 
     # Let's add sweep variables into the variable map
     for var_name in sweep:
-        if var_name not in comb:
-            raise Exception('{} is not in the comb map!'.format(var_name))
-
+        assert(var_name in comb)
         var_val = comb[var_name]
         if isinstance(var_val, hashablelist):
             instance['variables'][var_name] = list(var_val)
@@ -607,10 +563,11 @@ def generate_instances_combs(explicit_instances,
     explicit_instances_comb = []
     if explicit_instances:
         nb_explicit = len(explicit_instances)
-        explicit_instances_comb = [HashableDict({
-            'explicit': True,
-            'instance_name': explicit_instances[x]['name'],
-            'instance_id':x}) for x in range(nb_explicit)]
+        explicit_instances_comb = [HashableDict(
+                                   {'explicit': True,
+                                    'instance_name': explicit_instances[x]['name'],
+                                    'instance_id':x})
+                                   for x in range(nb_explicit)]
 
     # Let's handle implicit instances now.
     # Theses instances define a parameter space sweeping and all combinations
@@ -626,10 +583,7 @@ def generate_instances_combs(explicit_instances,
                 # called
                 for sweep_var_key in sweep_var:
                     sweep_var_value = sweep_var[sweep_var_key]
-                    if not isinstance(sweep_var_value, list):
-                        raise Exception('{} is not a list!'.format(
-                            sweep_var_value))
-                    # The following ugly code avoids copy!
+                    assert(isinstance(sweep_var_value, list))
                     for list_i in range(len(sweep_var_value)):
                         if isinstance(sweep_var_value[list_i], list):
                             sweep_var_value[list_i] = hashablelist(
@@ -671,7 +625,10 @@ def execute_instances(base_working_directory,
         sweeper.get_skipped() | sweeper.get_inprogress()
 
     global instance_id_to_instance_number
+    instance_id_to_instance_number = dict()
+
     global hash_length
+    hash_length = 8
     rows_list = []
     instance_number = 0
     for comb in all_combs:
@@ -687,17 +644,16 @@ def execute_instances(base_working_directory,
     # Let's generate the instances data frame
     global instances_df
     global instances_df_filename
-    instances_df_filename = '{bod}/instances/instances_info.csv'.format(
-        bod=base_output_directory)
+    instances_df_filename = '{base_output_dir}/instances/instances_info.csv'.format(
+        base_output_dir=base_output_directory)
 
     instances_df = pd.DataFrame(rows_list)
 
     # Let's check that instance ids are unique
-    if len(instances_df) != len(instances_df['instance_id'].unique()):
-        raise Exception('Instance IDs are not unique ({}!={})! The hash length'
-                        ' might be too small.'
-                        .format(len(instances_df),
-                                len(instances_df['instance_id'].unique())))
+    assert len(instances_df) == len(instances_df['instance_id'].unique()),\
+        "Instance IDs are not unique ({}!={})! " \
+        "The hash length might be too small.".format(len(instances_df),
+                                                     len(instances_df['instance_id'].unique()))
 
     # Let's save the dataframe into a csv file
     create_dir_if_not_exists('{base_output_dir}/instances'.format(
@@ -724,8 +680,9 @@ def execute_instances(base_working_directory,
             sys.exit(0)
     elif mark_as_cancelled_lambda is not None:
         logger.info('Trying to find instances to mark as cancelled. '
-                    'Lambda parameter is "{p}". Lambda filter string is "{f}".'
-                    .format(p='x', f=mark_as_cancelled_lambda))
+                    'Lambda parameter is "{p}". Lambda filter string is "{f}".'.format(
+                        p='x',
+                        f=mark_as_cancelled_lambda))
         combs_to_mark = [y for y in filter(lambda x:
                                            eval(mark_as_cancelled_lambda),
                                            sweeper.get_done())]
@@ -762,24 +719,22 @@ def execute_instances(base_working_directory,
             sweeper.cancel(comb)
 
     # Let's create data shared by all workers
-    worker_shared_data = WorkersSharedData(
-        sweeper=sweeper,
-        instances_post_cmds_only=instances_post_cmds_only,
-        implicit_instances=implicit_instances,
-        explicit_instances=explicit_instances,
-        nb_workers_finished=0,
-        base_working_directory=base_working_directory,
-        base_output_directory=base_output_directory,
-        base_variables=base_variables,
-        generate_only=generate_only,
-        hash_length=hash_length,
-        instances_subset_to_recompute=instances_subset_to_recompute)
+    worker_shared_data = WorkersSharedData(sweeper=sweeper,
+                                           instances_post_cmds_only=instances_post_cmds_only,
+                                           implicit_instances=implicit_instances,
+                                           explicit_instances=explicit_instances,
+                                           nb_workers_finished=0,
+                                           base_working_directory=base_working_directory,
+                                           base_output_directory=base_output_directory,
+                                           base_variables=base_variables,
+                                           generate_only=generate_only,
+                                           hash_length=hash_length,
+                                           instances_subset_to_recompute=instances_subset_to_recompute)
 
     # Let's create all workers
     nb_workers = min(len(combs), len(host_list) * nb_workers_per_host)
     workers = []
-    if nb_workers <= 0:
-        raise Exception('There are 0 workers!')
+    assert(nb_workers > 0)
 
     for local_rank in range(nb_workers_per_host):
         if len(workers) >= nb_workers:
@@ -790,8 +745,7 @@ def execute_instances(base_working_directory,
             worker = (hostname, local_rank)
             workers.append(worker)
 
-    if len(workers) != nb_workers:
-        raise Exception('Bad number of workers!')
+    assert(len(workers) == nb_workers)
 
     # Let's run all the workers, and wait for them to finish
     loop = asyncio.get_event_loop()
@@ -800,12 +754,10 @@ def execute_instances(base_working_directory,
           for (host, rank) in workers]))
 
     # Let's compute which instances failed
-    done_df = pd.DataFrame([{
-        'instance_id': instance_id_from_comb(x, hash_length),
-        'status': 'done'} for x in sweeper.get_done()])
-    skipped_df = pd.DataFrame([{
-        'instance_id': instance_id_from_comb(x, hash_length),
-        'status': 'skipped'} for x in sweeper.get_skipped()])
+    done_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
+                             'status': 'done'} for x in sweeper.get_done()])
+    skipped_df = pd.DataFrame([{'instance_id': instance_id_from_comb(x, hash_length),
+                                'status': 'skipped'} for x in sweeper.get_skipped()])
     status_df = pd.concat([done_df, skipped_df])
 
     # Let's log this into the CSV file
@@ -819,9 +771,9 @@ def execute_instances(base_working_directory,
     if not success:
         logger.warning('Number of skipped instances: {}'.format(
             len(sweeper.get_skipped())))
-        logger.warning('Information about these instances can be found in '
-                       'file {}'.format('{bod}/instances/instances_info.csv'
-                                        .format(bod=base_output_directory)))
+        logger.warning('Information about these instances can be found in file {}'.format(
+            '{base_output_dir}/instances/instances_info.csv'.format(
+                base_output_dir=base_output_directory)))
     return (success, worker_shared_data.post_command_failed)
 
 
@@ -850,129 +802,113 @@ can be found in the instances_examples subdirectory.
     # Program parameters parsing
     p = argparse.ArgumentParser(description=script_description)
 
-    p.add_argument(
-        'instances_description_filename',
-        type=str,
-        help='The name of the YAML file which describes the instance. '
-             'Beware, this argument is not subjected to the working '
-             'directory parameter.')
+    p.add_argument('instances_description_filename',
+                   type=str,
+                   help='The name of the YAML file which describes the instance. '
+                   'Beware, this argument is not subjected to the working '
+                   'directory parameter.')
 
-    p.add_argument(
-        '--mpi_hostfile',
-        type=str,
-        help='If given, the set of available hosts is retrieved '
-             'the given MPI hostfile')
+    p.add_argument('--mpi_hostfile',
+                   type=str,
+                   help='If given, the set of available hosts is retrieved '
+                   'the given MPI hostfile')
 
-    p.add_argument(
-        '--nb_workers_per_host',
-        type=int,
-        default=1,
-        help='Sets the number of workers that should be allocated '
-             'to each host.')
+    p.add_argument('--nb_workers_per_host',
+                   type=int,
+                   default=1,
+                   help='Sets the number of workers that should be allocated '
+                   'to each host.')
 
-    p.add_argument(
-        '-bwd', '--base_working_directory',
-        type=str,
-        default=None,
-        help='If set, the instance will be executed in the given '
-             'directory. This value has higher priority than the '
-             'one that might be given in the description file. '
-             'If unset, the script working directory is used instead')
+    p.add_argument('-bwd', '--base_working_directory',
+                   type=str,
+                   default=None,
+                   help='If set, the instance will be executed in the given '
+                   'directory. This value has higher priority than the '
+                   'one that might be given in the description file. '
+                   'If unset, the script working directory is used instead')
 
-    p.add_argument(
-        '-bod', '--base_output_directory',
-        type=str,
-        default=None,
-        help='If set, the outputs of the current script will be '
-             'put into the given directory. This value has higher '
-             'priority than the one that might be given in the '
-             'description file. If a value is set, it might be '
-             'either absolute or relative to the working directory. '
-             ' If unset, the working directory is used instead')
+    p.add_argument('-bod', '--base_output_directory',
+                   type=str,
+                   default=None,
+                   help='If set, the outputs of the current script will be '
+                   'put into the given directory. This value has higher '
+                   'priority than the one that might be given in the '
+                   'description file. If a value is set, it might be '
+                   'either absolute or relative to the working directory. '
+                   ' If unset, the working directory is used instead')
 
     gm = p.add_mutually_exclusive_group()
-    gm.add_argument(
-        '-m', '--mark_instances_as_cancelled',
-        type=str,
-        default=None,
-        help='Allows to mark some instances as cancelled, which '
-             'will force them to be recomputed. The parameter '
-             'is a lambda expression used to filter which '
-             'instances should be recomputed. If the parameter '
-             'is empty, a combination example is displayed. '
-             'The lambda parameter is named "x".')
+    gm.add_argument('-m', '--mark_instances_as_cancelled',
+                    type=str,
+                    default=None,
+                    help='Allows to mark some instances as cancelled, which '
+                    'will force them to be recomputed. The parameter '
+                    'is a lambda expression used to filter which '
+                    'instances should be recomputed. If the parameter '
+                    'is empty, a combination example is displayed. '
+                    'The lambda parameter is named "x".')
 
-    gm.add_argument(
-        '-M', '--recompute_some_instances_only',
-        type=str,
-        default=None,
-        help='Quite the same as -m, but this parameter limits the '
-             'parameter space to the one described in this '
-             'parameter.')
+    gm.add_argument('-M', '--recompute_some_instances_only',
+                    type=str,
+                    default=None,
+                    help='Quite the same as -m, but this parameter limits the '
+                    'parameter space to the one described in this '
+                    'parameter.')
 
-    p.add_argument(
-        '--skip_global_pre',
-        action='store_true',
-        help='If set, skips the commands which should be executed '
-             'before running any instance.')
+    p.add_argument('--skip_global_pre',
+                   action='store_true',
+                   help='If set, skips the commands which should be executed '
+                   'before running any instance.')
 
-    p.add_argument(
-        '--skip_global_post',
-        action='store_true',
-        help='If set, skips the commands which should be executed '
-             'after running all the instances.')
+    p.add_argument('--skip_global_post',
+                   action='store_true',
+                   help='If set, skips the commands which should be executed '
+                   'after running all the instances.')
 
     g = p.add_mutually_exclusive_group()
 
-    g.add_argument(
-        '--pre_only',
-        action='store_true',
-        help="If set, only the commands which precede instances "
-             'executions will be executed.')
+    g.add_argument('--pre_only',
+                   action='store_true',
+                   help="If set, only the commands which precede instances "
+                   'executions will be executed.')
 
-    g.add_argument(
-        '--post_only',
-        action='store_true',
-        help="If set, only the commands which go after instances' "
-             'executions will be executed.')
+    g.add_argument('--post_only',
+                   action='store_true',
+                   help="If set, only the commands which go after instances' "
+                   'executions will be executed.')
 
-    g.add_argument(
-        '-g', '--generate_only',
-        action='store_true',
-        help='If set, the instances will not be executed but only '
-             'generated. Commands before execution will be run, '
-             'commands before each instance too.')
+    g.add_argument('-g', '--generate_only',
+                   action='store_true',
+                   help='If set, the instances will not be executed but only '
+                   'generated. Commands before execution will be run, '
+                          'commands before each instance too.')
 
-    g.add_argument(
-        '-r', '--recompute_all_instances',
-        action='store_true',
-        help="If set, all instances will be recomputed. "
-             "By default, Execo's cache allows to avoid "
-             "recomputations of already done instances")
+    g.add_argument('-r', '--recompute_all_instances',
+                   action='store_true',
+                   help="If set, all instances will be recomputed. "
+                   "By default, Execo's cache allows to avoid "
+                          "recomputations of already done instances")
 
-    g.add_argument(
-        '-p', '--recompute_instances_post_commands',
-        action='store_true',
-        help='If set, the post_commands of the instances which '
-             'are already done will be computed before trying to '
-             'execute the other instances')
+    g.add_argument('-p', '--recompute_instances_post_commands',
+                   action='store_true',
+                   help='If set, the post_commands of the instances which '
+                   'are already done will be computed before trying to '
+                          'execute the other instances')
 
-    g.add_argument(
-        '-pg', '--recompute_already_done_post_commands',
-        action='store_true',
-        help='Does quite the same as '
-             '--recompute_instances_post_commands, but does not '
-             'try to execute skipped instances')
+    g.add_argument('-pg', '--recompute_already_done_post_commands',
+                   action='store_true',
+                   help='Does quite the same as '
+                          '--recompute_instances_post_commands, but does not '
+                          'try to execute skipped instances')
 
     args = p.parse_args()
 
     # Some basic checks
-    if args.nb_workers_per_host < 1:
-        raise Exception('There should be at least one worker per host!')
+    assert(args.nb_workers_per_host >= 1)
 
     # Let's read the YAML file content to get the real parameters
     desc_file = open(args.instances_description_filename, 'r')
-    desc_data = yaml.safe_load(desc_file)
+    desc_data = yaml.load(desc_file)
 
     base_working_directory = os.getcwd()
     base_output_directory = os.getcwd()
@@ -1040,8 +976,8 @@ can be found in the instances_examples subdirectory.
         sys.exit(1)
 
     # Let's retrieve bwd and owd (they might need some bash interpretation)
-    (base_working_directory, base_output_directory) = (
-        retrieve_dirs_from_instances(base_variables, var_decl_order, "/tmp"))
+    (base_working_directory, base_output_directory) = retrieve_dirs_from_instances(
+        base_variables, var_decl_order, "/tmp")
 
     # Let's update those variables
     base_variables['base_working_directory'] = base_working_directory
@@ -1088,7 +1024,7 @@ can be found in the instances_examples subdirectory.
             nb_chars_command_ids = int(
                 1 + math.log10(len(commands_before_instances)))
 
-            for command_id, command in enumerate(commands_before_instances):
+            for command_id in range(len(commands_before_instances)):
                 command_name = 'command' + \
                     str(command_id).zfill(nb_chars_command_ids)
                 output_command_filename = '{commands_dir}/{name}.bash'.format(
@@ -1098,14 +1034,13 @@ can be found in the instances_examples subdirectory.
                     commands_dir=pre_commands_dir,
                     name=command_name)
 
-                if not execute_command(
-                   command=command,
-                   working_directory=base_working_directory,
-                   variables_filename=base_variables_filename,
-                   output_script_filename=output_command_filename,
-                   output_subscript_filename=output_subscript_filename,
-                   output_script_output_dir=pre_commands_output_dir,
-                   command_name=command_name):
+                if not execute_command(command=commands_before_instances[command_id],
+                                       working_directory=base_working_directory,
+                                       variables_filename=base_variables_filename,
+                                       output_script_filename=output_command_filename,
+                                       output_subscript_filename=output_subscript_filename,
+                                       output_script_output_dir=pre_commands_output_dir,
+                                       command_name=command_name):
                     sys.exit(1)
 
         if args.pre_only:
@@ -1121,8 +1056,7 @@ can be found in the instances_examples subdirectory.
             explicit_instances=explicit_instances,
             nb_workers_per_host=args.nb_workers_per_host,
             recompute_all_instances=recompute_all_instances,
-            recompute_instances_post_commands=(
-                recompute_instances_post_commands),
+            recompute_instances_post_commands=recompute_instances_post_commands,
             generate_only=generate_only,
             mark_as_cancelled_lambda=mark_as_cancelled_lambda,
             only_compute_marked_cancelled=only_compute_marked_cancelled)
@@ -1143,7 +1077,7 @@ can be found in the instances_examples subdirectory.
         nb_chars_command_ids = int(
             1 + math.log10(len(commands_after_instances)))
 
-        for command_id, command in enumerate(commands_after_instances):
+        for command_id in range(len(commands_after_instances)):
             command_name = 'command' + \
                 str(command_id).zfill(nb_chars_command_ids)
             output_command_filename = '{commands_dir}/{name}.bash'.format(
@@ -1153,27 +1087,24 @@ can be found in the instances_examples subdirectory.
                 commands_dir=post_commands_dir,
                 name=command_name)
 
-            if not execute_command(
-               command=command,
-               working_directory=base_working_directory,
-               variables_filename=base_variables_filename,
-               output_script_filename=output_command_filename,
-               output_subscript_filename=output_subscript_filename,
-               output_script_output_dir=post_commands_output_dir,
-               command_name=command_name):
+            if not execute_command(command=commands_after_instances[command_id],
+                                   working_directory=base_working_directory,
+                                   variables_filename=base_variables_filename,
+                                   output_script_filename=output_command_filename,
+                                   output_subscript_filename=output_subscript_filename,
+                                   output_script_output_dir=post_commands_output_dir,
+                                   command_name=command_name):
                 sys.exit(1)
 
     # Everything went succesfully, let's return 0
     if post_command_failed:
-        print('Everything went quite successfully, '
-              'but some post-commands failed...')
+        print('Everything went quite successfully, but some post-commands failed...')
         sys.exit(7)
     sys.exit(0)
 
 
 if __name__ == '__main__':
-    execute_one_instance_script = '{sdir}/execute_one_instance.py'.format(
-        sdir=get_script_path())
-    if not os.path.isfile(execute_one_instance_script):
-        raise Exception('{} is not a file'.format(execute_one_instance_script))
+    execute_one_instance_script = '{script_dir}/execute_one_instance.py'.format(
+        script_dir=get_script_path())
+    assert(os.path.isfile(execute_one_instance_script))
     main()
