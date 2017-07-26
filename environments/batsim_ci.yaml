@@ -60,6 +60,7 @@ setup:
   - simgrid:
 
   - batsim_dependencies
+  - result_analysis
 
 export:
   - "@base"
