@@ -78,7 +78,7 @@ test_test:
     - make install
 
     - cd /builds/batsim/batsim/build
-    - CTEST_OUTPUT_ON_FAILURE=1 ctest -E remote
+    - ctest --output-on-failure -E remote
   dependencies:
     - build_clang
     - build_batsched
