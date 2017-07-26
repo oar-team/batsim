@@ -48,7 +48,8 @@
 - experiment_management:
   - exec_in: apt install -y python3-pip psmisc
   - exec_in: |
-      pip3 install sortedcontainers redis async_timeout pandas PyYAML pyzmq
+      pip3 install async_timeout coloredlogs pandas PyYAML redis \
+           sortedcontainers pyzmq
   - exec_in: git clone $${execo_remote} $${work_dir}/execo
   - exec_in: cd $${work_dir}/execo && git checkout $${execo_commit}
   - exec_in: cd $${work_dir}/execo && pip3 install -e .
