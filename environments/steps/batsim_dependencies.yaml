@@ -24,7 +24,8 @@
                          libhiredis-dev \
                          libev-dev \
                          libzmq3-dev \
-                         libssl-dev 2>&1
+                         libssl-dev \
+                         redis-server 2>&1
 
   # Install rapidjson from source
   - exec_in: git clone $${rapidjson_remote} $${work_dir}/rapidjson
