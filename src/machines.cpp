@@ -54,12 +54,19 @@ Machines::~Machines()
         _pfs_machine = nullptr;
     }
 
+    if (_hpst_machine != nullptr)
+    {
+        delete _hpst_machine;
+        _hpst_machine = nullptr;
+    }
+
 }
 
 void Machines::create_machines(xbt_dynar_t hosts,
                                const BatsimContext *context,
                                const string & master_host_name,
                                const string & pfs_host_name,
+                               const string & hpst_host_name,
                                int limit_machine_count)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
@@ -211,7 +218,7 @@ void Machines::create_machines(xbt_dynar_t hosts,
                        "is currently forbidden (https://github.com/oar-team/batsim/issues/21).");
         }
 
-        if ((machine->name != master_host_name) && (machine->name != pfs_host_name))
+        if ((machine->name != master_host_name) && (machine->name != pfs_host_name) && (machine->name != hpst_host_name))
         {
             machine->id = id;
             ++id;
@@ -225,12 +232,21 @@ void Machines::create_machines(xbt_dynar_t hosts,
                 machine->id = -1;
                 _master_machine = machine;
             }
-            else
+            else if (machine->name == pfs_host_name)
             {
-
                 xbt_assert(_pfs_machine == nullptr, "There are two pfs hosts...");
                 machine->id = -2;
                 _pfs_machine = machine;
+            }
+            else if (machine->name == hpst_host_name)
+            {
+                xbt_assert(_hpst_machine == nullptr, "There are two hpst hosts...");
+                machine->id = -3;
+                _hpst_machine = machine;
+            }
+            else 
+            {
+                xbt_die("Invalid machine found");
             }
         }
     }
@@ -240,6 +256,10 @@ void Machines::create_machines(xbt_dynar_t hosts,
     if (_pfs_machine == nullptr)
     {
          XBT_WARN("Could not find pfs_host '%s'!", pfs_host_name.c_str());
+    }
+    if (_hpst_machine == nullptr)
+    {
+         XBT_WARN("Could not find hpst_host '%s'!", hpst_host_name.c_str());
     }
 
     sort_machines_by_ascending_name();
@@ -319,6 +339,13 @@ const Machine *Machines::pfs_machine() const
     xbt_assert(_pfs_machine != nullptr,
                "Trying to access the PFS machine, which does not exist.");
     return _pfs_machine;
+}
+
+const Machine *Machines::hpst_machine() const
+{
+    xbt_assert(_hpst_machine != nullptr,
+               "Trying to access the hpst machine, which does not exist.");
+    return _hpst_machine;
 }
 
 
@@ -660,11 +687,13 @@ void create_machines(const MainArguments & main_args,
 
     XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
     XBT_INFO("Looking for master host '%s'", main_args.master_host_name.c_str());
-    XBT_INFO("Looking for parallel file system host '%s'", main_args.pfs_host_name.c_str());
+    XBT_INFO("Looking for parallel file system host (LCST) '%s'", main_args.pfs_host_name.c_str());
+    XBT_INFO("Looking for parallel file system host (HPST) '%s'", main_args.hpst_host_name.c_str());
 
     xbt_dynar_t hosts = MSG_hosts_as_dynar();
     context->machines.create_machines(hosts, context, main_args.master_host_name,
-                                      main_args.pfs_host_name, max_nb_machines_to_use);
+                                      main_args.pfs_host_name, main_args.hpst_host_name,
+                                      max_nb_machines_to_use);
     xbt_dynar_free(&hosts);
 
     XBT_INFO("The machines have been created successfully. There are %d computing machines.",

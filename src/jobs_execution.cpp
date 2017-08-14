@@ -51,7 +51,8 @@ int execute_profile(BatsimContext *context,
 
     if (profile->type == ProfileType::MSG_PARALLEL ||
         profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS ||
-        profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS0)
+        profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS ||
+        profile->type == ProfileType::MSG_DATA_STAGING)
     {
         double * computation_amount = nullptr;
         double * communication_amount = nullptr;
@@ -108,10 +109,10 @@ int execute_profile(BatsimContext *context,
                 }
             }
         }
-        else if (profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS0)
+        else if (profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS)
         {
-            task_name_prefix = "pfs0 ";
-            MsgParallelHomogeneousPFS0ProfileData * data = (MsgParallelHomogeneousPFS0ProfileData *)profile->data;
+            task_name_prefix = "pfs_tiers ";
+            MsgParallelHomogeneousPFSMultipleTiersProfileData * data = (MsgParallelHomogeneousPFSMultipleTiersProfileData *)profile->data;
 
             double cpu = 0;
             double size = data->size;
@@ -121,7 +122,16 @@ int execute_profile(BatsimContext *context,
             int pfs_id = nb_res - 1;
 
             // Add the pfs_machine
-            hosts_to_use.push_back(context->machines.pfs_machine()->host);
+            switch(data->host) {
+            case MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::HPST:
+                hosts_to_use.push_back(context->machines.hpst_machine()->host);
+                break;
+            case MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::LCST:
+                hosts_to_use.push_back(context->machines.pfs_machine()->host);
+                break;
+            default:
+                xbt_die("Should not be reached");
+            }
 
             // These amounts are deallocated by SG
             computation_amount = xbt_new(double, nb_res);
@@ -140,18 +150,46 @@ int execute_profile(BatsimContext *context,
                 {
                     for (int x = 0; x < nb_res; ++x)
                     {
-                        // Communications are done towards the PFS host, which is the last resource
-                        if (x != pfs_id)
-                        {
-                            communication_amount[k++] = 0;
-                        }
-                        else
-                        {
-                            communication_amount[k++] = size;
+                        switch(data->direction) {
+                        case MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::TO_STORAGE:
+                            // Communications are done towards the PFS host, which is the last resource (to the storage)
+                            if (x != pfs_id)
+                            {
+                                communication_amount[k++] = 0;
+                            }
+                            else
+                            {
+                                communication_amount[k++] = size;
+                            }
+                            break;
+                        case MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_STORAGE:
+                            // Communications are done towards the job allocation (from the storage)
+                            if (x != pfs_id)
+                            {
+                                communication_amount[k++] = size;
+                            }
+                            else
+                            {
+                                communication_amount[k++] = 0;
+                            }
+                            break;
+                        default:
+                            xbt_die("Should not be reached");
                         }
                     }
                 }
             }
+        }
+        else if (profile->type == ProfileType::MSG_DATA_STAGING)
+        {
+            task_name_prefix = "data_staging ";
+            MsgDataStagingProfileData * data = (MsgDataStagingProfileData *)profile->data;
+
+            double cpu = 0;
+            double size = data->size;
+
+            // TODO
+            xbt_die("TODO");
         }
 
         string task_name = task_name_prefix + to_string(job->number) + "'" + job->profile + "'";

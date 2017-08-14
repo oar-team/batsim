@@ -16,12 +16,13 @@
  */
 enum class ProfileType
 {
-    DELAY                           //!< The profile is a delay. Its data is of type DelayProfileData
-    ,MSG_PARALLEL                   //!< The profile is composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
-    ,MSG_PARALLEL_HOMOGENEOUS       //!< The profile is a homogeneous MSG one. Its data is of type MsgParallelHomogeneousProfileData
-    ,SMPI                           //!< The profile is a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
-    ,SEQUENCE                       //!< The profile is non-atomic: it is composed of a sequence of other profiles
-    ,MSG_PARALLEL_HOMOGENEOUS_PFS0  //!< The profile is a homogeneous MSG for simple parallel filesystem. Its data is of type MsgParallelHomogeneousPFS0ProfileData
+    DELAY                                          //!< The profile is a delay. Its data is of type DelayProfileData
+    ,MSG_PARALLEL                                  //!< The profile is composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
+    ,MSG_PARALLEL_HOMOGENEOUS                      //!< The profile is a homogeneous MSG one. Its data is of type MsgParallelHomogeneousProfileData
+    ,SMPI                                          //!< The profile is a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
+    ,SEQUENCE                                      //!< The profile is non-atomic: it is composed of a sequence of other profiles
+    ,MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS   //!< The profile is a homogeneous MSG for complex parallel filesystem access. Its data is of type MsgParallelHomogeneousPFSMultipleTiersProfileData
+    ,MSG_DATA_STAGING                              //!< The profile is a MSG for moving data between the pfs hosts. Its data is of type DataStagingProfileData
 };
 
 /**
@@ -118,11 +119,37 @@ struct SequenceProfileData
 };
 
 /**
- * @brief The data associated to MSG_PARALLEL_HOMOGENEOUS_PFS0 profiles
+ * @brief The data associated to MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS profiles
  */
-struct MsgParallelHomogeneousPFS0ProfileData
+struct MsgParallelHomogeneousPFSMultipleTiersProfileData
 {
-    double size; //!< The size of data per compute node to transfer to pfs_machine (simulate a simple I/O traffic model)
+    enum class Direction {
+        TO_STORAGE,
+        FROM_STORAGE
+    };
+
+    enum class Host {
+        HPST,
+        LCST
+    };
+
+    double size;         //!< The size of data per compute node to transfer to pfs_machine (simulate a simple I/O traffic model)
+    Direction direction; //!< Whether data should be transfered to the storage or from the storage to the nodes of the allocation
+    Host host;           //!< Whether data should be transfered to/from the HPST storage or to/from the LCST storage
+};
+
+/**
+ * @brief The data associated to MSG_DATA_STAGING profiles
+ */
+struct MsgDataStagingProfileData
+{
+    enum class Direction {
+        LCST_TO_HPST,
+        HPST_TO_LCST
+    };
+
+    double size;         //!< The size of data to transfer between the two PFS machines
+    Direction direction; //!< Whether data should be transfered to the HPST or from the HPST
 };
 
 /**

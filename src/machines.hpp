@@ -133,13 +133,15 @@ public:
      * @param[in] hosts The SimGrid hosts
      * @param[in] context The Batsim Context
      * @param[in] master_host_name The name of the host which should be used as the Master host
-     * @param[in] pfs_host_name The name of the host which should be used as the parallel filestem host
+     * @param[in] pfs_host_name The name of the host which should be used as the parallel filestem host (large-capacity storage tier)
+     * @param[in] hpst_host_name The name of the host which should be used as the HPST host (high-performance storage tier)
      * @param[in] limit_machine_count If set to -1, all the machines are used. If set to a strictly positive number N, only the first machines N will be used to compute jobs
      */
     void create_machines(xbt_dynar_t hosts,
                          const BatsimContext * context,
                          const std::string & master_host_name,
                          const std::string & pfs_host_name,
+                         const std::string & hpst_host_name,
                          int limit_machine_count = -1);
 
     /**
@@ -215,9 +217,17 @@ public:
 
     /**
      * @brief Returns a const pointer to the Parallel File System host machine
+     * for the large-capacity storage tier.
      * @return A const pointer to the Parallel File System host machine
      */
     const Machine * pfs_machine() const;
+
+    /**
+     * @brief Returns a const pointer to the Parallel File System host machine
+     * for the high-performance storage tier.
+     * @return A const pointer to the Parallel File System host machine
+     */
+    const Machine * hpst_machine() const;
 
     /**
      * @brief Computes and returns the total consumed energy of all the computing machines
@@ -256,6 +266,7 @@ private:
     std::vector<Machine *> _machines; //!< The vector of computing machines
     Machine * _master_machine = nullptr; //!< The Master host
     Machine * _pfs_machine = nullptr; //!< The Master host
+    Machine * _hpst_machine = nullptr; //!< The Master host
     PajeTracer * _tracer = nullptr; //!< The PajeTracer
     std::map<MachineState, int> _nb_machines_in_each_state; //!< Counts how many machines are in each state
 };

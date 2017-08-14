@@ -177,9 +177,18 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS0)
+    else if (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS)
     {
-        MsgParallelHomogeneousPFS0ProfileData * d = (MsgParallelHomogeneousPFS0ProfileData *) data;
+        MsgParallelHomogeneousPFSMultipleTiersProfileData * d = (MsgParallelHomogeneousPFSMultipleTiersProfileData *) data;
+        if (d != nullptr)
+        {
+            delete d;
+            d = nullptr;
+        }
+    }
+    else if (type == ProfileType::MSG_DATA_STAGING)
+    {
+        MsgDataStagingProfileData * d = (MsgDataStagingProfileData *) data;
         if (d != nullptr)
         {
             delete d;
@@ -325,10 +334,10 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "msg_par_hg_pfs0")
+    else if (profile_type == "msg_par_hg_pfs_tiers" || profile_type == "msg_par_hg_pfs0")
     {
-        profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS0;
-        MsgParallelHomogeneousPFS0ProfileData * data = new MsgParallelHomogeneousPFS0ProfileData;
+        profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS;
+        MsgParallelHomogeneousPFSMultipleTiersProfileData * data = new MsgParallelHomogeneousPFSMultipleTiersProfileData;
 
         xbt_assert(json_desc.HasMember("size"), "%s: profile '%s' has no 'size' field",
                    error_prefix.c_str(), profile_name.c_str());
@@ -337,6 +346,61 @@ Profile *Profile::from_json(const std::string & profile_name,
         data->size = json_desc["size"].GetDouble();
         xbt_assert(data->size >= 0, "%s: profile '%s' has a non-positive 'size' field (%g)",
                    error_prefix.c_str(), profile_name.c_str(), data->size);
+
+        if (json_desc.HasMember("direction")) {
+            auto direction = json_desc["direction"].GetString();
+            if (direction == std::string("to_storage")) {
+                data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::TO_STORAGE;
+            } else if (direction == std::string("from_storage")) {
+                data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_STORAGE;
+            } else {
+                xbt_assert(false, "%s: profile '%s' has an invalid 'direction' field (%g)",
+                       error_prefix.c_str(), profile_name.c_str(), direction);
+            }
+        } else {
+            data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::TO_STORAGE;
+        }
+
+        if (json_desc.HasMember("host")) {
+            auto host = json_desc["host"].GetString();
+            if (host == std::string("HPST")) {
+                data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::HPST;
+            } else if (host == std::string("LCST") || host == std::string("PFS")) {
+                data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::LCST;
+            } else {
+                xbt_assert(false, "%s: profile '%s' has an invalid 'host' field (%g)",
+                       error_prefix.c_str(), profile_name.c_str(), host);
+            }
+        } else {
+            data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::LCST;
+        }
+
+        profile->data = data;
+    }
+    else if (profile_type == "data_staging")
+    {
+        profile->type = ProfileType::MSG_DATA_STAGING;
+        MsgDataStagingProfileData * data = new MsgDataStagingProfileData;
+
+        xbt_assert(json_desc.HasMember("size"), "%s: profile '%s' has no 'size' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["size"].IsNumber(), "%s: profile '%s' has a non-number 'size' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        data->size = json_desc["size"].GetDouble();
+        xbt_assert(data->size >= 0, "%s: profile '%s' has a non-positive 'size' field (%g)",
+                   error_prefix.c_str(), profile_name.c_str(), data->size);
+
+        xbt_assert(json_desc.HasMember("direction"), "%s: profile '%s' has no 'direction' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        auto direction = json_desc["direction"].GetString();
+        if (direction == std::string("hpst_to_lcst")) {
+            data->direction = MsgDataStagingProfileData::Direction::HPST_TO_LCST;
+        } else if (direction == std::string("lcst_to_hpst")) {
+            data->direction = MsgDataStagingProfileData::Direction::LCST_TO_HPST;
+        } else {
+            xbt_assert(false, "%s: profile '%s' has an invalid 'direction' field (%g)",
+                   error_prefix.c_str(), profile_name.c_str(), direction);
+        }
 
         profile->data = data;
     }

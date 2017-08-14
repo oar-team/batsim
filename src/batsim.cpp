@@ -202,7 +202,12 @@ Other options:
                                     without scheduler nor Redis.
   --pfs-host <pfs_host>             The name of the host, in <platform_file>,
                                     which will be the parallel filesystem target
-                                    as data sink/source [default: pfs_host].
+                                    as data sink/source for the large-capacity
+                                    storage tier [default: pfs_host].
+  --hpst-host <hpst_host>           The name of the host, in <platform_file>,
+                                    which will be the parallel filesystem target
+                                    as data sink/source for the high-performance
+                                    storage tier [default: hpst_host].
   -h --help                         Shows this help.
   --version                         Shows Batsim version.
 )";
@@ -434,6 +439,7 @@ Other options:
         main_args.program_type = ProgramType::BATSIM;
     }
     main_args.pfs_host_name = args["--pfs-host"].asString();
+    main_args.hpst_host_name = args["--hpst-host"].asString();
 
     return !error;
 }
