@@ -188,8 +188,55 @@ int execute_profile(BatsimContext *context,
             double cpu = 0;
             double size = data->size;
 
-            // TODO
-            xbt_die("TODO");
+            // The PFS machine will also be used
+            nb_res = 2;
+            int pfs_id = nb_res - 1;
+
+            hosts_to_use = std::vector<msg_host_t>();
+
+            // Add the pfs_machine
+            switch(data->direction) {
+            case MsgDataStagingProfileData::Direction::LCST_TO_HPST:
+                hosts_to_use.push_back(context->machines.pfs_machine()->host);
+                hosts_to_use.push_back(context->machines.hpst_machine()->host);
+                break;
+            case MsgDataStagingProfileData::Direction::HPST_TO_LCST:
+                hosts_to_use.push_back(context->machines.hpst_machine()->host);
+                hosts_to_use.push_back(context->machines.pfs_machine()->host);
+                break;
+            default:
+                xbt_die("Should not be reached");
+            }
+
+            // These amounts are deallocated by SG
+            computation_amount = xbt_new(double, nb_res);
+            communication_amount = nullptr;
+            if(size > 0)
+            {
+                communication_amount = xbt_new(double, nb_res*nb_res);
+            }
+
+            // Let us fill the local computation and communication matrices
+            int k = 0;
+            for (int y = 0; y < nb_res; ++y)
+            {
+                computation_amount[y] = cpu;
+                if(communication_amount != nullptr)
+                {
+                    for (int x = 0; x < nb_res; ++x)
+                    {
+                        // Communications are done towards the last resource
+                        if (x != pfs_id)
+                        {
+                            communication_amount[k++] = 0;
+                        }
+                        else
+                        {
+                            communication_amount[k++] = size;
+                        }
+                    }
+                }
+            }
         }
 
         string task_name = task_name_prefix + to_string(job->number) + "'" + job->profile + "'";
