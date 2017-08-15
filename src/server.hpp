@@ -167,6 +167,15 @@ void server_on_end_dynamic_submit(ServerData * data,
 
 
 /**
+ * @brief Server CONTINUE_DYNAMIC_SUBMIT handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_continue_dynamic_submit(ServerData * data,
+                                  IPMessage * task_data);
+
+
+/**
  * @brief Server JOB_SUBMITTED_BY_DP handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received

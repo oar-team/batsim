@@ -66,6 +66,7 @@ int server_process(int argc, char *argv[])
     handler_map[IPMessageType::SWITCHED_ON] = server_on_switched;
     handler_map[IPMessageType::SWITCHED_OFF] = server_on_switched;
     handler_map[IPMessageType::END_DYNAMIC_SUBMIT] = server_on_end_dynamic_submit;
+    handler_map[IPMessageType::CONTINUE_DYNAMIC_SUBMIT] = server_on_continue_dynamic_submit;
 
     // Simulation loop
     while ((data->nb_submitters == 0) ||// To enter the loop
@@ -491,6 +492,15 @@ void server_on_end_dynamic_submit(ServerData * data,
 {
     (void) task_data;
     data->context->submission_sched_finished = true;
+
+    check_submitted_and_completed(data);
+}
+
+void server_on_continue_dynamic_submit(ServerData * data,
+                                  IPMessage * task_data)
+{
+    (void) task_data;
+    data->context->submission_sched_finished = false;
 
     check_submitted_and_completed(data);
 }

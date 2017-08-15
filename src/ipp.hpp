@@ -71,6 +71,7 @@ enum class IPMessageType
     ,SWITCHED_ON            //!< SwitcherON -> Server. The switcherON process tells the server the machine pstate has been changed
     ,SWITCHED_OFF           //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
     ,END_DYNAMIC_SUBMIT     //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
+    ,CONTINUE_DYNAMIC_SUBMIT //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions continue.
 };
 
 /**

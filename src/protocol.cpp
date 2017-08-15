@@ -666,6 +666,10 @@ void JsonProtocolReader::handle_notify(int event_number,
     {
         send_message(timestamp, "server", IPMessageType::END_DYNAMIC_SUBMIT);
     }
+    else if (notify_type == "continue_submission")
+    {
+        send_message(timestamp, "server", IPMessageType::CONTINUE_DYNAMIC_SUBMIT);
+    }
     else
     {
         xbt_assert(false, "Unknown NOTIFY type received ('%s').", notify_type.c_str());

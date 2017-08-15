@@ -121,6 +121,9 @@ std::string ip_message_type_to_string(IPMessageType type)
             break;
         case IPMessageType::END_DYNAMIC_SUBMIT:
             s = "END_DYNAMIC_SUBMIT";
+            break;
+        case IPMessageType::CONTINUE_DYNAMIC_SUBMIT:
+            s = "CONTINUE_DYNAMIC_SUBMIT";
     }
 
     return s;
@@ -235,6 +238,9 @@ IPMessage::~IPMessage()
             delete msg;
         } break;
         case IPMessageType::END_DYNAMIC_SUBMIT:
+        {
+        } break;
+        case IPMessageType::CONTINUE_DYNAMIC_SUBMIT:
         {
         } break;
     }
