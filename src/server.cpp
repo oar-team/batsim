@@ -491,6 +491,8 @@ void server_on_end_dynamic_submit(ServerData * data,
 {
     (void) task_data;
     data->context->submission_sched_finished = true;
+
+    check_submitted_and_completed(data);
 }
 
 void server_on_submit_job(ServerData * data,
