@@ -274,8 +274,11 @@ void server_on_pstate_modification(ServerData * data,
     PStateModificationMessage * message = (PStateModificationMessage *) task_data->data;
 
     data->context->current_switches.add_switch(message->machine_ids, message->new_pstate);
-    data->context->energy_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids,
+
+    if (data->context->energy_used) {
+        data->context->energy_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids,
                                                    message->new_pstate);
+    }
 
     // Let's quickly check whether this is a switchON or a switchOFF
     // Unknown transition states will be set to -42.
@@ -290,9 +293,11 @@ void server_on_pstate_modification(ServerData * data,
         transition_state = -2; // means we are switching to a SLEEP_PSTATE
     }
 
-    // The pstate is set to an invalid one to know the machines are in transition.
-    data->context->pstate_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids,
+    if (data->context->energy_used) {
+        // The pstate is set to an invalid one to know the machines are in transition.
+        data->context->pstate_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids,
                                                    transition_state);
+    }
 
     // Let's mark that some switches have been requested
     data->context->nb_grouped_switches++;
