@@ -77,6 +77,9 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_EXECUTE_JOB:
             s = "SCHED_EXECUTE_JOB";
             break;
+        case IPMessageType::SCHED_CHANGE_JOB_STATE:
+            s = "SCHED_CHANGE_JOB_STATE";
+            break;
         case IPMessageType::SCHED_REJECT_JOB:
             s = "SCHED_REJECT_JOB";
             break;
@@ -171,6 +174,11 @@ IPMessage::~IPMessage()
         {
             ExecuteJobMessage * msg = (ExecuteJobMessage *) data;
             // The Allocations themselves are not memory-deallocated there but at the end of the job execution.
+            delete msg;
+        } break;
+        case IPMessageType::SCHED_CHANGE_JOB_STATE:
+        {
+            ChangeJobStateMessage * msg = (ChangeJobStateMessage *) data;
             delete msg;
         } break;
         case IPMessageType::SCHED_REJECT_JOB:

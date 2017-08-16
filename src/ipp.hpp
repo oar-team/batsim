@@ -56,6 +56,7 @@ enum class IPMessageType
     ,JOB_COMPLETED          //!< Launcher -> Server. The job launcher tells the server a job has been completed.
     ,PSTATE_MODIFICATION    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (modify the state of some resources).
     ,SCHED_EXECUTE_JOB      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (execute a job).
+    ,SCHED_CHANGE_JOB_STATE //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (change the state of a job).
     ,SCHED_REJECT_JOB       //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (reject a job).
     ,SCHED_KILL_JOB         //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (kill a job).
     ,SCHED_CALL_ME_LATER    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to be called in the future).
@@ -125,6 +126,16 @@ struct JobSubmittedByDPMessage
 struct JobCompletedMessage
 {
     JobIdentifier job_id; //!< The JobIdentifier
+};
+
+/**
+ * @brief The content of the ChangeJobState message
+ */
+struct ChangeJobStateMessage
+{
+    JobIdentifier job_id; //!< The JobIdentifier
+    std::string job_state; //!< The new job state
+    std::string kill_reason; //!< The optional kill reason if the new job state is COMPLETED_KILLED
 };
 
 /**

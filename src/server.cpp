@@ -52,6 +52,7 @@ int server_process(int argc, char *argv[])
     handler_map[IPMessageType::JOB_COMPLETED] = server_on_job_completed;
     handler_map[IPMessageType::PSTATE_MODIFICATION] = server_on_pstate_modification;
     handler_map[IPMessageType::SCHED_EXECUTE_JOB] = server_on_execute_job;
+    handler_map[IPMessageType::SCHED_CHANGE_JOB_STATE] = server_on_change_job_state;
     handler_map[IPMessageType::SCHED_REJECT_JOB] = server_on_reject_job;
     handler_map[IPMessageType::SCHED_KILL_JOB] = server_on_kill_jobs;
     handler_map[IPMessageType::SCHED_CALL_ME_LATER] = server_on_call_me_later;
@@ -605,6 +606,77 @@ void server_on_submit_job(ServerData * data,
                                                           profile_json_description,
                                                           MSG_get_clock());
     }
+}
+
+void server_on_change_job_state(ServerData * data,
+                          IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr);
+    ChangeJobStateMessage * message = (ChangeJobStateMessage *) task_data->data;
+
+    Job * job = data->context->workloads.job_at(message->job_id);
+
+    XBT_INFO("Change job state: Job %d (workload=%s) to state %s (kill_Reason=%s)",
+        job->number, job->workload->name.c_str(),
+        message->job_state.c_str(), message->kill_reason.c_str());
+
+    JobState new_state;
+    if (message->job_state == "NOT_SUBMITTED") {
+        new_state = JobState::JOB_STATE_NOT_SUBMITTED;
+    } else if (message->job_state == "SUBMITTED") {
+        new_state = JobState::JOB_STATE_SUBMITTED;
+    } else if (message->job_state == "RUNNING") {
+        new_state = JobState::JOB_STATE_RUNNING;
+    } else if (message->job_state == "COMPLETED_SUCCESSFULLY") {
+        new_state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
+    } else if (message->job_state == "COMPLETED_KILLED") {
+        new_state = JobState::JOB_STATE_COMPLETED_KILLED;
+    } else if (message->job_state == "REJECTED") {
+        new_state = JobState::JOB_STATE_REJECTED;
+    } else {
+        xbt_assert(false, "Invalid new job state");
+    }
+
+    switch (job->state) {
+    case JobState::JOB_STATE_SUBMITTED:
+        switch (new_state) {
+        case JobState::JOB_STATE_RUNNING:
+            job->starting_time = MSG_get_clock();
+            data->nb_running_jobs++;
+            xbt_assert(data->nb_running_jobs <= data->nb_submitted_jobs);
+            break;
+        case JobState::JOB_STATE_REJECTED:
+            data->nb_completed_jobs++;
+            xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
+            break;
+        default:
+            xbt_assert(false, "Can only change the state of a submitted job to running or rejected");
+        }
+        break;
+    case JobState::JOB_STATE_RUNNING:
+        switch (new_state) {
+        case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
+        case JobState::JOB_STATE_COMPLETED_KILLED:
+            job->runtime = MSG_get_clock() - job->starting_time;
+            data->nb_running_jobs--;
+            xbt_assert(data->nb_running_jobs >= 0);
+            data->nb_completed_jobs++;
+            xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
+            break;
+        default:
+            xbt_assert(false, "Can only change the state of a running job to completed (successfully and killed)");
+        }
+        break;
+    default:
+        xbt_assert(false, "Can only change the state of a submitted or running job.");
+    }
+    job->state = new_state;
+    job->kill_reason = message->kill_reason;
+
+    XBT_INFO("Job state changed: Job %d (workload=%s)",
+        job->number, job->workload->name.c_str());
+
+    check_submitted_and_completed(data);
 }
 
 void server_on_reject_job(ServerData * data,

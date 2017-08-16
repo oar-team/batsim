@@ -369,6 +369,14 @@ public:
     void handle_execute_job(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
+     * @brief Handles an CHANGE_JOB_STATE event
+     * @param[in] event_number The event number in [0,nb_events[.
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_change_job_state(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
      * @brief Handles a CALL_ME_LATER event
      * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp

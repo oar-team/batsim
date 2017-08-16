@@ -296,6 +296,7 @@ JsonProtocolReader::JsonProtocolReader(BatsimContext *context) :
     _type_to_handler_map["QUERY_REQUEST"] = &JsonProtocolReader::handle_query_request;
     _type_to_handler_map["REJECT_JOB"] = &JsonProtocolReader::handle_reject_job;
     _type_to_handler_map["EXECUTE_JOB"] = &JsonProtocolReader::handle_execute_job;
+    _type_to_handler_map["CHANGE_JOB_STATE"] = &JsonProtocolReader::handle_change_job_state;
     _type_to_handler_map["CALL_ME_LATER"] = &JsonProtocolReader::handle_call_me_later;
     _type_to_handler_map["KILL_JOB"] = &JsonProtocolReader::handle_kill_job;
     _type_to_handler_map["SUBMIT_JOB"] = &JsonProtocolReader::handle_submit_job;
@@ -642,6 +643,70 @@ void JsonProtocolReader::handle_set_resource_state(int event_number,
     }
 
     send_message(timestamp, "server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
+}
+
+void JsonProtocolReader::handle_change_job_state(int event_number,
+                                       double timestamp,
+                                       const Value &data_object)
+{
+    (void) event_number; // Avoids a warning if assertions are ignored
+    /* {
+      "timestamp": 42.0,
+      "type": "CHANGE_JOB_STATE",
+      "data": {
+            "job_id": "w12!45",
+            "job_state": "COMPLETED_KILLED",
+            "kill_reason": "Sub-jobs were killed."
+      }
+    } */
+
+    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (CHANGE_JOB_STATE) should be an object", event_number);
+
+    xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (CHANGE_JOB_STATE) should have a 'job_id' key", event_number);
+    const Value & job_id_value = data_object["job_id"];
+    xbt_assert(job_id_value.IsString(), "Invalid JSON message: in event %d (CHANGE_JOB_STATE): ['data']['job_id'] should be a string", event_number);
+    string job_id = job_id_value.GetString();
+
+    xbt_assert(data_object.HasMember("job_state"), "Invalid JSON message: the 'data' value of event %d (CHANGE_JOB_STATE) should have a 'job_state' key", event_number);
+    const Value & job_state_value = data_object["job_state"];
+    xbt_assert(job_state_value.IsString(), "Invalid JSON message: in event %d (CHANGE_JOB_STATE): ['data']['job_state'] should be a string", event_number);
+    string job_state = job_state_value.GetString();
+
+    if (job_state != "NOT_SUBMITTED"
+            && job_state != "SUBMITTED"
+            && job_state != "RUNNING"
+            && job_state != "COMPLETED_SUCCESSFULLY"
+            && job_state != "COMPLETED_KILLED"
+            && job_state != "REJECTED") {
+        xbt_assert(false, "Invalid JSON message: in event %d (CHANGE_JOB_STATE): ['data']['job_state'] must be one of: NOT_SUBMITTED, SUBMITTED, RUNNING, COMPLETED_SUCCESSFULLY, COMPLETED_KILLED, REJECTED", event_number);
+    }
+
+    string kill_reason;
+    if (data_object.HasMember("kill_reason")) {
+        const Value & kill_reason_value = data_object["kill_reason"];
+        xbt_assert(kill_reason_value.IsString(), "Invalid JSON message: in event %d (CHANGE_kill_reason): ['data']['kill_reason'] should be a string", event_number);
+        kill_reason = kill_reason_value.GetString();
+
+        if (kill_reason != "" && job_state != "COMPLETED_KILLED") {
+            xbt_assert(false, "Invalid JSON message: in event %d (CHANGE_JOB_STATE): ['data']['kill_reason'] is only allowed if the job_state is COMPLETED_KILLED", event_number);
+        }
+    }
+
+    ChangeJobStateMessage * message = new ChangeJobStateMessage;
+
+    if (!identify_job_from_string(context, job_id, message->job_id))
+    {
+        xbt_assert(false, "Invalid JSON message: "
+                          "Invalid job change job state received: The job identifier '%s' is not valid. "
+                          "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
+                          "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
+                          "Furthermore, the corresponding job must exist.", job_id.c_str());
+    }
+
+    message->job_state = job_state;
+    message->kill_reason = kill_reason;
+
+    send_message(timestamp, "server", IPMessageType::SCHED_CHANGE_JOB_STATE, (void *) message);
 }
 
 void JsonProtocolReader::handle_notify(int event_number,
