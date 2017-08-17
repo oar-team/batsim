@@ -106,6 +106,8 @@ public:
      */
     virtual void append_job_completed(const std::string & job_id,
                                       const std::string & job_status,
+                                      const std::string & job_state,
+                                      const std::string & kill_reason,
                                       double date) = 0;
 
     /**
@@ -222,6 +224,8 @@ public:
      */
     void append_job_completed(const std::string & job_id,
                               const std::string & job_status,
+                              const std::string & job_state,
+                              const std::string & kill_reason,
                               double date);
 
     /**

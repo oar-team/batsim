@@ -212,8 +212,31 @@ void server_on_job_completed(ServerData * data,
         status = "TIMEOUT";
     }
 
+    string job_state;
+    switch (job->state) {
+    case JobState::JOB_STATE_NOT_SUBMITTED:
+        job_state = "NOT_SUBMITTED";
+        break;
+    case JobState::JOB_STATE_SUBMITTED:
+        job_state = "SUBMITTED";
+        break;
+    case JobState::JOB_STATE_RUNNING:
+        job_state = "RUNNING";
+        break;
+    case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
+        job_state = "COMPLETED_SUCCESSFULLY";
+        break;
+    case JobState::JOB_STATE_COMPLETED_KILLED:
+        job_state = "COMPLETED_KILLED";
+        break;
+    case JobState::JOB_STATE_REJECTED:
+        job_state = "REJECTED";
+        break;
+    }
+
     data->context->proto_writer->append_job_completed(message->job_id.to_string(),
-                                                      status, MSG_get_clock());
+                                                      status, job_state, job->kill_reason,
+                                                      MSG_get_clock());
 
     check_submitted_and_completed(data);
 }
