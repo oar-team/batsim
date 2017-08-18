@@ -69,13 +69,17 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
     resources.Reserve(machines.nb_machines(), _alloc);
     for (const Machine * machine : machines.machines())
     {
-        Value machine_doc(rapidjson::kObjectType);
-        machine_doc.AddMember("id", Value().SetInt(machine->id), _alloc);
-        machine_doc.AddMember("name", Value().SetString(machine->name.c_str(), _alloc), _alloc);
-        machine_doc.AddMember("state", Value().SetString(machine_state_to_string(machine->state).c_str(), _alloc), _alloc);
-        resources.PushBack(machine_doc, _alloc);
+        resources.PushBack(machine_to_json_value(*machine), _alloc);
     }
     data.AddMember("resources_data", Value().CopyFrom(resources, _alloc), _alloc);
+
+    if (machines.has_hpst_machine()) {
+        data.AddMember("lcst_host", machine_to_json_value(*machines.hpst_machine()), _alloc);
+    }
+
+    if (machines.has_pfs_machine()) {
+        data.AddMember("lcst_host", machine_to_json_value(*machines.pfs_machine()), _alloc);
+    }
 
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);
@@ -83,6 +87,16 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
     event.AddMember("data", data, _alloc);
 
     _events.PushBack(event, _alloc);
+}
+
+Value JsonProtocolWriter::machine_to_json_value(const Machine & machine)
+{
+    Value machine_doc(rapidjson::kObjectType);
+    machine_doc.AddMember("id", Value().SetInt(machine.id), _alloc);
+    machine_doc.AddMember("name", Value().SetString(machine.name.c_str(), _alloc), _alloc);
+    machine_doc.AddMember("state", Value().SetString(machine_state_to_string(machine.state).c_str(), _alloc), _alloc);
+
+    return machine_doc;
 }
 
 void JsonProtocolWriter::append_simulation_ends(double date)

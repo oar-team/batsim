@@ -282,6 +282,14 @@ public:
     bool is_empty() { return _is_empty; }
 
 private:
+    /**
+     * @brief Converts a machine to a json value.
+     * @param[in] the machine to be converted
+     * @return the json value
+     */
+    rapidjson::Value machine_to_json_value(const Machine & machine);
+
+private:
     BatsimContext * _context; //!< The BatsimContext
     bool _is_empty = true; //!< Stores whether events have been pushed into the writer since last clear.
     double _last_date = -1; //!< The date of the latest pushed event/message

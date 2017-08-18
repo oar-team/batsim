@@ -341,6 +341,11 @@ const Machine *Machines::pfs_machine() const
     return _pfs_machine;
 }
 
+bool Machines::has_pfs_machine() const
+{
+    return _pfs_machine != nullptr;
+}
+
 const Machine *Machines::hpst_machine() const
 {
     xbt_assert(_hpst_machine != nullptr,
@@ -348,7 +353,10 @@ const Machine *Machines::hpst_machine() const
     return _hpst_machine;
 }
 
-
+bool Machines::has_hpst_machine() const
+{
+    return _hpst_machine != nullptr;
+}
 
 long double Machines::total_consumed_energy(const BatsimContext *context) const
 {

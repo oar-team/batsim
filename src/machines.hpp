@@ -223,11 +223,23 @@ public:
     const Machine * pfs_machine() const;
 
     /**
+     * @brief Returns whether or not a pfs host is registered in the system.
+     * @return Whether or not a pfs host is present
+     */
+    bool has_pfs_machine() const;
+
+    /**
      * @brief Returns a const pointer to the Parallel File System host machine
      * for the high-performance storage tier.
      * @return A const pointer to the Parallel File System host machine
      */
     const Machine * hpst_machine() const;
+
+    /**
+     * @brief Returns whether or not a hpst host is registered in the system.
+     * @return Whether or not a hpst host is present
+     */
+    bool has_hpst_machine() const;
 
     /**
      * @brief Computes and returns the total consumed energy of all the computing machines
