@@ -9,6 +9,7 @@
 #include <rapidjson/writer.h>
 
 #include "machine_range.hpp"
+#include "machines.hpp"
 #include "ipp.hpp"
 
 struct BatsimContext;
@@ -75,7 +76,7 @@ public:
      * @param[in] configuration The simulation configuration
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_simulation_begins(int nb_resources,
+    virtual void append_simulation_begins(Machines & machines,
                                           const rapidjson::Document & configuration,
                                           double date) = 0;
 
@@ -193,7 +194,7 @@ public:
      * @param[in] configuration The simulation configuration
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_simulation_begins(int nb_resources,
+    void append_simulation_begins(Machines & machines,
                                   const rapidjson::Document & configuration,
                                   double date);
 

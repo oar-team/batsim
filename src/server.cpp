@@ -33,7 +33,7 @@ int server_process(int argc, char *argv[])
 
     // Let's tell the Decision process that the simulation is about to begin
     // (and that some data can be read from the data storage)
-    context->proto_writer->append_simulation_begins(context->machines.nb_machines(),
+    context->proto_writer->append_simulation_begins(context->machines,
                                                     context->config_file, MSG_get_clock());
 
     RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
