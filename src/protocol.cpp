@@ -74,7 +74,7 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
     data.AddMember("resources_data", Value().CopyFrom(resources, _alloc), _alloc);
 
     if (machines.has_hpst_machine()) {
-        data.AddMember("lcst_host", machine_to_json_value(*machines.hpst_machine()), _alloc);
+        data.AddMember("hpst_host", machine_to_json_value(*machines.hpst_machine()), _alloc);
     }
 
     if (machines.has_pfs_machine()) {
@@ -95,6 +95,14 @@ Value JsonProtocolWriter::machine_to_json_value(const Machine & machine)
     machine_doc.AddMember("id", Value().SetInt(machine.id), _alloc);
     machine_doc.AddMember("name", Value().SetString(machine.name.c_str(), _alloc), _alloc);
     machine_doc.AddMember("state", Value().SetString(machine_state_to_string(machine.state).c_str(), _alloc), _alloc);
+
+    Value properties(rapidjson::kObjectType);
+    for(auto const &entry : machine.properties) {
+        rapidjson::Value key(entry.first.c_str(), _alloc);
+        rapidjson::Value value(entry.second.c_str(), _alloc);
+        properties.AddMember(key, value, _alloc);
+    }
+    machine_doc.AddMember("properties", properties, _alloc);
 
     return machine_doc;
 }

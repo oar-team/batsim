@@ -84,6 +84,14 @@ void Machines::create_machines(xbt_dynar_t hosts,
         machine->host = host;
         machine->jobs_being_computed = {};
 
+        auto properties_dict = MSG_host_get_properties(machine->host);
+        xbt_dict_cursor_t cursor = nullptr;
+        char *prop_key = nullptr;
+        char *prop_value = nullptr;
+        xbt_dict_foreach(properties_dict, cursor, prop_key, prop_value) {
+            machine->properties[string(prop_key)] = string(prop_value);
+        }
+
         if (context->energy_used)
         {
             int nb_pstates = MSG_host_get_nb_pstates(machine->host);

@@ -62,6 +62,8 @@ struct Machine
 
     Rational last_state_change_date = 0; //!< The time at which the last state change has been done
     std::map<MachineState, Rational> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
+    
+    std::map<std::string, std::string> properties; //!< Properties defined in the platform file
 
     /**
      * @brief Returns whether the Machine has the given power state
