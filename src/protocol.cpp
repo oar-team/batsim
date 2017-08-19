@@ -46,6 +46,7 @@ void JsonProtocolWriter::append_requested_call(double date)
 
 void JsonProtocolWriter::append_simulation_begins(Machines & machines,
                                                   const Document & configuration,
+                                                  bool allow_time_sharing,
                                                   double date)
 {
     /* {
@@ -63,6 +64,7 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
 
     Value data(rapidjson::kObjectType);
     data.AddMember("nb_resources", Value().SetInt(machines.nb_machines()), _alloc);
+    data.AddMember("allow_time_sharing", Value().SetBool(allow_time_sharing), _alloc);
     data.AddMember("config", config, _alloc);
 
     Value resources(rapidjson::kArrayType);

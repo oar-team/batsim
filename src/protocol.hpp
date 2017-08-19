@@ -78,6 +78,7 @@ public:
      */
     virtual void append_simulation_begins(Machines & machines,
                                           const rapidjson::Document & configuration,
+                                          bool allow_time_sharing,
                                           double date) = 0;
 
     /**
@@ -196,6 +197,7 @@ public:
      */
     void append_simulation_begins(Machines & machines,
                                   const rapidjson::Document & configuration,
+                                  bool allow_time_sharing,
                                   double date);
 
     /**
