@@ -329,3 +329,51 @@ Job * Job::from_json(const std::string & json_str,
 
     return Job::from_json(doc, workload, error_prefix);
 }
+
+string job_state_to_string(JobState state)
+{
+    string job_state("UNKNOWN");
+
+    switch (state) {
+    case JobState::JOB_STATE_NOT_SUBMITTED:
+        job_state = "NOT_SUBMITTED";
+        break;
+    case JobState::JOB_STATE_SUBMITTED:
+        job_state = "SUBMITTED";
+        break;
+    case JobState::JOB_STATE_RUNNING:
+        job_state = "RUNNING";
+        break;
+    case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
+        job_state = "COMPLETED_SUCCESSFULLY";
+        break;
+    case JobState::JOB_STATE_COMPLETED_KILLED:
+        job_state = "COMPLETED_KILLED";
+        break;
+    case JobState::JOB_STATE_REJECTED:
+        job_state = "REJECTED";
+        break;
+    }
+    return job_state;
+}
+
+JobState job_state_from_string(string state)
+{
+    JobState new_state;
+    if (state == "NOT_SUBMITTED") {
+        new_state = JobState::JOB_STATE_NOT_SUBMITTED;
+    } else if (state == "SUBMITTED") {
+        new_state = JobState::JOB_STATE_SUBMITTED;
+    } else if (state == "RUNNING") {
+        new_state = JobState::JOB_STATE_RUNNING;
+    } else if (state == "COMPLETED_SUCCESSFULLY") {
+        new_state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
+    } else if (state == "COMPLETED_KILLED") {
+        new_state = JobState::JOB_STATE_COMPLETED_KILLED;
+    } else if (state == "REJECTED") {
+        new_state = JobState::JOB_STATE_REJECTED;
+    } else {
+        xbt_assert(false, "Invalid job state");
+    }
+    return new_state;
+}

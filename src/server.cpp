@@ -212,30 +212,9 @@ void server_on_job_completed(ServerData * data,
         status = "TIMEOUT";
     }
 
-    string job_state;
-    switch (job->state) {
-    case JobState::JOB_STATE_NOT_SUBMITTED:
-        job_state = "NOT_SUBMITTED";
-        break;
-    case JobState::JOB_STATE_SUBMITTED:
-        job_state = "SUBMITTED";
-        break;
-    case JobState::JOB_STATE_RUNNING:
-        job_state = "RUNNING";
-        break;
-    case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
-        job_state = "COMPLETED_SUCCESSFULLY";
-        break;
-    case JobState::JOB_STATE_COMPLETED_KILLED:
-        job_state = "COMPLETED_KILLED";
-        break;
-    case JobState::JOB_STATE_REJECTED:
-        job_state = "REJECTED";
-        break;
-    }
-
     data->context->proto_writer->append_job_completed(message->job_id.to_string(),
-                                                      status, job_state, job->kill_reason,
+                                                      status, job_state_to_string(job->state),
+                                                      job->kill_reason,
                                                       MSG_get_clock());
 
     check_submitted_and_completed(data);
@@ -643,22 +622,7 @@ void server_on_change_job_state(ServerData * data,
         job->number, job->workload->name.c_str(),
         message->job_state.c_str(), message->kill_reason.c_str());
 
-    JobState new_state;
-    if (message->job_state == "NOT_SUBMITTED") {
-        new_state = JobState::JOB_STATE_NOT_SUBMITTED;
-    } else if (message->job_state == "SUBMITTED") {
-        new_state = JobState::JOB_STATE_SUBMITTED;
-    } else if (message->job_state == "RUNNING") {
-        new_state = JobState::JOB_STATE_RUNNING;
-    } else if (message->job_state == "COMPLETED_SUCCESSFULLY") {
-        new_state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
-    } else if (message->job_state == "COMPLETED_KILLED") {
-        new_state = JobState::JOB_STATE_COMPLETED_KILLED;
-    } else if (message->job_state == "REJECTED") {
-        new_state = JobState::JOB_STATE_REJECTED;
-    } else {
-        xbt_assert(false, "Invalid new job state");
-    }
+    JobState new_state = job_state_from_string(message->job_state);
 
     switch (job->state) {
     case JobState::JOB_STATE_SUBMITTED:
