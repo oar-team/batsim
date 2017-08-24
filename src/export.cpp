@@ -828,23 +828,34 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
         }
     }
 
+    double success_rate = (double)nb_jobs_success/nb_jobs;
+
+    double mean_waiting_time = (double)sum_waiting_time/nb_jobs;
+    double mean_turnaround_time = (double)sum_turnaround_time/nb_jobs;
+    double mean_slowdown = (double)sum_slowdown/nb_jobs;
+
     output_map["nb_jobs"] = to_string(nb_jobs);
     output_map["nb_jobs_finished"] = to_string(nb_jobs_finished);
     output_map["nb_jobs_success"] = to_string(nb_jobs_success);
     output_map["nb_jobs_killed"] = to_string(nb_jobs_killed);
-    output_map["success_rate"] = to_string((double)nb_jobs_success/nb_jobs);
+    output_map["success_rate"] = to_string(success_rate);
 
     output_map["makespan"] = to_string((double)makespan);
-    output_map["mean_waiting_time"] = to_string((double)sum_waiting_time/nb_jobs);
-    output_map["mean_turnaround_time"] = to_string((double)sum_turnaround_time/nb_jobs);
-    output_map["mean_slowdown"] = to_string((double)sum_slowdown/nb_jobs);
+    output_map["mean_waiting_time"] = to_string(mean_waiting_time);
+    output_map["mean_turnaround_time"] = to_string(mean_turnaround_time);
+    output_map["mean_slowdown"] = to_string(mean_slowdown);
     output_map["max_waiting_time"] = to_string((double)max_waiting_time);
     output_map["max_turnaround_time"] = to_string((double)max_turnaround_time);
     output_map["max_slowdown"] = to_string((double)max_slowdown);
 
     output_map["nb_computing_machines"] = to_string(context->machines.nb_machines());
 
-    XBT_INFO("Makespan=%lf, scheduling_time=%lf", (double)makespan, (double)seconds_used_by_scheduler);
+    XBT_INFO("jobs=%d, finished=%d, success=%d, killed=%d, success_rate=%lf",
+            nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed, success_rate);
+    XBT_INFO("makespan=%lf, scheduling_time=%lf, mean_waiting_time=%lf, mean_turnaround_time=%lf, mean_slowdown=%lf, max_waiting_time=%lf, max_turnaround_time=%lf, max_slowdown=%lf",
+        (double)makespan, (double)seconds_used_by_scheduler,
+        mean_waiting_time, mean_turnaround_time, mean_slowdown,
+        max_waiting_time, max_turnaround_time, max_slowdown);
 
     Rational total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
     output_map["consumed_joules"] = to_string((double) total_consumed_energy);
