@@ -760,6 +760,11 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
 
     map<string, string> output_map;
 
+    map<int, Rational> machines_utilisation;
+    for (int i=0; i<context->machines.nb_machines(); i++) {
+        machines_utilisation[i] = 0;
+    }
+
     Rational seconds_used_by_scheduler = context->microseconds_used_by_scheduler / (Rational)1e6;
     output_map["scheduling_time"] = to_string((double) seconds_used_by_scheduler);
 
@@ -795,7 +800,9 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
                         nb_jobs_killed++;
                     }
 
-                    Rational waiting_time = job->starting_time - job->submission_time;
+
+                    Rational starting_time = job->starting_time;
+                    Rational waiting_time = starting_time - job->submission_time;
                     Rational completion_time = job->starting_time + job->runtime;
                     Rational turnaround_time = completion_time - job->submission_time;
                     Rational slowdown = turnaround_time / job->runtime;
@@ -823,10 +830,27 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
                     {
                         max_slowdown = slowdown;
                     }
+
+                    MachineRange & allocation = job->allocation;
+                    auto size = allocation.size();
+                    for (size_t i=0; i<size; i++) {
+                        int machine_idx = allocation[i];
+                        machines_utilisation[machine_idx] += job->runtime;
+                    }
                 }
             }
         }
     }
+    double sum_time_running = 0;
+    double max_time_running = 0;
+
+    for (auto const & entry: machines_utilisation) {
+        sum_time_running += (double) entry.second;
+        if ((double) entry.second > max_time_running) {
+            max_time_running = (double) entry.second;
+        }
+    }
+    double mean_time_running = sum_time_running / machines_utilisation.size();
 
     double success_rate = (double)nb_jobs_success/nb_jobs;
 
@@ -856,6 +880,8 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
         (double)makespan, (double)seconds_used_by_scheduler,
         mean_waiting_time, mean_turnaround_time, mean_slowdown,
         max_waiting_time, max_turnaround_time, max_slowdown);
+    XBT_INFO("mean_machines_running=%lf, max_machines_running=%lf",
+        mean_time_running, max_time_running);
 
     Rational total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
     output_map["consumed_joules"] = to_string((double) total_consumed_energy);
