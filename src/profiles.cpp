@@ -347,31 +347,51 @@ Profile *Profile::from_json(const std::string & profile_name,
         xbt_assert(data->size >= 0, "%s: profile '%s' has a non-positive 'size' field (%g)",
                    error_prefix.c_str(), profile_name.c_str(), data->size);
 
-        if (json_desc.HasMember("direction")) {
-            auto direction = json_desc["direction"].GetString();
-            if (direction == std::string("to_storage")) {
+        if (json_desc.HasMember("direction"))
+        {
+            xbt_assert(json_desc["direction"].IsString(),
+                       "%s: profile '%s' has a non-string 'direction' field",
+                       error_prefix.c_str(), profile_name.c_str());
+            string direction = json_desc["direction"].GetString();
+
+            if (direction == "to_storage")
+            {
                 data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::TO_STORAGE;
-            } else if (direction == std::string("from_storage")) {
-                data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_STORAGE;
-            } else {
-                xbt_assert(false, "%s: profile '%s' has an invalid 'direction' field (%g)",
-                       error_prefix.c_str(), profile_name.c_str(), direction);
             }
-        } else {
+            else if (direction == "from_storage")
+            {
+                data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_STORAGE;
+            }
+            else
+            {
+                xbt_assert(false, "%s: profile '%s' has an invalid 'direction' field (%s)",
+                           error_prefix.c_str(), profile_name.c_str(), direction.c_str());
+            }
+        }
+        else
+        {
             data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::TO_STORAGE;
         }
 
-        if (json_desc.HasMember("host")) {
-            auto host = json_desc["host"].GetString();
-            if (host == std::string("HPST")) {
+        if (json_desc.HasMember("host"))
+        {
+            string host = json_desc["host"].GetString();
+            if (host == "HPST")
+            {
                 data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::HPST;
-            } else if (host == std::string("LCST") || host == std::string("PFS")) {
-                data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::LCST;
-            } else {
-                xbt_assert(false, "%s: profile '%s' has an invalid 'host' field (%g)",
-                       error_prefix.c_str(), profile_name.c_str(), host);
             }
-        } else {
+            else if (host == "LCST" || host == "PFS")
+            {
+                data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::LCST;
+            }
+            else
+            {
+                xbt_assert(false, "%s: profile '%s' has an invalid 'host' field (%s)",
+                           error_prefix.c_str(), profile_name.c_str(), host.c_str());
+            }
+        }
+        else
+        {
             data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::LCST;
         }
 
@@ -392,14 +412,23 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         xbt_assert(json_desc.HasMember("direction"), "%s: profile '%s' has no 'direction' field",
                    error_prefix.c_str(), profile_name.c_str());
-        auto direction = json_desc["direction"].GetString();
-        if (direction == std::string("hpst_to_lcst")) {
+        xbt_assert(json_desc["direction"].IsString(),
+                   "%s: profile '%s' has a non-string 'direction' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        string direction = json_desc["direction"].GetString();
+
+        if (direction == std::string("hpst_to_lcst"))
+        {
             data->direction = MsgDataStagingProfileData::Direction::HPST_TO_LCST;
-        } else if (direction == std::string("lcst_to_hpst")) {
+        }
+        else if (direction == std::string("lcst_to_hpst"))
+        {
             data->direction = MsgDataStagingProfileData::Direction::LCST_TO_HPST;
-        } else {
-            xbt_assert(false, "%s: profile '%s' has an invalid 'direction' field (%g)",
-                   error_prefix.c_str(), profile_name.c_str(), direction);
+        }
+        else
+        {
+            xbt_assert(false, "%s: profile '%s' has an invalid 'direction' field (%s)",
+                       error_prefix.c_str(), profile_name.c_str(), direction.c_str());
         }
 
         profile->data = data;

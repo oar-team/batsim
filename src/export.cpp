@@ -876,12 +876,13 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
 
     XBT_INFO("jobs=%d, finished=%d, success=%d, killed=%d, success_rate=%lf",
             nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed, success_rate);
-    XBT_INFO("makespan=%lf, scheduling_time=%lf, mean_waiting_time=%lf, mean_turnaround_time=%lf, mean_slowdown=%lf, max_waiting_time=%lf, max_turnaround_time=%lf, max_slowdown=%lf",
-        (double)makespan, (double)seconds_used_by_scheduler,
-        mean_waiting_time, mean_turnaround_time, mean_slowdown,
-        max_waiting_time, max_turnaround_time, max_slowdown);
+    XBT_INFO("makespan=%lf, scheduling_time=%lf, mean_waiting_time=%lf, mean_turnaround_time=%lf,"
+             "mean_slowdown=%lf, max_waiting_time=%lf, max_turnaround_time=%lf, max_slowdown=%lf",
+             (double)makespan, (double)seconds_used_by_scheduler,
+             mean_waiting_time, mean_turnaround_time, mean_slowdown,
+             (double)max_waiting_time, (double)max_turnaround_time, (double)max_slowdown);
     XBT_INFO("mean_machines_running=%lf, max_machines_running=%lf",
-        mean_time_running, max_time_running);
+             mean_time_running, max_time_running);
 
     Rational total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
     output_map["consumed_joules"] = to_string((double) total_consumed_energy);
