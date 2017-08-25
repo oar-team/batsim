@@ -761,7 +761,8 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     map<string, string> output_map;
 
     map<int, Rational> machines_utilisation;
-    for (int i=0; i<context->machines.nb_machines(); i++) {
+    for (int i=0; i<context->machines.nb_machines(); i++)
+    {
         machines_utilisation[i] = 0;
     }
 
@@ -833,7 +834,8 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
 
                     MachineRange & allocation = job->allocation;
                     auto size = allocation.size();
-                    for (size_t i=0; i<size; i++) {
+                    for (size_t i=0; i < size; i++)
+                    {
                         int machine_idx = allocation[i];
                         machines_utilisation[machine_idx] += job->runtime;
                     }
@@ -844,9 +846,11 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     double sum_time_running = 0;
     double max_time_running = 0;
 
-    for (auto const & entry: machines_utilisation) {
+    for (auto const & entry : machines_utilisation)
+    {
         sum_time_running += (double) entry.second;
-        if ((double) entry.second > max_time_running) {
+        if ((double) entry.second > max_time_running)
+        {
             max_time_running = (double) entry.second;
         }
     }

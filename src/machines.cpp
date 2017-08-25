@@ -252,7 +252,7 @@ void Machines::create_machines(xbt_dynar_t hosts,
                 machine->id = -3;
                 _hpst_machine = machine;
             }
-            else 
+            else
             {
                 xbt_die("Invalid machine found");
             }

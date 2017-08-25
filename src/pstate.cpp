@@ -171,9 +171,9 @@ bool CurrentSwitches::mark_switch_as_done(int machine_id,
                 }
 
                 all_machines = s->all_machines;
-                if (context->energy_used) {
+                if (context->energy_used)
+                {
                     context->pstate_tracer.add_pstate_change(MSG_get_clock(), s->all_machines, s->target_pstate);
-
                     context->energy_tracer.add_pstate_change(MSG_get_clock(), s->all_machines, s->target_pstate);
                 }
 

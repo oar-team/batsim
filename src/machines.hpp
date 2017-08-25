@@ -62,7 +62,7 @@ struct Machine
 
     Rational last_state_change_date = 0; //!< The time at which the last state change has been done
     std::map<MachineState, Rational> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
-    
+
     std::map<std::string, std::string> properties; //!< Properties defined in the platform file
 
     /**
@@ -278,9 +278,9 @@ public:
 
 private:
     std::vector<Machine *> _machines; //!< The vector of computing machines
-    Machine * _master_machine = nullptr; //!< The Master host
-    Machine * _pfs_machine = nullptr; //!< The Master host
-    Machine * _hpst_machine = nullptr; //!< The Master host
+    Machine * _master_machine = nullptr; //!< The master machine
+    Machine * _pfs_machine = nullptr; //!< The PFS machine
+    Machine * _hpst_machine = nullptr; //!< The HPST machine
     PajeTracer * _tracer = nullptr; //!< The PajeTracer
     std::map<MachineState, int> _nb_machines_in_each_state; //!< Counts how many machines are in each state
 };

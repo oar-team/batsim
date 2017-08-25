@@ -334,7 +334,8 @@ string job_state_to_string(JobState state)
 {
     string job_state("UNKNOWN");
 
-    switch (state) {
+    switch (state)
+    {
     case JobState::JOB_STATE_NOT_SUBMITTED:
         job_state = "NOT_SUBMITTED";
         break;

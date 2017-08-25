@@ -281,9 +281,10 @@ void server_on_pstate_modification(ServerData * data,
 
     data->context->current_switches.add_switch(message->machine_ids, message->new_pstate);
 
-    if (data->context->energy_used) {
+    if (data->context->energy_used)
+    {
         data->context->energy_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids,
-                                                   message->new_pstate);
+                                                       message->new_pstate);
     }
 
     // Let's quickly check whether this is a switchON or a switchOFF
@@ -299,10 +300,11 @@ void server_on_pstate_modification(ServerData * data,
         transition_state = -2; // means we are switching to a SLEEP_PSTATE
     }
 
-    if (data->context->energy_used) {
+    if (data->context->energy_used)
+    {
         // The pstate is set to an invalid one to know the machines are in transition.
         data->context->pstate_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids,
-                                                   transition_state);
+                                                       transition_state);
     }
 
     // Let's mark that some switches have been requested
@@ -614,7 +616,7 @@ void server_on_submit_job(ServerData * data,
 }
 
 void server_on_change_job_state(ServerData * data,
-                          IPMessage * task_data)
+                                IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr);
     ChangeJobStateMessage * message = (ChangeJobStateMessage *) task_data->data;
@@ -622,14 +624,16 @@ void server_on_change_job_state(ServerData * data,
     Job * job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Change job state: Job %d (workload=%s) to state %s (kill_Reason=%s)",
-        job->number, job->workload->name.c_str(),
-        message->job_state.c_str(), message->kill_reason.c_str());
+             job->number, job->workload->name.c_str(),
+             message->job_state.c_str(), message->kill_reason.c_str());
 
     JobState new_state = job_state_from_string(message->job_state);
 
-    switch (job->state) {
+    switch (job->state)
+    {
     case JobState::JOB_STATE_SUBMITTED:
-        switch (new_state) {
+        switch (new_state)
+        {
         case JobState::JOB_STATE_RUNNING:
             job->starting_time = MSG_get_clock();
             data->nb_running_jobs++;
@@ -644,7 +648,8 @@ void server_on_change_job_state(ServerData * data,
         }
         break;
     case JobState::JOB_STATE_RUNNING:
-        switch (new_state) {
+        switch (new_state)
+        {
         case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
         case JobState::JOB_STATE_COMPLETED_KILLED:
             job->runtime = MSG_get_clock() - job->starting_time;
@@ -660,11 +665,12 @@ void server_on_change_job_state(ServerData * data,
     default:
         xbt_assert(false, "Can only change the state of a submitted or running job.");
     }
+
     job->state = new_state;
     job->kill_reason = message->kill_reason;
 
     XBT_INFO("Job state changed: Job %d (workload=%s)",
-        job->number, job->workload->name.c_str());
+             job->number, job->workload->name.c_str());
 
     check_submitted_and_completed(data);
 }

@@ -375,6 +375,9 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         if (json_desc.HasMember("host"))
         {
+            xbt_assert(json_desc["host"].IsString(),
+                       "%s: profile '%s' has a non-string 'host' field",
+                       error_prefix.c_str(), profile_name.c_str());
             string host = json_desc["host"].GetString();
             if (host == "HPST")
             {

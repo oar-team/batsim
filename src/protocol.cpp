@@ -1,5 +1,7 @@
 #include "protocol.hpp"
 
+#include <boost/algorithm/string/join.hpp>
+
 #include <xbt.h>
 
 #include <rapidjson/stringbuffer.h>
@@ -101,7 +103,8 @@ Value JsonProtocolWriter::machine_to_json_value(const Machine & machine)
     machine_doc.AddMember("state", Value().SetString(machine_state_to_string(machine.state).c_str(), _alloc), _alloc);
 
     Value properties(rapidjson::kObjectType);
-    for(auto const &entry : machine.properties) {
+    for(auto const &entry : machine.properties)
+    {
         rapidjson::Value key(entry.first.c_str(), _alloc);
         rapidjson::Value value(entry.second.c_str(), _alloc);
         properties.AddMember(key, value, _alloc);
@@ -714,22 +717,29 @@ void JsonProtocolReader::handle_change_job_state(int event_number,
     xbt_assert(job_state_value.IsString(), "Invalid JSON message: in event %d (CHANGE_JOB_STATE): ['data']['job_state'] should be a string", event_number);
     string job_state = job_state_value.GetString();
 
-    if (job_state != "NOT_SUBMITTED"
-            && job_state != "SUBMITTED"
-            && job_state != "RUNNING"
-            && job_state != "COMPLETED_SUCCESSFULLY"
-            && job_state != "COMPLETED_KILLED"
-            && job_state != "REJECTED") {
-        xbt_assert(false, "Invalid JSON message: in event %d (CHANGE_JOB_STATE): ['data']['job_state'] must be one of: NOT_SUBMITTED, SUBMITTED, RUNNING, COMPLETED_SUCCESSFULLY, COMPLETED_KILLED, REJECTED", event_number);
+    set<string> allowed_states = {"NOT_SUBMITTED",
+                                  "RUNNING",
+                                  "COMPLETED_SUCCESSFULLY",
+                                  "COMPLETED_KILLED",
+                                  "REJECTED"};
+
+
+    if (allowed_states.count(job_state) != 1)
+    {
+        xbt_assert(false, "Invalid JSON message: in event %d (CHANGE_JOB_STATE): "
+                   "['data']['job_state'] must be one of: {%s}", event_number,
+                   boost::algorithm::join(allowed_states, ", ").c_str());
     }
 
     string kill_reason;
-    if (data_object.HasMember("kill_reason")) {
+    if (data_object.HasMember("kill_reason"))
+    {
         const Value & kill_reason_value = data_object["kill_reason"];
         xbt_assert(kill_reason_value.IsString(), "Invalid JSON message: in event %d (CHANGE_kill_reason): ['data']['kill_reason'] should be a string", event_number);
         kill_reason = kill_reason_value.GetString();
 
-        if (kill_reason != "" && job_state != "COMPLETED_KILLED") {
+        if (kill_reason != "" && job_state != "COMPLETED_KILLED")
+        {
             xbt_assert(false, "Invalid JSON message: in event %d (CHANGE_JOB_STATE): ['data']['kill_reason'] is only allowed if the job_state is COMPLETED_KILLED", event_number);
         }
     }

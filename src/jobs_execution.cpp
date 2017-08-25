@@ -122,7 +122,8 @@ int execute_profile(BatsimContext *context,
             int pfs_id = nb_res - 1;
 
             // Add the pfs_machine
-            switch(data->host) {
+            switch(data->host)
+            {
             case MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::HPST:
                 hosts_to_use.push_back(context->machines.hpst_machine()->host);
                 break;
@@ -150,7 +151,8 @@ int execute_profile(BatsimContext *context,
                 {
                     for (int x = 0; x < nb_res; ++x)
                     {
-                        switch(data->direction) {
+                        switch(data->direction)
+                        {
                         case MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::TO_STORAGE:
                             // Communications are done towards the PFS host, which is the last resource (to the storage)
                             if (x != pfs_id)
@@ -195,7 +197,8 @@ int execute_profile(BatsimContext *context,
             hosts_to_use = std::vector<msg_host_t>();
 
             // Add the pfs_machine
-            switch(data->direction) {
+            switch(data->direction)
+            {
             case MsgDataStagingProfileData::Direction::LCST_TO_HPST:
                 hosts_to_use.push_back(context->machines.pfs_machine()->host);
                 hosts_to_use.push_back(context->machines.hpst_machine()->host);
