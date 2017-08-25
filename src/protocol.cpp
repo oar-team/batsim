@@ -51,10 +51,22 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
                                                   bool allow_time_sharing,
                                                   double date)
 {
-    /* {
+    /*{
       "timestamp": 0.0,
       "type": "SIMULATION_BEGINS",
-      "data": {}
+      "data": {
+        "allow_time_sharing": false,
+        "nb_resources": 1,
+        "config": {},
+        "resources_data": [
+          {
+            "id": 0,
+            "name": "host0",
+            "state": "idle",
+            "properties": {}
+          }
+        ]
+      }
     } */
 
     xbt_assert(date >= _last_date, "Date inconsistency");
@@ -205,7 +217,12 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
     /* {
       "timestamp": 10.0,
       "type": "JOB_COMPLETED",
-      "data": {"job_id": "w0!1", "status": "SUCCESS"}
+      "data": {
+        "job_id": "w0!1",
+        "status": "SUCCESS",
+        "job_state": "COMPLETED_KILLED",
+        "kill_reason": "Walltime reached"
+      }
     } */
 
     xbt_assert(date >= _last_date, "Date inconsistency");

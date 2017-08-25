@@ -131,15 +131,32 @@ Any custom information can be added into the
 [Batsim configuration](./configuration.md), which gives a generic way to give
 metainformation from Batsim to any scheduler at runtime.
 
-- **data**: the number of resources
+- **data**:
+  - **nb_resources**: the number of resources
+  - **allow_time_sharing**: whether time sharing is enabled or not
+  - **config**: the Batsim configuration
+  - **resources_data**: information about the resources
+    - **id**: unique resource number
+    - **name**: resource name
+    - **state**: resource state in {sleeping, idle, computing, switching_on, switching_off}
+    - **properties**: the properties specified in the SimGrid platform for the corresponding host
 - **example**:
 ```json
 {
   "timestamp": 0.0,
   "type": "SIMULATION_BEGINS",
   "data": {
-    "nb_resources": 60,
-    "config":{}
+    "allow_time_sharing": false,
+    "nb_resources": 1,
+    "config": {},
+    "resources_data": [
+      {
+        "id": 0,
+        "name": "host0",
+        "state": "idle",
+        "properties": {}
+      }
+    ]
   }
 }
 ```
@@ -235,13 +252,22 @@ A job has completed its execution. It acknowledges that the actions coming
 from a previous [EXECUTE_JOB](#execute_job) message have been done (successfully
 or not, depending on whether the job completed without reaching timeout).
 
-- **data**: a job id string with a status string (TIMEOUT, SUCCESS)
+- **data**:
+  - **job_id**: the job unique identifier
+  - **status**: whether SUCCESS or TIMEOUT
+  - **job_state**: the job state
+  - **kill_reason**: the kill reason (if any)
 - **example**:
 ```json
 {
   "timestamp": 10.0,
   "type": "JOB_COMPLETED",
-  "data": {"job_id": "w0!1", "status": "SUCCESS"}
+  "data": {
+    "job_id": "w0!1",
+    "status": "SUCCESS",
+    "job_state": "COMPLETED_KILLED",
+    "kill_reason": "Walltime reached"
+  }
 }
 ```
 
@@ -479,11 +505,17 @@ Sets some resources into a state.
 ```
 
 ### NOTIFY
-The scheduler notify Batsim of something. For example, that job submission
-from the scheduler is over, so Batsim is able to stop the simulation.  This
-message **must** be sent if ``"scheduler_submission": {"enabled": false}``
+The scheduler notifies Batsim of something.
+
+For example, the ``submission_finished`` notifies that job submissions
+from the scheduler are over, which allows Batsim to stop the simulation.
+This message **must** be sent if ``"scheduler_submission": {"enabled": false}``
 is configured. See [Configuration documentation](./configuration.md) for more
 details.
+If the scheduler realizes that it commited the mistake of notifying
+``submission_finished`` prematurely, the ``continue_submission`` notification
+can be sent to make the scheduler able to submit dynamic jobs again.
+
 
 - **data**: empty
 - **example**:
@@ -492,6 +524,23 @@ details.
   "timestamp": 42.0,
   "type": "NOTIFY",
   "data": { "type": "submission_finished" }
+}
+```
+
+### CHANGE_JOB_STATE
+
+Changes the state of a job, which may be helpful to implement schedulers with
+dynamic complex jobs.
+
+``` json
+{
+  "timestamp": 42.0,
+  "type": "CHANGE_JOB_STATE",
+  "data": {
+    "job_id": "w12!45",
+    "job_state": "COMPLETED_KILLED",
+    "kill_reason": "Sub-jobs were killed."
+  }
 }
 ```
 
