@@ -357,23 +357,38 @@ string job_state_to_string(JobState state)
     return job_state;
 }
 
-JobState job_state_from_string(string state)
+JobState job_state_from_string(std::string state)
 {
     JobState new_state;
-    if (state == "NOT_SUBMITTED") {
+
+    if (state == "NOT_SUBMITTED")
+    {
         new_state = JobState::JOB_STATE_NOT_SUBMITTED;
-    } else if (state == "SUBMITTED") {
+    }
+    else if (state == "SUBMITTED")
+    {
         new_state = JobState::JOB_STATE_SUBMITTED;
-    } else if (state == "RUNNING") {
+    }
+    else if (state == "RUNNING")
+    {
         new_state = JobState::JOB_STATE_RUNNING;
-    } else if (state == "COMPLETED_SUCCESSFULLY") {
+    }
+    else if (state == "COMPLETED_SUCCESSFULLY")
+    {
         new_state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
-    } else if (state == "COMPLETED_KILLED") {
+    }
+    else if (state == "COMPLETED_KILLED")
+    {
         new_state = JobState::JOB_STATE_COMPLETED_KILLED;
-    } else if (state == "REJECTED") {
+    }
+    else if (state == "REJECTED")
+    {
         new_state = JobState::JOB_STATE_REJECTED;
-    } else {
+    }
+    else
+    {
         xbt_assert(false, "Invalid job state");
     }
+
     return new_state;
 }

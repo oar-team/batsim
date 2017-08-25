@@ -75,11 +75,13 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
     }
     data.AddMember("resources_data", Value().CopyFrom(resources, _alloc), _alloc);
 
-    if (machines.has_hpst_machine()) {
+    if (machines.has_hpst_machine())
+    {
         data.AddMember("hpst_host", machine_to_json_value(*machines.hpst_machine()), _alloc);
     }
 
-    if (machines.has_pfs_machine()) {
+    if (machines.has_pfs_machine())
+    {
         data.AddMember("lcst_host", machine_to_json_value(*machines.pfs_machine()), _alloc);
     }
 

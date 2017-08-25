@@ -123,14 +123,22 @@ struct SequenceProfileData
  */
 struct MsgParallelHomogeneousPFSMultipleTiersProfileData
 {
-    enum class Direction {
-        TO_STORAGE,
-        FROM_STORAGE
+    /**
+     * @brief The Direction of the PFS transfer
+     */
+    enum class Direction
+    {
+        TO_STORAGE      //!< From the nodes to the storage
+        ,FROM_STORAGE   //!< From the storage to the nodes
     };
 
-    enum class Host {
-        HPST,
-        LCST
+    /**
+     * @brief The Host considered for the transfer
+     */
+    enum class Host
+    {
+        HPST    //!< The HPST...
+        ,LCST   //!< The LCST...
     };
 
     double size;         //!< The size of data per compute node to transfer to pfs_machine (simulate a simple I/O traffic model)
@@ -143,9 +151,13 @@ struct MsgParallelHomogeneousPFSMultipleTiersProfileData
  */
 struct MsgDataStagingProfileData
 {
-    enum class Direction {
-        LCST_TO_HPST,
-        HPST_TO_LCST
+    /**
+     * @brief The Direction of the data staging
+     */
+    enum class Direction
+    {
+        LCST_TO_HPST    //!< From the LCST to the HPST
+        ,HPST_TO_LCST   //!< From the HPST to the LCST
     };
 
     double size;         //!< The size of data to transfer between the two PFS machines

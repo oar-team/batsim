@@ -72,8 +72,9 @@ public:
     // Messages from Batsim to the Scheduler
     /**
      * @brief Appends a SIMULATION_BEGINS event.
-     * @param[in] nb_resources The number of simulated resources
+     * @param[in] machines The machines usable to compute jobs
      * @param[in] configuration The simulation configuration
+     * @param[in] allow_time_sharing Whether time sharing is enabled
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_simulation_begins(Machines & machines,
@@ -104,6 +105,8 @@ public:
      * @brief Appends a JOB_COMPLETED event.
      * @param[in] job_id The identifier of the job that has completed.
      * @param[in] job_status The job status
+     * @param[in] job_state The job state
+     * @param[in] kill_reason The kill reason (if any)
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_job_completed(const std::string & job_id,
@@ -191,8 +194,9 @@ public:
     // Messages from Batsim to the Scheduler
     /**
      * @brief Appends a SIMULATION_BEGINS event.
-     * @param[in] nb_resources The number of simulated resources
+     * @param[in] machines The machines usable to compute jobs
      * @param[in] configuration The simulation configuration
+     * @param[in] allow_time_sharing Whether time sharing is enabled
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_simulation_begins(Machines & machines,
@@ -223,6 +227,8 @@ public:
      * @brief Appends a JOB_COMPLETED event.
      * @param[in] job_id The identifier of the job that has completed.
      * @param[in] job_status The job status
+     * @param[in] job_state The job state
+     * @param[in] kill_reason The kill reason (if any)
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_job_completed(const std::string & job_id,
@@ -286,8 +292,8 @@ public:
 private:
     /**
      * @brief Converts a machine to a json value.
-     * @param[in] the machine to be converted
-     * @return the json value
+     * @param[in] machine The machine to be converted
+     * @return The json value
      */
     rapidjson::Value machine_to_json_value(const Machine & machine);
 

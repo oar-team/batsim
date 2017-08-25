@@ -215,7 +215,8 @@ void server_on_job_completed(ServerData * data,
     }
 
     data->context->proto_writer->append_job_completed(message->job_id.to_string(),
-                                                      status, job_state_to_string(job->state),
+                                                      status,
+                                                      job_state_to_string(job->state),
                                                       job->kill_reason,
                                                       MSG_get_clock());
 
