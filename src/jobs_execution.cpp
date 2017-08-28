@@ -315,7 +315,7 @@ int execute_profile(BatsimContext *context,
             if (data->on_timeout == "") {
                 XBT_INFO("Waiting for message from scheduler");
                 while (true) {
-                    static double sleeptime = 0.00001;
+                    static double sleeptime = 0.005;
                     if (sleeptime < *remaining_time)
                     {
                         MSG_process_sleep(sleeptime);
