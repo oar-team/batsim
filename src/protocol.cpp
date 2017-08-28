@@ -195,6 +195,7 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
                                               const string & job_status,
                                               const string & job_state,
                                               const string & kill_reason,
+                                              int return_code,
                                               double date)
 {
     /* {
@@ -213,6 +214,7 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
     data.AddMember("job_id", Value().SetString(job_id.c_str(), _alloc), _alloc);
     data.AddMember("status", Value().SetString(job_status.c_str(), _alloc), _alloc);
     data.AddMember("job_state", Value().SetString(job_state.c_str(), _alloc), _alloc);
+    data.AddMember("return_code", Value().SetInt(return_code), _alloc);
     data.AddMember("kill_reason", Value().SetString(kill_reason.c_str(), _alloc), _alloc);
 
     Value event(rapidjson::kObjectType);

@@ -209,6 +209,10 @@ void server_on_job_completed(ServerData * data,
     {
         status = "SUCCESS";
     }
+    else if (job->state == JobState::JOB_STATE_COMPLETED_FAILED)
+    {
+        status = "FAILED";
+    }
     else if (job->state == JobState::JOB_STATE_COMPLETED_KILLED && job->kill_reason == "Walltime reached")
     {
         status = "TIMEOUT";
@@ -217,6 +221,7 @@ void server_on_job_completed(ServerData * data,
     data->context->proto_writer->append_job_completed(message->job_id.to_string(),
                                                       status, job_state_to_string(job->state),
                                                       job->kill_reason,
+                                                      job->return_code,
                                                       MSG_get_clock());
 
     check_submitted_and_completed(data);
@@ -645,6 +650,7 @@ void server_on_change_job_state(ServerData * data,
     case JobState::JOB_STATE_RUNNING:
         switch (new_state) {
         case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
+        case JobState::JOB_STATE_COMPLETED_FAILED:
         case JobState::JOB_STATE_COMPLETED_KILLED:
             job->runtime = MSG_get_clock() - job->starting_time;
             data->nb_running_jobs--;
@@ -653,7 +659,7 @@ void server_on_change_job_state(ServerData * data,
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
             break;
         default:
-            xbt_assert(false, "Can only change the state of a running job to completed (successfully and killed)");
+            xbt_assert(false, "Can only change the state of a running job to completed (successfully, failed, and killed)");
         }
         break;
     default:

@@ -220,6 +220,13 @@ Profile *Profile::from_json(const std::string & profile_name,
                error_prefix.c_str(), profile_name.c_str());
 
     string profile_type = json_desc["type"].GetString();
+
+    int return_code = 0;
+    if (json_desc.HasMember("ret")) {
+        return_code = json_desc["ret"].GetInt();
+    }
+    profile->return_code = return_code;
+
     if (profile_type == "delay")
     {
         profile->type = ProfileType::DELAY;

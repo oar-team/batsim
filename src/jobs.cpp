@@ -347,6 +347,9 @@ string job_state_to_string(JobState state)
     case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
         job_state = "COMPLETED_SUCCESSFULLY";
         break;
+    case JobState::JOB_STATE_COMPLETED_FAILED:
+        job_state = "COMPLETED_FAILED";
+        break;
     case JobState::JOB_STATE_COMPLETED_KILLED:
         job_state = "COMPLETED_KILLED";
         break;
@@ -368,6 +371,8 @@ JobState job_state_from_string(string state)
         new_state = JobState::JOB_STATE_RUNNING;
     } else if (state == "COMPLETED_SUCCESSFULLY") {
         new_state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
+    } else if (state == "COMPLETED_FAILED") {
+        new_state = JobState::JOB_STATE_COMPLETED_FAILED;
     } else if (state == "COMPLETED_KILLED") {
         new_state = JobState::JOB_STATE_COMPLETED_KILLED;
     } else if (state == "REJECTED") {

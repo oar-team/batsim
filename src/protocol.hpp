@@ -110,6 +110,7 @@ public:
                                       const std::string & job_status,
                                       const std::string & job_state,
                                       const std::string & kill_reason,
+                                      int return_code,
                                       double date) = 0;
 
     /**
@@ -229,6 +230,7 @@ public:
                               const std::string & job_status,
                               const std::string & job_state,
                               const std::string & kill_reason,
+                              int return_code,
                               double date);
 
     /**
@@ -298,7 +300,7 @@ private:
     rapidjson::Document _doc; //!< A rapidjson document
     rapidjson::Document::AllocatorType & _alloc; //!< The allocated of _doc
     rapidjson::Value _events = rapidjson::Value(rapidjson::kArrayType); //!< A rapidjson array in which the events are pushed
-    const std::vector<std::string> accepted_completion_statuses = {"SUCCESS", "TIMEOUT"}; //!< The list of accepted statuses for the JOB_COMPLETED message
+    const std::vector<std::string> accepted_completion_statuses = {"SUCCESS", "FAILED", "TIMEOUT"}; //!< The list of accepted statuses for the JOB_COMPLETED message
 };
 
 

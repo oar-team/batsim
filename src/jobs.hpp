@@ -26,7 +26,8 @@ enum class JobState
      JOB_STATE_NOT_SUBMITTED          //!< The job exists but cannot be scheduled yet.
     ,JOB_STATE_SUBMITTED              //!< The job has been submitted, it can now be scheduled.
     ,JOB_STATE_RUNNING                //!< The job has been scheduled and is currently being processed.
-    ,JOB_STATE_COMPLETED_SUCCESSFULLY //!< The job execution finished before its walltime.
+    ,JOB_STATE_COMPLETED_SUCCESSFULLY //!< The job execution finished before its walltime successfully.
+    ,JOB_STATE_COMPLETED_FAILED       //!< The job execution finished before its walltime but the job failed.
     ,JOB_STATE_COMPLETED_KILLED       //!< The job has been killed.
     ,JOB_STATE_REJECTED               //!< The job has been rejected by the scheduler.
 };
@@ -60,6 +61,7 @@ struct Job
     MachineRange allocation; //!< The machines on which the job has been executed.
     std::vector<int> smpi_ranks_to_hosts_mapping; //!< If the job uses a SMPI profile, stores which host number each MPI rank should use. These numbers must be in [0,required_nb_res[.
     JobState state; //!< The current state of the job
+    int return_code = -1; //!< The return code of the job
 
     /**
      * @brief Creates a new-allocated Job from a JSON description
