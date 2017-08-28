@@ -23,6 +23,8 @@ enum class ProfileType
     ,SEQUENCE                                      //!< The profile is non-atomic: it is composed of a sequence of other profiles
     ,MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS   //!< The profile is a homogeneous MSG for complex parallel filesystem access. Its data is of type MsgParallelHomogeneousPFSMultipleTiersProfileData
     ,MSG_DATA_STAGING                              //!< The profile is a MSG for moving data between the pfs hosts. Its data is of type DataStagingProfileData
+    ,SCHEDULER_SEND                             //!< The profile is a profile simulating a message sent to the scheduler. Its data is of type SchedulerSendProfileData
+    ,SCHEDULER_RECV                             //!< The profile receives a message from the scheduler and can execute a profile based on a value comparison of the message. Its data is of type SchedulerRecvProfileData
 };
 
 /**
@@ -152,6 +154,26 @@ struct MsgDataStagingProfileData
     double size;         //!< The size of data to transfer between the two PFS machines
     Direction direction; //!< Whether data should be transfered to the HPST or from the HPST
 };
+
+/**
+ * @brief The data associated to SCHEDULER_SEND profiles
+ */
+struct SchedulerSendProfileData
+{
+    std::string message; //!< The message being sent to the scheduler
+};
+
+/**
+ * @brief The data associated to SCHEDULER_RECV profiles
+ */
+struct SchedulerRecvProfileData
+{
+    std::string regex; //!< The regex which is tested for matching
+    std::string on_success; //!< The profile to execute if it matches
+    std::string on_failure; //!< The profile to execute if it does not match
+    std::string on_timeout; //!< The profile to execute if no message is in the buffer (i.e. the scheduler has not answered in time). Can be omitted which will result that the job will wait until its walltime is reached.
+};
+
 
 /**
  * @brief Used to handles all the profiles of one workload

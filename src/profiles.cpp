@@ -195,6 +195,24 @@ Profile::~Profile()
             d = nullptr;
         }
     }
+    else if (type == ProfileType::SCHEDULER_SEND)
+    {
+        SchedulerSendProfileData * d = (SchedulerSendProfileData *) data;
+        if (d != nullptr)
+        {
+            delete d;
+            d = nullptr;
+        }
+    }
+    else if (type == ProfileType::SCHEDULER_RECV)
+    {
+        SchedulerRecvProfileData * d = (SchedulerRecvProfileData *) data;
+        if (d != nullptr)
+        {
+            delete d;
+            d = nullptr;
+        }
+    }
     else
     {
         XBT_ERROR("Deletion of an unknown profile type (%d)", type);
@@ -407,6 +425,44 @@ Profile *Profile::from_json(const std::string & profile_name,
         } else {
             xbt_assert(false, "%s: profile '%s' has an invalid 'direction' field (%g)",
                    error_prefix.c_str(), profile_name.c_str(), direction);
+        }
+
+        profile->data = data;
+    } 
+    else if (profile_type == "send")
+    {
+        profile->type = ProfileType::SCHEDULER_SEND;
+        SchedulerSendProfileData * data = new SchedulerSendProfileData;
+
+        xbt_assert(json_desc.HasMember("msg"), "%s: profile '%s' has no 'msg' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        data->message = json_desc["msg"].GetString();
+
+        profile->data = data;
+    }
+    else if (profile_type == "recv")
+    {
+        profile->type = ProfileType::SCHEDULER_RECV;
+        SchedulerRecvProfileData * data = new SchedulerRecvProfileData;
+
+        data->regex = string(".*");
+        if (json_desc.HasMember("regex")) {
+            data->regex = json_desc["regex"].GetString();
+        }
+
+        data->on_success = string("");
+        if (json_desc.HasMember("success")) {
+            data->on_success = json_desc["success"].GetString();
+        }
+
+        data->on_failure = string("");
+        if (json_desc.HasMember("failure")) {
+            data->on_failure = json_desc["failure"].GetString();
+        }
+
+        data->on_timeout = string("");
+        if (json_desc.HasMember("timeout")) {
+            data->on_timeout = json_desc["timeout"].GetString();
         }
 
         profile->data = data;

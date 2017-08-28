@@ -2,6 +2,7 @@
  * @file jobs_execution.cpp
  * @brief Contains functions related to the execution of the jobs
  */
+#include <regex>
 
 #include "jobs_execution.hpp"
 #include "jobs.hpp"
@@ -289,6 +290,78 @@ int execute_profile(BatsimContext *context,
                 {
                     return ret_last_profile;
                 }
+            }
+        }
+        return profile->return_code;
+    }
+    else if (profile->type == ProfileType::SCHEDULER_SEND)
+    {
+        SchedulerSendProfileData * data = (SchedulerSendProfileData *) profile->data;
+
+        XBT_INFO("Sending message to the scheduler: %s", data->message.c_str());
+        context->proto_writer->append_from_job_message(job->id, data->message, MSG_get_clock());
+
+        return profile->return_code;
+    }
+    else if (profile->type == ProfileType::SCHEDULER_RECV)
+    {
+        SchedulerRecvProfileData * data = (SchedulerRecvProfileData *) profile->data;
+
+        string profile_to_execute = "";
+        bool has_messages = false;
+
+        XBT_INFO("Trying to receive message from scheduler");
+        if (job->incoming_message_buffer.empty()) {
+            if (data->on_timeout == "") {
+                XBT_INFO("Waiting for message from scheduler");
+                while (true) {
+                    static double sleeptime = 0.00001;
+                    if (sleeptime < *remaining_time)
+                    {
+                        MSG_process_sleep(sleeptime);
+                        *remaining_time = *remaining_time - sleeptime;
+                    }
+                    else
+                    {
+                        XBT_INFO("Job has reached walltime without receiving message from scheduler");
+                        MSG_process_sleep(*remaining_time);
+                        *remaining_time = 0;
+                        return -1;
+                    }
+                    if (!job->incoming_message_buffer.empty()) {
+                        XBT_INFO("Finally got message from scheduler");
+                        has_messages = true;
+                        break;
+                    }
+                }
+            } else {
+                XBT_INFO("Timeout on waiting for message from scheduler");
+                profile_to_execute = data->on_timeout;
+            }
+        } else {
+            has_messages = true;
+        }
+        
+        if (has_messages) {
+            string first_message = job->incoming_message_buffer.front();
+            job->incoming_message_buffer.pop_front();
+
+            regex msg_regex(data->regex);
+            if (regex_match(first_message, msg_regex)) {
+                XBT_INFO("Message from scheduler matches");
+                profile_to_execute = data->on_success;
+            } else {
+                XBT_INFO("Message from scheduler does not match");
+                profile_to_execute = data->on_failure;
+            }
+        }
+
+        if (profile_to_execute != "") {
+            XBT_INFO("Execute profile: %s", profile_to_execute.c_str());
+            int ret_last_profile = execute_profile(context, profile_to_execute, allocation,
+                                    cleanup_data, remaining_time);
+            if (ret_last_profile != 0) {
+                return ret_last_profile;
             }
         }
         return profile->return_code;

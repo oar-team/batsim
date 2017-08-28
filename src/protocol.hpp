@@ -122,6 +122,16 @@ public:
                                    double date) = 0;
 
     /**
+     * @brief Appends a FROM_JOB_MSG event.
+     * @param[in] job_id The identifier of the job which sends the message.
+     * @param[in] message The message to be sent to the scheduler.
+     * @param[in] date The event date. Must be greater than or equal to the previous event.
+     */
+    virtual void append_from_job_message(const std::string & job_id,
+                                         const std::string & message,
+                                         double date) = 0;
+
+    /**
      * @brief Appends a RESOURCE_STATE_CHANGED event.
      * @param[in] resources The resources whose state has changed.
      * @param[in] new_state The state the machines are now in.
@@ -240,6 +250,16 @@ public:
      */
     void append_job_killed(const std::vector<std::string> & job_ids,
                            double date);
+
+    /**
+     * @brief Appends a FROM_JOB_MSG event.
+     * @param[in] job_id The identifier of the job which sends the message.
+     * @param[in] message The message to be sent to the scheduler.
+     * @param[in] date The event date. Must be greater than or equal to the previous event.
+     */
+    void append_from_job_message(const std::string & job_id,
+                                 const std::string & message,
+                                 double date);
 
     /**
      * @brief Appends a RESOURCE_STATE_CHANGED event.
@@ -416,6 +436,14 @@ public:
      * @param[in] data_object The data associated with the event (JSON object)
      */
     void handle_notify(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
+     * @brief Handles a TO_JOB_MSG event
+     * @param[in] event_number The event number in [0,nb_events[.
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_to_job_msg(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
      * @brief Handles a SUBMIT_JOB event

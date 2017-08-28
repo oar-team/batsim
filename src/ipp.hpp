@@ -73,6 +73,7 @@ enum class IPMessageType
     ,SWITCHED_OFF           //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
     ,END_DYNAMIC_SUBMIT     //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
     ,CONTINUE_DYNAMIC_SUBMIT //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions continue.
+    ,TO_JOB_MSG //!< Scheduler -> Server. The scheduler sends a message to a job.
 };
 
 /**
@@ -226,6 +227,15 @@ struct SwitchMessage
 struct KillingDoneMessage
 {
     std::vector<JobIdentifier> jobs_ids; //!< The IDs of the jobs which have been killed
+};
+
+/**
+ * @brief The content of the ToJobMessage message
+ */
+struct ToJobMessage
+{
+    JobIdentifier job_id; //!< The JobIdentifier
+    std::string message; //!< The message to send to the job
 };
 
 /**
