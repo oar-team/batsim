@@ -336,11 +336,14 @@ Profile *Profile::from_json(const std::string & profile_name,
         profile->type = ProfileType::SEQUENCE;
         SequenceProfileData * data = new SequenceProfileData;
 
-        xbt_assert(json_desc.HasMember("nb"), "%s: profile '%s' has no 'nb' field",
+        int repeat = 1; 
+        if (json_desc.HasMember("nb")) {
+            xbt_assert(json_desc["nb"].IsInt(), "%s: profile '%s' has a non-integral 'nb' field",
                    error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["nb"].IsInt(), "%s: profile '%s' has a non-integral 'nb' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        data->repeat = json_desc["nb"].GetInt();
+            repeat = json_desc["nb"].GetInt();
+        }
+        data->repeat = repeat;
+
         xbt_assert(data->repeat > 0, "%s: profile '%s' has a non-strictly-positive 'nb' field (%d)",
                    error_prefix.c_str(), profile_name.c_str(), data->repeat);
 
