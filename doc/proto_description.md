@@ -254,17 +254,17 @@ or not, depending on whether the job completed without reaching timeout).
 
 - **data**:
   - **job_id**: the job unique identifier
-  - **status**: whether SUCCESS or TIMEOUT
-  - **job_state**: the job state
+  - **status**: whether SUCCESS or TIMEOUT (**DEPRECATED**)
+  - **job_state**: the job state. Possible values: "NOT_SUBMITTED", "SUBMITTED", "RUNNING", "COMPLETED_SUCCESSFULLY", "COMPLETED_KILLED", "REJECTED"
   - **kill_reason**: the kill reason (if any)
 - **example**:
 ```json
 {
-  "timestamp": 10.0,
+  "timestamp": 10.000000,
   "type": "JOB_COMPLETED",
   "data": {
-    "job_id": "w0!1",
-    "status": "SUCCESS",
+    "job_id": "2cf8ca!10",
+    "status": "TIMEOUT",
     "job_state": "COMPLETED_KILLED",
     "kill_reason": "Walltime reached"
   }
