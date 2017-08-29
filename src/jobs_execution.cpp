@@ -298,6 +298,9 @@ int execute_profile(BatsimContext *context,
     {
         SchedulerSendProfileData * data = (SchedulerSendProfileData *) profile->data;
 
+        if (delay_job(0.005, remaining_time) == -1)
+            return -1;
+
         XBT_INFO("Sending message to the scheduler: %s", data->message.c_str());
         context->proto_writer->append_from_job_message(job->id, data->message, MSG_get_clock());
 
@@ -315,19 +318,9 @@ int execute_profile(BatsimContext *context,
             if (data->on_timeout == "") {
                 XBT_INFO("Waiting for message from scheduler");
                 while (true) {
-                    static double sleeptime = 0.005;
-                    if (sleeptime < *remaining_time)
-                    {
-                        MSG_process_sleep(sleeptime);
-                        *remaining_time = *remaining_time - sleeptime;
-                    }
-                    else
-                    {
-                        XBT_INFO("Job has reached walltime without receiving message from scheduler");
-                        MSG_process_sleep(*remaining_time);
-                        *remaining_time = 0;
+                    if (delay_job(0.005, remaining_time) == -1)
                         return -1;
-                    }
+
                     if (!job->incoming_message_buffer.empty()) {
                         XBT_INFO("Finally got message from scheduler");
                         has_messages = true;
@@ -463,6 +456,24 @@ int execute_profile(BatsimContext *context,
                 job->id.c_str(), job->profile.c_str());
 
     return 1;
+}
+
+int delay_job(double sleeptime,
+              double * remaining_time)
+{
+        if (sleeptime < *remaining_time)
+        {
+            MSG_process_sleep(sleeptime);
+            *remaining_time = *remaining_time - sleeptime;
+            return 0;
+        }
+        else
+        {
+            XBT_INFO("Job has reached walltime");
+            MSG_process_sleep(*remaining_time);
+            *remaining_time = 0;
+            return -1;
+        }
 }
 
 int execute_job_process(int argc, char *argv[])

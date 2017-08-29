@@ -52,6 +52,15 @@ int execute_profile(BatsimContext *context,
                     double * remaining_time);
 
 /**
+ * @brief Simulate the delay job profile (sleeping MSG process)
+ * @param[in] sleeptime The time to sleep
+ * @param[in,out] remaining_time The remaining amount of time before walltime
+ * @return 0 if enough time is available, -1 in the case of a timeout
+ */
+int delay_job(double sleeptime,
+              double * remaining_time);
+
+/**
  * @brief Is executed on execute_profile termination, allows to clean memory on kill
  * @param[in] unknown An unknown argument (oops?)
  * @param[in] data The data to free
