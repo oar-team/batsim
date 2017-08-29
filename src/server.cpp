@@ -56,6 +56,7 @@ int server_process(int argc, char *argv[])
     handler_map[IPMessageType::SCHED_EXECUTE_JOB] = server_on_execute_job;
     handler_map[IPMessageType::SCHED_CHANGE_JOB_STATE] = server_on_change_job_state;
     handler_map[IPMessageType::TO_JOB_MSG] = server_on_to_job_msg;
+    handler_map[IPMessageType::FROM_JOB_MSG] = server_on_from_job_msg;
     handler_map[IPMessageType::SCHED_REJECT_JOB] = server_on_reject_job;
     handler_map[IPMessageType::SCHED_KILL_JOB] = server_on_kill_jobs;
     handler_map[IPMessageType::SCHED_CALL_ME_LATER] = server_on_call_me_later;
@@ -688,6 +689,25 @@ void server_on_to_job_msg(ServerData * data,
         message->message.c_str());
 
     job->incoming_message_buffer.push_back(message->message);
+
+    check_submitted_and_completed(data);
+}
+
+void server_on_from_job_msg(ServerData * data,
+                          IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr);
+    FromJobMessage * message = (FromJobMessage *) task_data->data;
+
+    Job * job = data->context->workloads.job_at(message->job_id);
+
+    XBT_INFO("Send message to scheduler: Job %d (workload=%s) message=%s",
+        job->number, job->workload->name.c_str(),
+        message->message.c_str());
+
+    data->context->proto_writer->append_from_job_message(message->job_id.to_string(),
+                                         message->message,
+                                         MSG_get_clock());
 
     check_submitted_and_completed(data);
 }

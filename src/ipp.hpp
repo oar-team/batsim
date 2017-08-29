@@ -74,6 +74,7 @@ enum class IPMessageType
     ,END_DYNAMIC_SUBMIT     //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
     ,CONTINUE_DYNAMIC_SUBMIT //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions continue.
     ,TO_JOB_MSG //!< Scheduler -> Server. The scheduler sends a message to a job.
+    ,FROM_JOB_MSG //!< Job -> Server. The job wants to send a message to the scheduler via the server.
 };
 
 /**
@@ -236,6 +237,15 @@ struct ToJobMessage
 {
     JobIdentifier job_id; //!< The JobIdentifier
     std::string message; //!< The message to send to the job
+};
+
+/**
+ * @brief The content of the FromJobMessage message
+ */
+struct FromJobMessage
+{
+    JobIdentifier job_id; //!< The JobIdentifier
+    std::string message; //!< The message to send to the scheduler
 };
 
 /**

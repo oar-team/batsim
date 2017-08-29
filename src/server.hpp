@@ -230,3 +230,11 @@ void server_on_change_job_state(ServerData * data,
  */
 void server_on_to_job_msg(ServerData * data,
                           IPMessage * task_data);
+
+/**
+ * @brief Server FROM_JOB_MSG handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_from_job_msg(ServerData * data,
+                          IPMessage * task_data);

@@ -47,6 +47,7 @@ int execute_profile(BatsimContext *context,
 {
     Workload * workload = context->workloads.at(allocation->job_id.workload_name);
     Job * job = workload->jobs->at(allocation->job_id.job_number);
+    JobIdentifier job_id(workload->name, job->number);
     Profile * profile = workload->profiles->at(profile_name);
     int nb_res = job->required_nb_res;
 
@@ -298,11 +299,16 @@ int execute_profile(BatsimContext *context,
     {
         SchedulerSendProfileData * data = (SchedulerSendProfileData *) profile->data;
 
-        if (delay_job(0.005, remaining_time) == -1)
-            return -1;
-
         XBT_INFO("Sending message to the scheduler: %s", data->message.c_str());
         context->proto_writer->append_from_job_message(job->id, data->message, MSG_get_clock());
+
+        FromJobMessage * message = new FromJobMessage;
+        message->job_id = job_id;
+        message->message = data->message;
+        send_message("server", IPMessageType::FROM_JOB_MSG, (void*)message);
+
+        if (delay_job(0.005, remaining_time) == -1)
+            return -1;
 
         return profile->return_code;
     }
