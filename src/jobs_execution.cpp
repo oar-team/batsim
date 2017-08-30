@@ -300,7 +300,6 @@ int execute_profile(BatsimContext *context,
         SchedulerSendProfileData * data = (SchedulerSendProfileData *) profile->data;
 
         XBT_INFO("Sending message to the scheduler");
-        context->proto_writer->append_from_job_message(job->id, data->message, MSG_get_clock());
 
         FromJobMessage * message = new FromJobMessage;
         message->job_id = job_id;
