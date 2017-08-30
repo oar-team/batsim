@@ -8,6 +8,8 @@
 #include <vector>
 #include <string>
 
+#include <rapidjson/document.h>
+
 #include <simgrid/msg.h>
 
 #include "machine_range.hpp"
@@ -245,7 +247,7 @@ struct ToJobMessage
 struct FromJobMessage
 {
     JobIdentifier job_id; //!< The JobIdentifier
-    std::string message; //!< The message to send to the scheduler
+    rapidjson::Document message; //!< The message to send to the scheduler
 };
 
 /**

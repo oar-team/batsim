@@ -160,7 +160,7 @@ struct MsgDataStagingProfileData
  */
 struct SchedulerSendProfileData
 {
-    std::string message; //!< The message being sent to the scheduler
+    rapidjson::Document message; //!< The message being sent to the scheduler
 };
 
 /**

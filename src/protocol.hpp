@@ -128,7 +128,7 @@ public:
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_from_job_message(const std::string & job_id,
-                                         const std::string & message,
+                                         const rapidjson::Document & message,
                                          double date) = 0;
 
     /**
@@ -258,7 +258,7 @@ public:
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_from_job_message(const std::string & job_id,
-                                 const std::string & message,
+                                 const rapidjson::Document & message,
                                  double date);
 
     /**

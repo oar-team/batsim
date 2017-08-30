@@ -299,12 +299,13 @@ int execute_profile(BatsimContext *context,
     {
         SchedulerSendProfileData * data = (SchedulerSendProfileData *) profile->data;
 
-        XBT_INFO("Sending message to the scheduler: %s", data->message.c_str());
+        XBT_INFO("Sending message to the scheduler");
         context->proto_writer->append_from_job_message(job->id, data->message, MSG_get_clock());
 
         FromJobMessage * message = new FromJobMessage;
         message->job_id = job_id;
-        message->message = data->message;
+        message->message.CopyFrom(data->message, message->message.GetAllocator());
+
         send_message("server", IPMessageType::FROM_JOB_MSG, (void*)message);
 
         if (delay_job(0.005, remaining_time) == -1)

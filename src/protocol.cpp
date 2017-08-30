@@ -254,8 +254,8 @@ void JsonProtocolWriter::append_job_killed(const vector<string> & job_ids,
     _events.PushBack(event, _alloc);
 }
 
-void JsonProtocolWriter::append_from_job_message(const std::string & job_id,
-                                                 const std::string & message,
+void JsonProtocolWriter::append_from_job_message(const string & job_id,
+                                                 const Document & message,
                                                  double date)
 {
     /* {
@@ -274,7 +274,7 @@ void JsonProtocolWriter::append_from_job_message(const std::string & job_id,
     Value data(rapidjson::kObjectType);
     data.AddMember("job_id",
                    Value().SetString(job_id.c_str(), _alloc), _alloc);
-    data.AddMember("msg", Value().SetString(message.c_str(), _alloc), _alloc);
+    data.AddMember("msg", Value().CopyFrom(message, _alloc), _alloc);
 
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);

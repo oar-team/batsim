@@ -701,9 +701,8 @@ void server_on_from_job_msg(ServerData * data,
 
     Job * job = data->context->workloads.job_at(message->job_id);
 
-    XBT_INFO("Send message to scheduler: Job %d (workload=%s) message=%s",
-        job->number, job->workload->name.c_str(),
-        message->message.c_str());
+    XBT_INFO("Send message to scheduler: Job %d (workload=%s)",
+        job->number, job->workload->name.c_str());
 
     data->context->proto_writer->append_from_job_message(message->job_id.to_string(),
                                          message->message,

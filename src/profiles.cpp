@@ -439,7 +439,10 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         xbt_assert(json_desc.HasMember("msg"), "%s: profile '%s' has no 'msg' field",
                    error_prefix.c_str(), profile_name.c_str());
-        data->message = json_desc["msg"].GetString();
+        xbt_assert(json_desc["msg"].IsObject(), "%s: profile '%s' field 'msg' is no object",
+                   error_prefix.c_str(), profile_name.c_str());
+
+        data->message.CopyFrom(json_desc["msg"], data->message.GetAllocator());
 
         profile->data = data;
     }
