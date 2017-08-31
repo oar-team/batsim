@@ -212,6 +212,7 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
                                               const string & job_status,
                                               const string & job_state,
                                               const string & kill_reason,
+                                              int return_code,
                                               double date)
 {
     /* {
@@ -235,6 +236,7 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
     data.AddMember("job_id", Value().SetString(job_id.c_str(), _alloc), _alloc);
     data.AddMember("status", Value().SetString(job_status.c_str(), _alloc), _alloc);
     data.AddMember("job_state", Value().SetString(job_state.c_str(), _alloc), _alloc);
+    data.AddMember("return_code", Value().SetInt(return_code), _alloc);
     data.AddMember("kill_reason", Value().SetString(kill_reason.c_str(), _alloc), _alloc);
 
     Value event(rapidjson::kObjectType);
@@ -270,6 +272,36 @@ void JsonProtocolWriter::append_job_killed(const vector<string> & job_ids,
     }
 
     event.AddMember("data", Value().SetObject().AddMember("job_ids", jobs, _alloc), _alloc);
+
+    _events.PushBack(event, _alloc);
+}
+
+void JsonProtocolWriter::append_from_job_message(const string & job_id,
+                                                 const Document & message,
+                                                 double date)
+{
+    /* {
+      "timestamp": 10.0,
+      "type": "FROM_JOB_MSG",
+      "data": {
+            "job_id": "w0!1",
+            "msg": "some_message"
+      }
+    } */
+
+    xbt_assert(date >= _last_date, "Date inconsistency");
+    _last_date = date;
+    _is_empty = false;
+
+    Value data(rapidjson::kObjectType);
+    data.AddMember("job_id",
+                   Value().SetString(job_id.c_str(), _alloc), _alloc);
+    data.AddMember("msg", Value().CopyFrom(message, _alloc), _alloc);
+
+    Value event(rapidjson::kObjectType);
+    event.AddMember("timestamp", Value().SetDouble(date), _alloc);
+    event.AddMember("type", Value().SetString("FROM_JOB_MSG"), _alloc);
+    event.AddMember("data", data, _alloc);
 
     _events.PushBack(event, _alloc);
 }
@@ -364,6 +396,7 @@ JsonProtocolReader::JsonProtocolReader(BatsimContext *context) :
     _type_to_handler_map["SUBMIT_JOB"] = &JsonProtocolReader::handle_submit_job;
     _type_to_handler_map["SET_RESOURCE_STATE"] = &JsonProtocolReader::handle_set_resource_state;
     _type_to_handler_map["NOTIFY"] = &JsonProtocolReader::handle_notify;
+    _type_to_handler_map["TO_JOB_MSG"] = &JsonProtocolReader::handle_to_job_msg;
 }
 
 JsonProtocolReader::~JsonProtocolReader()
@@ -810,6 +843,47 @@ void JsonProtocolReader::handle_notify(int event_number,
     }
 
     (void) timestamp;
+}
+
+void JsonProtocolReader::handle_to_job_msg(int event_number,
+                                       double timestamp,
+                                       const Value &data_object)
+{
+    (void) event_number; // Avoids a warning if assertions are ignored
+    /* {
+      "timestamp": 42.0,
+      "type": "TO_JOB_MSG",
+      "data": {
+            "job_id": "w!0",
+            "msg": "Some answer"
+      }
+    } */
+
+    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (TO_JOB_MSG) should be an object", event_number);
+
+    xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (TO_JOB_MSG) should have a 'job_id' key", event_number);
+    const Value & job_id_value = data_object["job_id"];
+    xbt_assert(job_id_value.IsString(), "Invalid JSON message: in event %d (TO_JOB_MSG): ['data']['job_id'] should be a string", event_number);
+    string job_id = job_id_value.GetString();
+
+    xbt_assert(data_object.HasMember("msg"), "Invalid JSON msg: the 'data' value of event %d (TO_JOB_MSG) should have a 'msg' key", event_number);
+    const Value & msg_value = data_object["msg"];
+    xbt_assert(msg_value.IsString(), "Invalid JSON msg: in event %d (TO_JOB_MSG): ['data']['msg'] should be a string", event_number);
+    string msg = msg_value.GetString();
+
+    ToJobMessage * message = new ToJobMessage;
+
+    if (!identify_job_from_string(context, job_id, message->job_id))
+    {
+        xbt_assert(false, "Invalid JSON message: "
+                          "Invalid job change job state received: The job identifier '%s' is not valid. "
+                          "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
+                          "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
+                          "Furthermore, the corresponding job must exist.", job_id.c_str());
+    }
+    message->message = msg;
+
+    send_message(timestamp, "server", IPMessageType::TO_JOB_MSG, (void *) message);
 }
 
 void JsonProtocolReader::handle_submit_job(int event_number,

@@ -127,6 +127,12 @@ std::string ip_message_type_to_string(IPMessageType type)
             break;
         case IPMessageType::CONTINUE_DYNAMIC_SUBMIT:
             s = "CONTINUE_DYNAMIC_SUBMIT";
+            break;
+        case IPMessageType::TO_JOB_MSG:
+            s = "TO_JOB_MSG";
+            break;
+        case IPMessageType::FROM_JOB_MSG:
+            s = "FROM_JOB_MSG";
     }
 
     return s;
@@ -250,6 +256,16 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::CONTINUE_DYNAMIC_SUBMIT:
         {
+        } break;
+        case IPMessageType::TO_JOB_MSG:
+        {
+            ToJobMessage * msg = (ToJobMessage *) data;
+            delete msg;
+        } break;
+        case IPMessageType::FROM_JOB_MSG:
+        {
+            FromJobMessage * msg = (FromJobMessage *) data;
+            delete msg;
         } break;
     }
 

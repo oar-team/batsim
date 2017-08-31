@@ -113,6 +113,7 @@ public:
                                       const std::string & job_status,
                                       const std::string & job_state,
                                       const std::string & kill_reason,
+                                      int return_code,
                                       double date) = 0;
 
     /**
@@ -122,6 +123,16 @@ public:
      */
     virtual void append_job_killed(const std::vector<std::string> & job_ids,
                                    double date) = 0;
+
+    /**
+     * @brief Appends a FROM_JOB_MSG event.
+     * @param[in] job_id The identifier of the job which sends the message.
+     * @param[in] message The message to be sent to the scheduler.
+     * @param[in] date The event date. Must be greater than or equal to the previous event.
+     */
+    virtual void append_from_job_message(const std::string & job_id,
+                                         const rapidjson::Document & message,
+                                         double date) = 0;
 
     /**
      * @brief Appends a RESOURCE_STATE_CHANGED event.
@@ -235,6 +246,7 @@ public:
                               const std::string & job_status,
                               const std::string & job_state,
                               const std::string & kill_reason,
+                              int return_code,
                               double date);
 
     /**
@@ -244,6 +256,16 @@ public:
      */
     void append_job_killed(const std::vector<std::string> & job_ids,
                            double date);
+
+    /**
+     * @brief Appends a FROM_JOB_MSG event.
+     * @param[in] job_id The identifier of the job which sends the message.
+     * @param[in] message The message to be sent to the scheduler.
+     * @param[in] date The event date. Must be greater than or equal to the previous event.
+     */
+    void append_from_job_message(const std::string & job_id,
+                                 const rapidjson::Document & message,
+                                 double date);
 
     /**
      * @brief Appends a RESOURCE_STATE_CHANGED event.
@@ -304,7 +326,7 @@ private:
     rapidjson::Document _doc; //!< A rapidjson document
     rapidjson::Document::AllocatorType & _alloc; //!< The allocated of _doc
     rapidjson::Value _events = rapidjson::Value(rapidjson::kArrayType); //!< A rapidjson array in which the events are pushed
-    const std::vector<std::string> accepted_completion_statuses = {"SUCCESS", "TIMEOUT"}; //!< The list of accepted statuses for the JOB_COMPLETED message
+    const std::vector<std::string> accepted_completion_statuses = {"SUCCESS", "FAILED", "TIMEOUT"}; //!< The list of accepted statuses for the JOB_COMPLETED message
 };
 
 
@@ -420,6 +442,14 @@ public:
      * @param[in] data_object The data associated with the event (JSON object)
      */
     void handle_notify(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
+     * @brief Handles a TO_JOB_MSG event
+     * @param[in] event_number The event number in [0,nb_events[.
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_to_job_msg(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
      * @brief Handles a SUBMIT_JOB event
