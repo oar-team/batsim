@@ -307,7 +307,7 @@ int execute_profile(BatsimContext *context,
 
         send_message("server", IPMessageType::FROM_JOB_MSG, (void*)message);
 
-        if (delay_job(0.005, remaining_time) == -1)
+        if (delay_job(data->sleeptime, remaining_time) == -1)
             return -1;
 
         return profile->return_code;
@@ -324,7 +324,7 @@ int execute_profile(BatsimContext *context,
             if (data->on_timeout == "") {
                 XBT_INFO("Waiting for message from scheduler");
                 while (true) {
-                    if (delay_job(0.005, remaining_time) == -1)
+                    if (delay_job(data->polltime, remaining_time) == -1)
                         return -1;
 
                     if (!job->incoming_message_buffer.empty()) {

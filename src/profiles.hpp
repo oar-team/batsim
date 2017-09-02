@@ -161,6 +161,7 @@ struct MsgDataStagingProfileData
 struct SchedulerSendProfileData
 {
     rapidjson::Document message; //!< The message being sent to the scheduler
+    double sleeptime; //!< The time to sleep after sending the message.
 };
 
 /**
@@ -172,6 +173,7 @@ struct SchedulerRecvProfileData
     std::string on_success; //!< The profile to execute if it matches
     std::string on_failure; //!< The profile to execute if it does not match
     std::string on_timeout; //!< The profile to execute if no message is in the buffer (i.e. the scheduler has not answered in time). Can be omitted which will result that the job will wait until its walltime is reached.
+    double polltime; //!< The time to sleep between polling if on_timeout is not set.
 };
 
 
