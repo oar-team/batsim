@@ -1,0 +1,85 @@
+{
+    "version": 0,
+    "date": "Wed  6 Sep 17:41:23 CEST 2017",
+    "description": "Simple workload with delays for testing purposes.",
+    "jobs": [
+        {
+            "id": 0,
+            "profile": "delay",
+            "res": 4,
+            "walltime": 300,
+            "subtime": 0.0
+        },
+        {
+            "id": 1,
+            "profile": "delay",
+            "res": 8,
+            "walltime": 300,
+            "subtime": 0.1
+        },
+        {
+            "id": 2,
+            "profile": "delay",
+            "res": 16,
+            "walltime": 300,
+            "subtime": 0.2
+        },
+        {
+            "id": 3,
+            "profile": "delay",
+            "res": 16,
+            "walltime": 300,
+            "subtime": 0.3
+        },
+        {
+            "id": 4,
+            "profile": "delay",
+            "res": 4,
+            "walltime": 300,
+            "subtime": 0.4
+        },
+        {
+            "id": 5,
+            "profile": "delay",
+            "res": 4,
+            "walltime": 300,
+            "subtime": 0.5
+        },
+        {
+            "id": 6,
+            "profile": "delay",
+            "res": 4,
+            "walltime": 300,
+            "subtime": 0.5
+        },
+        {
+            "id": 7,
+            "profile": "delay",
+            "res": 4,
+            "walltime": 300,
+            "subtime": 0.5
+        },
+        {
+            "id": 8,
+            "profile": "delay",
+            "res": 4,
+            "walltime": 300,
+            "subtime": 0.5
+        },
+        {
+            "id": 9,
+            "profile": "delay",
+            "res": 4,
+            "walltime": 300,
+            "subtime": 0.5
+        }
+    ],
+    "nb_res": 32,
+    "profiles": {
+        "delay": {
+            "type": "delay",
+            "delay": 96.00
+        }
+    }
+}
+
