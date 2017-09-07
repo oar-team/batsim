@@ -72,6 +72,20 @@
             "res": 4,
             "walltime": 300,
             "subtime": 0.5
+        },
+        {
+            "id": 10,
+            "profile": "delay",
+            "res": 33,
+            "walltime": 300,
+            "subtime": 0.6
+        },
+        {
+            "id": 11,
+            "profile": "delay",
+            "res": 32,
+            "walltime": 300,
+            "subtime": 0.6
         }
     ],
     "nb_res": 32,
