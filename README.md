@@ -4,7 +4,8 @@ Batsim
 Batsim is a Batch Scheduler Simulator. A Batch scheduler -- AKA Resources and
 Jobs Management System (RJMS) -- is a system that manages resources in
 large-scale computing centers, notably by scheduling and placing jobs, and by
-setting up energy policies.
+setting up energy policies. Batsim is open source and distributed under
+LGPL-3.0 license. See [COPYING](COPYING) for more details.
 
 Batsim simulates the computing center behaviour. It is made such that any
 event-based scheduling algorithm can be plugged to it. Thus, it permits to
