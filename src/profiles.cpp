@@ -240,7 +240,8 @@ Profile *Profile::from_json(const std::string & profile_name,
     string profile_type = json_desc["type"].GetString();
 
     int return_code = 0;
-    if (json_desc.HasMember("ret")) {
+    if (json_desc.HasMember("ret"))
+    {
         return_code = json_desc["ret"].GetInt();
     }
     profile->return_code = return_code;
@@ -336,8 +337,9 @@ Profile *Profile::from_json(const std::string & profile_name,
         profile->type = ProfileType::SEQUENCE;
         SequenceProfileData * data = new SequenceProfileData;
 
-        int repeat = 1; 
-        if (json_desc.HasMember("nb")) {
+        int repeat = 1;
+        if (json_desc.HasMember("nb"))
+        {
             xbt_assert(json_desc["nb"].IsInt(), "%s: profile '%s' has a non-integral 'nb' field",
                    error_prefix.c_str(), profile_name.c_str());
             repeat = json_desc["nb"].GetInt();
@@ -463,7 +465,7 @@ Profile *Profile::from_json(const std::string & profile_name,
         }
 
         profile->data = data;
-    } 
+    }
     else if (profile_type == "send")
     {
         profile->type = ProfileType::SCHEDULER_SEND;
@@ -476,13 +478,18 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         data->message.CopyFrom(json_desc["msg"], data->message.GetAllocator());
 
-        if (json_desc.HasMember("sleeptime")) {
-            xbt_assert(json_desc["sleeptime"].IsNumber(), "%s: profile '%s' has a non-number 'sleeptime' field",
+        if (json_desc.HasMember("sleeptime"))
+        {
+            xbt_assert(json_desc["sleeptime"].IsNumber(),
+                       "%s: profile '%s' has a non-number 'sleeptime' field",
                        error_prefix.c_str(), profile_name.c_str());
             data->sleeptime = json_desc["sleeptime"].GetDouble();
-            xbt_assert(data->sleeptime > 0, "%s: profile '%s' has a non-positive 'sleeptime' field (%g)",
+            xbt_assert(data->sleeptime > 0,
+                       "%s: profile '%s' has a non-positive 'sleeptime' field (%g)",
                        error_prefix.c_str(), profile_name.c_str(), data->sleeptime);
-        } else {
+        }
+        else
+        {
             data->sleeptime = 0.0000001;
         }
         profile->data = data;
@@ -493,32 +500,41 @@ Profile *Profile::from_json(const std::string & profile_name,
         SchedulerRecvProfileData * data = new SchedulerRecvProfileData;
 
         data->regex = string(".*");
-        if (json_desc.HasMember("regex")) {
+        if (json_desc.HasMember("regex"))
+        {
             data->regex = json_desc["regex"].GetString();
         }
 
         data->on_success = string("");
-        if (json_desc.HasMember("success")) {
+        if (json_desc.HasMember("success"))
+        {
             data->on_success = json_desc["success"].GetString();
         }
 
         data->on_failure = string("");
-        if (json_desc.HasMember("failure")) {
+        if (json_desc.HasMember("failure"))
+        {
             data->on_failure = json_desc["failure"].GetString();
         }
 
         data->on_timeout = string("");
-        if (json_desc.HasMember("timeout")) {
+        if (json_desc.HasMember("timeout"))
+        {
             data->on_timeout = json_desc["timeout"].GetString();
         }
 
-        if (json_desc.HasMember("polltime")) {
-            xbt_assert(json_desc["polltime"].IsNumber(), "%s: profile '%s' has a non-number 'polltime' field",
+        if (json_desc.HasMember("polltime"))
+        {
+            xbt_assert(json_desc["polltime"].IsNumber(),
+                       "%s: profile '%s' has a non-number 'polltime' field",
                        error_prefix.c_str(), profile_name.c_str());
             data->polltime = json_desc["polltime"].GetDouble();
-            xbt_assert(data->polltime > 0, "%s: profile '%s' has a non-positive 'polltime' field (%g)",
+            xbt_assert(data->polltime > 0,
+                       "%s: profile '%s' has a non-positive 'polltime' field (%g)",
                        error_prefix.c_str(), profile_name.c_str(), data->polltime);
-        } else {
+        }
+        else
+        {
             data->polltime = 0.005;
         }
         profile->data = data;

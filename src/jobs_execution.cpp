@@ -311,7 +311,9 @@ int execute_profile(BatsimContext *context,
         send_message("server", IPMessageType::FROM_JOB_MSG, (void*)message);
 
         if (delay_job(data->sleeptime, remaining_time) == -1)
+        {
             return -1;
+        }
 
         return profile->return_code;
     }
@@ -323,46 +325,62 @@ int execute_profile(BatsimContext *context,
         bool has_messages = false;
 
         XBT_INFO("Trying to receive message from scheduler");
-        if (job->incoming_message_buffer.empty()) {
-            if (data->on_timeout == "") {
+        if (job->incoming_message_buffer.empty())
+        {
+            if (data->on_timeout == "")
+            {
                 XBT_INFO("Waiting for message from scheduler");
-                while (true) {
+                while (true)
+                {
                     if (delay_job(data->polltime, remaining_time) == -1)
+                    {
                         return -1;
+                    }
 
-                    if (!job->incoming_message_buffer.empty()) {
+                    if (!job->incoming_message_buffer.empty())
+                    {
                         XBT_INFO("Finally got message from scheduler");
                         has_messages = true;
                         break;
                     }
                 }
-            } else {
+            }
+            else
+            {
                 XBT_INFO("Timeout on waiting for message from scheduler");
                 profile_to_execute = data->on_timeout;
             }
-        } else {
+        }
+        else
+        {
             has_messages = true;
         }
-        
-        if (has_messages) {
+
+        if (has_messages)
+        {
             string first_message = job->incoming_message_buffer.front();
             job->incoming_message_buffer.pop_front();
 
             regex msg_regex(data->regex);
-            if (regex_match(first_message, msg_regex)) {
+            if (regex_match(first_message, msg_regex))
+            {
                 XBT_INFO("Message from scheduler matches");
                 profile_to_execute = data->on_success;
-            } else {
+            }
+            else
+            {
                 XBT_INFO("Message from scheduler does not match");
                 profile_to_execute = data->on_failure;
             }
         }
 
-        if (profile_to_execute != "") {
+        if (profile_to_execute != "")
+        {
             XBT_INFO("Execute profile: %s", profile_to_execute.c_str());
             int ret_last_profile = execute_profile(context, profile_to_execute, allocation,
                                     cleanup_data, remaining_time);
-            if (ret_last_profile != 0) {
+            if (ret_last_profile != 0)
+            {
                 return ret_last_profile;
             }
         }
