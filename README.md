@@ -142,7 +142,7 @@ More details about the protocol can be found in the [protocol description].
 You may also base your work on existing Batsim-compatible schedulers:
 - C++: [batsched][batsched gitlab]
 - D: [datsched][datsched gitlab]
-- Perl: [there][perl sched repo] (deprecated).
+- Perl: [there][perl sched repo] (deprecated)
 - Python: [pybatsim][pybatsim gitlab]
 - Rust: [there][rust sched repo]
 

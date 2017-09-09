@@ -9,11 +9,15 @@ Batsim's public API includes:
 - The communication protocol with the decision-making component.
 
 [//]: ==========================================================================
-## Unreleased
+## [Unreleased]
 
 
 [//]: ==========================================================================
-## 1.0.0 - 2017-09-09
+## [1.0.0] - 2017-09-09
+### SimGrid version to use:
+- Commit ``587483ebe`` on ``https://github.com/mpoquet/simgrid.git``.  
+  Please notice that energy consumption of parallel tasks does not work
+  as expected.
 ### Added
 - Stated LGPL-3.0 license.
 - Code cosmetics standards are now checked by Codacy.
@@ -59,3 +63,5 @@ Batsim's public API includes:
 [changelog]: http://keepachangelog.com/en/1.0.0/
 [semver]: http://semver.org/spec/v2.0.0.html
 
+[Unreleased]: https://github.com/oar-team/batsim/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/oar-team/batsim/compare/v0.99...v1.0.0
