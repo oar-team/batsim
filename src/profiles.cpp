@@ -476,6 +476,15 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         data->message.CopyFrom(json_desc["msg"], data->message.GetAllocator());
 
+        if (json_desc.HasMember("sleeptime")) {
+            xbt_assert(json_desc["sleeptime"].IsNumber(), "%s: profile '%s' has a non-number 'sleeptime' field",
+                       error_prefix.c_str(), profile_name.c_str());
+            data->sleeptime = json_desc["sleeptime"].GetDouble();
+            xbt_assert(data->sleeptime > 0, "%s: profile '%s' has a non-positive 'sleeptime' field (%g)",
+                       error_prefix.c_str(), profile_name.c_str(), data->sleeptime);
+        } else {
+            data->sleeptime = 0.0000001;
+        }
         profile->data = data;
     }
     else if (profile_type == "recv")
@@ -503,6 +512,15 @@ Profile *Profile::from_json(const std::string & profile_name,
             data->on_timeout = json_desc["timeout"].GetString();
         }
 
+        if (json_desc.HasMember("polltime")) {
+            xbt_assert(json_desc["polltime"].IsNumber(), "%s: profile '%s' has a non-number 'polltime' field",
+                       error_prefix.c_str(), profile_name.c_str());
+            data->polltime = json_desc["polltime"].GetDouble();
+            xbt_assert(data->polltime > 0, "%s: profile '%s' has a non-positive 'polltime' field (%g)",
+                       error_prefix.c_str(), profile_name.c_str(), data->polltime);
+        } else {
+            data->polltime = 0.005;
+        }
         profile->data = data;
     }
     else if (profile_type == "smpi")

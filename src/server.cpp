@@ -651,7 +651,7 @@ void server_on_change_job_state(ServerData * data,
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
             break;
         default:
-            xbt_assert(false, "Can only change the state of a submitted job to running or rejected");
+            xbt_assert(false, "Can only change the state of a submitted job to running or rejected. State was %s", job_state_to_string(job->state).c_str());
         }
         break;
     case JobState::JOB_STATE_RUNNING:
@@ -667,11 +667,11 @@ void server_on_change_job_state(ServerData * data,
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
             break;
         default:
-            xbt_assert(false, "Can only change the state of a running job to completed (successfully, failed, and killed)");
+            xbt_assert(false, "Can only change the state of a running job to completed (successfully, failed, and killed). State was %s", job_state_to_string(job->state).c_str());
         }
         break;
     default:
-        xbt_assert(false, "Can only change the state of a submitted or running job.");
+        xbt_assert(false, "Can only change the state of a submitted or running job. State was %s", job_state_to_string(job->state).c_str());
     }
 
     job->state = new_state;
