@@ -107,6 +107,7 @@ public:
      * @param[in] job_status The job status
      * @param[in] job_state The job state
      * @param[in] kill_reason The kill reason (if any)
+     * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_job_completed(const std::string & job_id,
@@ -240,6 +241,7 @@ public:
      * @param[in] job_status The job status
      * @param[in] job_state The job state
      * @param[in] kill_reason The kill reason (if any)
+     * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_job_completed(const std::string & job_id,
