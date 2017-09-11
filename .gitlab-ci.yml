@@ -24,11 +24,24 @@ before_script:
   - mkdir -p ~/.ssh
   - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
 
-build_clang:
+# build_clang:
+#   stage: build
+#   script:
+#     - export CC=/usr/bin/clang
+#     - export CXX=/usr/bin/clang++
+#     - mkdir /builds/batsim/batsim/build
+#     - cd /builds/batsim/batsim/build
+#     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
+#     - make
+#   artifacts:
+#     paths:
+#       - /builds/batsim/batsim/build
+
+build_gcc:
   stage: build
   script:
-    - export CC=/usr/bin/clang
-    - export CXX=/usr/bin/clang++
+    - export CC=/usr/bin/gcc
+    - export CXX=/usr/bin/g++
     - mkdir /builds/batsim/batsim/build
     - cd /builds/batsim/batsim/build
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
@@ -80,7 +93,7 @@ test_test:
     - cd /builds/batsim/batsim/build
     - ctest --output-on-failure -E 'remote|smpi'
   dependencies:
-    - build_clang
+    - build_gcc
     - build_batsched
 
 deploy_code_doc:
