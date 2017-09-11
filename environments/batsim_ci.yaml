@@ -43,20 +43,13 @@ setup:
   - "@base"
   - enable_root_ssh_login
 
-  #
-  # Simulator and schedulers install
-  #
-  #- configure_apt_repo
+  - install_ci_deps:
+    - install_build_tools:
+      - exec_in: apt-get update && apt-get -y install cmake gcc clang g++
+    - install_ci_tools:
+      - exec_in: apt-get update && apt-get -y install netcat
 
-  #  - install_common_deps:
-  #
-  #    - install_build_tools:
-  #      - exec_in: |
-  #          apt-get -y install cmake gcc clang g++
-  #          update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-6 100
-  #
   - simgrid
-
   - batsim_dependencies
   - result_analysis
 
