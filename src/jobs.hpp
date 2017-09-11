@@ -223,11 +223,11 @@ private:
  * @param[in] state The JobState
  * @return A std::string corresponding to a given JobState
  */
-std::string job_state_to_string(JobState state);
+std::string job_state_to_string(const JobState & state);
 
 /**
  * @brief Returns a JobState corresponding to a given std::string
  * @param[in] state The std::string
  * @return A JobState corresponding to a given std::string
  */
-JobState job_state_from_string(std::string state);
+JobState job_state_from_string(const std::string & state);
