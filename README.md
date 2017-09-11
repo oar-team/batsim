@@ -6,7 +6,7 @@ A batch scheduler -- AKA Resources and Jobs Management System (RJMS) --
 is a system that manages resources in large-scale computing centers,
 notably by scheduling and placing jobs, and by setting up energy policies.  
 Batsim is open source and distributed under LGPL-3.0 license.
-See [COPYING](COPYING) for more details.
+See [copyright](copyright) for more details.
 
 ![Batsim overview figure]
 
