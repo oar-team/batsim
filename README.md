@@ -17,7 +17,8 @@ academics worlds.
 
 Quick links
 -----------
-- The [contribute](doc/contribute.md) page tells how to contribute to Batsim
+- Please read our [contribution guidelines](CONTRIBUTING.md) if you want to
+  contribute to Batsim
 - The [changelog](doc/changelog.md) summarizes information about the project
   evolution.
 - Tutorials shows how to use Batsim and how it works:
