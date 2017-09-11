@@ -1,4 +1,4 @@
-image: oarteam/batsim_ci:2017-09-11
+image: oarteam/batsim_ci:2017-09-12
 
 variables:
   GIT_SUBMODULE_STRATEGY: normal
