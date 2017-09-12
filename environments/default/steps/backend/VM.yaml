@@ -5,12 +5,12 @@ global:
   out_context:
     cmd: ssh -F $${ssh_config_file} $${kameleon_recipe_name} -t /bin/bash
     workdir: /root/kameleon_workdir
-    proxy_cache: 10.0.2.2
+    proxy_cache: $${local_ip}
 
   in_context:
     cmd: ssh -F $${ssh_config_file} $${kameleon_recipe_name} -t /bin/bash
     workdir: /root/kameleon_workdir
-    proxy_cache: 10.0.2.2
+    proxy_cache: $${local_ip}
 
 bootstrap:
   - create_appliance

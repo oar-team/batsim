@@ -1,44 +1,44 @@
 write_local:
   - exec_local: |
       mkdir -p $(dirname @1);
-      cat >@1 <<EOF
+      cat >@1 <<EOF_KAMELEON_INTERNAL
       @2
-      EOF
+      EOF_KAMELEON_INTERNAL
 
 write_in:
   - exec_in: |
       mkdir -p $(dirname @1);
-      cat >@1 <<EOF
+      cat >@1 <<EOF_KAMELEON_INTERNAL
       @2
-      EOF
+      EOF_KAMELEON_INTERNAL
 
 write_out:
   - exec_out: |
       mkdir -p $(dirname @1);
-      cat >@1 <<EOF
+      cat >@1 <<EOF_KAMELEON_INTERNAL
       @2
-      EOF
+      EOF_KAMELEON_INTERNAL
 
 append_local:
   - exec_local: |
       mkdir -p $(dirname @1);
-      cat >>@1 <<EOF
+      cat >>@1 <<EOF_KAMELEON_INTERNAL
       @2
-      EOF
+      EOF_KAMELEON_INTERNAL
 
 append_in:
   - exec_in: |
       mkdir -p $(dirname @1);
-      cat >>@1 <<EOF
+      cat >>@1 <<EOF_KAMELEON_INTERNAL
       @2
-      EOF
+      EOF_KAMELEON_INTERNAL
 
 append_out:
   - exec_out: |
       mkdir -p $(dirname @1);
-      cat >>@1 <<EOF
+      cat >>@1 <<EOF_KAMELEON_INTERNAL
       @2
-      EOF
+      EOF_KAMELEON_INTERNAL
 
 local2out:
   - exec_out: |
@@ -112,3 +112,6 @@ download_file_out:
 
 download_file_local:
   - exec_local: __download "@1" "@2"
+
+download_recipe_build:
+  - exec_local: __download_recipe_build "@1" "@2" "@3" "@4" "@5" "@6" "@7"

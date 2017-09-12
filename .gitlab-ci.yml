@@ -1,4 +1,4 @@
-image: oarteam/batsim_ci:2017-07-26
+image: oarteam/batsim_ci:2017-09-12
 
 variables:
   GIT_SUBMODULE_STRATEGY: normal
@@ -36,6 +36,16 @@ build_clang:
   artifacts:
     paths:
       - /builds/batsim/batsim/build
+
+build_gcc:
+  stage: build
+  script:
+    - export CC=/usr/bin/gcc
+    - export CXX=/usr/bin/g++
+    - mkdir /builds/batsim/batsim/build
+    - cd /builds/batsim/batsim/build
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
+    - make
 
 build_batsched:
   stage: build

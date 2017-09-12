@@ -29,26 +29,9 @@
           --run-command 'chmod 600 $${authorized_keys}' \
           --delete /root/.ssh/.kameleon_authorized_keys
 
-- create_ssh_config:
+- add_insecure_key_to_ssh_config:
   - on_checkpoint: redo
   - exec_local: |
-      # Find empty SSH forwarding port
-      SSH_FWD_PORT=$(__find_free_port 50000 60000)
-      echo "SSH forwarding port: $SSH_FWD_PORT"
-
-  - write_local:
-    - $${ssh_config_file}
-    - |
-      Host $${kameleon_recipe_name}
-      HostName 127.0.0.1
-      Port $SSH_FWD_PORT
-      User root
+      cat <<EOF >> $${ssh_config_file}
       IdentityFile $${insecure_ssh_key}
-      UserKnownHostsFile /dev/null
-      StrictHostKeyChecking no
-      PasswordAuthentication no
-      IdentitiesOnly yes
-      LogLevel FATAL
-      ForwardAgent yes
-      Compression yes
-      Protocol 2
+      EOF
