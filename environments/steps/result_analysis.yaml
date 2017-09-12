@@ -16,6 +16,23 @@
 - install_r_packages:
   - exec_in: |
       R --vanilla <<EOF
-      install.packages(c('ggplot2','scales','dplyr'), repos='$${r_mirror}')
-      q()
+
+      '%notin%' <- function(x,y)!('%in%'(x,y))
+      printf <- function(...)print(sprintf(...))
+
+      to_install = c('ggplot2','scales','dplyr')
+
+      install.packages(to_install,
+                       repos='$${r_mirror}',
+                       clean=TRUE)
+
+      quit_status = 0
+      for (package in to_install) {
+          if (package %notin% rownames(installed.packages())) {
+              printf("Package %s has not been installed.", package)
+              quit_status = 1
+          }
+      }
+
+      quit(status=quit_status)
       EOF
