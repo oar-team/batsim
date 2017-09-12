@@ -21,7 +21,7 @@ a scheduler in the battuto environment:
 # get the code
 git clone https://gitlab.inria.fr/batsim/batsim.git /root/batsim
 cd /root/batsim
-git checkout d76c5dd
+git checkout v1.1.0
 git submodule update --init
 
 # build and install batsim
