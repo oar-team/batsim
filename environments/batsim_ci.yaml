@@ -51,6 +51,7 @@ setup:
 
   - simgrid
   - batsim_dependencies
+  - pybatsim_dependencies
   - result_analysis
 
 export:
