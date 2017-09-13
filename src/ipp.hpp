@@ -55,6 +55,7 @@ enum class IPMessageType
 {
     JOB_SUBMITTED           //!< Submitter -> Server. The submitter tells the server a new job has been submitted.
     ,JOB_SUBMITTED_BY_DP    //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to submit a job
+    ,PROFILE_SUBMITTED_BY_DP //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to submit a profile
     ,JOB_COMPLETED          //!< Launcher -> Server. The job launcher tells the server a job has been completed.
     ,PSTATE_MODIFICATION    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (modify the state of some resources).
     ,SCHED_EXECUTE_JOB      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (execute a job).
@@ -122,6 +123,16 @@ struct JobSubmittedByDPMessage
     JobIdentifier job_id; //!< The JobIdentifier of the new job
     std::string job_description; //!< The job description string (empty if redis is enabled)
     std::string job_profile_description; //!< The profile of the job (empty if redis is enabled)
+};
+
+/**
+ * @brief The content of the ProfileSubmittedByDPMessage message
+ */
+struct ProfileSubmittedByDPMessage
+{
+    std::string workload_name; //!< The workload name
+    std::string profile_name; //!< The profile name
+    std::string profile; //!< The submitted profile data
 };
 
 /**
