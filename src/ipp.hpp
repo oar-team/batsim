@@ -6,6 +6,7 @@
 #pragma once
 
 #include <vector>
+#include <map>
 #include <string>
 
 #include <rapidjson/document.h>
@@ -16,6 +17,7 @@
 
 struct BatsimContext;
 struct Job;
+struct BatTask;
 
 /**
  * @brief A simple structure used to identify one job
@@ -230,6 +232,7 @@ struct SwitchMessage
 struct KillingDoneMessage
 {
     std::vector<JobIdentifier> jobs_ids; //!< The IDs of the jobs which have been killed
+    std::map<JobIdentifier, BatTask *> jobs_progress; //!< Jobs list (recursive) amount of work done when killed
 };
 
 /**

@@ -28,6 +28,73 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(jobs, "jobs"); //!< Logging
 
+/**
+ * @brief Constructor for simple (leaf) task
+ */
+BatTask::BatTask(string profile_name, msg_task_t ptask, double computation_amount, double communication_amount)
+{
+    this->profile_name = profile_name;
+    this->ptask = ptask;
+    this->computation_amount = computation_amount;
+    this->communication_amount = communication_amount;
+}
+
+/**
+ * @brief Constructor for composed task (with sub_tasks)
+ */
+BatTask::BatTask(string profile_name, std::vector<BatTask*> sub_tasks)
+{
+    this->profile_name = profile_name;
+    this->sub_tasks = sub_tasks;
+}
+
+void BatTask::compute_leaf_progress()
+{
+    xbt_assert(this->sub_tasks.empty(), "Leaf should not contains sub tasks");
+
+    double remaining_flops = MSG_task_get_flops_amount(this->ptask);
+    double remaining_comm = MSG_task_get_remaining_communication(this->ptask);
+
+    double comput_ratio = 0;
+    if (this->computation_amount > 0)
+    {
+        comput_ratio = remaining_flops / this->computation_amount;
+    }
+
+    double comm_ratio = 0;
+    if (this->communication_amount > 0)
+    {
+        comm_ratio = remaining_comm / this->communication_amount;
+    }
+
+    this->current_task_progress_ratio = 1 - std::max(comm_ratio, comput_ratio);
+}
+
+BatTask * BatTask::compute_tasks_progress()
+{
+    if (this->ptask != nullptr)
+    {
+        this->compute_leaf_progress();
+    }
+    else
+    {
+        for (auto& task : sub_tasks)
+        {
+            task->compute_tasks_progress();
+        }
+    }
+}
+
+/**
+ * @brief Return the BatTask tree with progress
+ */
+BatTask* Job::compute_job_progress()
+{
+    this->task->compute_tasks_progress();
+    return this->task;
+
+}
+
 Jobs::Jobs()
 {
 

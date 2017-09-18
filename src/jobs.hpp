@@ -16,6 +16,8 @@
 #include "exact_numbers.hpp"
 #include "machine_range.hpp"
 
+using namespace std;
+
 class Profiles;
 class Workload;
 
@@ -31,6 +33,27 @@ enum class JobState
     ,JOB_STATE_COMPLETED_FAILED       //!< The job execution finished before its walltime but the job failed.
     ,JOB_STATE_COMPLETED_KILLED       //!< The job has been killed.
     ,JOB_STATE_REJECTED               //!< The job has been rejected by the scheduler.
+};
+
+/**
+ *  @brief Internal batsim simulation taski: the job profile instanciation.
+ */
+struct BatTask
+{
+    BatTask(string profile_name, msg_task_t ptask, double computation_amount, double communication_amount);
+    BatTask(string profile_name, std::vector<BatTask*> sub_tasks);
+
+    std::string profile_name; //!< The job profile name. The corresponding profile tells how the job should be computed
+    msg_task_t ptask = nullptr; //!< The final task to execute (only set for the leaf of the BatTask tree)
+    double computation_amount = 0;
+    double communication_amount = 0;
+    std::vector<BatTask*> sub_tasks; //!< List of sub task of this task to be executed sequentially or in parallel depending on the profile
+    unsigned int current_task_index = -1; //!< index in the sub_tasks vector of the current task
+    double current_task_progress_ratio = 0; //!< give the progress of the current task from 0 to 1
+    BatTask * compute_tasks_progress();
+
+    private:
+      void compute_leaf_progress();
 };
 
 /**
@@ -65,6 +88,10 @@ struct Job
     std::vector<int> smpi_ranks_to_hosts_mapping; //!< If the job uses a SMPI profile, stores which host number each MPI rank should use. These numbers must be in [0,required_nb_res[.
     JobState state; //!< The current state of the job
     int return_code = -1; //!< The return code of the job
+
+    BatTask * task; //!< The task to be executed by this job
+
+    BatTask * compute_job_progress(); //<! return the task progression of the task tree
 
     /**
      * @brief Creates a new-allocated Job from a JSON description
