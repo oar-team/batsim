@@ -276,6 +276,15 @@ or not, depending on whether the job completed without reaching timeout).
 Some jobs have been killed. It acknowledges that the actions coming from a
 previous [KILL_JOB](#kill_job) message have been done.
 
+The ``job_progress`` map is also given for the all the jobs and tasks
+inside the job that have been killed. Key is the ``job_id`` and the value
+contains a progress value that in \]0, 1\[ with 0 for not started and 1 for
+complete task and the profile name is also given for convenience. For
+sequential job the progress map contains the 0-based index of the inner
+task that was running at the time it was killed and the details of this
+progress in the ``current_task`` field. Note that sequential jobs can be
+nested.
+
 Please remark that this message does not necessarily means that all the jobs
 have been killed. It means that all the jobs have completed. Some of the jobs
 might have completed *ordinarily* before the kill.
@@ -290,6 +299,48 @@ event.
   "timestamp": 10.0,
   "type": "JOB_KILLED",
   "data": {"job_ids": ["w0!1", "w0!2"]}
+}
+```
+
+- **data**: A list of job ids + progress
+- **example**:
+```json
+{
+  "timestamp": 10.0,
+  "type": "JOB_KILLED",
+  "data":
+  {
+    "job_ids": ["w0!1", "w0!2"],
+    "job_progress":
+    {
+      "w0!1": {"profile": "my_simple_profile", "progress": 0.52},
+      "w0!2":
+      {
+        "profile": "my_sequential_profile",
+        "current_task_index": 3,
+        "current_task":
+        {
+          "profile": "my_simple_profile",
+          "progress": 0.52
+        }
+      },
+      "w0!3:
+      {
+        "profile": "my_composed_profile",
+        "current_task_index": 2,
+        "current_task":
+        {
+          "profile": "my_sequential_profile",
+          "current_task_index": 3,
+          "current_task":
+          {
+            "profile": "my_simple_profile",
+            "progress": 0.52
+          }
+        }
+      }
+    }
+  }
 }
 ```
 
