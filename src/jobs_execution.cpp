@@ -39,24 +39,25 @@ int smpi_replay_process(int argc, char *argv[])
     return 0;
 }
 
-int execute_task(BatsimContext *context,
-                 const std::string & profile_name,
+int execute_task(BatTask * btask,
+                 BatsimContext *context,
                  const SchedulingAllocation * allocation,
                  CleanExecuteProfileData * cleanup_data,
                  double * remaining_time)
 {
-    Workload * workload = context->workloads.at(allocation->job_id.workload_name);
-    Job * job = workload->jobs->at(allocation->job_id.job_number);
-    JobIdentifier job_id(workload->name, job->number);
-    Profile * profile = workload->profiles->at(profile_name);
-    int nb_res = job->required_nb_res;
+    Job * job = btask->parent_job;
+    Profile * profile = btask->profile;
+    int nb_res = btask->parent_job->required_nb_res;
+
+    // Init task
+    btask->parent_job = job;
 
     if (profile->type == ProfileType::MSG_PARALLEL ||
         profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS ||
         profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS ||
         profile->type == ProfileType::MSG_DATA_STAGING)
     {
-        int return_code = execute_msg_task(allocation, nb_res, job, remaining_time, profile, context, cleanup_data);
+        int return_code = execute_msg_task(btask, allocation, nb_res, remaining_time, context, cleanup_data);
         if (return_code != 0)
         {
             return return_code;
@@ -67,11 +68,19 @@ int execute_task(BatsimContext *context,
     {
         SequenceProfileData * data = (SequenceProfileData *) profile->data;
 
+        // initialize BatTask list
+        //btask->sub_tasks = vector<BatTask*>();
         for (int i = 0; i < data->repeat; i++)
         {
             for (unsigned int j = 0; j < data->sequence.size(); j++)
             {
-                int ret_last_profile = execute_task(context, data->sequence[j], allocation,
+                // conserve the index information in BatTask
+                btask->current_task_index = i * data->sequence.size() + j;
+                string task_name = "seq" + to_string(job->number) + "'" + job->profile + "'";
+                XBT_INFO("Creating sequential tasks '%s'", task_name.c_str());
+                BatTask * sub_btask = new BatTask(job, job->workload->profiles->at(data->sequence[j]));
+                btask->sub_tasks.push_back(sub_btask);
+                int ret_last_profile = execute_task(sub_btask, context,  allocation,
                                     cleanup_data, remaining_time);
                 if (ret_last_profile != 0)
                 {
@@ -88,7 +97,7 @@ int execute_task(BatsimContext *context,
         XBT_INFO("Sending message to the scheduler");
 
         FromJobMessage * message = new FromJobMessage;
-        message->job_id = job_id;
+        message->job_id = job->id;
         message->message.CopyFrom(data->message, message->message.GetAllocator());
 
         send_message("server", IPMessageType::FROM_JOB_MSG, (void*)message);
@@ -160,8 +169,7 @@ int execute_task(BatsimContext *context,
         if (profile_to_execute != "")
         {
             XBT_INFO("Instaciate task from profile: %s", profile_to_execute.c_str());
-            int ret_last_profile = execute_task(context, profile_to_execute, allocation,
-                                    cleanup_data, remaining_time);
+            int ret_last_profile = execute_task(btask, context, allocation, cleanup_data, remaining_time);
             if (ret_last_profile != 0)
             {
                 return ret_last_profile;
@@ -213,7 +221,7 @@ int execute_task(BatsimContext *context,
         xbt_assert(nb_ranks == (int) job->smpi_ranks_to_hosts_mapping.size(),
                    "Invalid job %s: SMPI ranks_to_host mapping has an invalid size, as it should "
                    "use %d MPI ranks but the ranking states that there are %d ranks.",
-                   job->id.c_str(), nb_ranks, (int) job->smpi_ranks_to_hosts_mapping.size());
+                   job->id.to_string().c_str(), nb_ranks, (int) job->smpi_ranks_to_hosts_mapping.size());
 
         for (int i = 0; i < nb_ranks; ++i)
         {
@@ -263,7 +271,7 @@ int execute_task(BatsimContext *context,
     }
     else
         xbt_die("Cannot execute job %s: the profile type '%s' is unknown",
-                job->id.c_str(), job->profile.c_str());
+                job->id.to_string().c_str(), job->profile.c_str());
 
     return 1;
 }
@@ -350,22 +358,24 @@ int execute_job_process(int argc, char *argv[])
     cleanup_data->exec_process_args = args;
     SIMIX_process_on_exit(MSG_process_self(), execute_task_cleanup, cleanup_data);
 
+    // Create root task
+    BatTask * root_task = new BatTask(job, workload->profiles->at(job->profile));
     // Execute the process
-    job->return_code = execute_task(args->context, job->profile, args->allocation, cleanup_data, &remaining_time);
+    job->return_code = execute_task(root_task, args->context, args->allocation, cleanup_data, &remaining_time);
     if (job->return_code == 0)
     {
-        XBT_INFO("Job %s finished in time (success)", job->id.c_str());
+        XBT_INFO("Job %s finished in time (success)", job->id.to_string().c_str());
         job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
     }
     else if (job->return_code > 0)
     {
-        XBT_INFO("Job %s finished in time (failed)", job->id.c_str());
+        XBT_INFO("Job %s finished in time (failed)", job->id.to_string().c_str());
         job->state = JobState::JOB_STATE_COMPLETED_FAILED;
     }
     else
     {
         XBT_INFO("Job %s had been killed (walltime %g reached)",
-                 job->id.c_str(), (double) job->walltime);
+                 job->id.to_string().c_str(), (double) job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
         job->kill_reason = "Walltime reached";
         if (args->context->trace_schedule)
@@ -374,13 +384,15 @@ int execute_job_process(int argc, char *argv[])
                                                     MSG_get_clock(), true);
         }
     }
+    // cleanup task
+    delete root_task;
 
     args->context->machines.update_machines_on_job_end(job, args->allocation->machine_ids,
                                                        args->context);
     job->runtime = MSG_get_clock() - job->starting_time;
     if (job->runtime == 0)
     {
-        XBT_WARN("Job '%s' computed in null time. Putting epsilon instead.", job->id.c_str());
+        XBT_WARN("Job '%s' computed in null time. Putting epsilon instead.", job->id.to_string().c_str());
         job->runtime = Rational(1e-5);
     }
 
@@ -464,7 +476,7 @@ int killer_process(int argc, char *argv[])
                    job->state == JobState::JOB_STATE_COMPLETED_KILLED ||
                    job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
                    job->state == JobState::JOB_STATE_COMPLETED_FAILED,
-                   "Bad kill: job %s is not running", job->id.c_str());
+                   "Bad kill: job %s is not running", job->id.to_string().c_str());
 
         // Store job progress in the message
         message->jobs_progress[job_id] = job->compute_job_progress();
@@ -490,11 +502,11 @@ int killer_process(int argc, char *argv[])
             job->runtime = (Rational)MSG_get_clock() - job->starting_time;
 
             xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%g)!",
-                       job->id.c_str(), (double)job->runtime);
+                       job->id.to_string().c_str(), (double)job->runtime);
             if (job->runtime == 0)
             {
                 XBT_WARN("Killed job '%s' has a null runtime. Putting epsilon instead.",
-                         job->id.c_str());
+                         job->id.to_string().c_str());
                 job->runtime = Rational(1e-5);
             }
 

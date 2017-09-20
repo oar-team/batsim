@@ -40,6 +40,7 @@ struct Profile
     ProfileType type; //!< The type of the profile
     void * data; //!< The associated data
     std::string json_description; //!< The JSON description of the profile
+    std::string name; //!< the profile unique name
     int return_code = 0;  //!< The return code of this profile's execution (SUCCESS == 0)
 
     /**

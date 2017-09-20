@@ -573,7 +573,7 @@ void Machine::display_machine(bool is_energy_used) const
     vector<string> jobs_vector;
     for (auto & job : jobs_being_computed)
     {
-        jobs_vector.push_back(job->id);
+        jobs_vector.push_back(job->id.to_string());
     }
 
     string str = "Machine\n";
@@ -628,7 +628,7 @@ string Machine::jobs_being_computed_as_string() const
 
     for (auto & job : jobs_being_computed)
     {
-        jobs_strings.push_back(job->id);
+        jobs_strings.push_back(job->id.to_string());
     }
 
     return boost::algorithm::join(jobs_strings, ", ");

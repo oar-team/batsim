@@ -257,7 +257,7 @@ void server_on_job_submitted(ServerData * data,
     XBT_INFO("GOT JOB: %s %d\n", message->job_id.workload_name.c_str(), message->job_id.job_number);
     xbt_assert(data->context->workloads.job_exists(message->job_id));
     Job * job = data->context->workloads.job_at(message->job_id);
-    job->id = message->job_id.to_string();
+    job->id = message->job_id;
 
     // Update control information
     job->state = JobState::JOB_STATE_SUBMITTED;
@@ -276,7 +276,7 @@ void server_on_job_submitted(ServerData * data,
         }
     }
 
-    data->context->proto_writer->append_job_submitted(job->id, job_json_description,
+    data->context->proto_writer->append_job_submitted(job->id.to_string(), job_json_description,
                                                       profile_json_description, MSG_get_clock());
 }
 
@@ -479,7 +479,9 @@ void server_on_killing_done(ServerData * data,
     vector<string> job_ids_str;
     vector<string> really_killed_job_ids_str;
     job_ids_str.reserve(message->jobs_ids.size());
+    map<string, BatTask *> jobs_progress_str;
 
+    // manage job Id list
     for (const JobIdentifier & job_id : message->jobs_ids)
     {
         job_ids_str.push_back(job_id.to_string());
@@ -495,13 +497,15 @@ void server_on_killing_done(ServerData * data,
 
             really_killed_job_ids_str.push_back(job_id.to_string());
         }
+        // compute job progress from BatTask tree in str
+        jobs_progress_str[job_id.to_string()] = message->jobs_progress[job_id];
     }
 
     XBT_INFO("Jobs {%s} have been killed (the following ones have REALLY been killed: {%s})",
              boost::algorithm::join(job_ids_str, ",").c_str(),
              boost::algorithm::join(really_killed_job_ids_str, ",").c_str());
 
-    data->context->proto_writer->append_job_killed(job_ids_str, MSG_get_clock());
+    data->context->proto_writer->append_job_killed(job_ids_str, jobs_progress_str, MSG_get_clock());
     --data->nb_killers;
 
     check_submitted_and_completed(data);
@@ -569,7 +573,7 @@ void server_on_submit_job(ServerData * data,
     Job * job = Job::from_json(message->job_description, workload,
                                "Invalid JSON job submitted by the scheduler");
     workload->jobs->add_job(job);
-    job->id = JobIdentifier(workload->name, job->number).to_string();
+    job->id = JobIdentifier(workload->name, job->number);
 
     // Let's parse the profile if needed
     if (!workload->profiles->exists(job->profile))
@@ -616,7 +620,7 @@ void server_on_submit_job(ServerData * data,
             }
         }
 
-        data->context->proto_writer->append_job_submitted(job->id, job_json_description,
+        data->context->proto_writer->append_job_submitted(job->id.to_string(), job_json_description,
                                                           profile_json_description,
                                                           MSG_get_clock());
     }
@@ -809,7 +813,7 @@ void server_on_execute_job(ServerData * data,
     Job * job = data->context->workloads.job_at(allocation->job_id);
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Cannot execute job '%s': its state (%d) is not JOB_STATE_SUBMITTED.",
-               job->id.c_str(), job->state);
+               job->id.to_string().c_str(), job->state);
 
     job->state = JobState::JOB_STATE_RUNNING;
 
@@ -854,7 +858,7 @@ void server_on_execute_job(ServerData * data,
                "Invalid job %s allocation. The job requires %d machines but only %d were given (%s). "
                "Using a different number of machines is only allowed if a custom mapping is specified. "
                "This mapping must specify which allocated machine each executor should use.",
-               job->id.c_str(), job->required_nb_res, (int)allocation->mapping.size(),
+               job->id.to_string().c_str(), job->required_nb_res, (int)allocation->mapping.size(),
                allocation->machine_ids.to_string_hyphen().c_str());
 
     // Let's generate the hosts used by the job
@@ -877,7 +881,7 @@ void server_on_execute_job(ServerData * data,
     exec_args->context = data->context;
     exec_args->allocation = allocation;
     exec_args->notify_server_at_end = true;
-    string pname = "job_" + job->id;
+    string pname = "job_" + job->id.to_string();
     msg_process_t process = MSG_process_create(pname.c_str(), execute_job_process,
                                                (void*)exec_args,
                                                data->context->machines[allocation->machine_ids.first_element()]->host);

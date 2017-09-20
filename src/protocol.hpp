@@ -123,6 +123,7 @@ public:
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_job_killed(const std::vector<std::string> & job_ids,
+                                   const std::map<std::string, BatTask *> job_progress,
                                    double date) = 0;
 
     /**
@@ -257,6 +258,7 @@ public:
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_job_killed(const std::vector<std::string> & job_ids,
+                           const std::map<std::string, BatTask *> job_progress,
                            double date);
 
     /**

@@ -28,24 +28,13 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(jobs, "jobs"); //!< Logging
 
-/**
- * @brief Constructor for simple (leaf) task
- */
-BatTask::BatTask(string profile_name, msg_task_t ptask, double computation_amount, double communication_amount)
-{
-    this->profile_name = profile_name;
-    this->ptask = ptask;
-    this->computation_amount = computation_amount;
-    this->communication_amount = communication_amount;
-}
 
 /**
- * @brief Constructor for composed task (with sub_tasks)
+ * @brief Constructor for simple task
  */
-BatTask::BatTask(string profile_name, std::vector<BatTask*> sub_tasks)
-{
-    this->profile_name = profile_name;
-    this->sub_tasks = sub_tasks;
+BatTask::BatTask(Job * parent_job, Profile * profile) {
+    this->parent_job = parent_job;
+    this->profile = profile;
 }
 
 void BatTask::compute_leaf_progress()
@@ -70,7 +59,7 @@ void BatTask::compute_leaf_progress()
     this->current_task_progress_ratio = 1 - std::max(comm_ratio, comput_ratio);
 }
 
-BatTask * BatTask::compute_tasks_progress()
+void BatTask::compute_tasks_progress()
 {
     if (this->ptask != nullptr)
     {
@@ -239,7 +228,7 @@ Job::~Job()
 {
     xbt_assert(execution_processes.size() == 0,
                "Internal error: job %s has %d execution processes on destruction (should be 0).",
-               this->id.c_str(), (int)execution_processes.size());
+               this->id.to_string().c_str(), (int)execution_processes.size());
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)

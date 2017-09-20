@@ -247,14 +247,71 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
     _events.PushBack(event, _alloc);
 }
 
+Value generate_task_tree(BatTask * task_tree, rapidjson::Document::AllocatorType & _alloc)
+{
+    Value task(rapidjson::kObjectType);
+    // create task tree
+    if (task_tree->ptask != nullptr)
+    {
+        task.AddMember("profile", Value().SetString(task_tree->profile->name.c_str(), _alloc), _alloc);
+        task.AddMember("progress", Value().SetDouble(task_tree->current_task_progress_ratio), _alloc);
+    }
+    else
+    {
+        task.AddMember("profile", Value().SetString(task_tree->profile->name.c_str(), _alloc), _alloc);
+        task.AddMember("current_task_index", Value().SetInt(task_tree->current_task_index), _alloc);
+
+        BatTask * btask = task_tree->sub_tasks[task_tree->current_task_index];
+        task.AddMember("current_task", generate_task_tree(btask, _alloc), _alloc);
+    }
+    return task;
+}
+
 void JsonProtocolWriter::append_job_killed(const vector<string> & job_ids,
+                                           const map<string, BatTask *> job_progress,
                                            double date)
 {
-    /* {
+    /*
+    {
       "timestamp": 10.0,
       "type": "JOB_KILLED",
-      "data": {"job_ids": ["w0!1", "w0!2"]}
-    } */
+      "data": {
+        "job_ids": ["w0!1", "w0!2"],
+        "job_progress":
+          {
+          // simple job
+          "w0!1": {"profile": "my_simple_profile", "progress": 0.52},
+          // sequential job
+          "w0!2":
+          {
+            "profile": "my_sequential_profile",
+            "current_task_index": 3,
+            "current_task":
+            {
+              "profile": "my_simple_profile",
+              "progress": 0.52
+            }
+          },
+          // composed sequential job
+          "w0!3:
+          {
+            "profile": "my_composed_profile",
+            "current_task_index": 2,
+            "current_task":
+            {
+              "profile": "my_sequential_profile",
+              "current_task_index": 3,
+              "current_task":
+              {
+                "profile": "my_simple_profile",
+                "progress": 0.52
+              }
+            }
+          },
+        }
+      }
+    }
+    */
 
     xbt_assert(date >= _last_date, "Date inconsistency");
     _last_date = date;
@@ -266,9 +323,15 @@ void JsonProtocolWriter::append_job_killed(const vector<string> & job_ids,
 
     Value jobs(rapidjson::kArrayType);
     jobs.Reserve(job_ids.size(), _alloc);
-    for (const string & job_id : job_ids)
+
+    Value progress(rapidjson::kObjectType);
+
+    for (const string& job_id : job_ids)
     {
         jobs.PushBack(Value().SetString(job_id.c_str(), _alloc), _alloc);
+        // compute task progress tree
+        progress.AddMember(Value().SetString(job_id.c_str(), _alloc),
+            generate_task_tree(job_progress.at(job_id), _alloc), _alloc);
     }
 
     event.AddMember("data", Value().SetObject().AddMember("job_ids", jobs, _alloc), _alloc);
@@ -521,7 +584,7 @@ void JsonProtocolReader::handle_reject_job(int event_number,
                "Invalid JSON message: "
                "Invalid rejection received: job %s cannot be rejected at the present time."
                "For being rejected, a job must be submitted and not allocated yet.",
-               job->id.c_str());
+               job->id.to_string().c_str());
 
     send_message(timestamp, "server", IPMessageType::SCHED_REJECT_JOB, (void*) message);
 }

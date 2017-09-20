@@ -19,7 +19,41 @@
 using namespace std;
 
 class Profiles;
+struct Profile;
 class Workload;
+struct Job;
+
+/**
+ * @brief A simple structure used to identify one job
+ */
+struct JobIdentifier
+{
+    /**
+     * @brief Creates a JobIdentifier
+     * @param[in] workload_name The workload name
+     * @param[in] job_number The job number
+     */
+    JobIdentifier(const std::string & workload_name = "", int job_number = -1);
+
+    std::string workload_name; //!< The name of the workload the job belongs to
+    int job_number; //!< The job unique number inside its workload
+
+    /**
+     * @brief Returns a string representation of the JobIdentifier.
+     * @details Output format is WORKLOAD_NAME!JOB_NUMBER
+     * @return A string representation of the JobIdentifier.
+     */
+    std::string to_string() const;
+};
+
+/**
+ * @brief Compares two JobIdentifier thanks to their string representations
+ * @param[in] ji1 The first JobIdentifier
+ * @param[in] ji2 The second JobIdentifier
+ * @return ji1.to_string() < ji2.to_string()
+ */
+bool operator<(const JobIdentifier & ji1, const JobIdentifier & ji2);
+
 
 /**
  * @brief Contains the different states a job can be in
@@ -35,26 +69,28 @@ enum class JobState
     ,JOB_STATE_REJECTED               //!< The job has been rejected by the scheduler.
 };
 
+
 /**
  *  @brief Internal batsim simulation taski: the job profile instanciation.
  */
 struct BatTask
 {
-    BatTask(string profile_name, msg_task_t ptask, double computation_amount, double communication_amount);
-    BatTask(string profile_name, std::vector<BatTask*> sub_tasks);
+    BatTask(Job * parent_job, Profile * profile);
 
-    std::string profile_name; //!< The job profile name. The corresponding profile tells how the job should be computed
+    Job * parent_job;
+    Profile * profile; //!< The job profile. The corresponding profile tells how the job should be computed
     msg_task_t ptask = nullptr; //!< The final task to execute (only set for the leaf of the BatTask tree)
     double computation_amount = 0;
     double communication_amount = 0;
-    std::vector<BatTask*> sub_tasks; //!< List of sub task of this task to be executed sequentially or in parallel depending on the profile
+    vector<BatTask*> sub_tasks; //!< List of sub task of this task to be executed sequentially or in parallel depending on the profile
     unsigned int current_task_index = -1; //!< index in the sub_tasks vector of the current task
     double current_task_progress_ratio = 0; //!< give the progress of the current task from 0 to 1
-    BatTask * compute_tasks_progress();
+    void compute_tasks_progress();
 
     private:
       void compute_leaf_progress();
 };
+
 
 /**
  * @brief Represents a job
@@ -65,7 +101,7 @@ struct Job
 
     Workload * workload = nullptr; //!< The workload the job belongs to
     int number; //!< The job unique number within its workload
-    std::string id; //!< The job unique identifier
+    JobIdentifier id; //!< The job unique identifier
     std::string profile; //!< The job profile name. The corresponding profile tells how the job should be computed
     Rational submission_time; //!< The job submission time: The time at which the becomes available
     Rational walltime; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed
@@ -117,6 +153,7 @@ struct Job
                            Workload * workload,
                            const std::string & error_prefix = "Invalid JSON job");
 };
+
 
 /**
  * @brief Compares job thanks to their submission times

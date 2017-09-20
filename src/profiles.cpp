@@ -229,6 +229,7 @@ Profile *Profile::from_json(const std::string & profile_name,
     (void) error_prefix; // Avoids a warning if assertions are ignored
 
     Profile * profile = new Profile;
+    profile->name = profile_name;
 
     xbt_assert(json_desc.IsObject(), "%s: profile '%s' value must be an object",
                error_prefix.c_str(), profile_name.c_str());

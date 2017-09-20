@@ -492,7 +492,7 @@ void PajeTracer::add_job_launching(const Job * job,
 void PajeTracer::register_new_job(const Job *job)
 {
     xbt_assert(_jobs.find(job) == _jobs.end(),
-               "Cannot register new job %s: it already exists", job->id.c_str());
+               "Cannot register new job %s: it already exists", job->id.to_string().c_str());
 
     const int buf_size = 256;
     int nb_printed;
@@ -503,14 +503,14 @@ void PajeTracer::register_new_job(const Job *job)
     // Let's create a state value corresponding to this job
     nb_printed = snprintf(buf, buf_size,
                           "%d %s%s %s \"%s\" %s\n",
-                          DEFINE_ENTITY_VALUE, jobPrefix, job->id.c_str(), machineState,
-                          job->id.c_str(), _colors[job->number % (int)_colors.size()].c_str());
+                          DEFINE_ENTITY_VALUE, jobPrefix, job->id.to_string().c_str(), machineState,
+                          job->id.to_string().c_str(), _colors[job->number % (int)_colors.size()].c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
     _wbuf->append_text(buf);
 
-    _jobs[job] = jobPrefix + job->id;
+    _jobs[job] = jobPrefix + job->id.to_string();
 
     free(buf);
 }
@@ -575,7 +575,7 @@ void PajeTracer::add_job_kill(const Job *job, const MachineRange & used_machine_
     // Let's add a kill event associated with the scheduler
     nb_printed = snprintf(buf, buf_size,
                           "%d %lf %s %s \"%s\"\n",
-                          NEW_EVENT, time, killEventKiller, killer, job->id.c_str());
+                          NEW_EVENT, time, killEventKiller, killer, job->id.to_string().c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -590,7 +590,7 @@ void PajeTracer::add_job_kill(const Job *job, const MachineRange & used_machine_
             nb_printed = snprintf(buf, buf_size,
                                   "%d %lf %s %s%d \"%s\"\n",
                                   NEW_EVENT, time, killEventMachine, machinePrefix, machine_id,
-                                  job->id.c_str());
+                                  job->id.to_string().c_str());
             xbt_assert(nb_printed < buf_size - 1,
                        "Writing error: buffer has been completely filled, some information might "
                        "have been lost. Please increase Batsim's output temporary buffers' size");
