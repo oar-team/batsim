@@ -215,7 +215,7 @@ void server_on_job_completed(ServerData * data,
     {
         status = "FAILED";
     }
-    else if (job->state == JobState::JOB_STATE_COMPLETED_KILLED && job->kill_reason == "Walltime reached")
+    else if (job->state == JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED)
     {
         status = "TIMEOUT";
     }
@@ -486,9 +486,11 @@ void server_on_killing_done(ServerData * data,
     {
         job_ids_str.push_back(job_id.to_string());
 
+        // store job progress from BatTask tree in str
+        jobs_progress_str[job_id.to_string()] = message->jobs_progress[job_id];
+
         const Job * job = data->context->workloads.job_at(job_id);
-        if (job->state == JobState::JOB_STATE_COMPLETED_KILLED &&
-            job->kill_reason == "Killed from killer_process (probably requested by the decision process)")
+        if (job->state == JobState::JOB_STATE_COMPLETED_KILLED)
         {
             data->nb_running_jobs--;
             xbt_assert(data->nb_running_jobs >= 0);
@@ -496,9 +498,8 @@ void server_on_killing_done(ServerData * data,
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
 
             really_killed_job_ids_str.push_back(job_id.to_string());
+
         }
-        // compute job progress from BatTask tree in str
-        jobs_progress_str[job_id.to_string()] = message->jobs_progress[job_id];
     }
 
     XBT_INFO("Jobs {%s} have been killed (the following ones have REALLY been killed: {%s})",
@@ -665,6 +666,7 @@ void server_on_change_job_state(ServerData * data,
         {
         case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
         case JobState::JOB_STATE_COMPLETED_FAILED:
+        case JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED:
         case JobState::JOB_STATE_COMPLETED_KILLED:
             job->runtime = MSG_get_clock() - job->starting_time;
             data->nb_running_jobs--;
@@ -762,9 +764,7 @@ void server_on_kill_jobs(ServerData * data,
         if (!job->kill_requested)
         {
             // Let's check the job state
-            xbt_assert(job->state == JobState::JOB_STATE_RUNNING ||
-                       job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
-                       job->state == JobState::JOB_STATE_COMPLETED_KILLED,
+            xbt_assert(job->state == JobState::JOB_STATE_RUNNING || job->is_complete(),
                        "Invalid KILL_JOB: job_id '%s' refers to a job not being executed nor completed.",
                        job_id.to_string().c_str());
 

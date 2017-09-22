@@ -247,11 +247,14 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
     _events.PushBack(event, _alloc);
 }
 
-Value generate_task_tree(BatTask * task_tree, rapidjson::Document::AllocatorType & _alloc)
+/**
+ * @brief Create task tree with progress in Json and add it to _alloc
+ */
+Value generate_task_tree(BatTask* task_tree, rapidjson::Document::AllocatorType & _alloc)
 {
     Value task(rapidjson::kObjectType);
-    // create task tree
-    if (task_tree->ptask != nullptr)
+    // add final task (leaf) progress
+    if (task_tree->ptask != nullptr || task_tree->delay_task_start != -1)
     {
         task.AddMember("profile", Value().SetString(task_tree->profile->name.c_str(), _alloc), _alloc);
         task.AddMember("progress", Value().SetDouble(task_tree->current_task_progress_ratio), _alloc);
@@ -330,11 +333,16 @@ void JsonProtocolWriter::append_job_killed(const vector<string> & job_ids,
     {
         jobs.PushBack(Value().SetString(job_id.c_str(), _alloc), _alloc);
         // compute task progress tree
-        progress.AddMember(Value().SetString(job_id.c_str(), _alloc),
-            generate_task_tree(job_progress.at(job_id), _alloc), _alloc);
+        if (job_progress.at(job_id) != nullptr) {
+            progress.AddMember(Value().SetString(job_id.c_str(), _alloc),
+                generate_task_tree(job_progress.at(job_id), _alloc), _alloc);
+        }
     }
 
-    event.AddMember("data", Value().SetObject().AddMember("job_ids", jobs, _alloc), _alloc);
+    Value data(rapidjson::kObjectType);
+    data.AddMember("job_ids", jobs, _alloc);
+    data.AddMember("job_progress", progress, _alloc);
+    event.AddMember("data", data, _alloc);
 
     _events.PushBack(event, _alloc);
 }

@@ -10,7 +10,7 @@
 int execute_msg_task(
         BatTask * btask,
         const SchedulingAllocation* allocation,
-        int nb_res,
+        unsigned int nb_res,
         double * remaining_time,
         BatsimContext * context,
         CleanExecuteProfileData * cleanup_data);

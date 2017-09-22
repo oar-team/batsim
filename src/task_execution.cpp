@@ -19,7 +19,7 @@ void generate_msg_parallel_task(
     string task_name_prefix,
     double*& computation_amount,
     double*& communication_amount,
-    int nb_res,
+    unsigned int nb_res,
     void* profile_data)
 {
     task_name_prefix = "p ";
@@ -37,7 +37,7 @@ void generate_msg_parallel_homogeneous(
     string task_name_prefix,
     double*& computation_amount,
     double*& communication_amount,
-    int nb_res,
+    unsigned int nb_res,
     void* profile_data)
 {
     task_name_prefix = "phg ";
@@ -56,10 +56,10 @@ void generate_msg_parallel_homogeneous(
 
     // Let us fill the local computation and communication matrices
     int k = 0;
-    for (int y = 0; y < nb_res; ++y) {
+    for (unsigned int y = 0; y < nb_res; ++y) {
         computation_amount[y] = cpu;
         if (communication_amount != nullptr) {
-            for (int x = 0; x < nb_res; ++x) {
+            for (unsigned int x = 0; x < nb_res; ++x) {
                 if (x == y) {
                     communication_amount[k] = 0;
                 } else {
@@ -75,10 +75,10 @@ void generate_msg_parallel_homogeneous_with_pfs(
     string task_name_prefix,
     double*& computation_amount,
     double*& communication_amount,
-    int& nb_res,
+    unsigned int& nb_res,
     void* profile_data,
     BatsimContext* context,
-    std::vector<msg_host_t> hosts_to_use)
+    std::vector<msg_host_t>& hosts_to_use)
 {
     task_name_prefix = "pfs_tiers ";
     MsgParallelHomogeneousPFSMultipleTiersProfileData* data
@@ -89,7 +89,7 @@ void generate_msg_parallel_homogeneous_with_pfs(
 
     // The PFS machine will also be used
     nb_res = nb_res + 1;
-    int pfs_id = nb_res - 1;
+    unsigned int pfs_id = nb_res - 1;
 
     // Add the pfs_machine
     switch (data->host) {
@@ -112,10 +112,10 @@ void generate_msg_parallel_homogeneous_with_pfs(
 
     // Let us fill the local computation and communication matrices
     int k = 0;
-    for (int y = 0; y < nb_res; ++y) {
+    for (unsigned int y = 0; y < nb_res; ++y) {
         computation_amount[y] = cpu;
         if (communication_amount != nullptr) {
-            for (int x = 0; x < nb_res; ++x) {
+            for (unsigned int x = 0; x < nb_res; ++x) {
                 switch (data->direction) {
                 case MsgParallelHomogeneousPFSMultipleTiersProfileData::
                     Direction::TO_STORAGE:
@@ -150,10 +150,10 @@ void generate_msg_parallel_homogeneous_with_pfs(
 void generate_msg_data_staginig_task(string task_name_prefix,
     double*&  computation_amount,
     double*& communication_amount,
-    int& nb_res,
+    unsigned int& nb_res,
     void* profile_data,
     BatsimContext* context,
-    std::vector<msg_host_t> hosts_to_use)
+    std::vector<msg_host_t>& hosts_to_use)
 {
     task_name_prefix = "data_staging ";
     MsgDataStagingProfileData* data = (MsgDataStagingProfileData*)profile_data;
@@ -163,7 +163,7 @@ void generate_msg_data_staginig_task(string task_name_prefix,
 
     // The PFS machine will also be used
     nb_res = 2;
-    int pfs_id = nb_res - 1;
+    unsigned int pfs_id = nb_res - 1;
 
     // reset the alloc to use only IO nodes
     hosts_to_use = std::vector<msg_host_t>();
@@ -191,10 +191,10 @@ void generate_msg_data_staginig_task(string task_name_prefix,
 
     // Let us fill the local computation and communication matrices
     int k = 0;
-    for (int y = 0; y < nb_res; ++y) {
+    for (unsigned int y = 0; y < nb_res; ++y) {
         computation_amount[y] = cpu;
         if (communication_amount != nullptr) {
-            for (int x = 0; x < nb_res; ++x) {
+            for (unsigned int x = 0; x < nb_res; ++x) {
                 // Communications are done towards the last resource
                 if (x != pfs_id) {
                     communication_amount[k] = 0;
@@ -210,7 +210,7 @@ void generate_msg_data_staginig_task(string task_name_prefix,
 int execute_msg_task(
         BatTask * btask,
         const SchedulingAllocation* allocation,
-        int nb_res,
+        unsigned int nb_res,
         double * remaining_time,
         BatsimContext * context,
         CleanExecuteProfileData * cleanup_data)
@@ -262,8 +262,11 @@ int execute_msg_task(
     // Create the MSG task
     string task_name
         = task_name_prefix + to_string(btask->parent_job->number) + "'" + btask->profile->name + "'";
-    XBT_INFO("Creating MSG task '%s'", task_name.c_str());
 
+    xbt_assert(nb_res == ((unsigned int)hosts_to_use.size()),
+        "the number of resources (%d) is not equal to the number of hosts (%lu)",
+        nb_res, hosts_to_use.size());
+    XBT_INFO("Creating MSG task '%s' on %d resources", task_name.c_str(), nb_res);
     msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(), nb_res,
         hosts_to_use.data(), computation_amount, communication_amount, NULL);
 
@@ -272,18 +275,6 @@ int execute_msg_task(
 
     // Keep track of the task to get information on kill
     btask->ptask = ptask;
-    if (computation_amount != nullptr) {
-        for (int i=0; i < nb_res; i++) {
-            btask->computation_amount += computation_amount[i];
-        }
-    }
-    if (communication_amount != nullptr) {
-        for (int i=0; i < nb_res; i++) {
-            for (int j=0; j < nb_res; j++) {
-                btask->communication_amount += communication_amount[(i * nb_res) + j];
-            }
-        }
-    }
 
     // Execute the MSG task (blocking)
     double time_before_execute = MSG_get_clock();

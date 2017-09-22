@@ -181,6 +181,9 @@ int execute_task(BatTask * btask,
     {
         DelayProfileData * data = (DelayProfileData *) profile->data;
 
+        btask->delay_task_start = MSG_get_clock();
+        btask->delay_task_required = data->delay;
+
         if (data->delay < *remaining_time)
         {
             XBT_INFO("Sleeping the whole task length");
@@ -360,6 +363,7 @@ int execute_job_process(int argc, char *argv[])
 
     // Create root task
     BatTask * root_task = new BatTask(job, workload->profiles->at(job->profile));
+    job->task = root_task;
     // Execute the process
     job->return_code = execute_task(root_task, args->context, args->allocation, cleanup_data, &remaining_time);
     if (job->return_code == 0)
@@ -376,7 +380,7 @@ int execute_job_process(int argc, char *argv[])
     {
         XBT_INFO("Job %s had been killed (walltime %g reached)",
                  job->id.to_string().c_str(), (double) job->walltime);
-        job->state = JobState::JOB_STATE_COMPLETED_KILLED;
+        job->state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
         job->kill_reason = "Walltime reached";
         if (args->context->trace_schedule)
         {
@@ -384,8 +388,6 @@ int execute_job_process(int argc, char *argv[])
                                                     MSG_get_clock(), true);
         }
     }
-    // cleanup task
-    delete root_task;
 
     args->context->machines.update_machines_on_job_end(job, args->allocation->machine_ids,
                                                        args->context);
@@ -472,17 +474,27 @@ int killer_process(int argc, char *argv[])
         Profile * profile = args->context->workloads.at(job_id.workload_name)->profiles->at(job->profile);
         (void) profile;
 
-        xbt_assert(job->state == JobState::JOB_STATE_RUNNING ||
-                   job->state == JobState::JOB_STATE_COMPLETED_KILLED ||
-                   job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
-                   job->state == JobState::JOB_STATE_COMPLETED_FAILED,
-                   "Bad kill: job %s is not running", job->id.to_string().c_str());
-
-        // Store job progress in the message
-        message->jobs_progress[job_id] = job->compute_job_progress();
+        xbt_assert(! (job->state == JobState::JOB_STATE_REJECTED ||
+                      job->state == JobState::JOB_STATE_SUBMITTED ||
+                      job->state == JobState::JOB_STATE_NOT_SUBMITTED),
+                   "Bad kill: job %s has not been started", job->id.to_string().c_str());
 
         if (job->state == JobState::JOB_STATE_RUNNING)
         {
+            BatTask * job_progress = job->compute_job_progress();
+            // consistency checks
+            if (profile->type == ProfileType::MSG_PARALLEL ||
+                profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS ||
+                profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS ||
+                profile->type == ProfileType::MSG_DATA_STAGING
+                )
+            {
+                xbt_assert(job_progress != nullptr, "MSG profiles should contains jobs progress");
+            }
+
+            // Store job progress in the message
+            message->jobs_progress[job_id] = job_progress;
+
             // Let's kill all the involved processes
             xbt_assert(job->execution_processes.size() > 0);
             for (msg_process_t process : job->execution_processes)

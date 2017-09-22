@@ -65,23 +65,29 @@ enum class JobState
     ,JOB_STATE_RUNNING                //!< The job has been scheduled and is currently being processed.
     ,JOB_STATE_COMPLETED_SUCCESSFULLY //!< The job execution finished before its walltime successfully.
     ,JOB_STATE_COMPLETED_FAILED       //!< The job execution finished before its walltime but the job failed.
+    ,JOB_STATE_COMPLETED_WALLTIME_REACHED       //!< The job has reached his walltime and have been killed
     ,JOB_STATE_COMPLETED_KILLED       //!< The job has been killed.
     ,JOB_STATE_REJECTED               //!< The job has been rejected by the scheduler.
 };
 
 
 /**
- *  @brief Internal batsim simulation taski: the job profile instanciation.
+ *  @brief Internal batsim simulation task: the job profile instantiation.
  */
 struct BatTask
 {
     BatTask(Job * parent_job, Profile * profile);
+    ~BatTask();
 
     Job * parent_job;
     Profile * profile; //!< The job profile. The corresponding profile tells how the job should be computed
+    // Manage MSG profiles
     msg_task_t ptask = nullptr; //!< The final task to execute (only set for the leaf of the BatTask tree)
-    double computation_amount = 0;
-    double communication_amount = 0;
+    // manage Delay profile
+    double delay_task_start = -1; //!< Keep delay task starting time in order to compute progress afterwards
+    double delay_task_required = -1; //!< Keep delay task time requirement
+
+    // manage sequential profile
     vector<BatTask*> sub_tasks; //!< List of sub task of this task to be executed sequentially or in parallel depending on the profile
     unsigned int current_task_index = -1; //!< index in the sub_tasks vector of the current task
     double current_task_progress_ratio = 0; //!< give the progress of the current task from 0 to 1
@@ -125,7 +131,7 @@ struct Job
     JobState state; //!< The current state of the job
     int return_code = -1; //!< The return code of the job
 
-    BatTask * task; //!< The task to be executed by this job
+    BatTask * task = nullptr; //!< The task to be executed by this job
 
     BatTask * compute_job_progress(); //<! return the task progression of the task tree
 
@@ -152,6 +158,11 @@ struct Job
     static Job * from_json(const std::string & json_str,
                            Workload * workload,
                            const std::string & error_prefix = "Invalid JSON job");
+    /**
+     * @brief Return true if the job has complete (successfully or not),
+     * false if the job has not started
+     */
+    bool is_complete();
 };
 
 

@@ -704,7 +704,7 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
             {
                 Job * job = mit.second;
 
-                if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY || job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+                if (job->is_complete())
                 {
                     char * buf = nullptr;
                     int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
@@ -787,8 +787,7 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
                 Job * job = mit.second;
                 nb_jobs++;
 
-                if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
-                    job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+                if (job->is_complete())
                 {
                     nb_jobs_finished++;
 
