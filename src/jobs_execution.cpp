@@ -39,6 +39,15 @@ int smpi_replay_process(int argc, char *argv[])
     return 0;
 }
 
+/**
+ * @brief Execute a BatTask recursively regarding on its profile type
+ * @param[in,out] btask the task to execute
+ * @param[in] context usefull information about Batsim context
+ * @param[in] allocation the host to execute the task to
+ * @param[in,out] cleanup_data to give to simgrid cleanup hook
+ * @param[in,out] remaining_time remaining time of the current task
+ * @return the profile return code if successful, -1 if walltime reached
+ */
 int execute_task(BatTask * btask,
                  BatsimContext *context,
                  const SchedulingAllocation * allocation,
@@ -102,7 +111,7 @@ int execute_task(BatTask * btask,
 
         send_message("server", IPMessageType::FROM_JOB_MSG, (void*)message);
 
-        if (delay_job(data->sleeptime, remaining_time) == -1)
+        if (do_delay_task(data->sleeptime, remaining_time) == -1)
         {
             return -1;
         }
@@ -124,7 +133,8 @@ int execute_task(BatTask * btask,
                 XBT_INFO("Waiting for message from scheduler");
                 while (true)
                 {
-                    if (delay_job(data->polltime, remaining_time) == -1)
+
+                    if (do_delay_task(data->polltime, remaining_time) == -1)
                     {
                         return -1;
                     }
@@ -184,22 +194,11 @@ int execute_task(BatTask * btask,
         btask->delay_task_start = MSG_get_clock();
         btask->delay_task_required = data->delay;
 
-        if (data->delay < *remaining_time)
+        if (do_delay_task(data->delay, remaining_time) == -1)
         {
-            XBT_INFO("Sleeping the whole task length");
-            MSG_process_sleep(data->delay);
-            XBT_INFO("Sleeping done");
-            *remaining_time = *remaining_time - data->delay;
-            return profile->return_code;
-        }
-        else
-        {
-            XBT_INFO("Sleeping until walltime");
-            MSG_process_sleep(*remaining_time);
-            XBT_INFO("Walltime reached");
-            *remaining_time = 0;
             return -1;
         }
+        return profile->return_code;
     }
     else if (profile->type == ProfileType::SMPI)
     {
@@ -279,24 +278,33 @@ int execute_task(BatTask * btask,
     return 1;
 }
 
-int delay_job(double sleeptime,
-              double * remaining_time)
+int do_delay_task(double sleeptime, double * remaining_time)
 {
         if (sleeptime < *remaining_time)
         {
+            XBT_INFO("Sleeping the whole task length");
             MSG_process_sleep(sleeptime);
+            XBT_INFO("Sleeping done");
             *remaining_time = *remaining_time - sleeptime;
             return 0;
         }
         else
         {
-            XBT_INFO("Job has reached walltime");
+            XBT_INFO("Sleeping until walltime");
             MSG_process_sleep(*remaining_time);
+            XBT_INFO("Job has reached walltime");
             *remaining_time = 0;
             return -1;
         }
 }
 
+/**
+ * @brief Hook function given to simgrid to cleanup the task after its
+ * execution ends
+ * @param unknown unknown
+ * @param[in,out] data structure to clean up (cast in * CleanExecuteProfileData)
+ * @return always 0
+ */
 int execute_task_cleanup(void * unknown, void * data)
 {
     (void) unknown;

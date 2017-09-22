@@ -37,28 +37,12 @@ int killer_process(int argc, char *argv[]);
 int smpi_replay_process(int argc, char *argv[]);
 
 /**
- * @brief Executes the profile of a job
- * @param[in] context The Batsim Context
- * @param[in] profile_name The name of the profile to execute
- * @param[in] allocation The machines the job should be executed on
- * @param[in,out] cleanup_data The data to clean on bad process termination (kill)
- * @param[in,out] remaining_time The remaining amount of time before walltime
- * @return 0
- */
-int execute_profile(BatsimContext *context,
-                    const std::string & profile_name,
-                    const SchedulingAllocation * allocation,
-                    CleanExecuteProfileData * cleanup_data,
-                    double * remaining_time);
-
-/**
  * @brief Simulate the delay job profile (sleeping MSG process)
  * @param[in] sleeptime The time to sleep
  * @param[in,out] remaining_time The remaining amount of time before walltime
  * @return 0 if enough time is available, -1 in the case of a timeout
  */
-int delay_job(double sleeptime,
-              double * remaining_time);
+int do_delay_task(double sleeptime, double * remaining_time);
 
 /**
  * @brief Is executed on execute_profile termination, allows to clean memory on kill

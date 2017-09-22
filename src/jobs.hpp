@@ -76,11 +76,16 @@ enum class JobState
  */
 struct BatTask
 {
+    /**
+     * brief Construct the batTask and store parent job and profile
+     * @param parent_job The parent job that own this task
+     * @param profile The task profile to be executed
+     */
     BatTask(Job * parent_job, Profile * profile);
     ~BatTask();
 
-    Job * parent_job;
-    Profile * profile; //!< The job profile. The corresponding profile tells how the job should be computed
+    Job * parent_job; //!< The parent job that own this task
+    Profile * profile; //!< The task profile. The corresponding profile tells how the job should be computed
     // Manage MSG profiles
     msg_task_t ptask = nullptr; //!< The final task to execute (only set for the leaf of the BatTask tree)
     // manage Delay profile
@@ -91,10 +96,11 @@ struct BatTask
     vector<BatTask*> sub_tasks; //!< List of sub task of this task to be executed sequentially or in parallel depending on the profile
     unsigned int current_task_index = -1; //!< index in the sub_tasks vector of the current task
     double current_task_progress_ratio = 0; //!< give the progress of the current task from 0 to 1
-    void compute_tasks_progress();
+
+    void compute_tasks_progress(); //!< fill up the progress field (current_task_*) for this task and his sub tasks
 
     private:
-      void compute_leaf_progress();
+      void compute_leaf_progress(); //!< Helper function for compute_task_progress
 };
 
 
@@ -133,7 +139,11 @@ struct Job
 
     BatTask * task = nullptr; //!< The task to be executed by this job
 
-    BatTask * compute_job_progress(); //<! return the task progression of the task tree
+    /**
+     * @brief compute the task progression of this job
+     * @return the task tree with progress values filled up
+     */
+    BatTask * compute_job_progress();
 
     /**
      * @brief Creates a new-allocated Job from a JSON description
@@ -159,8 +169,9 @@ struct Job
                            Workload * workload,
                            const std::string & error_prefix = "Invalid JSON job");
     /**
-     * @brief Return true if the job has complete (successfully or not),
-     * false if the job has not started
+     * @brief Check if a job is complete (successfully or not)
+     * @return true if the job is complete , false if the job has not
+     * started
      */
     bool is_complete();
 };

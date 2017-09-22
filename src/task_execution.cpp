@@ -14,9 +14,17 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(task_execution, "task_execution"); //!< Logging
 
 using namespace std;
 
-
+/**
+ * @brief Generate the communication and computaion matrix for the msg
+ * parallel task profile. It also set the prefix name of the task.
+ * @param[out] task_name_prefix the prefix to add to the task name
+ * @param[out] computation_amount the computation matrix to be simulated by the msg task
+ * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @param[in] nb_res the number of resources the task have to run on
+ * @param[in] profile_data the profile data
+ */
 void generate_msg_parallel_task(
-    string task_name_prefix,
+    string& task_name_prefix,
     double*& computation_amount,
     double*& communication_amount,
     unsigned int nb_res,
@@ -33,8 +41,18 @@ void generate_msg_parallel_task(
     memcpy(communication_amount, data->com, sizeof(double) * nb_res * nb_res);
 }
 
+/**
+ * @brief Generate the communication and computaion matrix for the msg
+ * parallel homogeneous task profile. It also set the prefix name of the
+ * task.
+ * @param[out] task_name_prefix the prefix to add to the task name
+ * @param[out] computation_amount the computation matrix to be simulated by the msg task
+ * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @param[in] nb_res the number of resources the task have to run on
+ * @param[in] profile_data the profile data
+ */
 void generate_msg_parallel_homogeneous(
-    string task_name_prefix,
+    string& task_name_prefix,
     double*& computation_amount,
     double*& communication_amount,
     unsigned int nb_res,
@@ -71,8 +89,21 @@ void generate_msg_parallel_homogeneous(
     }
 }
 
+/**
+ * @brief Generate the communication and computaion matrix for the msg
+ * parallel homogeneous task profile with pfs.
+ * @details Note that the number of resource is also altered because of
+ * the pfs node that is addded. It also set the prefix name of the task.
+ * @param[out] task_name_prefix the prefix to add to the task name
+ * @param[out] computation_amount the computation matrix to be simulated by the msg task
+ * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @param[in,out] nb_res the number of resources the task have to run on
+ * @param[in] profile_data the profile data
+ * @param[in,out] hosts_to_use the list of host to be used by the task
+ * @param[in] context the batsim context
+ */
 void generate_msg_parallel_homogeneous_with_pfs(
-    string task_name_prefix,
+    string& task_name_prefix,
     double*& computation_amount,
     double*& communication_amount,
     unsigned int& nb_res,
@@ -147,6 +178,20 @@ void generate_msg_parallel_homogeneous_with_pfs(
     }
 }
 
+/**
+ * @brief Generate the communication and computaion matrix for the msg
+ * data staging task profile.
+ * @details Note that the number of resource is also altered because only
+ * the pfs and the hpst are involved in the transfer. It also set the prefix
+ * name of the task.
+ * @param[out] task_name_prefix the prefix to add to the task name
+ * @param[out] computation_amount the computation matrix to be simulated by the msg task
+ * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @param[in,out] nb_res the number of resources the task have to run on
+ * @param[in] profile_data the profile data
+ * @param[in,out] hosts_to_use the list of host to be used by the task
+ * @param[in] context the batsim context
+ */
 void generate_msg_data_staginig_task(string task_name_prefix,
     double*&  computation_amount,
     double*& communication_amount,
