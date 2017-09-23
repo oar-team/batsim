@@ -79,18 +79,19 @@ Build and code status
 | :-------------------: | :----------------------------------------------: | :-------------------: |
 | ![master-badge]       | ![upstream_sg-badge]                             | ![codacy-badge]       |
 
-[master-badge]: https://gitlab.inria.fr/batsim/batsim/badges/master/build.svg "Gitlab CI build status (master branch)"
-[master-link]:  https://gitlab.inria.fr/batsim/batsim/pipelines "Gitlab CI build status"
-[upstream_sg-badge]: https://gitlab.inria.fr/batsim/batsim/badges/upstream_sg/build.svg "Gitlab CI build status (upstream_sg branch)"
-[upstream_sg-link]:  https://gitlab.inria.fr/batsim/batsim/pipelines "Gitlab CI build status"
+[master-badge]: https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/badges/master/build.svg "Gitlab CI build status (master branch)"
+[master-link]:  https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/pipelines "Gitlab CI build status"
+[upstream_sg-badge]: https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/badges/upstream_sg/build.svg "Gitlab CI build status (upstream_sg branch)"
+[upstream_sg-link]:  https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/pipelines "Gitlab CI build status"
 [codacy-badge]: https://api.codacy.com/project/badge/Grade/e5990f2e9abc4573b13a0b8c9d9e0f08 "Codacy code style"
 [codacy-link]: https://www.codacy.com/app/mpoquet/batsim/dashboard
 
 Batsim uses Gitlab CI as its continuous integration system.  
 Build status of the different commits can be found
-[there](https://gitlab.inria.fr/batsim/batsim/pipelines).  
+[there][batsim ci].  
 More information about our CI setup can be found
 [there](./doc/continuous_integration.md).
+
 
 Development environment
 -------------------------
@@ -155,7 +156,7 @@ Installation
 
 Batsim uses [Kameleon](http://kameleon.imag.fr/index.html) to build controlled
 environments. These environments allow us to generate Docker containers, which
-are used by [our CI](https://gitlab.inria.fr/batsim/batsim/pipelines) to test
+are used by [our CI][batsim ci] to test
 whether Batsim can be built correctly and whether some integration tests pass.
 
 Thus, the most up-to-date information about how to build Batsim dependencies
@@ -300,3 +301,4 @@ If you want to run more complex scenarios, giving a look at our
 [datsched gitlab]: https://gitlab.inria.fr/batsim/datsched
 [rust sched repo]: https://gitlab.inria.fr/adfaure/schedulers
 [perl sched repo]: https://github.com/fernandodeperto/batch-simulator
+[batsim ci]: https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/pipelines
