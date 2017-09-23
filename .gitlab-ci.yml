@@ -1,7 +1,7 @@
-image: oarteam/batsim_ci:2017-09-12
+image: oarteam/batsim_ci
 
 variables:
-  GIT_SUBMODULE_STRATEGY: normal
+  GIT_SUBMODULE_STRATEGY: none
 
 # The before_script part above is done in order to push Batsim's code doc
 # onto the gforge website.
@@ -50,14 +50,29 @@ build_gcc:
 build_batsched:
   stage: build
   script:
-    - cd /builds/batsim/batsim/schedulers
-    - mkdir batsched_build
-    - cd batsched_build
+    # Get the code at the expected revision
+    - git clone https://gitlab.inria.fr/batsim/batsched.git /builds/batsim/batsim/schedulers/batsched
+    - cd /builds/batsim/batsim/schedulers/batsched
+    - git reset --hard c2bbc1f2a9ab12856ea782a30321f0b22c5b1a13 # 2017-06-20
+    # Build batsched
+    - mkdir -p /builds/batsim/batsim/schedulers/batsched/build
+    - cd /builds/batsim/batsim/schedulers/batsched/build
     - cmake /builds/batsim/batsim/schedulers/batsched
     - make
   artifacts:
     paths:
-      - /builds/batsim/batsim/schedulers/batsched_build
+      - /builds/batsim/batsim/schedulers/batsched/build
+
+retrieve_pybatsim:
+  stage: build
+  script:
+    # Get the code at the expected revision
+    - git clone https://gitlab.inria.fr/batsim/pybatsim.git /builds/batsim/batsim/schedulers/pybatsim
+    - cd /builds/batsim/batsim/schedulers/pybatsim
+    - git reset --hard 450d9a43be89688f874b89b4b4839e8b021ec908 # 2017-09-11
+  artifacts:
+    paths:
+      - /builds/batsim/batsim/schedulers/pybatsim
 
 test_doc:
   stage: test
@@ -74,24 +89,31 @@ test_doc:
 test_test:
   stage: test
   script:
-    # Let's run the redis server
+    # Run the redis server
     - |
       redis-server>/dev/null &
       while ! nc -z localhost 6379; do
         sleep 1
       done
 
+    # Install Batsim
     - cd /builds/batsim/batsim/build
     - make install
 
-    - cd /builds/batsim/batsim/schedulers/batsched_build
+    # Install the Batsched scheduler
+    - cd /builds/batsim/batsim/schedulers/batsched/build
     - make install
 
+    # Install the pybatsim scheduler
+    - pip3 install --upgrade /builds/batsim/batsim/schedulers/pybatsim
+
+    # Finally run the tests
     - cd /builds/batsim/batsim/build
     - ctest --output-on-failure -E 'remote|smpi'
   dependencies:
     - build_clang
     - build_batsched
+    - retrieve_pybatsim
 
 deploy_code_doc:
   stage: deploy
