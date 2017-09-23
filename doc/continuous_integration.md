@@ -31,8 +31,7 @@ The script can be found [there](../.gitlab-ci.yml). It essentially:
 Gitlab Project Configuration
 ----------------------------
 
-Edit your project configuration page ([there for Batsim]
-(https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/edit))
+Edit your project configuration page ([there for Batsim](https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/edit))
 and make sure that ``Pipelines`` are enabled.
 
 Some additional CI related configuration can be done in the CI settings page
@@ -48,8 +47,7 @@ the rest of this section describes how we managed to do it.
 First, install the gitlab-ci-runner on the machine which should execute the
 various CI operations. It is probably in your favourite package manager, but
 more detailed information can be found on
-[the Gitlab CI runner installation manual]
-(https://docs.gitlab.com/runner/install/).
+[the Gitlab CI runner installation manual](https://docs.gitlab.com/runner/install/).
 
 When running a runner for the first time, you have to tell it some information
 about the server and the project. This information is given
