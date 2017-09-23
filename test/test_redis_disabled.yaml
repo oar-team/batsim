@@ -53,7 +53,7 @@ implicit_instances:
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${instance_id}
       batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -E -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vdebug
-      sched_command: ${batsim_dir}/schedulers/pybatsim/launcher.py ${algo[sched_name]}
+      sched_command: pybatsim ${algo[sched_name]}
       commands_before_execution:
         # Generate Batsim config file
         - |
