@@ -18,10 +18,12 @@ docker run -ti --name battuto oarteam/batsim_ci bash
 In the same terminal, running the following commands will install Batsim and
 a scheduler in the battuto environment:
 ``` bash
-# get the code
+# get batsim code
 git clone https://gitlab.inria.fr/batsim/batsim.git /root/batsim
 cd /root/batsim
 git checkout v1.1.0
+
+# get schedulers code
 git submodule update --init
 
 # build and install batsim
@@ -29,10 +31,13 @@ mkdir /root/batsim/build
 cd /root/batsim/build
 cmake .. && make install
 
-# build and install batsched
+# build and install batsched (C++ schedulers)
 mkdir /root/batsim/schedulers/batsched/build
 cd /root/batsim/schedulers/batsched/build
 cmake .. && make install
+
+# install pybatsim (python schedulers)
+pip3 install /root/batsim/schedulers/pybatsim
 
 # create an experiment directory
 mkdir /root/battuto
