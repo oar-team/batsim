@@ -255,7 +255,7 @@ or not, depending on whether the job completed without reaching timeout).
 - **data**:
   - **job_id**: the job unique identifier
   - **status**: whether SUCCESS or TIMEOUT (**DEPRECATED**)
-  - **job_state**: the job state. Possible values: "NOT_SUBMITTED", "SUBMITTED", "RUNNING", "COMPLETED_SUCCESSFULLY", "COMPLETED_KILLED", "REJECTED"
+  - **job_state**: the job state. Possible values: "NOT_SUBMITTED", "SUBMITTED", "RUNNING", "COMPLETED_SUCCESSFULLY", "COMPLETED_FAILED", "COMPLETED_WALLTIME_REACHED", "COMPLETED_KILLED", "REJECTED"
   - **kill_reason**: the kill reason (if any)
 - **example**:
 ```json
@@ -273,8 +273,11 @@ or not, depending on whether the job completed without reaching timeout).
 
 ### JOB_KILLED
 
-Some jobs have been killed. It acknowledges that the actions coming from a
-previous [KILL_JOB](#kill_job) message have been done.
+Some jobs have been killed.
+It acknowledges that the actions coming from a previous [KILL_JOB](#kill_job)
+message have been done.
+The ``job_ids`` jobs correspond to those requested in the previous
+[KILL_JOB](#kill_job) message)
 
 The ``job_progress`` map is also given for the all the jobs and tasks
 inside the job that have been killed. Key is the ``job_id`` and the value
@@ -298,7 +301,12 @@ event.
 {
   "timestamp": 10.0,
   "type": "JOB_KILLED",
-  "data": {"job_ids": ["w0!1", "w0!2"]}
+  "data": {
+    "job_ids": [
+      "w0!1",
+      "w0!2"
+    ]
+  }
 }
 ```
 
@@ -308,32 +316,31 @@ event.
 {
   "timestamp": 10.0,
   "type": "JOB_KILLED",
-  "data":
-  {
-    "job_ids": ["w0!1", "w0!2"],
-    "job_progress":
-    {
-      "w0!1": {"profile": "my_simple_profile", "progress": 0.52},
-      "w0!2":
-      {
+  "data": {
+    "job_ids": [
+      "w0!1",
+      "w0!2"
+    ],
+    "job_progress": {
+      "w0!1": {
+        "profile": "my_simple_profile",
+        "progress": 0.52
+      },
+      "w0!2": {
         "profile": "my_sequential_profile",
         "current_task_index": 3,
-        "current_task":
-        {
+        "current_task": {
           "profile": "my_simple_profile",
           "progress": 0.52
         }
       },
-      "w0!3:
-      {
+      "w0!3": {
         "profile": "my_composed_profile",
         "current_task_index": 2,
-        "current_task":
-        {
+        "current_task": {
           "profile": "my_sequential_profile",
           "current_task_index": 3,
-          "current_task":
-          {
+          "current_task": {
             "profile": "my_simple_profile",
             "progress": 0.52
           }
