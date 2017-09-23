@@ -606,3 +606,50 @@ Profile *Profile::from_json(const std::string & profile_name,
 
     return Profile::from_json(profile_name, doc, error_prefix, false);
 }
+
+bool Profile::is_parallel_task() const
+{
+    return (type == ProfileType::MSG_PARALLEL) ||
+           (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS) ||
+           (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS) ||
+           (type == ProfileType::MSG_DATA_STAGING);
+}
+
+
+std::string profile_type_to_string(const ProfileType & type)
+{
+    string str = "unset";
+
+    switch(type)
+    {
+    case ProfileType::DELAY:
+        str = "DELAY";
+        break;
+    case ProfileType::MSG_PARALLEL:
+        str = "MSG_PARALLEL";
+        break;
+    case ProfileType::MSG_PARALLEL_HOMOGENEOUS:
+        str = "MSG_PARALLEL_HOMOGENEOUS";
+        break;
+    case ProfileType::SMPI:
+        str = "SMPI";
+        break;
+    case ProfileType::SEQUENCE:
+        str = "SEQUENCE";
+        break;
+    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS:
+        str = "MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS";
+        break;
+    case ProfileType::MSG_DATA_STAGING:
+        str = "MSG_DATA_STAGING";
+        break;
+    case ProfileType::SCHEDULER_SEND:
+        str = "SCHEDULER_SEND";
+        break;
+    case ProfileType::SCHEDULER_RECV:
+        str = "SCHEDULER_RECV";
+        break;
+    }
+
+    return str;
+}

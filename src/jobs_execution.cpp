@@ -39,19 +39,10 @@ int smpi_replay_process(int argc, char *argv[])
     return 0;
 }
 
-/**
- * @brief Execute a BatTask recursively regarding on its profile type
- * @param[in,out] btask the task to execute
- * @param[in] context usefull information about Batsim context
- * @param[in] allocation the host to execute the task to
- * @param[in,out] cleanup_data to give to simgrid cleanup hook
- * @param[in,out] remaining_time remaining time of the current task
- * @return the profile return code if successful, -1 if walltime reached
- */
 int execute_task(BatTask * btask,
                  BatsimContext *context,
                  const SchedulingAllocation * allocation,
-                 CleanExecuteProfileData * cleanup_data,
+                 CleanExecuteTaskData * cleanup_data,
                  double * remaining_time)
 {
     Job * job = btask->parent_job;
@@ -61,42 +52,49 @@ int execute_task(BatTask * btask,
     // Init task
     btask->parent_job = job;
 
-    if (profile->type == ProfileType::MSG_PARALLEL ||
-        profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS ||
-        profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS ||
-        profile->type == ProfileType::MSG_DATA_STAGING)
+    if (profile->is_parallel_task())
     {
-        int return_code = execute_msg_task(btask, allocation, nb_res, remaining_time, context, cleanup_data);
+        int return_code = execute_msg_task(btask, allocation, nb_res, remaining_time,
+                                           context, cleanup_data);
         if (return_code != 0)
         {
             return return_code;
         }
+
         return profile->return_code;
     }
     else if (profile->type == ProfileType::SEQUENCE)
     {
         SequenceProfileData * data = (SequenceProfileData *) profile->data;
 
-        // initialize BatTask list
-        //btask->sub_tasks = vector<BatTask*>();
-        for (int i = 0; i < data->repeat; i++)
+        // (Sequences can be repeated several times)
+        for (int sequence_iteration = 0; sequence_iteration < data->repeat; sequence_iteration++)
         {
-            for (unsigned int j = 0; j < data->sequence.size(); j++)
+            for (unsigned int profile_index_in_sequence = 0;
+                 profile_index_in_sequence < data->sequence.size();
+                 profile_index_in_sequence++)
             {
-                // conserve the index information in BatTask
-                btask->current_task_index = i * data->sequence.size() + j;
+                // Traces how the execution is going so that progress can be retrieved if needed
+                btask->current_task_index = sequence_iteration * data->sequence.size() +
+                                            profile_index_in_sequence;
+                BatTask * sub_btask = new BatTask(job,
+                    job->workload->profiles->at(data->sequence[profile_index_in_sequence]));
+                btask->sub_tasks.push_back(sub_btask);
+
                 string task_name = "seq" + to_string(job->number) + "'" + job->profile + "'";
                 XBT_INFO("Creating sequential tasks '%s'", task_name.c_str());
-                BatTask * sub_btask = new BatTask(job, job->workload->profiles->at(data->sequence[j]));
-                btask->sub_tasks.push_back(sub_btask);
+
                 int ret_last_profile = execute_task(sub_btask, context,  allocation,
-                                    cleanup_data, remaining_time);
+                                                    cleanup_data, remaining_time);
+
+                // The whole sequence fails if a subtask fails
                 if (ret_last_profile != 0)
                 {
                     return ret_last_profile;
                 }
             }
         }
+
         return profile->return_code;
     }
     else if (profile->type == ProfileType::SCHEDULER_SEND)
@@ -133,7 +131,6 @@ int execute_task(BatTask * btask,
                 XBT_INFO("Waiting for message from scheduler");
                 while (true)
                 {
-
                     if (do_delay_task(data->polltime, remaining_time) == -1)
                     {
                         return -1;
@@ -280,36 +277,36 @@ int execute_task(BatTask * btask,
 
 int do_delay_task(double sleeptime, double * remaining_time)
 {
-        if (sleeptime < *remaining_time)
-        {
-            XBT_INFO("Sleeping the whole task length");
-            MSG_process_sleep(sleeptime);
-            XBT_INFO("Sleeping done");
-            *remaining_time = *remaining_time - sleeptime;
-            return 0;
-        }
-        else
-        {
-            XBT_INFO("Sleeping until walltime");
-            MSG_process_sleep(*remaining_time);
-            XBT_INFO("Job has reached walltime");
-            *remaining_time = 0;
-            return -1;
-        }
+    if (sleeptime < *remaining_time)
+    {
+        XBT_INFO("Sleeping the whole task length");
+        MSG_process_sleep(sleeptime);
+        XBT_INFO("Sleeping done");
+        *remaining_time = *remaining_time - sleeptime;
+        return 0;
+    }
+    else
+    {
+        XBT_INFO("Sleeping until walltime");
+        MSG_process_sleep(*remaining_time);
+        XBT_INFO("Job has reached walltime");
+        *remaining_time = 0;
+        return -1;
+    }
 }
 
 /**
  * @brief Hook function given to simgrid to cleanup the task after its
  * execution ends
  * @param unknown unknown
- * @param[in,out] data structure to clean up (cast in * CleanExecuteProfileData)
+ * @param[in,out] data structure to clean up (cast in * CleanExecuteTaskData)
  * @return always 0
  */
 int execute_task_cleanup(void * unknown, void * data)
 {
     (void) unknown;
 
-    CleanExecuteProfileData * cleanup_data = (CleanExecuteProfileData *) data;
+    CleanExecuteTaskData * cleanup_data = (CleanExecuteTaskData *) data;
     xbt_assert(cleanup_data != nullptr);
 
     XBT_DEBUG("before freeing computation amount %p", cleanup_data->computation_amount);
@@ -365,15 +362,16 @@ int execute_job_process(int argc, char *argv[])
                                                        args->allocation->machine_ids,
                                                        args->context);
     // Add a cleanup hook on the process
-    CleanExecuteProfileData * cleanup_data = new CleanExecuteProfileData;
+    CleanExecuteTaskData * cleanup_data = new CleanExecuteTaskData;
     cleanup_data->exec_process_args = args;
     SIMIX_process_on_exit(MSG_process_self(), execute_task_cleanup, cleanup_data);
 
     // Create root task
-    BatTask * root_task = new BatTask(job, workload->profiles->at(job->profile));
-    job->task = root_task;
+    job->task = new BatTask(job, workload->profiles->at(job->profile));
+
     // Execute the process
-    job->return_code = execute_task(root_task, args->context, args->allocation, cleanup_data, &remaining_time);
+    job->return_code = execute_task(job->task, args->context, args->allocation,
+                                    cleanup_data, &remaining_time);
     if (job->return_code == 0)
     {
         XBT_INFO("Job %s finished in time (success)", job->id.to_string().c_str());
@@ -381,7 +379,8 @@ int execute_job_process(int argc, char *argv[])
     }
     else if (job->return_code > 0)
     {
-        XBT_INFO("Job %s finished in time (failed)", job->id.to_string().c_str());
+        XBT_INFO("Job %s finished in time (failed: return_code=%d)",
+                 job->id.to_string().c_str(), job->return_code);
         job->state = JobState::JOB_STATE_COMPLETED_FAILED;
     }
     else
@@ -490,14 +489,13 @@ int killer_process(int argc, char *argv[])
         if (job->state == JobState::JOB_STATE_RUNNING)
         {
             BatTask * job_progress = job->compute_job_progress();
-            // consistency checks
-            if (profile->type == ProfileType::MSG_PARALLEL ||
-                profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS ||
-                profile->type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS ||
-                profile->type == ProfileType::MSG_DATA_STAGING
-                )
+
+            // Consistency checks
+            if (profile->is_parallel_task() ||
+                profile->type == ProfileType::DELAY)
             {
-                xbt_assert(job_progress != nullptr, "MSG profiles should contains jobs progress");
+                xbt_assert(job_progress != nullptr,
+                           "MSG and delay profiles should contain jobs progress");
             }
 
             // Store job progress in the message

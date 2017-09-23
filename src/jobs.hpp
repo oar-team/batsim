@@ -60,47 +60,64 @@ bool operator<(const JobIdentifier & ji1, const JobIdentifier & ji2);
  */
 enum class JobState
 {
-     JOB_STATE_NOT_SUBMITTED          //!< The job exists but cannot be scheduled yet.
-    ,JOB_STATE_SUBMITTED              //!< The job has been submitted, it can now be scheduled.
-    ,JOB_STATE_RUNNING                //!< The job has been scheduled and is currently being processed.
-    ,JOB_STATE_COMPLETED_SUCCESSFULLY //!< The job execution finished before its walltime successfully.
-    ,JOB_STATE_COMPLETED_FAILED       //!< The job execution finished before its walltime but the job failed.
-    ,JOB_STATE_COMPLETED_WALLTIME_REACHED       //!< The job has reached his walltime and have been killed
-    ,JOB_STATE_COMPLETED_KILLED       //!< The job has been killed.
-    ,JOB_STATE_REJECTED               //!< The job has been rejected by the scheduler.
+     JOB_STATE_NOT_SUBMITTED                //!< The job exists but cannot be scheduled yet.
+    ,JOB_STATE_SUBMITTED                    //!< The job has been submitted, it can now be scheduled.
+    ,JOB_STATE_RUNNING                      //!< The job has been scheduled and is currently being processed.
+    ,JOB_STATE_COMPLETED_SUCCESSFULLY       //!< The job execution finished before its walltime successfully.
+    ,JOB_STATE_COMPLETED_FAILED             //!< The job execution finished before its walltime but the job failed.
+    ,JOB_STATE_COMPLETED_WALLTIME_REACHED   //!< The job has reached its walltime and has been killed.
+    ,JOB_STATE_COMPLETED_KILLED             //!< The job has been killed.
+    ,JOB_STATE_REJECTED                     //!< The job has been rejected by the scheduler.
 };
 
 
 /**
- *  @brief Internal batsim simulation task: the job profile instantiation.
+ * @brief Internal Batsim simulation task (corresponds to a job profile instantiation).
+ * @details Please remark that this type is recursive since profiles can be composed.
  */
 struct BatTask
 {
     /**
-     * brief Construct the batTask and store parent job and profile
-     * @param parent_job The parent job that own this task
-     * @param profile The task profile to be executed
+     * @brief BatTask Constructs a batTask and stores the associated job and profile
+     * @param[in] parent_job The job that owns the task
+     * @param[in] profile The profile that corresponds to the task
      */
     BatTask(Job * parent_job, Profile * profile);
+
+    /**
+      * @brief BatTask destructor
+      * @details Recursively cleans subtasks
+      */
     ~BatTask();
 
-    Job * parent_job; //!< The parent job that own this task
+    /**
+     * @brief Computes the current progress of a task
+     * @details This function does recursive calls if needed (composed tasks).
+     *          compute_leaf_progress is called on leaves.
+     */
+    void compute_tasks_progress();
+
+private:
+    /**
+     * @brief Compute the progress of a leaf task
+     */
+    void compute_leaf_progress();
+
+public:
+    Job * parent_job; //!< The parent job that owns this task
     Profile * profile; //!< The task profile. The corresponding profile tells how the job should be computed
+
     // Manage MSG profiles
-    msg_task_t ptask = nullptr; //!< The final task to execute (only set for the leaf of the BatTask tree)
+    msg_task_t ptask = nullptr; //!< The final task to execute (only set for BatTask leaves with MSG profiles)
+
     // manage Delay profile
-    double delay_task_start = -1; //!< Keep delay task starting time in order to compute progress afterwards
-    double delay_task_required = -1; //!< Keep delay task time requirement
+    double delay_task_start = -1; //!< Stores when the task started its execution, in order to compute its progress afterwards (only set for BatTask leaves with delay profiles)
+    double delay_task_required = -1; //!< Stores how long delay tasks should last (only set for BatTask leaves with delay profiles)
 
     // manage sequential profile
-    vector<BatTask*> sub_tasks; //!< List of sub task of this task to be executed sequentially or in parallel depending on the profile
-    unsigned int current_task_index = -1; //!< index in the sub_tasks vector of the current task
-    double current_task_progress_ratio = 0; //!< give the progress of the current task from 0 to 1
-
-    void compute_tasks_progress(); //!< fill up the progress field (current_task_*) for this task and his sub tasks
-
-    private:
-      void compute_leaf_progress(); //!< Helper function for compute_task_progress
+    vector<BatTask*> sub_tasks; //!< List of sub tasks that must be executed sequentially. Only set for BatTask non-leaves with sequential profiles at the moment, but it may be used for parallel composition in the future.
+    unsigned int current_task_index = -1; //!< Index of the task that is currently being executed in the sub_tasks vector. Only set for BatTask non-leaves with sequential profiles.
+    double current_task_progress_ratio = 0; //!< Gives the progress of the current task from 0 to 1. Only set for BatTask non-leaves with sequential profiles.
 };
 
 
@@ -109,39 +126,43 @@ struct BatTask
  */
 struct Job
 {
+    /**
+     * @brief Destructor
+     */
     ~Job();
 
+    // Batsim internals
     Workload * workload = nullptr; //!< The workload the job belongs to
     int number; //!< The job unique number within its workload
     JobIdentifier id; //!< The job unique identifier
+    BatTask * task = nullptr; //!< The root task be executed by this job (profile instantiation).
+    std::string json_description; //!< The JSON description of the job
+    std::set<msg_process_t> execution_processes; //!< The processes involved in running the job
+    std::deque<std::string> incoming_message_buffer; //!< The buffer for incoming messages from the scheduler.
+
+    // Scheduler allocation
+    MachineRange allocation; //!< The machines on which the job has been executed.
+    std::vector<int> smpi_ranks_to_hosts_mapping; //!< If the job uses a SMPI profile, stores which host number each MPI rank should use. These numbers must be in [0,required_nb_res[.
+
+    // Current state
+    JobState state; //!< The current state of the job
+    Rational starting_time; //!< The time at which the job starts to be executed.
+    Rational runtime; //!< The amount of time during which the job has been executed.
+    std::string kill_reason; //!< If the job has been killed, the kill reason is stored in this variable
+    bool kill_requested = false; //!< Whether the job kill has been requested
+    long double consumed_energy; //!< The sum, for each machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
+
+    // User inputs
     std::string profile; //!< The job profile name. The corresponding profile tells how the job should be computed
     Rational submission_time; //!< The job submission time: The time at which the becomes available
     Rational walltime; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed
     int required_nb_res; //!< The number of resources the job is requested to be executed on
-    std::string kill_reason; //!< If the job has been killed, the kill reason is stored in this variable
-
-    bool kill_requested = false; //!< Whether the job kill has been requested
-
-    std::set<msg_process_t> execution_processes; //!< The processes involved in running the job
-
-    std::string json_description; //!< The JSON description of the job
-
-    long double consumed_energy; //!< The sum, for each machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
-
-    std::deque<std::string> incoming_message_buffer; //!< The buffer for incoming messages from the scheduler.
-
-    Rational starting_time; //!< The time at which the job starts to be executed.
-    Rational runtime; //!< The amount of time during which the job has been executed
-    MachineRange allocation; //!< The machines on which the job has been executed.
-    std::vector<int> smpi_ranks_to_hosts_mapping; //!< If the job uses a SMPI profile, stores which host number each MPI rank should use. These numbers must be in [0,required_nb_res[.
-    JobState state; //!< The current state of the job
     int return_code = -1; //!< The return code of the job
 
-    BatTask * task = nullptr; //!< The task to be executed by this job
-
+public:
     /**
-     * @brief compute the task progression of this job
-     * @return the task tree with progress values filled up
+     * @brief Computes the task progression of this job
+     * @return The task progress tree with filled-up associated values
      */
     BatTask * compute_job_progress();
 
@@ -169,11 +190,10 @@ struct Job
                            Workload * workload,
                            const std::string & error_prefix = "Invalid JSON job");
     /**
-     * @brief Check if a job is complete (successfully or not)
-     * @return true if the job is complete , false if the job has not
-     * started
+     * @brief Checks whether a job is complete (regardless of the job success)
+     * @return true if the job is complete (=has started then finished), false otherwise.
      */
-    bool is_complete();
+    bool is_complete() const;
 };
 
 
@@ -212,13 +232,13 @@ public:
      * @brief Sets the profiles which are associated to the Jobs
      * @param[in] profiles The profiles
      */
-    void setProfiles(Profiles * profiles);
+    void set_profiles(Profiles * profiles);
 
     /**
      * @brief Sets the Workload within which this Jobs instance exist
      * @param[in] workload The Workload
      */
-    void setWorkload(Workload * workload);
+    void set_workload(Workload * workload);
 
     /**
      * @brief Loads the jobs from a JSON document

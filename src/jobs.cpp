@@ -29,77 +29,74 @@ using namespace rapidjson;
 XBT_LOG_NEW_DEFAULT_CATEGORY(jobs, "jobs"); //!< Logging
 
 
-/**
- * @brief Constructor for simple task
- */
-BatTask::BatTask(Job * parent_job, Profile * profile) {
-    this->parent_job = parent_job;
-    this->profile = profile;
+BatTask::BatTask(Job * parent_job, Profile * profile) :
+    parent_job(parent_job),
+    profile(profile)
+{
 }
 
-BatTask::~BatTask() {
-    for (auto &sub_btask : this->sub_tasks) {
+BatTask::~BatTask()
+{
+    for (auto & sub_btask : this->sub_tasks)
+    {
         delete sub_btask;
         sub_btask = nullptr;
     }
 }
 
-
-
 void BatTask::compute_leaf_progress()
 {
-    xbt_assert(this->sub_tasks.empty(), "Leaf should not contains sub tasks");
+    xbt_assert(sub_tasks.empty(), "Leaves should not contain sub tasks");
 
-    // MSG task
-    if (this->ptask != nullptr) {
-        // WARNING: This is not returning the flops amount but the work quantity
-        //remaining from 1 (not started) to 0 (done)
-        this->current_task_progress_ratio = 1 - MSG_task_get_flops_amount(this->ptask);
-    }
-    // delay task
-    else if (this->delay_task_start != -1)
+    if (profile->is_parallel_task())
     {
-        double runtime = MSG_get_clock() - this->delay_task_start;
-        // manage empty delay job (why?!)
-        if (this->delay_task_required == 0)
+        xbt_assert(ptask != nullptr, "Internal error");
+
+        // WARNING: This is not returning the flops amount but the remainin quantity of work
+        // from 1 (not started yet) to 0 (completely finished)
+        current_task_progress_ratio = 1 - MSG_task_get_flops_amount(ptask);
+    }
+    else if (profile->type == ProfileType::DELAY)
+    {
+        xbt_assert(delay_task_start != -1, "Internal error");
+
+        double runtime = MSG_get_clock() - delay_task_start;
+
+        // Manages empty delay job (why?!)
+        if (delay_task_required == 0)
         {
-            this->current_task_progress_ratio = 1;
+            current_task_progress_ratio = 1;
         }
         else
         {
-            this->current_task_progress_ratio = runtime / this->delay_task_required;
+            current_task_progress_ratio = runtime / delay_task_required;
         }
     }
-    // Not implemented
-    else {
-        XBT_WARN("computing the progress of this type of task is not implemented");
+    else
+    {
+        XBT_WARN("Computing the progress of %s profiles is not implemented.",
+                 profile_type_to_string(profile->type).c_str());
     }
-
 }
 
 void BatTask::compute_tasks_progress()
 {
-    if (this->sub_tasks.empty())
+    if (profile->type == ProfileType::SEQUENCE)
     {
-        this->compute_leaf_progress();
+        sub_tasks[current_task_index]->compute_tasks_progress();
     }
     else
     {
-        // compute only for current sequential task
-        sub_tasks[current_task_index]->compute_tasks_progress();
+        this->compute_leaf_progress();
     }
 }
 
-/**
- * @brief Return the BatTask tree with progress
- */
 BatTask* Job::compute_job_progress()
 {
-    if (this->task != nullptr) {
-        this->task->compute_tasks_progress();
-    }
-    return this->task;
+    xbt_assert(task != nullptr, "Internal error");
 
+    task->compute_tasks_progress();
+    return task;
 }
 
 
@@ -116,12 +113,12 @@ Jobs::~Jobs()
     }
 }
 
-void Jobs::setProfiles(Profiles *profiles)
+void Jobs::set_profiles(Profiles *profiles)
 {
     _profiles = profiles;
 }
 
-void Jobs::setWorkload(Workload *workload)
+void Jobs::set_workload(Workload *workload)
 {
     _workload = workload;
 }
@@ -248,19 +245,20 @@ Job::~Job()
     xbt_assert(execution_processes.size() == 0,
                "Internal error: job %s has %d execution processes on destruction (should be 0).",
                this->id.to_string().c_str(), (int)execution_processes.size());
-    if (this->task != nullptr)
+
+    if (task != nullptr)
     {
-        delete this->task;
-        this->task = nullptr;
+        delete task;
+        task = nullptr;
     }
 }
 
-bool Job::is_complete()
+bool Job::is_complete() const
 {
-  return (this->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY
-      || this->state == JobState::JOB_STATE_COMPLETED_KILLED
-      || this->state == JobState::JOB_STATE_COMPLETED_FAILED
-      || this->state == JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED);
+    return (state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY) ||
+           (state == JobState::JOB_STATE_COMPLETED_KILLED) ||
+           (state == JobState::JOB_STATE_COMPLETED_FAILED) ||
+           (state == JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED);
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)

@@ -5,19 +5,18 @@
 #include "jobs.hpp"
 
 /**
- * @brief Execute tasks from profiles that use MSG simgrid model
- * @param[in,out] btask task to be filled and compute
- * @param[in] allocation the host to execute the task to
- * @param[in] nb_res the number of resources the task have to run on
- * @param[in,out] remaining_time remaining time of the current task
- * @param[in] context usefull information about Batsim context
- * @param[in,out] cleanup_data The data to clean on bad process termination (kill)
- * @return the task profile return code of -1 it the task timeout
+ * @brief Execute tasks that correspond to parallel task (MSG) profiles
+ * @param[in,out] btask The task to execute. Progress information is stored within it.
+ * @param[in] allocation The hosts where the task can be executed
+ * @param[in] nb_res The number of executors the task uses
+ * @param[in,out] remaining_time The remaining time of the current task. It will be automatically killed if 0 is reached.
+ * @param[in] context The BatsimContext
+ * @param[in,out] cleanup_data Used to clean data on process kill (happens when the scheduler requests jobs to be killed).
+ * @return The profile return code on success, -1 on timeout (remaining time reached 0)
  */
-int execute_msg_task(
-        BatTask * btask,
-        const SchedulingAllocation* allocation,
-        unsigned int nb_res,
-        double * remaining_time,
-        BatsimContext * context,
-        CleanExecuteProfileData * cleanup_data);
+int execute_msg_task(BatTask * btask,
+                     const SchedulingAllocation* allocation,
+                     unsigned int nb_res,
+                     double * remaining_time,
+                     BatsimContext * context,
+                     CleanExecuteTaskData * cleanup_data);

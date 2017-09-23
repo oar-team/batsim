@@ -201,8 +201,8 @@ struct SwitchMessage
  */
 struct KillingDoneMessage
 {
-    std::vector<JobIdentifier> jobs_ids; //!< The IDs of the jobs which have been killed
-    std::map<JobIdentifier, BatTask *> jobs_progress; //!< Jobs list (recursive) amount of work done when killed
+    std::vector<JobIdentifier> jobs_ids; //!< The IDs of the jobs whose kill has been requested
+    std::map<JobIdentifier, BatTask *> jobs_progress; //!< Stores the progress of the jobs that have really been killed.
 };
 
 /**

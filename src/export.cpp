@@ -503,8 +503,9 @@ void PajeTracer::register_new_job(const Job *job)
     // Let's create a state value corresponding to this job
     nb_printed = snprintf(buf, buf_size,
                           "%d %s%s %s \"%s\" %s\n",
-                          DEFINE_ENTITY_VALUE, jobPrefix, job->id.to_string().c_str(), machineState,
-                          job->id.to_string().c_str(), _colors[job->number % (int)_colors.size()].c_str());
+                          DEFINE_ENTITY_VALUE, jobPrefix, job->id.to_string().c_str(),
+                          machineState, job->id.to_string().c_str(),
+                          _colors[job->number % (int)_colors.size()].c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
