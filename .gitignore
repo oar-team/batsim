@@ -3,6 +3,7 @@
 *_schedule.csv
 *_schedule.trace
 *_pstate_changes.csv
+*_machine_states.csv
 *.pyc
 doc/doxygen_warnings.log
 doc/doxygen_doc
