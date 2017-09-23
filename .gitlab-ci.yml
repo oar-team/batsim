@@ -50,6 +50,7 @@ build_gcc:
 build_batsched:
   stage: build
   script:
+    - rm -rf /builds/batsim/batsim/schedulers/batsched
     # Get the code at the expected revision
     - git clone https://gitlab.inria.fr/batsim/batsched.git /builds/batsim/batsim/schedulers/batsched
     - cd /builds/batsim/batsim/schedulers/batsched
@@ -66,6 +67,7 @@ build_batsched:
 retrieve_pybatsim:
   stage: build
   script:
+    - rm -rf /builds/batsim/batsim/schedulers/pybatsim
     # Get the code at the expected revision
     - git clone https://gitlab.inria.fr/batsim/pybatsim.git /builds/batsim/batsim/schedulers/pybatsim
     - cd /builds/batsim/batsim/schedulers/pybatsim
