@@ -108,6 +108,18 @@ test_test:
     - build_clang
     - build_batsched
 
+test_version:
+  stage: test
+  script:
+    # Install Batsim
+    - cd /builds/batsim/batsim/build
+    - make install
+
+    # Checks that 'batsim --version' matches the latest batsim release
+    - tools/check_batsim_version.py
+  dependencies:
+    - build_clang
+
 deploy_code_doc:
   stage: deploy
   script:
