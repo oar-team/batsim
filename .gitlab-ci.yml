@@ -116,6 +116,7 @@ test_version:
     - make install
 
     # Checks that 'batsim --version' matches the latest batsim release
+    - cd /builds/batsim/batsim/
     - tools/check_batsim_version.py
   dependencies:
     - build_clang
