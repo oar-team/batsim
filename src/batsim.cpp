@@ -212,7 +212,9 @@ Other options:
   --version                         Shows Batsim version.
 )";
 
-    map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc }, true, "2.0");
+    const string version_str = "v1.0.0";
+    map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc },
+                                                     true, version_str);
 
     // Let's do some checks on the arguments!
     bool error = false;
