@@ -3,27 +3,6 @@ image: oarteam/batsim_ci
 variables:
   GIT_SUBMODULE_STRATEGY: none
 
-# The before_script part above is done in order to push Batsim's code doc
-# onto the gforge website.
-# Information found on https://docs.gitlab.com/ee/ci/ssh_keys/README.html
-before_script:
-  # Install ssh-agent if not already installed, it is required by Docker.
-  # (change apt-get to yum if you use a CentOS-based image)
-  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
-
-  # Run ssh-agent (inside the build environment)
-  - eval $(ssh-agent -s)
-
-  # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
-  - ssh-add <(echo "$SSH_PRIVATE_KEY")
-
-  # For Docker builds disable host key checking. Be aware that by adding that
-  # you are suspectible to man-in-the-middle attacks.
-  # WARNING: Use this only with the Docker executor, if you use it with shell
-  # you will overwrite your user's SSH config.
-  - mkdir -p ~/.ssh
-  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
-
 build_clang:
   stage: build
   script:
@@ -124,7 +103,28 @@ test_version:
 deploy_code_doc:
   stage: deploy
   script:
-    - cd /builds/batsim/batsim/doc
-    - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
+      # The script below is done to push Batsim's code doc onto the gforge website.
+      # Information found on https://docs.gitlab.com/ee/ci/ssh_keys/README.html
+
+      # Install ssh-agent if not already installed, it is required by Docker.
+      # (change apt-get to yum if you use a CentOS-based image)
+      - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+
+      # Run ssh-agent (inside the build environment)
+      - eval $(ssh-agent -s)
+
+      # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+      - ssh-add <(echo "$SSH_PRIVATE_KEY")
+
+      # For Docker builds disable host key checking. Be aware that by adding that
+      # you are suspectible to man-in-the-middle attacks.
+      # WARNING: Use this only with the Docker executor, if you use it with shell
+      # you will overwrite your user's SSH config.
+      - mkdir -p ~/.ssh
+      - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
+
+      # Finally push the code documentation on the gforge website
+      - cd /builds/batsim/batsim/doc
+      - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
   dependencies:
     - test_doc
