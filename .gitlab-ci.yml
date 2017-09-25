@@ -3,6 +3,9 @@ image: oarteam/batsim_ci
 variables:
   GIT_SUBMODULE_STRATEGY: none
 
+################################################################################
+# Build stage
+###############################################################################
 build_clang:
   stage: build
   script:
@@ -43,6 +46,20 @@ build_batsched:
     paths:
       - /builds/batsim/batsim/schedulers/batsched/build
 
+retrieve_pybatsim:
+  stage: build
+  script:
+    - rm -rf /builds/batsim/batsim/schedulers/pybatsim
+    - git clone https://gitlab.inria.fr/batsim/pybatsim.git /builds/batsim/batsim/schedulers/pybatsim
+    - cd /builds/batsim/batsim/schedulers/pybatsim
+    - git reset --hard 450d9a43be89688f874b89b4b4839e8b021ec908 # 2017-09-11
+  artifacts:
+    paths:
+      - /builds/batsim/batsim/schedulers/pybatsim
+
+################################################################################
+# Test stage
+################################################################################
 test_doc:
   stage: test
   script:
@@ -67,11 +84,7 @@ test_test:
     - make install
 
     # Install the pybatsim scheduler
-    - rm -rf /builds/batsim/batsim/schedulers/pybatsim
-    - git clone https://gitlab.inria.fr/batsim/pybatsim.git /builds/batsim/batsim/schedulers/pybatsim
-    - cd /builds/batsim/batsim/schedulers/pybatsim
-    - git reset --hard 450d9a43be89688f874b89b4b4839e8b021ec908 # 2017-09-11
-    - pip3 install --upgrade /builds/batsim/batsim/schedulers/pybatsim
+    - pip3 install /builds/batsim/batsim/schedulers/pybatsim
 
     # Run the redis server
     - |
@@ -86,6 +99,7 @@ test_test:
   dependencies:
     - build_clang
     - build_batsched
+    - retrieve_pybatsim
 
 test_version:
   stage: test
@@ -100,6 +114,9 @@ test_version:
   dependencies:
     - build_clang
 
+################################################################################
+# Deploy stage
+################################################################################
 deploy_code_doc:
   stage: deploy
   script:
