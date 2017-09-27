@@ -311,11 +311,17 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
                error_prefix.c_str(), j->number);
     j->submission_time = json_desc["subtime"].GetDouble();
 
-    xbt_assert(json_desc.HasMember("walltime"), "%s: job %d has no 'walltime' field",
-               error_prefix.c_str(), j->number);
-    xbt_assert(json_desc["walltime"].IsNumber(), "%s: job %d has a non-number 'walltime' field",
-               error_prefix.c_str(), j->number);
-    j->walltime = json_desc["walltime"].GetDouble();
+
+    // Make walltime optional
+    if (not json_desc.HasMember("walltime")) {
+        XBT_INFO("job %d has no 'walltime' field", j->number);
+    }
+    else
+    {
+        xbt_assert(json_desc["walltime"].IsNumber(), "%s: job %d has a non-number 'walltime' field",
+                   error_prefix.c_str(), j->number);
+        j->walltime = json_desc["walltime"].GetDouble();
+    }
 
     xbt_assert(json_desc.HasMember("res"), "%s: job %d has no 'res' field",
                error_prefix.c_str(), j->number);
@@ -360,7 +366,8 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
                "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
                "The output JSON '%s' has no 'subtime' field (or it is not a number)",
                j->json_description.c_str());
-    xbt_assert(check_doc.HasMember("walltime") && check_doc["walltime"].IsNumber(),
+    xbt_assert((check_doc.HasMember("walltime") && check_doc["walltime"].IsNumber())
+                or (not check_doc.HasMember("walltime")),
                "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
                "The output JSON '%s' has no 'walltime' field (or it is not a number)",
                j->json_description.c_str());

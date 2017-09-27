@@ -277,12 +277,16 @@ int execute_task(BatTask * btask,
 
 int do_delay_task(double sleeptime, double * remaining_time)
 {
-    if (sleeptime < *remaining_time)
+    // if the walltime is not set or not reached
+    if (*remaining_time < 0 or sleeptime < *remaining_time)
     {
         XBT_INFO("Sleeping the whole task length");
         MSG_process_sleep(sleeptime);
         XBT_INFO("Sleeping done");
-        *remaining_time = *remaining_time - sleeptime;
+        if (*remaining_time > 0)
+        {
+            *remaining_time = *remaining_time - sleeptime;
+        }
         return 0;
     }
     else
