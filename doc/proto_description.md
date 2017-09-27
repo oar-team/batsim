@@ -438,6 +438,7 @@ state (or whatever you want to know...). The supported requests are:
 ### REJECT_JOB
 
 Rejects a job that has already been submitted.
+The rejected job will not appear into the final jobs trace.
 
 - **data**: A job id
 - **example**:
