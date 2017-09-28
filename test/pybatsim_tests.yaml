@@ -11,6 +11,7 @@ implicit_instances:
       workload :
         - {"name":"tiny", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
         - {"name":"medium", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example.json"}
+        - {"name":"walltime", "filename":"${batsim_dir}/workload_profiles/walltime_test.json"}
       pybatsim_algo:
         - {"name":"filler", "algo_name":"fillerSched"}
         - {"name":"easy", "algo_name":"easyBackfill"}
