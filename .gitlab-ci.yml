@@ -52,7 +52,7 @@ retrieve_pybatsim:
     - rm -rf /builds/batsim/batsim/schedulers/pybatsim
     - git clone https://gitlab.inria.fr/batsim/pybatsim.git /builds/batsim/batsim/schedulers/pybatsim
     - cd /builds/batsim/batsim/schedulers/pybatsim
-    - git reset --hard 450d9a43be89688f874b89b4b4839e8b021ec908 # 2017-09-11
+    - git reset --hard 3dd3fc0  # 2017-09-28
   artifacts:
     paths:
       - /builds/batsim/batsim/schedulers/pybatsim
