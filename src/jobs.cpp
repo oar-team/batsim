@@ -313,7 +313,8 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
 
 
     // Make walltime optional
-    if (not json_desc.HasMember("walltime")) {
+    if (!json_desc.HasMember("walltime"))
+    {
         XBT_INFO("job %d has no 'walltime' field", j->number);
     }
     else
@@ -367,7 +368,7 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
                "The output JSON '%s' has no 'subtime' field (or it is not a number)",
                j->json_description.c_str());
     xbt_assert((check_doc.HasMember("walltime") && check_doc["walltime"].IsNumber())
-                or (not check_doc.HasMember("walltime")),
+               || (!check_doc.HasMember("walltime")),
                "A problem occured when replacing the job_id by its WLOAD!job_number counterpart: "
                "The output JSON '%s' has no 'walltime' field (or it is not a number)",
                j->json_description.c_str());
