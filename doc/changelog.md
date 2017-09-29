@@ -12,6 +12,13 @@ Batsim's public API includes:
 ## [Unreleased]
 
 [//]: ==========================================================================
+## [1.3.0] - 2017-09-30
+### Added
+- Jobs walltimes are no longer mandatory.  
+  The ``walltime`` field of jobs can now be omitted or set to -1.  
+  Such jobs will never be killed automatically by Batsim.
+
+[//]: ==========================================================================
 ## [1.2.0] - 2017-09-23
 ### Added
 - The job progress is now sent through the protocol when jobs are killed on
@@ -92,6 +99,7 @@ Batsim's public API includes:
 [semver]: http://semver.org/spec/v2.0.0.html
 
 [Unreleased]: https://github.com/oar-team/batsim/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/oar-team/batsim/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/oar-team/batsim/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/oar-team/batsim/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/oar-team/batsim/compare/v0.99...v1.0.0
