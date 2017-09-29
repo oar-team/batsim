@@ -346,8 +346,10 @@ int execute_msg_task(BatTask * btask,
         *remaining_time = *remaining_time - (MSG_get_clock() - time_before_execute);
     }
 
-    ret = profile->return_code;
-    if (err == MSG_OK) {}
+    if (err == MSG_OK)
+    {
+        ret = profile->return_code;
+    }
     else if (err == MSG_TIMEOUT)
     {
         ret = -1;
