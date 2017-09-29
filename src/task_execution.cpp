@@ -333,7 +333,8 @@ int execute_msg_task(BatTask * btask,
 
     // Execute the MSG task (blocking)
     msg_error_t err;
-    if (*remaining_time < 0) {
+    if (*remaining_time < 0)
+    {
         XBT_INFO("Executing task '%s' without walltime", MSG_task_get_name(ptask));
         err = MSG_parallel_task_execute(ptask);
     }
