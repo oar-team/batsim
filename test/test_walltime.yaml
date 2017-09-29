@@ -17,7 +17,7 @@ implicit_instances:
       workload :
         - {"name":"walltime", "filename":"${batsim_dir}/workload_profiles/walltime_test.json"}
       sched:
-        #- {"name":"batsched", "cmd":"batsched -v filler"}
+        - {"name":"batsched", "cmd":"batsched -v filler"}
         - {"name":"pybatsim", "cmd":"pybatsim fillerSched"}
     generic_instance:
       timeout: 10
@@ -36,10 +36,14 @@ implicit_instances:
             import sys
 
             def check_ok_bool(row):
+                # Walltime is set and the job execution time is greater than its walltime
                 if row['execution_time'] > row['requested_time'] and row['requested_time'] != -1:
                     return False
+
+                # Success -> (finished before walltime OR no walltime set)
                 if row['success']:
                     return (row['execution_time'] < row['requested_time']) or (row['requested_time'] == -1)
+                # Failure -> walltime reached
                 else:
                     return row['execution_time'] >= row['requested_time']
 
