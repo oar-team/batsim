@@ -341,7 +341,7 @@ int execute_msg_task(BatTask * btask,
     else
     {
         double time_before_execute = MSG_get_clock();
-        XBT_INFO("Executing task '%s' with walltime of %d", MSG_task_get_name(ptask), *remaining_time);
+        XBT_INFO("Executing task '%s' with walltime of %g", MSG_task_get_name(ptask), *remaining_time);
         err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - time_before_execute);
     }
