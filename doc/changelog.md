@@ -99,7 +99,7 @@ Batsim's public API includes:
 [semver]: http://semver.org/spec/v2.0.0.html
 
 [Unreleased]: https://github.com/oar-team/batsim/compare/v1.2.0...HEAD
-[1.2.0]: https://github.com/oar-team/batsim/compare/v1.2.0...v1.3.0
+[1.3.0]: https://github.com/oar-team/batsim/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/oar-team/batsim/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/oar-team/batsim/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/oar-team/batsim/compare/v0.99...v1.0.0
