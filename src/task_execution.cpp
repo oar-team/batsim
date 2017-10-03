@@ -93,10 +93,67 @@ void generate_msg_parallel_homogeneous(std::string & task_name_prefix,
 }
 
 /**
+ * @brief Generates the communication and computaion matrix for the msg
+ *        parallel homogeneous total amount task profile.
+ *
+ * @param[out] task_name_prefix the prefix to add to the task name
+ * @param[out] computation_amount the computation matrix to be simulated by the msg task
+ * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @param[in] nb_res the number of resources the task have to run on
+ * @param[in] profile_data the profile data
+ *
+ * @details It is like homogeneous profile but instead of giving what has
+ *          to be done per host, it gives what has to be done in total homogeneously
+ *          spread across the hosts.
+ */
+void generate_msg_parallel_homogeneous_total_amount(
+    std::string & task_name_prefix,
+    double *& computation_amount,
+    double *& communication_amount,
+    unsigned int nb_res,
+    void * profile_data)
+{
+    task_name_prefix = "phgt ";
+    MsgParallelHomogeneousTotalAmountProfileData* data = (MsgParallelHomogeneousTotalAmountProfileData*)profile_data;
+
+    double cpu = data->cpu;
+    double com = data->com;
+
+    // These amounts are deallocated by SG
+    computation_amount = xbt_new(double, nb_res);
+    communication_amount = nullptr;
+    if (com > 0)
+    {
+        communication_amount = xbt_new(double, nb_res* nb_res);
+    }
+
+    // Let us fill the local computation and communication matrices
+    int k = 0;
+    for (unsigned int y = 0; y < nb_res; ++y)
+    {
+        computation_amount[y] = cpu / nb_res;
+        if (communication_amount != nullptr)
+        {
+            for (unsigned int x = 0; x < nb_res; ++x)
+            {
+                if (x == y)
+                {
+                    communication_amount[k] = 0;
+                }
+                else
+                {
+                    communication_amount[k] = com / nb_res;
+                }
+                k++;
+            }
+        }
+    }
+}
+
+/**
  * @brief Generate the communication and computaion matrix for the msg
- * parallel homogeneous task profile with pfs.
- * @details Note that the number of resource is also altered because of
- * the pfs node that is addded. It also set the prefix name of the task.
+ *        parallel homogeneous task profile with pfs.
+ *
  * @param[out] task_name_prefix the prefix to add to the task name
  * @param[out] computation_amount the computation matrix to be simulated by the msg task
  * @param[out] communication_amount the communication matrix to be simulated by the msg task
@@ -104,6 +161,10 @@ void generate_msg_parallel_homogeneous(std::string & task_name_prefix,
  * @param[in] profile_data the profile data
  * @param[in,out] hosts_to_use the list of host to be used by the task
  * @param[in] context the batsim context
+ *
+ * @details Note that the number of resource is also altered because of the
+ *          pfs node that is addded. It also set the prefix name of the
+ *          task.
  */
 void generate_msg_parallel_homogeneous_with_pfs(std::string & task_name_prefix,
                                                 double *& computation_amount,
@@ -299,6 +360,11 @@ int execute_msg_task(BatTask * btask,
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS:
         generate_msg_parallel_homogeneous(task_name_prefix, computation_amount,
                                           communication_amount, nb_res, profile->data);
+        break;
+    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
+        generate_msg_parallel_homogeneous_total_amount(
+            task_name_prefix, computation_amount,
+            communication_amount, nb_res, profile->data);
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS:
         generate_msg_parallel_homogeneous_with_pfs(task_name_prefix, computation_amount,

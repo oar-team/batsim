@@ -159,7 +159,15 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::SMPI)
+    else if (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
+    {
+        MsgParallelHomogeneousTotalAmountProfileData * d = (MsgParallelHomogeneousTotalAmountProfileData *) data;
+        if (d != nullptr)
+        {
+            delete d;
+            d = nullptr;
+        }
+    }else if (type == ProfileType::SMPI)
     {
         SmpiProfileData * d = (SmpiProfileData *) data;
         if (d != nullptr)
@@ -314,6 +322,29 @@ Profile *Profile::from_json(const std::string & profile_name,
     {
         profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS;
         MsgParallelHomogeneousProfileData * data = new MsgParallelHomogeneousProfileData;
+
+        xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["cpu"].IsNumber(), "%s: profile '%s' has a non-number 'cpu' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        data->cpu = json_desc["cpu"].GetDouble();
+        xbt_assert(data->cpu >= 0, "%s: profile '%s' has a non-positive 'cpu' field (%g)",
+                   error_prefix.c_str(), profile_name.c_str(), data->cpu);
+
+        xbt_assert(json_desc.HasMember("com"), "%s: profile '%s' has no 'com' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["com"].IsNumber(), "%s: profile '%s' has a non-number 'com' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        data->com = json_desc["com"].GetDouble();
+        xbt_assert(data->com >= 0, "%s: profile '%s' has a non-positive 'com' field (%g)",
+                   error_prefix.c_str(), profile_name.c_str(), data->com);
+
+        profile->data = data;
+    }
+    else if (profile_type == "msg_par_hg_tot")
+    {
+        profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT;
+        MsgParallelHomogeneousTotalAmountProfileData * data = new MsgParallelHomogeneousTotalAmountProfileData;
 
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
                    error_prefix.c_str(), profile_name.c_str());
@@ -611,6 +642,7 @@ bool Profile::is_parallel_task() const
 {
     return (type == ProfileType::MSG_PARALLEL) ||
            (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS) ||
+           (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT) ||
            (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS) ||
            (type == ProfileType::MSG_DATA_STAGING);
 }
@@ -630,6 +662,9 @@ std::string profile_type_to_string(const ProfileType & type)
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS:
         str = "MSG_PARALLEL_HOMOGENEOUS";
+        break;
+    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
+        str = "MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT";
         break;
     case ProfileType::SMPI:
         str = "SMPI";
