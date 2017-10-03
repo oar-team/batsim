@@ -105,6 +105,8 @@ test_test:
     - cd /builds/batsim/batsim/schedulers/batsched/build
     - make install
 
+    # clean /tmp to fix https://gitlab.inria.fr/batsim/batsim/issues/27
+    - rm -rf /tmp/*
     # Install the pybatsim scheduler
     - pip3 install --no-deps /builds/batsim/batsim/schedulers/pybatsim
 
