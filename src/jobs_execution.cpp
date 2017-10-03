@@ -269,8 +269,8 @@ int execute_task(BatTask * btask,
         return profile->return_code;
     }
     else
-        xbt_die("Cannot execute job %s: the profile type '%s' is unknown",
-                job->id.to_string().c_str(), job->profile.c_str());
+        xbt_die("Cannot execute job %s: the profile '%s' is of unknown type: %s",
+                job->id.to_string().c_str(), job->profile.c_str(), profile->json_description.c_str());
 
     return 1;
 }
