@@ -212,9 +212,20 @@ Other options:
   --version                         Shows Batsim version.
 )";
 
-    const string version_str = "v1.3.0";
+
+    /* Let's retrieve Batsim version at compile-time.
+       If Batsim is built via CMake BATSIM_VERSION should be set.
+    */
+
+    #define STR_HELPER(x) #x
+    #define STR(x) STR_HELPER(x)
+
+    #ifndef BATSIM_VERSION
+        #define BATSIM_VERSION vUNKNOWN_PLEASE_COMPILE_VIA_CMAKE
+    #endif
+
     map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc },
-                                                     true, version_str);
+                                                     true, STR(BATSIM_VERSION));
 
     // Let's do some checks on the arguments!
     bool error = false;

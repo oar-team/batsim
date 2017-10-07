@@ -80,6 +80,23 @@ include_directories(${LIBEV_INCLUDE_DIRS})
 find_package(ZMQ REQUIRED)
 include_directories(${ZMQ_INCLUDE_DIRS})
 
+##################
+# Batsim version #
+##################
+set(default_batsim_version "v1.3.0")
+include(GetGitRevisionDescription)
+git_describe(batsim_version)
+message(STATUS "Batsim version from git: ${batsim_version}")
+
+if(NOT((${batsim_version} STREQUAL "GIT-NOTFOUND") OR
+       (${batsim_version} STREQUAL "HEAD-HASH-NOTFOUND")))
+    add_definitions(-DBATSIM_VERSION=${batsim_version})
+else()
+    message(WARNING "Cannot retrieve Batsim version from git. "
+                    "Using default version ${default_batsim_version}")
+    add_definitions(-DBATSIM_VERSION=${default_batsim_version})
+endif()
+
 ################
 # Source files #
 ################
