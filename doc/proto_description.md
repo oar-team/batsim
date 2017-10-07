@@ -549,6 +549,33 @@ in the configuration
 }
 ```
 
+### SUBMIT_PROFILE
+
+Submits a profile (from the scheduler). Job submissions from the scheduler must
+be enabled in the [configuration](./configuration.md)
+(``{"job_submission": {"from_scheduler": {"enabled": true}}``).
+
+- **data**: A workload name, profile name, and the data of the profile.
+
+- **with redis** : Instead of using this message, the profiles should be pushed
+  to redis directly by the scheduler.
+
+- **example without redis** : the whole profile description goes through the protocol.
+```json
+{
+  "timestamp": 10.0,
+  "type": "SUBMIT_PROFILE",
+  "data": {
+    "workload_name": "dyn_wl1",
+    "profile_name":  "delay_10s",
+    "profile": {
+      "type": "delay",
+      "delay": 10
+    }
+  }
+}
+```
+
 ### SET_RESOURCE_STATE
 
 Sets some resources into a state.

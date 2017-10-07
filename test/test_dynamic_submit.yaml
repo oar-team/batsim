@@ -21,9 +21,12 @@ implicit_instances:
       workload:
         - {"name":"one_job", "filename":"${batsim_dir}/workload_profiles/one_delay_job.json"}
       mode:
-        - {"name":"diff_profiles", "increase_jobs_duration":"true", "send_profile_if_already_sent":"true"}
-        - {"name":"same_profiles_resend", "increase_jobs_duration":"false", "send_profile_if_already_sent":"true"}
-        - {"name":"same_profiles_no_resend", "increase_jobs_duration":"false", "send_profile_if_already_sent":"false"}
+        - {"name":"diff_profiles__bundledp", "increase_jobs_duration":"true", "send_profile_if_already_sent":"true", "send_profiles_in_separate_event":"false"}
+        - {"name":"diff_profiles__separatep", "increase_jobs_duration":"true", "send_profile_if_already_sent":"true", "send_profiles_in_separate_event":"true"}
+        - {"name":"same_profiles__resend__bundledp", "increase_jobs_duration":"false", "send_profile_if_already_sent":"true", "send_profiles_in_separate_event":"false"}
+        - {"name":"same_profiles__resend__separatep", "increase_jobs_duration":"false", "send_profile_if_already_sent":"true", "send_profiles_in_separate_event":"true"}
+        - {"name":"same_profiles__no_resend__bundledp", "increase_jobs_duration":"false", "send_profile_if_already_sent":"false", "send_profiles_in_separate_event":"false"}
+        - {"name":"same_profiles__no_resend__separatep", "increase_jobs_duration":"false", "send_profile_if_already_sent":"false", "send_profiles_in_separate_event":"true"}
       redis_enabled: ["true", "false"]
       dynamic_submit_ack: ["true", "false"]
     generic_instance:
@@ -60,7 +63,8 @@ implicit_instances:
             {
               "nb_jobs_to_submit": ${nb_dyn_jobs},
               "increase_jobs_duration": ${mode[increase_jobs_duration]},
-              "send_profile_if_already_sent": ${mode[send_profile_if_already_sent]}
+              "send_profile_if_already_sent": ${mode[send_profile_if_already_sent]},
+              "send_profiles_in_separate_event": ${mode[send_profiles_in_separate_event]}
             }
             EOF
 

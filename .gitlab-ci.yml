@@ -57,7 +57,7 @@ build_batsched:
     # Get the code at the expected revision
     - git clone https://gitlab.inria.fr/batsim/batsched.git /builds/batsim/batsim/schedulers/batsched
     - cd /builds/batsim/batsim/schedulers/batsched
-    - git reset --hard bd5ae24 # 2017-09-30
+    - git reset --hard 59f73b7 # 2017-10-07
     # Build batsched
     - rm -rf   /builds/batsim/batsim/schedulers/batsched/build
     - mkdir -p /builds/batsim/batsim/schedulers/batsched/build
@@ -105,6 +105,8 @@ test_test:
     - cd /builds/batsim/batsim/schedulers/batsched/build
     - make install
 
+    # clean /tmp to fix https://gitlab.inria.fr/batsim/batsim/issues/27
+    - rm -rf /tmp/*
     # Install the pybatsim scheduler
     - pip3 install /builds/batsim/batsim/schedulers/pybatsim
 

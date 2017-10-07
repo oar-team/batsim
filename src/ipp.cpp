@@ -68,6 +68,9 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::JOB_SUBMITTED_BY_DP:
             s = "JOB_SUBMITTED_BY_DP";
             break;
+        case IPMessageType::PROFILE_SUBMITTED_BY_DP:
+            s = "PROFILE_SUBMITTED_BY_DP";
+            break;
         case IPMessageType::JOB_COMPLETED:
             s = "JOB_COMPLETED";
             break;
@@ -164,6 +167,11 @@ IPMessage::~IPMessage()
         case IPMessageType::JOB_SUBMITTED_BY_DP:
         {
             JobSubmittedByDPMessage * msg = (JobSubmittedByDPMessage *) data;
+            delete msg;
+        } break;
+        case IPMessageType::PROFILE_SUBMITTED_BY_DP:
+        {
+            ProfileSubmittedByDPMessage * msg = (ProfileSubmittedByDPMessage *) data;
             delete msg;
         } break;
         case IPMessageType::JOB_COMPLETED:
