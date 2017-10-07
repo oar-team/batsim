@@ -132,8 +132,6 @@ test_version_no_git:
 
     # Checks that 'batsim --version' matches the latest batsim release
     - /builds/batsim/batsim/tools/check_batsim_version.py --batsim-command /tmp/batsim/build/batsim --batsim-git-dir /builds/batsim/batsim
-  dependencies:
-    - build_clang_no_git
 
 ################################################################################
 # Deploy stage
