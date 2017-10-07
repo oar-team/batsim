@@ -127,10 +127,7 @@ test_version_git:
   stage: test
   script:
     # Checks that 'batsim --version' matches the latest batsim release
-    - |
-        /builds/batsim/batsim/tools/check_batsim_version.py \
-          --batsim-command /builds/batsim/batsim/build/batsim \
-          --batsim-git-dir /builds/batsim/batsim
+    - /builds/batsim/batsim/tools/check_batsim_version.py --batsim-command /builds/batsim/batsim/build/batsim --batsim-git-dir /builds/batsim/batsim
   dependencies:
     - build_clang
 
@@ -138,10 +135,7 @@ test_version_no_git:
   stage: test
   script:
     # Checks that 'batsim --version' matches the latest batsim release
-    - |
-        /builds/batsim/batsim/tools/check_batsim_version.py \
-          --batsim-command /builds/batsim/batsim/copy_no_git/build/batsim \
-          --batsim-git-dir /builds/batsim/batsim
+    - /builds/batsim/batsim/tools/check_batsim_version.py --batsim-command /builds/batsim/batsim/copy_no_git/build/batsim --batsim-git-dir /builds/batsim/batsim
   dependencies:
     - build_clang_no_git
 
