@@ -121,8 +121,10 @@ public:
      * @brief Appends a JOB_KILLED event.
      * @param[in] job_ids The identifiers of the jobs that have been killed.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
+     * @param[in] job_progress Contains the progress of each job that has really been killed.
      */
     virtual void append_job_killed(const std::vector<std::string> & job_ids,
+                                   const std::map<std::string, BatTask *> job_progress,
                                    double date) = 0;
 
     /**
@@ -255,8 +257,10 @@ public:
      * @brief Appends a JOB_KILLED event.
      * @param[in] job_ids The identifiers of the jobs that have been killed.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
+     * @param[in] job_progress Contains the progress of each job that has really been killed.
      */
     void append_job_killed(const std::vector<std::string> & job_ids,
+                           const std::map<std::string, BatTask *> job_progress,
                            double date);
 
     /**

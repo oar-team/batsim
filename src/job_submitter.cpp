@@ -427,7 +427,7 @@ int batexec_job_launcher_process(int argc, char *argv[])
         exec_args->context = context;
         exec_args->allocation = alloc;
         exec_args->notify_server_at_end = false;
-        string pname = "job" + job->id;
+        string pname = "job" + job->id.to_string();
         msg_process_t process = MSG_process_create(pname.c_str(), execute_job_process,
                                                    (void*) exec_args,
                                                    context->machines[alloc->machine_ids.first_element()]->host);

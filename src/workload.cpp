@@ -27,8 +27,8 @@ Workload::Workload(const std::string & workload_name)
     jobs = new Jobs;
     profiles = new Profiles;
 
-    jobs->setProfiles(profiles);
-    jobs->setWorkload(this);
+    jobs->set_profiles(profiles);
+    jobs->set_workload(this);
     this->name = workload_name;
 }
 

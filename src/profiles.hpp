@@ -23,8 +23,8 @@ enum class ProfileType
     ,SEQUENCE                                      //!< The profile is non-atomic: it is composed of a sequence of other profiles
     ,MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS   //!< The profile is a homogeneous MSG for complex parallel filesystem access. Its data is of type MsgParallelHomogeneousPFSMultipleTiersProfileData
     ,MSG_DATA_STAGING                              //!< The profile is a MSG for moving data between the pfs hosts. Its data is of type DataStagingProfileData
-    ,SCHEDULER_SEND                             //!< The profile is a profile simulating a message sent to the scheduler. Its data is of type SchedulerSendProfileData
-    ,SCHEDULER_RECV                             //!< The profile receives a message from the scheduler and can execute a profile based on a value comparison of the message. Its data is of type SchedulerRecvProfileData
+    ,SCHEDULER_SEND                                //!< The profile is a profile simulating a message sent to the scheduler. Its data is of type SchedulerSendProfileData
+    ,SCHEDULER_RECV                                //!< The profile receives a message from the scheduler and can execute a profile based on a value comparison of the message. Its data is of type SchedulerRecvProfileData
 };
 
 /**
@@ -40,6 +40,7 @@ struct Profile
     ProfileType type; //!< The type of the profile
     void * data; //!< The associated data
     std::string json_description; //!< The JSON description of the profile
+    std::string name; //!< the profile unique name
     int return_code = 0;  //!< The return code of this profile's execution (SUCCESS == 0)
 
     /**
@@ -69,6 +70,12 @@ struct Profile
     static Profile * from_json(const std::string & profile_name,
                                const std::string & json_str,
                                const std::string & error_prefix = "Invalid JSON profile");
+
+    /**
+     * @brief Returns whether a profile is a parallel task (or its derivatives)
+     * @return Whether a profile is a parallel task (or its derivatives)
+     */
+    bool is_parallel_task() const;
 };
 
 /**
@@ -279,3 +286,10 @@ public:
 private:
     std::map<std::string, Profile*> _profiles; //!< Stores all the profiles, indexed by their names
 };
+
+/**
+ * @brief Returns a std::string corresponding to a given ProfileType
+ * @param[in] type The ProfileType
+ * @return A std::string corresponding to a given ProfileType
+ */
+std::string profile_type_to_string(const ProfileType & type);

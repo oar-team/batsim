@@ -9,10 +9,10 @@
 #include "context.hpp"
 
 /**
- * @brief Structure used to clean the data of the execute_profile function if the process executing it gets killed
- * @details This structure should be allocated (via new!) before running execute_profile (but not when doing recursive calls). It is freed by execute_profile_cleanup.
+ * @brief Structure used to clean the data of a profile execution if the process executing it gets killed
+ * @details This structure should be allocated (via new!) before running execute_task (but not when doing recursive calls). It is freed by execute_task_cleanup.
  */
-struct CleanExecuteProfileData
+struct CleanExecuteTaskData
 {
     double * computation_amount = nullptr; //!< The computation amount (may be null)
     double * communication_amount = nullptr; //!< The communication amount (may be null)
@@ -37,36 +37,35 @@ int killer_process(int argc, char *argv[]);
 int smpi_replay_process(int argc, char *argv[]);
 
 /**
- * @brief Executes the profile of a job
- * @param[in] context The Batsim Context
- * @param[in] profile_name The name of the profile to execute
- * @param[in] allocation The machines the job should be executed on
- * @param[in,out] cleanup_data The data to clean on bad process termination (kill)
- * @param[in,out] remaining_time The remaining amount of time before walltime
- * @return 0
- */
-int execute_profile(BatsimContext *context,
-                    const std::string & profile_name,
-                    const SchedulingAllocation * allocation,
-                    CleanExecuteProfileData * cleanup_data,
-                    double * remaining_time);
-
-/**
- * @brief Simulate the delay job profile (sleeping MSG process)
+ * @brief Simulates a delay profile (sleeps until finished or walltime)
  * @param[in] sleeptime The time to sleep
  * @param[in,out] remaining_time The remaining amount of time before walltime
  * @return 0 if enough time is available, -1 in the case of a timeout
  */
-int delay_job(double sleeptime,
-              double * remaining_time);
+int do_delay_task(double sleeptime, double * remaining_time);
 
 /**
- * @brief Is executed on execute_profile termination, allows to clean memory on kill
+ * @brief Execute a BatTask recursively regarding on its profile type
+ * @param[in,out] btask the task to execute
+ * @param[in] context usefull information about Batsim context
+ * @param[in] allocation the host to execute the task to
+ * @param[in,out] cleanup_data to give to simgrid cleanup hook
+ * @param[in,out] remaining_time remaining time of the current task
+ * @return the profile return code if successful, -1 if walltime reached
+ */
+int execute_task(BatTask * btask,
+                 BatsimContext *context,
+                 const SchedulingAllocation * allocation,
+                 CleanExecuteTaskData * cleanup_data,
+                 double * remaining_time);
+
+/**
+ * @brief Is executed on execute_task termination, allows to clean memory on kill
  * @param[in] unknown An unknown argument (oops?)
  * @param[in] data The data to free
  * @return 0
  */
-int execute_profile_cleanup(void * unknown, void * data);
+int execute_task_cleanup(void * unknown, void * data);
 
 /**
  * @brief The process in charge of executing a job

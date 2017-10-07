@@ -6,6 +6,7 @@
 #pragma once
 
 #include <vector>
+#include <map>
 #include <string>
 
 #include <rapidjson/document.h>
@@ -14,39 +15,10 @@
 
 #include "machine_range.hpp"
 
+#include "jobs.hpp"
+
 struct BatsimContext;
-struct Job;
 
-/**
- * @brief A simple structure used to identify one job
- */
-struct JobIdentifier
-{
-    /**
-     * @brief Creates a JobIdentifier
-     * @param[in] workload_name The workload name
-     * @param[in] job_number The job number
-     */
-    JobIdentifier(const std::string & workload_name = "", int job_number = -1);
-
-    std::string workload_name; //!< The name of the workload the job belongs to
-    int job_number; //!< The job unique number inside its workload
-
-    /**
-     * @brief Returns a string representation of the JobIdentifier.
-     * @details Output format is WORKLOAD_NAME!JOB_NUMBER
-     * @return A string representation of the JobIdentifier.
-     */
-    std::string to_string() const;
-};
-
-/**
- * @brief Compares two JobIdentifier thanks to their string representations
- * @param[in] ji1 The first JobIdentifier
- * @param[in] ji2 The second JobIdentifier
- * @return ji1.to_string() < ji2.to_string()
- */
-bool operator<(const JobIdentifier & ji1, const JobIdentifier & ji2);
 
 /**
  * @brief Stores the different types of inter-process messages
@@ -240,7 +212,8 @@ struct SwitchMessage
  */
 struct KillingDoneMessage
 {
-    std::vector<JobIdentifier> jobs_ids; //!< The IDs of the jobs which have been killed
+    std::vector<JobIdentifier> jobs_ids; //!< The IDs of the jobs whose kill has been requested
+    std::map<JobIdentifier, BatTask *> jobs_progress; //!< Stores the progress of the jobs that have really been killed.
 };
 
 /**

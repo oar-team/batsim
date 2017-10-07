@@ -1,8 +1,9 @@
 Batsim Continuous Integration
 =============================
 
-The continuous integration (CI) mechanism used in Batsim is based on Gitlab CI,
-using the [Inria Gitlab server](https://gitlab.inria.fr).
+The continuous integration (CI) mechanism used in Batsim is based on Gitlab CI.  
+We are currently using the [GRICAD Gitlab server][GRICAD server]
+for this purpose.
 
 ![gitlab-ci-arch](https://about.gitlab.com/images/ci/arch-1.jpg "Gitlab CI architecture")
 
@@ -30,34 +31,35 @@ The script can be found [there](../.gitlab-ci.yml). It essentially:
 Gitlab Project Configuration
 ----------------------------
 
-Edit your project configuration page ([there for Batsim]
-(https://gitlab.inria.fr/batsim/batsim/edit)) and make sure that:
-  - Pushes are not disabled
-  - Builds are not disabled
+Edit your project configuration page ([there for Batsim](https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/edit))
+and make sure that ``Pipelines`` are enabled.
 
 Some additional CI related configuration can be done in the CI settings page
-([there for Batsim](https://gitlab.inria.fr/batsim/batsim/pipelines/settings)).
+([there for Batsim](https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/pipelines/settings)).
 
 Runner Configuration
 --------------------
 
-We have no runner servers at the moment, our laptops are used to do it.
+Batsim currently uses Docker runners provided by the GRICAD Gitlab server.  
+However, as we previously used our very own machines to host the CI runners,
+the rest of this section describes how we managed to do it.
 
 First, install the gitlab-ci-runner on the machine which should execute the
 various CI operations. It is probably in your favourite package manager, but
 more detailed information can be found on
-[the Gitlab CI runner installation manual]
-(https://docs.gitlab.com/runner/install/).
+[the Gitlab CI runner installation manual](https://docs.gitlab.com/runner/install/).
 
 When running a runner for the first time, you have to tell it some information
 about the server and the project. This information is given
-[there for Batsim](https://gitlab.inria.fr/batsim/batsim/runners).
+[there for Batsim](https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/runners).
 ``` bash
 sudo gitlab-ci-multi-runner register
 
 # Please enter the gitlab-ci coordinator URL (e.g. https://gitlab.com/):
-https://gitlab.inria.fr/ci
+https://gricad-gitlab.univ-grenoble-alpes.fr/
 
 # Please enter the gitlab-ci token for this runner:
 [PROJECT-DEPENDENT TOKEN]
 ```
+
+[GRICAD server]: https://gricad-gitlab.univ-grenoble-alpes.fr
