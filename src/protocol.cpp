@@ -1075,8 +1075,6 @@ void JsonProtocolReader::handle_submit_profile(int event_number,
 
     xbt_assert(data_object.HasMember("profile"), "Invalid JSON message: the 'data' value of event %d (SUBMIT_PROFILE) should have a 'profile' key", event_number);
 
-    xbt_assert(!context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_PROFILE): 'profile' object is given but redis seems disabled...", event_number);
-
     const Value & profile_object = data_object["profile"];
     xbt_assert(profile_object.IsObject(), "Invalid JSON message: in event %d (SUBMIT_PROFILE): ['data']['profile'] should be an object", event_number);
 

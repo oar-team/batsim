@@ -63,7 +63,8 @@ implicit_instances:
             {
               "nb_jobs_to_submit": ${nb_dyn_jobs},
               "increase_jobs_duration": ${mode[increase_jobs_duration]},
-              "send_profile_if_already_sent": ${mode[send_profile_if_already_sent]}
+              "send_profile_if_already_sent": ${mode[send_profile_if_already_sent]},
+              "send_profiles_in_separate_event": ${mode[send_profiles_in_separate_event]}
             }
             EOF
 
