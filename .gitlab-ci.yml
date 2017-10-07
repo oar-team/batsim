@@ -11,7 +11,8 @@ build_clang:
   script:
     - export CC=/usr/bin/clang
     - export CXX=/usr/bin/clang++
-    - mkdir /builds/batsim/batsim/build
+    - rm -rf /builds/batsim/batsim/build
+    - mkdir  /builds/batsim/batsim/build
     - cd /builds/batsim/batsim/build
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
@@ -24,7 +25,8 @@ build_gcc:
   script:
     - export CC=/usr/bin/gcc
     - export CXX=/usr/bin/g++
-    - mkdir /builds/batsim/batsim/build
+    - rm -rf /builds/batsim/batsim/build
+    - mkdir  /builds/batsim/batsim/build
     - cd /builds/batsim/batsim/build
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
@@ -39,7 +41,8 @@ build_clang_no_git:
     # compile
     - export CC=/usr/bin/clang
     - export CXX=/usr/bin/clang++
-    - mkdir /builds/batsim/batsim/copy_no_git/build
+    - rm -rf /builds/batsim/batsim/copy_no_git/build
+    - mkdir  /builds/batsim/batsim/copy_no_git/build
     - cd /builds/batsim/batsim/copy_no_git/build
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
@@ -56,6 +59,7 @@ build_batsched:
     - cd /builds/batsim/batsim/schedulers/batsched
     - git reset --hard bd5ae24 # 2017-09-30
     # Build batsched
+    - rm -rf   /builds/batsim/batsim/schedulers/batsched/build
     - mkdir -p /builds/batsim/batsim/schedulers/batsched/build
     - cd /builds/batsim/batsim/schedulers/batsched/build
     - cmake /builds/batsim/batsim/schedulers/batsched
