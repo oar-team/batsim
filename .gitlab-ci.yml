@@ -34,17 +34,18 @@ build_clang_no_git:
   script:
     # copy
     - cp -r /builds/batsim/batsim{,_copy_no_git}
-    - rm -rf /builds/batsim/batsim_copy_no_git/.git
+    - mv /builds/batsim/batsim{_,/}copy_no_git
+    - rm -rf /builds/batsim/batsim/copy_no_git/.git
     # compile
     - export CC=/usr/bin/clang
     - export CXX=/usr/bin/clang++
-    - mkdir /builds/batsim/batsim_copy_no_git/build
-    - cd /builds/batsim/batsim_copy_no_git/build
+    - mkdir /builds/batsim/batsim/copy_no_git/build
+    - cd /builds/batsim/batsim/copy_no_git/build
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
   artifacts:
     paths:
-      - /builds/batsim/batsim_copy_no_git/build/batsim
+      - /builds/batsim/batsim/copy_no_git/build/batsim
 
 build_batsched:
   stage: build
@@ -135,7 +136,7 @@ test_version_no_git:
     # Checks that 'batsim --version' matches the latest batsim release
     - |
         /builds/batsim/batsim/tools/check_batsim_version.py \
-          --batsim-command /builds/batsim/batsim_copy_no_git/build/batsim \
+          --batsim-command /builds/batsim/batsim/copy_no_git/build/batsim \
           --batsim-git-dir /builds/batsim/batsim
   dependencies:
     - build_clang_no_git
