@@ -10,6 +10,9 @@ Batsim's public API includes:
 
 [//]: ==========================================================================
 ## [Unreleased]
+### Added
+- Added the ``--simgrid-version`` command-line option to show which SimGrid
+  is used by Batsim.
 
 [//]: ==========================================================================
 ## [1.4.0] - 2017-10-07
