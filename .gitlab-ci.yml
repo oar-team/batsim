@@ -31,25 +31,6 @@ build_gcc:
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
 
-build_clang_no_git:
-  stage: build
-  script:
-    # copy
-    - cp -r /builds/batsim/batsim{,_copy_no_git}
-    - mv /builds/batsim/batsim{_,/}copy_no_git
-    - rm -rf /builds/batsim/batsim/copy_no_git/.git
-    # compile
-    - export CC=/usr/bin/clang
-    - export CXX=/usr/bin/clang++
-    - rm -rf /builds/batsim/batsim/copy_no_git/build
-    - mkdir  /builds/batsim/batsim/copy_no_git/build
-    - cd /builds/batsim/batsim/copy_no_git/build
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
-    - make
-  artifacts:
-    paths:
-      - /builds/batsim/batsim/copy_no_git/build/batsim
-
 build_batsched:
   stage: build
   script:
@@ -136,8 +117,21 @@ test_version_git:
 test_version_no_git:
   stage: test
   script:
+    # copy Batsim directory
+    - cp -r /builds/batsim/batsim /tmp/batsim
+    - rm -rf /tmp/batsim/.git
+
+    # compile Batsim outside the git directory
+    - export CC=/usr/bin/clang
+    - export CXX=/usr/bin/clang++
+    - rm -rf /tmp/batsim/build
+    - mkdir  /tmp/batsim/build
+    - cd /tmp/batsim/build
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
+    - make
+
     # Checks that 'batsim --version' matches the latest batsim release
-    - /builds/batsim/batsim/tools/check_batsim_version.py --batsim-command /builds/batsim/batsim/copy_no_git/build/batsim --batsim-git-dir /builds/batsim/batsim
+    - /builds/batsim/batsim/tools/check_batsim_version.py --batsim-command /tmp/batsim/build/batsim --batsim-git-dir /builds/batsim/batsim
   dependencies:
     - build_clang_no_git
 
