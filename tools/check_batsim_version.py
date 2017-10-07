@@ -23,10 +23,21 @@ def version_from_string(input_string,
 def batsim_binary_version(batsim_command="batsim",
                           pattern='''(v\d+\.\d+\.\d+).*'''):
     """Retrieve the version from the batsim binary."""
-    p = subprocess.run("{cmd} --version".format(cmd=batsim_command),
-                       shell=True, check=True, stdout=subprocess.PIPE)
+    cmd = "{cmd} --version".format(cmd=batsim_command)
+    p = subprocess.run(cmd, shell=True, check=True,
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    return version_from_string(p.stdout.decode('utf-8'), pattern)
+    if p.returncode != 0:
+        raise Exception("Command '{cmd}' returned {ret}.\n"
+                        "Output:\n{o}\n\n"
+                        "Error:\n{e}\n".format(cmd=cmd,
+                                               ret=p.returncode,
+                                               o=p.stdout.decode('utf-8'),
+                                               e=p.stderr.decode('utf-8')))
+
+    binary_version = p.stdout.decode('utf-8').strip()
+    print("Batsim binary full version: {}".format(binary_version))
+    return version_from_string(binary_version, pattern)
 
 
 def batsim_git_version(
@@ -42,16 +53,23 @@ def batsim_git_version(
     - v1.1.0-20-g0fcd0c9  if the current commit is after v1.1.0 in the tree
     - or fail if there is no released version before the current commit.
     """
-    p = subprocess.run("{cmd} -C {p} {scmd}".format(cmd=git_command,
-                                                    p=git_path,
-                                                    scmd=git_subcommand),
-                       shell=True, stdout=subprocess.PIPE)
+    cmd = "{cmd} -C {p} {scmd}".format(cmd=git_command,
+                                       p=git_path,
+                                       scmd=git_subcommand)
+    p = subprocess.run(cmd, shell=True, check=True,
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     if p.returncode != 0:
-        raise Exception("Command '{cmd}' returned {ret}. Output:\n{o}".format(
-            cmd=git_command, ret=p.returncode, o=p.stdout.decode('utf-8')))
+        raise Exception("Command '{cmd}' returned {ret}.\n"
+                        "Output:\n{o}\n\n"
+                        "Error:\n{e}\n".format(cmd=cmd,
+                                               ret=p.returncode,
+                                               o=p.stdout.decode('utf-8'),
+                                               e=p.stderr.decode('utf-8')))
 
-    return version_from_string(p.stdout.decode('utf-8'), pattern)
+    git_version = p.stdout.decode('utf-8').strip()
+    print("git full version: {}".format(git_version))
+    return version_from_string(git_version, pattern)
 
 
 def main():
