@@ -90,8 +90,8 @@ test_test:
     - rm -rf /tmp/*
     # Install the pybatsim scheduler
     - cd /builds/batsim/batsim/schedulers/pybatsim
-    - python setup.py build
-    - python setup.py install
+    - python3 setup.py build
+    - python3 setup.py install
 
     # Run the redis server
     - |
