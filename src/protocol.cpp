@@ -465,6 +465,7 @@ JsonProtocolReader::JsonProtocolReader(BatsimContext *context) :
     _type_to_handler_map["CALL_ME_LATER"] = &JsonProtocolReader::handle_call_me_later;
     _type_to_handler_map["KILL_JOB"] = &JsonProtocolReader::handle_kill_job;
     _type_to_handler_map["SUBMIT_JOB"] = &JsonProtocolReader::handle_submit_job;
+    _type_to_handler_map["SUBMIT_PROFILE"] = &JsonProtocolReader::handle_submit_profile;
     _type_to_handler_map["SET_RESOURCE_STATE"] = &JsonProtocolReader::handle_set_resource_state;
     _type_to_handler_map["NOTIFY"] = &JsonProtocolReader::handle_notify;
     _type_to_handler_map["TO_JOB_MSG"] = &JsonProtocolReader::handle_to_job_msg;
@@ -1037,6 +1038,56 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     }
 
     send_message(timestamp, "server", IPMessageType::JOB_SUBMITTED_BY_DP, (void *) message);
+}
+
+void JsonProtocolReader::handle_submit_profile(int event_number,
+                                           double timestamp,
+                                           const Value &data_object)
+{
+    (void) event_number; // Avoids a warning if assertions are ignored
+    /* "with_redis": {
+      "timestamp": 10.0,
+      "type": "SUBMIT_PROFILE",
+      "data": {
+        "workload_name": "w12",
+        "profile_name": "delay.0.1",
+        "profile": {
+          "type": "delay",
+          "delay": 10
+        }
+      }
+    } */
+    ProfileSubmittedByDPMessage * message = new ProfileSubmittedByDPMessage;
+
+    xbt_assert(context->submission_sched_enabled, "Invalid JSON message: dynamic profile submission received but the option seems disabled...");
+
+    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (SUBMIT_JOB) should be an object", event_number);
+
+    xbt_assert(data_object.HasMember("workload_name"), "Invalid JSON message: the 'data' value of event %d (SUBMIT_PROFILE) should have a 'workload_name' key", event_number);
+    const Value & workload_name_value = data_object["workload_name"];
+    xbt_assert(workload_name_value.IsString(), "Invalid JSON message: in event %d (SUBMIT_PROFILE): ['data']['workload_name'] should be a string", event_number);
+    string workload_name = workload_name_value.GetString();
+
+    xbt_assert(data_object.HasMember("profile_name"), "Invalid JSON message: the 'data' value of event %d (SUBMIT_PROFILE) should have a 'profile_name' key", event_number);
+    const Value & profile_name_value = data_object["profile_name"];
+    xbt_assert(profile_name_value.IsString(), "Invalid JSON message: in event %d (SUBMIT_PROFILE): ['data']['profile_name'] should be a string", event_number);
+    string profile_name = profile_name_value.GetString();
+
+    xbt_assert(data_object.HasMember("profile"), "Invalid JSON message: the 'data' value of event %d (SUBMIT_PROFILE) should have a 'profile' key", event_number);
+
+    const Value & profile_object = data_object["profile"];
+    xbt_assert(profile_object.IsObject(), "Invalid JSON message: in event %d (SUBMIT_PROFILE): ['data']['profile'] should be an object", event_number);
+
+    message->workload_name = workload_name;
+    message->profile_name = profile_name;
+
+    StringBuffer buffer;
+    ::Writer<rapidjson::StringBuffer> writer(buffer);
+    profile_object.Accept(writer);
+
+    message->profile = string(buffer.GetString(), buffer.GetSize());
+
+    send_message(timestamp, "server", IPMessageType::PROFILE_SUBMITTED_BY_DP, (void *) message);
 }
 
 void JsonProtocolReader::handle_kill_job(int event_number,

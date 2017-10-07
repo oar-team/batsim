@@ -11,7 +11,8 @@ build_clang:
   script:
     - export CC=/usr/bin/clang
     - export CXX=/usr/bin/clang++
-    - mkdir /builds/batsim/batsim/build
+    - rm -rf /builds/batsim/batsim/build
+    - mkdir  /builds/batsim/batsim/build
     - cd /builds/batsim/batsim/build
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
@@ -24,10 +25,30 @@ build_gcc:
   script:
     - export CC=/usr/bin/gcc
     - export CXX=/usr/bin/g++
-    - mkdir /builds/batsim/batsim/build
+    - rm -rf /builds/batsim/batsim/build
+    - mkdir  /builds/batsim/batsim/build
     - cd /builds/batsim/batsim/build
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
     - make
+
+build_clang_no_git:
+  stage: build
+  script:
+    # copy
+    - cp -r /builds/batsim/batsim{,_copy_no_git}
+    - mv /builds/batsim/batsim{_,/}copy_no_git
+    - rm -rf /builds/batsim/batsim/copy_no_git/.git
+    # compile
+    - export CC=/usr/bin/clang
+    - export CXX=/usr/bin/clang++
+    - rm -rf /builds/batsim/batsim/copy_no_git/build
+    - mkdir  /builds/batsim/batsim/copy_no_git/build
+    - cd /builds/batsim/batsim/copy_no_git/build
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
+    - make
+  artifacts:
+    paths:
+      - /builds/batsim/batsim/copy_no_git/build/batsim
 
 build_batsched:
   stage: build
@@ -36,8 +57,9 @@ build_batsched:
     # Get the code at the expected revision
     - git clone https://gitlab.inria.fr/batsim/batsched.git /builds/batsim/batsim/schedulers/batsched
     - cd /builds/batsim/batsim/schedulers/batsched
-    - git reset --hard bd5ae24 # 2017-09-30
+    - git reset --hard 59f73b7 # 2017-10-07
     # Build batsched
+    - rm -rf   /builds/batsim/batsim/schedulers/batsched/build
     - mkdir -p /builds/batsim/batsim/schedulers/batsched/build
     - cd /builds/batsim/batsim/schedulers/batsched/build
     - cmake /builds/batsim/batsim/schedulers/batsched
@@ -83,6 +105,8 @@ test_test:
     - cd /builds/batsim/batsim/schedulers/batsched/build
     - make install
 
+    # clean /tmp to fix https://gitlab.inria.fr/batsim/batsim/issues/27
+    - rm -rf /tmp/*
     # Install the pybatsim scheduler
     - pip3 install /builds/batsim/batsim/schedulers/pybatsim
 
@@ -101,18 +125,21 @@ test_test:
     - build_batsched
     - retrieve_pybatsim
 
-test_version:
+test_version_git:
   stage: test
   script:
-    # Install Batsim
-    - cd /builds/batsim/batsim/build
-    - make install
-
     # Checks that 'batsim --version' matches the latest batsim release
-    - cd /builds/batsim/batsim/
-    - tools/check_batsim_version.py
+    - /builds/batsim/batsim/tools/check_batsim_version.py --batsim-command /builds/batsim/batsim/build/batsim --batsim-git-dir /builds/batsim/batsim
   dependencies:
     - build_clang
+
+test_version_no_git:
+  stage: test
+  script:
+    # Checks that 'batsim --version' matches the latest batsim release
+    - /builds/batsim/batsim/tools/check_batsim_version.py --batsim-command /builds/batsim/batsim/copy_no_git/build/batsim --batsim-git-dir /builds/batsim/batsim
+  dependencies:
+    - build_clang_no_git
 
 ################################################################################
 # Deploy stage
@@ -145,3 +172,5 @@ deploy_code_doc:
       - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
   dependencies:
     - test_doc
+  only:
+    - master
