@@ -10,6 +10,9 @@ Batsim's public API includes:
 
 [//]: ==========================================================================
 ## [Unreleased]
+### Added
+- New ``SUBMIT_PROFILE`` protocol message that allows the decision process
+  to submit profiles dynamically.
 
 [//]: ==========================================================================
 ## [1.3.0] - 2017-09-30
