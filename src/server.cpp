@@ -646,7 +646,8 @@ void server_on_submit_profile(ServerData * data,
         data->context->workloads.insert_workload(workload->name, workload);
     }
 
-    if (!workload->profiles->exists(message->profile_name)) {
+    if (!workload->profiles->exists(message->profile_name))
+    {
         XBT_INFO("Adding user-submitted profile %s to workload %s",
                 message->profile_name.c_str(),
                 message->workload_name.c_str());
