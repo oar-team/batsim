@@ -93,7 +93,7 @@ void generate_msg_parallel_homogeneous(std::string & task_name_prefix,
 }
 
 /**
- * @brief Generates the communication and computaion matrix for the msg
+ * @brief Generates the communication vector and computation matrix for the msg
  *        parallel homogeneous total amount task profile.
  *
  * @param[out] task_name_prefix the prefix to add to the task name
@@ -103,35 +103,34 @@ void generate_msg_parallel_homogeneous(std::string & task_name_prefix,
  * @param[in] profile_data the profile data
  *
  * @details It is like homogeneous profile but instead of giving what has
- *          to be done per host, it gives what has to be done in total homogeneously
- *          spread across the hosts.
+ *          to be done per host, the user gives the total amounts that should be spread
+ *          homogeneously across the hosts.
  */
-void generate_msg_parallel_homogeneous_total_amount(
-    std::string & task_name_prefix,
-    double *& computation_amount,
-    double *& communication_amount,
-    unsigned int nb_res,
-    void * profile_data)
+void generate_msg_parallel_homogeneous_total_amount(std::string & task_name_prefix,
+                                                    double *& computation_amount,
+                                                    double *& communication_amount,
+                                                    unsigned int nb_res,
+                                                    void * profile_data)
 {
     task_name_prefix = "phgt ";
     MsgParallelHomogeneousTotalAmountProfileData* data = (MsgParallelHomogeneousTotalAmountProfileData*)profile_data;
 
-    double cpu = data->cpu;
-    double com = data->com;
+    const double spread_cpu = data->cpu / nb_res;
+    const double spread_com = data->com / nb_res;
 
     // These amounts are deallocated by SG
     computation_amount = xbt_new(double, nb_res);
     communication_amount = nullptr;
-    if (com > 0)
+    if (spread_com > 0)
     {
-        communication_amount = xbt_new(double, nb_res* nb_res);
+        communication_amount = xbt_new(double, nb_res * nb_res);
     }
 
-    // Let us fill the local computation and communication matrices
+    // Fill the local computation and communication matrices
     int k = 0;
     for (unsigned int y = 0; y < nb_res; ++y)
     {
-        computation_amount[y] = cpu / nb_res;
+        computation_amount[y] = spread_cpu;
         if (communication_amount != nullptr)
         {
             for (unsigned int x = 0; x < nb_res; ++x)
@@ -142,7 +141,7 @@ void generate_msg_parallel_homogeneous_total_amount(
                 }
                 else
                 {
-                    communication_amount[k] = com / nb_res;
+                    communication_amount[k] = spread_com;
                 }
                 k++;
             }
@@ -362,9 +361,8 @@ int execute_msg_task(BatTask * btask,
                                           communication_amount, nb_res, profile->data);
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
-        generate_msg_parallel_homogeneous_total_amount(
-            task_name_prefix, computation_amount,
-            communication_amount, nb_res, profile->data);
+        generate_msg_parallel_homogeneous_total_amount(task_name_prefix, computation_amount,
+                                                       communication_amount, nb_res, profile->data);
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS:
         generate_msg_parallel_homogeneous_with_pfs(task_name_prefix, computation_amount,

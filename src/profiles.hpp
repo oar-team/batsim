@@ -18,8 +18,8 @@ enum class ProfileType
 {
     DELAY                                          //!< The profile is a delay. Its data is of type DelayProfileData
     ,MSG_PARALLEL                                  //!< The profile is composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
-    ,MSG_PARALLEL_HOMOGENEOUS                      //!< The profile is a MSG task homogeneous that execute the given communication and computes to each nodes. Its data is of type MsgParallelHomogeneousProfileData
-    ,MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT         //!< The profile is a MSG task homogeneous that spread the given communication and computes over each nodes. Its data is of type MsgParallelHomogeneousTotalAmountProfileData
+    ,MSG_PARALLEL_HOMOGENEOUS                      //!< The profile is a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type MsgParallelHomogeneousProfileData
+    ,MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT         //!< The profile is a homogeneous parallel task that spreads the given amounts of computation and communication among all the nodes. Its data is of type MsgParallelHomogeneousTotalAmountProfileData
     ,SMPI                                          //!< The profile is a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
     ,SEQUENCE                                      //!< The profile is non-atomic: it is composed of a sequence of other profiles
     ,MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS   //!< The profile is a homogeneous MSG for complex parallel filesystem access. Its data is of type MsgParallelHomogeneousPFSMultipleTiersProfileData
@@ -109,8 +109,8 @@ struct MsgParallelHomogeneousProfileData
  */
 struct MsgParallelHomogeneousTotalAmountProfileData
 {
-    double cpu; //!< The computation amount to be spread over the nodes
-    double com; //!< The communication amount to be spread over each pair of nodes
+    double cpu; //!< The computation amount to spread over the nodes
+    double com; //!< The communication amount to spread over each pair of nodes
 };
 /**
  * @brief The data associated to DELAY profiles
