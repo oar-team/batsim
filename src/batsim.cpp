@@ -3,11 +3,25 @@
  * @brief Batsim's entry point
  */
 
-/** @def BATSIM_VERSION
-    @brief What batsim --version should return.
+/** @def STR_HELPER(x)
+ *  @brief Helper macro to retrieve the string view of a macro.
+ */
+#define STR_HELPER(x) #x
 
-    It is either set by CMake or set to vUNKNOWN_PLEASE_COMPILE_VIA_CMAKE
+/** @def STR(x)
+ *  @brief Macro to get a const char* from a macro
+ */
+#define STR(x) STR_HELPER(x)
+
+/** @def BATSIM_VERSION
+ *  @brief What batsim --version should return.
+ *
+ *  It is either set by CMake or set to vUNKNOWN_PLEASE_COMPILE_VIA_CMAKE
 **/
+#ifndef BATSIM_VERSION
+    #define BATSIM_VERSION vUNKNOWN_PLEASE_COMPILE_VIA_CMAKE
+#endif
+
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -218,17 +232,8 @@ Other options:
   --version                         Shows Batsim version.
 )";
 
-
-    /* Let's retrieve Batsim version at compile-time.
-       If Batsim is built via CMake BATSIM_VERSION should be set.
-    */
-
-    #ifndef BATSIM_VERSION
-        #define BATSIM_VERSION vUNKNOWN_PLEASE_COMPILE_VIA_CMAKE
-    #endif
-
     map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc },
-                                                     true, #BATSIM_VERSION);
+                                                     true, STR(BATSIM_VERSION));
 
     // Let's do some checks on the arguments!
     bool error = false;
