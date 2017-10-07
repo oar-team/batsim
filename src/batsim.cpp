@@ -3,6 +3,12 @@
  * @brief Batsim's entry point
  */
 
+/** @def BATSIM_VERSION
+    @brief What batsim --version should return.
+
+    It is either set by CMake or set to vUNKNOWN_PLEASE_COMPILE_VIA_CMAKE
+**/
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <argp.h>
@@ -217,15 +223,12 @@ Other options:
        If Batsim is built via CMake BATSIM_VERSION should be set.
     */
 
-    #define STR_HELPER(x) #x
-    #define STR(x) STR_HELPER(x)
-
     #ifndef BATSIM_VERSION
         #define BATSIM_VERSION vUNKNOWN_PLEASE_COMPILE_VIA_CMAKE
     #endif
 
     map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc },
-                                                     true, STR(BATSIM_VERSION));
+                                                     true, #BATSIM_VERSION);
 
     // Let's do some checks on the arguments!
     bool error = false;
