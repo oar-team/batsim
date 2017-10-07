@@ -89,7 +89,9 @@ test_test:
     # clean /tmp to fix https://gitlab.inria.fr/batsim/batsim/issues/27
     - rm -rf /tmp/*
     # Install the pybatsim scheduler
-    - pip3 install /builds/batsim/batsim/schedulers/pybatsim
+    - cd /builds/batsim/batsim/schedulers/pybatsim
+    - python setup.py build
+    - python setup.py install
 
     # Run the redis server
     - |
