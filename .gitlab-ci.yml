@@ -106,7 +106,7 @@ test_test:
     - make install
 
     # Install the pybatsim scheduler
-    - pip3 install /builds/batsim/batsim/schedulers/pybatsim
+    - pip3 install --no-deps /builds/batsim/batsim/schedulers/pybatsim
 
     # Run the redis server
     - |
