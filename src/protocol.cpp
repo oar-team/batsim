@@ -271,7 +271,7 @@ Value generate_task_tree(BatTask* task_tree, rapidjson::Document::AllocatorType 
 }
 
 void JsonProtocolWriter::append_job_killed(const vector<string> & job_ids,
-                                           const map<string, BatTask *> job_progress,
+                                           const std::map<string, BatTask *> & job_progress,
                                            double date)
 {
     /*

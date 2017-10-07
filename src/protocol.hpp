@@ -124,7 +124,7 @@ public:
      * @param[in] job_progress Contains the progress of each job that has really been killed.
      */
     virtual void append_job_killed(const std::vector<std::string> & job_ids,
-                                   const std::map<std::string, BatTask *> job_progress,
+                                   const std::map<std::string, BatTask *> & job_progress,
                                    double date) = 0;
 
     /**
@@ -260,7 +260,7 @@ public:
      * @param[in] job_progress Contains the progress of each job that has really been killed.
      */
     void append_job_killed(const std::vector<std::string> & job_ids,
-                           const std::map<std::string, BatTask *> job_progress,
+                           const std::map<std::string, BatTask *> & job_progress,
                            double date);
 
     /**
