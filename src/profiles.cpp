@@ -167,7 +167,8 @@ Profile::~Profile()
             delete d;
             d = nullptr;
         }
-    }else if (type == ProfileType::SMPI)
+    }
+    else if (type == ProfileType::SMPI)
     {
         SmpiProfileData * d = (SmpiProfileData *) data;
         if (d != nullptr)
