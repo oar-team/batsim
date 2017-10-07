@@ -170,3 +170,5 @@ deploy_code_doc:
       - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
   dependencies:
     - test_doc
+  only:
+    - master
