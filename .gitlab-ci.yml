@@ -118,8 +118,11 @@ test_version_no_git:
   stage: test
   script:
     # copy Batsim directory
-    - cp -r /builds/batsim/batsim /tmp/batsim
-    - rm -rf /tmp/batsim/.git
+    - rm -rf /tmp/batsim
+    - mkdir /tmp/batsim
+    - cp -r {/builds/batsim/batsim,/tmp/batsim}/src
+    - cp -r {/builds/batsim/batsim,/tmp/batsim}/CMakeLists.txt
+    - cp -r {/builds/batsim/batsim,/tmp/batsim}/cmake
 
     # compile Batsim outside the git directory
     - export CC=/usr/bin/clang
