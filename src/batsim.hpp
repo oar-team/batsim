@@ -104,9 +104,10 @@ struct MainArguments
  * @param[in] argc The number of arguments given to the main function
  * @param[in] argv The values of arguments given to the main function
  * @param[out] main_args Batsim usable arguments
- * @return true on success, false otherwise
+ * @param[out] return_code Batsim's return code (used directly if false is returned)
+ * @return whether the simulation should run
  */
-bool parse_main_args(int argc, char * argv[], MainArguments & main_args);
+bool parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code);
 
 /**
  * @brief Configures how the simulation should be logged
