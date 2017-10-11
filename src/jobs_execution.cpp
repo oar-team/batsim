@@ -175,8 +175,19 @@ int execute_task(BatTask * btask,
 
         if (profile_to_execute != "")
         {
-            XBT_INFO("Instaciate task from profile: %s", profile_to_execute.c_str());
-            int ret_last_profile = execute_task(btask, context, allocation, cleanup_data, remaining_time);
+            XBT_INFO("Instanciate task from profile: %s", profile_to_execute.c_str());
+
+            btask->current_task_index = 0;
+            BatTask * sub_btask = new BatTask(job,
+                    job->workload->profiles->at(profile_to_execute));
+            btask->sub_tasks.push_back(sub_btask);
+
+            string task_name = "recv" + to_string(job->number) + "'" + job->profile + "'";
+            XBT_INFO("Creating receive task '%s'", task_name.c_str());
+
+            int ret_last_profile = execute_task(sub_btask, context, allocation,
+                                    cleanup_data, remaining_time);
+
             if (ret_last_profile != 0)
             {
                 return ret_last_profile;
