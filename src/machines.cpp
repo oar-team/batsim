@@ -668,8 +668,9 @@ bool string_including_integers_comparator(const std::string & s1, const std::str
                 return int1 < int2;
             }
 
-            int int1_length = log10(int1) + 1;
-            int int2_length = log10(int2) + 1;
+            // max handles the log(0)=-infinity degenerate case
+            int int1_length = max(0.0, log10(int1)) + 1;
+            int int2_length = max(0.0, log10(int2)) + 1;
 
             c1 += int1_length;
             c2 += int2_length;
