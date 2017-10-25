@@ -57,6 +57,8 @@
 #include "workload.hpp"
 #include "workflow.hpp"
 
+#include "unittest/test_main.hpp"
+
 #include "docopt/docopt.h"
 
 using namespace std;
@@ -147,7 +149,8 @@ string generate_sha1_string(std::string string_to_hash, int output_length)
     return result;
 }
 
-bool parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code)
+void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code,
+                     bool & run_simulation, bool & run_unit_tests)
 {
     static const char usage[] =
 R"(A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.
@@ -160,6 +163,7 @@ Usage:
   batsim --help
   batsim --version
   batsim --simgrid-version
+  batsim --unittest
 
 Input options:
   -p --platform <platform_file>     The SimGrid platform to simulate.
@@ -233,6 +237,8 @@ Other options:
   -h --help                         Shows this help.
 )";
 
+    run_simulation = false,
+    run_unit_tests = false;
     return_code = 1;
     map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc },
                                                      true, STR(BATSIM_VERSION));
@@ -247,7 +253,13 @@ Other options:
         sg_version(&sg_major, &sg_minor, &sg_patch);
 
         printf("%d.%d.%d\n", sg_major, sg_minor, sg_patch);
-        return false;
+        return;
+    }
+
+    if (args["--unittest"].asBool())
+    {
+        run_unit_tests = true;
+        return;
     }
 
     // Input files
@@ -482,7 +494,7 @@ Other options:
     main_args.pfs_host_name = args["--pfs-host"].asString();
     main_args.hpst_host_name = args["--hpst-host"].asString();
 
-    return !error;
+    run_simulation = !error;
 }
 
 void configure_batsim_logging_output(const MainArguments & main_args)
@@ -663,7 +675,17 @@ int main(int argc, char * argv[])
     // Let's parse command-line arguments
     MainArguments main_args;
     int return_code = 1;
-    if (!parse_main_args(argc, argv, main_args, return_code))
+    bool run_simulation = false;
+    bool run_unittests = false;
+
+    parse_main_args(argc, argv, main_args, return_code, run_simulation, run_unittests);
+
+    if (run_unittests)
+    {
+        test_entry_point();
+    }
+
+    if (!run_simulation)
     {
         return return_code;
     }
