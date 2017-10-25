@@ -108,6 +108,18 @@ test_test:
     - build_batsched
     - retrieve_pybatsim
 
+test_unittest:
+  stage: test
+  script:
+    # Install Batsim
+    - cd /builds/batsim/batsim/build
+    - make install
+
+    # Run unit tests
+    - batsim --unittest
+  dependencies:
+    - build_clang
+
 test_version_git:
   stage: test
   script:
