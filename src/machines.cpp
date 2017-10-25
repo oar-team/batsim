@@ -648,51 +648,87 @@ void Machine::update_machine_state(MachineState new_state)
     last_state_change_date = current_date;
 }
 
-bool string_including_integers_comparator(const std::string & s1, const std::string & s2)
+int string_numeric_comparator(const std::string & s1, const std::string & s2)
 {
-    int c1 = 0;
-    int c2 = 0;
+    // Const C strings for s1 and s2
+    const char * const_c_s1 = s1.c_str();
+    const char * const_c_s2 = s2.c_str();
 
-    int size1 = s1.length();
-    int size2 = s2.length();
+    // Iterators
+    char * p1 = const_cast<char *>(const_c_s1);
+    char * p2 = const_cast<char *>(const_c_s2);
 
-    for ( ; c1 < size1 && c2 < size2; )
+    // End bounds (precompute for the sake of performance)
+    const char * s1_end = p1 + s1.size();
+    const char * s2_end = p2 + s2.size();
+
+    // Traverse the two strings until at least one of them is at end
+    for ( ; p1 < s1_end && p2 < s2_end; )
     {
-        if (isdigit(s1[c1]) && isdigit(s2[c2]))
+        // Digits are encountered. The integer value is used as a symbol instead of the character.
+        if (isdigit(*p1) && isdigit(*p2))
         {
-            int int1 = atoi(&s1[c1]);
-            int int2 = atoi(&s2[c2]);
+            // The numeric value is read via strtol, which tells where it stopped its reading
+            char * end_p1;
+            char * end_p2;
+
+            long int int1 = strtol(p1, &end_p1, 10);
+            long int int2 = strtol(p2, &end_p2, 10);
+
+            xbt_assert(int1 != LONG_MIN && int1 != LONG_MAX,
+                       "Numeric overflow while reading %s", const_c_s1);
+            xbt_assert(int2 != LONG_MIN && int1 != LONG_MAX,
+                       "Numeric overflow while reading %s", const_c_s2);
 
             if (int1 != int2)
             {
-                return int1 < int2;
+                return int1 - int2;
             }
 
-            // max handles the log(0)=-infinity degenerate case
-            int int1_length = max(0.0, log10(int1)) + 1;
-            int int2_length = max(0.0, log10(int2)) + 1;
-
-            c1 += int1_length;
-            c2 += int2_length;
+            // The string traversal is pursued where strtol stopped
+            p1 = end_p1;
+            p2 = end_p2;
         }
         else
         {
-            if (s1[c1] != s2[c2])
+            // Classical character by character comparison
+            if (*p1 != *p2)
             {
-                return s1[c1] < s2[c2];
+                return *p1 - *p2;
             }
 
-            ++c1;
-            ++c2;
+            // The string traversal is pursued on the next characters
+            ++p1;
+            ++p2;
         }
     }
 
-    return s1.length() < s2.length();
+    if (p1 < s1_end)
+    {
+        // S1 is not at end (but S2 is since the loop condition is false)
+        return 1;
+    }
+    else if (p2 < s2_end)
+    {
+        // S2 is not at end (but S1 is since the loop condition is false)
+        return -1;
+    }
+    else
+    {
+        // Both strings are at end. They are equal.
+        return 0;
+    }
 }
 
 bool machine_comparator_name(const Machine *m1, const Machine *m2)
 {
-    return string_including_integers_comparator(m1->name, m2->name);
+    int cmp_ret = string_numeric_comparator(m1->name, m2->name);
+
+    // If the strings are identical in the numeric meaning, they are compared lexicographically
+    if (cmp_ret == 0)
+        cmp_ret = strcmp(m1->name.c_str(), m2->name.c_str());
+
+    return cmp_ret <= 0;
 }
 
 
