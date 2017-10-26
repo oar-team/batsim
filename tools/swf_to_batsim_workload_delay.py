@@ -9,8 +9,9 @@
 
 from sortedcontainers import SortedSet
 import argparse
-import re
 import json
+import math
+import re
 import sys
 import datetime
 
@@ -22,6 +23,11 @@ parser = argparse.ArgumentParser(
 parser.add_argument('inputSWF', type=argparse.FileType('r'),
                     help='The input SWF file')
 parser.add_argument('outputJSON', type=str, help='The output JSON file')
+parser.add_argument('-jsf', '--job-size-function',
+                    type=str,
+                    default='1*nb_res',
+                    help='The function to apply on the jobs size. '
+                         'The identity is used by default.')
 parser.add_argument('-jwf', '--jobWalltimeFactor',
                     type=float, default=2,
                     help='Jobs walltimes are computed by the formula max(givenWalltime, jobWalltimeFactor*givenRuntime)')
@@ -73,6 +79,9 @@ for line in args.inputSWF:
         submit_time = max(0, float(res.group(SwfField.SUBMIT_TIME.value)))
         walltime = max(args.jobWalltimeFactor * run_time,
                        float(res.group(SwfField.REQUESTED_TIME.value)))
+
+        # nb_res may be changed by calling a user-given function
+        nb_res = eval(args.job_size_function)
 
         if args.givenWalltimeOnly:
             walltime = float(res.group(SwfField.REQUESTED_TIME.value))
