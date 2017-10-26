@@ -114,13 +114,20 @@ dprofs = {}
 for profile in profiles:
     dprofs[str(profile)] = {'type': 'delay', 'delay': profile}
 
-platform_size = max([nb_res for (job_id, nb_res, run_time, submit_time,
-                                 profile, walltime) in jobs])
+
+biggest_job = max([nb_res for (job_id, nb_res, run_time, submit_time,
+                               profile, walltime) in jobs])
+
 if args.platformSize is not None:
     if args.platformSize < 1:
-        print('Invalid input: platform size must be strictly positive')
-        exit(1)
+        raise Exception('Invalid input: platform size must be strictly positive')
+    if args.platformSize < biggest_job:
+        print('Warning: platform size {size} is smaller than '
+              'the biggest job ({big})'.format(size=args.platformSize,
+                                               big=biggest_job))
     platform_size = args.platformSize
+else:
+    platform_size = biggest_job
 
 data = {
     'version': version,

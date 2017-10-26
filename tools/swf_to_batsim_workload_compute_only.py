@@ -99,13 +99,18 @@ def generate_workload(input_swf, output_json, computation_speed,
                                 'cpu': profile * computation_speed,
                                 'com': 0.0}
 
-    platform_size = max([nb_res for (job_id, nb_res, run_time, submit_time,
-                                     profile, walltime) in jobs])
+    biggest_job = max([nb_res for (job_id, nb_res, run_time, submit_time,
+                                   profile, walltime) in jobs])
+
     if platform_size is not None:
         if platform_size < 1:
-            print('Invalid input: platform size must be strictly positive')
-            exit(1)
-        platform_size = platform_size
+            raise Exception('Invalid input: platform size must be strictly positive')
+        if platform_size < biggest_job:
+            print('Warning: platform size {size} is smaller than '
+                  'the biggest job ({big})'.format(size=platform_size,
+                                                   big=biggest_job))
+    else:
+        platform_size = biggest_job
 
     data = {
         'version': version,
