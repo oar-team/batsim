@@ -508,7 +508,7 @@ def execute_batsim_alone(batsim_command, batsim_stdout_file, batsim_stderr_file,
 def execute_batsim_and_sched(batsim_command, sched_command,
                              batsim_stdout_file, batsim_stderr_file,
                              sched_stdout_file, sched_stderr_file,
-                             timeout=None, wait_timeout_on_success=60):
+                             timeout=None, wait_timeout_on_success=600):
     """Execute Batsim+Sched and wait for their termination."""
     loop = asyncio.get_event_loop()
     proc_set = set()
@@ -671,7 +671,7 @@ def execute_one_instance(working_directory,
                          do_not_execute=False):
     """Execute one instance: Batsim(+Sched)."""
     if timeout is None:
-        timeout = 3600
+        timeout = 604800
 
     # Let's create the output directory if it does not exist
     create_dir_if_not_exists(output_directory)
