@@ -959,14 +959,15 @@ void PStateChangeTracer::add_pstate_change(double time, MachineRange machines, i
 {
     xbt_assert(_wbuf != nullptr);
 
-    const int buf_size = 256;
+    const string machines_as_string = machines.to_string_hyphen(" ", "-");
+    const int buf_size = 256 + machines_as_string.size();
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
     char * buf = (char*) malloc(sizeof(char) * buf_size);
     xbt_assert(buf != 0, "Couldn't allocate memory");
 
     nb_printed = snprintf(buf, buf_size, "%g,%s,%d\n",
-                          time, machines.to_string_hyphen(" ", "-").c_str(), pstate_after);
+                          time, machines_as_string.c_str(), pstate_after);
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
