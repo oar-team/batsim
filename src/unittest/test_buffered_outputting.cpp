@@ -4,6 +4,37 @@
 
 #include "../export.hpp"
 
+void test_buffered_writer()
+{
+    const char * filename = "/tmp/test_wbuf";
+    WriteBuffer * buf = new WriteBuffer(filename, 4);
+
+    // Smaller than the buffer size
+    for (int i = 0; i < 10; ++i)
+    {
+        buf->append_text("ok\n");
+    }
+
+    // Exactly the buffer size
+    for (int i = 0; i < 10; ++i)
+    {
+        buf->append_text("meh\n");
+    }
+
+    // Bigger than the buffer size
+    for (int i = 0; i < 10; ++i)
+    {
+        buf->append_text("Too big?\n");
+    }
+
+    // Flush content, close file and release memory
+    delete buf;
+
+    // Remove temporary file
+    int remove_ret = remove(filename);
+    xbt_assert(remove_ret == 0, "Could not remove file '%s'.", filename);
+}
+
 void test_pstate_writer()
 {
     const char * filename = "/tmp/test_pstate";

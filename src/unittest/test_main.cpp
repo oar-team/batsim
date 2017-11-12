@@ -6,5 +6,6 @@
 void test_entry_point()
 {
     test_numeric_strcmp();
+    test_buffered_writer();
     test_pstate_writer();
 }
