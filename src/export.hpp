@@ -312,6 +312,7 @@ public:
 
 private:
     WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
+    char * _temporary_buffer = nullptr; //!< The buffer used to generate text
 };
 
 /**

@@ -941,7 +941,8 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
 
 PStateChangeTracer::PStateChangeTracer()
 {
-
+    xbt_assert(_temporary_buffer == nullptr);
+    _temporary_buffer = (char*) malloc(512 * sizeof(char));
 }
 
 void PStateChangeTracer::setFilename(const string &filename)
@@ -959,6 +960,12 @@ PStateChangeTracer::~PStateChangeTracer()
         delete _wbuf;
         _wbuf = nullptr;
     }
+
+    if (_temporary_buffer != nullptr)
+    {
+        free(_temporary_buffer);
+        _temporary_buffer = nullptr;
+    }
 }
 
 void PStateChangeTracer::add_pstate_change(double time, MachineRange machines, int pstate_after)
@@ -966,20 +973,20 @@ void PStateChangeTracer::add_pstate_change(double time, MachineRange machines, i
     xbt_assert(_wbuf != nullptr);
 
     const string machines_as_string = machines.to_string_hyphen(" ", "-");
-    const int buf_size = 256 + machines_as_string.size();
+    const int minimum_buf_size = 256 + machines_as_string.size();
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Couldn't allocate memory");
 
-    nb_printed = snprintf(buf, buf_size, "%g,%s,%d\n",
+    // Increases the buffer size if needed
+    _temporary_buffer = (char*) realloc(_temporary_buffer, minimum_buf_size);
+    xbt_assert(_temporary_buffer != 0, "Couldn't allocate memory!");
+
+    nb_printed = snprintf(_temporary_buffer, minimum_buf_size, "%g,%s,%d\n",
                           time, machines_as_string.c_str(), pstate_after);
-    xbt_assert(nb_printed < buf_size - 1,
+    xbt_assert(nb_printed < minimum_buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
-    _wbuf->append_text(buf);
-
-    free(buf);
+    _wbuf->append_text(_temporary_buffer);
 }
 
 void PStateChangeTracer::flush()
