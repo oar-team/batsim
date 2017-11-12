@@ -682,6 +682,7 @@ int main(int argc, char * argv[])
 
     if (run_unittests)
     {
+        MSG_init(&argc, argv);
         test_entry_point();
     }
 
