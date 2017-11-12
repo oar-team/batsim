@@ -138,26 +138,32 @@ WriteBuffer::~WriteBuffer()
 
 void WriteBuffer::append_text(const char * text)
 {
-    const int textLength = strlen(text);
+    const int text_length = strlen(text);
 
-    // If the buffer is big enough
-    if (buffer_pos + textLength < buffer_size)
+    // Is the buffer big enough?
+    if (buffer_pos + text_length < buffer_size)
     {
-        // Let's append the text to the buffer
-        memcpy(buffer + buffer_pos, text, textLength * sizeof(char));
-        buffer_pos += textLength;
+        // Append the text into the buffer
+        memcpy(buffer + buffer_pos, text, text_length * sizeof(char));
+        buffer_pos += text_length;
     }
     else
     {
-        // Let's write the current buffer content in the file
+        // Write the current buffer content in the file
         flush_buffer();
 
-        // Let's write the text in the buffer
-        xbt_assert(textLength < buffer_size,
-                   "Text too large to fit in the buffer (%d required, only got %d)",
-                   textLength, buffer_size);
-        memcpy(buffer, text, textLength * sizeof(char));
-        buffer_pos = textLength;
+        // Does the text fit in the (now empty) buffer?
+        if (text_length < buffer_size)
+        {
+            // Copy the text into the buffer
+            memcpy(buffer, text, text_length * sizeof(char));
+            buffer_pos = text_length;
+        }
+        else
+        {
+            // Directly write the text into the file
+            f.write(text, text_length);
+        }
     }
 }
 
