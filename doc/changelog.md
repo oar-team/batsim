@@ -13,6 +13,12 @@ Batsim's public API includes:
 ### Added
 - Added the ``--simgrid-version`` command-line option to show which SimGrid
   is used by Batsim.
+- Added the ``--unittest`` command-line option to run unit tests.
+  Executed by Batsim's continuous integration system.
+
+### Fixed
+- Power stace tracing now works when the number of machines is big.
+- Output buffers now work even if incoming texts are bigger than the buffer.
 
 [//]: ==========================================================================
 ## [1.4.0] - 2017-10-07
