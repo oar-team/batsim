@@ -42,19 +42,23 @@ void test_pstate_writer()
     tracer->setFilename(filename);
 
     MachineRange range;
-    range.insert(0);
 
     // One machine
+    range.insert(0);
     tracer->add_pstate_change(0, range, 0);
 
     // More machines
     for (int i = 2; i < 100; i+=2)
+    {
         range.insert(i);
+    }
     tracer->add_pstate_change(1, range, 1);
 
     // Even more machines
     for (int i = 100; i < 1000; i+=2)
+    {
         range.insert(i);
+    }
     tracer->add_pstate_change(2, range, 3);
 
     // Flush content, close file and release memory
