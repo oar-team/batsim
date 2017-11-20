@@ -77,4 +77,6 @@ struct BatsimContext
     std::string platform_filename;                  //!< The name of the platform file
     std::string export_prefix;                      //!< The output export prefix
     int workflow_nb_concurrent_jobs_limit;          //!< Limits the number of concurrent jobs for workflows
+
+    std::string batsim_version;                     //!< The Batsim version (got from the BATSIM_VERSION variable that is usually set by CMake)
 };

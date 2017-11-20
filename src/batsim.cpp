@@ -701,6 +701,9 @@ int main(int argc, char * argv[])
     BatsimContext context;
     set_configuration(&context, main_args);
 
+    context.batsim_version = STR(BATSIM_VERSION);
+    XBT_INFO("Batsim version: %s", context.batsim_version.c_str());
+
     // Let's load the workloads and workflows
     int max_nb_machines_to_use = -1;
     load_workloads_and_workflows(main_args, &context, max_nb_machines_to_use);

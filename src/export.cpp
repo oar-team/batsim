@@ -868,6 +868,7 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     double mean_turnaround_time = (double)sum_turnaround_time/nb_jobs;
     double mean_slowdown = (double)sum_slowdown/nb_jobs;
 
+    output_map["batsim_version"] = context->batsim_version;
     output_map["nb_jobs"] = to_string(nb_jobs);
     output_map["nb_jobs_finished"] = to_string(nb_jobs_finished);
     output_map["nb_jobs_success"] = to_string(nb_jobs_success);
