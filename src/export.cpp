@@ -695,14 +695,38 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
 
-    // write headers
-    f << "job_id,hacky_job_id,workload_name,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,consumed_energy,allocated_processors\n";
+    // List all features (columns)
+    map<string, string> job_map;
+    job_map["job_id"] = "unset";
+    job_map["workload_name"] = "unset";
+    job_map["submission_time"] = "unset";
+    job_map["requested_number_of_processors"] = "unset";
+    job_map["requested_time"] = "unset";
+    job_map["success"] = "unset";
+    job_map["starting_time"] = "unset";
+    job_map["execution_time"] = "unset";
+    job_map["finish_time"] = "unset";
+    job_map["waiting_time"] = "unset";
+    job_map["turnaround_time"] = "unset";
+    job_map["stretch"] = "unset";
+    job_map["consumed_energy"] = "unset";
+    job_map["allocated_processors"] = "unset";
+
+    // Write headers (columns) to the output file
+    vector<string> row_content;
+    row_content.reserve(job_map.size());
+
+    for (auto mit : job_map)
+    {
+         row_content.push_back(mit.first);
+    }
+
+    f << boost::algorithm::join(row_content, ",") << "\n";
 
     for (const auto mit : context->workloads.workloads())
     {
         string workload_name = mit.first;
         const Workload * workload = mit.second;
-        int workload_num = distance((context->workloads.workloads()).begin(), (context->workloads.workloads()).find(mit.first));
 
         if(workload->jobs)
         {
@@ -713,32 +737,32 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
 
                 if (job->is_complete())
                 {
-                    char * buf = nullptr;
                     int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
-                    xbt_assert(job->runtime >= 0);
 
-                    int ret = asprintf(&buf, "%d,%d,%s,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
-                                       job->number,
-                                       job->number*10 + workload_num, // hacky_job_id
-                                       workload_name.c_str(), // workload_name
-                                       (double)job->submission_time, // submission_time
-                                       job->required_nb_res, // requested_number_of_processors
-                                       (double)job->walltime, // requested_time
-                                       success, // success
-                                       (double)job->starting_time, // starting_time
-                                       (double)job->runtime, // execution_time
-                                       (double)(job->starting_time + job->runtime), // finish_time
-                                       (double)(job->starting_time - job->submission_time), // waiting_time
-                                       (double)(job->starting_time + job->runtime - job->submission_time), // turnaround_time
-                                       (double)((job->starting_time + job->runtime - job->submission_time) / job->runtime), // stretch
-                                       job->consumed_energy // consumed energy
-                                       );
-                    (void) ret; // Avoids a warning if assertions are ignored
-                    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-                    f << buf;
-                    free(buf);
+                    // Update all values
+                    job_map["job_id"] = to_string(job->number);
+                    job_map["workload_name"] = string(workload_name);
+                    job_map["submission_time"] = to_string((double)job->submission_time);
+                    job_map["requested_number_of_processors"] = to_string(job->required_nb_res);
+                    job_map["requested_time"] = to_string((double)job->walltime);
+                    job_map["success"] = to_string(success);
+                    job_map["starting_time"] = to_string((double)job->starting_time);
+                    job_map["execution_time"] = to_string((double)job->runtime);
+                    job_map["finish_time"] = to_string((double)(job->starting_time + job->runtime));
+                    job_map["waiting_time"] = to_string((double)(job->starting_time - job->submission_time));
+                    job_map["turnaround_time"] = to_string((double)(job->starting_time + job->runtime - job->submission_time));
+                    job_map["stretch"] = to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
+                    job_map["consumed_energy"] = to_string(job->consumed_energy);
+                    job_map["allocated_processors"] = job->allocation.to_string_hyphen(" ");
 
-                    f << job->allocation.to_string_hyphen(" ") << "\n";
+                    // Write values to the output file
+                    row_content.resize(0);
+                    for (auto mit : job_map)
+                    {
+                        row_content.push_back(mit.second);
+                    }
+
+                    f << boost::algorithm::join(row_content, ",") << "\n";
                 }
             }
         }
