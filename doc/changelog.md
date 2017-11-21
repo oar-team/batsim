@@ -15,6 +15,15 @@ Batsim's public API includes:
   is used by Batsim.
 - Added the ``--unittest`` command-line option to run unit tests.
   Executed by Batsim's continuous integration system.
+- New ``SET_JOB_METADATA`` protocol message, which allows to set
+  set metadata to jobs.
+  Such metadata is written in the ``_jobs.csv`` output file.
+- The ``_schedule.csv`` output file now contains a batsim_version field.
+
+### Changed
+- The ``_jobs.csv`` output file is now written more cleanly.  
+  The order of the columns within it may have changed.  
+  Removal of the deprecated hacky_job_id.
 
 ### Fixed
 - Power stace tracing now works when the number of machines is big.
@@ -62,6 +71,7 @@ Batsim's public API includes:
   - ``JOB_COMPLETED``:
     - ``return_code`` indicates whether the job has succeeded
     - The ``FAILED`` status can now be received.
+
 ### Changed
 - The ``repeat`` value of sequence (composed) profiles is now optional.  
   Default value is 1 (executed once, no repeat).
@@ -72,6 +82,7 @@ Batsim's public API includes:
 - Commit ``587483ebe`` on ``https://github.com/mpoquet/simgrid.git``.  
   Please notice that energy consumption of parallel tasks does not work
   as expected.
+
 ### Added
 - Stated LGPL-3.0 license.
 - Code cosmetics standards are now checked by Codacy.
