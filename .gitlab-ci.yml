@@ -49,17 +49,6 @@ build_batsched:
     paths:
       - /builds/batsim/batsim/schedulers/batsched/build
 
-retrieve_pybatsim:
-  stage: build
-  script:
-    - rm -rf /builds/batsim/batsim/schedulers/pybatsim
-    - git clone https://gitlab.inria.fr/batsim/pybatsim.git /builds/batsim/batsim/schedulers/pybatsim
-    - cd /builds/batsim/batsim/schedulers/pybatsim
-    - git reset --hard 3dd3fc0  # 2017-09-28
-  artifacts:
-    paths:
-      - /builds/batsim/batsim/schedulers/pybatsim
-
 ################################################################################
 # Test stage
 ################################################################################
@@ -86,13 +75,6 @@ test_test:
     - cd /builds/batsim/batsim/schedulers/batsched/build
     - make install
 
-    # clean /tmp to fix https://gitlab.inria.fr/batsim/batsim/issues/27
-    - rm -rf /tmp/*
-    # Install the pybatsim scheduler
-    - cd /builds/batsim/batsim/schedulers/pybatsim
-    - python3 setup.py build
-    - python3 setup.py install
-
     # Run the redis server
     - |
       redis-server>/dev/null &
@@ -102,11 +84,10 @@ test_test:
 
     # Finally run the tests
     - cd /builds/batsim/batsim/build
-    - ctest --output-on-failure -E 'remote|smpi'
+    - ctest --output-on-failure -E 'remote|smpi|pybatsim'
   dependencies:
     - build_clang
     - build_batsched
-    - retrieve_pybatsim
 
 test_unittest:
   stage: test
