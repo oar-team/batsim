@@ -711,6 +711,7 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
     job_map["stretch"] = "unset";
     job_map["consumed_energy"] = "unset";
     job_map["allocated_processors"] = "unset";
+    job_map["metadata"] = "unset";
 
     // Write headers (columns) to the output file
     vector<string> row_content;
@@ -754,6 +755,7 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
                     job_map["stretch"] = to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
                     job_map["consumed_energy"] = to_string(job->consumed_energy);
                     job_map["allocated_processors"] = job->allocation.to_string_hyphen(" ");
+                    job_map["metadata"] = '"' + job->metadata + '"';
 
                     // Write values to the output file
                     row_content.resize(0);

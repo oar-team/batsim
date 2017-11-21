@@ -140,9 +140,10 @@ struct Job
     std::set<msg_process_t> execution_processes; //!< The processes involved in running the job
     std::deque<std::string> incoming_message_buffer; //!< The buffer for incoming messages from the scheduler.
 
-    // Scheduler allocation
+    // Scheduler allocation and metadata
     MachineRange allocation; //!< The machines on which the job has been executed.
     std::vector<int> smpi_ranks_to_hosts_mapping; //!< If the job uses a SMPI profile, stores which host number each MPI rank should use. These numbers must be in [0,required_nb_res[.
+    std::string metadata; //!< Metadata that the scheduler can set on the job
 
     // Current state
     JobState state; //!< The current state of the job

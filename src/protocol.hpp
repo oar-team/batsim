@@ -442,6 +442,14 @@ public:
     void handle_set_resource_state(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
+     * @brief Handles a SET_JOB_METADATA event
+     * @param[in] event_number The event number in [0,nb_events[.
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_set_job_metadata(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
      * @brief Handles a NOTIFY event
      * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp

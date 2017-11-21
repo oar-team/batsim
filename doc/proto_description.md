@@ -590,6 +590,20 @@ Sets some resources into a state.
 }
 ```
 
+### SET_JOB_METADATA
+- **data**: a job id and its metadata
+- **example**:
+```json
+{
+  "timestamp": 13.0,
+  "type": "SET_JOB_METADATA",
+  "data": {
+    "job_id": "wload!42",
+    "metadata": "scheduler-defined string"
+  }
+}
+```
+
 ### NOTIFY
 The scheduler notifies Batsim of something.
 

@@ -1,6 +1,7 @@
 #include "protocol.hpp"
 
 #include <boost/algorithm/string/join.hpp>
+#include <boost/regex.hpp>
 
 #include <xbt.h>
 
@@ -467,6 +468,7 @@ JsonProtocolReader::JsonProtocolReader(BatsimContext *context) :
     _type_to_handler_map["SUBMIT_JOB"] = &JsonProtocolReader::handle_submit_job;
     _type_to_handler_map["SUBMIT_PROFILE"] = &JsonProtocolReader::handle_submit_profile;
     _type_to_handler_map["SET_RESOURCE_STATE"] = &JsonProtocolReader::handle_set_resource_state;
+    _type_to_handler_map["SET_JOB_METADATA"] = &JsonProtocolReader::handle_set_job_metadata;
     _type_to_handler_map["NOTIFY"] = &JsonProtocolReader::handle_notify;
     _type_to_handler_map["TO_JOB_MSG"] = &JsonProtocolReader::handle_to_job_msg;
 }
@@ -810,6 +812,52 @@ void JsonProtocolReader::handle_set_resource_state(int event_number,
     }
 
     send_message(timestamp, "server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
+}
+
+void JsonProtocolReader::handle_set_job_metadata(int event_number,
+                                                 double timestamp,
+                                                 const Value & data_object)
+{
+    (void) event_number; // Avoids a warning if assertions are ignored
+    (void) timestamp;
+    /* {
+      "timestamp": 13.0,
+      "type": "SET_JOB_METADATA",
+      "data": {
+        "job_id": "wload!42",
+        "metadata": "scheduler-defined string"
+      }
+    } */
+
+    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (SET_JOB_METADATA) should be an object", event_number);
+    xbt_assert(data_object.MemberCount() == 2, "Invalid JSON message: the 'data' value of event %d (SET_JOB_METADATA) should be of size 2 (size=%d)", event_number, (int)data_object.MemberCount());
+
+    xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (SET_JOB_METADATA) should have a 'job_id' key", event_number);
+    const Value & job_id_value = data_object["job_id"];
+    xbt_assert(job_id_value.IsString(), "Invalid JSON message: in event %d (SET_JOB_METADATA): ['data']['job_id'] should be a string", event_number);
+    string job_id = job_id_value.GetString();
+
+    xbt_assert(data_object.HasMember("metadata"), "Invalid JSON message: the 'data' value of event %d (SET_JOB_METADATA) should contain a 'metadata' key.", event_number);
+    const Value & metadata_value = data_object["metadata"];
+    xbt_assert(metadata_value.IsString(), "Invalid JSON message: the 'metadata' value in the 'data' value of event %d (SET_JOB_METADATA) should be a string.", event_number);
+    string metadata = metadata_value.GetString();
+
+    // Check metadata validity regarding CSV output
+    boost::regex r("[^\"]*");
+    xbt_assert(boost::regex_match(metadata, r), "Invalid JSON message: the 'metadata' value in the 'data' value of event %d (SET_JOB_METADATA) should not contain double quotes (got ###%s###)", event_number, metadata.c_str());
+
+    JobIdentifier job_identifier;
+    if (!identify_job_from_string(context, job_id, job_identifier))
+    {
+        xbt_assert(false, "Invalid JSON message: "
+                          "Invalid job change job state received: The job identifier '%s' is not valid. "
+                          "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
+                          "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
+                          "Furthermore, the corresponding job must exist.", job_id.c_str());
+    }
+
+    Job * job = context->workloads.job_at(job_identifier);
+    job->metadata = metadata;
 }
 
 void JsonProtocolReader::handle_change_job_state(int event_number,
