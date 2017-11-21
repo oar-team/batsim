@@ -329,5 +329,11 @@ add_test(pybatsim_tests
 add_test(fewer_resources
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_fewer_resources.yaml
-         -bod /tmp/fewer_resources
+         -bod /tmp/batsim_tests/fewer_resources
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(set_job_metadata
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_set_job_metadata.yaml
+         -bod /tmp/batsim_tests/set_job_metadata
          -bwd ${CMAKE_SOURCE_DIR})
