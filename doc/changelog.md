@@ -26,6 +26,7 @@ Batsim's public API includes:
   Removal of the deprecated hacky_job_id.
 
 ### Fixed
+- Numeric sort should now work as expected (this is now tested).
 - Power stace tracing now works when the number of machines is big.
 - Output buffers now work even if incoming texts are bigger than the buffer.
 
