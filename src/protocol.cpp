@@ -228,6 +228,7 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
                                               const string & job_status,
                                               const string & job_state,
                                               const string & kill_reason,
+                                              const string & job_alloc,
                                               int return_code,
                                               double date)
 {
@@ -239,6 +240,7 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
         "status": "SUCCESS",
         "job_state": "COMPLETED_KILLED",
         "kill_reason": "Walltime reached"
+        "job_alloc": "0-1 5"
       }
     } */
 
@@ -254,6 +256,7 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
     data.AddMember("job_state", Value().SetString(job_state.c_str(), _alloc), _alloc);
     data.AddMember("return_code", Value().SetInt(return_code), _alloc);
     data.AddMember("kill_reason", Value().SetString(kill_reason.c_str(), _alloc), _alloc);
+    data.AddMember("job_alloc", Value().SetString(job_alloc.c_str(), _alloc), _alloc);
 
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);

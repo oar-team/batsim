@@ -226,6 +226,7 @@ void server_on_job_completed(ServerData * data,
                                                       status,
                                                       job_state_to_string(job->state),
                                                       job->kill_reason,
+                                                      job->allocation.to_string_hyphen(" "),
                                                       job->return_code,
                                                       MSG_get_clock());
 

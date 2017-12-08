@@ -110,6 +110,7 @@ public:
      * @param[in] job_status The job status
      * @param[in] job_state The job state
      * @param[in] kill_reason The kill reason (if any)
+     * @param[in] last allocation of the job
      * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
@@ -117,6 +118,7 @@ public:
                                       const std::string & job_status,
                                       const std::string & job_state,
                                       const std::string & kill_reason,
+                                      const std::string & job_alloc,
                                       int return_code,
                                       double date) = 0;
 
@@ -248,6 +250,7 @@ public:
      * @param[in] job_status The job status
      * @param[in] job_state The job state
      * @param[in] kill_reason The kill reason (if any)
+     * @param[in] last allocation of the job
      * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
@@ -255,6 +258,7 @@ public:
                               const std::string & job_status,
                               const std::string & job_state,
                               const std::string & kill_reason,
+                              const std::string & job_alloc,
                               int return_code,
                               double date);
 
