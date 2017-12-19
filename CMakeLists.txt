@@ -329,3 +329,9 @@ add_test(fewer_resources
          ${CMAKE_SOURCE_DIR}/test/test_fewer_resources.yaml
          -bod /tmp/fewer_resources
          -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(send_recv
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_send_recv.yaml
+         -bod /tmp/send_recv
+         -bwd ${CMAKE_SOURCE_DIR})
