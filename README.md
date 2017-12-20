@@ -38,7 +38,7 @@ batsim -p platforms/small_platform.xml -w workload_profiles/test_workload_profil
 
 Then in an *other terminal* execute the scheduler:
 ```bash
-python schedulers/pybatsim/launcher.py fillerSched
+batsched
 ```
 
 **Note**: Others worklaods and platforms examples can be found in the
