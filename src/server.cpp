@@ -34,6 +34,7 @@ int server_process(int argc, char *argv[])
     // Let's tell the Decision process that the simulation is about to begin
     // (and that some data can be read from the data storage)
     context->proto_writer->append_simulation_begins(context->machines,
+                                                    context->workloads,
                                                     context->config_file,
                                                     context->allow_time_sharing,
                                                     MSG_get_clock());
@@ -554,7 +555,7 @@ void server_on_submit_job(ServerData * data,
     }
     else
     {
-        workload = new Workload(message->job_id.workload_name);
+        workload = new Workload(message->job_id.workload_name, "Dynamic");
         data->context->workloads.insert_workload(workload->name, workload);
     }
 
@@ -647,7 +648,7 @@ void server_on_submit_profile(ServerData * data,
     }
     else
     {
-        workload = new Workload(message->workload_name);
+        workload = new Workload(message->workload_name, "Dynamic");
         data->context->workloads.insert_workload(workload->name, workload);
     }
 

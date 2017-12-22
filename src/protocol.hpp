@@ -10,6 +10,7 @@
 
 #include "machine_range.hpp"
 #include "machines.hpp"
+#include "workload.hpp"
 #include "ipp.hpp"
 
 struct BatsimContext;
@@ -73,11 +74,13 @@ public:
     /**
      * @brief Appends a SIMULATION_BEGINS event.
      * @param[in] machines The machines usable to compute jobs
+     * @param[in] workloads The workloads given to batsim
      * @param[in] configuration The simulation configuration
      * @param[in] allow_time_sharing Whether time sharing is enabled
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_simulation_begins(Machines & machines,
+                                          Workloads & workloads,
                                           const rapidjson::Document & configuration,
                                           bool allow_time_sharing,
                                           double date) = 0;
@@ -209,11 +212,13 @@ public:
     /**
      * @brief Appends a SIMULATION_BEGINS event.
      * @param[in] machines The machines usable to compute jobs
+     * @param[in] workloads The workloads given to batsim
      * @param[in] configuration The simulation configuration
      * @param[in] allow_time_sharing Whether time sharing is enabled
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_simulation_begins(Machines & machines,
+                                  Workloads & workloads,
                                   const rapidjson::Document & configuration,
                                   bool allow_time_sharing,
                                   double date);

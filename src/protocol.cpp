@@ -48,6 +48,7 @@ void JsonProtocolWriter::append_requested_call(double date)
 }
 
 void JsonProtocolWriter::append_simulation_begins(Machines & machines,
+                                                  Workloads & workloads,
                                                   const Document & configuration,
                                                   bool allow_time_sharing,
                                                   double date)
@@ -66,7 +67,11 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
             "state": "idle",
             "properties": {}
           }
-        ]
+        ],
+        "workloads": {
+          "1s3fa1f5d1": "workload0.json",
+          "41d51f8d4f": "workload1.json",
+        }
       }
     } */
 
@@ -99,6 +104,16 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
     {
         data.AddMember("lcst_host", machine_to_json_value(*machines.pfs_machine()), _alloc);
     }
+
+    Value workloads_dict(rapidjson::kObjectType);
+    for (const auto & workload : workloads.workloads())
+    {
+        workloads_dict.AddMember(
+            Value().SetString(workload.first.c_str(), _alloc),
+            Value().SetString(workload.second->file.c_str(), _alloc),
+            _alloc);
+    }
+    data.AddMember("workloads", workloads_dict, _alloc);
 
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);

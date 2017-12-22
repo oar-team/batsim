@@ -140,24 +140,67 @@ metainformation from Batsim to any scheduler at runtime.
     - **name**: resource name
     - **state**: resource state in {sleeping, idle, computing, switching_on, switching_off}
     - **properties**: the properties specified in the SimGrid platform for the corresponding host
+  - **workloads**: the map of workloads given to batsim. The key is the id
+    that prefix each jobs (before the ``!``) and the value is the absolute path of
+    the workload
 - **example**:
 ```json
 {
-  "timestamp": 0.0,
-  "type": "SIMULATION_BEGINS",
-  "data": {
-    "allow_time_sharing": false,
-    "nb_resources": 1,
-    "config": {},
-    "resources_data": [
-      {
-        "id": 0,
-        "name": "host0",
-        "state": "idle",
-        "properties": {}
+  "now": 0,
+  "events": [
+    {
+      "timestamp": 0,
+      "type": "SIMULATION_BEGINS",
+      "data": {
+        "nb_resources": 4,
+        "allow_time_sharing": false,
+        "config": {
+          "redis": {
+            "enabled": false,
+            "hostname": "127.0.0.1",
+            "port": 6379,
+            "prefix": "default"
+          },
+          "job_submission": {
+            "forward_profiles": false,
+            "from_scheduler": {
+              "enabled": false,
+              "acknowledge": true
+            }
+          }
+        },
+        "resources_data": [
+          {
+            "id": 0,
+            "name": "Bourassa",
+            "state": "idle",
+            "properties": {}
+          },
+          {
+            "id": 1,
+            "name": "Fafard",
+            "state": "idle",
+            "properties": {}
+          },
+          {
+            "id": 2,
+            "name": "Ginette",
+            "state": "idle",
+            "properties": {}
+          },
+          {
+            "id": 3,
+            "name": "Jupiter",
+            "state": "idle",
+            "properties": {}
+          }
+        ],
+        "workloads": {
+          "26dceb": "/home/mmercier/Projects/batsim/workload_profiles/test_workload_profile.json"
+        }
       }
-    ]
-  }
+    }
+  ]
 }
 ```
 

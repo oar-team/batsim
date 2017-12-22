@@ -22,7 +22,7 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(workload, "workload"); //!< Logging
 
-Workload::Workload(const std::string & workload_name)
+Workload::Workload(const std::string & workload_name, const std::string & workload_file)
 {
     jobs = new Jobs;
     profiles = new Profiles;
@@ -30,6 +30,7 @@ Workload::Workload(const std::string & workload_name)
     jobs->set_profiles(profiles);
     jobs->set_workload(this);
     this->name = workload_name;
+    this->file = workload_file;
 }
 
 Workload::~Workload()
@@ -187,6 +188,11 @@ const Workload *Workloads::at(const std::string &workload_name) const
 {
     xbt_assert(exists(workload_name));
     return _workloads.at(workload_name);
+}
+
+int Workloads::nb_workloads() const
+{
+    return _workloads.size();
 }
 
 Job *Workloads::job_at(const std::string &workload_name, int job_number)
