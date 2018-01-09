@@ -21,6 +21,6 @@ default configuration:
  }
 ```
 
-This configuration can be override using the ``--config_file`` option. Each
+This configuration can be override using the ``--config-file`` option. Each
 field present in the file will be used and the fields that are not provided
 keeps the default value.
