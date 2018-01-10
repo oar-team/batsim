@@ -136,7 +136,7 @@ You can install batsim (and batsched) using one of the methods defined the
 ### For developers
 
 It is highly recommended to use the method describe in the
-[Development environment](dev_batsim.md) page to get everything setup and
+[Development environment](doc/dev_batsim.md) page to get everything setup and
 running: from compilation to tests.
 
 Executing complete experiments
