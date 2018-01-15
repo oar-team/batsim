@@ -18,7 +18,6 @@ implicit_instances:
         - {"name":"walltime", "filename":"${batsim_dir}/workload_profiles/walltime_test.json"}
       sched:
         - {"name":"batsched", "cmd":"${BATSCHED_BIN:=batsched} -v filler"}
-        - {"name":"pybatsim", "cmd":"${PYBATSIM_BIN:=pybatsim} fillerSched"}
     generic_instance:
       timeout: 10
       working_directory: ${base_working_directory}

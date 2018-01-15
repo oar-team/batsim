@@ -38,7 +38,7 @@ build_batsched:
     # Get the code at the expected revision
     - git clone https://gitlab.inria.fr/batsim/batsched.git /builds/batsim/batsim/schedulers/batsched
     - cd /builds/batsim/batsim/schedulers/batsched
-    - git reset --hard 2f7ae95 # 2017-11-21
+    - git reset --hard fe0a6b2 # 2018-01-15
     # Build batsched
     - rm -rf   /builds/batsim/batsim/schedulers/batsched/build
     - mkdir -p /builds/batsim/batsim/schedulers/batsched/build
@@ -84,7 +84,7 @@ test_test:
 
     # Finally run the tests
     - cd /builds/batsim/batsim/build
-    - ctest --output-on-failure -E 'remote|smpi|pybatsim'
+    - ctest --output-on-failure -E 'remote|smpi|pybatsim|send_recv'
   dependencies:
     - build_clang
     - build_batsched
