@@ -6,7 +6,7 @@ up-to-date packages (like boost) that may not be easily available in your
 distribution yet.
 
 If you are looking for development setup to be able to compile batsim and
-run the tests, see the [Setup a Development Environment](doc/dev_batsim.md)
+run the tests, see the [Setup a Development Environment](dev_batsim.md)
 documentation.
 
 ## Install batsim with Nix (**Recommended**)

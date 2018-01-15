@@ -655,11 +655,12 @@ Sets some resources into a state.
 ### NOTIFY
 The scheduler notifies Batsim of something.
 
-For example, the ``submission_finished`` notifies that job submissions
+For example, the ``submission_finished`` notifies that the job submissions
 from the scheduler are over, which allows Batsim to stop the simulation.
-This message **must** be sent if ``"scheduler_submission": {"enabled": false}``
-is configured. See [Configuration documentation](./configuration.md) for more
-details.
+This message **MUST** be sent if ``"scheduler_submission": {"enabled": true}``
+is configured, in order to finish the simulation. See [Configuration
+documentation](./configuration.md) for more details.
+
 If the scheduler realizes that it commited the mistake of notifying
 ``submission_finished`` prematurely, the ``continue_submission`` notification
 can be sent to make the scheduler able to submit dynamic jobs again.

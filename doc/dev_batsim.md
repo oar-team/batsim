@@ -2,7 +2,7 @@
 
 ## Using Nix (**Recommended**)
 
-See the [install and run](doc/run_batsim.md) page to setup Nix with our
+See the [install and run](run_batsim.md) page to setup Nix with our
 repository.
 
 You can simply enter a shell that comes with all you need to build and
@@ -34,9 +34,9 @@ whether Batsim can be built correctly and whether some integration tests pass.
 
 Thus, the most up-to-date information about how to build Batsim dependencies
 and Batsim itself can be found in our Kameleon recipes:
-  - [batsim_ci.yaml](environments/batsim_ci.yaml), for the dependencies (Debian)
-  - [batsim.yaml](environments/batsim.yaml), for Batsim itself (Debian)
-  - Please note that [the steps directory](environments/steps/) contain
+  - [batsim_ci.yaml](../environments/batsim_ci.yaml), for the dependencies (Debian)
+  - [batsim.yaml](../environments/batsim.yaml), for Batsim itself (Debian)
+  - Please note that [the steps directory](../environments/steps/) contain
     subcommands that can be used by the recipes.
 
 However, some information is also written below for the sake of simplicity, but
