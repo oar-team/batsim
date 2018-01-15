@@ -22,8 +22,8 @@ implicit_instances:
       timeout: 10
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${instance_id}
-      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out --redis-prefix ${instance_id} --mmax-workload -vnetwork-only
-      sched_command: batsched -v ${algo[algo_name]}
+      batsim_command: ${BATSIM_BIN:=batsim} -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out --redis-prefix ${instance_id} --mmax-workload -vnetwork-only
+      sched_command: ${BATSCHED_BIN:=batsched} -v ${algo[algo_name]}
 
       commands_after_execution:
         # Puts into messages.txt all JSON messages concerning job submissions

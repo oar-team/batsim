@@ -20,5 +20,5 @@ variables:
 
 timeout: 60
 
-batsim_command: batsim -p ${platform} -w ${workload} -e ${output_directory}/out
-sched_command: batsched -v ${algo}
+batsim_command: ${BATSIM_BIN:=batsim} -p ${platform} -w ${workload} -e ${output_directory}/out
+sched_command: ${BATSCHED_BIN:=batsched} -v ${algo}
