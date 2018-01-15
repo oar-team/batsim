@@ -1,0 +1,58 @@
+# This script should be called from Batsim's root directory
+
+# If needed, the working directory of this script can be specified within this file
+#base_working_directory: ~/proj/batsim
+
+# If needed, the output directory of this script can be specified within this file
+base_output_directory: /tmp/batsim_tests/send_recv
+
+base_variables:
+  batsim_dir: ${base_working_directory}
+
+implicit_instances:
+  implicit:
+    sweep:
+      platform :
+        - {"name":"no_energy", "filename":"${batsim_dir}/platforms/simple_coalloc_platform.xml"}
+      workload :
+        - {"name":"workload", "filename":"${batsim_dir}/workload_profiles/test_simple_send_recv.json"}
+      algo:
+        - {"name":"SendRecv", "sched_name":"${batsim_dir}/schedulers/pybatsim/schedulers/schedSendRecv.py"}
+    generic_instance:
+      timeout: 10
+      working_directory: ${base_working_directory}
+      output_directory: ${base_output_directory}/results/${algo[name]}_${workload[name]}_${platform[name]}
+      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf
+      sched_command: pybatsim -p ${algo[sched_name]} --options-file ${output_directory}/sched_input.json
+      commands_before_execution:
+        # Batsim config file
+        - |
+              #!/usr/bin/env bash
+              cat > ${output_directory}/batsim.conf << EOF
+              {
+                  "redis": {
+                      "enabled": false,
+                      "hostname": "127.0.0.1",
+                      "port": 6379,
+                      "prefix": "default"
+                  },
+                  "job_submission": {
+                      "forward_profiles": true,
+                      "from_scheduler": {
+                          "enabled": true,
+                          "acknowledge": true
+                      }
+                  }
+              }
+              EOF
+
+              #!/usr/bin/env bash
+              cat > ${output_directory}/sched_input.json << EOF
+              {
+                  "export-prefix": "${output_directory}/out"
+              }
+              EOF
+
+commands_before_instances:
+  - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
+  - ${batsim_dir}/test/clean_output_dir.py ${base_output_directory}
