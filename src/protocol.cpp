@@ -908,6 +908,7 @@ void JsonProtocolReader::handle_change_job_state(int event_number,
     set<string> allowed_states = {"NOT_SUBMITTED",
                                   "RUNNING",
                                   "COMPLETED_SUCCESSFULLY",
+                                  "COMPLETED_WALLTIME_REACHED",
                                   "COMPLETED_KILLED",
                                   "REJECTED"};
 
