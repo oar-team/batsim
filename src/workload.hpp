@@ -23,6 +23,7 @@ public:
     /**
      * @brief Builds an empty Workload
      * @param[in] workload_name The workload name
+     * @param[in] workload_file The workload file name
      */
     explicit Workload(const std::string & workload_name,
                       const std::string & workload_file);

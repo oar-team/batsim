@@ -1,4 +1,4 @@
-#pragma once
+108#pragma once
 
 #include <functional>
 #include <vector>
@@ -110,7 +110,7 @@ public:
      * @param[in] job_status The job status
      * @param[in] job_state The job state
      * @param[in] kill_reason The kill reason (if any)
-     * @param[in] last allocation of the job
+     * @param[in] job_alloc last allocation of the job
      * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
@@ -250,7 +250,7 @@ public:
      * @param[in] job_status The job status
      * @param[in] job_state The job state
      * @param[in] kill_reason The kill reason (if any)
-     * @param[in] last allocation of the job
+     * @param[in] job_alloc last allocation of the job
      * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
