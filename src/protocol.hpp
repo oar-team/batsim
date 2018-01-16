@@ -153,12 +153,12 @@ public:
                                                double date) = 0;
 
     /**
-     * @brief Appends a QUERY_REPLY (energy) event.
+     * @brief Appends an ANSWER (energy) event.
      * @param[in] consumed_energy The total consumed energy in joules
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_query_reply_energy(double consumed_energy,
-                                           double date) = 0;
+    virtual void append_answer_energy(double consumed_energy,
+                                      double date) = 0;
 
     /**
      * @brief Appends a REQUESTED_CALL message.
@@ -293,12 +293,12 @@ public:
                                        double date);
 
     /**
-     * @brief Appends a QUERY_REPLY (energy) event.
+     * @brief Appends an ANSWER (energy) event.
      * @param[in] consumed_energy The total consumed energy in joules
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_query_reply_energy(double consumed_energy,
-                                   double date);
+    void append_answer_energy(double consumed_energy,
+                              double date);
 
     /**
      * @brief Appends a REQUESTED_CALL message.
@@ -403,12 +403,12 @@ public:
 
 
     /**
-     * @brief Handles a QUERY_REQUEST event
+     * @brief Handles a QUERY event
      * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
-    void handle_query_request(int event_number, double timestamp, const rapidjson::Value & data_object);
+    void handle_query(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
      * @brief Handles a REJECT_JOB event

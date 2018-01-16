@@ -428,7 +428,7 @@ void server_on_sched_tell_me_energy(ServerData * data,
 {
     (void) task_data;
     long double total_consumed_energy = data->context->machines.total_consumed_energy(data->context);
-    data->context->proto_writer->append_query_reply_energy(total_consumed_energy, MSG_get_clock());
+    data->context->proto_writer->append_answer_energy(total_consumed_energy, MSG_get_clock());
 }
 
 void server_on_wait_query(ServerData * data,

@@ -19,16 +19,25 @@ Batsim's public API includes:
   set metadata to jobs.
   Such metadata is written in the ``_jobs.csv`` output file.
 - The ``_schedule.csv`` output file now contains a batsim_version field.
+- The ``energy_query`` test checks that ``QUERY``/``ANSWER`` work as expected
+  for the ``consumed_energy`` request.
 
 ### Changed
 - The ``_jobs.csv`` output file is now written more cleanly.  
   The order of the columns within it may have changed.  
   Removal of the deprecated hacky_job_id.
+- The ``QUERY_REQUEST`` and ``QUERY_REPLY`` messages have been respectively
+  renamed ``QUERY`` and ``ANSWER``. This pair of messages is now bidirectional
+  (Batsim can now ask information to the scheduler).  
+  Redis interactions with this pair of messages is no longer in the protocol
+  (as it has never been implemented).
 
 ### Fixed
 - Numeric sort should now work as expected (this is now tested).
 - Power stace tracing now works when the number of machines is big.
 - Output buffers now work even if incoming texts are bigger than the buffer.
+- The ``QUERY_REQUEST``/``QUERY_REPLY`` messages were not respecting the
+  protocol definition (probably never tested since the JSON protocol update).
 
 [//]: ==========================================================================
 ## [1.4.0] - 2017-10-07

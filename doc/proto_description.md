@@ -113,6 +113,48 @@ events list is empty: ``"events": []``
 }
 ```
 
+### QUERY
+
+This message allows a peer to ask specific information to its counterpart:
+- Batsim can ask information to the scheduler.
+- The scheduler can ask information to Batsim.
+
+The other peer should answer such QUERY via an [ANSWER](#answer).
+
+For now, Batsim **queries** the following requests:
+- None.
+
+For now, Batsim **answers** to the following requests:
+- "consumed_energy" with no argument: queries Batsim about the total
+  consumed energy (from time 0 to now) in Joules.
+  Only works in energy mode.
+
+- **data**: a dictionnary of requests.
+- **example**:
+```json
+{
+  "timestamp": 10.0,
+  "type": "QUERY",
+  "data": {
+    "requests": {"consumed_energy": {}}
+  }
+}
+```
+
+### ANSWER
+
+This is a reply to a [QUERY](#query) message.
+
+- **data**: See [QUERY](#query) documentation
+- **example**:
+```json
+{
+  "timestamp": 10.0,
+  "type": "ANSWER",
+  "data": {"consumed_energy": 12500.0}
+}
+```
+
 ---
 
 ## Batsim to Scheduler events
@@ -415,33 +457,6 @@ been done.
 }
 ```
 
-### QUERY_REPLY
-
-This is a reply to a [QUERY_REQUEST](#query_request) message. It depends on the
-The message content depends on whether redis is enabled in the
-[Batsim configuration](./configuration.md).
-If ``{"redis": { "enabled": true }}``, the reply will
-go in redis and only the key will be given. Otherwise, the response will be
-put directly in the message.
-
-- **data**: See [QUERY_REQUEST](#query_request) documentation
-- **example**:
-```json
-{
-  "timestamp": 10.0,
-  "type": "QUERY_REPLY",
-  "data": {"redis_keys": "/my/key/path0" }
-}
-```
-or
-```json
-{
-  "timestamp": 10.0,
-  "type": "QUERY_REPLY",
-  "data": {"consumed_energy": "12500" }
-}
-```
-
 ### REQUESTED_CALL
 This message is a response to the [CALL_ME_LATER](#call_me_later) message.
 
@@ -461,26 +476,6 @@ This message is a response to the [CALL_ME_LATER](#call_me_later) message.
 These events are sent by the scheduler to Batsim.
 ```
 BATSIM <--- DECISION
-```
-
-### QUERY_REQUEST
-
-This is a query sent to Batsim to get information about the simulation
-state (or whatever you want to know...). The supported requests are:
-- "consumed_energy" with no argument that asks Batsim about the total
-  consumed energy (from time 0 to now) in Joules. Works only in energy
-  mode.
-
-- **data**: a dictionnary of requests.
-- **example**:
-```json
-{
-  "timestamp": 10.0,
-  "type": "QUERY_REQUEST",
-  "data": {
-    "requests": {"consumed_energy": {}}
-  }
-}
 ```
 
 ### REJECT_JOB

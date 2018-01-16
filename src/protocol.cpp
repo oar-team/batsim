@@ -423,13 +423,13 @@ void JsonProtocolWriter::append_resource_state_changed(const MachineRange & reso
     _events.PushBack(event, _alloc);
 }
 
-void JsonProtocolWriter::append_query_reply_energy(double consumed_energy,
-                                                   double date)
+void JsonProtocolWriter::append_answer_energy(double consumed_energy,
+                                              double date)
 {
     /* {
       "timestamp": 10.0,
-      "type": "QUERY_REPLY",
-      "data": {"energy_consumed": "12500" }
+      "type": "ANSWER",
+      "data": {"consumed_energy": 12500.0}
     } */
 
     xbt_assert(date >= _last_date, "Date inconsistency");
@@ -438,8 +438,8 @@ void JsonProtocolWriter::append_query_reply_energy(double consumed_energy,
 
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);
-    event.AddMember("type", Value().SetString("QUERY_REPLY"), _alloc);
-    event.AddMember("data", Value().SetObject().AddMember("energy_consumed", Value().SetDouble(consumed_energy), _alloc), _alloc);
+    event.AddMember("type", Value().SetString("ANSWER"), _alloc);
+    event.AddMember("data", Value().SetObject().AddMember("consumed_energy", Value().SetDouble(consumed_energy), _alloc), _alloc);
 
     _events.PushBack(event, _alloc);
 }
@@ -477,7 +477,7 @@ string JsonProtocolWriter::generate_current_message(double date)
 JsonProtocolReader::JsonProtocolReader(BatsimContext *context) :
     context(context)
 {
-    _type_to_handler_map["QUERY_REQUEST"] = &JsonProtocolReader::handle_query_request;
+    _type_to_handler_map["QUERY"] = &JsonProtocolReader::handle_query;
     _type_to_handler_map["REJECT_JOB"] = &JsonProtocolReader::handle_reject_job;
     _type_to_handler_map["EXECUTE_JOB"] = &JsonProtocolReader::handle_execute_job;
     _type_to_handler_map["CHANGE_JOB_STATE"] = &JsonProtocolReader::handle_change_job_state;
@@ -544,36 +544,45 @@ void JsonProtocolReader::parse_and_apply_event(const Value & event_object,
     handler_function(this, event_number, timestamp, data_object);
 }
 
-void JsonProtocolReader::handle_query_request(int event_number, double timestamp, const Value &data_object)
+void JsonProtocolReader::handle_query(int event_number, double timestamp, const Value &data_object)
 {
     (void) event_number; // Avoids a warning if assertions are ignored
     /* {
       "timestamp": 10.0,
-      "type": "QUERY_REQUEST",
+      "type": "QUERY",
       "data": {
         "requests": {"consumed_energy": {}}
       }
     } */
 
-    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (QUERY_REQUEST) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() > 0, "Invalid JSON message: the 'data' value of event %d (QUERY_REQUEST) cannot be empty (size=%d)", event_number, (int)data_object.MemberCount());
+    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (QUERY) should be an object", event_number);
+    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (QUERY) must be of size 1 (size=%d)", event_number, (int)data_object.MemberCount());
+    xbt_assert(data_object.HasMember("requests"), "Invalid JSON message: the 'data' value of event %d (QUERY) must have a 'requests' member", event_number);
 
-    for (auto it = data_object.MemberBegin(); it != data_object.MemberEnd(); ++it)
+    const Value & requests = data_object["requests"];
+    xbt_assert(requests.IsObject(), "Invalid JSON message: the 'requests' member of the 'data' object  of event %d (QUERY) must be an object", event_number);
+    xbt_assert(requests.MemberCount() > 0, "Invalid JSON message: the 'requests' object of the 'data' object of event %d (QUERY) must be non-empty", event_number);
+
+    for (auto it = requests.MemberBegin(); it != requests.MemberEnd(); ++it)
     {
         const Value & key_value = it->name;
         const Value & value_object = it->value;
         (void) value_object; // Avoids a warning if assertions are ignored
 
-        xbt_assert(key_value.IsString(), "Invalid JSON message: a key within the 'data' object of event %d (QUERY_REQUEST) is not a string", event_number);
+        xbt_assert(key_value.IsString(), "Invalid JSON message: a key within the 'data' object of event %d (QUERY) is not a string", event_number);
         string key = key_value.GetString();
-        xbt_assert(std::find(accepted_requests.begin(), accepted_requests.end(), key) != accepted_requests.end(), "Invalid JSON message: Unknown QUERY_REQUEST '%s' of event %d", key.c_str(), event_number);
+        xbt_assert(std::find(accepted_requests.begin(), accepted_requests.end(), key) != accepted_requests.end(), "Invalid JSON message: Unknown QUERY '%s' of event %d", key.c_str(), event_number);
 
-        xbt_assert(value_object.IsObject(), "Invalid JSON message: the value of '%s' inside 'data' object of event %d (QUERY_REQUEST) is not an object", key.c_str(), event_number);
+        xbt_assert(value_object.IsObject(), "Invalid JSON message: the value of '%s' inside the 'requests' object of the 'data' object of event %d (QUERY) is not an object", key.c_str(), event_number);
 
         if (key == "consumed_energy")
         {
-            xbt_assert(value_object.ObjectEmpty(), "Invalid JSON message: the value of '%s' inside 'data' object of event %d (QUERY_REQUEST) should be empty", key.c_str(), event_number);
+            xbt_assert(value_object.ObjectEmpty(), "Invalid JSON message: the value of '%s' inside the 'requests' object of the 'data' object of event %d (QUERY) should be empty", key.c_str(), event_number);
             send_message(timestamp, "server", IPMessageType::SCHED_TELL_ME_ENERGY);
+        }
+        else
+        {
+            xbt_assert(0, "Invalid JSON message: in event %d (QUERY): request type '%s' is unknown", event_number, key.c_str());
         }
     }
 }

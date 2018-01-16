@@ -217,6 +217,12 @@ add_test(energy
          -bod /tmp/batsim_tests/energy
          -bwd ${CMAKE_SOURCE_DIR})
 
+add_test(energy_query
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_energy_query.yaml
+         -bod /tmp/batsim_tests/energy_query
+         -bwd ${CMAKE_SOURCE_DIR})
+
 add_test(walltime
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_walltime.yaml
@@ -336,7 +342,7 @@ add_test(set_job_metadata
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_set_job_metadata.yaml
          -bod /tmp/batsim_tests/set_job_metadata
-         -bwd ${CMAKE_SOURCE_DIR})
+         -bwd ${CMAKE_SworkloadOURCE_DIR})
 
 add_test(send_recv
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
