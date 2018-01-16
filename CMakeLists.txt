@@ -342,7 +342,7 @@ add_test(set_job_metadata
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_set_job_metadata.yaml
          -bod /tmp/batsim_tests/set_job_metadata
-         -bwd ${CMAKE_SworkloadOURCE_DIR})
+         -bwd ${CMAKE_SOURCE_DIR})
 
 add_test(send_recv
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
