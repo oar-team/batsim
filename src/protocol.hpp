@@ -411,7 +411,7 @@ public:
     void handle_query_request(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
-     * @brief Handles a QUERY_REQUEST event
+     * @brief Handles a REJECT_JOB event
      * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
