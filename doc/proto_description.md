@@ -200,6 +200,7 @@ BATSIM ---> DECISION
 ```
 
 ### SIMULATION_BEGINS
+
 Sent at the beginning of the simulation. Once it has been sent,
 and if redis is enabled, meta-information can be read from Redis.
 
@@ -282,6 +283,7 @@ metainformation from Batsim to any scheduler at runtime.
 ```
 
 ### SIMULATION_ENDS
+
 Sent when Batsim thinks that the simulation is over. It means that all the jobs
 (either coming from Batsim workloads/workflows inputs, or dynamically submitted
 ones) have been submitted and executed (or rejected). The scheduler should
@@ -291,12 +293,7 @@ answer a [NOP](#nop) to this message then close its socket and terminate.
 - **example**:
 ```json
 {
-  "timestamp"job":{
-      "profile": "delay_10s",
-      "res": 1,
-      "id": "my_new_job",
-      "walltime": 12.0
-    }": 100.0,
+  "timestamp: 100.0,
   "type": "SIMULATION_ENDS",
   "data": {}
 }
