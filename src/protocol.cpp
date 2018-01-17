@@ -679,7 +679,7 @@ void JsonProtocolReader::handle_answer(int event_number,
         }
         else
         {
-            xbt_assert(0, "Invalid JSON message: unknown ANSWER type '%s' in event %d", key_value.c_str());
+            xbt_assert(0, "Invalid JSON message: unknown ANSWER type '%s' in event %d", key_value.c_str(), event_number);
         }
     }
 }
