@@ -1,7 +1,7 @@
 # Install and Run batsim
 
 **Important note**: It is highly recommended to install Batsim with the
-provided methods because we are using specific version of Simgrid and
+provided methods because we are using specific version of SimGrid and
 up-to-date packages (like boost) that may not be easily available in your
 distribution yet.
 
@@ -62,10 +62,6 @@ To make it more understandable, here is the command decomposition:
 
 Then you can run your own scheduler to make the simulation begins.
 
-Get more details and example here:
-[https://gitlab.inria.fr/batsim/batsim]()
-
-
 # Bonus :)
 
 ## Create the docker image with Nix
@@ -95,7 +91,7 @@ docker images
 # add some tag
 docker tag oarteam/batsim:1.2.0 oarteam/batsim:latest
 
-# login to docker (needed only one time)
+# login to docker (needed only once)
 docker login
 
 # push it to the docker hub

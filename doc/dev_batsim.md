@@ -6,23 +6,23 @@ See the [install and run](run_batsim.md) page to setup Nix with our
 repository.
 
 You can simply enter a shell that comes with all you need to build and
-test batsim with this command:
+test Batsim with this command:
 ```sh
 nix-shell /path/to/datamovepkgs -A batsim_dev
 ```
 
 ## Using Docker
 
-If you need to change the code of batsim you can use the docker environment ``oarteam/batsim_ci``
-and use the docker volumes to make your batsim version of the code inside the container.
+If you need to change the code of Batsim you can use the docker environment ``oarteam/batsim_ci``
+and use the docker volumes to make your Batsim version of the code inside the container.
 ```bash
 # launch a batsim container
 docker run -ti -v /home/myuser/mybatrepo:/root/batsim --name batsim_dev oarteam/batsim_ci bash
 ```
-Then, inside the container run the instruction provided in the following part.
+Then, inside the container run the instructions provided in the following part.
 
 With this setting you can use your own development tools outside the
-container to hack the batsim code and use the container to only to build
+container to hack the batsim code and use the container only to build
 and test your your code.
 
 ## Manual installation (not recommended)
@@ -59,7 +59,7 @@ Batsim dependencies are listed below:
 # Compile and Test
 
 When you have setup your environment (see previous section), you can
-go to the already cloned batsim repository (or clone this repository)
+go to the already cloned Batsim repository (or clone this repository)
 and configure the build.
 
 ```sh
@@ -70,8 +70,8 @@ cd build
 cmake ..
 ```
 
-Now you can code your stuff, (It recommended to do it in a branch) and add
-some tests. Than build and run the tests with:
+Now you can code your stuff, (**note**: It is recommended to do it in a branch)
+and add some tests. Then build and run the tests with:
 
 ```sh
 make -j $(nproc)

@@ -22,7 +22,7 @@ First install batsim and batsched using one of the methods defined the
 [install and Run](doc/run_batsim.md) documentation page.
 
 You will also need a platform file that defines the cluster hardware and
-topology and a workload that define the set of jobs that will be submitted
+topology, and a workload that defines the set of jobs that will be submitted
 to the scheduler and when they will be submitted. Some examples are
 available in this repository so you can grab individual files or clone the
 whole repo:
@@ -41,18 +41,25 @@ Then in an *other terminal* execute the scheduler:
 batsched
 ```
 
-**Note**: Others worklaods and platforms examples can be found in the
-current repository. More sofisticated (and up-to-date) platforms can be
-found in the Simgrid repository [https://github.com/simgrid/simgrid]().
+**Note**: Others workloads and platforms examples can be found in the
+current repository. More sophisticated (and more up-to-date) platforms can be
+found in the [SimGrid repository](https://github.com/simgrid/simgrid).
 
 External References
 -------------------
-* Batsim scientific publication pre-print is available on HAL:
-  https://hal.inria.fr/hal-01333471v1
+* Chapters 2 and 3 of Millian Poquet's
+  [PhD manuscript](https://mpoquet.github.io/research/phd/manuscript.pdf)
+  explain in detail some of Batsim design choices and how Batsim works
+  internally. The corresponding
+  [defense slides](https://mpoquet.github.io/research/phd/defense_slides.pdf)
+  may also interest you.
 
-* For a better understanding of what Batsim is, and why it may be interesting
-  for you, give a look at the following presentation, that has been made for
-  the JSSPP 2016 IPDPS workshop: [./publications/Batsim\_JSSPP\_2016.pdf]
+* Batsim scientific publication pre-print is available on HAL:
+  https://hal.inria.fr/hal-01333471v1.
+  The corresponding [slides](./publications/Batsim\_JSSPP\_2016.pdf) may
+  also interest you for a better understanding of what Batsim is
+  and for seeking whether it may be interesting for you.
+  These slides have been made for the JSSPP 2016 IPDPS workshop.
 
 * Batsim internal documentation can be found
   [there](http://batsim.gforge.inria.fr/).
@@ -107,10 +114,15 @@ Batsim output files can be visualised using external tools:
 Tools
 -----
 
-Also, some tools can be found in the [tools](./tools) directory:
-  - scripts to do conversions between SWF and Batsim formats
-  - scripts to setup experiments with Batsim (more details
-    [here](./tools/experiments))
+As Batsim simulation involve multiple processes, they may be tricky to manage.  
+Some tools already exist to achieve this goal:
+- python tools are located [there](./tools/experiments)
+- a more robust and modular approach is conducted
+  [there](https://gitlab.inria.fr/batsim/batexpe) and is expected to deprecate
+  aforementioned python tools.
+
+You can also find other tools in the [tools](./tools) directory,
+for example to conduct convertions between SWF and Batsim workload formats.
 
 Write your own scheduler (or adapt an existing one)
 ---------------------------------------------------
@@ -143,7 +155,8 @@ Executing complete experiments
 ------------------------------
 
 If you want to run more complex scenarios, giving a look at our
-[experiment tools](./tools/experiments) may save you some time!
+[experiment tools](./tools/experiments) may save you some time! (May be
+deprecated in the future by [batexpe](https://gitlab.inria.fr/batsim/batexpe))
 
 [Batsim overview figure]: ./doc/batsim_rjms_overview.png
 [./publications/Batsim\_JSSPP\_2016.pdf]: ./publications/Batsim_JSSPP_2016.pdf
