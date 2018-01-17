@@ -17,7 +17,7 @@ The main repositories and their role are listed below:
       can be done to share your modifications
 - [GRICAD's gitlab](https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/)
   - entry point for **main developers**:
-    - [continuous integration](https://gitlab.inria.fr/batsim/batsim/pipelines)
+    - [continuous integration](https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/pipelines)
       is there.
       This CI setup is built on top of Gitlab CI.
       There are existing runners on GRICAD's infrastructure.
@@ -56,8 +56,9 @@ problem ;).
 If you want to request a new feature, you may also write an issue or
 contact us by email.
 
-If you want to share any improvement on the Batsim code, you can use the
-following mechanisms so we can include your modifications:
+If you want to share any improvement on the Batsim code,
+please make sure you follow [coding conventions](#coding-conventions)
+then you can use the following mechanisms so we can include your modifications:
 - external user: [github pull request](https://github.com/oar-team/batsim/pulls)
 - internal user: [inria's gitlab merge request](https://gitlab.inria.fr/batsim/batsim/merge_requests)
 
