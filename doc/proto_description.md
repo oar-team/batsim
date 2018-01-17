@@ -121,13 +121,17 @@ This message allows a peer to ask specific information to its counterpart:
 
 The other peer should answer such QUERY via an [ANSWER](#answer).
 
-For now, Batsim **queries** the following requests:
-- None.
-
 For now, Batsim **answers** to the following requests:
-- "consumed_energy" with no argument: queries Batsim about the total
-  consumed energy (from time 0 to now) in Joules.
-  Only works in energy mode.
+- "consumed_energy": the scheduler queries Batsim about the total consumed
+   energy (from time 0 to now) in Joules.
+  Only works in energy mode.  
+  This query has no argument.
+
+For now, Batsim **queries** the following requests:
+- "estimate_waiting_time": Batsim asks the scheduler what would be the waiting
+  time of a potential job.  
+  Arguments: a job description, similar to those sent in
+  [JOB_SUBMITTED](#job_submitted) messages when redis is disabled.
 
 - **data**: a dictionnary of requests.
 - **example**:
@@ -137,6 +141,24 @@ For now, Batsim **answers** to the following requests:
   "type": "QUERY",
   "data": {
     "requests": {"consumed_energy": {}}
+  }
+}
+```
+or
+```json
+{
+  "timestamp": 10.0,
+  "type": "QUERY",
+  "data": {
+    "requests": {
+      "estimate_waiting_time": {
+        "job_id": "workflow_submitter0!potential_job17",
+        "job": {
+          "res": 1,
+          "walltime": 12.0
+        }
+      }
+    }
   }
 }
 ```
@@ -152,6 +174,19 @@ This is a reply to a [QUERY](#query) message.
   "timestamp": 10.0,
   "type": "ANSWER",
   "data": {"consumed_energy": 12500.0}
+}
+```
+or
+```json
+{
+  "timestamp": 10.0,
+  "type": "ANSWER",
+  "data": {
+    "estimate_waiting_time": {
+      "job_id": "workflow_submitter0!potential_job17",
+      "estimated_waiting_time": 56
+    }
+  }
 }
 ```
 
@@ -256,7 +291,12 @@ answer a [NOP](#nop) to this message then close its socket and terminate.
 - **example**:
 ```json
 {
-  "timestamp": 100.0,
+  "timestamp"job":{
+      "profile": "delay_10s",
+      "res": 1,
+      "id": "my_new_job",
+      "walltime": 12.0
+    }": 100.0,
   "type": "SIMULATION_ENDS",
   "data": {}
 }

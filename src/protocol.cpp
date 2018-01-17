@@ -423,6 +423,52 @@ void JsonProtocolWriter::append_resource_state_changed(const MachineRange & reso
     _events.PushBack(event, _alloc);
 }
 
+void JsonProtocolWriter::append_query_estimate_waiting_time(const string &job_id,
+                                                            const string &job_json_description,
+                                                            double date)
+{
+    /* {
+      "timestamp": 10.0,
+      "type": "QUERY",
+      "data": {
+        "requests": {
+          "estimate_waiting_time": {
+            "job_id": "workflow_submitter0!potential_job17",
+            "job": {
+              "res": 1,
+              "walltime": 12.0
+            }
+          }
+        }
+      }
+    } */
+
+    xbt_assert(date >= _last_date, "Date inconsistency");
+    _last_date = date;
+    _is_empty = false;
+
+    Value estimate_object(rapidjson::kObjectType);
+
+    Document job_description_doc;
+    job_description_doc.Parse(job_json_description.c_str());
+    xbt_assert(!job_description_doc.HasParseError());
+    estimate_object.AddMember("job_id", Value().SetString(job_id.c_str(), _alloc), _alloc);
+    estimate_object.AddMember("job", Value().CopyFrom(job_description_doc, _alloc), _alloc);
+
+    Value requests_object(rapidjson::kObjectType);
+    requests_object.AddMember("estimate_waiting_time", estimate_object, _alloc);
+
+    Value data(rapidjson::kObjectType);
+    data.AddMember("requests", requests_object, _alloc);
+
+    Value event(rapidjson::kObjectType);
+    event.AddMember("timestamp", Value().SetDouble(date), _alloc);
+    event.AddMember("type", Value().SetString("QUERY"), _alloc);
+    event.AddMember("data", data, _alloc);
+
+    _events.PushBack(event, _alloc);
+}
+
 void JsonProtocolWriter::append_answer_energy(double consumed_energy,
                                               double date)
 {
@@ -478,6 +524,7 @@ JsonProtocolReader::JsonProtocolReader(BatsimContext *context) :
     context(context)
 {
     _type_to_handler_map["QUERY"] = &JsonProtocolReader::handle_query;
+    _type_to_handler_map["ANSWER"] = &JsonProtocolReader::handle_answer;
     _type_to_handler_map["REJECT_JOB"] = &JsonProtocolReader::handle_reject_job;
     _type_to_handler_map["EXECUTE_JOB"] = &JsonProtocolReader::handle_execute_job;
     _type_to_handler_map["CHANGE_JOB_STATE"] = &JsonProtocolReader::handle_change_job_state;
@@ -583,6 +630,56 @@ void JsonProtocolReader::handle_query(int event_number, double timestamp, const 
         else
         {
             xbt_assert(0, "Invalid JSON message: in event %d (QUERY): request type '%s' is unknown", event_number, key.c_str());
+        }
+    }
+}
+
+void JsonProtocolReader::handle_answer(int event_number,
+                                       double timestamp,
+                                       const Value &data_object)
+{
+    (void) event_number; // Avoids a warning if assertions are ignored
+    /* {
+      "timestamp": 10.0,
+      "type": "ANSWER",
+      "data": {
+        "estimate_waiting_time": {
+          "job_id": "workflow_submitter0!potential_job17",
+          "estimated_waiting_time": 56
+        }
+      }
+    } */
+
+    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (ANSWER) should be an object", event_number);
+    xbt_assert(data_object.MemberCount() > 0, "Invalid JSON message: the 'data' object of event %d (ANSWER) must be non-empty (size=%d)", event_number, (int)data_object.MemberCount());
+
+    for (auto it = data_object.MemberBegin(); it != data_object.MemberEnd(); ++it)
+    {
+        string key_value = it->name.GetString();
+        const Value & value_object = it->value;
+
+        if (key_value == "estimate_waiting_time")
+        {
+            xbt_assert(value_object.IsObject(), "Invalid JSON message: the value of the '%s' key of event %d (ANSWER) should be an object", key_value.c_str(), event_number);
+
+            xbt_assert(value_object.HasMember("job_id"), "Invalid JSON message: the object of '%s' key of event %d (ANSWER) should have a 'job_id' field", key_value.c_str(), event_number);
+            const Value & job_id_value = value_object["job_id"];
+            xbt_assert(job_id_value.IsString(), "Invalid JSON message: the value of the 'job_id' field (on the '%s' key) of event %d should be a string", key_value.c_str(), event_number);
+            string job_id = job_id_value.GetString();
+
+            xbt_assert(value_object.HasMember("estimated_waiting_time"), "Invalid JSON message: the object of '%s' key of event %d (ANSWER) should have a 'estimated_waiting_time' field", key_value.c_str(), event_number);
+            const Value & estimated_waiting_time_value = value_object["estimated_waiting_time"];
+            xbt_assert(estimated_waiting_time_value.IsNumber(), "Invalid JSON message: the value of the 'estimated_waiting_time' field (on the '%s' key) of event %d should be a number", key_value.c_str(), event_number);
+            double estimated_waiting_time = estimated_waiting_time_value.GetDouble();
+
+            XBT_WARN("Received an ANSWER of type 'estimate_waiting_time' with job_id='%s' and 'estimated_waiting_time'=%g. "
+                     "However, I do not know what I should do with it.",
+                     job_id.c_str(), estimated_waiting_time);
+            (void) timestamp;
+        }
+        else
+        {
+            xbt_assert(0, "Invalid JSON message: unknown ANSWER type '%s' in event %d", key_value.c_str());
         }
     }
 }

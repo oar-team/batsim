@@ -21,6 +21,7 @@ Batsim's public API includes:
 - The ``_schedule.csv`` output file now contains a batsim_version field.
 - The ``energy_query`` test checks that ``QUERY``/``ANSWER`` work as expected
   for the ``consumed_energy`` request.
+- Added the ``estimate_waiting_time`` QUERY from Batsim to the scheduler.
 
 ### Changed
 - The ``_jobs.csv`` output file is now written more cleanly.  

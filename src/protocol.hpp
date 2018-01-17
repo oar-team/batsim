@@ -153,6 +153,16 @@ public:
                                                double date) = 0;
 
     /**
+     * @brief Appends a QUERY message to ask the scheduler about the waiting time of a potential job.
+     * @param[in] job_id The identifier of the potential job
+     * @param[in] job_json_description The job JSON description of the potential job
+     * @param[in] date The event date. Must be greater than or equal to the previous event.
+     */
+    virtual void append_query_estimate_waiting_time(const std::string & job_id,
+                                                    const std::string & job_json_description,
+                                                    double date) = 0;
+
+    /**
      * @brief Appends an ANSWER (energy) event.
      * @param[in] consumed_energy The total consumed energy in joules
      * @param[in] date The event date. Must be greater than or equal to the previous event.
@@ -293,6 +303,16 @@ public:
                                        double date);
 
     /**
+     * @brief Appends a QUERY message to ask the scheduler about the waiting time of a potential job.
+     * @param[in] job_id The identifier of the potential job
+     * @param[in] job_json_description The job JSON description of the potential job
+     * @param[in] date The event date. Must be greater than or equal to the previous event.
+     */
+    void append_query_estimate_waiting_time(const std::string & job_id,
+                                            const std::string & job_json_description,
+                                            double date);
+
+    /**
      * @brief Appends an ANSWER (energy) event.
      * @param[in] consumed_energy The total consumed energy in joules
      * @param[in] date The event date. Must be greater than or equal to the previous event.
@@ -409,6 +429,14 @@ public:
      * @param[in] data_object The data associated with the event (JSON object)
      */
     void handle_query(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
+     * @brief Handles an ANSWER event
+     * @param[in] event_number The event number in [0,nb_events[.
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_answer(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
      * @brief Handles a REJECT_JOB event
