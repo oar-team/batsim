@@ -293,7 +293,7 @@ answer a [NOP](#nop) to this message then close its socket and terminate.
 - **example**:
 ```json
 {
-  "timestamp: 100.0,
+  "timestamp": 100.0,
   "type": "SIMULATION_ENDS",
   "data": {}
 }
