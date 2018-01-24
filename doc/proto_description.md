@@ -603,9 +603,10 @@ Asks Batsim to call the scheduler later on, at a given timestamp.
 ### KILL_JOB
 Kill some jobs (almost instantaneously).
 
-Once all the jobs defined in the ``job_ids`` field have completed (most probably
-killed, but they may also have finished *ordinarily* before the kill),
-Batsim acknowledges it with one [JOB_KILLED](#job_killed) message.
+As soon as all the jobs defined in the ``job_ids`` field have completed
+(most probably killed, but they may also have finished *ordinarily* before
+the kill),
+Batsim acknowledges it with one [JOB_KILLED](#job_killed) event.
 
 - **data**: A list of job ids
 - **example**:
@@ -692,6 +693,10 @@ be enabled in the [configuration](./configuration.md)
 ### SET_RESOURCE_STATE
 
 Sets some resources into a state.
+
+As soon as all the resources have been set into the given state,
+Batsim acknowledges it by sending one
+[RESOURCE_STATE_CHANGED](resource_state_changed) event.
 
 - **data**: an interval set of resource id, and the new state
 - **example**:
