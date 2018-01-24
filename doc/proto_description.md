@@ -696,7 +696,7 @@ Sets some resources into a state.
 
 As soon as all the resources have been set into the given state,
 Batsim acknowledges it by sending one
-[RESOURCE_STATE_CHANGED](resource_state_changed) event.
+[RESOURCE_STATE_CHANGED](#resource_state_changed) event.
 
 - **data**: an interval set of resource id, and the new state
 - **example**:
