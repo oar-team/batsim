@@ -90,6 +90,32 @@ Constraints on the message format are defined here:
 
 ---
 
+## Table of Events
+
+- Bidirectional
+  - [NOP](nop)
+  - [QUERY](query)
+  - [ANSWER](answer)
+- Batsim to Scheduler
+  - [SIMULATION_BEGINS](simulation_begins)
+  - [SIMULATION_ENDS](simulation_ends)
+  - [JOB_SUBMITTED](job_submitted)
+  - [JOB_COMPLETED](job_completed)
+  - [JOB_KILLED](job_killed)
+  - [RESOURCE_STATE_CHANGED](resource_state_changed)
+  - [REQUESTED_CALL](requested_call)
+- Scheduler to Batsim
+  - [REJECT_JOB](reject_job)
+  - [EXECUTE_JOB](execute_job)
+  - [CALL_ME_LATER](call_me_later)
+  - [KILL_JOB](kill_job)
+  - [SUBMIT_JOB](submit_job)
+  - [SUBMIT_PROFILE](submit_profile)
+  - [SET_RESOURCE_STATE](set_resource_state)
+  - [SET_JOB_METADATA](set_job_metadata)
+  - [NOTIFY](notify)
+  - [CHANGE_JOB_STATE](change_job_state)
+
 ## Bidirectional events
 
 These events can be sent from Batsim to the scheduler, or in the opposite
