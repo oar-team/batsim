@@ -401,21 +401,24 @@ or not, depending on whether the job completed without reaching timeout).
 ### JOB_KILLED
 
 Some jobs have been killed.
-It acknowledges that the actions coming from a previous [KILL_JOB](#kill_job)
-message have been done.
+
+
+This message acknowledges that the actions coming from a previous
+[KILL_JOB](#kill_job) message have been done.
 The ``job_ids`` jobs correspond to those requested in the previous
 [KILL_JOB](#kill_job) message)
 
-The ``job_progress`` map is also given for the all the jobs and tasks
-inside the job that have been killed. Key is the ``job_id`` and the value
-contains a progress value that in \]0, 1\[ with 0 for not started and 1 for
-complete task and the profile name is also given for convenience. For
-sequential job the progress map contains the 0-based index of the inner
-task that was running at the time it was killed and the details of this
-progress in the ``current_task`` field. Note that sequential jobs can be
-nested.
+The ``job_progress`` map is also given for all the jobs (and for the tasks
+inside the jobs) that have been killed. Key is the ``job_id`` and the value
+contains a progress value in \]0, 1\[, where 0 means not started and 1 means
+completed.
+The profile name is also given for convenience.
+For sequential jobs, the progress map contains the 0-based index of the inner
+task that was running at the time it was killed, and the details of this
+progress are in the ``current_task`` field.
+Please note that sequential jobs can be nested.
 
-Please remark that this message does not necessarily means that all the jobs
+Please remark that this message does not necessarily mean that all the jobs
 have been killed. It means that all the jobs have completed. Some of the jobs
 might have completed *ordinarily* before the kill.
 In this case, [JOB_COMPLETED](#job_completed) events corresponding to the
@@ -572,7 +575,11 @@ Asks Batsim to call the scheduler later on, at a given timestamp.
 
 
 ### KILL_JOB
-Kills some jobs (almost instantaneously).
+Kill some jobs (almost instantaneously).
+
+Once all the jobs defined in the ``job_ids`` field have completed (most probably
+killed, but they may also have finished *ordinarily* before the kill),
+Batsim acknowledges it with one [JOB_KILLED](#job_killed) message.
 
 - **data**: A list of job ids
 - **example**:
