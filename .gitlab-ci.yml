@@ -38,7 +38,7 @@ build_batsched:
     # Get the code at the expected revision
     - git clone https://gitlab.inria.fr/batsim/batsched.git /builds/batsim/batsim/schedulers/batsched
     - cd /builds/batsim/batsim/schedulers/batsched
-    - git reset --hard cc16185 # 2018-01-17
+    - git reset --hard 0a52e82 # 2018-01-26
     # Build batsched
     - rm -rf   /builds/batsim/batsim/schedulers/batsched/build
     - mkdir -p /builds/batsim/batsim/schedulers/batsched/build
