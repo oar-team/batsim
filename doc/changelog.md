@@ -39,6 +39,9 @@ Batsim's public API includes:
 - Output buffers now work even if incoming texts are bigger than the buffer.
 - The ``QUERY_REQUEST``/``QUERY_REPLY`` messages were not respecting the
   protocol definition (probably never tested since the JSON protocol update).
+- Dynamically submitted jobs could not be used right away after being submitted
+  (by the following events, or at least the events of the same timestamp).
+  This should now be possible.
 
 [//]: ==========================================================================
 ## [1.4.0] - 2017-10-07
