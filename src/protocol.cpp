@@ -1178,6 +1178,7 @@ void JsonProtocolReader::handle_submit_job(int event_number,
         xbt_assert(false, "Invalid JSON message: in event %d (SUBMIT_JOB): job_id '%s' seems invalid (already exists?)", event_number, job_id.c_str());
     }
 
+    // Read the job description, either directly or from Redis
     if (data_object.HasMember("job"))
     {
         xbt_assert(!context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): 'job' object is given but redis seems disabled...", event_number);
@@ -1194,8 +1195,34 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     else
     {
         xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['job'] is unset but redis seems enabled...", event_number);
+
+        xbt_assert(message->job_description.empty(), "Internal error");
+        string job_key = RedisStorage::job_key(message->job_id);
+        message->job_description = context->storage.get(job_key);
     }
 
+    // Create the job into memory now (so that following events at the same timestamp can refer to this job).
+    // But first, create the workload if needed.
+    Workload * workload = nullptr;
+    if (context->workloads.exists(message->job_id.workload_name))
+    {
+        workload = context->workloads.at(message->job_id.workload_name);
+    }
+    else
+    {
+        workload = new Workload(message->job_id.workload_name, "Dynamic");
+        context->workloads.insert_workload(workload->name, workload);
+    }
+
+    // Create the job.
+    XBT_INFO("Parsing user-submitted job %s", message->job_id.to_string().c_str());
+    Job * job = Job::from_json(message->job_description, workload,
+                               "Invalid JSON job submitted by the scheduler");
+    workload->jobs->add_job(job);
+    job->id = JobIdentifier(workload->name, job->number);
+    job->state = JobState::JOB_STATE_SUBMITTED;
+
+    // Read the profile description if possible
     if (data_object.HasMember("profile"))
     {
         xbt_assert(!context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): 'profile' object is given but redis seems disabled...", event_number);
@@ -1209,76 +1236,35 @@ void JsonProtocolReader::handle_submit_job(int event_number,
 
         message->job_profile_description = string(buffer.GetString(), buffer.GetSize());
     }
-
-    // Let's put the job into memory now (so that next events at the same time stamp can refer to this job).
-    xbt_assert(context->submission_sched_enabled,
-               "Job submission coming from the decision process received but the option "
-               "seems disabled... It can be activated by specifying a configuration file "
-               "to Batsim.");
-
-    xbt_assert(!context->workloads.job_exists(message->job_id),
-               "Bad job submission received from the decision process: job %s already exists.",
-               message->job_id.to_string().c_str());
-
-    // Let's create the workload if it doesn't exist, or retrieve it otherwise
-    Workload * workload = nullptr;
-    if (context->workloads.exists(message->job_id.workload_name))
+    else if (context->redis_enabled)
     {
-        workload = context->workloads.at(message->job_id.workload_name);
-    }
-    else
-    {
-        workload = new Workload(message->job_id.workload_name, "Dynamic");
-        context->workloads.insert_workload(workload->name, workload);
+        string profile_key = RedisStorage::profile_key(message->job_id.workload_name,
+                                                       job->profile);
+        message->job_profile_description = context->storage.get(profile_key);
     }
 
-    // If redis is enabled, the job description must be retrieved from it
-    if (context->redis_enabled)
-    {
-        xbt_assert(message->job_description.empty(), "Internal error");
-        string job_key = RedisStorage::job_key(message->job_id);
-        message->job_description = context->storage.get(job_key);
-    }
-    else
-    {
-        xbt_assert(!message->job_description.empty(), "Internal error");
-    }
-
-    // Let's parse the user-submitted job
-    XBT_INFO("Parsing user-submitted job %s", message->job_id.to_string().c_str());
-    Job * job = Job::from_json(message->job_description, workload,
-                               "Invalid JSON job submitted by the scheduler");
-    workload->jobs->add_job(job);
-    job->id = JobIdentifier(workload->name, job->number);
-
-    // Let's parse the profile if needed
+    // Put the profile into memory if needed and possible now (has been read now)
     if (!workload->profiles->exists(job->profile))
     {
-        XBT_INFO("The profile of user-submitted job '%s' does not exist yet.",
-                 job->profile.c_str());
-
-        // If redis is enabled, the profile description must be retrieved from it
-        if (context->redis_enabled)
+        if (!message->job_profile_description.empty())
         {
-            xbt_assert(message->job_profile_description.empty(), "Internal error");
-            string profile_key = RedisStorage::profile_key(message->job_id.workload_name,
-                                                           job->profile);
-            message->job_profile_description = context->storage.get(profile_key);
+            Profile * profile = Profile::from_json(job->profile,
+                                                   message->job_profile_description,
+                                                   "Invalid JSON profile received from the scheduler");
+            workload->profiles->add_profile(job->profile, profile);
         }
         else
         {
-            xbt_assert(!message->job_profile_description.empty(), "Internal error");
+            XBT_DEBUG("Dynamically submitted job '%s' has no profile for the moment.",
+                      job->id.to_string().c_str());
         }
-
-        Profile * profile = Profile::from_json(job->profile,
-                                               message->job_profile_description,
-                                               "Invalid JSON profile received from the scheduler");
-        workload->profiles->add_profile(job->profile, profile);
     }
-    // TODO? check profile collisions otherwise
-
-    // Let's set the job state
-    job->state = JobState::JOB_STATE_SUBMITTED;
+    else
+    {
+        XBT_WARN("New submission of profile '%s' of workload '%s' is discarded (old profile kept as-is)",
+                 job->profile.c_str(), workload->name.c_str());
+        // TODO? check profile collisions
+    }
 
     send_message(timestamp, "server", IPMessageType::JOB_SUBMITTED_BY_DP, (void *) message);
 }

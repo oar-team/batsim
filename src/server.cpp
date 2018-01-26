@@ -542,7 +542,23 @@ void server_on_submit_job(ServerData * data,
     // Let's update global states
     ++data->nb_submitted_jobs;
 
+    xbt_assert(data->context->workloads.job_exists(message->job_id),
+               "Internal error: job '%s' should exist.",
+               message->job_id.to_string().c_str());
+
     const Job * job = data->context->workloads.job_at(message->job_id);
+
+    Workload * workload = data->context->workloads.at(message->job_id.workload_name);
+    xbt_assert(workload->profiles->exists(job->profile),
+               "Dynamically submitted job '%s' has no profile: "
+               "Workload '%s' has no profile named '%s'. "
+               "When submitting a dynamic job, its profile should either already exist "
+               "or be submitted inside the SUBMIT_JOB message. "
+               "If the profile is also dynamic, it can be submitted with the SUBMIT_PROFILE "
+               "message but you must ensure that the profile is sent (non-strictly) before "
+               "the SUBMIT_JOB message.",
+               job->id.to_string().c_str(),
+               workload->name.c_str(), job->profile.c_str());
 
     if (data->context->submission_sched_ack)
     {
@@ -595,6 +611,12 @@ void server_on_submit_profile(ServerData * data,
                                                message->profile,
                                                "Invalid JSON profile received from the scheduler");
         workload->profiles->add_profile(message->profile_name, profile);
+    }
+    else
+    {
+        XBT_WARN("New submission of profile '%s' of workload '%s' is discarded (old profile kept as-is)",
+                 message->profile.c_str(), message->workload_name.c_str());
+        // TODO? check profile collisions
     }
 }
 
