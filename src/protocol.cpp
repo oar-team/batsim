@@ -704,13 +704,10 @@ void JsonProtocolReader::handle_reject_job(int event_number,
     string job_id = job_id_value.GetString();
 
     JobRejectedMessage * message = new JobRejectedMessage;
-    if (!identify_job_from_string(context, job_id, message->job_id))
+    parse_job_identifier(job_id, message->job_id);
+    if (!(context->workloads.job_exists(message->job_id)))
     {
-        xbt_assert(false, "Invalid JSON message: "
-                          "Invalid job rejection received: The job identifier '%s' is not valid. "
-                          "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
-                          "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
-                          "Furthermore, the corresponding job must exist.", job_id.c_str());
+        xbt_assert(false, "The folowing job does not exist.", job_id.c_str());
     }
 
     Job * job = context->workloads.job_at(message->job_id);
@@ -755,15 +752,10 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     string job_id = job_id_value.GetString();
 
     // Let's retrieve the job identifier
-    if (!identify_job_from_string(context, job_id, message->allocation->job_id,
-                                  IdentifyJobReturnCondition::STRING_VALID))
+    parse_job_identifier(job_id, message->allocation->job_id);
+    if (!(context->workloads.job_exists(message->allocation->job_id)))
     {
-        xbt_assert(false, "Invalid JSON message: in event %d (EXECUTE_JOB): "
-                          "The job identifier '%s' is not valid. "
-                          "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
-                          "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
-                          "Furthermore, the corresponding job must exist.",
-                   event_number, job_id.c_str());
+        xbt_assert(false, "Invalid message in event %d (EXECUTE_JOB): job %d with job_id:'%s' does not exists", event_number, job_id.c_str());
     }
 
     // *********************
@@ -971,13 +963,10 @@ void JsonProtocolReader::handle_set_job_metadata(int event_number,
     xbt_assert(boost::regex_match(metadata, r), "Invalid JSON message: the 'metadata' value in the 'data' value of event %d (SET_JOB_METADATA) should not contain double quotes (got ###%s###)", event_number, metadata.c_str());
 
     JobIdentifier job_identifier;
-    if (!identify_job_from_string(context, job_id, job_identifier))
+    parse_job_identifier(job_id, job_identifier);
+    if (!(context->workloads.job_exists(job_identifier)))
     {
-        xbt_assert(false, "Invalid JSON message: "
-                          "Invalid job change job state received: The job identifier '%s' is not valid. "
-                          "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
-                          "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
-                          "Furthermore, the corresponding job must exist.", job_id.c_str());
+        xbt_assert(false, "Invalid message in event %d (SET_JOB_METADATA): The folowing job does not exist: %s", event_number, job_id.c_str());
     }
 
     Job * job = context->workloads.job_at(job_identifier);
@@ -1041,13 +1030,10 @@ void JsonProtocolReader::handle_change_job_state(int event_number,
 
     ChangeJobStateMessage * message = new ChangeJobStateMessage;
 
-    if (!identify_job_from_string(context, job_id, message->job_id))
+    parse_job_identifier(job_id, message->job_id);
+    if (!(context->workloads.job_exists(message->job_id)))
     {
-        xbt_assert(false, "Invalid JSON message: "
-                          "Invalid job change job state received: The job identifier '%s' is not valid. "
-                          "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
-                          "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
-                          "Furthermore, the corresponding job must exist.", job_id.c_str());
+        xbt_assert(false, "The folowing job does not exist.", job_id.c_str());
     }
 
     message->job_state = job_state;
@@ -1118,13 +1104,10 @@ void JsonProtocolReader::handle_to_job_msg(int event_number,
 
     ToJobMessage * message = new ToJobMessage;
 
-    if (!identify_job_from_string(context, job_id, message->job_id))
+    parse_job_identifier(job_id, message->job_id);
+    if (!(context->workloads.job_exists(message->job_id)))
     {
-        xbt_assert(false, "Invalid JSON message: "
-                          "Invalid job change job state received: The job identifier '%s' is not valid. "
-                          "Job identifiers must be of the form [WORKLOAD_NAME!]JOB_ID. "
-                          "If WORKLOAD_NAME! is omitted, WORKLOAD_NAME='static' is used. "
-                          "Furthermore, the corresponding job must exist.", job_id.c_str());
+        xbt_assert(false, "The folowing job does not exist.", job_id.c_str());
     }
     message->message = msg;
 
@@ -1172,10 +1155,10 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     xbt_assert(job_id_value.IsString(), "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['job_id'] should be a string", event_number);
     string job_id = job_id_value.GetString();
 
-    if (!identify_job_from_string(context, job_id, message->job_id,
-                                  IdentifyJobReturnCondition::STRING_VALID__JOB_DOES_NOT_EXISTS))
+    parse_job_identifier(job_id, message->job_id);
+    if (context->workloads.job_exists(message->job_id))
     {
-        xbt_assert(false, "Invalid JSON message: in event %d (SUBMIT_JOB): job_id '%s' seems invalid (already exists?)", event_number, job_id.c_str());
+        xbt_assert(false, "Invalid message in event %d (SUBMIT_JOB): job_id '%s' already exists", event_number, job_id.c_str());
     }
 
     // Read the job description, either directly or from Redis
@@ -1235,6 +1218,7 @@ void JsonProtocolReader::handle_submit_job(int event_number,
         profile_object.Accept(writer);
 
         message->job_profile_description = string(buffer.GetString(), buffer.GetSize());
+        XBT_INFO("A profile was submited with the job '%d' in workload '%s': %s", job->number, workload->name.c_str(), message->job_profile_description.c_str());
     }
     else if (context->redis_enabled)
     {
@@ -1344,9 +1328,10 @@ void JsonProtocolReader::handle_kill_job(int event_number,
     for (unsigned int i = 0; i < job_ids_array.Size(); ++i)
     {
         const Value & job_id_value = job_ids_array[i];
-        if (!identify_job_from_string(context, job_id_value.GetString(), message->jobs_ids[i]))
+        parse_job_identifier(job_id_value.GetString(), message->jobs_ids[i]);
+        if (!(context->workloads.job_exists(message->jobs_ids[i])))
         {
-            xbt_assert(false, "Invalid JSON message: in event %d (KILL_JOB): job_id %d ('%s') is invalid.", event_number, i, message->jobs_ids[i].to_string().c_str());
+            xbt_assert(false, "Invalid message in event %d (KILL_JOB): job %d with job_id:'%s' does not exists", event_number, i, message->jobs_ids[i].to_string().c_str());
         }
     }
 

@@ -94,15 +94,14 @@ std::string absolute_filename(const std::string & filename)
     return string(getcwd_ret) + '/' + filename;
 }
 
-bool identify_job_from_string(BatsimContext * context,
-                              const std::string & job_identifier_string,
-                              JobIdentifier & job_id,
-                              IdentifyJobReturnCondition return_condition)
+void parse_job_identifier(const std::string & job_identifier_string,
+                          JobIdentifier & job_id)
 {
     // Let's split the job_identifier by '!'
     vector<string> job_identifier_parts;
     boost::split(job_identifier_parts, job_identifier_string, boost::is_any_of("!"), boost::token_compress_on);
 
+    XBT_DEBUG("Parsed job_identifier: '%d'", job_identifier_parts.size());
     if (job_identifier_parts.size() == 1)
     {
         XBT_WARN("Job ID is not of format WORKLOAD!NUMBER... assuming static!");
@@ -116,23 +115,7 @@ bool identify_job_from_string(BatsimContext * context,
     }
     else
     {
-        return false;
+        xbt_assert("Empty or invalid job identifier: %s", job_identifier_string.c_str());
     }
 
-    if (return_condition == IdentifyJobReturnCondition::STRING_VALID)
-    {
-        return true;
-    }
-    else if (return_condition == IdentifyJobReturnCondition::STRING_VALID__JOB_EXISTS)
-    {
-        return context->workloads.job_exists(job_id);
-    }
-    else if (return_condition == IdentifyJobReturnCondition::STRING_VALID__JOB_DOES_NOT_EXISTS)
-    {
-        return !context->workloads.job_exists(job_id);
-    }
-    else
-    {
-        xbt_assert(0, "Unhandled IdentifyJobReturnCondition value");
-    }
 }
