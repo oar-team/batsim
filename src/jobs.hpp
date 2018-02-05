@@ -86,6 +86,12 @@ struct BatTask
     BatTask(Job * parent_job, Profile * profile);
 
     /**
+     * @brief Battask cannot be copied.
+     * @param[in] other Another instance
+     */
+    BatTask(const BatTask & other) = delete;
+
+    /**
       * @brief BatTask destructor
       * @details Recursively cleans subtasks
       */
