@@ -584,40 +584,16 @@ void server_on_submit_profile(ServerData * data,
 {
     xbt_assert(task_data->data != nullptr);
     ProfileSubmittedByDPMessage * message = (ProfileSubmittedByDPMessage *) task_data->data;
+    (void) message;
+
+    // Does nothing.
+    // Just here to keep the usual time increases from protocol reader to orchestrator.
 
     xbt_assert(data->context->submission_sched_enabled,
                "Profile submission coming from the decision process received but the option "
                "seems disabled... It can be activated by specifying a configuration file "
                "to Batsim.");
 
-    // Let's create the workload if it doesn't exist, or retrieve it otherwise
-    Workload * workload = nullptr;
-    if (data->context->workloads.exists(message->workload_name))
-    {
-        workload = data->context->workloads.at(message->workload_name);
-    }
-    else
-    {
-        workload = new Workload(message->workload_name, "Dynamic");
-        data->context->workloads.insert_workload(workload->name, workload);
-    }
-
-    if (!workload->profiles->exists(message->profile_name))
-    {
-        XBT_INFO("Adding user-submitted profile %s to workload %s",
-                message->profile_name.c_str(),
-                message->workload_name.c_str());
-        Profile * profile = Profile::from_json(message->profile_name,
-                                               message->profile,
-                                               "Invalid JSON profile received from the scheduler");
-        workload->profiles->add_profile(message->profile_name, profile);
-    }
-    else
-    {
-        XBT_WARN("New submission of profile '%s' of workload '%s' is discarded (old profile kept as-is)",
-                 message->profile.c_str(), message->workload_name.c_str());
-        // TODO? check profile collisions
-    }
 }
 
 void server_on_change_job_state(ServerData * data,
