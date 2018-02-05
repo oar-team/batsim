@@ -153,11 +153,6 @@ void Workload::check_validity()
 
 
 
-Workloads::Workloads()
-{
-
-}
-
 Workloads::~Workloads()
 {
     for (auto mit : _workloads)

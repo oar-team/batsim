@@ -33,6 +33,8 @@ enum class ProfileType
  */
 struct Profile
 {
+    Profile() = default;
+
     /**
      * @brief Destroys a Profile, deleting its data from memory according to the profile type
      */
@@ -84,6 +86,8 @@ struct Profile
  */
 struct MsgParallelProfileData
 {
+    MsgParallelProfileData() = default;
+
     /**
      * @brief Destroys a MsgParallelProfileData
      * @details This method cleans the cpu and comm arrays from the memory if they are not set to nullptr
@@ -214,7 +218,7 @@ public:
     /**
      * @brief Creates an empty Profiles
      */
-    Profiles();
+    Profiles() = default;
 
     /**
      * @brief Profiles cannot be copied.

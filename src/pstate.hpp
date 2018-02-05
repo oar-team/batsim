@@ -56,10 +56,7 @@ public:
     /**
      * @brief Default constructor
      */
-    CurrentSwitches()
-    {
-
-    }
+    CurrentSwitches() = default;
 
     /**
      * @brief CurrentSwitches cannot be copied.

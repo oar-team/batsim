@@ -1032,9 +1032,6 @@ void PStateChangeTracer::close_buffer()
 }
 
 
-EnergyConsumptionTracer::EnergyConsumptionTracer()
-{
-}
 
 EnergyConsumptionTracer::~EnergyConsumptionTracer()
 {
@@ -1139,10 +1136,6 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     return energy;
 }
 
-MachineStateTracer::MachineStateTracer()
-{
-
-}
 
 MachineStateTracer::~MachineStateTracer()
 {

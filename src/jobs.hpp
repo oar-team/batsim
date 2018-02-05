@@ -126,6 +126,8 @@ public:
  */
 struct Job
 {
+    Job() = default;
+
     /**
      * @brief Destructor
      */
@@ -215,7 +217,7 @@ public:
     /**
      * @brief Constructs an empty Jobs
      */
-    Jobs();
+    Jobs() = default;
 
     /**
      * @brief Jobs cannot be copied.

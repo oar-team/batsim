@@ -324,7 +324,7 @@ public:
     /**
      * @brief Constructs a EnergyConsumptionTracer
      */
-    EnergyConsumptionTracer();
+    EnergyConsumptionTracer() = default;
 
     /**
      * @brief EnergyConsumptionTracer cannot be copied.
@@ -408,7 +408,7 @@ public:
     /**
      * @brief Constructs a MachineStateTracer
      */
-    MachineStateTracer();
+    MachineStateTracer() = default;
 
     /**
      * @brief MachineStateTracer cannot be copied.

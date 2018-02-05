@@ -23,11 +23,6 @@ using namespace boost;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(profiles, "profiles"); //!< Logging
 
-Profiles::Profiles()
-{
-
-}
-
 Profiles::~Profiles()
 {
     for (auto mit : _profiles)

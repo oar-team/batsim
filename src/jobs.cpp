@@ -100,10 +100,6 @@ BatTask* Job::compute_job_progress()
 }
 
 
-Jobs::Jobs()
-{
-
-}
 
 Jobs::~Jobs()
 {
