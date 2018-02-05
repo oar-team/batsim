@@ -33,7 +33,8 @@ struct JobIdentifier
      * @param[in] workload_name The workload name
      * @param[in] job_number The job number
      */
-    JobIdentifier(const std::string & workload_name = "", int job_number = -1);
+    explicit JobIdentifier(const std::string & workload_name = "",
+                           int job_number = -1);
 
     std::string workload_name; //!< The name of the workload the job belongs to
     int job_number; //!< The job unique number inside its workload

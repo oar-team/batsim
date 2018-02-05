@@ -43,7 +43,8 @@ public:
      * @param[in] filename The file that will be written
      * @param[in] buffer_size The size of the buffer (in bytes).
      */
-    WriteBuffer(const std::string & filename, int buffer_size = 64*1024);
+    explicit WriteBuffer(const std::string & filename,
+                         int buffer_size = 64*1024);
 
     /**
      * @brief WriteBuffers cannot be copied.
