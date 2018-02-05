@@ -847,16 +847,21 @@ void server_on_execute_job(ServerData * data,
         }
     }
 
-    xbt_assert((int)allocation->mapping.size() == job->required_nb_res,
-               "Invalid job %s allocation. The job requires %d machines but only %d were given (%s). "
-               "Using a different number of machines is only allowed if a custom mapping is specified. "
-               "This mapping must specify which allocated machine each executor should use.",
-               job->id.to_string().c_str(), job->required_nb_res, (int)allocation->mapping.size(),
-               allocation->machine_ids.to_string_hyphen().c_str());
+    // Only the this profile that take a total amount of work is capable to
+    // manage correctly a different number of resources than the requested
+    // number
+    if (job->workload->profiles->at(job->profile)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT) {
+      xbt_assert((int)allocation->mapping.size() == job->required_nb_res,
+                 "Invalid job %s allocation. The job requires %d machines but only %d were given (%s). "
+                 "Using a different number of machines is only allowed if a custom mapping is specified. "
+                 "This mapping must specify which allocated machine each executor should use.",
+                 job->id.to_string().c_str(), job->required_nb_res, (int)allocation->mapping.size(),
+                 allocation->machine_ids.to_string_hyphen().c_str());
+    }
 
     // Let's generate the hosts used by the job
     allocation->hosts.clear();
-    allocation->hosts.reserve(job->required_nb_res);
+    allocation->hosts.reserve(allocation->machine_ids.size());
 
     for (unsigned int executor_id = 0; executor_id < allocation->mapping.size(); ++executor_id)
     {
@@ -866,9 +871,9 @@ void server_on_execute_job(ServerData * data,
         allocation->hosts.push_back(data->context->machines[machine_id]->host);
     }
 
-    xbt_assert((int)allocation->hosts.size() == job->required_nb_res,
+    xbt_assert(allocation->hosts.size() == allocation->machine_ids.size(),
                "Invalid number of hosts (expected %d, got %d)",
-               job->required_nb_res, (int)allocation->hosts.size());
+               allocation->machine_ids.size(), allocation->hosts.size());
 
     ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
     exec_args->context = data->context;

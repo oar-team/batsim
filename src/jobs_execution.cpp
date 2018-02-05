@@ -47,7 +47,7 @@ int execute_task(BatTask * btask,
 {
     Job * job = btask->parent_job;
     Profile * profile = btask->profile;
-    int nb_res = btask->parent_job->required_nb_res;
+    int nb_res = allocation->hosts.size();
 
     // Init task
     btask->parent_job = job;
