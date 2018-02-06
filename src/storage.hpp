@@ -24,7 +24,7 @@ public:
     /**
      * @brief Builds a RedisStorage
      */
-    RedisStorage();
+    explicit RedisStorage();
 
     /**
      * @brief RedisStorage cannot be copied.

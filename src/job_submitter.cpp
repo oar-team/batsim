@@ -404,8 +404,7 @@ int batexec_job_launcher_process(int argc, char *argv[])
     for (auto & mit : jobs)
     {
         Job * job = mit.second;
-        JobIdentifier id(workload->name, job->number);
-        job->id = id.to_string();
+        job->id = JobIdentifier(workload->name, job->number);
 
         int nb_res = job->required_nb_res;
 

@@ -584,6 +584,10 @@ void server_on_submit_profile(ServerData * data,
 {
     xbt_assert(task_data->data != nullptr);
     ProfileSubmittedByDPMessage * message = (ProfileSubmittedByDPMessage *) task_data->data;
+    (void) message;
+
+    // Does nothing.
+    // Just here to keep the usual time increases from protocol reader to orchestrator.
 
     xbt_assert(data->context->submission_sched_enabled,
                "Profile submission coming from the decision process received but the option "

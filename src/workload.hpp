@@ -74,7 +74,7 @@ public:
     /**
      * @brief Builds an empty Workloads
      */
-    Workloads();
+    Workloads() = default;
 
     /**
      * @brief Workloads cannot be copied.
