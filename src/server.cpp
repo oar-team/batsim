@@ -258,7 +258,7 @@ void server_on_job_submitted(ServerData * data,
 
     // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
     XBT_INFO("GOT JOB: %s %d\n", message->job_id.workload_name.c_str(), message->job_id.job_number);
-    xbt_assert(data->context->workloads.job_exists(message->job_id));
+    xbt_assert(data->context->workloads.job_is_registered(message->job_id));
     Job * job = data->context->workloads.job_at(message->job_id);
     job->id = message->job_id;
 
@@ -542,7 +542,7 @@ void server_on_submit_job(ServerData * data,
     // Let's update global states
     ++data->nb_submitted_jobs;
 
-    xbt_assert(data->context->workloads.job_exists(message->job_id),
+    xbt_assert(data->context->workloads.job_is_registered(message->job_id),
                "Internal error: job '%s' should exist.",
                message->job_id.to_string().c_str());
 
@@ -600,6 +600,7 @@ void server_on_submit_profile(ServerData * data,
     {
         workload = new Workload(message->workload_name, "Dynamic");
         data->context->workloads.insert_workload(workload->name, workload);
+        XBT_INFO("New user-submitted workload %s was created", workload->name);
     }
 
     if (!workload->profiles->exists(message->profile_name))
@@ -799,8 +800,12 @@ void server_on_execute_job(ServerData * data,
     ExecuteJobMessage * message = (ExecuteJobMessage *) task_data->data;
     SchedulingAllocation * allocation = message->allocation;
 
-    xbt_assert(data->context->workloads.job_exists(allocation->job_id),
-               "Trying to execute job '%s', which does NOT exist!",
+    xbt_assert(data->context->workloads.job_is_registered(allocation->job_id),
+               "Trying to execute job '%s', which is not registered in the workload!",
+               allocation->job_id.to_string().c_str());
+
+    xbt_assert(data->context->workloads.job_profile_is_registered(allocation->job_id),
+               "Trying to execute job '%s', in which the profile is not registered in the workload!",
                allocation->job_id.to_string().c_str());
 
     Job * job = data->context->workloads.job_at(allocation->job_id);
@@ -851,7 +856,7 @@ void server_on_execute_job(ServerData * data,
     // manage correctly a different number of resources than the requested
     // number
     if (job->workload->profiles->at(job->profile)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT) {
-      xbt_assert((int)allocation->mapping.size() == job->required_nb_res,
+        xbt_assert((int)allocation->mapping.size() == job->required_nb_res,
                  "Invalid job %s allocation. The job requires %d machines but only %d were given (%s). "
                  "Using a different number of machines is only allowed if a custom mapping is specified. "
                  "This mapping must specify which allocated machine each executor should use.",
@@ -868,12 +873,14 @@ void server_on_execute_job(ServerData * data,
         int machine_id_within_allocated_resources = allocation->mapping[executor_id];
         int machine_id = allocation->machine_ids[machine_id_within_allocated_resources];
 
-        allocation->hosts.push_back(data->context->machines[machine_id]->host);
+        msg_host_t to_add = data->context->machines[machine_id]->host;
+        allocation->hosts.push_back(to_add);
+        // Only add the host if it is not already added (due to custom mapping)
+        //if (std::find(allocation->hosts.begin(), allocation->hosts.end(), to_add) == allocation->hosts.end())
+        //{
+        //    allocation->hosts.push_back(to_add);
+        //}
     }
-
-    xbt_assert(allocation->hosts.size() == allocation->machine_ids.size(),
-               "Invalid number of hosts (expected %d, got %d)",
-               allocation->machine_ids.size(), allocation->hosts.size());
 
     ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
     exec_args->context = data->context;

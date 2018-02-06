@@ -161,20 +161,38 @@ public:
     const Job * job_at(const JobIdentifier & job_id) const;
 
     /**
-     * @brief Checks whether a job exist
+     * @brief Checks whether a job is registered in the given workload
      * @param[in] workload_name The name of the workload in which the job should be
      * @param[in] job_number The job number
-     * @return True if the given job exists, false otherwise
+     * @return True if the given job is registered in the given workload, false otherwise
      */
-    bool job_exists(const std::string & workload_name,
+    bool job_is_registered(const std::string & workload_name,
                     const int job_number);
 
     /**
-     * @brief Checks whether a job exist
+     * @brief Checks whether a job is registered in the associated workload
      * @param[in] job_id The JobIdentifier
-     * @return True if the given job exists, false otherwise
+     * @return True if the given is registered in the associated workload, false otherwise
      */
-    bool job_exists(const JobIdentifier & job_id);
+    bool job_is_registered(const JobIdentifier & job_id);
+
+    /**
+     * @brief Checks whether a job profile is registered in the given workload
+     * @param[in] workload_name The name of the workload in which the job should be
+     * @param[in] job_number The job number
+     * @return True if the given job is registered in the given workload, false otherwise
+     */
+    bool job_profile_is_registered(const std::string & workload_name,
+                    const int job_number);
+
+    /**
+     * @brief Checks whether a job profile is registered in the workload it
+     * is attached to
+     * @param[in] job_id The JobIdentifier
+     * @return True if the given is registered in the associated workload, false otherwise
+     */
+    bool job_profile_is_registered(const JobIdentifier & job_id);
+
 
     /**
      * @brief Inserts a new Workload into a Workloads

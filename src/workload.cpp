@@ -226,7 +226,6 @@ void Workloads::insert_workload(const std::string &workload_name, Workload *work
 
 bool Workloads::exists(const std::string &workload_name) const
 {
-
     return _workloads.count(workload_name) == 1;
 }
 
@@ -253,30 +252,25 @@ void Workloads::register_smpi_applications()
     }
 }
 
-bool Workloads::job_exists(const std::string &workload_name, const int job_number)
+bool Workloads::job_is_registered(const std::string &workload_name, const int job_number)
 {
-    if (!exists(workload_name))
-    {
-        return false;
-    }
-
-    if (!at(workload_name)->jobs->exists(job_number))
-    {
-        return false;
-    }
-
-    const Job * job = at(workload_name)->jobs->at(job_number);
-    if (!at(workload_name)->profiles->exists(job->profile))
-    {
-        return false;
-    }
-
-    return true;
+    return at(workload_name)->jobs->exists(job_number);
 }
 
-bool Workloads::job_exists(const JobIdentifier &job_id)
+bool Workloads::job_profile_is_registered(const std::string &workload_name, const int job_number)
 {
-    return job_exists(job_id.workload_name, job_id.job_number);
+    const Job * job = at(workload_name)->jobs->at(job_number);
+    return at(workload_name)->profiles->exists(job->profile);
+}
+
+bool Workloads::job_is_registered(const JobIdentifier &job_id)
+{
+    return job_is_registered(job_id.workload_name, job_id.job_number);
+}
+
+bool Workloads::job_profile_is_registered(const JobIdentifier &job_id)
+{
+    return job_profile_is_registered(job_id.workload_name, job_id.job_number);
 }
 
 std::map<std::string, Workload *> &Workloads::workloads()
