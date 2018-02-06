@@ -1,0 +1,114 @@
+base_output_directory: /tmp/batsim_tests/fewer_resources
+
+base_variables:
+  batsim_dir: ${base_working_directory}
+  agg_dir: ${base_output_directory}/aggregated
+
+implicit_instances:
+  implicit:
+    sweep:
+      platform :
+        - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
+      workload :
+        - {"name":"one_job_tot", "filename":"${batsim_dir}/workload_profiles/one_computation_job_tot.json"}
+      algo:
+        - {"name":"filler", "algo_name":"filler"}
+      resource_fraction: [0.25, 0.5, 0.75, 1.0]
+    generic_instance:
+      timeout: 10
+      working_directory: ${base_working_directory}
+      output_directory: ${base_output_directory}/results/${instance_id}
+      batsim_command: ${BATSIM_BIN:=batsim} -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/${instance_id} --mmax-workload --redis-prefix ${instance_id}
+      sched_command: ${BATSCHED_BIN:=batsched} -v ${algo[algo_name]} --variant_options_filepath ${output_directory}/sched_input.json
+      commands_before_execution:
+        # Generate sched options
+        - |
+            #!/usr/bin/env bash
+            # Since bash associative arrays are not exported, the variables.bash
+            # is sourced here.
+            source ${output_directory}/variables.bash
+
+            # Let's generate an input file for the scheduler
+            cat > ${output_directory}/sched_input.json << EOF
+            {
+              "fraction_of_machines_to_use": ${resource_fraction}
+            }
+            EOF
+
+commands_before_instances:
+  - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
+  - ${batsim_dir}/test/clean_output_dir.py ${base_output_directory}
+  - rm -rf ${agg_dir}
+  - mkdir -p ${agg_dir}
+
+commands_after_instances:
+  # Let's merge the sched output csv files so they include who they are!
+  - |
+      #!/usr/bin/env bash
+      cat > ${agg_dir}/analysis.py <<EOF
+      #!/usr/bin/env python3
+      import glob
+      import re
+      import shutil
+      import os
+      import pandas as pd
+      import subprocess
+
+      ########################################
+      # Let's merge the schedules' overviews #
+      ########################################
+
+      instances_info_df = pd.read_csv('${base_output_directory}/instances/instances_info.csv')
+
+      filenames = glob.glob('${base_output_directory}/results/*/*_schedule.csv')
+      df_list = []
+      for filename in filenames:
+          m = re.search('${base_output_directory}/results/.*/(.*)_schedule\.csv', filename)
+          instance_id = m.group(1)
+
+          schedule_df = pd.read_csv(filename)
+          schedule_df['instance_id'] = instance_id
+
+          df_list.append(schedule_df)
+
+      aggregated_df = pd.concat(df_list, ignore_index=True)
+      joined_df = pd.merge(aggregated_df, instances_info_df, on='instance_id')
+
+      joined_df.to_csv('${agg_dir}/schedules_aggregated.csv',
+                       index=False, na_rep = 'NA')
+
+      ###################################################
+      # Let's make sure the makespan are those expected #
+      ###################################################
+      joined_df.sort_values(by='resource_fraction', inplace=True)
+      joined_df.reset_index(inplace=True)
+
+      base_makespan = 10
+
+      # Only one machine (resource_fraction == 0.25).
+      # The machine is used 4 times more than usual.
+      print(joined_df)
+      assert(joined_df['resource_fraction'][0] == 0.25), "Wrong resource_fraction (expected {}, got {})".format(0.25, joined_df['resource_fraction'][0])
+      assert(joined_df['makespan'][0] == base_makespan * 4), "Wrong makespan (expected {}, got {})".format(base_makespan*4, joined_df['makespan'][0])
+
+      # Only two machines (resource_fraction == 0.5).
+      # The two machines are used 2 times more than usual.
+      assert(joined_df['resource_fraction'][1] == 0.5), "Wrong resource_fraction (expected {}, got {})".format(0.5, joined_df['resource_fraction'][1])
+      assert(joined_df['makespan'][1] == base_makespan * 2), "Wrong makespan (expected {}, got {})".format(base_makespan*2, joined_df['makespan'][1])
+
+      # Only three machines (resource_fraction == 0.75).
+      # One machine is used 2 times more than usual. The used is used as usual.
+      assert(joined_df['resource_fraction'][2] == 0.75), "Wrong resource_fraction (expected {}, got {})".format(0.75, joined_df['resource_fraction'][2])
+      assert(abs(joined_df['makespan'][2] - (float(base_makespan) * 1.33333)) < 0.001), "Wrong makespan (expected {}, got {})".format(float(base_makespan) * 1.33333, joined_df['makespan'][2])
+
+      # Three machines (resource_fraction == 1).
+      # All machines are used as usual.
+      assert(joined_df['resource_fraction'][3] == 1), "Wrong resource_fraction (expected {}, got {})".format(1, joined_df['resource_fraction'][3])
+      assert(joined_df['makespan'][3] == base_makespan), "Wrong makespan (expected {}, got {})".format(base_makespan, joined_df['makespan'][3])
+
+      print('All the instances have been executed with expected makespan!')
+
+      EOF
+  - chmod +x ${agg_dir}/analysis.py
+  - ${agg_dir}/analysis.py
+
