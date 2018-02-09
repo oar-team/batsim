@@ -34,14 +34,14 @@ struct JobIdentifier
      * @param[in] job_number The job number
      */
     explicit JobIdentifier(const std::string & workload_name = "",
-                           int job_number = -1);
+                           const std::string &job_name = "");
 
     std::string workload_name; //!< The name of the workload the job belongs to
-    int job_number; //!< The job unique number inside its workload
+    std::string job_name; //!< The job unique name inside its workload
 
     /**
      * @brief Returns a string representation of the JobIdentifier.
-     * @details Output format is WORKLOAD_NAME!JOB_NUMBER
+     * @details Output format is WORKLOAD_NAME!JOB_NAME
      * @return A string representation of the JobIdentifier.
      */
     std::string to_string() const;
@@ -142,7 +142,6 @@ struct Job
 
     // Batsim internals
     Workload * workload = nullptr; //!< The workload the job belongs to
-    int number; //!< The job unique number within its workload
     JobIdentifier id; //!< The job unique identifier
     BatTask * task = nullptr; //!< The root task be executed by this job (profile instantiation).
     std::string json_description; //!< The JSON description of the job
@@ -166,7 +165,7 @@ struct Job
     std::string profile; //!< The job profile name. The corresponding profile tells how the job should be computed
     Rational submission_time; //!< The job submission time: The time at which the becomes available
     Rational walltime = -1; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed. Set at -1 to disable this behavior
-    int required_nb_res; //!< The number of resources the job is requested to be executed on
+    int requested_nb_res; //!< The number of resources the job is requested to be executed on
     int return_code = -1; //!< The return code of the job
 
 public:
@@ -329,7 +328,7 @@ public:
     int nb_jobs() const;
 
 private:
-    std::map<int, Job*> _jobs; //!< The std::map which contains the jobs
+    std::map<JobIdentifier, Job*> _jobs; //!< The std::map which contains the jobs
     Profiles * _profiles = nullptr; //!< The profiles associated with the jobs
     Workload * _workload = nullptr; //!< The Workload the jobs belong to
 };

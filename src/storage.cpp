@@ -108,7 +108,7 @@ std::string RedisStorage::key_subparts_separator() const
 
 std::string RedisStorage::job_key(const JobIdentifier &job_id)
 {
-    std::string key = "job_" + job_id.workload_name + '!' + to_string(job_id.job_number);
+    std::string key = "job_" + job_id.workload_name + '!' + to_string(job_id.job_name);
     return key;
 }
 

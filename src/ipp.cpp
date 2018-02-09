@@ -280,16 +280,16 @@ IPMessage::~IPMessage()
     data = nullptr;
 }
 
-JobIdentifier::JobIdentifier(const string &workload_name, int job_number) :
+JobIdentifier::JobIdentifier(const string &workload_name, const string &job_number) :
     workload_name(workload_name),
-    job_number(job_number)
+    job_name(job_number)
 {
 
 }
 
 string JobIdentifier::to_string() const
 {
-    return workload_name + '!' + std::to_string(job_number);
+    return workload_name + '!' + job_name;
 }
 
 bool operator<(const JobIdentifier &ji1, const JobIdentifier &ji2)

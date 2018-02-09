@@ -744,7 +744,7 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
                     job_map["job_id"] = to_string(job->number);
                     job_map["workload_name"] = string(workload_name);
                     job_map["submission_time"] = to_string((double)job->submission_time);
-                    job_map["requested_number_of_processors"] = to_string(job->required_nb_res);
+                    job_map["requested_number_of_processors"] = to_string(job->requested_nb_res);
                     job_map["requested_time"] = to_string((double)job->walltime);
                     job_map["success"] = to_string(success);
                     job_map["starting_time"] = to_string((double)job->starting_time);
@@ -1056,13 +1056,13 @@ void EnergyConsumptionTracer::set_filename(const string &filename)
     _wbuf->append_text("time,energy,event_type,wattmin,epower\n");
 }
 
-void EnergyConsumptionTracer::add_job_start(double date, int job_id)
+void EnergyConsumptionTracer::add_job_start(double date, string job_id)
 {
     (void) job_id;
     add_entry(date, 's');
 }
 
-void EnergyConsumptionTracer::add_job_end(double date, int job_id)
+void EnergyConsumptionTracer::add_job_end(double date, string job_id)
 {
     (void) job_id;
     _context->energy_last_job_completion = add_entry(date, 'e');

@@ -37,19 +37,3 @@ enum NetworkStamp : char
  * @return 0
  */
 int request_reply_scheduler_process(int argc, char *argv[]);
-
-/**
- * @brief Computes the absolute filename of a given file
- * @param[in] filename The name of the file (not necessarily existing).
- * @return The absolute filename corresponding to the given filename
- */
-std::string absolute_filename(const std::string & filename);
-
-/**
- * @brief Retrieves the workload_name and the job_id from a job_identifier
- * @details Job identifiers are in the form [WORKLOAD_NAME!]JOB_ID
- * @param[in] job_identifier_string The input job identifier string
- * @param[out] job_id The output JobIdentifier
- */
-void parse_job_identifier(const std::string & job_identifier_string, JobIdentifier & job_id);
-

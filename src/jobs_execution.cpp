@@ -81,7 +81,7 @@ int execute_task(BatTask * btask,
                     job->workload->profiles->at(data->sequence[profile_index_in_sequence]));
                 btask->sub_tasks.push_back(sub_btask);
 
-                string task_name = "seq" + to_string(job->number) + "'" + job->profile + "'";
+                string task_name = "seq" + job->id.to_string() + "'" + job->profile + "'";
                 XBT_INFO("Creating sequential tasks '%s'", task_name.c_str());
 
                 int ret_last_profile = execute_task(sub_btask, context,  allocation,
@@ -182,7 +182,7 @@ int execute_task(BatTask * btask,
                     job->workload->profiles->at(profile_to_execute));
             btask->sub_tasks.push_back(sub_btask);
 
-            string task_name = "recv" + to_string(job->number) + "'" + job->profile + "'";
+            string task_name = "recv" + job->id.to_string() + "'" + job->profile + "'";
             XBT_INFO("Creating receive task '%s'", task_name.c_str());
 
             int ret_last_profile = execute_task(sub_btask, context, allocation,
@@ -224,7 +224,7 @@ int execute_task(BatTask * btask,
             for (int i = 0; i < nb_ranks; ++i)
             {
                 job->smpi_ranks_to_hosts_mapping[i] = host_to_use;
-                ++host_to_use %= job->required_nb_res; // ++ is done first
+                ++host_to_use %= job->requested_nb_res; // ++ is done first
             }
         }
 
@@ -236,7 +236,7 @@ int execute_task(BatTask * btask,
         for (int i = 0; i < nb_ranks; ++i)
         {
             char *str_instance_id = NULL;
-            int ret = asprintf(&str_instance_id, "%s!%d", job->workload->name.c_str(), job->number);
+            int ret = asprintf(&str_instance_id, "%s", job->id.to_string().c_str());
             (void) ret; // Avoids a warning if assertions are ignored
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
@@ -245,7 +245,7 @@ int execute_task(BatTask * btask,
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
             char *str_pname = NULL;
-            ret = asprintf(&str_pname, "%d_%d", job->number, i);
+            ret = asprintf(&str_pname, "%s_%d", job->id.to_string().c_str(), i);
             xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
             char **argv = xbt_new(char*, 5);
@@ -359,7 +359,7 @@ int execute_job_process(int argc, char *argv[])
     ExecuteJobProcessArguments * args = (ExecuteJobProcessArguments *) MSG_process_get_data(MSG_process_self());
 
     Workload * workload = args->context->workloads.at(args->allocation->job_id.workload_name);
-    Job * job = workload->jobs->at(args->allocation->job_id.job_number);
+    Job * job = workload->jobs->at(args->allocation->job_id.job_name);
     job->starting_time = MSG_get_clock();
     job->allocation = args->allocation->machine_ids;
     double remaining_time = (double)job->walltime;
@@ -369,7 +369,7 @@ int execute_job_process(int argc, char *argv[])
     {
         job->consumed_energy = consumed_energy_on_machines(args->context, job->allocation);
         // Let's trace the consumed energy
-        args->context->energy_tracer.add_job_start(MSG_get_clock(), job->number);
+        args->context->energy_tracer.add_job_start(MSG_get_clock(), job->id);
     }
 
     // Job computation

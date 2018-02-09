@@ -205,8 +205,8 @@ void server_on_job_completed(ServerData * data,
     xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
     Job * job = data->context->workloads.job_at(message->job_id);
 
-    XBT_INFO("Job %s!%d COMPLETED. %d jobs completed so far",
-             job->workload->name.c_str(), job->number, data->nb_completed_jobs);
+    XBT_INFO("Job  COMPLETED. %d jobs completed so far",
+             job->id.to_string().c_str(), data->nb_completed_jobs);
 
     string status = "UNKNOWN";
     if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
@@ -257,7 +257,7 @@ void server_on_job_submitted(ServerData * data,
     }
 
     // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
-    XBT_INFO("GOT JOB: %s %d\n", message->job_id.workload_name.c_str(), message->job_id.job_number);
+    XBT_INFO("GOT JOB: %s %d\n", message->job_id.workload_name.c_str(), message->job_id.job_name);
     xbt_assert(data->context->workloads.job_is_registered(message->job_id));
     Job * job = data->context->workloads.job_at(message->job_id);
     job->id = message->job_id;
@@ -633,9 +633,9 @@ void server_on_change_job_state(ServerData * data,
 
     Job * job = data->context->workloads.job_at(message->job_id);
 
-    XBT_INFO("Change job state: Job %d (workload=%s) to state %s (kill_Reason=%s)",
-             job->number, job->workload->name.c_str(),
-             message->job_state.c_str(), message->kill_reason.c_str());
+    XBT_INFO("Change job state: Job %s to state %s",
+             job->id.to_string().c_str(),
+             message->job_state.c_str());
 
     JobState new_state = job_state_from_string(message->job_state);
 
@@ -688,9 +688,6 @@ void server_on_change_job_state(ServerData * data,
     job->state = new_state;
     job->kill_reason = message->kill_reason;
 
-    XBT_INFO("Job state changed: Job %d (workload=%s)",
-             job->number, job->workload->name.c_str());
-
     check_submitted_and_completed(data);
 }
 
@@ -702,8 +699,8 @@ void server_on_to_job_msg(ServerData * data,
 
     Job * job = data->context->workloads.job_at(message->job_id);
 
-    XBT_INFO("Send message to job: Job %d (workload=%s) message=%s",
-             job->number, job->workload->name.c_str(),
+    XBT_INFO("Send message to job: Job %s message=%s",
+             job->id.to_string().c_str(),
              message->message.c_str());
 
     job->incoming_message_buffer.push_back(message->message);
@@ -719,8 +716,8 @@ void server_on_from_job_msg(ServerData * data,
 
     Job * job = data->context->workloads.job_at(message->job_id);
 
-    XBT_INFO("Send message to scheduler: Job %d (workload=%s)",
-             job->number, job->workload->name.c_str());
+    XBT_INFO("Send message to scheduler: Job %s",
+             job->id.to_string().c_str());
 
     data->context->proto_writer->append_from_job_message(message->job_id.to_string(),
                                                          message->message,
@@ -739,8 +736,8 @@ void server_on_reject_job(ServerData * data,
     job->state = JobState::JOB_STATE_REJECTED;
     data->nb_completed_jobs++;
 
-    XBT_INFO("Job %d (workload=%s) has been rejected",
-             job->number, job->workload->name.c_str());
+    XBT_INFO("Job %s has been rejected",
+             job->id.to_string().c_str());
 
     check_submitted_and_completed(data);
 }
@@ -860,11 +857,11 @@ void server_on_execute_job(ServerData * data,
     // manage correctly a different number of resources than the requested
     // number
     if (job->workload->profiles->at(job->profile)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT) {
-        xbt_assert((int)allocation->mapping.size() == job->required_nb_res,
+        xbt_assert((int)allocation->mapping.size() == job->requested_nb_res,
                  "Invalid job %s allocation. The job requires %d machines but only %d were given (%s). "
                  "Using a different number of machines is only allowed if a custom mapping is specified. "
                  "This mapping must specify which allocated machine each executor should use.",
-                 job->id.to_string().c_str(), job->required_nb_res, (int)allocation->mapping.size(),
+                 job->id.to_string().c_str(), job->requested_nb_res, (int)allocation->mapping.size(),
                  allocation->machine_ids.to_string_hyphen().c_str());
     }
 

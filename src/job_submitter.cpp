@@ -89,8 +89,6 @@ int static_job_submitter_process(int argc, char *argv[])
 
     sort(jobsVector.begin(), jobsVector.end(), job_comparator_subtime_number);
 
-    XBT_INFO("taille vecteur : %d", (int) jobsVector.size() );
-
     if (jobsVector.size() > 0)
     {
         const Job * first_submitted_job = *jobsVector.begin();
@@ -105,10 +103,8 @@ int static_job_submitter_process(int argc, char *argv[])
             //job->completion_notification_mailbox = "SOME_MAILBOX";
 
             // Let's put the metadata about the job into the data storage
-            JobIdentifier job_id(workload->name, job->number);
-            string job_key = RedisStorage::job_key(job_id);
+            string job_key = RedisStorage::job_key(job->id);
             string profile_key = RedisStorage::profile_key(workload->name, job->profile);
-            XBT_INFO("IN STATIC JOB SUBMITTER: '%s'", job->json_description.c_str());
 
             if (context->redis_enabled)
             {
@@ -123,7 +119,7 @@ int static_job_submitter_process(int argc, char *argv[])
             JobSubmittedMessage * msg = new JobSubmittedMessage;
             msg->submitter_name = submitter_name;
             msg->job_id.workload_name = args->workload_name;
-            msg->job_id.job_number = job->number;
+            msg->job_id.job_name = job->id.to_string();
 
             send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
             previous_submission_date = MSG_get_clock();
@@ -330,7 +326,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     JobSubmittedMessage * msg = new JobSubmittedMessage;
     msg->submitter_name = submitter_name;
     msg->job_id.workload_name = workload_name;
-    msg->job_id.job_number = job_number;
+    msg->job_id.job_name = job_number;
     send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
 
     // HOWTO Test Wait Query
@@ -368,7 +364,7 @@ static string wait_for_job_completion(string submitter_name)
         (SubmitterJobCompletionCallbackMessage *) task_notification_data->data;
 
     return  notification_data->job_id.workload_name + "!" +
-            std::to_string(notification_data->job_id.job_number);
+            std::to_string(notification_data->job_id.job_name);
 }
 
 /**
@@ -404,14 +400,12 @@ int batexec_job_launcher_process(int argc, char *argv[])
     for (auto & mit : jobs)
     {
         Job * job = mit.second;
-        job->id = JobIdentifier(workload->name, job->number);
 
-        int nb_res = job->required_nb_res;
+        int nb_res = job->requested_nb_res;
 
         SchedulingAllocation * alloc = new SchedulingAllocation;
 
-        alloc->job_id.workload_name = args->workload_name;
-        alloc->job_id.job_number = job->number;
+        alloc->job_id = job->id;
         alloc->hosts.clear();
         alloc->hosts.reserve(nb_res);
         alloc->machine_ids.clear();
