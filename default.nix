@@ -6,5 +6,5 @@ with import (
 batsim_dev.overrideAttrs (attrs: rec {
   version = "dev_local";
   src = ./.;
-  buildInputs = attrs.nativeBuildInputs ++ [evalysEnv];
+  buildInputs = attrs.nativeBuildInputs;
 })
