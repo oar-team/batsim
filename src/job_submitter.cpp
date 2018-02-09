@@ -46,8 +46,6 @@ int static_job_submitter_process(int argc, char *argv[])
 
     Workload * workload = context->workloads.at(args->workload_name);
 
-    XBT_INFO("Nom : %s", (args->workload_name).c_str() );
-
     string submitter_name = args->workload_name + "_submitter";
 
     /*  ░░░░░░░░▄▄▄███░░░░░░░░░░░░░░░░░░░░
@@ -89,8 +87,6 @@ int static_job_submitter_process(int argc, char *argv[])
 
     sort(jobsVector.begin(), jobsVector.end(), job_comparator_subtime_number);
 
-    XBT_INFO("taille vecteur : %d", (int) jobsVector.size() );
-
     if (jobsVector.size() > 0)
     {
         const Job * first_submitted_job = *jobsVector.begin();
@@ -105,10 +101,8 @@ int static_job_submitter_process(int argc, char *argv[])
             //job->completion_notification_mailbox = "SOME_MAILBOX";
 
             // Let's put the metadata about the job into the data storage
-            JobIdentifier job_id(workload->name, job->number);
-            string job_key = RedisStorage::job_key(job_id);
+            string job_key = RedisStorage::job_key(job->id);
             string profile_key = RedisStorage::profile_key(workload->name, job->profile);
-            XBT_INFO("IN STATIC JOB SUBMITTER: '%s'", job->json_description.c_str());
 
             if (context->redis_enabled)
             {
@@ -122,8 +116,7 @@ int static_job_submitter_process(int argc, char *argv[])
             // Let's now continue the simulation
             JobSubmittedMessage * msg = new JobSubmittedMessage;
             msg->submitter_name = submitter_name;
-            msg->job_id.workload_name = args->workload_name;
-            msg->job_id.job_number = job->number;
+            msg->job_id = JobIdentifier(job->id);
 
             send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
             previous_submission_date = MSG_get_clock();
@@ -279,7 +272,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
 
     const string workload_name = workflow_name;
 
-    int job_number = task_id_counters[workflow_name];
+    string job_number = to_string(task_id_counters[workflow_name]);
     task_id_counters[workflow_name]++;
 
 
@@ -299,7 +292,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     // Create JSON description of Job corresponding to Task
     double walltime = task->execution_time + 10.0;
     string job_json_description = std::string() + "{" +
-            "\"id\": \"" + workload_name + "!" + std::to_string(job_number) +  "\", " +
+            "\"id\": \"" + workload_name + "!" + job_number +  "\", " +
             "\"subtime\":" + std::to_string(MSG_get_clock()) + ", " +
             "\"walltime\":" + std::to_string(walltime) + ", " +
             "\"res\":" + std::to_string(task->num_procs) + ", " +
@@ -311,11 +304,10 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
                                "Invalid workflow-injected JSON job");
     context->workloads.at(workload_name)->jobs->add_job(job);
 
+    // Put the metadata about the job into the data storage
+    JobIdentifier job_id(workload_name, job_number);
     if (context->redis_enabled)
     {
-        // Put the metadata about the job into the data storage
-        JobIdentifier job_id(workload_name, job_number);
-
         string job_key = RedisStorage::job_key(job_id);
         context->storage.set(job_key, job_json_description);
 
@@ -329,8 +321,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     // Submit the job
     JobSubmittedMessage * msg = new JobSubmittedMessage;
     msg->submitter_name = submitter_name;
-    msg->job_id.workload_name = workload_name;
-    msg->job_id.job_number = job_number;
+    msg->job_id = job_id;
     send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
 
     // HOWTO Test Wait Query
@@ -346,11 +337,8 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     // XBT_INFO("Got my answer : %f", std::get<2>(answer));
     (void)wait_for_query_answer; // Horrible hack to silence "unused" warning.
 
-    // Create an ID to return
-    string id_to_return = workload_name + "!" + std::to_string(job_number);
-
     // Return a key
-    return id_to_return;
+    return job_id.to_string();
 }
 
 /**
@@ -367,8 +355,7 @@ static string wait_for_job_completion(string submitter_name)
     SubmitterJobCompletionCallbackMessage *notification_data =
         (SubmitterJobCompletionCallbackMessage *) task_notification_data->data;
 
-    return  notification_data->job_id.workload_name + "!" +
-            std::to_string(notification_data->job_id.job_number);
+    return  notification_data->job_id.to_string();
 }
 
 /**
@@ -404,14 +391,12 @@ int batexec_job_launcher_process(int argc, char *argv[])
     for (auto & mit : jobs)
     {
         Job * job = mit.second;
-        job->id = JobIdentifier(workload->name, job->number);
 
-        int nb_res = job->required_nb_res;
+        int nb_res = job->requested_nb_res;
 
         SchedulingAllocation * alloc = new SchedulingAllocation;
 
-        alloc->job_id.workload_name = args->workload_name;
-        alloc->job_id.job_number = job->number;
+        alloc->job_id = job->id;
         alloc->hosts.clear();
         alloc->hosts.reserve(nb_res);
         alloc->machine_ids.clear();

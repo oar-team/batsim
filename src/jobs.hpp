@@ -29,19 +29,30 @@ struct Job;
 struct JobIdentifier
 {
     /**
+     * @brief Creates an empty JobIdentifier
+     */
+    JobIdentifier() {};
+
+    /**
      * @brief Creates a JobIdentifier
      * @param[in] workload_name The workload name
-     * @param[in] job_number The job number
+     * @param[in] job_name The job name
      */
-    explicit JobIdentifier(const std::string & workload_name = "",
-                           int job_number = -1);
+    explicit JobIdentifier(const std::string & workload_name,
+                           const std::string &job_name);
+
+    /**
+     * @brief Creates a JobIdentifier from a string to parse
+     * @param[in] job_id_str The string to parse
+     */
+    explicit JobIdentifier(const std::string &job_id_str);
 
     std::string workload_name; //!< The name of the workload the job belongs to
-    int job_number; //!< The job unique number inside its workload
+    std::string job_name; //!< The job unique name inside its workload
 
     /**
      * @brief Returns a string representation of the JobIdentifier.
-     * @details Output format is WORKLOAD_NAME!JOB_NUMBER
+     * @details Output format is WORKLOAD_NAME!JOB_NAME
      * @return A string representation of the JobIdentifier.
      */
     std::string to_string() const;
@@ -142,7 +153,6 @@ struct Job
 
     // Batsim internals
     Workload * workload = nullptr; //!< The workload the job belongs to
-    int number; //!< The job unique number within its workload
     JobIdentifier id; //!< The job unique identifier
     BatTask * task = nullptr; //!< The root task be executed by this job (profile instantiation).
     std::string json_description; //!< The JSON description of the job
@@ -166,7 +176,7 @@ struct Job
     std::string profile; //!< The job profile name. The corresponding profile tells how the job should be computed
     Rational submission_time; //!< The job submission time: The time at which the becomes available
     Rational walltime = -1; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed. Set at -1 to disable this behavior
-    int required_nb_res; //!< The number of resources the job is requested to be executed on
+    int requested_nb_res; //!< The number of resources the job is requested to be executed on
     int return_code = -1; //!< The return code of the job
 
 public:
@@ -206,6 +216,13 @@ public:
     bool is_complete() const;
 };
 
+/**
+ * @brief Compares two Job thanks to their string representations
+ * @param[in] j1 The first Job
+ * @param[in] j2 The second Job
+ * @return j1.id < j2.id
+ */
+bool operator<(const Job & j1, const Job & j2);
 
 /**
  * @brief Compares job thanks to their submission times
@@ -258,46 +275,47 @@ public:
     void load_from_json(const rapidjson::Document & doc, const std::string & filename);
 
     /**
-     * @brief Accesses one job thanks to its unique number
-     * @param[in] job_number The job unique number
-     * @return A pointer to the job associated to the given job number
+     * @brief Accesses one job thanks to its identifier
+     * @param[in] job_id The job id
+     * @return A pointer to the job associated to the given job id
      */
-    Job * operator[](int job_number);
+    Job * operator[](JobIdentifier job_id);
 
     /**
-     * @brief Accesses one job thanks to its unique number (const version)
-     * @param[in] job_number The job unique number
-     * @return A (const) pointer to the job associated to the given job number
+     * @brief Accesses one job thanks to its unique name (const version)
+     * @param[in] job_id The job id
+     * @return A (const) pointer to the job associated to the given job id
      */
-    const Job * operator[](int job_number) const;
+    const Job * operator[](JobIdentifier job_id) const;
 
     /**
-     * @brief Accesses one job thanks to its unique number
-     * @param[in] job_number The job unique number
-     * @return A pointer to the job associated to the given job number
+     * @brief Accesses one job thanks to its unique id
+     * @param[in] job_id The job unique id
+     * @return A pointer to the job associated to the given job id
      */
-    Job * at(int job_number);
+    Job * at(JobIdentifier job_id);
 
     /**
-     * @brief Accesses one job thanks to its unique number (const version)
-     * @param[in] job_number The job unique number
-     * @return A (const) pointer to the job associated to the given job number
+     * @brief Accesses one job thanks to its unique id (const version)
+     * @param[in] job_id The job unique name
+     * @return A (const) pointer to the job associated to the given job
+     * name
      */
-    const Job * at(int job_number) const;
+    const Job * at(JobIdentifier job_id) const;
 
     /**
      * @brief Adds a job into a Jobs instance
      * @param[in] job The job to add
-     * @pre No job with the same number exist in the Jobs instance
+     * @pre No job with the same name exist in the Jobs instance
      */
     void add_job(Job * job);
 
     /**
      * @brief Allows to know whether a job exists
-     * @param[in] job_number The unique job number
-     * @return True if and only if a job with the given job number exists
+     * @param[in] job_id The unique job name
+     * @return True if and only if a job with the given job name exists
      */
-    bool exists(int job_number) const;
+    bool exists(JobIdentifier job_id) const;
 
     /**
      * @brief Allows to know whether the Jobs contains any SMPI job
@@ -314,13 +332,13 @@ public:
      * @brief Returns a copy of the std::map which contains the jobs
      * @return A copy of the std::map which contains the jobs
      */
-    const std::map<int, Job*> & jobs() const;
+    const std::map<JobIdentifier, Job*> & jobs() const;
 
     /**
      * @brief Returns a reference to the std::map which contains the jobs
      * @return A reference to the std::map which contains the jobs
      */
-    std::map<int, Job*> & jobs();
+    std::map<JobIdentifier, Job*> & jobs();
 
     /**
      * @brief Returns the number of jobs of the Jobs instance
@@ -329,7 +347,7 @@ public:
     int nb_jobs() const;
 
 private:
-    std::map<int, Job*> _jobs; //!< The std::map which contains the jobs
+    std::map<JobIdentifier, Job*> _jobs; //!< The std::map which contains the jobs
     Profiles * _profiles = nullptr; //!< The profiles associated with the jobs
     Workload * _workload = nullptr; //!< The Workload the jobs belong to
 };

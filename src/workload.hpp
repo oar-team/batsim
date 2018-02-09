@@ -29,6 +29,12 @@ public:
                       const std::string & workload_file);
 
     /**
+     * @brief Builds an empty dynamic Workload
+     * @param[in] workload_name The workload name
+     */
+    explicit Workload(const std::string & workload_name) : Workload(workload_name, DYNAMIC_WORKLOAD) {};
+
+    /**
      * @brief Workloads cannot be copied.
      * @param[in] other Another instance
      */
@@ -57,11 +63,17 @@ public:
      */
     void check_validity();
 
+    /**
+     * @brief display workload name
+     */
+    std::string to_string();
+
 public:
     std::string name; //!< The Workload name
     std::string file = ""; //!< The Workload file if it exists
     Jobs * jobs = nullptr; //!< The Jobs of the Workload
     Profiles * profiles = nullptr; //!< The Profiles associated to the Jobs of the Workload
+    std::string DYNAMIC_WORKLOAD = "DYNAMIC"; //!< The default workload id for dynamic workloads
 };
 
 
@@ -125,25 +137,6 @@ public:
      */
     int nb_workloads() const;
 
-
-    /**
-     * @brief Allows to get a job from the Workloads
-     * @param[in] workload_name The name of the workload the job is in
-     * @param[in] job_number The job number within its workload
-     * @return The job which has been asked
-     * @pre The requested job exists
-     */
-    Job * job_at(const std::string & workload_name, int job_number);
-
-    /**
-     * @brief Allows to get a job from the Workloads (const version)
-     * @param[in] workload_name The name of the workload the job is in
-     * @param[in] job_number The job number within its workload
-     * @return The (const) job which has been asked
-     * @pre The requested job exists
-     */
-    const Job * job_at(const std::string & workload_name, int job_number) const;
-
     /**
      * @brief Allows to get a job from the Workloads
      * @param[in] job_id The JobIdentifier
@@ -161,29 +154,11 @@ public:
     const Job * job_at(const JobIdentifier & job_id) const;
 
     /**
-     * @brief Checks whether a job is registered in the given workload
-     * @param[in] workload_name The name of the workload in which the job should be
-     * @param[in] job_number The job number
-     * @return True if the given job is registered in the given workload, false otherwise
-     */
-    bool job_is_registered(const std::string & workload_name,
-                    const int job_number);
-
-    /**
      * @brief Checks whether a job is registered in the associated workload
      * @param[in] job_id The JobIdentifier
      * @return True if the given is registered in the associated workload, false otherwise
      */
     bool job_is_registered(const JobIdentifier & job_id);
-
-    /**
-     * @brief Checks whether a job profile is registered in the given workload
-     * @param[in] workload_name The name of the workload in which the job should be
-     * @param[in] job_number The job number
-     * @return True if the given job is registered in the given workload, false otherwise
-     */
-    bool job_profile_is_registered(const std::string & workload_name,
-                    const int job_number);
 
     /**
      * @brief Checks whether a job profile is registered in the workload it
@@ -232,6 +207,11 @@ public:
      * @return The internal map (const version)
      */
     const std::map<std::string, Workload*> & workloads() const;
+
+    /**
+     * @brief display workload name
+     */
+    std::string to_string();
 
 private:
     std::map<std::string, Workload*> _workloads; //!< Associates Workloads with their names

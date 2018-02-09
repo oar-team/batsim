@@ -344,6 +344,9 @@ If redis is enabled (``{"redis": {"enabled": true}}``),
 ``job_id`` is the only forwarded field.
 Otherwise (if redis is disabled), a JSON description of the job is forwarded
 in the ``job`` field.
+
+**Note:** The workload name MUST NOT be present in the job description id field.
+
 A JSON description of the job profile is sent if and only if
 profiles forwarding is enabled
 (``{"job_submission": {"forward_profiles": true}}``).
@@ -709,6 +712,20 @@ Batsim acknowledges it by sending one
 ```
 
 ### SET_JOB_METADATA
+
+ This message is a convenient way to to attach metadata to a job during
+ simulation runtime that will appear in the final result file.  A column
+ named ``metadata`` will be present in th output file ``PREFIX_job.csv``
+ with the string provided by the scheduler, or an empty string if not set.
+
+ **Note**: If you need to add **static** metadata to a job you can simply
+ add one or more fields in the job profile.
+
+ **Warning**: This not a way to delegate to batsim the storage of metadata.
+ That should be done though Redis, (when you have to share information
+ between different process for example), or using the scheduler's internal
+ data structures.
+
 - **data**: a job id and its metadata
 - **example**:
 ```json

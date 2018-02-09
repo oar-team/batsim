@@ -16,6 +16,7 @@
 #include <simgrid/msg.h>
 
 #include "machines.hpp"
+#include "jobs.hpp"
 
 struct BatsimContext;
 struct Job;
@@ -261,6 +262,7 @@ private:
     std::vector<std::string> _colors; //!< Strings associated with colors, used for the jobs
 
     PajeTracerState state = UNINITIALIZED; //!< The state of the PajeTracer
+    int nb_total_jobs = 0;      //!< The total number of jobs added to Paje
 };
 
 
@@ -356,14 +358,14 @@ public:
      * @param[in] date The date at which the job has been started
      * @param[in] job_id The job unique number
      */
-    void add_job_start(double date, int job_id);
+    void add_job_start(double date, JobIdentifier job_id);
 
     /**
      * @brief Adds a job end in the tracer
      * @param[in] date The date at which the job has ended
      * @param[in] job_id The job unique number
      */
-    void add_job_end(double date, int job_id);
+    void add_job_end(double date, JobIdentifier job_id);
 
     /**
      * @brief Adds a power state change in the tracer
