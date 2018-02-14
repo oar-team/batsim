@@ -330,7 +330,16 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
     {
         job_id_str = to_string(json_desc["id"].GetInt());
     }
-    j->id = JobIdentifier(workload->name, job_id_str);
+
+    if (job_id_str.find(workload->name) == std::string::npos)
+    {
+        // the workload name is not present in the job id string
+        j->id = JobIdentifier(workload->name, job_id_str);
+    }
+    else
+    {
+        j->id = JobIdentifier(job_id_str);
+    }
 
     // Get submission time
     xbt_assert(json_desc.HasMember("subtime"), "%s: job %s has no 'subtime' field",
