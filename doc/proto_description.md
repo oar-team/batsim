@@ -345,8 +345,6 @@ If redis is enabled (``{"redis": {"enabled": true}}``),
 Otherwise (if redis is disabled), a JSON description of the job is forwarded
 in the ``job`` field.
 
-**Note:** The workload name MUST NOT be present in the job description id field.
-
 A JSON description of the job profile is sent if and only if
 profiles forwarding is enabled
 (``{"job_submission": {"forward_profiles": true}}``).
@@ -362,7 +360,7 @@ profiles forwarding is enabled
     "job": {
       "profile": "delay_10s",
       "res": 1,
-      "id": "my_new_job",
+      "id": "dyn!my_new_job",
       "walltime": 12.0
     }
   }
@@ -378,7 +376,7 @@ profiles forwarding is enabled
     "job": {
       "profile": "delay_10s",
       "res": 1,
-      "id": "my_new_job",
+      "id": "dyn!my_new_job",
       "walltime": 12.0
     },
     "profile":{
@@ -630,6 +628,11 @@ The submission is acknowledged by default, but acknowledgements can be disabled
 in the configuration
 (``{"job_submission": {"from_scheduler": {"acknowledge": false}}}``).
 
+**Note:** The workload name SHOULD be present in the job description id field
+with the notation WORKLOAD!JOB_NAME. If it is not present it will be added
+to the job description provided in the acknowledgment message
+[JOB_SUBMITTED](#job_submitted)
+
 - **data**: A job id (job id duplication is forbidden), classical job and
   profile information (optional).
 
@@ -655,7 +658,7 @@ in the configuration
     "job":{
       "profile": "delay_10s",
       "res": 1,
-      "id": "my_new_job",
+      "id": "dyn!my_new_job",
       "walltime": 12.0
     },
     "profile":{
