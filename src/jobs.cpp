@@ -94,7 +94,7 @@ void JobIdentifier::check_lexically_valid() const
 
 bool operator<(const JobIdentifier &ji1, const JobIdentifier &ji2)
 {
-    return ji1.job_name < ji2.job_name;
+    return ji1.to_string() < ji2.to_string();
 }
 
 
