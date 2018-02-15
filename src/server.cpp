@@ -490,7 +490,7 @@ void server_on_killing_done(ServerData * data,
 
             really_killed_job_ids_str.push_back(job_id.to_string());
 
-            // also add a job complete message for the jobs that heve really been
+            // also add a job complete message for the jobs that have really been
             // killed
             data->context->proto_writer->append_job_completed(
                 job->id.to_string(),
