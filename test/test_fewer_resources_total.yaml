@@ -1,4 +1,4 @@
-base_output_directory: /tmp/batsim_tests/fewer_resources
+base_output_directory: /tmp/batsim_tests/fewer_resources_total
 
 base_variables:
   batsim_dir: ${base_working_directory}
