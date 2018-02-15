@@ -835,9 +835,10 @@ void server_on_execute_job(ServerData * data,
     // Only the this profile that take a total amount of work is capable to
     // manage correctly a different number of resources than the requested
     // number
-    if (job->workload->profiles->at(job->profile)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT) {
+    if (job->workload->profiles->at(job->profile)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT
+        and job->workload->profiles->at(job->profile)->type != ProfileType::SEQUENCE)  {
         xbt_assert((int)allocation->mapping.size() == job->requested_nb_res,
-                 "Invalid job %s allocation. The job requires %d machines but only %d were given (%s). "
+                 "Job '%s' allocation is invalid. The job requires %d machines but only %d were given (%s). "
                  "Using a different number of machines is only allowed if a custom mapping is specified. "
                  "This mapping must specify which allocated machine each executor should use.",
                  job->id.to_string().c_str(), job->requested_nb_res, (int)allocation->mapping.size(),
