@@ -36,7 +36,7 @@ batsim --help
 You can also install Batsched, the scheduler used for the tests and the
 examples, with the same mechanism:
 ```sh
-nix-env --file ./datamovepkgs --install batsched
+nix-env --file ./datamovepkgs -iA batsched
 ```
 
 ## Run batsim directly with docker (Deprecated)
