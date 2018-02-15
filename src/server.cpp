@@ -205,25 +205,10 @@ void server_on_job_completed(ServerData * data,
     xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
     Job * job = data->context->workloads.job_at(message->job_id);
 
-    XBT_INFO("Job  COMPLETED. %d jobs completed so far",
+    XBT_INFO("Job %s has COMPLETED. %d jobs completed so far",
              job->id.to_string().c_str(), data->nb_completed_jobs);
 
-    string status = "UNKNOWN";
-    if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
-    {
-        status = "SUCCESS";
-    }
-    else if (job->state == JobState::JOB_STATE_COMPLETED_FAILED)
-    {
-        status = "FAILED";
-    }
-    else if (job->state == JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED)
-    {
-        status = "TIMEOUT";
-    }
-
     data->context->proto_writer->append_job_completed(message->job_id.to_string(),
-                                                      status,
                                                       job_state_to_string(job->state),
                                                       job->kill_reason,
                                                       job->allocation.to_string_hyphen(" "),

@@ -403,7 +403,6 @@ or not, depending on whether the job completed without reaching timeout).
 
 - **data**:
   - **job_id**: the job unique identifier
-  - **status**: whether SUCCESS or TIMEOUT (**DEPRECATED**)
   - **job_state**: the job state. Possible values: "NOT_SUBMITTED", "SUBMITTED", "RUNNING", "COMPLETED_SUCCESSFULLY", "COMPLETED_FAILED", "COMPLETED_WALLTIME_REACHED", "COMPLETED_KILLED", "REJECTED"
   - **return_code**: the return code of the job process (equals to 0 by default)
   - **kill_reason**: the kill reason (if any)
@@ -416,7 +415,6 @@ or not, depending on whether the job completed without reaching timeout).
   "type": "JOB_COMPLETED",
   "data": {
     "job_id": "26dceb!4",
-    "status": "SUCCESS",
     "job_state": "COMPLETED_SUCCESSFULLY",
     "return_code": 0,
     "kill_reason": "",
