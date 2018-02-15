@@ -204,8 +204,8 @@ void Jobs::load_from_json(const Document &doc, const string &filename)
 
         Job * j = Job::from_json(job_json_description, _workload, error_prefix);
 
-        xbt_assert(!exists(j->id), "%s: duplication of job id %s",
-                   error_prefix.c_str(), j->id);
+        xbt_assert(!exists(j->id), "%s: duplication of job id '%s'",
+                   error_prefix.c_str(), j->id.to_string().c_str());
         _jobs[j->id] = j;
     }
 }
@@ -213,14 +213,16 @@ void Jobs::load_from_json(const Document &doc, const string &filename)
 Job *Jobs::operator[](JobIdentifier job_id)
 {
     auto it = _jobs.find(job_id);
-    xbt_assert(it != _jobs.end(), "Cannot get job %s: it does not exist", job_id);
+    xbt_assert(it != _jobs.end(), "Cannot get job '%s': it does not exist",
+               job_id.to_string().c_str());
     return it->second;
 }
 
 const Job *Jobs::operator[](JobIdentifier job_id) const
 {
     auto it = _jobs.find(job_id);
-    xbt_assert(it != _jobs.end(), "Cannot get job %s: it does not exist", job_id);
+    xbt_assert(it != _jobs.end(), "Cannot get job '%s': it does not exist",
+               job_id.to_string().c_str());
     return it->second;
 }
 
@@ -237,8 +239,8 @@ const Job *Jobs::at(JobIdentifier job_id) const
 void Jobs::add_job(Job *job)
 {
     xbt_assert(!exists(job->id),
-               "Bad Jobs::add_job call: A job with name=%s already exists.",
-               job->id);
+               "Bad Jobs::add_job call: A job with name='%s' already exists.",
+               job->id.to_string().c_str());
 
     _jobs[job->id] = job;
 }
@@ -371,10 +373,10 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
     }
 
     // Get submission time
-    xbt_assert(json_desc.HasMember("subtime"), "%s: job %s has no 'subtime' field",
-               error_prefix.c_str(), j->id);
-    xbt_assert(json_desc["subtime"].IsNumber(), "%s: job %s has a non-number 'subtime' field",
-               error_prefix.c_str(), j->id);
+    xbt_assert(json_desc.HasMember("subtime"), "%s: job '%s' has no 'subtime' field",
+               error_prefix.c_str(), j->id.to_string().c_str());
+    xbt_assert(json_desc["subtime"].IsNumber(), "%s: job '%s' has a non-number 'subtime' field",
+               error_prefix.c_str(), j->id.to_string().c_str());
     j->submission_time = json_desc["subtime"].GetDouble();
 
     // Get walltime (optional)
@@ -457,8 +459,8 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
     if (json_desc.HasMember("smpi_ranks_to_hosts_mapping"))
     {
         xbt_assert(json_desc["smpi_ranks_to_hosts_mapping"].IsArray(),
-                "%s: job %s has a non-array 'smpi_ranks_to_hosts_mapping' field",
-                error_prefix.c_str(), j->id);
+                "%s: job '%s' has a non-array 'smpi_ranks_to_hosts_mapping' field",
+                error_prefix.c_str(), j->id.to_string().c_str());
 
         const auto & mapping_array = json_desc["smpi_ranks_to_hosts_mapping"];
         j->smpi_ranks_to_hosts_mapping.resize(mapping_array.Size());
@@ -466,14 +468,15 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
         for (unsigned int i = 0; i < mapping_array.Size(); ++i)
         {
             xbt_assert(mapping_array[i].IsInt(),
-                       "%s: job %s has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
+                       "%s: job '%s' has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
                        "%d does not point to an integral number",
-                       error_prefix.c_str(), j->id, i);
+                       error_prefix.c_str(), j->id.to_string().c_str(), i);
             int host_number = mapping_array[i].GetInt();
             xbt_assert(host_number >= 0 && host_number < j->requested_nb_res,
-                       "%s: job %s has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
+                       "%s: job '%s' has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
                        "%d has an invalid value %d : should be in [0,%d[",
-                       error_prefix.c_str(), j->id, i, host_number, j->requested_nb_res);
+                       error_prefix.c_str(), j->id.to_string().c_str(),
+                       i, host_number, j->requested_nb_res);
 
             j->smpi_ranks_to_hosts_mapping[i] = host_number;
         }

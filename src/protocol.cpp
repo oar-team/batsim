@@ -705,7 +705,7 @@ void JsonProtocolReader::handle_reject_job(int event_number,
     message->job_id = JobIdentifier(job_id);
     if (!(context->workloads.job_is_registered(message->job_id)))
     {
-        xbt_assert(false, "The folowing job does not exist.", job_id.c_str());
+        xbt_assert(false, "Job '%s' does not exist.", job_id.c_str());
     }
 
     Job * job = context->workloads.job_at(message->job_id);
@@ -753,7 +753,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     message->allocation->job_id = JobIdentifier(job_id);
     if (!(context->workloads.job_is_registered(message->allocation->job_id)))
     {
-        xbt_assert(false, "Invalid message in event %d (EXECUTE_JOB): job %d with job_id:'%s' does not exists", event_number, job_id.c_str());
+        xbt_assert(false, "Invalid message in event %d (EXECUTE_JOB): job with job_id '%s' does not exists", event_number, job_id.c_str());
     }
 
     // *********************
@@ -1030,7 +1030,7 @@ void JsonProtocolReader::handle_change_job_state(int event_number,
     message->job_id = JobIdentifier(job_id);
     if (!(context->workloads.job_is_registered(message->job_id)))
     {
-        xbt_assert(false, "The folowing job does not exist.", job_id.c_str());
+        xbt_assert(false, "The job '%s' does not exist.", job_id.c_str());
     }
 
     message->job_state = job_state;
@@ -1104,7 +1104,7 @@ void JsonProtocolReader::handle_to_job_msg(int event_number,
     message->job_id = JobIdentifier(job_id);
     if (!(context->workloads.job_is_registered(message->job_id)))
     {
-        xbt_assert(false, "The folowing job does not exist.", job_id.c_str());
+        xbt_assert(false, "The job '%s' does not exist.", job_id.c_str());
     }
     message->message = msg;
 
