@@ -28,23 +28,24 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(jobs, "jobs"); //!< Logging
 
-JobIdentifier::JobIdentifier(const string &workload_name, const string &job_name)
+JobIdentifier::JobIdentifier(const string & workload_name,
+                             const string & job_name) :
+    workload_name(workload_name),
+    job_name(job_name)
 {
-    this->workload_name = workload_name;
-    this->job_name = job_name;
     XBT_DEBUG("Parsed workload_name: '%s'", this->workload_name.c_str());
     XBT_DEBUG("Parsed job_name: '%s'", this->job_name.c_str());
     XBT_DEBUG("Parsed job_identifier: '%s'", this->to_string().c_str());
-    xbt_assert(job_name.find(workload_name) == std::string::npos,
-        "Found workload name in the id field of the job description, you "
-        "must only provide the job id and not the workload name");
+
+    check_lexically_valid();
 }
 
-JobIdentifier::JobIdentifier(const string &job_id_str)
+JobIdentifier::JobIdentifier(const string & job_id_str)
 {
-    // Let's split the job_identifier by '!'
+    // Split the job_identifier by '!'
     vector<string> job_identifier_parts;
-    boost::split(job_identifier_parts, job_id_str, boost::is_any_of("!"), boost::token_compress_on);
+    boost::split(job_identifier_parts, job_id_str,
+                 boost::is_any_of("!"), boost::token_compress_on);
 
     xbt_assert(job_identifier_parts.size() == 2,
                "Invalid string job identifier '%s': should be formatted as two '!'-separated "
@@ -56,11 +57,39 @@ JobIdentifier::JobIdentifier(const string &job_id_str)
     this->job_name = job_identifier_parts[1];
     XBT_DEBUG("Parsed job_name: '%s'", this->job_name.c_str());
     XBT_DEBUG("Parsed job_identifier: '%s'", this->to_string().c_str());
+
+    check_lexically_valid();
 }
 
 string JobIdentifier::to_string() const
 {
     return workload_name + '!' + job_name;
+}
+
+bool JobIdentifier::is_lexically_valid(std::string &reason) const
+{
+    bool ret = true;
+    reason.clear();
+
+    if(workload_name.find('!') != std::string::npos)
+    {
+        ret = false;
+        reason += "Invalid workload_name '" + workload_name + "': contains a '!'.";
+    }
+
+    if(job_name.find('!') != std::string::npos)
+    {
+        ret = false;
+        reason += "Invalid job_name '" + job_name + "': contains a '!'.";
+    }
+
+    return ret;
+}
+
+void JobIdentifier::check_lexically_valid() const
+{
+    string reason;
+    xbt_assert(is_lexically_valid(reason), "%s", reason.c_str());
 }
 
 bool operator<(const JobIdentifier &ji1, const JobIdentifier &ji2)
@@ -320,7 +349,7 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
 
     // Get job id and create a JobIdentifier
     xbt_assert(json_desc.HasMember("id"), "%s: one job has no 'id' field", error_prefix.c_str());
-    xbt_assert(json_desc["id"].IsString() or json_desc["id"].IsInt(), "%s: on job id field is invalid, it should be a string or an interger", error_prefix.c_str());
+    xbt_assert(json_desc["id"].IsString() or json_desc["id"].IsInt(), "%s: on job id field is invalid, it should be a string or an integer", error_prefix.c_str());
     string job_id_str;
     if (json_desc["id"].IsString())
     {

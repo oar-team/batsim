@@ -31,7 +31,7 @@ struct JobIdentifier
     /**
      * @brief Creates an empty JobIdentifier
      */
-    JobIdentifier() {};
+    JobIdentifier() = default;
 
     /**
      * @brief Creates a JobIdentifier
@@ -39,16 +39,13 @@ struct JobIdentifier
      * @param[in] job_name The job name
      */
     explicit JobIdentifier(const std::string & workload_name,
-                           const std::string &job_name);
+                           const std::string & job_name);
 
     /**
      * @brief Creates a JobIdentifier from a string to parse
      * @param[in] job_id_str The string to parse
      */
-    explicit JobIdentifier(const std::string &job_id_str);
-
-    std::string workload_name; //!< The name of the workload the job belongs to
-    std::string job_name; //!< The job unique name inside its workload
+    explicit JobIdentifier(const std::string & job_id_str);
 
     /**
      * @brief Returns a string representation of the JobIdentifier.
@@ -56,6 +53,24 @@ struct JobIdentifier
      * @return A string representation of the JobIdentifier.
      */
     std::string to_string() const;
+
+    /**
+     * @brief Returns whether the fields are lexically valid.
+     * @details None of the fields should contain a '!'.
+     * @param[out] reason Empty if valid.
+     *             Otherwise, a string explaining why the identifier is invalid.
+     * @return Whether the fields are lexically valid.
+     */
+    bool is_lexically_valid(std::string & reason) const;
+
+    /**
+     * @brief Checks whether the JobIdentifier fields are lexically valid
+     */
+    void check_lexically_valid() const;
+
+public:
+    std::string workload_name; //!< The name of the workload the job belongs to
+    std::string job_name; //!< The job unique name inside its workload
 };
 
 /**
