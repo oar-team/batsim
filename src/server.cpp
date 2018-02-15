@@ -490,6 +490,15 @@ void server_on_killing_done(ServerData * data,
 
             really_killed_job_ids_str.push_back(job_id.to_string());
 
+            // also add a job complete message for the jobs that heve really been
+            // killed
+            data->context->proto_writer->append_job_completed(
+                job->id.to_string(),
+                job_state_to_string(job->state),
+                job->kill_reason,
+                job->allocation.to_string_hyphen(" "),
+                job->return_code,
+                MSG_get_clock());
         }
     }
 
