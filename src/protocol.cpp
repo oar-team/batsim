@@ -1198,8 +1198,8 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     XBT_INFO("Parsing user-submitted job %s", message->job_id.to_string().c_str());
     Job * job = Job::from_json(message->job_description, workload,
                                "Invalid JSON job submitted by the scheduler");
-    assert(job->id.job_name == message->job_id.job_name);
-    assert(job->id.workload_name == message->job_id.workload_name);
+    xbt_assert(job->id.job_name == message->job_id.job_name, "Internal error");
+    xbt_assert(job->id.workload_name == message->job_id.workload_name, "Internal error");
 
     workload->jobs->add_job(job);
     job->state = JobState::JOB_STATE_SUBMITTED;
