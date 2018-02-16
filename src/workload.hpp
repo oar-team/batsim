@@ -64,7 +64,8 @@ public:
     void check_validity();
 
     /**
-     * @brief display workload name
+     * @brief Returns the workload name
+     * @return The workload name
      */
     std::string to_string();
 
@@ -209,7 +210,9 @@ public:
     const std::map<std::string, Workload*> & workloads() const;
 
     /**
-     * @brief display workload name
+     * @brief Returns a string representation of a Workloads
+     * @return A string representation of a Workloads
+     *
      */
     std::string to_string();
 

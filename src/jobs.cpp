@@ -28,8 +28,8 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(jobs, "jobs"); //!< Logging
 
-JobIdentifier::JobIdentifier(const string & workload_name,
-                             const string & job_name) :
+JobIdentifier::JobIdentifier(const std::string & workload_name,
+                             const std::string & job_name) :
     workload_name(workload_name),
     job_name(job_name)
 {
@@ -40,7 +40,7 @@ JobIdentifier::JobIdentifier(const string & workload_name,
     check_lexically_valid();
 }
 
-JobIdentifier::JobIdentifier(const string & job_id_str)
+JobIdentifier::JobIdentifier(const std::string & job_id_str)
 {
     // Split the job_identifier by '!'
     vector<string> job_identifier_parts;
@@ -66,7 +66,7 @@ string JobIdentifier::to_string() const
     return workload_name + '!' + job_name;
 }
 
-bool JobIdentifier::is_lexically_valid(std::string &reason) const
+bool JobIdentifier::is_lexically_valid(std::string & reason) const
 {
     bool ret = true;
     reason.clear();
