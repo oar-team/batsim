@@ -93,6 +93,28 @@ bool file_exists(const std::string & filename)
 }
 
 /**
+ * @brief Computes the absolute filename of a given file
+ * @param[in] filename The name of the file (not necessarily existing).
+ * @return The absolute filename corresponding to the given filename
+ */
+std::string absolute_filename(const std::string & filename)
+{
+    xbt_assert(filename.length() > 0);
+
+    // Let's assume filenames starting by "/" are absolute.
+    if (filename[0] == '/')
+    {
+        return filename;
+    }
+
+    char cwd_buf[PATH_MAX];
+    char * getcwd_ret = getcwd(cwd_buf, PATH_MAX);
+    xbt_assert(getcwd_ret == cwd_buf, "getcwd failed");
+
+    return string(getcwd_ret) + '/' + filename;
+}
+
+/**
  * @brief Converts a string to a VerbosityLevel
  * @param[in] str The string
  * @return The matching VerbosityLevel. An exception is thrown if str is invalid.

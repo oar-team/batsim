@@ -94,10 +94,9 @@ void Workload::register_smpi_applications()
         {
             SmpiProfileData * data = (SmpiProfileData *) profile->data;
 
-            string job_id_str = name + "!" + to_string(job->number);
             XBT_INFO("Registering app. instance='%s', nb_process=%d",
-                     job_id_str.c_str(), (int) data->trace_filenames.size());
-            SMPI_app_instance_register(job_id_str.c_str(), smpi_replay_process, data->trace_filenames.size());
+                     job->id.to_string().c_str(), (int) data->trace_filenames.size());
+            SMPI_app_instance_register(job->id.to_string().c_str(), smpi_replay_process, data->trace_filenames.size());
         }
     }
 
@@ -131,18 +130,18 @@ void Workload::check_validity()
     {
         Job * job = mit.second;
         xbt_assert(profiles->exists(job->profile),
-                   "Invalid job %d: the associated profile '%s' does not exist",
-                   job->number, job->profile.c_str());
+                   "Invalid job %s: the associated profile '%s' does not exist",
+                   job->id.to_string().c_str(), job->profile.c_str());
 
         const Profile * profile = profiles->at(job->profile);
         if (profile->type == ProfileType::MSG_PARALLEL)
         {
             MsgParallelProfileData * data = (MsgParallelProfileData *) profile->data;
             (void) data; // Avoids a warning if assertions are ignored
-            xbt_assert(data->nb_res == job->required_nb_res,
-                       "Invalid job %d: the requested number of resources (%d) do NOT match"
+            xbt_assert(data->nb_res == job->requested_nb_res,
+                       "Invalid job %s: the requested number of resources (%d) do NOT match"
                        " the number of resources of the associated profile '%s' (%d)",
-                       job->number, job->required_nb_res, job->profile.c_str(), data->nb_res);
+                       job->id.to_string().c_str(), job->requested_nb_res, job->profile.c_str(), data->nb_res);
         }
         else if (profile->type == ProfileType::SEQUENCE)
         {
@@ -152,6 +151,10 @@ void Workload::check_validity()
 }
 
 
+string Workload::to_string()
+{
+    return this->name;
+}
 
 Workloads::~Workloads()
 {
@@ -175,13 +178,11 @@ const Workload *Workloads::operator[](const std::string &workload_name) const
 
 Workload *Workloads::at(const std::string &workload_name)
 {
-    xbt_assert(exists(workload_name));
     return _workloads.at(workload_name);
 }
 
 const Workload *Workloads::at(const std::string &workload_name) const
 {
-    xbt_assert(exists(workload_name));
     return _workloads.at(workload_name);
 }
 
@@ -190,24 +191,14 @@ int Workloads::nb_workloads() const
     return _workloads.size();
 }
 
-Job *Workloads::job_at(const std::string &workload_name, int job_number)
-{
-    return at(workload_name)->jobs->at(job_number);
-}
-
-const Job *Workloads::job_at(const std::string &workload_name, int job_number) const
-{
-    return at(workload_name)->jobs->at(job_number);
-}
-
 Job *Workloads::job_at(const JobIdentifier &job_id)
 {
-    return at(job_id.workload_name)->jobs->at(job_id.job_number);
+    return at(job_id.workload_name)->jobs->at(job_id);
 }
 
 const Job *Workloads::job_at(const JobIdentifier &job_id) const
 {
-    return at(job_id.workload_name)->jobs->at(job_id.job_number);
+    return at(job_id.workload_name)->jobs->at(job_id);
 }
 
 void Workloads::insert_workload(const std::string &workload_name, Workload *workload)
@@ -247,25 +238,15 @@ void Workloads::register_smpi_applications()
     }
 }
 
-bool Workloads::job_is_registered(const std::string &workload_name, const int job_number)
-{
-    return at(workload_name)->jobs->exists(job_number);
-}
-
-bool Workloads::job_profile_is_registered(const std::string &workload_name, const int job_number)
-{
-    const Job * job = at(workload_name)->jobs->at(job_number);
-    return at(workload_name)->profiles->exists(job->profile);
-}
-
 bool Workloads::job_is_registered(const JobIdentifier &job_id)
 {
-    return job_is_registered(job_id.workload_name, job_id.job_number);
+    return at(job_id.workload_name)->jobs->exists(job_id);
 }
 
 bool Workloads::job_profile_is_registered(const JobIdentifier &job_id)
 {
-    return job_profile_is_registered(job_id.workload_name, job_id.job_number);
+    const Job * job = at(job_id.workload_name)->jobs->at(job_id);
+    return at(job_id.workload_name)->profiles->exists(job->profile);
 }
 
 std::map<std::string, Workload *> &Workloads::workloads()
@@ -276,4 +257,16 @@ std::map<std::string, Workload *> &Workloads::workloads()
 const std::map<std::string, Workload *> &Workloads::workloads() const
 {
     return _workloads;
+}
+
+string Workloads::to_string()
+{
+    string str;
+    for (auto mit : _workloads)
+    {
+        string key = mit.first;
+        Workload * workload = mit.second;
+        str += key + ": " + workload->to_string() + " ";
+    }
+    return str;
 }

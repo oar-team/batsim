@@ -511,7 +511,7 @@ void PajeTracer::register_new_job(const Job *job)
                           "%d %s%s %s \"%s\" %s\n",
                           DEFINE_ENTITY_VALUE, jobPrefix, job->id.to_string().c_str(),
                           machineState, job->id.to_string().c_str(),
-                          _colors[job->number % (int)_colors.size()].c_str());
+                          _colors[nb_total_jobs++ % (int)_colors.size()].c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -741,10 +741,10 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
                     int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
 
                     // Update all values
-                    job_map["job_id"] = to_string(job->number);
+                    job_map["job_id"] = job->id.job_name;
                     job_map["workload_name"] = string(workload_name);
                     job_map["submission_time"] = to_string((double)job->submission_time);
-                    job_map["requested_number_of_processors"] = to_string(job->required_nb_res);
+                    job_map["requested_number_of_processors"] = to_string(job->requested_nb_res);
                     job_map["requested_time"] = to_string((double)job->walltime);
                     job_map["success"] = to_string(success);
                     job_map["starting_time"] = to_string((double)job->starting_time);
@@ -1056,13 +1056,13 @@ void EnergyConsumptionTracer::set_filename(const string &filename)
     _wbuf->append_text("time,energy,event_type,wattmin,epower\n");
 }
 
-void EnergyConsumptionTracer::add_job_start(double date, int job_id)
+void EnergyConsumptionTracer::add_job_start(double date, JobIdentifier job_id)
 {
     (void) job_id;
     add_entry(date, 's');
 }
 
-void EnergyConsumptionTracer::add_job_end(double date, int job_id)
+void EnergyConsumptionTracer::add_job_end(double date, JobIdentifier job_id)
 {
     (void) job_id;
     _context->energy_last_job_completion = add_entry(date, 'e');

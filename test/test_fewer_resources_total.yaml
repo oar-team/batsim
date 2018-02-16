@@ -31,7 +31,8 @@ implicit_instances:
             # Let's generate an input file for the scheduler
             cat > ${output_directory}/sched_input.json << EOF
             {
-              "fraction_of_machines_to_use": ${resource_fraction}
+              "fraction_of_machines_to_use": ${resource_fraction},
+              "custom_mapping": false
             }
             EOF
 

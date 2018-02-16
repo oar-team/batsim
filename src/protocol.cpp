@@ -225,7 +225,6 @@ void JsonProtocolWriter::append_job_submitted(const string & job_id,
 }
 
 void JsonProtocolWriter::append_job_completed(const string & job_id,
-                                              const string & job_status,
                                               const string & job_state,
                                               const string & kill_reason,
                                               const string & job_alloc,
@@ -237,7 +236,6 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
       "type": "JOB_COMPLETED",
       "data": {
         "job_id": "w0!1",
-        "status": "SUCCESS",
         "job_state": "COMPLETED_KILLED",
         "kill_reason": "Walltime reached"
         "job_alloc": "0-1 5"
@@ -245,14 +243,11 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
     } */
 
     xbt_assert(date >= _last_date, "Date inconsistency");
-    xbt_assert(std::find(accepted_completion_statuses.begin(), accepted_completion_statuses.end(), job_status) != accepted_completion_statuses.end(),
-               "Unsupported job status '%s'!", job_status.c_str());
     _last_date = date;
     _is_empty = false;
 
     Value data(rapidjson::kObjectType);
     data.AddMember("job_id", Value().SetString(job_id.c_str(), _alloc), _alloc);
-    data.AddMember("status", Value().SetString(job_status.c_str(), _alloc), _alloc);
     data.AddMember("job_state", Value().SetString(job_state.c_str(), _alloc), _alloc);
     data.AddMember("return_code", Value().SetInt(return_code), _alloc);
     data.AddMember("kill_reason", Value().SetString(kill_reason.c_str(), _alloc), _alloc);
@@ -588,9 +583,10 @@ void JsonProtocolReader::parse_and_apply_event(const Value & event_object,
     const Value & data_object = event_object["data"];
 
     auto handler_function = _type_to_handler_map[type];
-    XBT_INFO("Start Processing Event number: %d, Type: %s", event_number, type.c_str());
+    XBT_DEBUG("Starting event processing (number: %d, Type: %s)", event_number, type.c_str());
 
     handler_function(this, event_number, timestamp, data_object);
+    XBT_DEBUG("Finished event processing (number: %d, Type: %s)", event_number, type.c_str());
 }
 
 void JsonProtocolReader::handle_query(int event_number, double timestamp, const Value &data_object)
@@ -706,10 +702,10 @@ void JsonProtocolReader::handle_reject_job(int event_number,
     string job_id = job_id_value.GetString();
 
     JobRejectedMessage * message = new JobRejectedMessage;
-    parse_job_identifier(job_id, message->job_id);
+    message->job_id = JobIdentifier(job_id);
     if (!(context->workloads.job_is_registered(message->job_id)))
     {
-        xbt_assert(false, "The following job does not exist.", job_id.c_str());
+        xbt_assert(false, "Job '%s' does not exist.", job_id.c_str());
     }
 
     Job * job = context->workloads.job_at(message->job_id);
@@ -754,10 +750,10 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     string job_id = job_id_value.GetString();
 
     // Let's retrieve the job identifier
-    parse_job_identifier(job_id, message->allocation->job_id);
+    message->allocation->job_id = JobIdentifier(job_id);
     if (!(context->workloads.job_is_registered(message->allocation->job_id)))
     {
-        xbt_assert(false, "Invalid message in event %d (EXECUTE_JOB): job %d with job_id:'%s' does not exists", event_number, job_id.c_str());
+        xbt_assert(false, "Invalid message in event %d (EXECUTE_JOB): job with job_id '%s' does not exists", event_number, job_id.c_str());
     }
 
     // *********************
@@ -964,8 +960,7 @@ void JsonProtocolReader::handle_set_job_metadata(int event_number,
     boost::regex r("[^\"]*");
     xbt_assert(boost::regex_match(metadata, r), "Invalid JSON message: the 'metadata' value in the 'data' value of event %d (SET_JOB_METADATA) should not contain double quotes (got ###%s###)", event_number, metadata.c_str());
 
-    JobIdentifier job_identifier;
-    parse_job_identifier(job_id, job_identifier);
+    JobIdentifier job_identifier = JobIdentifier(job_id);
     if (!(context->workloads.job_is_registered(job_identifier)))
     {
         xbt_assert(false, "Invalid message in event %d (SET_JOB_METADATA): The following job does not exist: %s", event_number, job_id.c_str());
@@ -1032,10 +1027,10 @@ void JsonProtocolReader::handle_change_job_state(int event_number,
 
     ChangeJobStateMessage * message = new ChangeJobStateMessage;
 
-    parse_job_identifier(job_id, message->job_id);
+    message->job_id = JobIdentifier(job_id);
     if (!(context->workloads.job_is_registered(message->job_id)))
     {
-        xbt_assert(false, "The following job does not exist.", job_id.c_str());
+        xbt_assert(false, "The job '%s' does not exist.", job_id.c_str());
     }
 
     message->job_state = job_state;
@@ -1106,10 +1101,10 @@ void JsonProtocolReader::handle_to_job_msg(int event_number,
 
     ToJobMessage * message = new ToJobMessage;
 
-    parse_job_identifier(job_id, message->job_id);
+    message->job_id = JobIdentifier(job_id);
     if (!(context->workloads.job_is_registered(message->job_id)))
     {
-        xbt_assert(false, "The following job does not exist.", job_id.c_str());
+        xbt_assert(false, "The job '%s' does not exist.", job_id.c_str());
     }
     message->message = msg;
 
@@ -1157,7 +1152,7 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     xbt_assert(job_id_value.IsString(), "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['job_id'] should be a string", event_number);
     string job_id = job_id_value.GetString();
 
-    parse_job_identifier(job_id, message->job_id);
+    message->job_id = JobIdentifier(job_id);
     if (context->workloads.exists(message->job_id.workload_name))
     {
         xbt_assert(!context->workloads.job_is_registered(message->job_id), "Invalid message in event %d (SUBMIT_JOB): job_id '%s' already exists", event_number, job_id.c_str());
@@ -1195,7 +1190,7 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     }
     else
     {
-        workload = new Workload(message->job_id.workload_name, "Dynamic");
+        workload = new Workload(message->job_id.workload_name);
         context->workloads.insert_workload(workload->name, workload);
     }
 
@@ -1203,8 +1198,10 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     XBT_INFO("Parsing user-submitted job %s", message->job_id.to_string().c_str());
     Job * job = Job::from_json(message->job_description, workload,
                                "Invalid JSON job submitted by the scheduler");
+    xbt_assert(job->id.job_name == message->job_id.job_name, "Internal error");
+    xbt_assert(job->id.workload_name == message->job_id.workload_name, "Internal error");
+
     workload->jobs->add_job(job);
-    job->id = JobIdentifier(workload->name, job->number);
     job->state = JobState::JOB_STATE_SUBMITTED;
 
     // Read the profile description if possible
@@ -1220,7 +1217,7 @@ void JsonProtocolReader::handle_submit_job(int event_number,
         profile_object.Accept(writer);
 
         message->job_profile_description = string(buffer.GetString(), buffer.GetSize());
-        XBT_INFO("A profile was submited with the job '%d' in workload '%s': %s", job->number, workload->name.c_str(), message->job_profile_description.c_str());
+        XBT_INFO("A profile was submited with the job '%s' : %s", job->id.to_string().c_str(), message->job_profile_description.c_str());
     }
     else if (context->redis_enabled)
     {
@@ -1317,7 +1314,7 @@ void JsonProtocolReader::handle_submit_profile(int event_number,
     }
     else
     {
-        workload = new Workload(message->workload_name, "Dynamic");
+        workload = new Workload(message->workload_name);
         context->workloads.insert_workload(workload->name, workload);
     }
 
@@ -1366,7 +1363,7 @@ void JsonProtocolReader::handle_kill_job(int event_number,
     for (unsigned int i = 0; i < job_ids_array.Size(); ++i)
     {
         const Value & job_id_value = job_ids_array[i];
-        parse_job_identifier(job_id_value.GetString(), message->jobs_ids[i]);
+        message->jobs_ids[i] = JobIdentifier(job_id_value.GetString());
         if (!(context->workloads.job_is_registered(message->jobs_ids[i])))
         {
             xbt_assert(false, "Invalid message in event %d (KILL_JOB): job %d with job_id:'%s' does not exists", event_number, i, message->jobs_ids[i].to_string().c_str());

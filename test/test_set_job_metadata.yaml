@@ -26,7 +26,7 @@ implicit_instances:
       timeout: 10
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${algo[name]}_${workload[name]}_${platform[name]}
-      batsim_command: ${BATSIM_BIN:=batsim} -p ${platform[filename]} -m ${platform[master_host]} -w ${workload[filename]} -e ${output_directory}/out --mmax-workload --redis-prefix ${instance_id} --socket-endpoint="tcp://localhost:${socket_port}" --config-file ${output_directory}/batsim.conf
+      batsim_command: ${BATSIM_BIN:=batsim} -p ${platform[filename]} -m ${platform[master_host]} -w ${workload[filename]} -e ${output_directory}/out --mmax-workload --redis-prefix ${instance_id} --socket-endpoint="tcp://localhost:${socket_port}" --config-file ${output_directory}/batsim.conf -v debug
       sched_command: ${BATSCHED_BIN:=batsched} -v ${algo[algo_name]} --socket-endpoint="tcp://*:${socket_port}" --variant_options_filepath ${output_directory}/sched_input.json
       commands_before_execution:
         # Generate Batsim options

@@ -378,9 +378,9 @@ int execute_msg_task(BatTask * btask,
     }
 
     // Create the MSG task
-    string task_name = task_name_prefix + to_string(btask->parent_job->number) +
+    string task_name = task_name_prefix + btask->parent_job->id.to_string() +
                        "'" + btask->profile->name + "'";
-    XBT_INFO("Creating MSG task '%s' on %d resources", task_name.c_str(), nb_res);
+    XBT_DEBUG("Creating MSG task '%s' on %d resources", task_name.c_str(), nb_res);
     msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(), nb_res,
                                                 hosts_to_use.data(), computation_amount,
                                                 communication_amount, NULL);

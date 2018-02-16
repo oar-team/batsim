@@ -205,25 +205,10 @@ void server_on_job_completed(ServerData * data,
     xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
     Job * job = data->context->workloads.job_at(message->job_id);
 
-    XBT_INFO("Job %s!%d COMPLETED. %d jobs completed so far",
-             job->workload->name.c_str(), job->number, data->nb_completed_jobs);
-
-    string status = "UNKNOWN";
-    if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
-    {
-        status = "SUCCESS";
-    }
-    else if (job->state == JobState::JOB_STATE_COMPLETED_FAILED)
-    {
-        status = "FAILED";
-    }
-    else if (job->state == JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED)
-    {
-        status = "TIMEOUT";
-    }
+    XBT_INFO("Job %s has COMPLETED. %d jobs completed so far",
+             job->id.to_string().c_str(), data->nb_completed_jobs);
 
     data->context->proto_writer->append_job_completed(message->job_id.to_string(),
-                                                      status,
                                                       job_state_to_string(job->state),
                                                       job->kill_reason,
                                                       job->allocation.to_string_hyphen(" "),
@@ -257,7 +242,10 @@ void server_on_job_submitted(ServerData * data,
     }
 
     // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
-    XBT_INFO("GOT JOB: %s %d\n", message->job_id.workload_name.c_str(), message->job_id.job_number);
+    XBT_INFO("Job received: %s\n", message->job_id.to_string().c_str());
+
+    XBT_INFO("Workloads: %s", data->context->workloads.to_string().c_str());
+
     xbt_assert(data->context->workloads.job_is_registered(message->job_id));
     Job * job = data->context->workloads.job_at(message->job_id);
     job->id = message->job_id;
@@ -502,6 +490,15 @@ void server_on_killing_done(ServerData * data,
 
             really_killed_job_ids_str.push_back(job_id.to_string());
 
+            // also add a job complete message for the jobs that have really been
+            // killed
+            data->context->proto_writer->append_job_completed(
+                job->id.to_string(),
+                job_state_to_string(job->state),
+                job->kill_reason,
+                job->allocation.to_string_hyphen(" "),
+                job->return_code,
+                MSG_get_clock());
         }
     }
 
@@ -542,6 +539,9 @@ void server_on_submit_job(ServerData * data,
     // Let's update global states
     ++data->nb_submitted_jobs;
 
+    xbt_assert(data->context->workloads.exists(message->job_id.workload_name),
+               "Internal error: Workload '%s' should exist.",
+               message->job_id.workload_name.c_str());
     xbt_assert(data->context->workloads.job_is_registered(message->job_id),
                "Internal error: job '%s' should exist.",
                message->job_id.to_string().c_str());
@@ -594,19 +594,7 @@ void server_on_submit_profile(ServerData * data,
                "seems disabled... It can be activated by specifying a configuration file "
                "to Batsim.");
 
-    // Let's create the workload if it doesn't exist, or retrieve it otherwise
-    Workload * workload = nullptr;
-    if (data->context->workloads.exists(message->workload_name))
-    {
-        workload = data->context->workloads.at(message->workload_name);
-    }
-    else
-    {
-        workload = new Workload(message->workload_name, "Dynamic");
-        data->context->workloads.insert_workload(workload->name, workload);
-        XBT_INFO("New user-submitted workload %s was created", workload->name);
-    }
-
+    Workload * workload = data->context->workloads.at(message->workload_name);
     if (!workload->profiles->exists(message->profile_name))
     {
         XBT_INFO("Adding user-submitted profile %s to workload %s",
@@ -633,9 +621,9 @@ void server_on_change_job_state(ServerData * data,
 
     Job * job = data->context->workloads.job_at(message->job_id);
 
-    XBT_INFO("Change job state: Job %d (workload=%s) to state %s (kill_Reason=%s)",
-             job->number, job->workload->name.c_str(),
-             message->job_state.c_str(), message->kill_reason.c_str());
+    XBT_INFO("Change job state: Job %s to state %s",
+             job->id.to_string().c_str(),
+             message->job_state.c_str());
 
     JobState new_state = job_state_from_string(message->job_state);
 
@@ -688,9 +676,6 @@ void server_on_change_job_state(ServerData * data,
     job->state = new_state;
     job->kill_reason = message->kill_reason;
 
-    XBT_INFO("Job state changed: Job %d (workload=%s)",
-             job->number, job->workload->name.c_str());
-
     check_submitted_and_completed(data);
 }
 
@@ -702,8 +687,8 @@ void server_on_to_job_msg(ServerData * data,
 
     Job * job = data->context->workloads.job_at(message->job_id);
 
-    XBT_INFO("Send message to job: Job %d (workload=%s) message=%s",
-             job->number, job->workload->name.c_str(),
+    XBT_INFO("Send message to job: Job %s message=%s",
+             job->id.to_string().c_str(),
              message->message.c_str());
 
     job->incoming_message_buffer.push_back(message->message);
@@ -719,8 +704,8 @@ void server_on_from_job_msg(ServerData * data,
 
     Job * job = data->context->workloads.job_at(message->job_id);
 
-    XBT_INFO("Send message to scheduler: Job %d (workload=%s)",
-             job->number, job->workload->name.c_str());
+    XBT_INFO("Send message to scheduler: Job %s",
+             job->id.to_string().c_str());
 
     data->context->proto_writer->append_from_job_message(message->job_id.to_string(),
                                                          message->message,
@@ -739,8 +724,8 @@ void server_on_reject_job(ServerData * data,
     job->state = JobState::JOB_STATE_REJECTED;
     data->nb_completed_jobs++;
 
-    XBT_INFO("Job %d (workload=%s) has been rejected",
-             job->number, job->workload->name.c_str());
+    XBT_INFO("Job %s has been rejected",
+             job->id.to_string().c_str());
 
     check_submitted_and_completed(data);
 }
@@ -859,13 +844,15 @@ void server_on_execute_job(ServerData * data,
     // Only this profile is able to manage the following scenario:
     // The scheduler allocated a different number of resources than the
     // number of requested resources.
-    if (job->workload->profiles->at(job->profile)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT) {
-        xbt_assert((int)allocation->mapping.size() == job->required_nb_res,
-                 "Invalid job %s allocation. The job requires %d machines but only %d were given (%s). "
-                 "Using a different number of machines is only allowed if a custom mapping is specified. "
-                 "This mapping must specify which allocated machine each executor should use.",
-                 job->id.to_string().c_str(), job->required_nb_res, (int)allocation->mapping.size(),
-                 allocation->machine_ids.to_string_hyphen().c_str());
+    if (job->workload->profiles->at(job->profile)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT
+        and job->workload->profiles->at(job->profile)->type != ProfileType::SEQUENCE)
+    {
+        xbt_assert((int)allocation->mapping.size() == job->requested_nb_res,
+                   "Job '%s' allocation is invalid. The job requires %d machines but only %d were given (%s). "
+                   "Using a different number of machines is only allowed if a custom mapping is specified. "
+                   "This mapping must specify which allocated machine each executor should use.",
+                   job->id.to_string().c_str(), job->requested_nb_res, (int)allocation->mapping.size(),
+                   allocation->machine_ids.to_string_hyphen().c_str());
     }
 
     // Let's generate the hosts used by the job

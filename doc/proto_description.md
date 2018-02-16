@@ -344,6 +344,7 @@ If redis is enabled (``{"redis": {"enabled": true}}``),
 ``job_id`` is the only forwarded field.
 Otherwise (if redis is disabled), a JSON description of the job is forwarded
 in the ``job`` field.
+
 A JSON description of the job profile is sent if and only if
 profiles forwarding is enabled
 (``{"job_submission": {"forward_profiles": true}}``).
@@ -359,7 +360,7 @@ profiles forwarding is enabled
     "job": {
       "profile": "delay_10s",
       "res": 1,
-      "id": "my_new_job",
+      "id": "dyn!my_new_job",
       "walltime": 12.0
     }
   }
@@ -375,7 +376,7 @@ profiles forwarding is enabled
     "job": {
       "profile": "delay_10s",
       "res": 1,
-      "id": "my_new_job",
+      "id": "dyn!my_new_job",
       "walltime": 12.0
     },
     "profile":{
@@ -402,7 +403,6 @@ or not, depending on whether the job completed without reaching timeout).
 
 - **data**:
   - **job_id**: the job unique identifier
-  - **status**: whether SUCCESS or TIMEOUT (**DEPRECATED**)
   - **job_state**: the job state. Possible values: "NOT_SUBMITTED", "SUBMITTED", "RUNNING", "COMPLETED_SUCCESSFULLY", "COMPLETED_FAILED", "COMPLETED_WALLTIME_REACHED", "COMPLETED_KILLED", "REJECTED"
   - **return_code**: the return code of the job process (equals to 0 by default)
   - **kill_reason**: the kill reason (if any)
@@ -415,7 +415,6 @@ or not, depending on whether the job completed without reaching timeout).
   "type": "JOB_COMPLETED",
   "data": {
     "job_id": "26dceb!4",
-    "status": "SUCCESS",
     "job_state": "COMPLETED_SUCCESSFULLY",
     "return_code": 0,
     "kill_reason": "",
@@ -627,6 +626,11 @@ The submission is acknowledged by default, but acknowledgements can be disabled
 in the configuration
 (``{"job_submission": {"from_scheduler": {"acknowledge": false}}}``).
 
+**Note:** The workload name SHOULD be present in the job description id field
+with the notation WORKLOAD!JOB_NAME. If it is not present it will be added
+to the job description provided in the acknowledgment message
+[JOB_SUBMITTED](#job_submitted)
+
 - **data**: A job id (job id duplication is forbidden), classical job and
   profile information (optional).
 
@@ -652,7 +656,7 @@ in the configuration
     "job":{
       "profile": "delay_10s",
       "res": 1,
-      "id": "my_new_job",
+      "id": "dyn!my_new_job",
       "walltime": 12.0
     },
     "profile":{
@@ -709,6 +713,20 @@ Batsim acknowledges it by sending one
 ```
 
 ### SET_JOB_METADATA
+
+This message is a convenient way to attach metadata to a job during
+simulation runtime that will appear in the final result file.  A column
+named ``metadata`` will be present in the output file ``PREFIX_job.csv``
+with the string provided by the scheduler, or an empty string if not set.
+
+**Note**: If you need to add **static** metadata to a job you can simply
+add one or more fields in the job profile.
+
+**Warning**: This not a way to delegate to batsim the storage of metadata.
+That should be done though Redis, (when you have to share information
+between different process for example), or using the scheduler's internal
+data structures.
+
 - **data**: a job id and its metadata
 - **example**:
 ```json

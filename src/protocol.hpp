@@ -107,7 +107,6 @@ public:
     /**
      * @brief Appends a JOB_COMPLETED event.
      * @param[in] job_id The identifier of the job that has completed.
-     * @param[in] job_status The job status
      * @param[in] job_state The job state
      * @param[in] kill_reason The kill reason (if any)
      * @param[in] job_alloc last allocation of the job
@@ -115,7 +114,6 @@ public:
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_job_completed(const std::string & job_id,
-                                      const std::string & job_status,
                                       const std::string & job_state,
                                       const std::string & kill_reason,
                                       const std::string & job_alloc,
@@ -257,7 +255,6 @@ public:
     /**
      * @brief Appends a JOB_COMPLETED event.
      * @param[in] job_id The identifier of the job that has completed.
-     * @param[in] job_status The job status
      * @param[in] job_state The job state
      * @param[in] kill_reason The kill reason (if any)
      * @param[in] job_alloc last allocation of the job
@@ -265,7 +262,6 @@ public:
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_job_completed(const std::string & job_id,
-                              const std::string & job_status,
                               const std::string & job_state,
                               const std::string & kill_reason,
                               const std::string & job_alloc,
@@ -361,7 +357,6 @@ private:
     rapidjson::Document _doc; //!< A rapidjson document
     rapidjson::Document::AllocatorType & _alloc; //!< The allocated of _doc
     rapidjson::Value _events = rapidjson::Value(rapidjson::kArrayType); //!< A rapidjson array in which the events are pushed
-    const std::vector<std::string> accepted_completion_statuses = {"SUCCESS", "FAILED", "TIMEOUT"}; //!< The list of accepted statuses for the JOB_COMPLETED message
 };
 
 
