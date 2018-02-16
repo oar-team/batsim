@@ -800,7 +800,7 @@ void server_on_execute_job(ServerData * data,
     Job * job = data->context->workloads.job_at(allocation->job_id);
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Cannot execute job '%s': its state (%s) is not JOB_STATE_SUBMITTED.",
-               job->id.to_string().c_str(), job_state_to_string(job->state));
+               job->id.to_string().c_str(), job_state_to_string(job->state).c_str());
 
     job->state = JobState::JOB_STATE_RUNNING;
 
@@ -815,7 +815,7 @@ void server_on_execute_job(ServerData * data,
             const Machine * machine = data->context->machines[machine_id];
             (void) machine; // Avoids a warning if assertions are ignored
             xbt_assert(machine->jobs_being_computed.empty(),
-                       "job %s invalid allocation: machine %d ('%s') is currently computing jobs (these ones:"
+                       "Job '%s': Invalid allocation: machine %d ('%s') is currently computing jobs (these ones:"
                        " {%s}) whereas space sharing is forbidden. Space sharing can be enabled via an option,"
                        " try --help to display the available options", job->id.to_string().c_str(), machine->id, machine->name.c_str(),
                        machine->jobs_being_computed_as_string().c_str());
