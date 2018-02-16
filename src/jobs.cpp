@@ -61,7 +61,7 @@ JobIdentifier::JobIdentifier(const std::string & job_id_str)
     check_lexically_valid();
 }
 
-string JobIdentifier::to_string() const
+std::string JobIdentifier::to_string() const
 {
     return workload_name + '!' + job_name;
 }
@@ -189,7 +189,7 @@ void Jobs::set_workload(Workload *workload)
     _workload = workload;
 }
 
-void Jobs::load_from_json(const Document &doc, const string &filename)
+void Jobs::load_from_json(const rapidjson::Document &doc, const std::string &filename)
 {
     string error_prefix = "Invalid JSON file '" + filename + "'";
 
@@ -500,7 +500,7 @@ Job * Job::from_json(const std::string & json_str,
     return Job::from_json(doc, workload, error_prefix);
 }
 
-string job_state_to_string(const JobState & state)
+std::string job_state_to_string(const JobState & state)
 {
     string job_state("UNKNOWN");
 
