@@ -16,8 +16,6 @@
 #include "exact_numbers.hpp"
 #include "machine_range.hpp"
 
-using namespace std;
-
 class Profiles;
 struct Profile;
 class Workload;
@@ -148,7 +146,7 @@ public:
     double delay_task_required = -1; //!< Stores how long delay tasks should last (only set for BatTask leaves with delay profiles)
 
     // manage sequential profile
-    vector<BatTask*> sub_tasks; //!< List of sub tasks that must be executed sequentially. Only set for BatTask non-leaves with sequential profiles at the moment, but it may be used for parallel composition in the future.
+    std::vector<BatTask*> sub_tasks; //!< List of sub tasks that must be executed sequentially. Only set for BatTask non-leaves with sequential profiles at the moment, but it may be used for parallel composition in the future.
     unsigned int current_task_index = -1; //!< Index of the task that is currently being executed in the sub_tasks vector. Only set for BatTask non-leaves with sequential profiles.
     double current_task_progress_ratio = 0; //!< Gives the progress of the current task from 0 to 1. Only set for BatTask non-leaves with sequential profiles.
 };
