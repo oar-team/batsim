@@ -418,7 +418,9 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
     // Let's replace the job ID by its WLOAD!NUMBER counterpart if needed
     // in the json raw description
     string json_description_tmp(buffer.GetString(), buffer.GetSize());
-    boost::regex r(R"foo("id"\s*:\s*(?:"*[^(,|})]*"*)\s*)foo");
+    /// @cond DOXYGEN_FAILS_PARSING_THIS_REGEX
+    boost::regex r(R"("id"\s*:\s*(?:"*[^(,|})]*"*)\s*)");
+    /// @endcond
     string replacement_str = "\"id\":\"" + j->id.to_string() + "\"";
     // XBT_INFO("Before regexp: %s", json_description_tmp.c_str());
     j->json_description = boost::regex_replace(json_description_tmp, r, replacement_str);
