@@ -83,7 +83,7 @@ include_directories(${ZMQ_INCLUDE_DIRS})
 ##################
 # Batsim version #
 ##################
-set(default_batsim_version "v1.4.0")
+set(default_batsim_version "v2.0.0")
 include(GetGitRevisionDescription)
 git_describe(batsim_version)
 message(STATUS "Batsim version from git: ${batsim_version}")
