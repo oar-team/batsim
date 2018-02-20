@@ -1,3 +1,9 @@
+# Table of contents
+- [Overview](#overview)
+- [How to contribute?](#how-to-contribute)
+- [Hacking Batsim](#hacking-batsim)
+- [How to release a new version?](#how-to-release-a-new-version)
+
 # Overview
 Batsim uses different git repositories.
 The main repositories and their role are listed below:
@@ -208,3 +214,14 @@ it should be done as follows:
   ``std::string ip_message_type_to_string(IPMessageType type);`` function.
 - make sure the new message type is destroyed correctly in the ``IPMessage``
   destructor.
+
+# How to release a new version?
+
+1. Determine what version should be released,
+   following [semantic versioning](https://semver.org/) rules.  
+   Major version should be changed whenever an incompatible change occurs on the CLI or the protocol.
+2. Update the [changelog](doc/changelog.md).  
+   Try to mention all modifications since last release: ``git diff``
+3. Bump version in [CMakeLists.txt](./CMakeLists.txt)
+4. Tag new version (with annotations): ``git tag -a vX.Y.Z``  
+   Put the changelog of the new release in the long description.
