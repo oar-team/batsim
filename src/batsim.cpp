@@ -79,6 +79,9 @@ string default_configuration = R"({
                                    "enabled": false,
                                    "acknowledge": true
                                  }
+                               },
+                               "job_kill": {
+                                 "forward_profiles": false
                                }
                              })";
 
@@ -835,6 +838,8 @@ void set_configuration(BatsimContext *context,
     bool submission_sched_enabled = default_config_doc["job_submission"]["from_scheduler"]["enabled"].GetBool();
     bool submission_sched_ack = default_config_doc["job_submission"]["from_scheduler"]["acknowledge"].GetBool();
 
+    bool kill_forward_profiles = default_config_doc["job_kill"]["forward_profiles"].GetBool();
+
     // **********************************
     // Let's parse the configuration file
     // **********************************
@@ -906,6 +911,19 @@ void set_configuration(BatsimContext *context,
             }
         }
     }
+    if (main_object.HasMember("job_kill"))
+    {
+        const Value & job_kill_object = main_object["job_kill"];
+        xbt_assert(job_kill_object.IsObject(), "Invalid JSON configuration: ['job_kill'] should be an object.");
+
+        if (job_kill_object.HasMember("forward_profiles"))
+        {
+            const Value & forward_profiles_value = job_kill_object["forward_profiles"];
+            xbt_assert(forward_profiles_value.IsBool(), "Invalid JSON configuration: ['job_kill']['forward_profiles'] should be a boolean.");
+            kill_forward_profiles = forward_profiles_value.GetBool();
+        }
+    }
+
 
     // *****************************************************************
     // Let's override configuration values from main arguments if needed
@@ -930,6 +948,7 @@ void set_configuration(BatsimContext *context,
     context->submission_forward_profiles = submission_forward_profiles;
     context->submission_sched_enabled = submission_sched_enabled;
     context->submission_sched_ack = submission_sched_ack;
+    context->kill_forward_profiles = kill_forward_profiles;
 
     context->platform_filename = main_args.platform_filename;
     context->export_prefix = main_args.export_prefix;
@@ -1038,5 +1057,19 @@ void set_configuration(BatsimContext *context,
     if (from_sched_value.FindMember("acknowledge") == from_sched_value.MemberEnd())
     {
         from_sched_value.AddMember("acknowledge", Value().SetBool(submission_sched_ack), alloc);
+    }
+
+    // job_kill
+    auto mit_job_kill = context->config_file.FindMember("job_kill");
+    if (mit_job_kill == context->config_file.MemberEnd())
+    {
+        context->config_file.AddMember("job_kill", Value().SetObject(), alloc);
+        mit_job_kill = context->config_file.FindMember("job_kill");
+    }
+
+    // job_kill->forward_profiles
+    if (mit_job_kill->value.FindMember("forward_profiles") == mit_job_kill->value.MemberEnd())
+    {
+        mit_job_kill->value.AddMember("forward_profiles", Value().SetBool(kill_forward_profiles), alloc);
     }
 }

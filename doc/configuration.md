@@ -5,20 +5,23 @@ default configuration:
 
 ```json
 {
-   "redis": {
-     "enabled": false,
-     "hostname": "127.0.0.1",
-     "port": 6379,
-     "prefix": "default"
-   },
-   "job_submission": {
-     "forward_profiles": false,
-     "from_scheduler": {
-       "enabled": false,
-       "acknowledge": true
-     }
-   }
- }
+  "redis": {
+    "enabled": false,
+    "hostname": "127.0.0.1",
+    "port": 6379,
+    "prefix": "default"
+  },
+  "job_submission": {
+    "forward_profiles": false,
+    "from_scheduler": {
+      "enabled": false,
+      "acknowledge": true
+    }
+  },
+  "job_kill": {
+    "forward_profiles": false
+  }
+}
 ```
 
 This configuration can be override using the ``--config-file`` option. Each

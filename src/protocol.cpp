@@ -264,22 +264,33 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
 /**
  * @brief Create task tree with progress in Json and add it to _alloc
  */
-Value generate_task_tree(BatTask* task_tree, rapidjson::Document::AllocatorType & _alloc)
+Value generate_task_tree(BatTask* task_tree, rapidjson::Document::AllocatorType & _alloc, bool forward_profiles)
 {
     Value task(rapidjson::kObjectType);
     // add final task (leaf) progress
     if (task_tree->ptask != nullptr || task_tree->delay_task_start != -1)
     {
-        task.AddMember("profile", Value().SetString(task_tree->profile->name.c_str(), _alloc), _alloc);
+        task.AddMember("profile_name", Value().SetString(task_tree->profile->name.c_str(), _alloc), _alloc);
         task.AddMember("progress", Value().SetDouble(task_tree->current_task_progress_ratio), _alloc);
+
+        if (forward_profiles)
+        {
+            // Add profile description
+            Document profile_description_doc;
+            const string & profile_json_description = task_tree->profile->json_description;
+            profile_description_doc.Parse(profile_json_description.c_str());
+            xbt_assert(!profile_description_doc.HasParseError());
+
+            task.AddMember("profile", Value().CopyFrom(profile_description_doc, _alloc), _alloc);
+        }
     }
     else
     {
-        task.AddMember("profile", Value().SetString(task_tree->profile->name.c_str(), _alloc), _alloc);
+        task.AddMember("profile_name", Value().SetString(task_tree->profile->name.c_str(), _alloc), _alloc);
         task.AddMember("current_task_index", Value().SetInt(task_tree->current_task_index), _alloc);
 
         BatTask * btask = task_tree->sub_tasks[task_tree->current_task_index];
-        task.AddMember("current_task", generate_task_tree(btask, _alloc), _alloc);
+        task.AddMember("current_task", generate_task_tree(btask, _alloc, forward_profiles), _alloc);
     }
     return task;
 }
@@ -349,7 +360,7 @@ void JsonProtocolWriter::append_job_killed(const vector<string> & job_ids,
         // compute task progress tree
         if (job_progress.at(job_id) != nullptr) {
             progress.AddMember(Value().SetString(job_id.c_str(), _alloc),
-                generate_task_tree(job_progress.at(job_id), _alloc), _alloc);
+                generate_task_tree(job_progress.at(job_id), _alloc, _context->kill_forward_profiles), _alloc);
         }
     }
 
