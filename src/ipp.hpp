@@ -18,6 +18,7 @@
 #include "jobs.hpp"
 
 struct BatsimContext;
+struct ServerData;
 
 
 /**
@@ -310,6 +311,7 @@ struct WorkflowSubmitterProcessArguments
 struct WaiterProcessArguments
 {
     double target_time; //!< The time at which the waiter should stop waiting
+    ServerData * server_data; //!< The ServerData. Used to check whether the simulation is finished or not
 };
 
 /**

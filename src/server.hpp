@@ -30,6 +30,7 @@ struct ServerData
 
     int nb_completed_jobs = 0;  //!< The number of completed jobs
     int nb_submitted_jobs = 0;  //!< The number of submitted jobs
+    int expected_nb_submitters = -1; //!< The expected number of total submitters
     int nb_submitters = 0;  //!< The number of submitters
     int nb_submitters_finished = 0; //!< The number of finished submitters
     int nb_workflow_submitters_finished = 0;    //!< The number of finished workflow submitters
@@ -38,8 +39,10 @@ struct ServerData
     int nb_waiters = 0; //!< The number of pending CALL_ME_LATER waiters
     int nb_killers = 0; //!< The number of killers
     bool sched_ready = true;    //!< Whether the scheduler can be called now
-    bool all_jobs_submitted_and_completed = false;  //!< Whether all jobs (static and dynamic) have been submitted and completed.
-    bool end_of_simulation_sent = false; //!< Whether the SIMULATION_ENDS event has been sent to the scheduler.
+
+    bool end_of_simulation_in_send_buffer = false;  //!< Whether the SIMULATION_ENDS is in the decision process send buffer
+    bool end_of_simulation_sent = false; //!< Whether the SIMULATION_ENDS event has been sent to the scheduler
+    bool end_of_simulation_ack_received = false; //!< Whether the SIMULATION_ENDS acknowledgement (NOP) event has been received
 
     std::map<std::string, Submitter*> submitters;   //!< The submitters
     std::map<JobIdentifier, Submitter*> origin_of_jobs; //!< Stores whether a Submitter must be notified on job completion
@@ -47,10 +50,17 @@ struct ServerData
 };
 
 /**
- * @brief Checks whether all jobs are submitted and completed
+ * @brief Returns whether the simulation is finished or not.
+ * @param[in] data The ServerData
+ * @return Whether the simulation is finished or not
+ */
+bool is_simumation_finished(const ServerData * data);
+
+/**
+ * @brief Checks whether the simulation is finished, and buffers a SIMULATION_ENDS event if needed.
  * @param[in,out] data The data associated with the server_process
  */
-void check_submitted_and_completed(ServerData * data);
+void check_simulation_finished(ServerData * data);
 
 /**
  * @brief Process used to orchestrate the simulation

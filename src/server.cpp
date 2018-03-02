@@ -75,16 +75,17 @@ int server_process(int argc, char *argv[])
     handler_map[IPMessageType::END_DYNAMIC_SUBMIT] = server_on_end_dynamic_submit;
     handler_map[IPMessageType::CONTINUE_DYNAMIC_SUBMIT] = server_on_continue_dynamic_submit;
 
+    /* Currently, there is one submtiter per input file (workload or workflow).
+       As workflows use an inner workload, calling nb_static_workloads() should
+       be enough. The dynamic submitter (from the decision process) is not part
+       of this count as it can finish then restart... */
+    data->expected_nb_submitters = context->workloads.nb_static_workloads();
+
+    // Is the simulation already finished? It can occur now if there is no job to execute.
+    check_simulation_finished(data);
+
     // Simulation loop
-    while ((data->nb_submitters == 0 && !context->submission_sched_enabled) || // If dynamic submissions are not enabled: wait for the first submitter
-           (data->nb_submitters_finished < data->nb_submitters) || // All submitters must have finished
-           (data->nb_completed_jobs < data->nb_submitted_jobs) || // All jobs must have finished
-           (!data->sched_ready) || // A scheduler answer is being injected into the simulation
-           (data->nb_switching_machines > 0) || // Some machines are switching state
-           (data->nb_waiters > 0) || // The scheduler requested to be called in the future
-           (data->nb_killers > 0) || // Some jobs are being killed
-           (context->submission_sched_enabled && // If dynamic job submission are enabled
-            !context->submission_sched_finished)) // The end of submissions must have been received
+    while (!data->end_of_simulation_ack_received)
     {
         // Let's wait a message from a node or the request-reply process...
         msg_task_t task_received = NULL;
@@ -108,8 +109,9 @@ int server_process(int argc, char *argv[])
 
         // Let's send a message to the scheduler if needed
         if (data->sched_ready && // The scheduler must be ready
-            !data->end_of_simulation_sent && // It will NOT be called if SIMULATION_ENDS has already been sent
-            !context->proto_writer->is_empty()) // There must be something to send to it
+            !context->proto_writer->is_empty() && // There must be something to send to the scheduler
+            !data->end_of_simulation_ack_received // The simulation must NOT be finished
+            )
         {
             RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
             req_rep_args->context = context;
@@ -118,8 +120,10 @@ int server_process(int argc, char *argv[])
 
             MSG_process_create("Scheduler REQ-REP", request_reply_scheduler_process, (void*)req_rep_args, MSG_host_self());
             data->sched_ready = false;
-            if (data->all_jobs_submitted_and_completed)
+
+            if (data->end_of_simulation_in_send_buffer)
             {
+                data->end_of_simulation_in_send_buffer = false;
                 data->end_of_simulation_sent = true;
             }
         }
@@ -127,9 +131,23 @@ int server_process(int argc, char *argv[])
     } // end of while
 
     XBT_INFO("Simulation is finished!");
-    bool simulation_is_completed = data->all_jobs_submitted_and_completed;
-    (void) simulation_is_completed; // Avoids a warning if assertions are ignored
-    xbt_assert(simulation_is_completed, "Left simulation loop, but the simulation does NOT seem finished...");
+
+    // Is simulation also finished for the decision process?
+    xbt_assert(!data->end_of_simulation_in_send_buffer, "Left simulation loop, but the SIMULATION_ENDS message is still in the send buffer to the decision process.");
+    xbt_assert(data->end_of_simulation_sent, "Left simulation loop, but the SIMULATION_ENDS message has not been sent to the scheduler.");
+    xbt_assert(data->end_of_simulation_ack_received, "Left simulation loop, but the decision process did not ACK the SIMULATION_ENDS message.");
+
+    // Are there still pending actions in Batsim?
+    xbt_assert(data->sched_ready, "Left simulation loop, but a call to the decision process is ongoing.");
+    xbt_assert(data->nb_running_jobs == 0, "Left simulation loop, but some jobs are running.");
+    xbt_assert(data->nb_switching_machines == 0, "Left simulation loop, but some machines are being switched.");
+    xbt_assert(data->nb_killers == 0, "Left simulation loop, but some killer processes (used to kill jobs) are running.");
+
+    if (data->nb_waiters > 0)
+        XBT_WARN("Left simulation loop, but some waiter processes (used to manage the CALL_ME_LATER message) are running.");
+
+    // Consistency
+    xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
 
     delete data;
     delete args;
@@ -140,8 +158,8 @@ void server_on_submitter_hello(ServerData * data,
                                IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr);
-    xbt_assert(!data->all_jobs_submitted_and_completed,
-               "A new submitter said hello but all jobs have already been submitted and completed... Aborting.");
+    xbt_assert(!data->end_of_simulation_in_send_buffer,
+               "A new submitter said hello but the simulation is finished... Aborting.");
     SubmitterHelloMessage * message = (SubmitterHelloMessage *) task_data->data;
 
     xbt_assert(data->submitters.count(message->submitter_name) == 0,
@@ -178,7 +196,7 @@ void server_on_submitter_bye(ServerData * data,
     XBT_INFO("A submitted said goodbye. Number of finished submitters: %d",
              data->nb_submitters_finished);
 
-    check_submitted_and_completed(data);
+    check_simulation_finished(data);
 }
 
 void server_on_job_completed(ServerData * data,
@@ -215,7 +233,7 @@ void server_on_job_completed(ServerData * data,
                                                       job->return_code,
                                                       MSG_get_clock());
 
-    check_submitted_and_completed(data);
+    check_simulation_finished(data);
 }
 
 void server_on_job_submitted(ServerData * data,
@@ -397,6 +415,11 @@ void server_on_sched_ready(ServerData * data,
 {
     (void) task_data;
     data->sched_ready = true;
+
+    if (data->end_of_simulation_sent)
+    {
+        data->end_of_simulation_ack_received = true;
+    }
 }
 
 void server_on_sched_wait_answer(ServerData * data,
@@ -509,16 +532,17 @@ void server_on_killing_done(ServerData * data,
     data->context->proto_writer->append_job_killed(job_ids_str, jobs_progress_str, MSG_get_clock());
     --data->nb_killers;
 
-    check_submitted_and_completed(data);
+    check_simulation_finished(data);
 }
 
 void server_on_end_dynamic_submit(ServerData * data,
                                   IPMessage * task_data)
 {
     (void) task_data;
+
     data->context->submission_sched_finished = true;
 
-    check_submitted_and_completed(data);
+    check_simulation_finished(data);
 }
 
 void server_on_continue_dynamic_submit(ServerData * data,
@@ -527,7 +551,7 @@ void server_on_continue_dynamic_submit(ServerData * data,
     (void) task_data;
     data->context->submission_sched_finished = false;
 
-    check_submitted_and_completed(data);
+    check_simulation_finished(data);
 }
 
 void server_on_submit_job(ServerData * data,
@@ -676,7 +700,7 @@ void server_on_change_job_state(ServerData * data,
     job->state = new_state;
     job->kill_reason = message->kill_reason;
 
-    check_submitted_and_completed(data);
+    check_simulation_finished(data);
 }
 
 void server_on_to_job_msg(ServerData * data,
@@ -693,7 +717,7 @@ void server_on_to_job_msg(ServerData * data,
 
     job->incoming_message_buffer.push_back(message->message);
 
-    check_submitted_and_completed(data);
+    check_simulation_finished(data);
 }
 
 void server_on_from_job_msg(ServerData * data,
@@ -711,7 +735,7 @@ void server_on_from_job_msg(ServerData * data,
                                                          message->message,
                                                          MSG_get_clock());
 
-    check_submitted_and_completed(data);
+    check_simulation_finished(data);
 }
 
 void server_on_reject_job(ServerData * data,
@@ -727,7 +751,7 @@ void server_on_reject_job(ServerData * data,
     XBT_INFO("Job %s has been rejected",
              job->id.to_string().c_str());
 
-    check_submitted_and_completed(data);
+    check_simulation_finished(data);
 }
 
 void server_on_kill_jobs(ServerData * data,
@@ -775,6 +799,7 @@ void server_on_call_me_later(ServerData * data,
 
     WaiterProcessArguments * args = new WaiterProcessArguments;
     args->target_time = message->target_time;
+    args->server_data = data;
 
     string pname = "waiter " + to_string(message->target_time);
     MSG_process_create(pname.c_str(), waiter_process, (void*) args,
@@ -884,17 +909,27 @@ void server_on_execute_job(ServerData * data,
     job->execution_processes.insert(process);
 }
 
-void check_submitted_and_completed(ServerData * data)
+bool is_simumation_finished(const ServerData * data)
 {
-    if (!data->all_jobs_submitted_and_completed && // guard to prevent multiple SIMULATION_ENDS events
-        data->nb_submitters_finished == data->nb_submitters && // all submitters must have finished
-        data->nb_completed_jobs == data->nb_submitted_jobs && // all submitted jobs must have finished
-        // If dynamic submission is enabled, it must be finished
-        (!data->context->submission_sched_enabled || data->context->submission_sched_finished))
+    return (data->nb_submitters_finished == data->expected_nb_submitters) && // All static submitters have finished
+           (!data->context->submission_sched_enabled || data->context->submission_sched_finished) && // Dynamic submissions are disabled or finished
+           (data->nb_completed_jobs == data->nb_submitted_jobs) && // All submitted jobs have been completed (either computed and finished or rejected)
+           (data->nb_running_jobs == 0) && // No jobs are being executed
+           (data->nb_switching_machines == 0) && // No machine is being switched
+           (data->nb_killers == 0); // No jobs is being killed
+}
+
+void check_simulation_finished(ServerData * data)
+{
+    if (is_simumation_finished(data) &&
+        !data->end_of_simulation_sent &&
+        !data->end_of_simulation_in_send_buffer)
     {
-        XBT_INFO("It seems that all jobs have been submitted and completed!");
-        data->all_jobs_submitted_and_completed = true;
+        XBT_INFO("The simulation seems to be finished!");
 
         data->context->proto_writer->append_simulation_ends(MSG_get_clock());
+        data->end_of_simulation_in_send_buffer = true;
     }
 }
+
+

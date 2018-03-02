@@ -7,6 +7,7 @@
 #include "jobs_execution.hpp"
 #include "jobs.hpp"
 #include "task_execution.hpp"
+#include "server.hpp"
 
 #include <simgrid/plugins/energy.h>
 
@@ -472,9 +473,18 @@ int waiter_process(int argc, char *argv[])
         XBT_INFO("Time %g is already reached, skipping sleep", args->target_time);
     }
 
-    send_message("server", IPMessageType::WAITING_DONE);
-    delete args;
+    if (args->server_data->end_of_simulation_in_send_buffer ||
+        args->server_data->end_of_simulation_sent ||
+        args->server_data->end_of_simulation_ack_received)
+    {
+        XBT_INFO("Simulation have finished. Thus, NOT sending WAITING_DONE to the server.");
+    }
+    else
+    {
+        send_message("server", IPMessageType::WAITING_DONE);
+    }
 
+    delete args;
     return 0;
 }
 
