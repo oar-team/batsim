@@ -1,0 +1,7 @@
+batcmd: batsim -p ${BATSIM_DIR}/platforms/small_platform.xml -e /tmp/batsim_tests/nowload-nosched/out --batexec
+output-dir: /tmp/batsim_tests/nowload-nosched
+schedcmd:
+simulation-timeout: 5
+ready-timeout: 1
+success-timeout: 5
+failure-timeout: 0
