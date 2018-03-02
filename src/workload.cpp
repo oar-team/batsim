@@ -22,16 +22,31 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(workload, "workload"); //!< Logging
 
-Workload::Workload(const std::string & workload_name, const std::string & workload_file)
+Workload *Workload::new_static_workload(const string & workload_name,
+                                        const string & workload_file)
 {
-    jobs = new Jobs;
-    profiles = new Profiles;
+    Workload * workload = new Workload;
 
-    jobs->set_profiles(profiles);
-    jobs->set_workload(this);
-    this->name = workload_name;
-    this->file = workload_file;
+    workload->jobs = new Jobs;
+    workload->profiles = new Profiles;
+
+    workload->jobs->set_profiles(workload->profiles);
+    workload->jobs->set_workload(workload);
+    workload->name = workload_name;
+    workload->file = workload_file;
+
+    workload->_is_static = true;
+    return workload;
 }
+
+Workload *Workload::new_dynamic_workload(const string & workload_name)
+{
+    Workload * workload = new_static_workload(workload_name, "dynamic");
+
+    workload->_is_static = false;
+    return workload;
+}
+
 
 Workload::~Workload()
 {
@@ -156,6 +171,11 @@ string Workload::to_string()
     return this->name;
 }
 
+bool Workload::is_static() const
+{
+    return _is_static;
+}
+
 Workloads::~Workloads()
 {
     for (auto mit : _workloads)
@@ -189,6 +209,20 @@ const Workload *Workloads::at(const std::string &workload_name) const
 int Workloads::nb_workloads() const
 {
     return _workloads.size();
+}
+
+int Workloads::nb_static_workloads() const
+{
+    int count = 0;
+
+    for (auto mit : _workloads)
+    {
+        Workload * workload = mit.second;
+
+        count += int(workload->is_static());
+    }
+
+    return count;
 }
 
 Job *Workloads::job_at(const JobIdentifier &job_id)

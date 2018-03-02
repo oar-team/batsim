@@ -1201,7 +1201,7 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     }
     else
     {
-        workload = new Workload(message->job_id.workload_name);
+        workload = Workload::new_dynamic_workload(message->job_id.workload_name);
         context->workloads.insert_workload(workload->name, workload);
     }
 
@@ -1325,7 +1325,7 @@ void JsonProtocolReader::handle_submit_profile(int event_number,
     }
     else
     {
-        workload = new Workload(message->workload_name);
+        workload = Workload::new_dynamic_workload(message->workload_name);
         context->workloads.insert_workload(workload->name, workload);
     }
 

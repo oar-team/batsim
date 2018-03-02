@@ -593,7 +593,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     // Let's create the workloads
     for (const MainArguments::WorkloadDescription & desc : main_args.workload_descriptions)
     {
-        Workload * workload = new Workload(desc.name, desc.filename);
+        Workload * workload = Workload::new_static_workload(desc.name, desc.filename);
 
         int nb_machines_in_workload = -1;
         workload->load_from_json(desc.filename, nb_machines_in_workload);
@@ -605,7 +605,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     // Let's create the workflows
     for (const MainArguments::WorkflowDescription & desc : main_args.workflow_descriptions)
     {
-        Workload * workload = new Workload(desc.workload_name, desc.filename); // Is creating the Workload now necessary? Workloads::add_job_if_not_exists may be enough
+        Workload * workload = Workload::new_static_workload(desc.workload_name, desc.filename);
         workload->jobs = new Jobs;
         workload->profiles = new Profiles;
         context->workloads.insert_workload(desc.workload_name, workload);
