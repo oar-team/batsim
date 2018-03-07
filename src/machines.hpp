@@ -15,6 +15,7 @@
 #include "exact_numbers.hpp"
 #include "machine_range.hpp"
 #include "pstate.hpp"
+#include "permissions.hpp"
 
 struct BatsimContext;
 struct Job;
@@ -33,6 +34,7 @@ enum class MachineState
     ,TRANSITING_FROM_SLEEPING_TO_COMPUTING  //!< The machine is in transition from a sleeping state to a computing state
     ,TRANSITING_FROM_COMPUTING_TO_SLEEPING  //!< The machine is in transition from a computing state to a sleeping state
 };
+
 
 /**
  * @brief Represents a machine
@@ -54,6 +56,7 @@ struct Machine
     int id; //!< The machine unique number
     std::string name; //!< The machine name
     msg_host_t host; //!< The SimGrid host corresponding to the machine
+    roles::Permissions permissions = roles::Permissions::NONE; //!< Machine permissions
     MachineState state = MachineState::IDLE; //!< The current state of the Machine
     std::set<const Job *> jobs_being_computed; //!< The set of jobs being computed on the Machine
 
@@ -64,6 +67,11 @@ struct Machine
     std::map<MachineState, Rational> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
 
     std::map<std::string, std::string> properties; //!< Properties defined in the platform file
+
+    /**
+     * @brief Returns wether the Machine has the given role
+     */
+    bool has_role(roles::Permissions role);
 
     /**
      * @brief Returns whether the Machine has the given power state
@@ -134,16 +142,11 @@ public:
      * @brief Fill the Machines with SimGrid hosts
      * @param[in] hosts The SimGrid hosts
      * @param[in] context The Batsim Context
-     * @param[in] master_host_name The name of the host which should be used as the Master host
-     * @param[in] pfs_host_name The name of the host which should be used as the parallel filestem host (large-capacity storage tier)
-     * @param[in] hpst_host_name The name of the host which should be used as the HPST host (high-performance storage tier)
      * @param[in] limit_machine_count If set to -1, all the machines are used. If set to a strictly positive number N, only the first machines N will be used to compute jobs
      */
     void create_machines(xbt_dynar_t hosts,
                          const BatsimContext * context,
-                         const std::string & master_host_name,
-                         const std::string & pfs_host_name,
-                         const std::string & hpst_host_name,
+                         std::map<std::string, std::string> roles,
                          int limit_machine_count = -1);
 
     /**
@@ -277,7 +280,8 @@ public:
     const std::map<MachineState, int> & nb_machines_in_each_state() const;
 
 private:
-    std::vector<Machine *> _machines; //!< The vector of computing machines
+    std::vector<Machine *> _machines; //!< The vector of all machines
+    std::vector<Machine *> _compute_nodes; //!< The vector of computing machines only
     Machine * _master_machine = nullptr; //!< The master machine
     Machine * _pfs_machine = nullptr; //!< The PFS machine
     Machine * _hpst_machine = nullptr; //!< The HPST machine

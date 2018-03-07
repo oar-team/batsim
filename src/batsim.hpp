@@ -2,6 +2,7 @@
 
 #include <string>
 #include <list>
+#include <map>
 
 #include <rapidjson/document.h>
 
@@ -67,6 +68,7 @@ struct MainArguments
     // Common
     std::string master_host_name;                           //!< The name of the SimGrid host which runs scheduler processes and not user tasks
     bool energy_used;                                       //!< True if and only if the SimGrid energy plugin should be used.
+    std::map<std::string, std::string> hosts_roles_map;     //!< The hosts/roles mapping to be added to the hosts properties.
 
     // Execution context
     rapidjson::Document config_file;                        //!< The configuration file

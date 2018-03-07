@@ -177,6 +177,15 @@ string generate_sha1_string(std::string string_to_hash, int output_length)
 void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code,
                      bool & run_simulation, bool & run_unit_tests)
 {
+
+    // TODO: change hosts format in roles to support intervals
+    // The <hosts> should be formated as follow:
+    // hostname[intervals],hostname[intervals],...
+    // Where `intervals` is a comma separated list of simple integer
+    // or closed interval separated with a '-'.
+    // Example: -r host[1-5,8]:role1,role2 -r toto,tata:myrole
+ 
+
     static const char usage[] =
 R"(A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.
 
@@ -184,6 +193,7 @@ Usage:
   batsim -p <platform_file> [-w <workload_file>...]
                             [-W <workflow_file>...]
                             [--WS (<cut_workflow_file> <start_time>)...]
+                            [-r <hosts_roles_map>...]
                             [options]
   batsim --help
   batsim --version
@@ -191,75 +201,84 @@ Usage:
   batsim --unittest
 
 Input options:
-  -p --platform <platform_file>     The SimGrid platform to simulate.
-  -w --workload <workload_file>     The workload JSON files to simulate.
-  -W --workflow <workflow_file>     The workflow XML files to simulate.
-  --WS --workflow-start (<cut_workflow_file> <start_time>)... The workflow XML
-                                    files to simulate, with the time at which
-                                    they should be started.
+  -p, --platform <platform_file>     The SimGrid platform to simulate.
+  -w, --workload <workload_file>     The workload JSON files to simulate.
+  -W, --workflow <workflow_file>     The workflow XML files to simulate.
+  --WS, --workflow-start (<cut_workflow_file> <start_time>)...  The workflow XML
+                                     files to simulate, with the time at which
+                                     they should be started.
 
 Most common options:
-  -m, --master-host <name>          The name of the host in <platform_file>
-                                    which will be used as the RJMS management
-                                    host (thus NOT used to compute jobs)
-                                    [default: master_host].
-  -E --energy                       Enables the SimGrid energy plugin and
-                                    outputs energy-related files.
+  -m, --master-host <name>           The name of the host in <platform_file>
+                                     which will be used as the RJMS management
+                                     host (thus NOT used to compute jobs)
+                                     [default: master_host].
+  -r, --add-roles-to-hosts <hosts_roles_map>... Add a `roles` property to the specify host(s),
+                                     or append the roles if it already exists.
+                                     The <hosts-roles-map> is formated as <hosts>:<roles>
+                                     The <hosts> should be formated as follow:
+                                     hostname1,hostname2,..
+                                     Thes <roles> should be formated as follow:
+                                     role1,role2,...
+                                     Example: -r host8:role1,role2 -r host1,host2:role1
+                                     Supported roles are: master, storage, pfs, hpst
+  -E, --energy                       Enables the SimGrid energy plugin and
+                                     outputs energy-related files.
 
 Execution context options:
-  --config-file <cfg_file>          Configuration file name (optional). [default: None]
-  -s, --socket-endpoint <endpoint>  The Decision process socket endpoint
-                                    Decision process [default: tcp://localhost:28000].
-  --redis-hostname <redis_host>     The Redis server hostname. Read from config file by default.
-                                    [default: None]
-  --redis-port <redis_port>         The Redis server port. Read from config file by default.
-                                    [default: -1]
-  --redis-prefix <prefix>           The Redis prefix. Read from config file by default.
-                                    [default: None]
+  --config-file <cfg_file>           Configuration file name (optional). [default: None]
+  -s, --socket-endpoint <endpoint>   The Decision process socket endpoint
+                                     Decision process [default: tcp://localhost:28000].
+  --redis-hostname <redis_host>      The Redis server hostname. Read from config file by default.
+                                     [default: None]
+  --redis-port <redis_port>          The Redis server port. Read from config file by default.
+                                     [default: -1]
+  --redis-prefix <prefix>            The Redis prefix. Read from config file by default.
+                                     [default: None]
 
 Output options:
-  -e, --export <prefix>             The export filename prefix used to generate
-                                    simulation output [default: out].
-  --enable-sg-process-tracing       Enables SimGrid process tracing
-  --disable-schedule-tracing        Disables the Pajé schedule outputting.
-  --disable-machine-state-tracing   Disables the machine state outputting.
+  -e, --export <prefix>              The export filename prefix used to generate
+                                     simulation output [default: out].
+  --enable-sg-process-tracing        Enables SimGrid process tracing
+  --disable-schedule-tracing         Disables the Pajé schedule outputting.
+  --disable-machine-state-tracing    Disables the machine state outputting.
 
 
 Platform size limit options:
-  --mmax <nb>                       Limits the number of machines to <nb>.
-                                    0 means no limit [default: 0].
-  --mmax-workload                   If set, limits the number of machines to
-                                    the 'nb_res' field of the input workloads.
-                                    If several workloads are used, the maximum
-                                    of these fields is kept.
+  --mmax <nb>                        Limits the number of machines to <nb>.
+                                     0 means no limit [default: 0].
+  --mmax-workload                    If set, limits the number of machines to
+                                     the 'nb_res' field of the input workloads.
+                                     If several workloads are used, the maximum
+                                     of these fields is kept.
 Verbosity options:
-  -v, --verbosity <verbosity_level> Sets the Batsim verbosity level. Available
-                                    values: quiet, network-only, information,
-                                    debug [default: information].
-  -q, --quiet                       Shortcut for --verbosity quiet
+  -v, --verbosity <verbosity_level>  Sets the Batsim verbosity level. Available
+                                     values: quiet, network-only, information,
+                                     debug [default: information].
+  -q, --quiet                        Shortcut for --verbosity quiet
 
 Workflow options:
-  --workflow-jobs-limit <job_limit> Limits the number of possible concurrent
-                                    jobs for workflows. 0 means no limit
-                                    [default: 0].
-  --ignore-beyond-last-workflow     Ignores workload jobs that occur after all
-                                    workflows have completed.
+  --workflow-jobs-limit <job_limit>  Limits the number of possible concurrent
+                                     jobs for workflows. 0 means no limit
+                                     [default: 0].
+  --ignore-beyond-last-workflow      Ignores workload jobs that occur after all
+                                     workflows have completed.
 
 Other options:
-  --allow-time-sharing              Allows time sharing: One resource may
-                                    compute several jobs at the same time.
-  --batexec                         If set, the jobs in the workloads are
-                                    computed one by one, one after the other,
-                                    without scheduler nor Redis.
-  --pfs-host <pfs_host>             The name of the host, in <platform_file>,
-                                    which will be the parallel filesystem target
-                                    as data sink/source for the large-capacity
-                                    storage tier [default: pfs_host].
-  --hpst-host <hpst_host>           The name of the host, in <platform_file>,
-                                    which will be the parallel filesystem target
-                                    as data sink/source for the high-performance
-                                    storage tier [default: hpst_host].
-  -h --help                         Shows this help.
+  --allow-time-sharing               Allows time sharing: One resource may
+                                     compute several jobs at the same time.
+  --batexec                          If set, the jobs in the workloads are
+                                     computed one by one, one after the other,
+                                     without scheduler nor Redis.
+  --pfs-host <pfs_host>              The name of the host, in <platform_file>,
+                                     which will be the parallel filesystem target
+                                     as data sink/source for the large-capacity
+                                     storage tier [default: pfs_host].
+  --hpst-host <hpst_host>            The name of the host, in <platform_file>,
+                                     which will be the parallel filesystem target
+                                     as data sink/source for the high-performance
+                                     storage tier [default: hpst_host].
+  -h, --help                         Shows this help.
 )";
 
     run_simulation = false,
@@ -405,8 +424,33 @@ Other options:
 
     // Common options
     // **************
+    main_args.hosts_roles_map = map<string, string>();
+
     main_args.master_host_name = args["--master-host"].asString();
+    main_args.hosts_roles_map[main_args.master_host_name] = "master";
+
     main_args.energy_used = args["--energy"].asBool();
+
+
+    // get roles mapping
+    vector<string> hosts_roles_maps = args["--add-roles-to-hosts"].asStringList();
+    for (unsigned int i = 0; i < hosts_roles_maps.size(); ++i)
+    {
+        vector<string> parsed;
+        boost::split(parsed, hosts_roles_maps[i], boost::is_any_of(":"));
+
+        xbt_assert(parsed.size() == 2, "The roles host mapping sould only contain one ':' charactere");
+        string hosts = parsed[0];
+        string roles = parsed[1];
+        vector<string> host_list;
+
+        boost::split(host_list, hosts, boost::is_any_of(","));
+
+        for (auto & host: host_list)
+        {
+            main_args.hosts_roles_map[host] = roles;
+        }
+    }
 
     // Execution context options
     // *************************
@@ -517,7 +561,9 @@ Other options:
         main_args.program_type = ProgramType::BATSIM;
     }
     main_args.pfs_host_name = args["--pfs-host"].asString();
+    main_args.hosts_roles_map[main_args.pfs_host_name] = "pfs";
     main_args.hpst_host_name = args["--hpst-host"].asString();
+    main_args.hosts_roles_map[main_args.hpst_host_name] = "hpst";
 
     run_simulation = !error;
 }

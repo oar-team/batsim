@@ -17,8 +17,10 @@
 #include "context.hpp"
 #include "export.hpp"
 #include "jobs.hpp"
+#include "permissions.hpp"
 
 using namespace std;
+using namespace roles;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(machines, "machines"); //!< Logging
 
@@ -41,32 +43,11 @@ Machines::~Machines()
         delete machine;
     }
     _machines.clear();
-
-    if (_master_machine != nullptr)
-    {
-        delete _master_machine;
-        _master_machine = nullptr;
-    }
-
-    if (_pfs_machine != nullptr)
-    {
-        delete _pfs_machine;
-        _pfs_machine = nullptr;
-    }
-
-    if (_hpst_machine != nullptr)
-    {
-        delete _hpst_machine;
-        _hpst_machine = nullptr;
-    }
-
 }
 
 void Machines::create_machines(xbt_dynar_t hosts,
                                const BatsimContext *context,
-                               const string & master_host_name,
-                               const string & pfs_host_name,
-                               const string & hpst_host_name,
+                               map<string, string> roles,
                                int limit_machine_count)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
@@ -75,7 +56,8 @@ void Machines::create_machines(xbt_dynar_t hosts,
     _machines.reserve(nb_machines);
 
     msg_host_t host;
-    unsigned int i, id=0;
+    unsigned int i = 0;
+    unsigned int id = 0;
     xbt_dynar_foreach(hosts, i, host)
     {
         Machine * machine = new Machine(this);
@@ -88,8 +70,50 @@ void Machines::create_machines(xbt_dynar_t hosts,
         xbt_dict_cursor_t cursor = nullptr;
         char *prop_key = nullptr;
         char *prop_value = nullptr;
-        xbt_dict_foreach(properties_dict, cursor, prop_key, prop_value) {
-            machine->properties[string(prop_key)] = string(prop_value);
+        xbt_dict_foreach(properties_dict, cursor, prop_key, prop_value)
+        {
+            if (string(prop_value) != "")
+            {
+                machine->properties[string(prop_key)] = string(prop_value);
+            }
+        }
+
+        // set role properties on hosts if it has CLI defined roles
+        if (roles.count(machine->name))
+        {
+            // there is roles to set
+            if (machine->properties.count("roles"))
+            {
+                // there is an existing roles property
+                machine->properties["roles"] = machine->properties["roles"] + "," + roles[machine->name];
+            }
+            else
+            {
+                machine->properties["roles"] = roles[machine->name];
+            }
+        }
+
+        // set the permissions using the roles
+        if (machine->properties.count("roles") == 0)
+        {
+            machine->permissions |= Permissions::COMPUTE_NODE;
+            // set the ids for the compute nodes only
+            machine->id = id;
+            ++id;
+            _compute_nodes.push_back(machine);
+        }
+        else
+        {
+            vector<string> role_list;
+            boost::split(role_list, machine->properties["roles"],
+                         boost::is_any_of(","),
+                         boost::token_compress_on);
+
+            machine->permissions = Permissions::NONE;
+            for (const string & role : role_list)
+            {
+                machine->permissions |= permissions_from_role(role);
+            }
         }
 
         if (context->energy_used)
@@ -225,57 +249,16 @@ void Machines::create_machines(xbt_dynar_t hosts,
                        "Using dynamic job submissions AND plaforms with energy information "
                        "is currently forbidden (https://github.com/oar-team/batsim/issues/21).");
         }
-
-        if ((machine->name != master_host_name) && (machine->name != pfs_host_name) && (machine->name != hpst_host_name))
-        {
-            machine->id = id;
-            ++id;
-            _machines.push_back(machine);
-        }
-        else
-        {
-            if (machine->name == master_host_name)
-            {
-                xbt_assert(_master_machine == nullptr, "There are two master hosts...");
-                machine->id = -1;
-                _master_machine = machine;
-            }
-            else if (machine->name == pfs_host_name)
-            {
-                xbt_assert(_pfs_machine == nullptr, "There are two pfs hosts...");
-                machine->id = -2;
-                _pfs_machine = machine;
-            }
-            else if (machine->name == hpst_host_name)
-            {
-                xbt_assert(_hpst_machine == nullptr, "There are two hpst hosts...");
-                machine->id = -3;
-                _hpst_machine = machine;
-            }
-            else
-            {
-                xbt_die("Invalid machine found");
-            }
-        }
+        _machines.push_back(machine);
     }
 
-    xbt_assert(_master_machine != nullptr,
-               "Cannot find the MasterHost '%s' in the platform file", master_host_name.c_str());
-    if (_pfs_machine == nullptr)
-    {
-         XBT_WARN("Could not find pfs_host '%s'!", pfs_host_name.c_str());
-    }
-    if (_hpst_machine == nullptr)
-    {
-         XBT_WARN("Could not find hpst_host '%s'!", hpst_host_name.c_str());
-    }
-
+    // sort the machines by name
     sort_machines_by_ascending_name();
 
     // Let's limit the number of machines
     if (limit_machine_count != 0)
     {
-        int nb_machines_without_limitation = (int)_machines.size();
+        int nb_machines_without_limitation = (int)_compute_nodes.size();
         xbt_assert(limit_machine_count > 0);
         xbt_assert(limit_machine_count <= nb_machines_without_limitation,
                    "Impossible to compute on M=%d machines: "
@@ -285,11 +268,42 @@ void Machines::create_machines(xbt_dynar_t hosts,
 
         for (int machine_id = limit_machine_count; machine_id < nb_machines_without_limitation; ++machine_id)
         {
-            delete _machines[machine_id];
+            delete _compute_nodes[machine_id];
         }
 
-        _machines.resize(limit_machine_count);
+        _compute_nodes.resize(limit_machine_count);
     }
+
+    // then attibute ids to other roles
+    for (auto& machine : _machines)
+    {
+        if (machine->properties.count("roles") != 0)
+        {
+            machine->id = id;
+            ++id;
+            // also keep old legacy parameters (DEPRECATED)
+            if (machine->properties["roles"] == "master")
+            {
+                xbt_assert(_master_machine == nullptr, "There are two master hosts...");
+                _master_machine = machine;
+            }
+            else if (machine->properties["roles"] == "pfs")
+            {
+                xbt_assert(_pfs_machine == nullptr, "There are two pfs hosts...");
+                _pfs_machine = machine;
+            }
+            else if (machine->properties["roles"] == "hpst")
+            {
+                xbt_assert(_hpst_machine == nullptr, "There are two hpst hosts...");
+                _hpst_machine = machine;
+            }
+        }
+    }
+
+    xbt_assert(_master_machine != nullptr,
+               "Cannot find the \"master\" role in the platform file");
+
+
 
     _nb_machines_in_each_state[MachineState::IDLE] = (int)_machines.size();
 }
@@ -560,6 +574,12 @@ Machine::~Machine()
     }
 
     sleep_pstates.clear();
+    properties.clear();
+}
+
+bool Machine::has_role(Permissions role)
+{
+    return (role | this->permissions) == role;
 }
 
 bool Machine::has_pstate(int pstate) const
@@ -736,16 +756,15 @@ void create_machines(const MainArguments & main_args,
                      BatsimContext * context,
                      int max_nb_machines_to_use)
 {
+    XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
     MSG_create_environment(main_args.platform_filename.c_str());
 
-    XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
     XBT_INFO("Looking for master host '%s'", main_args.master_host_name.c_str());
-    XBT_INFO("Looking for parallel file system host (LCST) '%s'", main_args.pfs_host_name.c_str());
-    XBT_INFO("Looking for parallel file system host (HPST) '%s'", main_args.hpst_host_name.c_str());
 
     xbt_dynar_t hosts = MSG_hosts_as_dynar();
-    context->machines.create_machines(hosts, context, main_args.master_host_name,
-                                      main_args.pfs_host_name, main_args.hpst_host_name,
+    context->machines.create_machines(hosts,
+                                      context,
+                                      main_args.hosts_roles_map,
                                       max_nb_machines_to_use);
     xbt_dynar_free(&hosts);
 
