@@ -39,7 +39,7 @@ inline Permissions permissions_from_role(const std::string& str)
         for (auto const& element : map_str_to_role) {
           keys_str += element.first + ", ";
         }
-        throw std::invalid_argument("Cannot create any role from string description " + str + "existing roles are: " + keys_str );
+        throw std::invalid_argument("Cannot create any role from string description '" + str + "' existing roles are: " + keys_str );
     }
 };
 

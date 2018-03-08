@@ -58,14 +58,23 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
       "type": "SIMULATION_BEGINS",
       "data": {
         "allow_time_sharing": false,
-        "nb_resources": 1,
+        "nb_compute_resources": 1,
+        "nb_storage_resources": 1,
         "config": {},
-        "resources_data": [
+        "compute_resources_data": [
           {
             "id": 0,
             "name": "host0",
             "state": "idle",
             "properties": {}
+          }
+        ],
+        "storage_resources_data": [
+          {
+            "id": 2,
+            "name": "host2",
+            "state": "idle",
+            "properties": {"roles": "storage"}
           }
         ],
         "workloads": {
@@ -83,7 +92,8 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
     config.CopyFrom(configuration, _alloc);
 
     Value data(rapidjson::kObjectType);
-    data.AddMember("nb_resources", Value().SetInt(machines.nb_machines()), _alloc);
+    data.AddMember("nb_compute_resources", Value().SetInt(machines.nb_machines()), _alloc);
+    // FIXME this should be in the configuration and not there
     data.AddMember("allow_time_sharing", Value().SetBool(allow_time_sharing), _alloc);
     data.AddMember("config", config, _alloc);
 

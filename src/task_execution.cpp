@@ -185,17 +185,7 @@ void generate_msg_parallel_homogeneous_with_pfs(std::string & task_name_prefix,
     unsigned int pfs_id = nb_res - 1;
 
     // Add the pfs_machine
-    switch (data->host)
-    {
-    case MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::HPST:
-        hosts_to_use.push_back(context->machines.hpst_machine()->host);
-        break;
-    case MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::LCST:
-        hosts_to_use.push_back(context->machines.pfs_machine()->host);
-        break;
-    default:
-        xbt_die("Should not be reached");
-    }
+    hosts_to_use.push_back(context->machines[data->storage_id]->host);
 
     // These amounts are deallocated by SG
     computation_amount = xbt_new(double, nb_res);
@@ -216,7 +206,7 @@ void generate_msg_parallel_homogeneous_with_pfs(std::string & task_name_prefix,
             {
                 switch (data->direction)
                 {
-                case MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::TO_STORAGE:
+                case MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_NODES_TO_STORAGE:
                 {
                     // Communications are done towards the PFS host,
                     // which is the last resource (to the storage)
@@ -230,7 +220,7 @@ void generate_msg_parallel_homogeneous_with_pfs(std::string & task_name_prefix,
                     }
                     k++;
                 } break;
-                case MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_STORAGE:
+                case MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_STORAGE_TO_NODES:
                 {
                     // Communications are done towards the job
                     // allocation (from the storage)
@@ -288,19 +278,8 @@ void generate_msg_data_staginig_task(string task_name_prefix,
     hosts_to_use = std::vector<msg_host_t>();
 
     // Add the pfs_machine
-    switch (data->direction)
-    {
-    case MsgDataStagingProfileData::Direction::LCST_TO_HPST:
-        hosts_to_use.push_back(context->machines.pfs_machine()->host);
-        hosts_to_use.push_back(context->machines.hpst_machine()->host);
-        break;
-    case MsgDataStagingProfileData::Direction::HPST_TO_LCST:
-        hosts_to_use.push_back(context->machines.hpst_machine()->host);
-        hosts_to_use.push_back(context->machines.pfs_machine()->host);
-        break;
-    default:
-        xbt_die("Should not be reached");
-    }
+    hosts_to_use.push_back(context->machines[data->from_storage_id]->host);
+    hosts_to_use.push_back(context->machines[data->to_storage_id]->host);
 
     // These amounts are deallocated by SG
     computation_amount = xbt_new(double, nb_res);

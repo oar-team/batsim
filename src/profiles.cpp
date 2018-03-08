@@ -412,13 +412,13 @@ Profile *Profile::from_json(const std::string & profile_name,
                        error_prefix.c_str(), profile_name.c_str());
             string direction = json_desc["direction"].GetString();
 
-            if (direction == "to_storage")
+            if (direction == "from_node_to_storage")
             {
-                data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::TO_STORAGE;
+                data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_NODES_TO_STORAGE;
             }
-            else if (direction == "from_storage")
+            else if (direction == "from_storage_to_node")
             {
-                data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_STORAGE;
+                data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_STORAGE_TO_NODES;
             }
             else
             {
@@ -428,33 +428,15 @@ Profile *Profile::from_json(const std::string & profile_name,
         }
         else
         {
-            data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::TO_STORAGE;
+            data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_NODES_TO_STORAGE;
         }
 
-        if (json_desc.HasMember("host"))
-        {
-            xbt_assert(json_desc["host"].IsString(),
+        xbt_assert(json_desc.HasMember("storage_id"), "%s: profile '%s', field 'storage_id' is missing",
+                           error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["storage_id"].IsInt(),
                        "%s: profile '%s' has a non-string 'host' field",
                        error_prefix.c_str(), profile_name.c_str());
-            string host = json_desc["host"].GetString();
-            if (host == "HPST")
-            {
-                data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::HPST;
-            }
-            else if (host == "LCST" || host == "PFS")
-            {
-                data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::LCST;
-            }
-            else
-            {
-                xbt_assert(false, "%s: profile '%s' has an invalid 'host' field (%s)",
-                           error_prefix.c_str(), profile_name.c_str(), host.c_str());
-            }
-        }
-        else
-        {
-            data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::LCST;
-        }
+        data->storage_id = json_desc["storage_id"].GetInt();
 
         profile->data = data;
     }
@@ -471,26 +453,19 @@ Profile *Profile::from_json(const std::string & profile_name,
         xbt_assert(data->size >= 0, "%s: profile '%s' has a non-positive 'size' field (%g)",
                    error_prefix.c_str(), profile_name.c_str(), data->size);
 
-        xbt_assert(json_desc.HasMember("direction"), "%s: profile '%s' has no 'direction' field",
+        xbt_assert(json_desc.HasMember("from_storage_id"), "%s: profile '%s' has no 'from_storage_id' field",
                    error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["direction"].IsString(),
-                   "%s: profile '%s' has a non-string 'direction' field",
+        xbt_assert(json_desc["from_storage_id"].IsInt(),
+                   "%s: profile '%s' has a non-string 'from_storage_id' field",
                    error_prefix.c_str(), profile_name.c_str());
-        string direction = json_desc["direction"].GetString();
+        data->from_storage_id = json_desc["from_storage_id"].GetInt();
 
-        if (direction == std::string("hpst_to_lcst"))
-        {
-            data->direction = MsgDataStagingProfileData::Direction::HPST_TO_LCST;
-        }
-        else if (direction == std::string("lcst_to_hpst"))
-        {
-            data->direction = MsgDataStagingProfileData::Direction::LCST_TO_HPST;
-        }
-        else
-        {
-            xbt_assert(false, "%s: profile '%s' has an invalid 'direction' field (%s)",
-                       error_prefix.c_str(), profile_name.c_str(), direction.c_str());
-        }
+        xbt_assert(json_desc.HasMember("to_storage_id"), "%s: profile '%s' has no 'to_storage_id' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["to_storage_id"].IsInt(),
+                   "%s: profile '%s' has a non-string 'to_storage_id' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        data->to_storage_id = json_desc["to_storage_id"].GetInt();
 
         profile->data = data;
     }

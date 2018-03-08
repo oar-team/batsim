@@ -151,22 +151,13 @@ struct MsgParallelHomogeneousPFSMultipleTiersProfileData
      */
     enum class Direction
     {
-        TO_STORAGE      //!< From the nodes to the storage
-        ,FROM_STORAGE   //!< From the storage to the nodes
+        FROM_NODES_TO_STORAGE      //!< From the nodes to the storage
+        ,FROM_STORAGE_TO_NODES     //!< From the storage to the nodes
     };
 
-    /**
-     * @brief The Host considered for the transfer
-     */
-    enum class Host
-    {
-        HPST    //!< The HPST...
-        ,LCST   //!< The LCST...
-    };
-
-    double size;         //!< The size of data per compute node to transfer to pfs_machine (simulate a simple I/O traffic model)
-    Direction direction; //!< Whether data should be transfered to the storage or from the storage to the nodes of the allocation
-    Host host;           //!< Whether data should be transfered to/from the HPST storage or to/from the LCST storage
+    double size;          //!< The size of data per compute node to transfer to pfs_machine (simulate a simple I/O traffic model)
+    Direction direction;  //!< Whether data should be transfered to the storage or from the storage to the nodes of the allocation
+    int storage_id;    //!< The storage node where data should be transfered to/from depending on the direction
 };
 
 /**
@@ -174,17 +165,9 @@ struct MsgParallelHomogeneousPFSMultipleTiersProfileData
  */
 struct MsgDataStagingProfileData
 {
-    /**
-     * @brief The Direction of the data staging
-     */
-    enum class Direction
-    {
-        LCST_TO_HPST    //!< From the LCST to the HPST
-        ,HPST_TO_LCST   //!< From the HPST to the LCST
-    };
-
-    double size;         //!< The size of data to transfer between the two PFS machines
-    Direction direction; //!< Whether data should be transfered to the HPST or from the HPST
+    double size;              //!< The size of data to transfer between the two PFS machines
+    int from_storage_id ;  //!< The storage id from where data come
+    int to_storage_id ;    //!< The storage id where data goes to
 };
 
 /**

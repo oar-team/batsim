@@ -213,15 +213,12 @@ Most common options:
                                      which will be used as the RJMS management
                                      host (thus NOT used to compute jobs)
                                      [default: master_host].
-  -r, --add-roles-to-hosts <hosts_roles_map>... Add a `roles` property to the specify host(s),
-                                     or append the roles if it already exists.
-                                     The <hosts-roles-map> is formated as <hosts>:<roles>
+  -r, --add-role-to-hosts <hosts_role_map>... Add a `role` property to the specify host(s).
+                                     The <hosts-roles-map> is formated as <hosts>:<role>
                                      The <hosts> should be formated as follow:
                                      hostname1,hostname2,..
-                                     Thes <roles> should be formated as follow:
-                                     role1,role2,...
-                                     Example: -r host8:role1,role2 -r host1,host2:role1
                                      Supported roles are: master, storage, pfs, hpst
+                                     Example: -r host8:master -r host1,host2:storage
   -E, --energy                       Enables the SimGrid energy plugin and
                                      outputs energy-related files.
 
@@ -433,7 +430,7 @@ Other options:
 
 
     // get roles mapping
-    vector<string> hosts_roles_maps = args["--add-roles-to-hosts"].asStringList();
+    vector<string> hosts_roles_maps = args["--add-role-to-hosts"].asStringList();
     for (unsigned int i = 0; i < hosts_roles_maps.size(); ++i)
     {
         vector<string> parsed;
