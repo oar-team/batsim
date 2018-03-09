@@ -217,7 +217,8 @@ Most common options:
                                      The <hosts-roles-map> is formated as <hosts>:<role>
                                      The <hosts> should be formated as follow:
                                      hostname1,hostname2,..
-                                     Supported roles are: master, storage, pfs, hpst
+                                     Supported roles are: master, storage, compute_node
+                                     By default, no role means 'compute_node'
                                      Example: -r host8:master -r host1,host2:storage
   -E, --energy                       Enables the SimGrid energy plugin and
                                      outputs energy-related files.
@@ -267,14 +268,6 @@ Other options:
   --batexec                          If set, the jobs in the workloads are
                                      computed one by one, one after the other,
                                      without scheduler nor Redis.
-  --pfs-host <pfs_host>              The name of the host, in <platform_file>,
-                                     which will be the parallel filesystem target
-                                     as data sink/source for the large-capacity
-                                     storage tier [default: pfs_host].
-  --hpst-host <hpst_host>            The name of the host, in <platform_file>,
-                                     which will be the parallel filesystem target
-                                     as data sink/source for the high-performance
-                                     storage tier [default: hpst_host].
   -h, --help                         Shows this help.
 )";
 
@@ -283,7 +276,6 @@ Other options:
     return_code = 1;
     map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc },
                                                      true, STR(BATSIM_VERSION));
-
     // Let's do some checks on the arguments!
     bool error = false;
     return_code = 0;
@@ -557,11 +549,6 @@ Other options:
     {
         main_args.program_type = ProgramType::BATSIM;
     }
-    main_args.pfs_host_name = args["--pfs-host"].asString();
-    main_args.hosts_roles_map[main_args.pfs_host_name] = "pfs";
-    main_args.hpst_host_name = args["--hpst-host"].asString();
-    main_args.hosts_roles_map[main_args.hpst_host_name] = "hpst";
-
     run_simulation = !error;
 }
 

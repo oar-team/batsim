@@ -47,17 +47,13 @@ Machines::~Machines()
 
 void Machines::create_machines(xbt_dynar_t hosts,
                                const BatsimContext *context,
-                               map<string, string> roles,
+                               map<string, string> role_map,
                                int limit_machine_count)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
 
-    int nb_machines = xbt_dynar_length(hosts);
-    _machines.reserve(nb_machines);
-
     msg_host_t host;
     unsigned int i = 0;
-    unsigned int id = 0;
     xbt_dynar_foreach(hosts, i, host)
     {
         Machine * machine = new Machine(this);
@@ -78,43 +74,23 @@ void Machines::create_machines(xbt_dynar_t hosts,
             }
         }
 
-        // set role properties on hosts if it has CLI defined roles
-        if (roles.count(machine->name))
+        // set role properties on hosts if it has CLI defined role
+        if (role_map.count(machine->name))
         {
-            // there is roles to set
-            if (machine->properties.count("roles"))
+            // there is role to set
+            if (machine->properties.count("role"))
             {
-                // there is an existing roles property
-                machine->properties["roles"] = machine->properties["roles"] + "," + roles[machine->name];
+                // there is an existing role property
+                machine->properties["role"] = machine->properties["role"] + "," + role_map[machine->name];
             }
             else
             {
-                machine->properties["roles"] = roles[machine->name];
+                machine->properties["role"] = role_map[machine->name];
             }
         }
 
-        // set the permissions using the roles
-        if (machine->properties.count("roles") == 0)
-        {
-            machine->permissions |= Permissions::COMPUTE_NODE;
-            // set the ids for the compute nodes only
-            machine->id = id;
-            ++id;
-            _compute_nodes.push_back(machine);
-        }
-        else
-        {
-            vector<string> role_list;
-            boost::split(role_list, machine->properties["roles"],
-                         boost::is_any_of(","),
-                         boost::token_compress_on);
-
-            machine->permissions = Permissions::NONE;
-            for (const string & role : role_list)
-            {
-                machine->permissions |= permissions_from_role(role);
-            }
-        }
+        // set the permissions using the role
+        machine->permissions = permissions_from_role(machine->properties["role"]);
 
         if (context->energy_used)
         {
@@ -249,11 +225,27 @@ void Machines::create_machines(xbt_dynar_t hosts,
                        "Using dynamic job submissions AND plaforms with energy information "
                        "is currently forbidden (https://github.com/oar-team/batsim/issues/21).");
         }
-        _machines.push_back(machine);
+        
+        // Store machines in different place depending on the role
+        if (machine->permissions == Permissions::COMPUTE_NODE)
+        {
+            _compute_nodes.push_back(machine);
+        }
+        else if (machine->permissions == Permissions::STORAGE)
+        {
+            // wait to give ids until we know how many compute node there is
+            _storage_nodes.push_back(machine);
+        }
+        else if (machine->permissions == Permissions::MASTER)
+        {
+            xbt_assert(_master_machine == nullptr, "There are two master hosts...");
+            machine->id = -1;
+            _master_machine = machine;
+        }
     }
 
     // sort the machines by name
-    sort_machines_by_ascending_name();
+    sort_machines_by_ascending_name(_compute_nodes);
 
     // Let's limit the number of machines
     if (limit_machine_count != 0)
@@ -274,38 +266,27 @@ void Machines::create_machines(xbt_dynar_t hosts,
         _compute_nodes.resize(limit_machine_count);
     }
 
-    // then attibute ids to other roles
-    for (auto& machine : _machines)
+    // Now add machines to global list and add ids
+    unsigned int id = 0;
+    for (auto& machine : _compute_nodes)
     {
-        if (machine->properties.count("roles") != 0)
-        {
-            machine->id = id;
-            ++id;
-            // also keep old legacy parameters (DEPRECATED)
-            if (machine->properties["roles"] == "master")
-            {
-                xbt_assert(_master_machine == nullptr, "There are two master hosts...");
-                _master_machine = machine;
-            }
-            else if (machine->properties["roles"] == "pfs")
-            {
-                xbt_assert(_pfs_machine == nullptr, "There are two pfs hosts...");
-                _pfs_machine = machine;
-            }
-            else if (machine->properties["roles"] == "hpst")
-            {
-                xbt_assert(_hpst_machine == nullptr, "There are two hpst hosts...");
-                _hpst_machine = machine;
-            }
-        }
+        machine->id = id;
+        ++id;
+        _machines.push_back(machine);
+    }   
+    
+    // then attibute ids to storage machines
+    for (auto& machine : _storage_nodes)
+    {
+        machine->id = id;
+        ++id;
+        _machines.push_back(machine);
     }
 
     xbt_assert(_master_machine != nullptr,
                "Cannot find the \"master\" role in the platform file");
 
-
-
-    _nb_machines_in_each_state[MachineState::IDLE] = (int)_machines.size();
+    _nb_machines_in_each_state[MachineState::IDLE] = (int)_compute_nodes.size();
 }
 
 const Machine * Machines::operator[](int machineID) const
@@ -349,35 +330,21 @@ const std::vector<Machine *> &Machines::machines() const
     return _machines;
 }
 
+const std::vector<Machine *> &Machines::compute_machines() const
+{
+    return _compute_nodes;
+}
+
+const std::vector<Machine *> &Machines::storage_machines() const
+{
+    return _storage_nodes;
+}
+
 const Machine *Machines::master_machine() const
 {
     xbt_assert(_master_machine != nullptr,
                "Trying to access the master machine, which does not exist.");
     return _master_machine;
-}
-
-const Machine *Machines::pfs_machine() const
-{
-    xbt_assert(_pfs_machine != nullptr,
-               "Trying to access the PFS machine, which does not exist.");
-    return _pfs_machine;
-}
-
-bool Machines::has_pfs_machine() const
-{
-    return _pfs_machine != nullptr;
-}
-
-const Machine *Machines::hpst_machine() const
-{
-    xbt_assert(_hpst_machine != nullptr,
-               "Trying to access the hpst machine, which does not exist.");
-    return _hpst_machine;
-}
-
-bool Machines::has_hpst_machine() const
-{
-    return _hpst_machine != nullptr;
 }
 
 long double Machines::total_consumed_energy(const BatsimContext *context) const
@@ -421,6 +388,16 @@ long double Machines::total_wattmin(const BatsimContext *context) const
 int Machines::nb_machines() const
 {
     return _machines.size();
+}
+
+int Machines::nb_compute_machines() const
+{
+    return _compute_nodes.size();
+}
+
+int Machines::nb_storage_machines() const
+{
+    return _storage_nodes.size();
 }
 
 void Machines::update_nb_machines_in_each_state(MachineState old_state, MachineState new_state)
@@ -508,16 +485,6 @@ void Machines::update_machines_on_job_end(const Job * job,
     if (context->trace_machine_states)
     {
         context->machine_state_tracer.write_machine_states(MSG_get_clock());
-    }
-}
-
-void Machines::sort_machines_by_ascending_name()
-{
-    std::sort(_machines.begin(), _machines.end(), machine_comparator_name);
-
-    for (unsigned int i = 0; i < _machines.size(); ++i)
-    {
-        _machines[i]->id = i;
     }
 }
 
@@ -751,6 +718,15 @@ bool machine_comparator_name(const Machine *m1, const Machine *m2)
     return cmp_ret <= 0;
 }
 
+void sort_machines_by_ascending_name(std::vector<Machine *> machines_vect)
+{
+    std::sort(machines_vect.begin(), machines_vect.end(), machine_comparator_name);
+
+    for (unsigned int i = 0; i < machines_vect.size(); ++i)
+    {
+        machines_vect[i]->id = i;
+    }
+}
 
 void create_machines(const MainArguments & main_args,
                      BatsimContext * context,
@@ -769,7 +745,7 @@ void create_machines(const MainArguments & main_args,
     xbt_dynar_free(&hosts);
 
     XBT_INFO("The machines have been created successfully. There are %d computing machines.",
-             context->machines.nb_machines());
+             context->machines.nb_compute_machines());
 }
 
 long double consumed_energy_on_machines(BatsimContext * context,

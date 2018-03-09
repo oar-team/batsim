@@ -157,8 +157,9 @@ void generate_msg_parallel_homogeneous_total_amount(std::string & task_name_pref
  * @param[out] computation_amount the computation matrix to be simulated by the msg task
  * @param[out] communication_amount the communication matrix to be simulated by the msg task
  * @param[in,out] nb_res the number of resources the task have to run on
- * @param[in] profile_data the profile data
  * @param[in,out] hosts_to_use the list of host to be used by the task
+ * @param[in] storage_mapping mapping from label given in the profile and machine id
+ * @param[in] profile_data the profile data
  * @param[in] context the batsim context
  *
  * @details Note that the number of resource is also altered because of the
@@ -169,9 +170,10 @@ void generate_msg_parallel_homogeneous_with_pfs(std::string & task_name_prefix,
                                                 double *& computation_amount,
                                                 double *& communication_amount,
                                                 unsigned int & nb_res,
+                                                std::vector<msg_host_t> & hosts_to_use,
+                                                std::map<std::string, int> storage_mapping,
                                                 void * profile_data,
-                                                BatsimContext * context,
-                                                std::vector<msg_host_t> & hosts_to_use)
+                                                BatsimContext * context)
 {
     task_name_prefix = "pfs_tiers ";
     MsgParallelHomogeneousPFSMultipleTiersProfileData* data =
@@ -185,7 +187,24 @@ void generate_msg_parallel_homogeneous_with_pfs(std::string & task_name_prefix,
     unsigned int pfs_id = nb_res - 1;
 
     // Add the pfs_machine
-    hosts_to_use.push_back(context->machines[data->storage_id]->host);
+    int pfs_machine_id;
+    if (storage_mapping.empty())
+    {
+        if (context->machines.storage_machines().size() == 1)
+        {
+            // No label given: Use the only storage available
+            pfs_machine_id = context->machines.storage_machines().at(0)->id;
+        }
+        else
+        {
+            xbt_assert(false, "No storage/host mapping given and there is no (ore more than one) storage node available");
+        }
+    }
+    else
+    {
+        pfs_machine_id = storage_mapping[data->storage_label];
+    }
+    hosts_to_use.push_back(context->machines[pfs_machine_id]->host);
 
     // These amounts are deallocated by SG
     computation_amount = xbt_new(double, nb_res);
@@ -252,17 +271,19 @@ void generate_msg_parallel_homogeneous_with_pfs(std::string & task_name_prefix,
  * @param[out] computation_amount the computation matrix to be simulated by the msg task
  * @param[out] communication_amount the communication matrix to be simulated by the msg task
  * @param[in,out] nb_res the number of resources the task have to run on
- * @param[in] profile_data the profile data
  * @param[in,out] hosts_to_use the list of host to be used by the task
+ * @param[in] storage_mapping mapping from label given in the profile and machine id
+ * @param[in] profile_data the profile data
  * @param[in] context the batsim context
  */
 void generate_msg_data_staginig_task(string task_name_prefix,
                                      double *&  computation_amount,
                                      double *& communication_amount,
                                      unsigned int & nb_res,
+                                     std::vector<msg_host_t> & hosts_to_use,
+                                     std::map<std::string, int> storage_mapping,
                                      void * profile_data,
-                                     BatsimContext * context,
-                                     std::vector<msg_host_t> & hosts_to_use)
+                                     BatsimContext * context)
 {
     task_name_prefix = "data_staging ";
     MsgDataStagingProfileData* data = (MsgDataStagingProfileData*)profile_data;
@@ -278,8 +299,10 @@ void generate_msg_data_staginig_task(string task_name_prefix,
     hosts_to_use = std::vector<msg_host_t>();
 
     // Add the pfs_machine
-    hosts_to_use.push_back(context->machines[data->from_storage_id]->host);
-    hosts_to_use.push_back(context->machines[data->to_storage_id]->host);
+    int from_machine_id = storage_mapping[data->from_storage_label];
+    int to_machine_id = storage_mapping[data->to_storage_label];
+    hosts_to_use.push_back(context->machines[from_machine_id]->host);
+    hosts_to_use.push_back(context->machines[to_machine_id]->host);
 
     // These amounts are deallocated by SG
     computation_amount = xbt_new(double, nb_res);
@@ -332,25 +355,45 @@ int execute_msg_task(BatTask * btask,
     switch(profile->type)
     {
     case ProfileType::MSG_PARALLEL:
-        generate_msg_parallel_task(task_name_prefix, computation_amount, communication_amount,
-                                   nb_res, profile->data);
+        generate_msg_parallel_task(task_name_prefix, 
+                                   computation_amount, 
+                                   communication_amount,
+                                   nb_res, 
+                                   profile->data);
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS:
-        generate_msg_parallel_homogeneous(task_name_prefix, computation_amount,
-                                          communication_amount, nb_res, profile->data);
+        generate_msg_parallel_homogeneous(task_name_prefix,
+                                          computation_amount,
+                                          communication_amount,
+                                          nb_res, 
+                                          profile->data);
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
-        generate_msg_parallel_homogeneous_total_amount(task_name_prefix, computation_amount,
-                                                       communication_amount, nb_res, profile->data);
+        generate_msg_parallel_homogeneous_total_amount(task_name_prefix,
+                                                       computation_amount,
+                                                       communication_amount,
+                                                       nb_res,
+                                                       profile->data);
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS:
-        generate_msg_parallel_homogeneous_with_pfs(task_name_prefix, computation_amount,
-                                                   communication_amount, nb_res, profile->data,
-                                                   context, hosts_to_use);
+        generate_msg_parallel_homogeneous_with_pfs(task_name_prefix,
+                                                   computation_amount,
+                                                   communication_amount,
+                                                   nb_res,
+                                                   hosts_to_use, 
+                                                   allocation->storage_mapping,
+                                                   profile->data,
+                                                   context);
         break;
     case ProfileType::MSG_DATA_STAGING:
-        generate_msg_data_staginig_task(task_name_prefix, computation_amount, communication_amount,
-                                        nb_res, profile->data, context, hosts_to_use);
+        generate_msg_data_staginig_task(task_name_prefix,
+                                        computation_amount,
+                                        communication_amount,
+                                        nb_res,
+                                        hosts_to_use,
+                                        allocation->storage_mapping,
+                                        profile->data,
+                                        context);
         break;
     default:
         xbt_die("Should not be reached.");

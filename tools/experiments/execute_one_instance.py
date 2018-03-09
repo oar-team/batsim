@@ -75,6 +75,7 @@ def find_info_from_batsim_command(batsim_command):
     batparser.add_argument("-e", "--export", type=str, default="out")
     batparser.add_argument("-m", "--master-host", default="master_host")
     batparser.add_argument("-E", "--energy", action='store_true')
+    batparser.add_argument('--add-role-to-hosts', type=str, default="None")
 
     batparser.add_argument('--config-file', type=str, default="None")
     batparser.add_argument("-s", "--socket-endpoint",
@@ -101,7 +102,6 @@ def find_info_from_batsim_command(batsim_command):
 
     batparser.add_argument("--allow-time-sharing", action='store_true')
     batparser.add_argument("--batexec", action='store_true')
-    batparser.add_argument("--pfs-host", type=str, default="pfs_host")
 
     batparser.add_argument("-h", "--help", action='store_true')
     batparser.add_argument("--version", action='store_true')

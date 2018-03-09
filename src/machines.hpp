@@ -172,11 +172,6 @@ public:
                                     BatsimContext *context);
 
     /**
-     * @brief Sorts the machine by ascending name (lexicographically speaking)
-     */
-    void sort_machines_by_ascending_name();
-
-    /**
      * @brief Sets the PajeTracer
      * @param[in] tracer The PajeTracer
      */
@@ -215,36 +210,20 @@ public:
     const std::vector<Machine *> & machines() const;
 
     /**
+     * @brief Returns a const reference to the vector of computing Machine
+     */
+    const std::vector<Machine *> & compute_machines() const;
+
+    /**
+     * @brief Returns a const reference to the vector of storage Machine
+     */
+    const std::vector<Machine *> & storage_machines() const;
+
+    /**
      * @brief Returns a const pointer to the Master host machine
      * @return A const pointer to the Master host machine
      */
     const Machine * master_machine() const;
-
-    /**
-     * @brief Returns a const pointer to the Parallel File System host machine
-     * for the large-capacity storage tier.
-     * @return A const pointer to the Parallel File System host machine
-     */
-    const Machine * pfs_machine() const;
-
-    /**
-     * @brief Returns whether or not a pfs host is registered in the system.
-     * @return Whether or not a pfs host is present
-     */
-    bool has_pfs_machine() const;
-
-    /**
-     * @brief Returns a const pointer to the Parallel File System host machine
-     * for the high-performance storage tier.
-     * @return A const pointer to the Parallel File System host machine
-     */
-    const Machine * hpst_machine() const;
-
-    /**
-     * @brief Returns whether or not a hpst host is registered in the system.
-     * @return Whether or not a hpst host is present
-     */
-    bool has_hpst_machine() const;
 
     /**
      * @brief Computes and returns the total consumed energy of all the computing machines
@@ -261,10 +240,19 @@ public:
     long double total_wattmin(const BatsimContext * context) const;
 
     /**
-     * @brief Returns the number of computing machines
-     * @return The number of computing machines
+     * @brief Returns the total number of machines
      */
     int nb_machines() const;
+
+    /**
+     * @brief Returns the number of computing machines
+     */
+    int nb_compute_machines() const;
+
+    /**
+     * @brief Returns the number of storage machines
+     */
+    int nb_storage_machines() const;
 
     /**
      * @brief Updates the number of machines in each state after a MachineState transition
@@ -280,12 +268,11 @@ public:
     const std::map<MachineState, int> & nb_machines_in_each_state() const;
 
 private:
-    std::vector<Machine *> _machines; //!< The vector of all machines
-    std::vector<Machine *> _compute_nodes; //!< The vector of computing machines only
-    Machine * _master_machine = nullptr; //!< The master machine
-    Machine * _pfs_machine = nullptr; //!< The PFS machine
-    Machine * _hpst_machine = nullptr; //!< The HPST machine
-    PajeTracer * _tracer = nullptr; //!< The PajeTracer
+    std::vector<Machine *> _machines;       //!< The vector of all machines
+    std::vector<Machine *> _storage_nodes;  //!< The vector of storage machines
+    std::vector<Machine *> _compute_nodes;  //!< The vector of computing machines
+    Machine * _master_machine = nullptr;    //!< The master machine
+    PajeTracer * _tracer = nullptr;         //!< The PajeTracer
     std::map<MachineState, int> _nb_machines_in_each_state; //!< Counts how many machines are in each state
 };
 
@@ -313,3 +300,10 @@ void create_machines(const MainArguments & main_args, BatsimContext * context,
  */
 long double consumed_energy_on_machines(BatsimContext * context,
                                         const MachineRange & machines);
+
+/**
+ * @brief Sorts the given vector of machines by ascending name (lexicographically speaking)
+ */
+void sort_machines_by_ascending_name(std::vector<Machine *>);
+
+

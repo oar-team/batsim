@@ -21,14 +21,16 @@ enum class Permissions : int
 const static std::map<std::string, Permissions> map_str_to_role = {
     {"master", Permissions::MASTER},
     {"compute_node", Permissions::COMPUTE_NODE},
-    {"storage", Permissions::STORAGE},
-    // DEPRECATED: Keep this for retro compat
-    {"pfs", Permissions::STORAGE},
-    {"hpst", Permissions::STORAGE}
+    {"storage", Permissions::STORAGE}
 };
 
 inline Permissions permissions_from_role(const std::string& str)
 {
+    if (str == "")
+    {
+        return Permissions::COMPUTE_NODE;
+    }
+
     try
     {
         return map_str_to_role.at(str);

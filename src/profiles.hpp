@@ -157,7 +157,7 @@ struct MsgParallelHomogeneousPFSMultipleTiersProfileData
 
     double size;          //!< The size of data per compute node to transfer to pfs_machine (simulate a simple I/O traffic model)
     Direction direction;  //!< Whether data should be transfered to the storage or from the storage to the nodes of the allocation
-    int storage_id;    //!< The storage node where data should be transfered to/from depending on the direction
+    std::string storage_label;    //!< A label for the storage where data should be transfered to/from depending on the direction
 };
 
 /**
@@ -166,8 +166,8 @@ struct MsgParallelHomogeneousPFSMultipleTiersProfileData
 struct MsgDataStagingProfileData
 {
     double size;              //!< The size of data to transfer between the two PFS machines
-    int from_storage_id ;  //!< The storage id from where data come
-    int to_storage_id ;    //!< The storage id where data goes to
+    std::string from_storage_label ;  //!< The storage id from where data come
+    std::string to_storage_label ;    //!< The storage id where data goes to
 };
 
 /**

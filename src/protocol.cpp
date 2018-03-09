@@ -61,7 +61,7 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
         "nb_compute_resources": 1,
         "nb_storage_resources": 1,
         "config": {},
-        "compute_resources_data": [
+        "compute_resources": [
           {
             "id": 0,
             "name": "host0",
@@ -69,7 +69,7 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
             "properties": {}
           }
         ],
-        "storage_resources_data": [
+        "storage_resources": [
           {
             "id": 2,
             "name": "host2",
@@ -92,28 +92,28 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
     config.CopyFrom(configuration, _alloc);
 
     Value data(rapidjson::kObjectType);
-    data.AddMember("nb_compute_resources", Value().SetInt(machines.nb_machines()), _alloc);
+    data.AddMember("nb_resources", Value().SetInt(machines.nb_machines()), _alloc);
+    data.AddMember("nb_compute_resources", Value().SetInt(machines.nb_compute_machines()), _alloc);
+    data.AddMember("nb_storage_resources", Value().SetInt(machines.nb_storage_machines()), _alloc);
     // FIXME this should be in the configuration and not there
     data.AddMember("allow_time_sharing", Value().SetBool(allow_time_sharing), _alloc);
     data.AddMember("config", config, _alloc);
 
-    Value resources(rapidjson::kArrayType);
-    resources.Reserve(machines.nb_machines(), _alloc);
-    for (const Machine * machine : machines.machines())
+    Value compute_resources(rapidjson::kArrayType);
+    compute_resources.Reserve(machines.nb_compute_machines(), _alloc);
+    for (const Machine * machine : machines.compute_machines())
     {
-        resources.PushBack(machine_to_json_value(*machine), _alloc);
+        compute_resources.PushBack(machine_to_json_value(*machine), _alloc);
     }
-    data.AddMember("resources_data", Value().CopyFrom(resources, _alloc), _alloc);
+    data.AddMember("compute_resources", Value().CopyFrom(compute_resources, _alloc), _alloc);
+    Value storage_resources(rapidjson::kArrayType);
+    storage_resources.Reserve(machines.nb_storage_machines(), _alloc);
+    for (const Machine * machine : machines.storage_machines())
+    {
+        storage_resources.PushBack(machine_to_json_value(*machine), _alloc);
+    }
+    data.AddMember("storage_resources", Value().CopyFrom(storage_resources, _alloc), _alloc);
 
-    if (machines.has_hpst_machine())
-    {
-        data.AddMember("hpst_host", machine_to_json_value(*machines.hpst_machine()), _alloc);
-    }
-
-    if (machines.has_pfs_machine())
-    {
-        data.AddMember("lcst_host", machine_to_json_value(*machines.pfs_machine()), _alloc);
-    }
 
     Value workloads_dict(rapidjson::kObjectType);
     for (const auto & workload : workloads.workloads())
@@ -752,6 +752,20 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         "job_id": "w12!45",
         "alloc": "2-3",
         "mapping": {"0": "0", "1": "0", "2": "1", "3": "1"}
+        "storage_mapping": {
+          "pfs": 2
+        }
+        "additional_io_job": {
+          "alloc": "2-3 5-6",
+          "profile": {
+            "type": "msg_par",
+            "cpu": 0,
+            "com": [0  ,5e6,5e6,5e6,
+                    5e6,0  ,5e6,0  ,
+                    0  ,5e6,4e6,0  ,
+                    0  ,0  ,0  ,0  ]
+          }
+        }
       }
     } */
 
@@ -869,6 +883,35 @@ void JsonProtocolReader::handle_execute_job(int event_number,
             message->allocation->mapping[i] = i;
         }
     }
+
+    // *************************************
+    // Storage Mapping management (optional)
+    // *************************************
+    // Only needed if the executed job profile use storage labels
+    //
+    if (data_object.HasMember("storage_mapping"))
+    {
+        const Value & mapping_value = data_object["storage_mapping"];
+        xbt_assert(mapping_value.IsObject(), "Invalid JSON message: the 'storage_mapping' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
+        xbt_assert(mapping_value.MemberCount() > 0, "Invalid JSON: the 'storage_mapping' value in the 'data' value of event %d (EXECUTE_JOB) must be a non-empty object", event_number);
+        map<string, int> storage_mapping_map;
+
+        // Let's fill the map from the JSON description
+        for (auto it = mapping_value.MemberBegin(); it != mapping_value.MemberEnd(); ++it)
+        {
+            const Value & key_value = it->name;
+            const Value & value_value = it->value;
+
+            xbt_assert(key_value.IsString(), "Invalid JSON message: Invalid 'storage_mapping' of event %d (EXECUTE_JOB): a key is not a string", event_number);
+            xbt_assert(value_value.IsInt(), "Invalid JSON message: Invalid 'storage_mapping' of event %d (EXECUTE_JOB): a value is not an integer", event_number);
+            storage_mapping_map[key_value.GetString()] = value_value.GetInt();
+
+        }
+        message->allocation->storage_mapping = storage_mapping_map;
+    }
+
+    // TODO Manage additional io job 
+    
 
     // Everything has been parsed correctly, let's inject the message into the simulation.
     send_message(timestamp, "server", IPMessageType::SCHED_EXECUTE_JOB, (void*) message);
