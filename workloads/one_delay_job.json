@@ -1,0 +1,18 @@
+{
+    "version": 0,
+    "command:": "",
+    "date": "Tue, 11 Mar 2015 9:44:30 +0100",
+    "description": "workload with profile file for test",
+
+    "nb_res": 1,
+    "jobs": [
+        {"id":1, "subtime":0, "walltime": 100, "res": 1, "profile": "delay10"}
+    ],
+
+    "profiles": {
+        "delay10": {
+            "type": "delay",
+            "delay": 10
+        }
+    }
+}

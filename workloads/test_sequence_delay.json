@@ -1,0 +1,68 @@
+{
+    "date": "2017-04-18",
+    "description": "Tests whether simple sequence profiles work. Jobs 1->4 should finish in time, jobs 11->14 should reach walltime. All jobs run for 30s",
+
+    "nb_res": 4,
+    "jobs": [
+        {"id": 1, "subtime":   0, "walltime": 50, "res": 1, "profile": "seq_3x10"},
+        {"id": 2, "subtime": 100, "walltime": 50, "res": 2, "profile": "seq_3x10_unrolled"},
+        {"id": 3, "subtime": 200, "walltime": 50, "res": 3, "profile": "seq_20+10"},
+        {"id": 4, "subtime": 300, "walltime": 50, "res": 4, "profile": "seq_10+20"},
+        {"id": 5, "subtime": 400, "walltime": 50, "res": 4, "profile": "seq_of_seq"},
+
+        {"id":11, "subtime":1000, "walltime": 20, "res": 1, "profile": "seq_3x10"},
+        {"id":12, "subtime":1100, "walltime": 20, "res": 2, "profile": "seq_3x10_unrolled"},
+        {"id":13, "subtime":1200, "walltime": 20, "res": 3, "profile": "seq_20+10"},
+        {"id":14, "subtime":1300, "walltime": 20, "res": 4, "profile": "seq_10+20"},
+        {"id":15, "subtime":1400, "walltime": 20, "res": 4, "profile": "seq_of_seq"}
+    ],
+
+    "profiles": {
+        "delay_10": {
+            "type": "delay",
+            "delay": 10
+        },
+        "delay_20": {
+            "type": "delay",
+            "delay": 20
+        },
+        "delay_5": {
+            "type": "delay",
+            "delay": 5
+        },
+        "seq_4x5": {
+            "type": "composed",
+            "nb" : 4,
+            "seq": ["delay_5"]
+        },
+        "seq_3x10": {
+            "type": "composed",
+            "nb" : 3,
+            "seq": ["delay_10"]
+        },
+
+        "seq_3x10_unrolled": {
+            "type": "composed",
+            "nb" : 1,
+            "seq": ["delay_10", "delay_10", "delay_10"]
+        },
+
+        "seq_20+10": {
+            "type": "composed",
+            "nb" : 1,
+            "seq": ["delay_20", "delay_10"]
+        },
+
+        "seq_10+20": {
+            "type": "composed",
+            "nb" : 1,
+            "seq": ["delay_10", "delay_20"]
+        },
+
+        "seq_of_seq": {
+            "type": "composed",
+            "nb" : 1,
+            "seq": ["seq_4x5", "delay_10"]
+        }
+    }
+}
