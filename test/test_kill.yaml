@@ -10,10 +10,10 @@ implicit_instances:
         #- {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
         - {"name":"cluster512", "filename":"${batsim_dir}/platforms/cluster512.xml", "master_node":"master_host0"}
       workload :
-        - {"name":"hello", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
-        - {"name":"medium_late", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example_late_job.json"}
-        - {"name":"same_profile", "filename":"${batsim_dir}/workload_profiles/delays_same_profile.json"}
-        - {"name":"issue32", "filename":"${batsim_dir}/workload_profiles/issue32.json"}
+        - {"name":"hello", "filename":"${batsim_dir}/workloads/test_workload_profile.json"}
+        - {"name":"medium_late", "filename":"${batsim_dir}/workloads/batsim_paper_workload_example_late_job.json"}
+        - {"name":"same_profile", "filename":"${batsim_dir}/workloads/delays_same_profile.json"}
+        - {"name":"issue32", "filename":"${batsim_dir}/workloads/issue32.json"}
       algo:
         - {"name":"killer", "sched_name":"killer"}
       redis_enabled: ["true", "false"]
@@ -74,10 +74,10 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"hello", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
-        - {"name":"medium_late", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example_late_job.json"}
-        - {"name":"same_profile", "filename":"${batsim_dir}/workload_profiles/delays_same_profile.json"}
-        - {"name":"issue32", "filename":"${batsim_dir}/workload_profiles/issue32.json"}
+        - {"name":"hello", "filename":"${batsim_dir}/workloads/test_workload_profile.json"}
+        - {"name":"medium_late", "filename":"${batsim_dir}/workloads/batsim_paper_workload_example_late_job.json"}
+        - {"name":"same_profile", "filename":"${batsim_dir}/workloads/delays_same_profile.json"}
+        - {"name":"issue32", "filename":"${batsim_dir}/workloads/issue32.json"}
       algo:
         - {"name":"killer2", "sched_name":"killer2"}
       redis_enabled: ["true", "false"]

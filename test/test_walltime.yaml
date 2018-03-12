@@ -15,7 +15,7 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"walltime", "filename":"${batsim_dir}/workload_profiles/walltime_test.json"}
+        - {"name":"walltime", "filename":"${batsim_dir}/workloads/walltime_test.json"}
       sched:
         - {"name":"batsched", "cmd":"${BATSCHED_BIN:=batsched} -v filler"}
     generic_instance:

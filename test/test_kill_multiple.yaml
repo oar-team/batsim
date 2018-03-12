@@ -7,7 +7,7 @@ implicit_instances:
       platform :
         - {"name":"small", "filename":"${batsim_dir}/platforms/small_platform.xml", "master_host":"master_host"}
       workload :
-        - {"name":"tiny", "filename": "${batsim_dir}/workload_profiles/one_delay_job.json"}
+        - {"name":"tiny", "filename": "${batsim_dir}/workloads/one_delay_job.json"}
       algo:
         - {"name":"killer", "sched_name":"killer"}
       delay_before_kill: [0,5,10,15]

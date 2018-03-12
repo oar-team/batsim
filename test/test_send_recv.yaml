@@ -15,7 +15,7 @@ implicit_instances:
       platform :
         - {"name":"no_energy", "filename":"${batsim_dir}/platforms/simple_coalloc_platform.xml"}
       workload :
-        - {"name":"workload", "filename":"${batsim_dir}/workload_profiles/test_simple_send_recv.json"}
+        - {"name":"workload", "filename":"${batsim_dir}/workloads/test_simple_send_recv.json"}
       algo:
         - {"name":"SendRecv", "sched_name":"${batsim_dir}/schedulers/pybatsim/schedulers/schedSendRecv.py"}
     generic_instance:

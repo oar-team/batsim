@@ -22,6 +22,11 @@
         "2": {
             "type": "msg_par_hg_pfs0",
             "size": 10e6
+        },
+        "3": {
+            "type": "msg_par_hg_tier",
+            "size": 10e6,
+            "storage": "pfs0"
         }
     }
 }

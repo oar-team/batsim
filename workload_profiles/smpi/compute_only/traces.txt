@@ -1,2 +1,0 @@
-actions0.txt
-actions1.txt

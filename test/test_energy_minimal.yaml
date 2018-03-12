@@ -16,7 +16,7 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"two_jobs", "filename":"${batsim_dir}/workload_profiles/energy_minimal.json"}
+        - {"name":"two_jobs", "filename":"${batsim_dir}/workloads/energy_minimal.json"}
       algo:
         - {"name":"subpart_sleeper", "sched_name":"energy_bf_subpart_sleeper"}
       monitoring_period: [30]

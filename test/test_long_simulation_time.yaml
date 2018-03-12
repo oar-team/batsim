@@ -15,7 +15,7 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"long_workload", "filename":"${batsim_dir}/workload_profiles/long_workload.json"}
+        - {"name":"long_workload", "filename":"${batsim_dir}/workloads/long_workload.json"}
       algo:
         - {"name":"filler", "algo_name":"filler"}
     generic_instance:

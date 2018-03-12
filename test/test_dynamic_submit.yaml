@@ -19,7 +19,7 @@ implicit_instances:
       algo:
         - {"name":"submitter", "sched_name":"submitter"}
       workload:
-        - {"name":"one_job", "filename":"${batsim_dir}/workload_profiles/one_delay_job.json"}
+        - {"name":"one_job", "filename":"${batsim_dir}/workloads/one_delay_job.json"}
       mode:
         - {"name":"diff_profiles__bundledp", "increase_jobs_duration":"true", "send_profile_if_already_sent":"true", "send_profiles_in_separate_event":"false"}
         - {"name":"diff_profiles__separatep", "increase_jobs_duration":"true", "send_profile_if_already_sent":"true", "send_profiles_in_separate_event":"true"}

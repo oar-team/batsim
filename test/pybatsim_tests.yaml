@@ -9,8 +9,8 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"tiny", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
-        - {"name":"medium", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example.json"}
+        - {"name":"tiny", "filename":"${batsim_dir}/workloads/test_workload_profile.json"}
+        - {"name":"medium", "filename":"${batsim_dir}/workloads/batsim_paper_workload_example.json"}
       pybatsim_algo:
         - {"name":"filler", "algo_name":"fillerSched"}
         - {"name":"easy", "algo_name":"easyBackfill"}

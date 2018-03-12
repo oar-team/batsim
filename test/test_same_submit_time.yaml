@@ -15,7 +15,7 @@ implicit_instances:
       platform :
         - {"name":"small", "filename":"${batsim_dir}/platforms/small_platform.xml"}
       workload :
-        - {"name":"same_submit_time", "filename":"${batsim_dir}/workload_profiles/same_submit_time.json"}
+        - {"name":"same_submit_time", "filename":"${batsim_dir}/workloads/same_submit_time.json"}
       algo:
         - {"name":"filler", "algo_name":"filler"}
     generic_instance:

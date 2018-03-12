@@ -19,7 +19,7 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"energy_small", "filename":"${batsim_dir}/workload_profiles/energy_small.json"}
+        - {"name":"energy_small", "filename":"${batsim_dir}/workloads/energy_small.json"}
       algo:
         - {"name":"inertial_shutdown", "sched_name":"energy_bf_monitoring_inertial"}
       llh_bound: [500]
@@ -89,7 +89,7 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"energy_small", "filename":"${batsim_dir}/workload_profiles/energy_small.json"}
+        - {"name":"energy_small", "filename":"${batsim_dir}/workloads/energy_small.json"}
       algo:
         - {"name":"opportunistic", "sched_name":"energy_bf_idle_sleeper"}
     generic_instance:
@@ -156,7 +156,7 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"energy_small", "filename":"${batsim_dir}/workload_profiles/energy_small.json"}
+        - {"name":"energy_small", "filename":"${batsim_dir}/workloads/energy_small.json"}
       algo:
         - {"name":"inertial_shutdown", "sched_name":"energy_bf_monitoring_inertial"}
       llh_bound: [500]
@@ -226,7 +226,7 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"energy_small", "filename":"${batsim_dir}/workload_profiles/energy_small.json"}
+        - {"name":"energy_small", "filename":"${batsim_dir}/workloads/energy_small.json"}
       algo:
         - {"name":"proportional", "sched_name":"energy_bf_subpart_sleeper"}
     generic_instance:

@@ -20,8 +20,8 @@ implicit_instances:
         - 2
         - 3
       workload :
-        - {"name":"tiny", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
-        - {"name":"medium", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example.json"}
+        - {"name":"tiny", "filename":"${batsim_dir}/workloads/test_workload_profile.json"}
+        - {"name":"medium", "filename":"${batsim_dir}/workloads/batsim_paper_workload_example.json"}
       algo:
         - {"name":"random", "algo_name":"random"}
     generic_instance:

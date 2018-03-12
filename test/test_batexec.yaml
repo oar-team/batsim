@@ -15,7 +15,7 @@ implicit_instances:
       platform :
         - {"name":"small", "filename":"${batsim_dir}/platforms/small_platform.xml"}
       workload :
-        - {"name":"tiny", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
+        - {"name":"tiny", "filename":"${batsim_dir}/workloads/test_workload_profile.json"}
     generic_instance:
       timeout: 10
       working_directory: ${base_working_directory}

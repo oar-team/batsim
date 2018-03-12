@@ -51,7 +51,7 @@ commands_before_instances:
   - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
   - ${batsim_dir}/test/clean_output_dir.py ${base_output_directory}
   - cp ${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml ${base_output_directory}/platform.xml
-  - cp ${batsim_dir}/workload_profiles/batsim_paper_workload_example.json ${base_output_directory}/workload.json
+  - cp ${batsim_dir}/workloads/batsim_paper_workload_example.json ${base_output_directory}/workload.json
 
 # These post commands are done once all instances have been executed
 commands_after_instances:

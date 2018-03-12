@@ -15,7 +15,7 @@ implicit_instances:
       platform :
         - {"name":"small", "filename":"${batsim_dir}/platforms/small_platform.xml"}
       workload :
-        - {"name":"sequence_delay", "filename":"${batsim_dir}/workload_profiles/test_sequence_delay.json"}
+        - {"name":"sequence_delay", "filename":"${batsim_dir}/workloads/test_sequence_delay.json"}
       algo:
         - {"name":"filler", "algo_name":"filler"}
     generic_instance:

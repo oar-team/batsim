@@ -15,7 +15,7 @@ implicit_instances:
       platform :
         - {"name":"small_pfs0", "filename":"${batsim_dir}/platforms/small_platform_pfs0.xml", "pfs_host":"hosts_pfs0"}
       workload :
-        - {"name":"tiny_pfs0", "filename":"${batsim_dir}/workload_profiles/test_workload_pfs0.json"}
+        - {"name":"tiny_pfs0", "filename":"${batsim_dir}/workloads/test_workload_pfs0.json"}
     generic_instance:
       timeout: 10
       working_directory: ${base_working_directory}

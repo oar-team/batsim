@@ -10,7 +10,7 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"one_job", "filename":"${batsim_dir}/workload_profiles/one_computation_job.json"}
+        - {"name":"one_job", "filename":"${batsim_dir}/workloads/one_computation_job.json"}
       algo:
         - {"name":"filler", "algo_name":"filler"}
       resource_fraction: [0.25, 0.5, 0.75, 1.0]
