@@ -404,7 +404,6 @@ int execute_job_process(int argc, char *argv[])
         XBT_INFO("Job %s had been killed (walltime %g reached)",
                  job->id.to_string().c_str(), (double) job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
-        job->kill_reason = "Walltime reached";
         if (args->context->trace_schedule)
         {
             args->context->paje_tracer.add_job_kill(job, args->allocation->machine_ids,
@@ -537,7 +536,6 @@ int killer_process(int argc, char *argv[])
 
             // Let's update the job information
             job->state = JobState::JOB_STATE_COMPLETED_KILLED;
-            job->kill_reason = "Killed from killer_process (probably requested by the decision process)";
 
             args->context->machines.update_machines_on_job_end(job,
                                                                job->allocation,

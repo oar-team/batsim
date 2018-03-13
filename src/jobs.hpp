@@ -181,7 +181,6 @@ struct Job
     JobState state; //!< The current state of the job
     Rational starting_time; //!< The time at which the job starts to be executed.
     Rational runtime; //!< The amount of time during which the job has been executed.
-    std::string kill_reason; //!< If the job has been killed, the kill reason is stored in this variable
     bool kill_requested = false; //!< Whether the job kill has been requested
     long double consumed_energy; //!< The sum, for each machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
 

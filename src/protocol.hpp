@@ -108,14 +108,12 @@ public:
      * @brief Appends a JOB_COMPLETED event.
      * @param[in] job_id The identifier of the job that has completed.
      * @param[in] job_state The job state
-     * @param[in] kill_reason The kill reason (if any)
      * @param[in] job_alloc last allocation of the job
      * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_job_completed(const std::string & job_id,
                                       const std::string & job_state,
-                                      const std::string & kill_reason,
                                       const std::string & job_alloc,
                                       int return_code,
                                       double date) = 0;
@@ -256,14 +254,12 @@ public:
      * @brief Appends a JOB_COMPLETED event.
      * @param[in] job_id The identifier of the job that has completed.
      * @param[in] job_state The job state
-     * @param[in] kill_reason The kill reason (if any)
      * @param[in] job_alloc last allocation of the job
      * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_job_completed(const std::string & job_id,
                               const std::string & job_state,
-                              const std::string & kill_reason,
                               const std::string & job_alloc,
                               int return_code,
                               double date);

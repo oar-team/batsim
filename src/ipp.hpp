@@ -123,7 +123,6 @@ struct ChangeJobStateMessage
 {
     JobIdentifier job_id; //!< The JobIdentifier
     std::string job_state; //!< The new job state
-    std::string kill_reason; //!< The optional kill reason if the new job state is COMPLETED_KILLED
 };
 
 /**

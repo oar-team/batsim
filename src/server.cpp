@@ -228,7 +228,6 @@ void server_on_job_completed(ServerData * data,
 
     data->context->proto_writer->append_job_completed(message->job_id.to_string(),
                                                       job_state_to_string(job->state),
-                                                      job->kill_reason,
                                                       job->allocation.to_string_hyphen(" "),
                                                       job->return_code,
                                                       MSG_get_clock());
@@ -518,7 +517,6 @@ void server_on_killing_done(ServerData * data,
             data->context->proto_writer->append_job_completed(
                 job->id.to_string(),
                 job_state_to_string(job->state),
-                job->kill_reason,
                 job->allocation.to_string_hyphen(" "),
                 job->return_code,
                 MSG_get_clock());
@@ -698,7 +696,6 @@ void server_on_change_job_state(ServerData * data,
     }
 
     job->state = new_state;
-    job->kill_reason = message->kill_reason;
 
     check_simulation_finished(data);
 }

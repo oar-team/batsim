@@ -236,7 +236,6 @@ void JsonProtocolWriter::append_job_submitted(const string & job_id,
 
 void JsonProtocolWriter::append_job_completed(const string & job_id,
                                               const string & job_state,
-                                              const string & kill_reason,
                                               const string & job_alloc,
                                               int return_code,
                                               double date)
@@ -247,7 +246,6 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
       "data": {
         "job_id": "w0!1",
         "job_state": "COMPLETED_KILLED",
-        "kill_reason": "Walltime reached"
         "job_alloc": "0-1 5"
       }
     } */
@@ -260,7 +258,6 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
     data.AddMember("job_id", Value().SetString(job_id.c_str(), _alloc), _alloc);
     data.AddMember("job_state", Value().SetString(job_state.c_str(), _alloc), _alloc);
     data.AddMember("return_code", Value().SetInt(return_code), _alloc);
-    data.AddMember("kill_reason", Value().SetString(kill_reason.c_str(), _alloc), _alloc);
     data.AddMember("alloc", Value().SetString(job_alloc.c_str(), _alloc), _alloc);
 
     Value event(rapidjson::kObjectType);
@@ -1045,7 +1042,6 @@ void JsonProtocolReader::handle_change_job_state(int event_number,
       "data": {
             "job_id": "w12!45",
             "job_state": "COMPLETED_KILLED",
-            "kill_reason": "Sub-jobs were killed."
       }
     } */
 
@@ -1076,19 +1072,6 @@ void JsonProtocolReader::handle_change_job_state(int event_number,
                    boost::algorithm::join(allowed_states, ", ").c_str());
     }
 
-    string kill_reason;
-    if (data_object.HasMember("kill_reason"))
-    {
-        const Value & kill_reason_value = data_object["kill_reason"];
-        xbt_assert(kill_reason_value.IsString(), "Invalid JSON message: in event %d (CHANGE_kill_reason): ['data']['kill_reason'] should be a string", event_number);
-        kill_reason = kill_reason_value.GetString();
-
-        if (kill_reason != "" && job_state != "COMPLETED_KILLED")
-        {
-            xbt_assert(false, "Invalid JSON message: in event %d (CHANGE_JOB_STATE): ['data']['kill_reason'] is only allowed if the job_state is COMPLETED_KILLED", event_number);
-        }
-    }
-
     ChangeJobStateMessage * message = new ChangeJobStateMessage;
 
     message->job_id = JobIdentifier(job_id);
@@ -1098,7 +1081,6 @@ void JsonProtocolReader::handle_change_job_state(int event_number,
     }
 
     message->job_state = job_state;
-    message->kill_reason = kill_reason;
 
     send_message(timestamp, "server", IPMessageType::SCHED_CHANGE_JOB_STATE, (void *) message);
 }
