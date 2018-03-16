@@ -13,9 +13,6 @@ that plugs with it:
 
 It also provide a script to run the experiment and reproduce the results.
 
-.. note:: You can find already built images and cache here:
-   http://simctn.gforge.inria.fr/ (maybe outdated)
-
 Usage
 -----
 
@@ -50,7 +47,11 @@ If you want to use Docker, you can import and run the image using these
 commands::
 
   docker import build/debian8_batsim/debian8_batsim.tar.gz simctn
-  docker run -ti -e LANG=en_US.UTF-8 -p 8888:8888 simctn bash
+  docker run -ti \
+    --env LANG=en_US.UTF-8 \
+    --volume $SSH_AUTH_SOCK:/ssh-agent --env SSH_AUTH_SOCK=/ssh-agent \
+    -p 8888:8888 \
+    simctn bash
 
 Now you should be in the container.
 
@@ -67,7 +68,7 @@ and with this command::
 
 Then ssh into it::
 
-  ssh root@localhost -p2222
+  ssh -A root@localhost -p2222
   # password: root
 
 Run the experiment
@@ -76,7 +77,7 @@ Run the experiment
 Login into the image. Default credential is **login: root** and **password:
 root**. Now you can run the experiment like this::
 
-  cd /root
+  cd /root/expe-batsim
   ./experiment.py
 
 You can modify the experimentation parameters directly inside the
@@ -89,7 +90,25 @@ To check the results of the experiment you can use ipython notebook (now
 jupyther). To do so, run the server and connect to it via your local
 browser::
 
-  ipython3 notebook --ip 0.0.0.0
+  ipython3 notebook --no-browser --ip 0.0.0.0
+
+Development
+-----------
+
+When you are building your experiment you use some development tools. The
+last step of the ``setup`` section is made to install your favorite tools
+in order to work the way you like. You should use the provided step, as a
+template to build your own. You can find it in ``step/my_dev_tools.yaml``.
+
+All the experiment tools (simulators, schedulers, input data, ...) are
+versioned using Git but, in order to import it without credential, the
+remote repositories are read-only. Thus, you have to set your personal
+remote clones for any modified tools of the chain to save your work. In
+order to push your work on a remote repository, SSH credentials need to be
+imported using SSH forward Agent or Key import from your home. For docker
+container the ssh-agent socket (SSH_AUTH_SOCK) can be mounted as volume and
+exported in the environment.  Note that the examples below already do this
+for you.
 
 
 References

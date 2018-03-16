@@ -66,7 +66,7 @@ setup:
           git clone https://github.com/miloyip/rapidjson.git
       - exec_in: |
           cd $$simctn_dir/rapidjson
-          git checkout 3d5848a
+          git checkout 3d5848a # v1.02
           cp -a include/rapidjson /usr/include
     - do_it:
       - exec_in: |
@@ -74,13 +74,13 @@ setup:
           git clone https://scm.gforge.inria.fr/anonscm/git/batsim/batsim.git
       - exec_in: |
           cd $$simctn_dir/batsim
-          git checkout 5a3ba6b
+          git checkout feb4031e3351d
           mkdir build
       - exec_in: |
           cd $$simctn_dir/batsim/build
           cmake ..
           make -j$(nproc)
-          #make install
+          make install
   - fred_scheduler:
     - install dependencies:
       - exec_in: |
@@ -120,7 +120,7 @@ setup:
           git clone https://github.com/oar-team/oar-kao.git
       - exec_in: |
           cd $$simctn_dir/oar-kao
-          git checkout ae82dce
+          git checkout 4090933eda9
           pip3 install -e .
   - evalys:
     - install dependencies:
@@ -130,39 +130,26 @@ setup:
             python3-pyqt4 \
             python3-matplotlib \
             python3-pandas \
-            ipython3-notebook 2>&1
+            ipython3-notebook \
+            python3-mpld3
     - install_evalys:
       - exec_in: |
           cd $$simctn_dir
           git clone https://github.com/oar-team/evalys.git
       - exec_in: |
           cd $$simctn_dir/evalys
-          # Not stable for now
-          #git checkout 840ac5e
           pip3 install -e .
   - import_experiment_material:
-    - copy_platfom:
-      - local2in:
-        - $$kameleon_data_dir/griffon_modified.xml
-        - $$simctn_dir/griffon_modified.xml
-    - copy_job_description:
-      - local2in:
-        - $$kameleon_data_dir/300_16_0001000000.0_0000000000.0_010.json
-        - $$simctn_dir/300_16_0001000000.0_0000000000.0_010.json
-      - local2in:
-        - $$kameleon_data_dir/CEA-Curie-2011-2.1-cln.swf
-        - $$simctn_dir/CEA-Curie-2011-2.1-cln.swf
-    - copy_experiment_script:
-      - local2in:
-        - $$kameleon_data_dir/experiment.py
-        - $$simctn_dir/experiment.py
-      - local2in:
-        - $$kameleon_data_dir/swfToJsonConverter.py
-        - $$simctn_dir/swfToJsonConverter.py
+    - install_expe_batsim:
+      - exec_in: |
+          cd $$simctn_dir
+          git clone https://scm.gforge.inria.fr/anonscm/git/expe-batsim/expe-batsim.git
     - make_experiment_runnable:
       - exec_in: pip3 install sortedcontainers
-      - exec_in: chmod 755 $$simctn_dir/experiment.py
-      - exec_in: chmod 755 $$simctn_dir/swfToJsonConverter.py
+      - exec_in: chmod 755 $$simctn_dir/expe-batsim/experiment.py
+      - exec_in: chmod 755 $$simctn_dir/expe-batsim/swfToJsonConverter.py
+  # import my personal dev tools
+  - my_dev_tools
 
 export:
   - "@base"
