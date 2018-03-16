@@ -8,19 +8,22 @@
 
 ---
 ## Choose one of them :)
-extend: default/chroot/debian8.yaml
 checkpoint: btrfs.yaml
+extend: default/chroot/debian8.yaml
+
 #extend: default/virtualbox/debian8.yaml
+
 #extend: default/qemu/debian8.yaml
 
 global:
   # You can see the base template  to know the
   # variables that you can override
-  # virtualbox_memory_size: 2048
+  virtualbox_memory_size: 2048
   # qemu_memory_size : 2048
   appliance_formats: tar.gz qcow2
+  tar_compression_level: fast
   btrfs_volume: "/"
-  setup_packages: $$setup_packages git cmake build-essential
+  setup_packages: $$setup_packages git cmake build-essential e2fsprogs
   default_keyboard_layout: fr
   default_timezone: Europe/Paris
   root_password: root
@@ -71,7 +74,13 @@ setup:
           #make install
   - fred_scheduler:
     - install dependencies:
-      - exec_in: apt-get -y --force-yes install liblog-log4perl-perl 2>&1
+      - exec_in: |
+          apt-get -y --force-yes install \
+          liblog-log4perl-perl \
+          libjson-perl \
+          liblist-moreutils-perl \
+          libfile-slurp-perl \
+          2>&1
     - get_it:
       - exec_in: |
           cd $$simctn_dir
@@ -79,6 +88,12 @@ setup:
       - exec_in: |
           cd $$simctn_dir/batch-simulator
           git checkout 170521bd1ec6
+          cd ProcessorRange
+          perl Makefile.PL
+          make
+          make install
+          cd ..
+          cp log4perl.conf.template log4perl.conf
   - oar_sched:
     - install dependencies:
       - exec_in: apt-get -y --force-yes install python-setuptools 2>&1
@@ -109,6 +124,19 @@ setup:
       - local2in:
         - $$kameleon_data_dir/300_16_0001000000.0_0000000000.0_010.json
         - $$simctn_dir/300_16_0001000000.0_0000000000.0_010.json
+      - local2in:
+        - $$kameleon_data_dir/CEA-Curie-2011-2.1-cln.swf
+        - $$simctn_dir/CEA-Curie-2011-2.1-cln.swf
+    - copy_experiment_script:
+      - local2in:
+        - $$kameleon_data_dir/experiment.py
+        - $$simctn_dir/experiment.py
+      - local2in:
+        - $$kameleon_data_dir/swfToJsonConverter.py
+        - $$simctn_dir/swfToJsonConverter.py
+    - make_experiment_runnable:
+      - exec_in: apt-get -y --force-yes install python3 2>&1
+      - exec_in: chmod 755 $$simctn_dir/experiment.py
 
 export:
   - "@base"
