@@ -907,8 +907,34 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         message->allocation->storage_mapping = storage_mapping_map;
     }
 
-    // TODO Manage additional io job 
-    
+    // *************************************
+    // Additional io job management (optional)
+    // *************************************
+    if (data_object.HasMember("additional_io_job"))
+    {
+        const Value & io_job_value = data_object["additional_io_job"];
+
+        // Read the profile description
+        xbt_assert(io_job_value.HasMember("profile"), "Invalid JSON message: In event %d (EXECUTE_JOB): the 'profile' field is mandatory in the 'additional_io_job' object", event_number)")
+        const Value & profile_object = data_object["profile"];
+        xbt_assert(profile_object.IsObject(), "Invalid JSON message: in event %d (EXECUTE_JOB): ['data']['profile'] should be an object", event_number);
+
+        StringBuffer buffer;
+        ::Writer<rapidjson::StringBuffer> writer(buffer);
+        profile_object.Accept(writer);
+
+        message->additional_io_job_profile_description = string(buffer.GetString(), buffer.GetSize());
+        XBT_INFO("An additional job profile was added to the job '%s' : %s",
+                job->id.to_string().c_str(), message->additional_io_job_profile_description.c_str());
+
+        // create the profile
+        Profile * profile = Profile::from_json(job->additional_io_profile,
+                message->additional_io_job_profile_description,
+                "Invalid JSON profile received from the scheduler for the 'additional_io_job'");
+        // merge the profile with the executed job profile
+        profile->
+    }
+    workload->profiles->add_profile(job->profile, profile);
 
     // Everything has been parsed correctly, let's inject the message into the simulation.
     send_message(timestamp, "server", IPMessageType::SCHED_EXECUTE_JOB, (void*) message);
