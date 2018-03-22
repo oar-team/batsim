@@ -888,11 +888,13 @@ void server_on_execute_job(ServerData * data,
 
         msg_host_t to_add = data->context->machines[machine_id]->host;
         allocation->hosts.push_back(to_add);
-        // Only add the host if it is not already added (due to custom mapping)
-        //if (std::find(allocation->hosts.begin(), allocation->hosts.end(), to_add) == allocation->hosts.end())
-        //{
-        //    allocation->hosts.push_back(to_add);
-        //}
+    }
+
+    // Also generate io hosts list if any
+    allocation->io_hosts.reserve(allocation->io_allocation.size());
+    for (unsigned int id = 0; id < allocation->io_hosts.size(); ++id)
+    {
+        allocation->io_hosts.push_back(data->context->machines[id]->host);
     }
 
     ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;

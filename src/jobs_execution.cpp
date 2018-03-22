@@ -48,14 +48,13 @@ int execute_task(BatTask * btask,
 {
     Job * job = btask->parent_job;
     Profile * profile = btask->profile;
-    int nb_res = allocation->hosts.size();
 
     // Init task
     btask->parent_job = job;
 
     if (profile->is_parallel_task())
     {
-        int return_code = execute_msg_task(btask, allocation, nb_res, remaining_time,
+        int return_code = execute_msg_task(btask, allocation, remaining_time,
                                            context, cleanup_data);
         if (return_code != 0)
         {

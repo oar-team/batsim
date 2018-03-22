@@ -754,6 +754,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         }
         "additional_io_job": {
           "alloc": "2-3 5-6",
+          "profile_name": "my_io_job",
           "profile": {
             "type": "msg_par",
             "cpu": 0,
@@ -915,26 +916,76 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         const Value & io_job_value = data_object["additional_io_job"];
 
         // Read the profile description
-        xbt_assert(io_job_value.HasMember("profile"), "Invalid JSON message: In event %d (EXECUTE_JOB): the 'profile' field is mandatory in the 'additional_io_job' object", event_number)")
-        const Value & profile_object = data_object["profile"];
-        xbt_assert(profile_object.IsObject(), "Invalid JSON message: in event %d (EXECUTE_JOB): ['data']['profile'] should be an object", event_number);
+        xbt_assert(io_job_value.HasMember("profile_name"), "Invalid JSON message: In event %d (EXECUTE_JOB): the 'profile_name' field is mandatory in the 'additional_io_job' object", event_number);
 
-        StringBuffer buffer;
-        ::Writer<rapidjson::StringBuffer> writer(buffer);
-        profile_object.Accept(writer);
+        xbt_assert(io_job_value["profile_name"].IsString(), "Invalid JSON message: Invalid 'profile_name' of event %d (EXECUTE_JOB): should be a string", event_number);
+        string profile_name = io_job_value["profile_name"].GetString();
 
-        message->additional_io_job_profile_description = string(buffer.GetString(), buffer.GetSize());
-        XBT_INFO("An additional job profile was added to the job '%s' : %s",
-                job->id.to_string().c_str(), message->additional_io_job_profile_description.c_str());
+        Profile * io_profile;
+        Workload * workload = context->workloads.at(message->allocation->job_id.workload_name);
+        if (io_job_value.HasMember("profile"))
+        {
+            const Value & profile_object = io_job_value["profile"];
+            xbt_assert(profile_object.IsObject(), "Invalid JSON message: in event %d (EXECUTE_JOB): ['data']['profile'] should be an object", event_number);
 
-        // create the profile
-        Profile * profile = Profile::from_json(job->additional_io_profile,
-                message->additional_io_job_profile_description,
-                "Invalid JSON profile received from the scheduler for the 'additional_io_job'");
-        // merge the profile with the executed job profile
-        profile->
+            StringBuffer buffer;
+            ::Writer<rapidjson::StringBuffer> writer(buffer);
+            profile_object.Accept(writer);
+
+            string additional_io_job_profile_description = string(buffer.GetString(), buffer.GetSize());
+            // create the io_profile
+            io_profile = Profile::from_json(profile_name,
+                    additional_io_job_profile_description,
+                    "Invalid JSON profile received from the scheduler for the 'additional_io_job'");
+            // Add it to the wokload
+            workload->profiles->add_profile(profile_name, io_profile);
+
+        }
+        else // profile should already be submitted
+        {
+            xbt_assert(workload->profiles->exists(profile_name),
+                    "The given profile name '%d' does not exists");
+            io_profile = workload->profiles->at(profile_name);
+        }
+
+        // Add this additional io profile to the job
+        Job * job = workload->jobs->at(message->allocation->job_id);
+
+        // manage sequence profile special case
+        if (io_profile->type == ProfileType::SEQUENCE)
+        {
+            Profile * job_profile = workload->profiles->at(job->profile);
+            xbt_assert(job_profile->type == ProfileType::SEQUENCE,
+                    "the job io profile is a '%s' profile but the the original job is '%s': they must have compatible profile in order to be merged",
+                    profile_type_to_string(io_profile->type),
+                    profile_type_to_string(job_profile->type));
+
+            // check if it has the same size
+            SequenceProfileData * job_data = (SequenceProfileData*)job_profile->data;
+            SequenceProfileData * io_data = (SequenceProfileData*)io_profile->data;
+            xbt_assert(job_data->sequence.size() == io_data->sequence.size(),
+                    " IO profile sequence size (%d) and job profile sequence size (%d) should be the same",
+                    io_data->sequence.size(),
+                    job_data->sequence.size());
+            // Attach a io profile to each batask of the sequence
+            for (int i=0; i<io_data->sequence.size(); i++)
+            {
+                xbt_assert(workload->profiles->exists(io_data->sequence[i]),
+                    "The given profile name '%d' does not exists");
+                job->task->sub_tasks[i]->io_profile = workload->profiles->at(io_data->sequence[i]);
+            }
+        }
+        // store profile on the BatTask
+        job->task->io_profile = io_profile;
+
+        // get IO allocation
+        xbt_assert(io_job_value.HasMember("alloc"), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should contain a 'alloc' key.", event_number);
+        const Value & alloc_value = io_job_value["alloc"];
+        xbt_assert(alloc_value.IsString(), "Invalid JSON message: the 'alloc' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
+        string alloc = alloc_value.GetString();
+
+        message->allocation->io_allocation = MachineRange::from_string_hyphen(alloc, " ", "-", "Invalid io allocation");
     }
-    workload->profiles->add_profile(job->profile, profile);
 
     // Everything has been parsed correctly, let's inject the message into the simulation.
     send_message(timestamp, "server", IPMessageType::SCHED_EXECUTE_JOB, (void*) message);

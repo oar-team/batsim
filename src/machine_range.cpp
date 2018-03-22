@@ -238,6 +238,16 @@ bool MachineRange::operator==(const MachineRange &other)
     return set == other.set;
 }
 
+MachineRange & MachineRange::operator&(const MachineRange & other)
+{
+    return (set & other.set);
+}
+
+MachineRange & MachineRange::operator-(const MachineRange &other)
+{
+    return (set - other.set);
+}
+
 MachineRange & MachineRange::operator&=(const MachineRange & other)
 {
     set &= other.set;

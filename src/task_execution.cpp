@@ -17,19 +17,16 @@ using namespace std;
 /**
  * @brief Generate the communication and computaion matrix for the msg
  * parallel task profile. It also set the prefix name of the task.
- * @param[out] task_name_prefix the prefix to add to the task name
  * @param[out] computation_amount the computation matrix to be simulated by the msg task
  * @param[out] communication_amount the communication matrix to be simulated by the msg task
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  */
-void generate_msg_parallel_task(std::string & task_name_prefix,
-                                double *& computation_amount,
+void generate_msg_parallel_task(double *& computation_amount,
                                 double *& communication_amount,
                                 unsigned int nb_res,
                                 void * profile_data)
 {
-    task_name_prefix = "p ";
     MsgParallelProfileData* data = (MsgParallelProfileData*)profile_data;
     // These amounts are deallocated by SG
     computation_amount = xbt_new(double, nb_res);
@@ -43,19 +40,16 @@ void generate_msg_parallel_task(std::string & task_name_prefix,
 /**
  * @brief Generates the communication and computaion matrix for the msg
  *        parallel homogeneous task profile. It also set the prefix name of the task.
- * @param[out] task_name_prefix the prefix to add to the task name
  * @param[out] computation_amount the computation matrix to be simulated by the msg task
  * @param[out] communication_amount the communication matrix to be simulated by the msg task
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  */
-void generate_msg_parallel_homogeneous(std::string & task_name_prefix,
-                                       double *& computation_amount,
+void generate_msg_parallel_homogeneous(double *& computation_amount,
                                        double *& communication_amount,
                                        unsigned int nb_res,
                                        void * profile_data)
 {
-    task_name_prefix = "phg ";
     MsgParallelHomogeneousProfileData* data = (MsgParallelHomogeneousProfileData*)profile_data;
 
     double cpu = data->cpu;
@@ -96,7 +90,6 @@ void generate_msg_parallel_homogeneous(std::string & task_name_prefix,
  * @brief Generates the communication vector and computation matrix for the msg
  *        parallel homogeneous total amount task profile.
  *
- * @param[out] task_name_prefix the prefix to add to the task name
  * @param[out] computation_amount the computation matrix to be simulated by the msg task
  * @param[out] communication_amount the communication matrix to be simulated by the msg task
  * @param[in] nb_res the number of resources the task have to run on
@@ -106,13 +99,11 @@ void generate_msg_parallel_homogeneous(std::string & task_name_prefix,
  *          to be done per host, the user gives the total amounts that should be spread
  *          homogeneously across the hosts.
  */
-void generate_msg_parallel_homogeneous_total_amount(std::string & task_name_prefix,
-                                                    double *& computation_amount,
+void generate_msg_parallel_homogeneous_total_amount(double *& computation_amount,
                                                     double *& communication_amount,
                                                     unsigned int nb_res,
                                                     void * profile_data)
 {
-    task_name_prefix = "phgt ";
     MsgParallelHomogeneousTotalAmountProfileData* data = (MsgParallelHomogeneousTotalAmountProfileData*)profile_data;
 
     const double spread_cpu = data->cpu / nb_res;
@@ -153,10 +144,8 @@ void generate_msg_parallel_homogeneous_total_amount(std::string & task_name_pref
  * @brief Generate the communication and computaion matrix for the msg
  *        parallel homogeneous task profile with pfs.
  *
- * @param[out] task_name_prefix the prefix to add to the task name
  * @param[out] computation_amount the computation matrix to be simulated by the msg task
  * @param[out] communication_amount the communication matrix to be simulated by the msg task
- * @param[in,out] nb_res the number of resources the task have to run on
  * @param[in,out] hosts_to_use the list of host to be used by the task
  * @param[in] storage_mapping mapping from label given in the profile and machine id
  * @param[in] profile_data the profile data
@@ -166,16 +155,13 @@ void generate_msg_parallel_homogeneous_total_amount(std::string & task_name_pref
  *          pfs node that is addded. It also set the prefix name of the
  *          task.
  */
-void generate_msg_parallel_homogeneous_with_pfs(std::string & task_name_prefix,
-                                                double *& computation_amount,
+void generate_msg_parallel_homogeneous_with_pfs(double *& computation_amount,
                                                 double *& communication_amount,
-                                                unsigned int & nb_res,
                                                 std::vector<msg_host_t> & hosts_to_use,
                                                 std::map<std::string, int> storage_mapping,
                                                 void * profile_data,
                                                 BatsimContext * context)
 {
-    task_name_prefix = "pfs_tiers ";
     MsgParallelHomogeneousPFSMultipleTiersProfileData* data =
             (MsgParallelHomogeneousPFSMultipleTiersProfileData*)profile_data;
 
@@ -183,7 +169,7 @@ void generate_msg_parallel_homogeneous_with_pfs(std::string & task_name_prefix,
     double size = data->size;
 
     // The PFS machine will also be used
-    nb_res = nb_res + 1;
+    unsigned int nb_res = host_to_use.size() + 1;
     unsigned int pfs_id = nb_res - 1;
 
     // Add the pfs_machine
@@ -267,32 +253,27 @@ void generate_msg_parallel_homogeneous_with_pfs(std::string & task_name_prefix,
  * @details Note that the number of resource is also altered because only
  * the pfs and the hpst are involved in the transfer. It also set the prefix
  * name of the task.
- * @param[out] task_name_prefix the prefix to add to the task name
  * @param[out] computation_amount the computation matrix to be simulated by the msg task
  * @param[out] communication_amount the communication matrix to be simulated by the msg task
- * @param[in,out] nb_res the number of resources the task have to run on
  * @param[in,out] hosts_to_use the list of host to be used by the task
  * @param[in] storage_mapping mapping from label given in the profile and machine id
  * @param[in] profile_data the profile data
  * @param[in] context the batsim context
  */
-void generate_msg_data_staginig_task(string task_name_prefix,
-                                     double *&  computation_amount,
+void generate_msg_data_staginig_task(double *&  computation_amount,
                                      double *& communication_amount,
-                                     unsigned int & nb_res,
                                      std::vector<msg_host_t> & hosts_to_use,
                                      std::map<std::string, int> storage_mapping,
                                      void * profile_data,
                                      BatsimContext * context)
 {
-    task_name_prefix = "data_staging ";
     MsgDataStagingProfileData* data = (MsgDataStagingProfileData*)profile_data;
 
     double cpu = 0;
     double size = data->size;
 
     // The PFS machine will also be used
-    nb_res = 2;
+    unsigned int nb_res = 2;
     unsigned int pfs_id = nb_res - 1;
 
     // reset the alloc to use only IO nodes
@@ -336,60 +317,56 @@ void generate_msg_data_staginig_task(string task_name_prefix,
     }
 }
 
-int execute_msg_task(BatTask * btask,
-                     const SchedulingAllocation* allocation,
-                     unsigned int nb_res,
-                     double * remaining_time,
-                     BatsimContext * context,
-                     CleanExecuteTaskData * cleanup_data)
+/**
+ * @brief Generate communication and computation matrix depending on the profile
+ *
+ * @param[out] computation_amount the computation matrix to be simulated by the msg task
+ * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @param[in,out] nb_res the number of resources the task have to run on
+ * @param[in,out] hosts_to_use the list of host to be used by the task
+ * @param[in] the job allocation
+ * @param[in] profile_data the profile data
+ * @param[in] context the batsim context
+ */
+void generate_matices_from_profile(double *& computation_matrix,
+                                   double *& communication_matrix,
+                                   std::vector<msg_host_t> hosts_to_use,
+                                   BatsimContext * context)
 {
-    std::vector<msg_host_t> hosts_to_use = allocation->hosts;
-    Profile * profile = btask->profile;
 
-    double* computation_amount = nullptr;
-    double* communication_amount = nullptr;
-    string task_name_prefix;
-    int ret;
+    unsigned int nb_res = host_to_use.size();
 
-    // Generate communication and computation matrix depending on the profile
     switch(profile->type)
     {
     case ProfileType::MSG_PARALLEL:
-        generate_msg_parallel_task(task_name_prefix, 
-                                   computation_amount, 
-                                   communication_amount,
-                                   nb_res, 
+        generate_msg_parallel_task(computation_matrix,
+                                   communication_matrix,
+                                   nb_res,
                                    profile->data);
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS:
-        generate_msg_parallel_homogeneous(task_name_prefix,
-                                          computation_amount,
-                                          communication_amount,
-                                          nb_res, 
+        generate_msg_parallel_homogeneous(computation_matrix,
+                                          communication_matrix,
+                                          nb_res,
                                           profile->data);
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
-        generate_msg_parallel_homogeneous_total_amount(task_name_prefix,
-                                                       computation_amount,
-                                                       communication_amount,
+        generate_msg_parallel_homogeneous_total_amount(computation_matrix,
+                                                       communication_matrix,
                                                        nb_res,
                                                        profile->data);
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS:
-        generate_msg_parallel_homogeneous_with_pfs(task_name_prefix,
-                                                   computation_amount,
-                                                   communication_amount,
-                                                   nb_res,
-                                                   hosts_to_use, 
+        generate_msg_parallel_homogeneous_with_pfs(computation_matrix,
+                                                   communication_matrix,
+                                                   hosts_to_use,
                                                    allocation->storage_mapping,
                                                    profile->data,
                                                    context);
         break;
     case ProfileType::MSG_DATA_STAGING:
-        generate_msg_data_staginig_task(task_name_prefix,
-                                        computation_amount,
-                                        communication_amount,
-                                        nb_res,
+        generate_msg_data_staginig_task(computation_matrix,
+                                        communication_matrix,
                                         hosts_to_use,
                                         allocation->storage_mapping,
                                         profile->data,
@@ -398,14 +375,97 @@ int execute_msg_task(BatTask * btask,
     default:
         xbt_die("Should not be reached.");
     }
+}
+
+int execute_msg_task(BatTask * btask,
+                     const SchedulingAllocation* allocation,
+                     double * remaining_time,
+                     BatsimContext * context,
+                     CleanExecuteTaskData * cleanup_data)
+{
+    Profile * profile = btask->profile;
+    std::vector<msg_host_t> hosts_to_use = allocation->hosts;
+
+    double* computation_matrix = nullptr;
+    double* communication_matrix = nullptr;
+
+    generate_matices_from_profile(computation_matrix,
+                                  communication_matrix,
+                                  allocation,
+                                  profile,
+                                  context)
+
+    // Manage additional io job
+    if (job->additional_io_profile != nullptr)
+    {
+        Profile * io_profile = btask->io_profile;
+        double* io_computation_matrix = nullptr;
+        double* io_communication_matrix = nullptr;
+
+        generate_matices_from_profile(io_computation_matrix,
+                                      io_communication_matrix,
+                                      allocation->io_hosts_to_use,
+                                      profile,
+                                      context)
+        // merge the two profiles
+        // First get part of the allocation that do change or not in the job
+        immut_job_alloc = allocation->machine_ids - allocation->io_allocation;
+        immut_io_alloc = allocation->io_allocation - allocation->machine_ids;
+        to_merge_alloc = allocation->machine_ids & allocation->io_allocation;
+        MachineRange new_alloc;
+        new_alloc += immut_job_alloc;
+        new_alloc += immut_io_alloc;
+        new_alloc += to_merge_alloc;
+
+        // FIXME this does not work for profiles that changes the number of hosts: where the allocation and the host to use
+        // are different
+
+        //Generate the new list of hosts
+        vector<msg_host_t> new_host_to_use;
+        for (int & machine_id : new_alloc)
+        {
+            new_hosts_to_use.push_back(context->machines[machine_id]->host);
+        }
+
+        // Generate the new matrices
+        unsigned int nb_res = new_host_to_use.size();
+
+        // These amounts are deallocated by SG
+        double * new_computation_amount = xbt_new(double, nb_res);
+        double * new_communication_amount = xbt_new(double, nb_res* nb_res);
+
+        // Fill the computation and communication matrices
+        int k = 0;
+        for (unsigned int y = 0; y < nb_res; ++y)
+        {
+            if (immut_job_alloc.contains(new_alloc[y]))
+            {
+                // FIXME Need a mapping between matrix index and in job and machine id
+                new_computation_amount[y] = communication_amount[y];
+            }
+            for (unsigned int x = 0; x < nb_res; ++x)
+            {
+                // Communications are done towards the last resource
+                if (x != pfs_id)
+                {
+                    new_communication_amount[k] = 0;
+                }
+                else
+                {
+                    new_communication_amount[k] = size;
+                }
+                k++;
+            }
+        }
+    }
 
     // Create the MSG task
-    string task_name = task_name_prefix + btask->parent_job->id.to_string() +
-                       "'" + btask->profile->name + "'";
+    string task_name = profile_type_to_string(profile) + '_' + btask->parent_job->id.to_string() +
+                       "_" + btask->profile->name + "_";
     XBT_DEBUG("Creating MSG task '%s' on %d resources", task_name.c_str(), nb_res);
-    msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(), nb_res,
-                                                hosts_to_use.data(), computation_amount,
-                                                communication_amount, NULL);
+    msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(), host_to_use.size(),
+                                                hosts_to_use.data(), computation_matrix,
+                                                communication_matrix, NULL);
 
     // If the process gets killed, the following data may need to be freed
     cleanup_data->task = ptask;
@@ -428,6 +488,7 @@ int execute_msg_task(BatTask * btask,
         *remaining_time = *remaining_time - (MSG_get_clock() - time_before_execute);
     }
 
+    int ret;
     if (err == MSG_OK)
     {
         ret = profile->return_code;

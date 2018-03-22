@@ -137,6 +137,7 @@ private:
 public:
     Job * parent_job; //!< The parent job that owns this task
     Profile * profile; //!< The task profile. The corresponding profile tells how the job should be computed
+    Profile * io_profile = nullptr; //!< The task additional io profile. This profile, if defined will b merge to the task profile before execution
 
     // Manage MSG profiles
     msg_task_t ptask = nullptr; //!< The final task to execute (only set for BatTask leaves with MSG profiles)
@@ -186,6 +187,7 @@ struct Job
 
     // User inputs
     std::string profile; //!< The job profile name. The corresponding profile tells how the job should be computed
+    Profile * additional_io_profile = nullptr; //!< The additional io profile to be merged with the current job (if defined)
     Rational submission_time; //!< The job submission time: The time at which the becomes available
     Rational walltime = -1; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed. Set at -1 to disable this behavior
     int requested_nb_res; //!< The number of resources the job is requested to be executed on

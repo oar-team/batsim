@@ -185,6 +185,16 @@ public:
     bool operator==(const MachineRange & other);
 
     /**
+     * @breif Returns the intersection of two MachineRange
+     */
+    MachineRange & operator&(const MachineRange & other);
+
+    /**
+     * @breif Returns the difference of two MachineRange
+     */
+    MachineRange & operator-(const MachineRange & other);
+
+    /**
      * @brief Sets the set as the intersection between itself and another MachineRange
      * @param[in] other The other MachineRange
      * @return The current MachineRange after the operation
