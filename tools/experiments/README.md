@@ -55,7 +55,7 @@ We chose to use YAML files as input of the [execute_one_instance.py](./execute_o
 # The different variables can be defined here
 variables:
   platform: {"name":"small", "filename":"platforms/small_platform.xml"} # A dictionary
-  workload: {"name":"tiny", "filename":"workload_profiles/test_workload_profile.json"} # Another dictionary
+  workload: {"name":"tiny", "filename":"workloads/test_workload_profile.json"} # Another dictionary
   pybatsim_algo: fillerSched # A simple variable
   useless_list: ["just_an_example", "mmh..."] # A list
 # Some variables are automatically added into this dictionary:
@@ -224,8 +224,8 @@ implicit_instances:
         # We define two different workloads there. Please not their names MUST
         # be different to avoid different instances pointing to the same YAML
         # filename.
-        - {"name":"tiny", "filename":"workload_profiles/test_workload_profile.json"}
-        - {"name":"medium", "filename":"workload_profiles/batsim_paper_workload_example.json"}
+        - {"name":"tiny", "filename":"workloads/test_workload_profile.json"}
+        - {"name":"medium", "filename":"workloads/batsim_paper_workload_example.json"}
       pybatsim_algo:
         # We use only one scheduling algorithm
         - fillerSched
@@ -247,7 +247,7 @@ explicit_instances:
     output_directory: ${base_output_directory}/results/explicit/easybf_tiny_small
     variables: # We use simple values here, not dictionaries (but they could have been used!)
       platform: platforms/small_platform.xml
-      workload: workload_profiles/test_workload_profile.json
+      workload: workloads/test_workload_profile.json
       pybatsim_algo: easyBackfill
       # All base_variables are also copied here
 

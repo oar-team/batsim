@@ -34,8 +34,8 @@ implicit_instances:
         # We define two different workloads there. Please not their names MUST
         # be different to avoid different instances pointing to the same YAML
         # filename.
-        - {"name":"tiny", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
-        - {"name":"medium", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example.json"}
+        - {"name":"tiny", "filename":"${batsim_dir}/workloads/test_workload_profile.json"}
+        - {"name":"medium", "filename":"${batsim_dir}/workloads/batsim_paper_workload_example.json"}
       algo:
         # We use only one scheduling algorithm
         - {"name":"filler", "algo_name":"filler"}
@@ -58,7 +58,7 @@ explicit_instances:
     output_directory: ${base_output_directory}/results/explicit/easybf_tiny_small
     variables: # We use simple values here, not dictionaries (but they could have been used!)
       platform: ${batsim_dir}/platforms/small_platform.xml
-      workload: ${batsim_dir}/workload_profiles/test_workload_profile.json
+      workload: ${batsim_dir}/workloads/test_workload_profile.json
       algo: {"name":"easy", "algo_name":"easy_bf"}
       # All base_variables are also copied here
 

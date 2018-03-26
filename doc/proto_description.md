@@ -300,7 +300,7 @@ metainformation from Batsim to any scheduler at runtime.
           }
         ],
         "workloads": {
-          "26dceb": "/home/mmercier/Projects/batsim/workload_profiles/test_workload_profile.json"
+          "26dceb": "/home/mmercier/Projects/batsim/workloads/test_workload_profile.json"
         }
       }
     }

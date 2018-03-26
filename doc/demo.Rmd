@@ -22,7 +22,7 @@ We can move them to our new experiment directory.
 export BATSIM_DIR=~/proj/batsim
 export EXPE_DIR=/tmp/batsim_demo
 
-cp ${BATSIM_DIR}/workload_profiles/batsim_paper_workload_example.json ${EXPE_DIR}/workload.json
+cp ${BATSIM_DIR}/workloads/batsim_paper_workload_example.json ${EXPE_DIR}/workload.json
 cp ${BATSIM_DIR}/platforms/energy_platform_homogeneous_no_net_128.xml ${EXPE_DIR}/platform.xml
 ```
 
@@ -137,7 +137,7 @@ base_variables:
 # These pre commands are done before executing any instance
 commands_before_instances:
   - cp ${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml ${base_output_directory}/platform.xml
-  - cp ${batsim_dir}/workload_profiles/batsim_paper_workload_example.json ${base_output_directory}/workload.json
+  - cp ${batsim_dir}/workloads/batsim_paper_workload_example.json ${base_output_directory}/workload.json
 
 # Description of "implicit" instances: a combination of the sweep parameters will be done
 implicit_instances:
@@ -169,7 +169,7 @@ base_variables:
 # These pre commands are done before executing any instance
 commands_before_instances:
   - cp ${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml ${base_output_directory}/platform.xml
-  - cp ${batsim_dir}/workload_profiles/batsim_paper_workload_example.json ${base_output_directory}/workload.json
+  - cp ${batsim_dir}/workloads/batsim_paper_workload_example.json ${base_output_directory}/workload.json
 
 # Description of "implicit" instances: a combination of the sweep parameters will be done
 implicit_instances:

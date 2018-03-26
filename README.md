@@ -33,7 +33,7 @@ cd batsim
 
 Now, you can run batsim for a simple workload:
 ```bash
-batsim -p platforms/small_platform.xml -w workload_profiles/test_workload_profile.json
+batsim -p platforms/small_platform.xml -w workloads/test_workload_profile.json
 ```
 
 Then in an *other terminal* execute the scheduler:

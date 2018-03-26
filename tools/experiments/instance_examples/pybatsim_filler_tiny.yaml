@@ -9,7 +9,7 @@ variables:
   useless_list: ["just_an_example", "mmh..."] # A list
   batsim_dir: ${working_directory} # The script must be called from the Batsim root directory
   platform: {"name":"small", "filename":"${batsim_dir}/platforms/small_platform.xml"} # A dictionary
-  workload: {"name":"tiny", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"} # Another dictionary
+  workload: {"name":"tiny", "filename":"${batsim_dir}/workloads/test_workload_profile.json"} # Another dictionary
 
 # Some variables are automatically added into this dictionary:
 #   - working_directory
