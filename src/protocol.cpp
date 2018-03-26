@@ -968,7 +968,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
                     io_data->sequence.size(),
                     job_data->sequence.size());
             // Attach a io profile to each batask of the sequence
-            for (int i=0; i<io_data->sequence.size(); i++)
+            for (unsigned int i=0; i < io_data->sequence.size(); i++)
             {
                 xbt_assert(workload->profiles->exists(io_data->sequence[i]),
                     "The given profile name '%d' does not exists");

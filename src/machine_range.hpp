@@ -187,12 +187,12 @@ public:
     /**
      * @breif Returns the intersection of two MachineRange
      */
-    MachineRange & operator&(const MachineRange & other);
+    //MachineRange & operator&(const MachineRange & other);
 
     /**
      * @breif Returns the difference of two MachineRange
      */
-    MachineRange & operator-(const MachineRange & other);
+    //MachineRange & operator-(const MachineRange & other);
 
     /**
      * @brief Sets the set as the intersection between itself and another MachineRange
@@ -230,6 +230,10 @@ public:
                                            const std::string & joiner = "-",
                                            const std::string & error_prefix = "Invalid machine range string");
 
-private:
     Set set; //!< The internal set of machines
 };
+
+
+MachineRange & difference(const MachineRange & one, const MachineRange & other);
+
+MachineRange & intersection(const MachineRange & one, const MachineRange & other);
