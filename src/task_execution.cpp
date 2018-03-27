@@ -317,7 +317,24 @@ void generate_msg_data_staginig_task(double *&  computation_amount,
     }
 }
 
+void print_matrices(double * computation_vector, double * communication_matrix, unsigned int nb_res)
+{
+    string comp = "";
+    string comm = "";
+    for (unsigned int i=0; i < nb_res; i++)
+    {
+        comp += to_string(computation_vector[i]) + ", ";
+        for (unsigned int j=0; j < nb_res; j++)
+        {
+            comm += to_string(communication_matrix[i+j]) + ", ";
+        }
+        comm += "\n";
+    }
+
+    XBT_INFO("Generated matrices: \nCompute: \n%s\nComm:\n%s", comp.c_str(), comm.c_str());
+}
 /**
+ * }
  * @brief Generate communication and computation matrix depending on the profile
  *
  * @param[out] computation_amount the computation matrix to be simulated by the msg task
@@ -375,6 +392,7 @@ void generate_matices_from_profile(double *& computation_matrix,
     default:
         xbt_die("Should not be reached.");
     }
+    print_matrices(computation_matrix, communication_matrix, hosts_to_use.size());
 }
 
 int execute_msg_task(BatTask * btask,
@@ -389,6 +407,7 @@ int execute_msg_task(BatTask * btask,
     double* computation_vector = nullptr;
     double* communication_matrix = nullptr;
 
+    XBT_INFO("Generating comm/compute matrix for job");
     generate_matices_from_profile(computation_vector,
                                   communication_matrix,
                                   hosts_to_use,
@@ -403,6 +422,7 @@ int execute_msg_task(BatTask * btask,
         double* io_computation_vector = nullptr;
         double* io_communication_matrix = nullptr;
 
+        XBT_INFO("Generating comm/compute matrix for IO");
         generate_matices_from_profile(io_computation_vector,
                                       io_communication_matrix,
                                       allocation->io_hosts,
@@ -514,11 +534,15 @@ int execute_msg_task(BatTask * btask,
         hosts_to_use = new_hosts_to_use;
         // TODO Free old job and io structures
     }
+    XBT_INFO("Merged Job+IO matrices");
+    print_matrices(computation_vector, communication_matrix, hosts_to_use.size());
 
     // Create the MSG task
     string task_name = profile_type_to_string(profile->type) + '_' + btask->parent_job->id.to_string() +
-                       "_" + btask->profile->name + "_";
+                       "_" + btask->profile->name;
     XBT_DEBUG("Creating MSG task '%s' on %d resources", task_name.c_str(), hosts_to_use.size());
+
+
     msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(), hosts_to_use.size(),
                                                 hosts_to_use.data(), computation_vector,
                                                 communication_matrix, NULL);
