@@ -77,9 +77,7 @@ int execute_task(BatTask * btask,
                 // Traces how the execution is going so that progress can be retrieved if needed
                 btask->current_task_index = sequence_iteration * data->sequence.size() +
                                             profile_index_in_sequence;
-                BatTask * sub_btask = new BatTask(job,
-                    job->workload->profiles->at(data->sequence[profile_index_in_sequence]));
-                btask->sub_tasks.push_back(sub_btask);
+                BatTask * sub_btask = btask->sub_tasks[profile_index_in_sequence];
 
                 string task_name = "seq" + job->id.to_string() + "'" + job->profile + "'";
                 XBT_INFO("Creating sequential tasks '%s'", task_name.c_str());
@@ -380,9 +378,6 @@ int execute_job_process(int argc, char *argv[])
     CleanExecuteTaskData * cleanup_data = new CleanExecuteTaskData;
     cleanup_data->exec_process_args = args;
     SIMIX_process_on_exit(MSG_process_self(), execute_task_cleanup, cleanup_data);
-
-    // Create root task
-    job->task = new BatTask(job, workload->profiles->at(job->profile));
 
     // Execute the process
     job->return_code = execute_task(job->task, args->context, args->allocation,

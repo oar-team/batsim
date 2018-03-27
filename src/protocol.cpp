@@ -773,20 +773,49 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should be an object", event_number);
     xbt_assert(data_object.MemberCount() == 2 || data_object.MemberCount() == 3, "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should be of size in {2,3} (size=%d)", event_number, (int)data_object.MemberCount());
 
-    // *************************
-    // Job identifier management
-    // *************************
+    // ******************
+    // Get Job identifier
+    // ******************
     // Let's read it from the JSON message
     xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should contain a 'job_id' key.", event_number);
     const Value & job_id_value = data_object["job_id"];
     xbt_assert(job_id_value.IsString(), "Invalid JSON message: the 'job_id' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
-    string job_id = job_id_value.GetString();
+    string job_id_str = job_id_value.GetString();
 
     // Let's retrieve the job identifier
-    message->allocation->job_id = JobIdentifier(job_id);
-    if (!(context->workloads.job_is_registered(message->allocation->job_id)))
+    JobIdentifier job_id = JobIdentifier(job_id_str);
+    if (!(context->workloads.job_is_registered(job_id)))
     {
-        xbt_assert(false, "Invalid message in event %d (EXECUTE_JOB): job with job_id '%s' does not exists", event_number, job_id.c_str());
+        xbt_assert(false, "Invalid message in event %d (EXECUTE_JOB): job with job_id '%s' does not exists", event_number, job_id_str.c_str());
+    }
+
+    // **************************
+    // Initialize data structures
+    // **************************
+    //
+    // Create the root task: Needed for additional io job
+    Workload * workload = context->workloads.at(job_id.workload_name);
+    Job * job = workload->jobs->at(job_id);
+    Profile * profile = workload->profiles->at(job->profile);
+    job->task = new BatTask(job, profile);
+
+    message->allocation->job_id = job_id;
+    if (profile->type == ProfileType::SEQUENCE)
+    {
+        SequenceProfileData * data = (SequenceProfileData *) profile->data;
+
+        // (Sequences can be repeated several times)
+        for (int sequence_iteration = 0; sequence_iteration < data->repeat; sequence_iteration++)
+        {
+            for (unsigned int profile_index_in_sequence = 0;
+                 profile_index_in_sequence < data->sequence.size();
+                 profile_index_in_sequence++)
+            {
+                BatTask * sub_btask = new BatTask(job,
+                    job->workload->profiles->at(data->sequence[profile_index_in_sequence]));
+                job->task->sub_tasks.push_back(sub_btask);
+            }
+        }
     }
 
     // *********************
@@ -913,6 +942,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     // *************************************
     if (data_object.HasMember("additional_io_job"))
     {
+        XBT_INFO("Found additional_io_job in the EXECUTE_JOB message");
         const Value & io_job_value = data_object["additional_io_job"];
 
         // Read the profile description
@@ -922,7 +952,6 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         string profile_name = io_job_value["profile_name"].GetString();
 
         Profile * io_profile;
-        Workload * workload = context->workloads.at(message->allocation->job_id.workload_name);
         if (io_job_value.HasMember("profile"))
         {
             const Value & profile_object = io_job_value["profile"];
@@ -948,9 +977,6 @@ void JsonProtocolReader::handle_execute_job(int event_number,
             io_profile = workload->profiles->at(profile_name);
         }
 
-        // Add this additional io profile to the job
-        Job * job = workload->jobs->at(message->allocation->job_id);
-
         // manage sequence profile special case
         if (io_profile->type == ProfileType::SEQUENCE)
         {
@@ -975,8 +1001,10 @@ void JsonProtocolReader::handle_execute_job(int event_number,
                 job->task->sub_tasks[i]->io_profile = workload->profiles->at(io_data->sequence[i]);
             }
         }
-        // store profile on the BatTask
-        job->task->io_profile = io_profile;
+        else
+        {
+            job->task->io_profile = io_profile;
+        }
 
         // get IO allocation
         xbt_assert(io_job_value.HasMember("alloc"), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should contain a 'alloc' key.", event_number);
@@ -985,6 +1013,10 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         string alloc = alloc_value.GetString();
 
         message->allocation->io_allocation = MachineRange::from_string_hyphen(alloc, " ", "-", "Invalid io allocation");
+    }
+    else
+    {
+        XBT_INFO("The optional field 'additional_io_job' was not found");
     }
 
     // Everything has been parsed correctly, let's inject the message into the simulation.
