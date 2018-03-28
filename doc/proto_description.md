@@ -560,17 +560,36 @@ The rejected job will not appear into the final jobs trace.
 
 ### EXECUTE_JOB
 
-Execute a job on a given set of resources. An optional mapping can be
-added to tell Batsim how to map executors to resources: where the
-executors will be placed inside the allocation (resource numbers are shifted
-to 0). It only works for SMPI for now.
+Execute a job on a given set of resources.
 
-The following example overrides the default round robin mapping to put the
-first two ranks (0 and 1) on the first allocated machine (0, which stands for
-resource id 2), and the last two ranks (2 and 3) on the second machine (1, which
-stands for resource id 3).
+An optional ``mapping`` field can be added to tell Batsim how to map executors
+to resources: where the executors will be placed inside the allocation (resource
+numbers are shifted to 0). It can be seen as MPI rank to host mapping. It only
+works for the ``smpi`` job profile type.
+The following example overrides the default round robin mapping to put the first
+two ranks (0 and 1) on the first allocated machine (0, which stands for resource
+id 2), and the last two ranks (2 and 3) on the second machine (1, which stands
+for resource id 3).
 
-- **data**: A job id, an allocation and a mapping (optional)
+For certain job profile that involve storage you may need to define a
+``storage_mapping`` between the storage label defined in the job profile
+definition and the storage resource id on the platform. For example, the a job
+profile of type ``msg_par_hg_pfs_tiers`` contains this field ``"storage":
+"pfs"``, in order to select what is the resource that correspond to the
+``"pfs"`` storage you should provide a mapping for this label:
+``"storage_mapping": { "pfs": 2 }``. If no mapping is provided Batsim will guess
+the storage mapping, only if one storage resource is provided on the platform.
+
+An other optional field is ``additional_io_job`` that permits to the decision
+process to add a job that represents the IO traffic, dynamically at execution
+time. This dynamicity is necessary when the IO traffic depends on the job
+allocation. It only works for MSG based job profile types for the additional IO
+job and the job itself. The given IO job will be merged to the actual job before
+it's execution. The additional job allocation may be different from the job
+allocation itself, for example when some IO nodes are involved.
+
+- **data**: A job id, an allocation, a mapping (optional), an additional IO job
+  (optional)
 - **example**:
 ```json
 {
@@ -580,6 +599,21 @@ stands for resource id 3).
     "job_id": "w12!45",
     "alloc": "2-3",
     "mapping": {"0": "0", "1": "0", "2": "1", "3": "1"}
+  }
+  "storage_mapping": {
+    "pfs": 2
+  }
+  "additional_io_job": {
+    "alloc": "2-3 5-6",
+    "profile_name": "my_io_job",
+    "profile": {
+      "type": "msg_par",
+      "cpu": 0,
+      "com": [0  ,5e6,5e6,5e6,
+              5e6,0  ,5e6,0  ,
+              0  ,5e6,4e6,0  ,
+              0  ,0  ,0  ,0  ]
+    }
   }
 }
 ```
