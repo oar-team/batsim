@@ -252,6 +252,13 @@ MachineRange & difference(const MachineRange & one, const MachineRange &other)
     return *result;
 }
 
+MachineRange & union_itvs(const MachineRange & one, const MachineRange &other)
+{
+    MachineRange * result = new MachineRange();
+    result->set = one.set + other.set;
+    return *result;
+}
+
 MachineRange & MachineRange::operator&=(const MachineRange & other)
 {
     set &= other.set;

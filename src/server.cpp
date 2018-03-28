@@ -892,7 +892,7 @@ void server_on_execute_job(ServerData * data,
 
     // Also generate io hosts list if any
     allocation->io_hosts.reserve(allocation->io_allocation.size());
-    for (unsigned int id = 0; id < allocation->io_hosts.size(); ++id)
+    for (unsigned int id = 0; id < allocation->io_allocation.size(); ++id)
     {
         allocation->io_hosts.push_back(data->context->machines[id]->host);
     }

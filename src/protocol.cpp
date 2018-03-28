@@ -951,31 +951,36 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         xbt_assert(io_job_value["profile_name"].IsString(), "Invalid JSON message: Invalid 'profile_name' of event %d (EXECUTE_JOB): should be a string", event_number);
         string profile_name = io_job_value["profile_name"].GetString();
 
-        Profile * io_profile;
         if (io_job_value.HasMember("profile"))
         {
-            const Value & profile_object = io_job_value["profile"];
-            xbt_assert(profile_object.IsObject(), "Invalid JSON message: in event %d (EXECUTE_JOB): ['data']['profile'] should be an object", event_number);
 
-            StringBuffer buffer;
-            ::Writer<rapidjson::StringBuffer> writer(buffer);
-            profile_object.Accept(writer);
+            if (workload->profiles->exists(profile_name))
+            {
+                XBT_WARN("The given profile name '%s' already exists: ignore the new one", profile_name.c_str());
+            }
+            else
+            {
+                const Value & profile_object = io_job_value["profile"];
+                xbt_assert(profile_object.IsObject(), "Invalid JSON message: in event %d (EXECUTE_JOB): ['data']['profile'] should be an object", event_number);
 
-            string additional_io_job_profile_description = string(buffer.GetString(), buffer.GetSize());
-            // create the io_profile
-            io_profile = Profile::from_json(profile_name,
-                    additional_io_job_profile_description,
-                    "Invalid JSON profile received from the scheduler for the 'additional_io_job'");
-            // Add it to the wokload
-            workload->profiles->add_profile(profile_name, io_profile);
+                StringBuffer buffer;
+                ::Writer<rapidjson::StringBuffer> writer(buffer);
+                profile_object.Accept(writer);
+
+                string additional_io_job_profile_description = string(buffer.GetString(), buffer.GetSize());
+                // create the io_profile
+                Profile * new_io_profile = Profile::from_json(profile_name,
+                        additional_io_job_profile_description,
+                        "Invalid JSON profile received from the scheduler for the 'additional_io_job'");
+                // Add it to the wokload
+                workload->profiles->add_profile(profile_name, new_io_profile);
+            }
 
         }
-        else // profile should already be submitted
-        {
-            xbt_assert(workload->profiles->exists(profile_name),
+        // get the profile
+        xbt_assert(workload->profiles->exists(profile_name),
                     "The given profile name '%d' does not exists");
-            io_profile = workload->profiles->at(profile_name);
-        }
+        Profile * io_profile = workload->profiles->at(profile_name);
 
         // manage sequence profile special case
         if (io_profile->type == ProfileType::SEQUENCE)

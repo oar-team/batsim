@@ -321,17 +321,24 @@ void print_matrices(double * computation_vector, double * communication_matrix, 
 {
     string comp = "";
     string comm = "";
+    int k = 0;
     for (unsigned int i=0; i < nb_res; i++)
     {
-        comp += to_string(computation_vector[i]) + ", ";
-        for (unsigned int j=0; j < nb_res; j++)
+        if (computation_vector != nullptr)
         {
-            comm += to_string(communication_matrix[i+j]) + ", ";
+            comp += to_string(computation_vector[i]) + ", ";
         }
-        comm += "\n";
+        if (communication_matrix != nullptr)
+        {
+            for (unsigned int j = 0; j < nb_res; j++)
+            {
+                comm += to_string(communication_matrix[k++]) + ", ";
+            }
+            comm += "\n";
+        }
     }
 
-    XBT_INFO("Generated matrices: \nCompute: \n%s\nComm:\n%s", comp.c_str(), comm.c_str());
+    XBT_DEBUG("Generated matrices: \nCompute: \n%s\nComm:\n%s", comp.c_str(), comm.c_str());
 }
 /**
  * }
@@ -407,7 +414,11 @@ int execute_msg_task(BatTask * btask,
     double* computation_vector = nullptr;
     double* communication_matrix = nullptr;
 
-    XBT_INFO("Generating comm/compute matrix for job");
+    string task_name = profile_type_to_string(profile->type) + '_' + btask->parent_job->id.to_string() +
+                       "_" + btask->profile->name;
+    XBT_DEBUG("Generating comm/compute matrix for task '%s' with allocation %s",
+            task_name.c_str(), allocation->machine_ids.to_string_hyphen().c_str());
+
     generate_matices_from_profile(computation_vector,
                                   communication_matrix,
                                   hosts_to_use,
@@ -422,7 +433,9 @@ int execute_msg_task(BatTask * btask,
         double* io_computation_vector = nullptr;
         double* io_communication_matrix = nullptr;
 
-        XBT_INFO("Generating comm/compute matrix for IO");
+        XBT_DEBUG("Generating comm/compute matrix for IO with alloaction: %s",
+                allocation->io_allocation.to_string_hyphen().c_str());
+
         generate_matices_from_profile(io_computation_vector,
                                       io_communication_matrix,
                                       allocation->io_hosts,
@@ -434,13 +447,11 @@ int execute_msg_task(BatTask * btask,
         MachineRange immut_job_alloc = difference(allocation->machine_ids, allocation->io_allocation);
         MachineRange immut_io_alloc = difference(allocation->io_allocation, allocation->machine_ids);
         MachineRange to_merge_alloc = intersection(allocation->machine_ids, allocation->io_allocation);
-        MachineRange new_alloc;
-        new_alloc &= immut_job_alloc;
-        new_alloc &= immut_io_alloc;
-        new_alloc &= to_merge_alloc;
+        MachineRange new_alloc = union_itvs(allocation->machine_ids, allocation->io_allocation);
 
         // FIXME this does not work for profiles that changes the number of hosts: where the allocation and the host to use
         // are different
+        XBT_DEBUG("Job+IO allocation: %s", new_alloc.to_string_hyphen().c_str());
 
         //Generate the new list of hosts
         vector<msg_host_t> new_hosts_to_use;
@@ -463,20 +474,25 @@ int execute_msg_task(BatTask * btask,
         int row_job_host_index = 0;
         int col_io_host_index = 0;
         int row_io_host_index = 0;
-        bool col_only_in_job, col_only_in_io = false;
+        bool col_only_in_job;
+        bool col_only_in_io;
         for (unsigned int col = 0; col < nb_res; ++col)
         {
+            col_only_in_job = false;
+            col_only_in_io = false;
+            int curr_machine = new_alloc[col];
+            XBT_DEBUG("Current machine in generation: %d");
             // Fill computation vector
-            if (immut_job_alloc.contains(new_alloc[col]) and immut_io_alloc.contains(new_alloc[col]))
+            if (to_merge_alloc.contains(curr_machine))
             {
                 new_computation_vector[col] = computation_vector[col_job_host_index++] + io_computation_vector[col_io_host_index++];
             }
-            else if (immut_job_alloc.contains(new_alloc[col]))
+            else if (immut_job_alloc.contains(curr_machine))
             {
                 new_computation_vector[col] = computation_vector[col_job_host_index++];
                 col_only_in_job = true;
             }
-            else if (immut_io_alloc.contains(new_alloc[col]))
+            else if (immut_io_alloc.contains(curr_machine))
             {
                 new_computation_vector[col] = io_computation_vector[col_io_host_index++];
                 col_only_in_io = true;
@@ -489,7 +505,7 @@ int execute_msg_task(BatTask * btask,
             // Fill communication matrix with merged values
             for (unsigned int row = 0; row < nb_res; ++row)
             {
-                if (immut_job_alloc.contains(new_alloc[row]) and immut_io_alloc.contains(new_alloc[row]))
+                if (to_merge_alloc.contains(new_alloc[row]))
                 {
                     if (col_only_in_job){
                         new_communication_matrix[k] = communication_matrix[row_job_host_index++];
@@ -533,16 +549,12 @@ int execute_msg_task(BatTask * btask,
         computation_vector = new_computation_vector;
         hosts_to_use = new_hosts_to_use;
         // TODO Free old job and io structures
+        XBT_DEBUG("Merged Job+IO matrices");
+        print_matrices(computation_vector, communication_matrix, hosts_to_use.size());
+
     }
-    XBT_INFO("Merged Job+IO matrices");
-    print_matrices(computation_vector, communication_matrix, hosts_to_use.size());
-
     // Create the MSG task
-    string task_name = profile_type_to_string(profile->type) + '_' + btask->parent_job->id.to_string() +
-                       "_" + btask->profile->name;
     XBT_DEBUG("Creating MSG task '%s' on %d resources", task_name.c_str(), hosts_to_use.size());
-
-
     msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(), hosts_to_use.size(),
                                                 hosts_to_use.data(), computation_vector,
                                                 communication_matrix, NULL);
@@ -557,13 +569,13 @@ int execute_msg_task(BatTask * btask,
     msg_error_t err;
     if (*remaining_time < 0)
     {
-        XBT_INFO("Executing task '%s' without walltime", MSG_task_get_name(ptask));
+        XBT_DEBUG("Executing task '%s' without walltime", MSG_task_get_name(ptask));
         err = MSG_parallel_task_execute(ptask);
     }
     else
     {
         double time_before_execute = MSG_get_clock();
-        XBT_INFO("Executing task '%s' with walltime of %g", MSG_task_get_name(ptask), *remaining_time);
+        XBT_DEBUG("Executing task '%s' with walltime of %g", MSG_task_get_name(ptask), *remaining_time);
         err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - time_before_execute);
     }
@@ -582,7 +594,7 @@ int execute_msg_task(BatTask * btask,
         xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
     }
 
-    XBT_INFO("Task '%s' finished", MSG_task_get_name(ptask));
+    XBT_DEBUG("Task '%s' finished", MSG_task_get_name(ptask));
     MSG_task_destroy(ptask);
 
     // The task has been executed, the data does need to be freed in the cleanup function anymore
@@ -590,5 +602,4 @@ int execute_msg_task(BatTask * btask,
 
     return ret;
 }
-
 

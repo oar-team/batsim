@@ -237,3 +237,5 @@ public:
 MachineRange & difference(const MachineRange & one, const MachineRange & other);
 
 MachineRange & intersection(const MachineRange & one, const MachineRange & other);
+
+MachineRange & union_itvs(const MachineRange & one, const MachineRange & other);
