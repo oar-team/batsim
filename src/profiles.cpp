@@ -253,6 +253,12 @@ Profile *Profile::from_json(const std::string & profile_name,
 
     if (profile_type == "delay")
     {
+        /*
+        {
+            "type": "delay",
+            "delay": 20.20
+        }
+        */
         profile->type = ProfileType::DELAY;
         DelayProfileData * data = new DelayProfileData;
 
@@ -269,6 +275,16 @@ Profile *Profile::from_json(const std::string & profile_name,
     }
     else if (profile_type == "msg_par")
     {
+        /*
+        {
+            "type": "msg_par",
+            "cpu": [5e6,  0,  0,  0],
+            "com": [5e6,  0,  0,  0,
+                    5e6,5e6,  0,  0,
+                    5e6,5e6,  0,  0,
+                    5e6,5e6,5e6,  0]
+        }
+        */
         profile->type = ProfileType::MSG_PARALLEL;
         MsgParallelProfileData * data = new MsgParallelProfileData;
 
@@ -316,6 +332,13 @@ Profile *Profile::from_json(const std::string & profile_name,
     }
     else if (profile_type == "msg_par_hg")
     {
+        /*
+        {
+            "type": "msg_par_hg",
+            "cpu": 10e6,
+            "com": 1e6
+        }
+        */
         profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS;
         MsgParallelHomogeneousProfileData * data = new MsgParallelHomogeneousProfileData;
 
@@ -339,6 +362,13 @@ Profile *Profile::from_json(const std::string & profile_name,
     }
     else if (profile_type == "msg_par_hg_tot")
     {
+        /*
+        {
+            "type": "msg_par_hg_tot",
+            "cpu": 10e6,
+            "com": 1e6
+        }
+        */
         profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT;
         MsgParallelHomogeneousTotalAmountProfileData * data = new MsgParallelHomogeneousTotalAmountProfileData;
 
