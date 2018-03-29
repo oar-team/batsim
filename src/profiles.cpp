@@ -392,19 +392,26 @@ Profile *Profile::from_json(const std::string & profile_name,
     }
     else if (profile_type == "composed")
     {
+        /*
+        {
+            "type": "composed",
+            "repeat" : 4,
+            "seq": ["simple","homogeneous","simple"]
+        }
+        */
         profile->type = ProfileType::SEQUENCE;
         SequenceProfileData * data = new SequenceProfileData;
 
         int repeat = 1;
-        if (json_desc.HasMember("nb"))
+        if (json_desc.HasMember("repeat"))
         {
-            xbt_assert(json_desc["nb"].IsInt(), "%s: profile '%s' has a non-integral 'nb' field",
+            xbt_assert(json_desc["repeat"].IsInt(), "%s: profile '%s' has a non-integral 'repeat' field",
                    error_prefix.c_str(), profile_name.c_str());
-            repeat = json_desc["nb"].GetInt();
+            repeat = json_desc["repeat"].GetInt();
         }
         data->repeat = repeat;
 
-        xbt_assert(data->repeat > 0, "%s: profile '%s' has a non-strictly-positive 'nb' field (%d)",
+        xbt_assert(data->repeat > 0, "%s: profile '%s' has a non-strictly-positive 'repeat' field (%d)",
                    error_prefix.c_str(), profile_name.c_str(), data->repeat);
 
         xbt_assert(json_desc.HasMember("seq"), "%s: profile '%s' has no 'seq' field",
