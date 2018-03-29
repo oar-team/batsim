@@ -32,36 +32,36 @@
         },
         "seq_4x5": {
             "type": "composed",
-            "nb" : 4,
+            "repeat" : 4,
             "seq": ["delay_5"]
         },
         "seq_3x10": {
             "type": "composed",
-            "nb" : 3,
+            "repeat" : 3,
             "seq": ["delay_10"]
         },
 
         "seq_3x10_unrolled": {
             "type": "composed",
-            "nb" : 1,
+            "repeat" : 1,
             "seq": ["delay_10", "delay_10", "delay_10"]
         },
 
         "seq_20+10": {
             "type": "composed",
-            "nb" : 1,
+            "repeat" : 1,
             "seq": ["delay_20", "delay_10"]
         },
 
         "seq_10+20": {
             "type": "composed",
-            "nb" : 1,
+            "repeat" : 1,
             "seq": ["delay_10", "delay_20"]
         },
 
         "seq_of_seq": {
             "type": "composed",
-            "nb" : 1,
+            "repeat" : 1,
             "seq": ["seq_4x5", "delay_10"]
         }
     }
