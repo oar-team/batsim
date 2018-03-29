@@ -877,30 +877,12 @@ void server_on_execute_job(ServerData * data,
                    allocation->machine_ids.to_string_hyphen().c_str());
     }
 
-    // Let's generate the hosts used by the job
-    allocation->hosts.clear();
-    allocation->hosts.reserve(allocation->machine_ids.size());
-
-    for (unsigned int executor_id = 0; executor_id < allocation->mapping.size(); ++executor_id)
-    {
-        int machine_id_within_allocated_resources = allocation->mapping[executor_id];
-        int machine_id = allocation->machine_ids[machine_id_within_allocated_resources];
-
-        msg_host_t to_add = data->context->machines[machine_id]->host;
-        allocation->hosts.push_back(to_add);
-    }
-
-    // Also generate io hosts list if any
-    allocation->io_hosts.reserve(allocation->io_allocation.size());
-    for (unsigned int id = 0; id < allocation->io_allocation.size(); ++id)
-    {
-        allocation->io_hosts.push_back(data->context->machines[id]->host);
-    }
 
     ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
     exec_args->context = data->context;
     exec_args->allocation = allocation;
     exec_args->notify_server_at_end = true;
+    exec_args->io_profile = message->io_profile;
     string pname = "job_" + job->id.to_string();
     msg_process_t process = MSG_process_create(pname.c_str(), execute_job_process,
                                                (void*)exec_args,

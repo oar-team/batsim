@@ -80,7 +80,7 @@ int execute_task(BatTask * btask,
                 BatTask * sub_btask = btask->sub_tasks[profile_index_in_sequence];
 
                 string task_name = "seq" + job->id.to_string() + "'" + job->profile + "'";
-                XBT_INFO("Creating sequential tasks '%s'", task_name.c_str());
+                XBT_DEBUG("Creating sequential tasks '%s'", task_name.c_str());
 
                 int ret_last_profile = execute_task(sub_btask, context,  allocation,
                                                     cleanup_data, remaining_time);
@@ -348,6 +348,50 @@ int execute_task_cleanup(void * unknown, void * data)
     return 0;
 }
 
+BatTask * initialize_sequential_tasks(Job * job, Profile * profile, Profile * io_profile)
+{
+    BatTask * task = new BatTask(job, profile);
+
+    // leaf of the task tree
+    if (profile->type != ProfileType::SEQUENCE)
+    {
+        task->io_profile = io_profile;
+        return task;
+    }
+
+    // it's a sequence profile
+    SequenceProfileData * data = (SequenceProfileData *) profile->data;
+    Profiles * profiles = job->workload->profiles;
+
+    // Sequences can be repeated several times
+    for (int repeated = 0; repeated < data->repeat; repeated++)
+    {
+        for (unsigned int i = 0; i < data->sequence.size(); i++)
+        {
+            // Get profile from name
+            Profile * sub_profile = profiles->at(data->sequence[i]);
+
+            // Manage io profile
+            Profile * sub_io_profile = nullptr;
+            if (io_profile != nullptr)
+            {
+                SequenceProfileData * io_data = (SequenceProfileData*)io_profile->data;
+                xbt_assert(profiles->exists(io_data->sequence[i]),
+                        "The given profile name '%d' does not exists");
+                sub_io_profile = profiles->at(io_data->sequence[i]);
+            }
+
+            // recusrsive call
+            BatTask * sub_btask = initialize_sequential_tasks(
+                    job, sub_profile, sub_io_profile);
+
+            task->sub_tasks.push_back(sub_btask);
+        }
+    }
+
+    return task;
+}
+
 int execute_job_process(int argc, char *argv[])
 {
     (void) argc;
@@ -358,9 +402,36 @@ int execute_job_process(int argc, char *argv[])
 
     Workload * workload = args->context->workloads.at(args->allocation->job_id.workload_name);
     Job * job = workload->jobs->at(args->allocation->job_id);
+    Profile * profile = workload->profiles->at(job->profile);
+    Profile * io_profile = args->io_profile;
+    SchedulingAllocation * allocation = args->allocation;
+
     job->starting_time = MSG_get_clock();
     job->allocation = args->allocation->machine_ids;
     double remaining_time = (double)job->walltime;
+
+    // Create the root task
+    job->task = initialize_sequential_tasks(job, profile, io_profile);
+
+    // Let's generate the hosts used by the job
+    allocation->hosts.clear();
+    allocation->hosts.reserve(allocation->machine_ids.size());
+
+    for (unsigned int executor_id = 0; executor_id < allocation->mapping.size(); ++executor_id)
+    {
+        int machine_id_within_allocated_resources = allocation->mapping[executor_id];
+        int machine_id = allocation->machine_ids[machine_id_within_allocated_resources];
+
+        msg_host_t to_add = args->context->machines[machine_id]->host;
+        allocation->hosts.push_back(to_add);
+    }
+
+    // Also generate io hosts list if any
+    allocation->io_hosts.reserve(allocation->io_allocation.size());
+    for (unsigned int id = 0; id < allocation->io_allocation.size(); ++id)
+    {
+        allocation->io_hosts.push_back(args->context->machines[id]->host);
+    }
 
     // If energy is enabled, let us compute the energy used by the machines before running the job
     if (args->context->energy_used)

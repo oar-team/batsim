@@ -788,35 +788,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     {
         xbt_assert(false, "Invalid message in event %d (EXECUTE_JOB): job with job_id '%s' does not exists", event_number, job_id_str.c_str());
     }
-
-    // **************************
-    // Initialize data structures
-    // **************************
-    //
-    // Create the root task: Needed for additional io job
-    Workload * workload = context->workloads.at(job_id.workload_name);
-    Job * job = workload->jobs->at(job_id);
-    Profile * profile = workload->profiles->at(job->profile);
-    job->task = new BatTask(job, profile);
-
     message->allocation->job_id = job_id;
-    if (profile->type == ProfileType::SEQUENCE)
-    {
-        SequenceProfileData * data = (SequenceProfileData *) profile->data;
-
-        // (Sequences can be repeated several times)
-        for (int sequence_iteration = 0; sequence_iteration < data->repeat; sequence_iteration++)
-        {
-            for (unsigned int profile_index_in_sequence = 0;
-                 profile_index_in_sequence < data->sequence.size();
-                 profile_index_in_sequence++)
-            {
-                BatTask * sub_btask = new BatTask(job,
-                    job->workload->profiles->at(data->sequence[profile_index_in_sequence]));
-                job->task->sub_tasks.push_back(sub_btask);
-            }
-        }
-    }
 
     // *********************
     // Allocation management
@@ -942,7 +914,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     // *************************************
     if (data_object.HasMember("additional_io_job"))
     {
-        XBT_INFO("Found additional_io_job in the EXECUTE_JOB message");
+        XBT_DEBUG("Found additional_io_job in the EXECUTE_JOB message");
         const Value & io_job_value = data_object["additional_io_job"];
 
         // Read the profile description
@@ -951,9 +923,10 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         xbt_assert(io_job_value["profile_name"].IsString(), "Invalid JSON message: Invalid 'profile_name' of event %d (EXECUTE_JOB): should be a string", event_number);
         string profile_name = io_job_value["profile_name"].GetString();
 
+        Workload * workload = context->workloads.at(job_id.workload_name);
+        Job * job = workload->jobs->at(job_id);
         if (io_job_value.HasMember("profile"))
         {
-
             if (workload->profiles->exists(profile_name))
             {
                 XBT_WARN("The given profile name '%s' already exists: ignore the new one", profile_name.c_str());
@@ -1006,10 +979,8 @@ void JsonProtocolReader::handle_execute_job(int event_number,
                 job->task->sub_tasks[i]->io_profile = workload->profiles->at(io_data->sequence[i]);
             }
         }
-        else
-        {
-            job->task->io_profile = io_profile;
-        }
+
+        message->io_profile = io_profile;
 
         // get IO allocation
         xbt_assert(io_job_value.HasMember("alloc"), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should contain a 'alloc' key.", event_number);
@@ -1021,7 +992,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     }
     else
     {
-        XBT_INFO("The optional field 'additional_io_job' was not found");
+        XBT_DEBUG("The optional field 'additional_io_job' was not found");
     }
 
     // Everything has been parsed correctly, let's inject the message into the simulation.
@@ -1355,7 +1326,7 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     }
 
     // Create the job.
-    XBT_INFO("Parsing user-submitted job %s", message->job_id.to_string().c_str());
+    XBT_DEBUG("Parsing user-submitted job %s", message->job_id.to_string().c_str());
     Job * job = Job::from_json(message->job_description, workload,
                                "Invalid JSON job submitted by the scheduler");
     xbt_assert(job->id.job_name == message->job_id.job_name, "Internal error");
@@ -1377,7 +1348,7 @@ void JsonProtocolReader::handle_submit_job(int event_number,
         profile_object.Accept(writer);
 
         message->job_profile_description = string(buffer.GetString(), buffer.GetSize());
-        XBT_INFO("A profile was submited with the job '%s' : %s", job->id.to_string().c_str(), message->job_profile_description.c_str());
+        XBT_DEBUG("A profile was submited with the job '%s' : %s", job->id.to_string().c_str(), message->job_profile_description.c_str());
     }
     else if (context->redis_enabled)
     {

@@ -153,6 +153,7 @@ struct SchedulingAllocation
 struct ExecuteJobMessage
 {
     SchedulingAllocation * allocation; //!< The allocation itself
+    Profile * io_profile = nullptr; //!< Tho optional io profile
 };
 
 /**
@@ -276,6 +277,7 @@ struct ExecuteJobProcessArguments
     BatsimContext * context;            //!< The BatsimContext
     SchedulingAllocation * allocation;  //!< The SchedulingAllocation
     bool notify_server_at_end;          //!< Whether a message to the server must be sent after job completion
+    Profile * io_profile;               //!< The optional IO profile
 };
 
 /**
