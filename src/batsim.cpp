@@ -283,7 +283,7 @@ Other options:
     if (args["--simgrid-version"].asBool())
     {
         int sg_major, sg_minor, sg_patch;
-        sg_version(&sg_major, &sg_minor, &sg_patch);
+        sg_version_get(&sg_major, &sg_minor, &sg_patch);
 
         printf("%d.%d.%d\n", sg_major, sg_minor, sg_patch);
         return;
@@ -600,7 +600,7 @@ void initialize_msg(const MainArguments & main_args, int argc, char * argv[])
     // Must be initialized before MSG_init
     if (main_args.energy_used)
     {
-        sg_energy_plugin_init();
+        sg_host_energy_plugin_init();
     }
 
     MSG_init(&argc, argv);

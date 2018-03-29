@@ -377,7 +377,7 @@ int execute_job_process(int argc, char *argv[])
     // Add a cleanup hook on the process
     CleanExecuteTaskData * cleanup_data = new CleanExecuteTaskData;
     cleanup_data->exec_process_args = args;
-    SIMIX_process_on_exit(MSG_process_self(), execute_task_cleanup, cleanup_data);
+    MSG_process_on_exit(execute_task_cleanup, cleanup_data);
 
     // Execute the process
     job->return_code = execute_task(job->task, args->context, args->allocation,

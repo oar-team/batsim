@@ -124,7 +124,7 @@ void BatTask::compute_leaf_progress()
 
         // WARNING: This is not returning the flops amount but the remainin quantity of work
         // from 1 (not started yet) to 0 (completely finished)
-        current_task_progress_ratio = 1 - MSG_task_get_flops_amount(ptask);
+        current_task_progress_ratio = 1 - MSG_task_get_remaining_work_ratio(ptask);
     }
     else if (profile->type == ProfileType::DELAY)
     {
