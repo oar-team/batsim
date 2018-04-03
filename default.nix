@@ -1,7 +1,8 @@
 with import (
     fetchTarball
     "https://gitlab.inria.fr/vreis/datamove-nix/repository/master/archive.tar.gz")
-    { pkgs = (import <nixpkgs> {}); };
+    { };
+# pkgs = (import <nixpkgs> {});
 #with import <nixpkgs> {};
 
 #let
