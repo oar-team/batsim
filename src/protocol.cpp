@@ -952,7 +952,8 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         }
         // get the profile
         xbt_assert(workload->profiles->exists(profile_name),
-                    "The given profile name '%d' does not exists");
+                    "The given profile name '%s' does not exists",
+                   profile_name.c_str());
         Profile * io_profile = workload->profiles->at(profile_name);
 
         // manage sequence profile special case
@@ -961,21 +962,22 @@ void JsonProtocolReader::handle_execute_job(int event_number,
             Profile * job_profile = workload->profiles->at(job->profile);
             xbt_assert(job_profile->type == ProfileType::SEQUENCE,
                     "the job io profile is a '%s' profile but the the original job is '%s': they must have compatible profile in order to be merged",
-                    profile_type_to_string(io_profile->type),
-                    profile_type_to_string(job_profile->type));
+                    profile_type_to_string(io_profile->type).c_str(),
+                    profile_type_to_string(job_profile->type).c_str());
 
             // check if it has the same size
             SequenceProfileData * job_data = (SequenceProfileData*)job_profile->data;
             SequenceProfileData * io_data = (SequenceProfileData*)io_profile->data;
             xbt_assert(job_data->sequence.size() == io_data->sequence.size(),
-                    " IO profile sequence size (%d) and job profile sequence size (%d) should be the same",
+                    " IO profile sequence size (%zu) and job profile sequence size (%zu) should be the same",
                     io_data->sequence.size(),
                     job_data->sequence.size());
             // Attach a io profile to each batask of the sequence
             for (unsigned int i=0; i < io_data->sequence.size(); i++)
             {
                 xbt_assert(workload->profiles->exists(io_data->sequence[i]),
-                    "The given profile name '%d' does not exists");
+                    "The given profile name '%s' does not exists",
+                    io_data->sequence[i].c_str());
                 job->task->sub_tasks[i]->io_profile = workload->profiles->at(io_data->sequence[i]);
             }
         }

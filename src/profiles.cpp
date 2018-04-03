@@ -488,7 +488,8 @@ Profile *Profile::from_json(const std::string & profile_name,
 
                 xbt_assert(json_desc[key.c_str()].IsString(),
                                "%s: profile '%s' has a non-string '%s' field",
-                               error_prefix.c_str(), profile_name.c_str(), key);
+                               error_prefix.c_str(), profile_name.c_str(),
+                               key.c_str());
                 data->storage_label = json_desc[key.c_str()].GetString();
             }
         }

@@ -481,7 +481,7 @@ int execute_msg_task(BatTask * btask,
             col_only_in_job = false;
             col_only_in_io = false;
             int curr_machine = new_alloc[col];
-            XBT_DEBUG("Current machine in generation: %d");
+            XBT_DEBUG("Current machine in generation: %d", curr_machine);
             // Fill computation vector
             if (to_merge_alloc.contains(curr_machine))
             {
@@ -554,7 +554,7 @@ int execute_msg_task(BatTask * btask,
 
     }
     // Create the MSG task
-    XBT_DEBUG("Creating MSG task '%s' on %d resources", task_name.c_str(), hosts_to_use.size());
+    XBT_DEBUG("Creating MSG task '%s' on %zu resources", task_name.c_str(), hosts_to_use.size());
     msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(), hosts_to_use.size(),
                                                 hosts_to_use.data(), computation_vector,
                                                 communication_matrix, NULL);

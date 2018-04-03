@@ -377,7 +377,8 @@ BatTask * initialize_sequential_tasks(Job * job, Profile * profile, Profile * io
             {
                 SequenceProfileData * io_data = (SequenceProfileData*)io_profile->data;
                 xbt_assert(profiles->exists(io_data->sequence[i]),
-                        "The given profile name '%d' does not exists");
+                        "The given profile name '%s' does not exists",
+                        io_data->sequence[i].c_str());
                 sub_io_profile = profiles->at(io_data->sequence[i]);
             }
 
