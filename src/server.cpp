@@ -866,8 +866,8 @@ void server_on_execute_job(ServerData * data,
     // Only this profile is able to manage the following scenario:
     // The scheduler allocated a different number of resources than the
     // number of requested resources.
-    if (job->workload->profiles->at(job->profile)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT
-        and job->workload->profiles->at(job->profile)->type != ProfileType::SEQUENCE)
+    if (allocation->mapping.size() != 0
+            and job->workload->profiles->at(job->profile)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
     {
         xbt_assert((int)allocation->mapping.size() == job->requested_nb_res,
                    "Job '%s' allocation is invalid. The job requires %d machines but only %d were given (%s). "
