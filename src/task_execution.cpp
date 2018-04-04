@@ -364,6 +364,8 @@ void generate_matices_from_profile(double *& computation_matrix,
 
     unsigned int nb_res = hosts_to_use.size();
 
+    XBT_DEBUG("Number of hosts to use: %d", nb_res);
+
     switch(profile->type)
     {
     case ProfileType::MSG_PARALLEL:
@@ -452,9 +454,9 @@ int execute_msg_task(BatTask * btask,
                                   & allocation->storage_mapping,
                                   context);
 
-    //FIXME: This will not work for the PFS profiles
     enforce_role_permission(allocation->machine_ids, computation_vector, context);
 
+    //FIXME: This will not work for the PFS profiles
     // Manage additional io job
     if (btask->io_profile != nullptr)
     {
@@ -480,6 +482,7 @@ int execute_msg_task(BatTask * btask,
 
         // FIXME this does not work for profiles that changes the number of hosts: where the allocation and the host to use
         // are different
+        // Maybe this and the IO profiles should be merged to simplify implementation
         XBT_DEBUG("Job+IO allocation: %s", new_alloc.to_string_hyphen().c_str());
 
         //Generate the new list of hosts

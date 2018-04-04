@@ -873,15 +873,6 @@ void JsonProtocolReader::handle_execute_job(int event_number,
 
         xbt_assert(message->allocation->mapping.size() == mapping_map.size());
     }
-    else
-    {
-        // Default mapping
-        message->allocation->mapping.resize(nb_allocated_resources);
-        for (int i = 0; i < nb_allocated_resources; ++i)
-        {
-            message->allocation->mapping[i] = i;
-        }
-    }
 
     // *************************************
     // Storage Mapping management (optional)

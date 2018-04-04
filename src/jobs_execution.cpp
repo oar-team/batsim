@@ -413,11 +413,23 @@ int execute_job_process(int argc, char *argv[])
 
     // Create the root task
     job->task = initialize_sequential_tasks(job, profile, io_profile);
+    unsigned int nb_allocated_resources = allocation->machine_ids.size();
 
-    // Let's generate the hosts used by the job
+    if (allocation->mapping.size() == 0)
+    {
+        // Default mapping
+        allocation->mapping.resize(nb_allocated_resources);
+        for (unsigned int i = 0; i < nb_allocated_resources; ++i)
+        {
+            allocation->mapping[i] = i;
+        }
+    }
+
+    // generate the hosts used by the job
     allocation->hosts.clear();
-    allocation->hosts.reserve(allocation->machine_ids.size());
+    allocation->hosts.reserve(nb_allocated_resources);
 
+    // create hosts list from mapping
     for (unsigned int executor_id = 0; executor_id < allocation->mapping.size(); ++executor_id)
     {
         int machine_id_within_allocated_resources = allocation->mapping[executor_id];
