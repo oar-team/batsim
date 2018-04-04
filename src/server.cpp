@@ -94,7 +94,7 @@ int server_process(int argc, char *argv[])
 
         // Let's handle the message
         task_data = (IPMessage *) MSG_task_get_data(task_received);
-        XBT_INFO("Server received a message of type %s:",
+        XBT_DEBUG("Server received a message of type %s:",
                  ip_message_type_to_string(task_data->type).c_str());
 
         xbt_assert(handler_map.count(task_data->type) == 1,
@@ -174,7 +174,7 @@ void server_on_submitter_hello(ServerData * data,
 
     data->submitters[message->submitter_name] = submitter;
 
-    XBT_INFO("New submitter said hello. Number of polite submitters: %d",
+    XBT_DEBUG("New submitter said hello. Number of polite submitters: %d",
              data->nb_submitters);
 }
 
@@ -193,7 +193,7 @@ void server_on_submitter_bye(ServerData * data,
     {
         data->nb_workflow_submitters_finished++;
     }
-    XBT_INFO("A submitted said goodbye. Number of finished submitters: %d",
+    XBT_DEBUG("A submitted said goodbye. Number of finished submitters: %d",
              data->nb_submitters_finished);
 
     check_simulation_finished(data);
@@ -259,9 +259,9 @@ void server_on_job_submitted(ServerData * data,
     }
 
     // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
-    XBT_INFO("Job received: %s\n", message->job_id.to_string().c_str());
+    XBT_DEBUG("Job received: %s\n", message->job_id.to_string().c_str());
 
-    XBT_INFO("Workloads: %s", data->context->workloads.to_string().c_str());
+    XBT_DEBUG("Workloads: %s", data->context->workloads.to_string().c_str());
 
     xbt_assert(data->context->workloads.job_is_registered(message->job_id));
     Job * job = data->context->workloads.job_at(message->job_id);
