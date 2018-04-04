@@ -79,4 +79,12 @@ inline Permissions & operator&=(Permissions & a, Permissions b)
     return a;
 };
 
+/**
+ * @brief Operator to compare permissions
+ */
+inline bool operator==(Permissions a, Permissions b)
+{
+    return static_cast<unsigned int>(a) == static_cast<unsigned int>(b);
+};
+
 };

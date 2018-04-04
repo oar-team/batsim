@@ -13,6 +13,7 @@
 XBT_LOG_NEW_DEFAULT_CATEGORY(task_execution, "task_execution"); //!< Logging
 
 using namespace std;
+using namespace roles;
 
 /**
  * @brief Generate the communication and computaion matrix for the msg
@@ -189,6 +190,7 @@ void generate_msg_parallel_homogeneous_with_pfs(double *& computation_amount,
     else
     {
         pfs_machine_id = storage_mapping[data->storage_label];
+        xbt_assert(context->machines[pfs_machine_id]->permissions == Permissions::STORAGE, "The given Storage tier node (%d) is not a storage node", pfs_machine_id);
     }
     hosts_to_use.push_back(context->machines[pfs_machine_id]->host);
 
@@ -281,7 +283,9 @@ void generate_msg_data_staginig_task(double *&  computation_amount,
 
     // Add the pfs_machine
     int from_machine_id = storage_mapping[data->from_storage_label];
+    xbt_assert(context->machines[from_machine_id]->permissions == Permissions::STORAGE, "The given Storage for 'from' (%d) is not a storage node", from_machine_id);
     int to_machine_id = storage_mapping[data->to_storage_label];
+    xbt_assert(context->machines[to_machine_id]->permissions == Permissions::STORAGE, "The given Storage for 'from' (%d) is not a storage node", to_machine_id);
     hosts_to_use.push_back(context->machines[from_machine_id]->host);
     hosts_to_use.push_back(context->machines[to_machine_id]->host);
 
@@ -400,6 +404,28 @@ void generate_matices_from_profile(double *& computation_matrix,
         xbt_die("Should not be reached.");
     }
     print_matrices(computation_matrix, communication_matrix, hosts_to_use.size());
+
+}
+
+void enforce_role_permission(MachineRange alloc,
+                             double * computation_matrix,
+                             BatsimContext * context)
+{
+    // TODO: simplify the roles because it is very simple in the end
+    // Enforce role permission
+    for (unsigned int i = 0; i < alloc.size(); i++)
+    {
+        int machine_id = alloc[i];
+        XBT_DEBUG("enforcing permission for machine id: %d", machine_id);
+        Permissions perm = context->machines[machine_id]->permissions;
+        if (computation_matrix[i] != 0)
+        {
+            XBT_DEBUG("found computation: %f", computation_matrix[i]);
+            xbt_assert(perm == Permissions::COMPUTE_NODE,
+                "Some computation (%f) is assigned to a storage node (id: %d)",
+                computation_matrix[i], machine_id);
+        }
+    }
 }
 
 int execute_msg_task(BatTask * btask,
@@ -425,6 +451,9 @@ int execute_msg_task(BatTask * btask,
                                   profile,
                                   & allocation->storage_mapping,
                                   context);
+
+    //FIXME: This will not work for the PFS profiles
+    enforce_role_permission(allocation->machine_ids, computation_vector, context);
 
     // Manage additional io job
     if (btask->io_profile != nullptr)
@@ -481,7 +510,7 @@ int execute_msg_task(BatTask * btask,
             col_only_in_job = false;
             col_only_in_io = false;
             int curr_machine = new_alloc[col];
-            XBT_DEBUG("Current machine in generation: %d", curr_machine);
+            XBT_DEBUG("Current machine in generation: %d");
             // Fill computation vector
             if (to_merge_alloc.contains(curr_machine))
             {
@@ -544,6 +573,7 @@ int execute_msg_task(BatTask * btask,
                 k++;
             }
         }
+
         // update variables with merged matrix
         communication_matrix = new_communication_matrix;
         computation_vector = new_computation_vector;
@@ -552,9 +582,12 @@ int execute_msg_task(BatTask * btask,
         XBT_DEBUG("Merged Job+IO matrices");
         print_matrices(computation_vector, communication_matrix, hosts_to_use.size());
 
+        enforce_role_permission(new_alloc, computation_vector, context);
     }
+
+
     // Create the MSG task
-    XBT_DEBUG("Creating MSG task '%s' on %zu resources", task_name.c_str(), hosts_to_use.size());
+    XBT_DEBUG("Creating MSG task '%s' on %d resources", task_name.c_str(), hosts_to_use.size());
     msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(), hosts_to_use.size(),
                                                 hosts_to_use.data(), computation_vector,
                                                 communication_matrix, NULL);
