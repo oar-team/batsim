@@ -110,7 +110,6 @@ implicit_instances:
                                              -waiting_time,
                                              -stretch,
                                              -allocated_processors,
-                                             -hacky_job_id,
                                              -submission_time,
                                              -requested_time,
                                              -starting_time,
