@@ -16,16 +16,16 @@
  */
 enum class ProfileType
 {
-    DELAY                                          //!< The profile is a delay. Its data is of type DelayProfileData
-    ,MSG_PARALLEL                                  //!< The profile is composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
-    ,MSG_PARALLEL_HOMOGENEOUS                      //!< The profile is a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type MsgParallelHomogeneousProfileData
-    ,MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT         //!< The profile is a homogeneous parallel task that spreads the given amounts of computation and communication among all the nodes. Its data is of type MsgParallelHomogeneousTotalAmountProfileData
-    ,SMPI                                          //!< The profile is a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
-    ,SEQUENCE                                      //!< The profile is non-atomic: it is composed of a sequence of other profiles
-    ,MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS   //!< The profile is a homogeneous MSG for complex parallel filesystem access. Its data is of type MsgParallelHomogeneousPFSMultipleTiersProfileData
-    ,MSG_DATA_STAGING                              //!< The profile is a MSG for moving data between the pfs hosts. Its data is of type DataStagingProfileData
-    ,SCHEDULER_SEND                                //!< The profile is a profile simulating a message sent to the scheduler. Its data is of type SchedulerSendProfileData
-    ,SCHEDULER_RECV                                //!< The profile receives a message from the scheduler and can execute a profile based on a value comparison of the message. Its data is of type SchedulerRecvProfileData
+    DELAY                                          //!< a delay. Its data is of type DelayProfileData
+    ,MSG_PARALLEL                                  //!< composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
+    ,MSG_PARALLEL_HOMOGENEOUS                      //!< a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type MsgParallelHomogeneousProfileData
+    ,MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT         //!< a homogeneous parallel task that spreads the given amounts of computation and communication among all the nodes. Its data is of type MsgParallelHomogeneousTotalAmountProfileData
+    ,SMPI                                          //!< a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
+    ,SEQUENCE                                      //!< non-atomic: it is composed of a sequence of other profiles
+    ,MSG_PARALLEL_HOMOGENEOUS_PFS                  //!< Read and writes data to a PFS storage nodes. data type MsgParallelHomogeneousPFSProfileData
+    ,MSG_DATA_STAGING                              //!< for moving data between the pfs hosts. Its data is of type DataStagingProfileData
+    ,SCHEDULER_SEND                                //!< a profile simulating a message sent to the scheduler. Its data is of type SchedulerSendProfileData
+    ,SCHEDULER_RECV                                //!< receives a message from the scheduler and can execute a profile based on a value comparison of the message. Its data is of type SchedulerRecvProfileData
 };
 
 /**
@@ -142,22 +142,13 @@ struct SequenceProfileData
 };
 
 /**
- * @brief The data associated to MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS profiles
+ * @brief The data associated to MSG_PARALLEL_HOMOGENEOUS_PFS profiles
  */
-struct MsgParallelHomogeneousPFSMultipleTiersProfileData
+struct MsgParallelHomogeneousPFSProfileData
 {
-    /**
-     * @brief The Direction of the PFS transfer
-     */
-    enum class Direction
-    {
-        FROM_NODES_TO_STORAGE      //!< From the nodes to the storage
-        ,FROM_STORAGE_TO_NODES     //!< From the storage to the nodes
-    };
-
-    double size;          //!< The size of data per compute node to transfer to pfs_machine (simulate a simple I/O traffic model)
-    Direction direction;  //!< Whether data should be transfered to the storage or from the storage to the nodes of the allocation
-    std::string storage_label;    //!< A label for the storage where data should be transfered to/from depending on the direction
+    double bytes_to_read = 0;             //!< The amount of bytes to reads from the PFS storage node for each nodes (default: 0)
+    double bytes_to_write = 0;            //!< The amount of bytes to writes to the PFS storage for each nodes (default: 0)
+    std::string storage_label = "pfs";    //!< A label that defines the PFS storage node (default: "pfs")
 };
 
 /**
@@ -165,9 +156,9 @@ struct MsgParallelHomogeneousPFSMultipleTiersProfileData
  */
 struct MsgDataStagingProfileData
 {
-    double size;              //!< The size of data to transfer between the two PFS machines
-    std::string from_storage_label ;  //!< The storage id from where data come
-    std::string to_storage_label ;    //!< The storage id where data goes to
+    double nb_bytes;                  //!< The number of bytes to transfer between the two storage nodes
+    std::string from_storage_label ;  //!< The storage label where data comes from
+    std::string to_storage_label ;    //!< The storage label where data goes to
 };
 
 /**

@@ -119,25 +119,24 @@ This job profile is a list of profiles to be executed in a sequence.
 ```
 
 
-## MSG homogeneous IO to/from a storage tier
+## MSG homogeneous IO to/from a PFS storage (Parallel File System)
 
 Represents an IO transfer between all the nodes of a job's allocation and a
 centralized storage tier. The storage tier is represented by one node.
 
 ### Parameters
-- ``size``: the amount of bytes to be transfered.
-- ``direction``: the direction of the transfer. Posible values are
-  ``from_storage`` and ``to_storage``.
+- ``bytes_to_read``: the amount of bytes to read from the PFS to each nodes.
+- ``bytes_to_write``: the amount of bytes to write to the PFS from each nodes.
 - ``storage``: The name of the storage. It will be map to a specific node at the job
-  execution time. Default value is ``pfs``.
+  execution time. (optional: Default value is ``pfs``).
 
 ### Example
 
 ```json
 {
-    "type": "msg_par_hg_pfs_tiers"
-    "size": 10e5,
-    "direction": "to_storage",
+    "type": "msg_par_hg_pfs"
+    "bytes_to_read": 10e5,
+    "bytes_to_write": 10e5,
     "storage": "nfs"
 }
 ```
@@ -147,7 +146,7 @@ centralized storage tier. The storage tier is represented by one node.
 This profile represents an IO transfer between two storage tiers.
 
 ### Parameters
-- ``size``: the amount of bytes to be transfered.
+- ``nb_bytes``: the amount of bytes to be transfered.
 - ``from``: The name of the storage that send. It will be map to a specific node at the job execution time.
 - ``to``: The name of the storage that receive. It will be map to a specific node at the job execution time.
 
@@ -156,7 +155,7 @@ This profile represents an IO transfer between two storage tiers.
 ```json
 {
     "type": "data_staging",
-    "size": 10e5,
+    "nb_bytes": 10e5,
     "from": "pfs",
     "to": "nfs"
 }

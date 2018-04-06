@@ -143,7 +143,7 @@ void generate_msg_parallel_homogeneous_total_amount(double *& computation_amount
 
 /**
  * @brief Generate the communication and computaion matrix for the msg
- *        parallel homogeneous task profile with pfs.
+ *        parallel homogeneous task profile with a Parallel File System.
  *
  * @param[out] computation_amount the computation matrix to be simulated by the msg task
  * @param[out] communication_amount the communication matrix to be simulated by the msg task
@@ -153,8 +153,7 @@ void generate_msg_parallel_homogeneous_total_amount(double *& computation_amount
  * @param[in] context the batsim context
  *
  * @details Note that the number of resource is also altered because of the
- *          pfs node that is addded. It also set the prefix name of the
- *          task.
+ *          pfs node that is addded.
  */
 void generate_msg_parallel_homogeneous_with_pfs(double *& computation_amount,
                                                 double *& communication_amount,
@@ -163,11 +162,8 @@ void generate_msg_parallel_homogeneous_with_pfs(double *& computation_amount,
                                                 void * profile_data,
                                                 BatsimContext * context)
 {
-    MsgParallelHomogeneousPFSMultipleTiersProfileData* data =
-            (MsgParallelHomogeneousPFSMultipleTiersProfileData*)profile_data;
-
-    double cpu = 0;
-    double size = data->size;
+    MsgParallelHomogeneousPFSProfileData* data =
+            (MsgParallelHomogeneousPFSProfileData*)profile_data;
 
     // The PFS machine will also be used
     unsigned int nb_res = hosts_to_use.size() + 1;
@@ -184,66 +180,51 @@ void generate_msg_parallel_homogeneous_with_pfs(double *& computation_amount,
         }
         else
         {
-            xbt_assert(false, "No storage/host mapping given and there is no (ore more than one) storage node available");
+            xbt_assert(false, "No storage/host mapping given and there is no"
+                    "(or more than one) storage node available");
         }
     }
     else
     {
         pfs_machine_id = storage_mapping[data->storage_label];
-        xbt_assert(context->machines[pfs_machine_id]->permissions == Permissions::STORAGE, "The given Storage tier node (%d) is not a storage node", pfs_machine_id);
+        xbt_assert(context->machines[pfs_machine_id]->permissions == Permissions::STORAGE,
+                "The given node (%d) is not a storage node", pfs_machine_id);
     }
     hosts_to_use.push_back(context->machines[pfs_machine_id]->host);
 
     // These amounts are deallocated by SG
     computation_amount = xbt_new(double, nb_res);
     communication_amount = nullptr;
-    if (size > 0)
+    if (data->bytes_to_read > 0 || data->bytes_to_write > 0)
     {
         communication_amount = xbt_new(double, nb_res* nb_res);
     }
 
     // Let us fill the local computation and communication matrices
     int k = 0;
-    for (unsigned int y = 0; y < nb_res; ++y)
+    for (unsigned int row = 0; row < nb_res; ++row)
     {
-        computation_amount[y] = cpu;
+        computation_amount[row] = 0;
         if (communication_amount != nullptr)
         {
-            for (unsigned int x = 0; x < nb_res; ++x)
+            for (unsigned int col = 0; col < nb_res; ++col)
             {
-                switch (data->direction)
+                // No intra node comm and no inter node comm if it's not the pfs
+                if (col == row or (col != pfs_id and row != pfs_id))
                 {
-                case MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_NODES_TO_STORAGE:
-                {
-                    // Communications are done towards the PFS host,
-                    // which is the last resource (to the storage)
-                    if (x != pfs_id)
-                    {
-                        communication_amount[k] = 0;
-                    }
-                    else
-                    {
-                        communication_amount[k] = size;
-                    }
-                    k++;
-                } break;
-                case MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_STORAGE_TO_NODES:
-                {
-                    // Communications are done towards the job
-                    // allocation (from the storage)
-                    if (x != pfs_id)
-                    {
-                        communication_amount[k] = size;
-                    }
-                    else
-                    {
-                        communication_amount[k] = 0;
-                    }
-                    k++;
-                } break;
-                default:
-                    xbt_die("Should not be reached");
+                    communication_amount[k] = 0;
                 }
+                // Writes
+                else if (col == pfs_id)
+                {
+                    communication_amount[k] = data->bytes_to_write;
+                }
+                // Reads
+                else if (row == pfs_id)
+                {
+                    communication_amount[k] = data->bytes_to_read;
+                }
+                k++;
             }
         }
     }
@@ -272,7 +253,7 @@ void generate_msg_data_staginig_task(double *&  computation_amount,
     MsgDataStagingProfileData* data = (MsgDataStagingProfileData*)profile_data;
 
     double cpu = 0;
-    double size = data->size;
+    double nb_bytes = data->nb_bytes;
 
     // The PFS machine will also be used
     unsigned int nb_res = 2;
@@ -292,28 +273,28 @@ void generate_msg_data_staginig_task(double *&  computation_amount,
     // These amounts are deallocated by SG
     computation_amount = xbt_new(double, nb_res);
     communication_amount = nullptr;
-    if (size > 0)
+    if (nb_bytes > 0)
     {
         communication_amount = xbt_new(double, nb_res* nb_res);
     }
 
     // Let us fill the local computation and communication matrices
     int k = 0;
-    for (unsigned int y = 0; y < nb_res; ++y)
+    for (unsigned int row = 0; row < nb_res; ++row)
     {
-        computation_amount[y] = cpu;
+        computation_amount[row] = cpu;
         if (communication_amount != nullptr)
         {
-            for (unsigned int x = 0; x < nb_res; ++x)
+            for (unsigned int col = 0; col < nb_res; ++col)
             {
                 // Communications are done towards the last resource
-                if (x != pfs_id)
+                if (col == row or col != pfs_id)
                 {
                     communication_amount[k] = 0;
                 }
                 else
                 {
-                    communication_amount[k] = size;
+                    communication_amount[k] = nb_bytes;
                 }
                 k++;
             }
@@ -356,7 +337,7 @@ void print_matrices(double * computation_vector, double * communication_matrix, 
  */
 void generate_matices_from_profile(double *& computation_matrix,
                                    double *& communication_matrix,
-                                   std::vector<msg_host_t> hosts_to_use,
+                                   std::vector<msg_host_t> & hosts_to_use,
                                    Profile * profile,
                                    const std::map<std::string, int> * storage_mapping,
                                    BatsimContext * context)
@@ -386,7 +367,7 @@ void generate_matices_from_profile(double *& computation_matrix,
                                                        nb_res,
                                                        profile->data);
         break;
-    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS:
+    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS:
         generate_msg_parallel_homogeneous_with_pfs(computation_matrix,
                                                    communication_matrix,
                                                    hosts_to_use,
@@ -466,10 +447,10 @@ int execute_msg_task(BatTask * btask,
 
         XBT_DEBUG("Generating comm/compute matrix for IO with alloaction: %s",
                 allocation->io_allocation.to_string_hyphen().c_str());
-
+        std::vector<msg_host_t> io_hosts = allocation->io_hosts;
         generate_matices_from_profile(io_computation_vector,
                                       io_communication_matrix,
-                                      allocation->io_hosts,
+                                      io_hosts,
                                       io_profile,
                                       nullptr,
                                       context);

@@ -181,9 +181,9 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS)
+    else if (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS)
     {
-        MsgParallelHomogeneousPFSMultipleTiersProfileData * d = (MsgParallelHomogeneousPFSMultipleTiersProfileData *) data;
+        MsgParallelHomogeneousPFSProfileData * d = (MsgParallelHomogeneousPFSProfileData *) data;
         if (d != nullptr)
         {
             delete d;
@@ -429,52 +429,34 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "msg_par_hg_pfs_tiers" || profile_type == "msg_par_hg_pfs0")
+    else if (profile_type == "msg_par_hg_pfs")
     {
         /*
         {
-            "size": 10e5,
-            "direction": "to_storage",
-            "storage": "pfs"
+            "bytes_to_read": 10e5,
+            "bytes_to_write": 10e5,
+            "storage": "my_io_node" //optional (default: 'pfs')
         }
         */
-        profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS;
-        MsgParallelHomogeneousPFSMultipleTiersProfileData * data = new MsgParallelHomogeneousPFSMultipleTiersProfileData;
+        profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS;
+        MsgParallelHomogeneousPFSProfileData * data = new MsgParallelHomogeneousPFSProfileData;
 
-        xbt_assert(json_desc.HasMember("size"), "%s: profile '%s' has no 'size' field",
+        xbt_assert(json_desc.HasMember("bytes_to_read") or json_desc.HasMember("bytes_to_write"), "%s: profile '%s' has no 'bytes_to_read' or 'bytes_to_write' field (0 if not set)",
                    error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["size"].IsNumber(), "%s: profile '%s' has a non-number 'size' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        data->size = json_desc["size"].GetDouble();
-        xbt_assert(data->size >= 0, "%s: profile '%s' has a non-positive 'size' field (%g)",
-                   error_prefix.c_str(), profile_name.c_str(), data->size);
-
-        if (json_desc.HasMember("direction"))
+        if (json_desc.HasMember("bytes_to_read"))
         {
-            xbt_assert(json_desc["direction"].IsString(),
-                       "%s: profile '%s' has a non-string 'direction' field",
+            xbt_assert(json_desc["bytes_to_read"].IsNumber(), "%s: profile '%s' has a non-number 'bytes_to_read' field",
                        error_prefix.c_str(), profile_name.c_str());
-            string direction = json_desc["direction"].GetString();
-
-            if (direction == "from_node_to_storage" || direction == "to_storage")
-            {
-                data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_NODES_TO_STORAGE;
-            }
-            else if (direction == "from_storage_to_node" || direction == "from_storage")
-            {
-                data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_STORAGE_TO_NODES;
-            }
-            else
-            {
-                xbt_assert(false, "%s: profile '%s' has an invalid 'direction' field (%s)",
-                           error_prefix.c_str(), profile_name.c_str(), direction.c_str());
-            }
+            data->bytes_to_read = json_desc["bytes_to_read"].GetDouble();
         }
-        else
+        if (json_desc.HasMember("bytes_to_write"))
         {
-            data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_NODES_TO_STORAGE;
+            xbt_assert(json_desc["bytes_to_write"].IsNumber(), "%s: profile '%s' has a non-number 'bytes_to_write' field",
+                       error_prefix.c_str(), profile_name.c_str());
+            data->bytes_to_write = json_desc["bytes_to_write"].GetDouble();
         }
 
+        // If not set Use the "pfs" label by default
         if (json_desc.HasMember("storage") or json_desc.HasMember("host"))
         {
             string key;
@@ -486,17 +468,12 @@ Profile *Profile::from_json(const std::string & profile_name,
             {
                 key = "host";
 
-                xbt_assert(json_desc[key.c_str()].IsString(),
-                               "%s: profile '%s' has a non-string '%s' field",
-                               error_prefix.c_str(), profile_name.c_str(),
-                               key.c_str());
-                data->storage_label = json_desc[key.c_str()].GetString();
             }
-        }
-        else
-        {
-            // Use the "pfs" label by default
-            data->storage_label = "pfs";
+            xbt_assert(json_desc[key.c_str()].IsString(),
+                           "%s: profile '%s' has a non-string '%s' field",
+                           error_prefix.c_str(), profile_name.c_str(),
+                           key.c_str());
+            data->storage_label = json_desc[key.c_str()].GetString();
         }
 
         profile->data = data;
@@ -505,7 +482,7 @@ Profile *Profile::from_json(const std::string & profile_name,
     {
         /*
         {
-            "size": 10e5,
+            "nb_bytes": 10e5,
             "from": "pfs",
             "to": "lcfs"
         }
@@ -513,13 +490,13 @@ Profile *Profile::from_json(const std::string & profile_name,
         profile->type = ProfileType::MSG_DATA_STAGING;
         MsgDataStagingProfileData * data = new MsgDataStagingProfileData;
 
-        xbt_assert(json_desc.HasMember("size"), "%s: profile '%s' has no 'size' field",
+        xbt_assert(json_desc.HasMember("nb_bytes"), "%s: profile '%s' has no 'nb_bytes' field",
                    error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["size"].IsNumber(), "%s: profile '%s' has a non-number 'size' field",
+        xbt_assert(json_desc["nb_bytes"].IsNumber(), "%s: profile '%s' has a non-number 'nb_bytes' field",
                    error_prefix.c_str(), profile_name.c_str());
-        data->size = json_desc["size"].GetDouble();
-        xbt_assert(data->size >= 0, "%s: profile '%s' has a non-positive 'size' field (%g)",
-                   error_prefix.c_str(), profile_name.c_str(), data->size);
+        data->nb_bytes = json_desc["nb_bytes"].GetDouble();
+        xbt_assert(data->nb_bytes >= 0, "%s: profile '%s' has a non-positive 'nb_bytes' field (%g)",
+                   error_prefix.c_str(), profile_name.c_str(), data->nb_bytes);
 
         xbt_assert(json_desc.HasMember("from"), "%s: profile '%s' has no 'from' field",
                    error_prefix.c_str(), profile_name.c_str());
@@ -682,7 +659,7 @@ bool Profile::is_parallel_task() const
     return (type == ProfileType::MSG_PARALLEL) ||
            (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS) ||
            (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT) ||
-           (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS) ||
+           (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS) ||
            (type == ProfileType::MSG_DATA_STAGING);
 }
 
@@ -711,8 +688,8 @@ std::string profile_type_to_string(const ProfileType & type)
     case ProfileType::SEQUENCE:
         str = "SEQUENCE";
         break;
-    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS:
-        str = "MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS";
+    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS:
+        str = "MSG_PARALLEL_HOMOGENEOUS_PFS";
         break;
     case ProfileType::MSG_DATA_STAGING:
         str = "MSG_DATA_STAGING";

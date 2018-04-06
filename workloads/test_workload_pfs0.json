@@ -1,17 +1,24 @@
 {
-    "version": 0,
+    "version": 1,
     "command:": "",
-    "date": "Fri, 31 Mar 2017",
+    "date": "Fri, 6 Apr 2018",
     "description": "Simple workload test",
 
     "nb_res": 4,
     "jobs": [
-        {"id":1, "subtime":10, "walltime": 100, "res": 4, "profile": "1"},
-        {"id":2, "subtime":20, "walltime": 100, "res": 4, "profile": "2"},
-        {"id":3, "subtime":30, "walltime": 100, "res": 4, "profile": "3"}
+        {"id":"0", "subtime":0, "walltime": 100, "res": 4, "profile": "delay"},
+        {"id":1, "subtime":60, "walltime": 100, "res": 4, "profile": "1"},
+        {"id":2, "subtime":1000, "walltime": 100, "res": 4, "profile": "mapping"},
+        {"id":3, "subtime":1100, "walltime": 100, "res": 4, "profile": "read"},
+        {"id":4, "subtime":20, "walltime": 100, "res": 4, "profile": "write"},
+        {"id":5, "subtime":30, "walltime": 100, "res": 4, "profile": "both"}
     ],
 
     "profiles": {
+        "delay": {
+            "type": "delay",
+            "delay": 20
+        },
         "1": {
             "type": "msg_par",
             "cpu": [5e6,5e6,5e6,5e6],
@@ -20,14 +27,23 @@
                     5e6,5e6,5e6,5e6,
                     5e6,5e6,5e6,5e6]
         },
-        "2": {
-            "type": "msg_par_hg_pfs0",
-            "size": 10e6
-        },
-        "3": {
-            "type": "msg_par_hg_pfs_tiers",
-            "size": 10e6,
+        "mapping": {
+            "type": "msg_par_hg_pfs",
+            "bytes_to_read": 10e7,
             "storage": "pfs0"
+        },
+        "read": {
+            "type": "msg_par_hg_pfs",
+            "bytes_to_read": 10e7
+        },
+        "write": {
+            "type": "msg_par_hg_pfs",
+            "bytes_to_write": 10e7
+        },
+        "both": {
+            "type": "msg_par_hg_pfs",
+            "bytes_to_read": 10e7,
+            "bytes_to_write": 1e7
         }
     }
 }
