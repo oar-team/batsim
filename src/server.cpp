@@ -284,8 +284,10 @@ void server_on_job_submitted(ServerData * data,
         }
     }
 
-    data->context->proto_writer->append_job_submitted(job->id.to_string(), job_json_description,
-                                                      profile_json_description, MSG_get_clock());
+    data->context->proto_writer->append_job_submitted(job->id.to_string(),
+                                                      job_json_description,
+                                                      profile_json_description,
+                                                      MSG_get_clock());
 }
 
 void server_on_pstate_modification(ServerData * data,
@@ -595,7 +597,8 @@ void server_on_submit_job(ServerData * data,
             }
         }
 
-        data->context->proto_writer->append_job_submitted(job->id.to_string(), job_json_description,
+        data->context->proto_writer->append_job_submitted(job->id.to_string(),
+                                                          job_json_description,
                                                           profile_json_description,
                                                           MSG_get_clock());
     }
@@ -608,6 +611,9 @@ void server_on_submit_profile(ServerData * data,
     ProfileSubmittedByDPMessage * message = (ProfileSubmittedByDPMessage *) task_data->data;
     (void) message;
 
+    XBT_DEBUG("New user-submitted profile %s to workload %s",
+                message->profile_name.c_str(),
+                message->workload_name.c_str());
     // Does nothing.
     // Just here to keep the usual time increases from protocol reader to orchestrator.
 

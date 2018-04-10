@@ -81,6 +81,26 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
           "1s3fa1f5d1": "workload0.json",
           "41d51f8d4f": "workload1.json",
         }
+        "profiles": {
+          "1s3fa1f5d1": {
+            "delay_10s": {
+              "type": "delay",
+              "delay": 10
+            },
+            "compute_only_10s":{
+              "type":"msg_par_hg",
+              "cpu": 1e9,
+              "com": 0
+            }
+          }
+          "41d51f8d4f": {
+            "no_com": {
+              "com": 0,
+              "type": "msg_par_hg",
+              "cpu": 1000000000.0
+            }
+          }
+        }
       }
     } */
 
@@ -116,14 +136,30 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
 
 
     Value workloads_dict(rapidjson::kObjectType);
+    Value profiles_dict(rapidjson::kObjectType);
     for (const auto & workload : workloads.workloads())
     {
         workloads_dict.AddMember(
             Value().SetString(workload.first.c_str(), _alloc),
             Value().SetString(workload.second->file.c_str(), _alloc),
             _alloc);
+
+        Value profile_dict(rapidjson::kObjectType);
+        for (const auto & profile : workload.second->profiles->profiles())
+        {
+            Document profile_description_doc;
+            const string & profile_json_description = profile.second->json_description;
+            profile_description_doc.Parse(profile_json_description.c_str());
+            profile_dict.AddMember(
+                    Value().SetString(profile.first.c_str(), _alloc),
+                    Value().CopyFrom(profile_description_doc, _alloc), _alloc);
+        }
+        profiles_dict.AddMember(
+                Value().SetString(workload.first.c_str(), _alloc),
+                profile_dict, _alloc);
     }
     data.AddMember("workloads", workloads_dict, _alloc);
+    data.AddMember("profiles", profiles_dict, _alloc);
 
     Value event(rapidjson::kObjectType);
     event.AddMember("timestamp", Value().SetDouble(date), _alloc);
@@ -895,7 +931,6 @@ void JsonProtocolReader::handle_execute_job(int event_number,
             xbt_assert(key_value.IsString(), "Invalid JSON message: Invalid 'storage_mapping' of event %d (EXECUTE_JOB): a key is not a string", event_number);
             xbt_assert(value_value.IsInt(), "Invalid JSON message: Invalid 'storage_mapping' of event %d (EXECUTE_JOB): a value is not an integer", event_number);
             storage_mapping_map[key_value.GetString()] = value_value.GetInt();
-
         }
         message->allocation->storage_mapping = storage_mapping_map;
     }
@@ -963,13 +998,11 @@ void JsonProtocolReader::handle_execute_job(int event_number,
                     " IO profile sequence size (%zu) and job profile sequence size (%zu) should be the same",
                     io_data->sequence.size(),
                     job_data->sequence.size());
-            // Attach a io profile to each batask of the sequence
             for (unsigned int i=0; i < io_data->sequence.size(); i++)
             {
                 xbt_assert(workload->profiles->exists(io_data->sequence[i]),
                     "The given profile name '%s' does not exists",
                     io_data->sequence[i].c_str());
-                job->task->sub_tasks[i]->io_profile = workload->profiles->at(io_data->sequence[i]);
             }
         }
 
