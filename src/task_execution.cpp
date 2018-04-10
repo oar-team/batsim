@@ -521,18 +521,32 @@ int execute_msg_task(BatTask * btask,
                 if (to_merge_alloc.contains(new_alloc[row]))
                 {
                     if (col_only_in_job){
-                        new_communication_matrix[k] = communication_matrix[row_job_host_index++];
+                        if (communication_matrix != nullptr)
+                        {
+                            new_communication_matrix[k] = communication_matrix[row_job_host_index++];
+                        }
+                        else
+                        {
+                            new_communication_matrix[k] = 0;
+                        }
                     }
                     else if (col_only_in_io){
                         new_communication_matrix[k] = io_communication_matrix[row_io_host_index++];
                     }
                     else {
-                        new_communication_matrix[k] = communication_matrix[row_job_host_index++] + io_communication_matrix[row_io_host_index++];
+                        if (communication_matrix != nullptr)
+                        {
+                            new_communication_matrix[k] = communication_matrix[row_job_host_index++] + io_communication_matrix[row_io_host_index++];
+                        }
+                        else
+                        {
+                            new_communication_matrix[k] = io_communication_matrix[row_io_host_index++];
+                        }
                     }
                 }
                 else if (immut_job_alloc.contains(new_alloc[row]))
                 {
-                    if (col_only_in_io){
+                    if (col_only_in_io or communication_matrix == nullptr){
                         new_communication_matrix[k] = 0;
                     }
                     else
