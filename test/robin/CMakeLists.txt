@@ -76,7 +76,7 @@ function(add_test_robintest_batsched)
     # Default values #
     ##################
     set(atrb_err_prefix "add_test_robintest_batsched bad call: ")
-    
+
     # The following arguments are not optional
     if ("${atrb_NAME}" STREQUAL "")
         message(FATAL_ERROR "${atrb_err_prefix} NAME is empty")
@@ -106,8 +106,6 @@ function(add_test_robintest_batsched)
         set(atrb_ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end")
     endif()
 
-    
-
     # Create robin description file
     create_robin_description_file(NAME ${atrb_NAME}
         OUTPUT_DIR ${test_output_dir}/${atrb_NAME}
@@ -115,10 +113,16 @@ function(add_test_robintest_batsched)
         SCHEDCMD "batsched -v ${atrb_ALGORITHM} -s tcp://*:${atrb_PORT} ${atrb_OTH_BATSCHED_ARGS}"
     )
 
+    # Split robintest expectation by ' '
+    string(REPLACE " " ";"
+        ROBIN_EXPECTATION_LIST ${atrb_ROBINTEST_EXPECTATION})
+
     # Add the CMake test
     add_test(NAME ${atrb_NAME}
         COMMAND robintest ${robinfiles_dir}/${atrb_NAME}.yaml
-        --test-timeout=${atrb_TEST_TIMEOUT})
+        --test-timeout=${atrb_TEST_TIMEOUT}
+        ${ROBIN_EXPECTATION_LIST}
+        --result-check-script=${atrb_CHECK_SCRIPT})
 endfunction()
 
 add_test_robintest_batsched(NAME meh
