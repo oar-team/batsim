@@ -149,11 +149,11 @@ function(add_test_robintest_batsched)
     if ("${atrb_WORKLOAD}" STREQUAL "")
         message(FATAL_ERROR "${atrb_err_prefix} WORKLOAD is empty")
     endif()
+    if ("${atrb_ALGORITHM}" STREQUAL "")
+        message(FATAL_ERROR "${atrb_err_prefix} ALGORITHM is empty")
+    endif()
 
     # The following arguments have default values
-    if ("${atrb_ALGORITHM}" STREQUAL "")
-        set(atrb_ALGORITHM "fcfs_fast")
-    endif()
     if ("${atrb_PORT}" STREQUAL "")
         get_property(port GLOBAL PROPERTY autoincreasing_port)
         set(atrb_PORT ${port})
@@ -173,10 +173,32 @@ function(add_test_robintest_batsched)
     )
 endfunction()
 
-add_test_robintest_batsched(NAME meh
-    PLATFORM /home/carni/proj/batsim/platforms/small_platform.xml
-    WORKLOAD /home/carni/proj/batsim/workloads/test_workload_profile.json)
 
-add_test_robintest_batsched(NAME bwah
-    PLATFORM /home/carni/proj/batsim/platforms/small_platform.xml
-    WORKLOAD /home/carni/proj/batsim/workloads/test_workload_profile.json)
+#######################################
+# Definition of classical test inputs #
+#######################################
+# Platforms input syntax:
+# "name!filename"
+set(SGPLATFORM_small "small!${PROJECT_SOURCE_DIR}/platforms/small_platform.xml")
+set(SGPLATFORM_cluster512 "cluster512!${PROJECT_SOURCE_DIR}/platforms/cluster512.xml.xml")
+set(SGPLATFORM_energy128 "energy128!${PROJECT_SOURCE_DIR}/platforms/energy_platform_homogeneous_no_net_128.xml")
+
+# Workload input syntax:
+# "name!filename"
+set(BATWLOAD_delay1 "delay1!${PROJECT_SOURCE_DIR}/workloads/one_delay_job.json")
+set(BATWLOAD_delays "delays!${PROJECT_SOURCE_DIR}/workloads/simple_delay_workload.json")
+set(BATWLOAD_hello "hello!${PROJECT_SOURCE_DIR}/workloads/one_delay_job.json")
+set(BATWLOAD_long "long!${PROJECT_SOURCE_DIR}/workloads/batsim_paper_workload_example.json")
+
+# Algorithm input syntax:
+# "algo_name!algo_name_in_batsched"
+set(BSALGO_easy "easy!easy_bf")
+set(BSALGO_easy_fast "easyfast!easy_bf_fast")
+set(BSALGO_fcfs "fcfs!fcfs_fast")
+set(BSALGO_filler "filler!filler")
+set(BSALGO_sequencer "sequencer!sequencer")
+
+##############################################
+# Delegate generation of tests to subscripts #
+##############################################
+add_subdirectory(simple)
