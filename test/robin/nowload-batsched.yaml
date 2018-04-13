@@ -1,7 +1,0 @@
-batcmd: batsim -p ${BATSIM_DIR}/platforms/small_platform.xml -e /tmp/batsim_tests/nowload-batsched/out
-output-dir: /tmp/batsim_tests/nowload-batsched
-schedcmd: batsched
-simulation-timeout: 5
-ready-timeout: 1
-success-timeout: 5
-failure-timeout: 0
