@@ -63,6 +63,68 @@ function(create_robin_description_file)
     )
 endfunction()
 
+function(add_test_robintest)
+    # Parameters
+    set(oneValueArgs NAME OUTPUT_DIR BATCMD SCHEDCMD
+                     SIMULATION_TIMEOUT READY_TIMEOUT
+                     SUCCESS_TIMEOUT FAILURE_TIMEOUT
+                     ROBINTEST_EXPECTATION TEST_TIMEOUT
+                     CHECK_SCRIPT)
+    cmake_parse_arguments(atr "${options}" "${oneValueArgs}"
+                              "${multiValueArgs}" ${ARGN})
+
+    ##################
+    # Default values #
+    ##################
+    set(atr_err_prefix "add_test_robintest bad call: ")
+
+    # The following arguments are not optional
+    if ("${atr_NAME}" STREQUAL "")
+        message(FATAL_ERROR "${atr_err_prefix} NAME is empty")
+    endif()
+    if ("${atr_OUTPUT_DIR}" STREQUAL "")
+        message(FATAL_ERROR "${atr_err_prefix} OUTPUT_DIR is empty")
+    endif()
+    if ("${atr_BATCMD}" STREQUAL "")
+        message(FATAL_ERROR "${atr_err_prefix} BATCMD is empty")
+    endif()
+    if ("${atr_SCHEDCMD}" STREQUAL "")
+        message(FATAL_ERROR "${atr_err_prefix} SCHEDCMD is empty")
+    endif()
+
+    # The following arguments have default values
+    if ("${atr_TEST_TIMEOUT}" STREQUAL "")
+        set(atr_TEST_TIMEOUT "30")
+    endif()
+    if ("${atr_ROBINTEST_EXPECTATION}" STREQUAL "")
+        set(atr_ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end")
+    endif()
+
+    # Create description file
+    create_robin_description_file(NAME ${atr_NAME}
+        OUTPUT_DIR ${atr_OUTPUT_DIR}
+        BATCMD ${atr_BATCMD}
+        SCHEDCMD ${atr_SCHEDCMD}
+        SIMULATION_TIMEOUT ${atr_SIMULATION_TIMEOUT}
+        READY_TIMEOUT ${atr_READY_TIMEOUT}
+        SUCCESS_TIMEOUT ${atr_SUCCESS_TIMEOUT}
+        FAILURE_TIMEOUT ${atr_FAILURE_TIMEOUT}
+    )
+
+    # Split robintest expectation by ' '
+    string(REPLACE " " ";"
+        ROBIN_EXPECTATION_LIST ${atr_ROBINTEST_EXPECTATION})
+
+    # Add the CMake test
+    add_test(NAME ${atr_NAME}
+        COMMAND robintest ${robinfiles_dir}/${atr_NAME}.yaml
+                          --test-timeout=${atr_TEST_TIMEOUT}
+                          ${ROBIN_EXPECTATION_LIST}
+                          --result-check-script=${atr_CHECK_SCRIPT}
+    )
+
+endfunction()
+
 function(add_test_robintest_batsched)
     # Parameters
     set(oneValueArgs NAME PLATFORM WORKLOAD
@@ -89,9 +151,6 @@ function(add_test_robintest_batsched)
     endif()
 
     # The following arguments have default values
-    if ("${atrb_TEST_TIMEOUT}" STREQUAL "")
-        set(atrb_TEST_TIMEOUT "30")
-    endif()
     if ("${atrb_ALGORITHM}" STREQUAL "")
         set(atrb_ALGORITHM "fcfs_fast")
     endif()
@@ -102,27 +161,16 @@ function(add_test_robintest_batsched)
         math(EXPR new_port "${port}+1" )
         set_property(GLOBAL PROPERTY autoincreasing_port "${new_port}")
     endif()
-    if ("${atrb_ROBINTEST_EXPECTATION}" STREQUAL "")
-        set(atrb_ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end")
-    endif()
 
-    # Create robin description file
-    create_robin_description_file(NAME ${atrb_NAME}
+    # Create main function to add tests
+    add_test_robintest(NAME ${atrb_NAME}
         OUTPUT_DIR ${test_output_dir}/${atrb_NAME}
         BATCMD "batsim -p ${atrb_PLATFORM} -w ${atrb_WORKLOAD} -e ${test_output_dir}/${atrb_NAME}/out -s tcp://localhost:${atrb_PORT} ${atrb_OTH_BATSIM_ARGS}"
         SCHEDCMD "batsched -v ${atrb_ALGORITHM} -s tcp://*:${atrb_PORT} ${atrb_OTH_BATSCHED_ARGS}"
+        ROBINTEST_EXPECTATION ${atrb_ROBINTEST_EXPECTATION}
+        TEST_TIMEOUT ${atrb_TEST_TIMEOUT}
+        CHECK_SCRIPT ${atrb_CHECK_SCRIPT}
     )
-
-    # Split robintest expectation by ' '
-    string(REPLACE " " ";"
-        ROBIN_EXPECTATION_LIST ${atrb_ROBINTEST_EXPECTATION})
-
-    # Add the CMake test
-    add_test(NAME ${atrb_NAME}
-        COMMAND robintest ${robinfiles_dir}/${atrb_NAME}.yaml
-        --test-timeout=${atrb_TEST_TIMEOUT}
-        ${ROBIN_EXPECTATION_LIST}
-        --result-check-script=${atrb_CHECK_SCRIPT})
 endfunction()
 
 add_test_robintest_batsched(NAME meh
