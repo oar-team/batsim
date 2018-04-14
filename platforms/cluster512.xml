@@ -9,7 +9,9 @@
 
     <cluster id="my_cluster_2" prefix="master_host" suffix="" radical="0-0"
         speed="1Gf" bw="125MBps" lat="50us" bb_bw="2.25GBps"
-        bb_lat="500us" />
+        bb_lat="500us">
+        <prop id="role" value="master" />
+    </cluster>
 
     <link id="backbone" bandwidth="1.25GBps" latency="500us" />
 
