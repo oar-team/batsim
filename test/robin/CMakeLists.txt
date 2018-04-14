@@ -1,5 +1,3 @@
-enable_testing()
-
 # Blobal variables
 set_property(GLOBAL PROPERTY autoincreasing_port 28000)
 
@@ -32,9 +30,6 @@ function(create_robin_description_file)
     endif()
     if ("${crdf_BATCMD}" STREQUAL "")
         message(FATAL_ERROR "${crdf_err_prefix} BATCMD is empty")
-    endif()
-    if ("${crdf_SCHEDCMD}" STREQUAL "")
-        message(FATAL_ERROR "${crdf_err_prefix} SCHEDCMD is empty")
     endif()
 
     if ("${crdf_SIMULATION_TIMEOUT}" STREQUAL "")
@@ -87,9 +82,6 @@ function(add_test_robintest)
     endif()
     if ("${atr_BATCMD}" STREQUAL "")
         message(FATAL_ERROR "${atr_err_prefix} BATCMD is empty")
-    endif()
-    if ("${atr_SCHEDCMD}" STREQUAL "")
-        message(FATAL_ERROR "${atr_err_prefix} SCHEDCMD is empty")
     endif()
 
     # The following arguments have default values
@@ -179,16 +171,16 @@ endfunction()
 #######################################
 # Platforms input syntax:
 # "name!filename"
-set(SGPLATFORM_small "small!${PROJECT_SOURCE_DIR}/platforms/small_platform.xml")
-set(SGPLATFORM_cluster512 "cluster512!${PROJECT_SOURCE_DIR}/platforms/cluster512.xml.xml")
-set(SGPLATFORM_energy128 "energy128!${PROJECT_SOURCE_DIR}/platforms/energy_platform_homogeneous_no_net_128.xml")
+set(SGPLATFORM_small "small!${CMAKE_SOURCE_DIR}/platforms/small_platform.xml")
+set(SGPLATFORM_cluster512 "cluster512!${CMAKE_SOURCE_DIR}/platforms/cluster512.xml")
+set(SGPLATFORM_energy128 "energy128!${CMAKE_SOURCE_DIR}/platforms/energy_platform_homogeneous_no_net_128.xml")
 
 # Workload input syntax:
 # "name!filename"
-set(BATWLOAD_delay1 "delay1!${PROJECT_SOURCE_DIR}/workloads/one_delay_job.json")
-set(BATWLOAD_delays "delays!${PROJECT_SOURCE_DIR}/workloads/simple_delay_workload.json")
-set(BATWLOAD_hello "hello!${PROJECT_SOURCE_DIR}/workloads/one_delay_job.json")
-set(BATWLOAD_long "long!${PROJECT_SOURCE_DIR}/workloads/batsim_paper_workload_example.json")
+set(BATWLOAD_delay1 "delay1!${CMAKE_SOURCE_DIR}/workloads/one_delay_job.json")
+set(BATWLOAD_delays "delays!${CMAKE_SOURCE_DIR}/workloads/simple_delay_workload.json")
+set(BATWLOAD_hello "hello!${CMAKE_SOURCE_DIR}/workloads/one_delay_job.json")
+set(BATWLOAD_long "long!${CMAKE_SOURCE_DIR}/workloads/batsim_paper_workload_example.json")
 
 # Algorithm input syntax:
 # "algo_name!algo_name_in_batsched"
@@ -205,3 +197,4 @@ set(BSALGO_sleeper "sleeper!sleeper")
 ##############################################
 add_subdirectory(simple)
 add_subdirectory(energy)
+add_subdirectory(nosched)

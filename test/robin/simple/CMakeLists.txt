@@ -35,6 +35,7 @@ foreach(simu_instance IN LISTS simu_instances)
             PLATFORM ${platform_filename}
             WORKLOAD ${workload_filename}
             ALGORITHM ${algo_realname}
+            ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end --expect-robin-success --expect-sched-success --expect-batsim-success"
         )
     endforeach()
 endforeach()

@@ -70,7 +70,9 @@ foreach(simu_instance IN LISTS simu_instances)
             PLATFORM ${platform_filename}
             WORKLOAD ${workload_filename}
             ALGORITHM ${algo_realname}
+            OTH_BATSIM_ARGS "--energy"
             OTH_BATSCHED_ARGS "--variant_options_filepath=${thistest_SCHED_INPUT_FILE}"
+            ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end --expect-robin-success --expect-sched-success --expect-batsim-success"
         )
     endforeach()
 endforeach()
