@@ -64,7 +64,7 @@ function(add_test_robintest)
                      SIMULATION_TIMEOUT READY_TIMEOUT
                      SUCCESS_TIMEOUT FAILURE_TIMEOUT
                      ROBINTEST_EXPECTATION TEST_TIMEOUT
-                     CHECK_SCRIPT)
+                     CHECK_SCRIPT WORKING_DIR)
     cmake_parse_arguments(atr "${options}" "${oneValueArgs}"
                               "${multiValueArgs}" ${ARGN})
 
@@ -91,6 +91,9 @@ function(add_test_robintest)
     if ("${atr_ROBINTEST_EXPECTATION}" STREQUAL "")
         set(atr_ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end")
     endif()
+    if ("${atr_WORKING_DIR}" STREQUAL "")
+        set(atr_WORKING_DIR "${CMAKE_SOURCE_DIR}")
+    endif()
 
     # Create description file
     create_robin_description_file(NAME ${atr_NAME}
@@ -113,6 +116,7 @@ function(add_test_robintest)
                           --test-timeout=${atr_TEST_TIMEOUT}
                           ${ROBIN_EXPECTATION_LIST}
                           --result-check-script=${atr_CHECK_SCRIPT}
+        WORKING_DIRECTORY ${atr_WORKING_DIR}
     )
 
 endfunction()
@@ -121,7 +125,7 @@ function(add_test_robintest_batsched)
     # Parameters
     set(oneValueArgs NAME PLATFORM WORKLOAD
                      ALGORITHM PORT CHECK_SCRIPT
-                     TEST_TIMEOUT
+                     TEST_TIMEOUT WORKING_DIR
                      OTH_BATSIM_ARGS OTH_BATSCHED_ARGS ROBINTEST_EXPECTATION)
     cmake_parse_arguments(atrb "${options}" "${oneValueArgs}"
                                "${multiValueArgs}" ${ARGN})
@@ -162,6 +166,7 @@ function(add_test_robintest_batsched)
         ROBINTEST_EXPECTATION ${atrb_ROBINTEST_EXPECTATION}
         TEST_TIMEOUT ${atrb_TEST_TIMEOUT}
         CHECK_SCRIPT ${atrb_CHECK_SCRIPT}
+        WORKING_DIR ${atrb_WORKING_DIR}
     )
 endfunction()
 
