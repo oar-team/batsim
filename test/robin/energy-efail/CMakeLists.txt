@@ -41,12 +41,6 @@ foreach(simu_instance IN LISTS simu_instances)
 \"output_dir\":\"${thistest_OUTPUT_DIR}\", \n\
 \"trace_output_filename\":\"${thistest_SCHED_TRACEFILE}\", \n\
 \n\
-\"inertial_alteration\":\"p1\", \n\
-\"upper_llh_threshold\":500, \n\
-\"monitoring_period\":120, \n\
-\"idle_time_to_sedate\":1e18, \n\
-\"sedate_idle_on_classical_events\":false, \n\
-\n\
 \"ensured_sleep_time_lower_bound\":0, \n\
 \"ensured_sleep_time_upper_bound\":0, \n\
 \n\

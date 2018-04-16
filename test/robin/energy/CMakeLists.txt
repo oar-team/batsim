@@ -7,7 +7,6 @@ list(APPEND simu_instances "${SGPLATFORM_energy128}?${BATWLOAD_long}")
 # Algorithms
 list(APPEND algos ${BSALGO_easy_fast})
 list(APPEND algos ${BSALGO_fcfs})
-list(APPEND algos ${BSALGO_inertial_shutdown})
 list(APPEND algos ${BSALGO_sleeper})
 list(APPEND algos ${BSALGO_energy_watcher})
 
@@ -44,12 +43,6 @@ foreach(simu_instance IN LISTS simu_instances)
 "{ \n\
 \"output_dir\":\"${thistest_OUTPUT_DIR}\", \n\
 \"trace_output_filename\":\"${thistest_SCHED_TRACEFILE}\", \n\
-\n\
-\"inertial_alteration\":\"p1\", \n\
-\"upper_llh_threshold\":500, \n\
-\"monitoring_period\":120, \n\
-\"idle_time_to_sedate\":1e18, \n\
-\"sedate_idle_on_classical_events\":false, \n\
 \n\
 \"ensured_sleep_time_lower_bound\":0, \n\
 \"ensured_sleep_time_upper_bound\":0, \n\
