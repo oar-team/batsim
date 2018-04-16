@@ -188,19 +188,20 @@ set(BATWLOAD_walltime "walltime!${CMAKE_SOURCE_DIR}/workloads/walltime_test.json
 # "algo_name!algo_name_in_batsched"
 set(BSALGO_easy "easy!easy_bf")
 set(BSALGO_easy_fast "easyfast!easy_bf_fast")
+set(BSALGO_energy_watcher "energywatcher!energy_watcher")
 set(BSALGO_fcfs "fcfs!fcfs_fast")
 set(BSALGO_filler "filler!filler")
 set(BSALGO_random "random!random")
+set(BSALGO_rejecter "rejecter!rejecter")
 set(BSALGO_sequencer "sequencer!sequencer")
 set(BSALGO_sleeper "sleeper!sleeper")
-set(BSALGO_energy_watcher "energywatcher!energy_watcher")
 
 ##############################################
 # Delegate generation of tests to subscripts #
 ##############################################
+add_subdirectory(nosched)
 add_subdirectory(simple)
 add_subdirectory(energy)
 add_subdirectory(energy-efail)
-add_subdirectory(nosched)
 add_subdirectory(walltime)
 add_subdirectory(timesharing)

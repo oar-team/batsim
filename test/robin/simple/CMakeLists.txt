@@ -10,6 +10,7 @@ list(APPEND algos ${BSALGO_easy})
 list(APPEND algos ${BSALGO_easy_fast})
 list(APPEND algos ${BSALGO_fcfs})
 list(APPEND algos ${BSALGO_filler})
+list(APPEND algos ${BSALGO_rejecter})
 list(APPEND algos ${BSALGO_sequencer})
 
 foreach(simu_instance IN LISTS simu_instances)
