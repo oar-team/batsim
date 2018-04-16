@@ -190,6 +190,7 @@ set(BATWLOAD_verylong "verylong!${CMAKE_SOURCE_DIR}/workloads/long_workload.json
 set(BATWLOAD_walltime "walltime!${CMAKE_SOURCE_DIR}/workloads/walltime_test.json")
 set(BATWLOAD_same_submit_time "samesubmittime!${CMAKE_SOURCE_DIR}/workloads/same_submit_time.json")
 set(BATWLOAD_delay_sequences "delaysequences!${CMAKE_SOURCE_DIR}/workloads/test_sequence_delay.json")
+set(BATWLOAD_tuto1 "tuto1!${CMAKE_SOURCE_DIR}/workloads/case_study1.json")
 
 # Algorithm input syntax:
 # "algo_name!algo_name_in_batsched"
