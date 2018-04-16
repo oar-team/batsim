@@ -181,6 +181,7 @@ set(BATWLOAD_delay1 "delay1!${CMAKE_SOURCE_DIR}/workloads/one_delay_job.json")
 set(BATWLOAD_delays "delays!${CMAKE_SOURCE_DIR}/workloads/simple_delay_workload.json")
 set(BATWLOAD_hello "hello!${CMAKE_SOURCE_DIR}/workloads/one_delay_job.json")
 set(BATWLOAD_long "long!${CMAKE_SOURCE_DIR}/workloads/batsim_paper_workload_example.json")
+set(BATWLOAD_verylong "verylong!${CMAKE_SOURCE_DIR}/workloads/long_workload.json")
 set(BATWLOAD_walltime "walltime!${CMAKE_SOURCE_DIR}/workloads/walltime_test.json")
 
 # Algorithm input syntax:
