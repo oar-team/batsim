@@ -9,6 +9,7 @@ list(APPEND algos ${BSALGO_easy_fast})
 list(APPEND algos ${BSALGO_fcfs})
 list(APPEND algos ${BSALGO_inertial_shutdown})
 list(APPEND algos ${BSALGO_sleeper})
+list(APPEND algos ${BSALGO_energy_watcher})
 
 
 foreach(simu_instance IN LISTS simu_instances)

@@ -191,6 +191,7 @@ set(BSALGO_filler "filler!filler")
 set(BSALGO_sequencer "sequencer!sequencer")
 set(BSALGO_inertial_shutdown "inertialshutdown!energy_bf_monitoring_inertial")
 set(BSALGO_sleeper "sleeper!sleeper")
+set(BSALGO_energy_watcher "energywatcher!energy_watcher")
 
 ##############################################
 # Delegate generation of tests to subscripts #

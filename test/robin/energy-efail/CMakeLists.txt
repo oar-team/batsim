@@ -6,7 +6,7 @@ list(APPEND simu_instances "${SGPLATFORM_energy128}?${BATWLOAD_long}")
 
 # Algorithms
 list(APPEND algos ${BSALGO_sleeper})
-
+list(APPEND algos ${BSALGO_energy_watcher})
 
 foreach(simu_instance IN LISTS simu_instances)
     # Parsing simulation instance.
