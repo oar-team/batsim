@@ -191,6 +191,9 @@ set(BATWLOAD_walltime "walltime!${CMAKE_SOURCE_DIR}/workloads/walltime_test.json
 set(BATWLOAD_same_submit_time "samesubmittime!${CMAKE_SOURCE_DIR}/workloads/same_submit_time.json")
 set(BATWLOAD_delay_sequences "delaysequences!${CMAKE_SOURCE_DIR}/workloads/test_sequence_delay.json")
 set(BATWLOAD_tuto1 "tuto1!${CMAKE_SOURCE_DIR}/workloads/case_study1.json")
+set(BATWLOAD_smpi_compute1 "smpicomp1!${CMAKE_SOURCE_DIR}/workloads/test_smpi_compute_only.json")
+set(BATWLOAD_smpi_compute2 "smpicomp2!${CMAKE_SOURCE_DIR}/workloads/test_smpi_compute_only_2_jobs.json")
+set(BATWLOAD_smpi_mixed "smpimixed!${CMAKE_SOURCE_DIR}/workloads/test_smpi_mixed_comp_comm.json")
 
 # Algorithm input syntax:
 # "algo_name!algo_name_in_batsched"
