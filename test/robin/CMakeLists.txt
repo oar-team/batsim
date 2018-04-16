@@ -188,6 +188,7 @@ set(BATWLOAD_hello "hello!${CMAKE_SOURCE_DIR}/workloads/one_delay_job.json")
 set(BATWLOAD_long "long!${CMAKE_SOURCE_DIR}/workloads/batsim_paper_workload_example.json")
 set(BATWLOAD_verylong "verylong!${CMAKE_SOURCE_DIR}/workloads/long_workload.json")
 set(BATWLOAD_walltime "walltime!${CMAKE_SOURCE_DIR}/workloads/walltime_test.json")
+set(BATWLOAD_same_submit_time "samesubmittime!${CMAKE_SOURCE_DIR}/workloads/same_submit_time.json")
 
 # Algorithm input syntax:
 # "algo_name!algo_name_in_batsched"
@@ -210,3 +211,4 @@ add_subdirectory(energy)
 add_subdirectory(energy-efail)
 add_subdirectory(walltime)
 add_subdirectory(timesharing)
+add_subdirectory(submitorder)
