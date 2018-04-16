@@ -35,7 +35,7 @@ foreach(simu_instance IN LISTS simu_instances)
         set(thistest_NAME "energy-${workload_name}-${platform_name}-${algo_name}")
         set(thistest_OUTPUT_DIR "${test_output_dir}/${thistest_NAME}")
         set(thistest_SCHED_INPUT_FILE "${thistest_OUTPUT_DIR}/sched_input.json")
-        set(thistest_SCHED_TRACEFILE "${thistest_OUTPUT_DIR}/sched_input.json")
+        set(thistest_SCHED_TRACEFILE "${thistest_OUTPUT_DIR}/sched_trace.csv")
 
         # Generate batsched input file
         file(MAKE_DIRECTORY ${thistest_OUTPUT_DIR})
