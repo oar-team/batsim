@@ -438,6 +438,10 @@ void server_on_sched_tell_me_energy(ServerData * data,
                                     IPMessage * task_data)
 {
     (void) task_data;
+    xbt_assert(data->context->energy_used,
+               "Received a request about the energy consumption of the "
+               "machines but energy simulation is not enabled. "
+               "Try --help to enable it.");
     long double total_consumed_energy = data->context->machines.total_consumed_energy(data->context);
     data->context->proto_writer->append_answer_energy(total_consumed_energy, MSG_get_clock());
 }
