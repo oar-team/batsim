@@ -197,4 +197,5 @@ set(BSALGO_sleeper "sleeper!sleeper")
 ##############################################
 add_subdirectory(simple)
 add_subdirectory(energy)
+add_subdirectory(energy-efail)
 add_subdirectory(nosched)
