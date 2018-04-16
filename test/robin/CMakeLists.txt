@@ -190,6 +190,8 @@ set(BATWLOAD_verylong "verylong!${CMAKE_SOURCE_DIR}/workloads/long_workload.json
 set(BATWLOAD_walltime "walltime!${CMAKE_SOURCE_DIR}/workloads/walltime_test.json")
 set(BATWLOAD_same_submit_time "samesubmittime!${CMAKE_SOURCE_DIR}/workloads/same_submit_time.json")
 set(BATWLOAD_delay_sequences "delaysequences!${CMAKE_SOURCE_DIR}/workloads/test_sequence_delay.json")
+set(BATWLOAD_delay_same_profiles "delayssameprofile!${CMAKE_SOURCE_DIR}/workloads/delays_same_profile.json")
+
 set(BATWLOAD_tuto1 "tuto1!${CMAKE_SOURCE_DIR}/workloads/case_study1.json")
 set(BATWLOAD_smpi_compute1 "smpicomp1!${CMAKE_SOURCE_DIR}/workloads/test_smpi_compute_only.json")
 set(BATWLOAD_smpi_compute2 "smpicomp2!${CMAKE_SOURCE_DIR}/workloads/test_smpi_compute_only_2_jobs.json")
