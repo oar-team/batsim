@@ -1,6 +1,7 @@
 # Simulation instances
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_compute1}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_delay1}")
+list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_mixed}")
 
 # The number of kills to do for each job
 list(APPEND nb_kills_per_job "1kill!1")

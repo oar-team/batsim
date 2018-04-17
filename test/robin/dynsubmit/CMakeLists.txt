@@ -1,6 +1,6 @@
 # Simulation instances
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_delay1}")
-list(APPEND simu_instances "${SGPLATFORM_cluster512}?${BATWLOAD_delays}")
+list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_mixed}")
 
 # Algorithms
 list(APPEND algos ${BSALGO_submitter})
