@@ -182,6 +182,7 @@ set(SGPLATFORM_energy128 "energy128!${CMAKE_SOURCE_DIR}/platforms/energy_platfor
 
 # Workload input syntax:
 # "name!filename"
+set(BATWLOAD_compute1 "compute1!${CMAKE_SOURCE_DIR}/workloads/one_computation_job.json")
 set(BATWLOAD_delay1 "delay1!${CMAKE_SOURCE_DIR}/workloads/one_delay_job.json")
 set(BATWLOAD_delays "delays!${CMAKE_SOURCE_DIR}/workloads/simple_delay_workload.json")
 set(BATWLOAD_long "long!${CMAKE_SOURCE_DIR}/workloads/batsim_paper_workload_example.json")

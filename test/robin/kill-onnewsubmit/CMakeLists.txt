@@ -1,4 +1,5 @@
 # Simulation instances
+list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_compute1}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_delay1}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_delay_same_profiles}")
 list(APPEND simu_instances "${SGPLATFORM_cluster512}?${BATWLOAD_delays}")

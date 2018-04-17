@@ -1,4 +1,5 @@
 # Simulation instances
+list(APPEND simu_instances "${SGPLATFORM_energy128}?${BATWLOAD_compute1}")
 list(APPEND simu_instances "${SGPLATFORM_energy128}?${BATWLOAD_delay1}")
 list(APPEND simu_instances "${SGPLATFORM_energy128}?${BATWLOAD_delay_sequences}")
 list(APPEND simu_instances "${SGPLATFORM_energy128}?${BATWLOAD_delay_same_profiles}")
