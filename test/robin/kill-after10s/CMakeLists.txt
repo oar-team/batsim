@@ -62,7 +62,7 @@ foreach(simu_instance IN LISTS simu_instances)
             WORKLOAD ${workload_filename}
             ALGORITHM ${algo_realname}
             OTH_BATSIM_ARGS "--config-file ${thistest_BATSIM_CONFIG_FILE}"
-            OTH_BATSCHED_ARGS "--variant_options_filepath=${thistest_SCHED_INPUT_FILE}"
+            OTH_BATSCHED_ARGS ""
             ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end --expect-robin-success --expect-sched-success --expect-batsim-success"
             CHECK_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/check_jobs_duration_before_10s.py"
         )
