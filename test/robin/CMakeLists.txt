@@ -210,6 +210,7 @@ set(BSALGO_random "random!random")
 set(BSALGO_rejecter "rejecter!rejecter")
 set(BSALGO_sequencer "sequencer!sequencer")
 set(BSALGO_sleeper "sleeper!sleeper")
+set(BSALGO_submitter "submitter!submitter")
 
 ##############################################
 # Delegate generation of tests to subscripts #
@@ -229,3 +230,4 @@ add_subdirectory(kill-multiple)
 add_subdirectory(kill-progress)
 add_subdirectory(fewer-resources-compute1)
 add_subdirectory(fewer-resources-computetot1)
+add_subdirectory(set-job-metadata)
