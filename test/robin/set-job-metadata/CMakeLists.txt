@@ -12,33 +12,33 @@ list(APPEND algos "${BSALGO_submitter}!dynsubmit!true")
 list(APPEND metadatamodes "set!true")
 list(APPEND metadatamodes "do-not-set!false")
 
-foreach(simu_instance IN LISTS simu_instances)
-    # Parsing simulation instance.
-    string(REPLACE "?" ";" list_si ${simu_instance})
-    list(GET list_si 0 platform)
-    list(GET list_si 1 workload)
+foreach(mdm IN LISTS metadatamodes)
+    # Parsing metadata mode
+    string(REPLACE "!" ";" list_mdm ${mdm})
+    list(GET list_mdm 0 mdm_name)
+    list(GET list_mdm 1 mdm_value)
 
-    string(REPLACE "!" ";" list_platform ${platform})
-    list(GET list_platform 0 platform_name)
-    list(GET list_platform 1 platform_filename)
+    foreach(simu_instance IN LISTS simu_instances)
+        # Parsing simulation instance.
+        string(REPLACE "?" ";" list_si ${simu_instance})
+        list(GET list_si 0 platform)
+        list(GET list_si 1 workload)
 
-    string(REPLACE "!" ";" list_workload ${workload})
-    list(GET list_workload 0 workload_name)
-    list(GET list_workload 1 workload_filename)
+        string(REPLACE "!" ";" list_platform ${platform})
+        list(GET list_platform 0 platform_name)
+        list(GET list_platform 1 platform_filename)
 
-    foreach(algo IN LISTS algos)
-        # Parsing algorithm+dynamic submit mode
-        string(REPLACE "!" ";" list_algo ${algo})
-        list(GET list_algo 0 algo_name)
-        list(GET list_algo 1 algo_realname)
-        list(GET list_algo 2 dynsubmitmode_name)
-        list(GET list_algo 3 dynsubmitmode_value)
+        string(REPLACE "!" ";" list_workload ${workload})
+        list(GET list_workload 0 workload_name)
+        list(GET list_workload 1 workload_filename)
 
-        foreach(mdm IN LISTS metadatamodes)
-            # Parsing metadata mode
-            string(REPLACE "!" ";" list_mdm ${mdm})
-            list(GET list_mdm 0 mdm_name)
-            list(GET list_mdm 1 mdm_value)
+        foreach(algo IN LISTS algos)
+            # Parsing algorithm+dynamic submit mode
+            string(REPLACE "!" ";" list_algo ${algo})
+            list(GET list_algo 0 algo_name)
+            list(GET list_algo 1 algo_realname)
+            list(GET list_algo 2 dynsubmitmode_name)
+            list(GET list_algo 3 dynsubmitmode_value)
 
             # Some variables
             set(thistest_NAME "${mdm_name}-job-metadata-${workload_name}-${platform_name}-${algo_name}-${dynsubmitmode_name}")
