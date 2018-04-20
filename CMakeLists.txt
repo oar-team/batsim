@@ -47,7 +47,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 ## SimGrid dependency
 find_package(SimGrid REQUIRED)
-include_directories(${SIMGRID_INCLUDE_DIR})
+include_directories(BEFORE SYSTEM ${SimGrid_INCLUDE_DIR})
 
 ## Boost dependency
 find_package(Boost 1.58 REQUIRED COMPONENTS system filesystem regex locale)
@@ -117,7 +117,7 @@ add_executable(batsim ${batsim_SRC})
 
 # Libraries to link
 target_link_libraries(batsim
-                      ${HAVE_SIMGRID_LIB}
+                      ${SimGrid_LIBRARY}
                       ${GMP_LIBRARIES}
                       ${Boost_FILESYSTEM_LIBRARY_DEBUG}
                       ${Boost_LOCALE_LIBRARY_DEBUG}
