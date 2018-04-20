@@ -42,12 +42,12 @@ foreach(simu_instance IN LISTS simu_instances)
             set(thistest_SCHED_INPUT_FILE "${thistest_OUTPUT_DIR}/sched_input.json")
 
             # Generate scheduler input
-                file(MAKE_DIRECTORY ${thistest_OUTPUT_DIR})
-                file(WRITE ${thistest_SCHED_INPUT_FILE}
+            file(MAKE_DIRECTORY ${thistest_OUTPUT_DIR})
+            file(WRITE ${thistest_SCHED_INPUT_FILE}
 "{\n\
     \"fraction_of_machines_to_use\": ${frtu_value}\n\
 }"
-                )
+            )
 
             add_test_robintest_batsched(NAME ${thistest_NAME}
                 PLATFORM ${platform_filename}
