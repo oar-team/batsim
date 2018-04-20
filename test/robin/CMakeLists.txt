@@ -46,7 +46,7 @@ function(create_robin_description_file)
     endif()
 
     # Call robin generate
-    execute_process(COMMAND robin
+    execute_process(COMMAND ${robin_COMMAND}
         generate ${robinfiles_dir}/${crdf_NAME}.yaml
         --output-dir=${crdf_OUTPUT_DIR}
         --batcmd=${crdf_BATCMD}
@@ -112,7 +112,7 @@ function(add_test_robintest)
 
     # Add the CMake test
     add_test(NAME ${atr_NAME}
-        COMMAND robintest ${robinfiles_dir}/${atr_NAME}.yaml
+        COMMAND ${robintest_COMMAND} ${robinfiles_dir}/${atr_NAME}.yaml
                           --test-timeout=${atr_TEST_TIMEOUT}
                           ${ROBIN_EXPECTATION_LIST}
                           --result-check-script=${atr_CHECK_SCRIPT}
