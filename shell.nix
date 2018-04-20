@@ -24,6 +24,8 @@ pkgs.stdenv.mkDerivation rec {
     #########
     # Build #
     #########
+    pkgs.gcc
+    pkgs.clang
     pkgs.boost
     pkgs.gmp
     pkgs.rapidjson
