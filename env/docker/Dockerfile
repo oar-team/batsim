@@ -7,6 +7,9 @@ RUN nix-env -i git gnutar gzip
 # Clone batsim repo
 RUN git clone https://github.com/oar-team/batsim.git /batsim
 
-# Pre install all dependencies
+# Pre install all test dependencies
 RUN nix-shell /batsim/shell.nix \
               --command "echo Preinstalling dependencies done"
+
+# CI dependencies
+RUN nix-env -i ssh-ident rsync
