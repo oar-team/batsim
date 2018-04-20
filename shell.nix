@@ -48,5 +48,7 @@ pkgs.stdenv.mkDerivation rec {
     # Check results
     pkgs.python36
     pkgs.python36Packages.pandas
+    # Misc
+    pkgs.doxygen
   ];
 }
