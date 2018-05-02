@@ -1,11 +1,9 @@
-{
-  pkgs ? import (
-    fetchTarball "https://github.com/NixOS/nixpkgs/archive/17.09.tar.gz") {},
-  dmpkgs ? import (
-    #fetchTarball "https://gitlab.inria.fr/vreis/datamove-nix/repository/35d8902a19f48403b287da9c0a46b92090997ac8/archive.tar.gz"
-    fetchTarball "https://gitlab.inria.fr/vreis/datamove-nix/repository/master/archive.tar.gz"
-    ) { inherit pkgs;},
-}:
+with import (
+    fetchTarball
+    "https://gitlab.inria.fr/vreis/datamove-nix/repository/master/archive.tar.gz")
+    { };
+# pkgs = (import <nixpkgs> {});
+#with import <nixpkgs> {};
 
 pkgs.stdenv.mkDerivation rec {
   name = "batsim-test-env";
