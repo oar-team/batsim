@@ -5,13 +5,14 @@ with import (
 
 batsim_dev
 
+## For local simgrid development use the folowing instead
+#
 #let
 #  simgrid_local = simgrid_dev.overrideAttrs (attrs: {
-#       src = /path/to/simgrid;
-#       dontStrip = true;
-#       doCheck = false;
-#     }
-#   );
+#    src = /path/to/simgrid;
+#    dontStrip = true;
+#    doCheck = false;
+#  });
 #in
 #(
 #  batsim_dev.override { simgrid = simgrid_local; }
@@ -19,5 +20,4 @@ batsim_dev
 #  version = "dev_local";
 #  src = ./.;
 #  makeFlags = ["VERBOSE=1"];
-#  doCheck = false;
 #})
