@@ -1,50 +1,31 @@
-{
-  pkgs ? import (
-    fetchTarball "https://github.com/NixOS/nixpkgs/archive/17.09.tar.gz") {},
-  dmpkgs ? import (
-    #fetchTarball "https://gitlab.inria.fr/vreis/datamove-nix/repository/35d8902a19f48403b287da9c0a46b92090997ac8/archive.tar.gz"
-    fetchTarball "https://gitlab.inria.fr/vreis/datamove-nix/repository/master/archive.tar.gz"
-    ) { inherit pkgs;},
-}:
+with import (
+    fetchTarball
+    "https://gitlab.inria.fr/vreis/datamove-nix/repository/master/archive.tar.gz")
+    { };
+# pkgs = (import <nixpkgs> {});
+#with import <nixpkgs> {};
 
-pkgs.stdenv.mkDerivation rec {
-  name = "batsim-test-env";
-  env = pkgs.buildEnv { name = name; paths = buildInputs; };
-
-  simgrid_batsim = dmpkgs.simgrid_dev.overrideDerivation(attrs: rec {
-    src = pkgs.fetchgit {
-      url = "https://github.com/simgrid/simgrid.git";
-      rev = "54f07f038966ffe0b3e8ef526e9192f7eb49ad09";
-      sha256 = "0afsh7ys4lcbdabaqzc2m6ddar875f3rrmzjdb00k9x2pr91whpa";
-    };
-    doCheck = false;
-  });
-
-  buildInputs = [
-    #########
-    # Build #
-    #########
-    pkgs.boost
-    pkgs.gmp
-    pkgs.rapidjson
-    pkgs.openssl
-    pkgs.hiredis
-    pkgs.libev
-    pkgs.cppzmq
-    pkgs.zeromq
-    pkgs.cmake
-    simgrid_batsim
-    dmpkgs.redox
-
-    ########
-    # Test #
-    ########
-    # Run simulations
-    dmpkgs.batexpe
-    dmpkgs.batsched_dev
-    pkgs.redis
-    # Check results
-    pkgs.python36
-    pkgs.python36Packages.pandas
-  ];
-}
+#let
+#  simgrid_local = (pkgs.simgrid_dev.override {
+#  debug = true;
+#  # fortranSupport = true;
+#  # buildDocumentation = true;
+#  # buildJavaBindings = true;
+#  # modelCheckingSupport = true;
+#  #  moreTests = true;
+#  }).overrideAttrs (attrs: {
+#  src = /home/mmercier/Projects/simgrid;
+#  dontStrip = true;
+#  doCheck = false;
+#});
+#in
+(batsim_dev.override {
+  #batsim = (batsim.override { simgrid = simgrid_local; });
+  batsim = (batsim.override { simgrid = simgrid_dev; });
+}).overrideAttrs (attrs: rec {
+  version = "dev_local";
+  src = ./.;
+  buildInputs = attrs.nativeBuildInputs;
+  makeFlags = ["VERBOSE=1"];
+  doCheck = false;
+})
