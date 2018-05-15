@@ -9,13 +9,24 @@ You can simply enter a shell that comes with all you need to build and
 test Batsim with this command at the root of the repository:
 ```sh
 cd batsim
-nix-shell
+nix-shell shell.nix
 ```
 
 If it does not work (for old batsim versions) you can do:
 ```sh
 nix-shell /path/to/datamovepkgs -A batsim_dev
 ```
+
+This command will open a new Bash shell with all the environment variable set
+correctly to find all de dependencies and build batsim.
+
+**NOTE**: You can use `nix-shell --pure` to avoid the conflict with already
+installed tools.
+
+**WARNING**: The environment created by the `nix-shell` command is heavily
+based on environment variables injected in the provided Bash shell. Do NOT
+switch to an other shell (zsh, fish, ...) because environment variableswill not
+be present and the build will fail.
 
 Then you can configure build batsim with these commands:
 ```
