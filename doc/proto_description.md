@@ -134,8 +134,8 @@ events list is empty: ``"events": []``
 - **full message example**:
 ```json
 {
-  "now": 1024.24,
-  "events": []
+  "now": 1024.42,
+  "events":[]
 }
 ```
 
@@ -150,8 +150,14 @@ The other peer should answer such QUERY via an [ANSWER](#answer).
 For now, Batsim **answers** to the following requests:
 - "consumed_energy": the scheduler queries Batsim about the total consumed
    energy (from time 0 to now) in Joules.
-  Only works in energy mode.  
+  Only works if the energy mode is enabled.
   This query has no argument.
+- "air_temperature_all": the scheduler queries Batsim about the ambient air temperature of
+   all hosts.
+  Only works if the temperature mode is enabled.
+- "processor_temperature_all": the scheduler queries Batsim about the processor
+   temperature of all hosts.
+  Only works if the temperature mode is enabled.
 
 For now, Batsim **queries** the following requests:
 - "estimate_waiting_time": Batsim asks the scheduler what would be the waiting
@@ -167,6 +173,16 @@ For now, Batsim **queries** the following requests:
   "type": "QUERY",
   "data": {
     "requests": {"consumed_energy": {}}
+  }
+}
+```
+or
+```json
+{
+  "timestamp": 10.0,
+  "type": "QUERY",
+  "data": {
+    "requests": {"processor_temperature_all": {}}
   }
 }
 ```
@@ -207,6 +223,14 @@ or
 {
   "timestamp": 10.0,
   "type": "ANSWER",
+  "data": {"processor_temperature_all": {"0":51.21, "1":25.74, "2":21.53}}
+}
+```
+or
+```json
+{
+  "timestamp": 10.0,
+  "type": "ANSWER",
   "data": {
     "estimate_waiting_time": {
       "job_id": "workflow_submitter0!potential_job17",
@@ -237,16 +261,21 @@ metainformation from Batsim to any scheduler at runtime.
 
 - **data**:
   - **nb_resources**: the number of resources
+  - **nb_compute_resources**: the number of compute resources
+  - **nb_storage_resources**: the number of storage resources
   - **allow_time_sharing**: whether time sharing is enabled or not
   - **config**: the Batsim configuration
-  - **resources_data**: information about the resources
+  - **compute_resources**: informations about the compute resources
     - **id**: unique resource number
     - **name**: resource name
     - **state**: resource state in {sleeping, idle, computing, switching_on, switching_off}
     - **properties**: the properties specified in the SimGrid platform for the corresponding host
-  - **workloads**: the map of workloads given to batsim. The key is the id
-    that prefix each jobs (before the ``!``) and the value is the absolute path of
-    the workload
+  - **storage_resources**: informations about the storage resources
+  - **workloads**: the map of workloads given to Batsim. The key is the unique id of the workload
+    and the value is the absolute path of the workload.
+   Note that this unique id prefixes each job (before the ``!``).
+  - **profiles**: the map of profiles given to Batsim. The key is the unique id of a workload and
+    the value is the list of profiles of that workload.
 - **example**:
 ```json
 {
@@ -257,7 +286,9 @@ metainformation from Batsim to any scheduler at runtime.
       "type": "SIMULATION_BEGINS",
       "data": {
         "nb_resources": 4,
-        "allow_time_sharing": false,
+        "nb_compute_resources": 4,
+        "nb_storage_resources": 0,
+        "allow_time_sharng": false,
         "config": {
           "redis": {
             "enabled": false,
@@ -273,7 +304,7 @@ metainformation from Batsim to any scheduler at runtime.
             }
           }
         },
-        "resources_data": [
+        "compute_resources": [
           {
             "id": 0,
             "name": "Bourassa",
@@ -299,8 +330,50 @@ metainformation from Batsim to any scheduler at runtime.
             "properties": {}
           }
         ],
+        "storage_resources": [],
         "workloads": {
           "26dceb": "/home/mmercier/Projects/batsim/workloads/test_workload_profile.json"
+        },
+        "profiles": {
+          "26dceb":{
+            "simple": {
+              "type": "msg_par",
+              "cpu": [5e6,  0,  0,  0],
+              "com": [5e6,  0,  0,  0,
+                      5e6,5e6,  0,  0,
+                      5e6,5e6,  0,  0,
+                      5e6,5e6,5e6,  0]
+            },
+            "homogeneous": {
+              "type": "msg_par_hg",
+              "cpu": 10e6,
+              "com": 1e6
+            },
+            "homogeneous_no_cpu": {
+              "type": "msg_par_hg",
+              "cpu": 0,
+              "com": 1e6
+            },
+            "homogeneous_no_com": {
+              "type": "msg_par_hg",
+              "cpu": 2e5,
+              "com": 0
+            },
+            "sequence": {
+              "type": "composed",
+              "repeat" : 4,
+              "seq": ["simple","homogeneous","simple"]
+            },
+            "delay": {
+              "type": "delay",
+              "delay": 20.20
+            },
+            "homogeneous_total": {
+              "type": "msg_par_hg_tot",
+              "cpu": 10e6,
+              "com": 1e6
+            }
+          }
         }
       }
     }
@@ -311,8 +384,8 @@ metainformation from Batsim to any scheduler at runtime.
 ### SIMULATION_ENDS
 
 Sent when Batsim thinks that the simulation is over. It means that all the jobs
-(either coming from Batsim workloads/workflows inputs, or dynamically submitted
-ones) have been submitted and executed (or rejected). The scheduler should
+(either coming from Batsim workloads/workflows inputs, or dynamically submitted) 
+have been submitted and executed (or rejected). The scheduler should
 answer a [NOP](#nop) to this message then close its socket and terminate.
 
 - **data**: empty
@@ -334,10 +407,10 @@ This event means that one job has been submitted within Batsim.
 It is sent whenever a job coming from Batsim inputs (workloads and workflows)
 has been submitted.
 If dynamic job submissions are enabled (the configuration contains
-``{"job_submission": { "from_scheduler": {"enabled": true}}}``), this message is
+``{"job_submission": { "from_scheduler": {"enabled": true}}}``), this message
 is sent as a reply to a [SUBMIT_JOB](#submit_job) message if and only if
 dynamic job submissions acknowledgements are enabled
-(``{"job_submission": {"from_scheduler": {"acknowledge": true}}}``)
+(``{"job_submission": {"from_scheduler": {"acknowledge": true}}}``).
 
 The ``job_id`` field is always sent and contains a unique job identifier.
 If redis is enabled (``{"redis": {"enabled": true}}``),
@@ -512,7 +585,7 @@ The state of some resources has changed. It acknowledges that the actions
 coming from a previous [SET_RESOURCE_STATE](#set_resource_state) message have
 been done.
 
-- **data**: an interval set of resource id and the new state
+- **data**: an interval set of resource ids and the new state
 - **example**:
 ```json
 {
@@ -571,21 +644,21 @@ two ranks (0 and 1) on the first allocated machine (0, which stands for resource
 id 2), and the last two ranks (2 and 3) on the second machine (1, which stands
 for resource id 3).
 
-For certain job profile that involve storage you may need to define a
+For certain job profiles that involve storage you may need to define a
 ``storage_mapping`` between the storage label defined in the job profile
-definition and the storage resource id on the platform. For example, the a job
-profile of type ``msg_par_hg_pfs_tiers`` contains this field ``"storage":
-"pfs"``, in order to select what is the resource that correspond to the
-``"pfs"`` storage you should provide a mapping for this label:
-``"storage_mapping": { "pfs": 2 }``. If no mapping is provided Batsim will guess
-the storage mapping, only if one storage resource is provided on the platform.
+definition and the storage resource id on the platform. For example, the job
+profile of type ``msg_par_hg_pfs_tiers`` contains this field ``"storage": "pfs"``.
+In order to select what is the resource that corresponds to the
+``"pfs"`` storage, you should provide a mapping for this label:
+``"storage_mapping": { "pfs": 2 }``. If no mapping is provided, Batsim will guess
+the storage mapping only if one storage resource is provided on the platform.
 
-An other optional field is ``additional_io_job`` that permits to the decision
-process to add a job that represents the IO traffic, dynamically at execution
+Another optional field is ``additional_io_job`` that permits to the decision
+process to add a job, that represents the IO traffic, dynamically at execution
 time. This dynamicity is necessary when the IO traffic depends on the job
 allocation. It only works for MSG based job profile types for the additional IO
 job and the job itself. The given IO job will be merged to the actual job before
-it's execution. The additional job allocation may be different from the job
+its execution. The additional job allocation may be different from the job
 allocation itself, for example when some IO nodes are involved.
 
 - **data**: A job id, an allocation, a mapping (optional), an additional IO job
@@ -622,7 +695,7 @@ allocation itself, for example when some IO nodes are involved.
 
 Asks Batsim to call the scheduler later on, at a given timestamp.
 
-- **data**: future timestamp float
+- **data**: future timestamp (float)
 - **example**:
 ```json
 {
@@ -656,12 +729,12 @@ Batsim acknowledges it with one [JOB_KILLED](#job_killed) event.
 Submits a job (from the scheduler). Job submissions from the scheduler must
 be enabled in the [configuration](./configuration.md)
 (``{"job_submission": {"from_scheduler": {"enabled": true}}``).
-The submission is acknowledged by default, but acknowledgements can be disabled
+The submission is acknowledged by default, but acknowledgments can be disabled
 in the configuration
 (``{"job_submission": {"from_scheduler": {"acknowledge": false}}}``).
 
 **Note:** The workload name SHOULD be present in the job description id field
-with the notation WORKLOAD!JOB_NAME. If it is not present it will be added
+with the notation ``WORKLOAD!JOB_NAME``. If it is not present it will be added
 to the job description provided in the acknowledgment message
 [JOB_SUBMITTED](#job_submitted)
 
@@ -669,8 +742,8 @@ to the job description provided in the acknowledgment message
   profile information (optional).
 
 - **example with redis** : the job description, and the profile description if
-  it unknown to Batsim yet, must have been pushed into redis by the
-  scheduler before sending this message
+  unknown to Batsim yet, must have been pushed into redis by the
+  scheduler before sending this message.
 ```json
 {
   "timestamp": 10.0,
@@ -801,7 +874,7 @@ can be sent to make the scheduler able to submit dynamic jobs again.
 ### CHANGE_JOB_STATE
 
 Changes the state of a job, which may be helpful to implement schedulers with
-dynamic complex jobs.
+complex dynamic jobs.
 
 ``` json
 {
@@ -819,7 +892,7 @@ dynamic complex jobs.
 The way to do some operations with the protocol is shown in this section.
 
 ## Executing jobs
-Depending on the [configuration](./configuration.md), job information might
+Depending on the [configuration](./configuration.md), jobs information might
 either be transmitted through the protocol or Redis.
 ![executing_jobs_figure](protocol_img/job_submission_and_execution.png)
 
@@ -855,7 +928,7 @@ This implementation should work whether Redis is enabled and whether dynamic
 job submissions are acknowledged.
 
 The following two figures outline how submissions should be done
-(depending whether Redis is enabled).
+(depending whether Redis is enabled or not).
 
 ### Without Redis
 ![dynamic_submission](protocol_img/dynamic_job_submission.png)
