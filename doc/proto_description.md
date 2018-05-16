@@ -121,7 +121,7 @@ Constraints on the message format are defined here:
 These events can be sent from Batsim to the scheduler, or in the opposite
 direction.
 ```
-BATSIM <---> DECISION
+BATSIM <---> SCHEDULER
 ```
 
 ### NOP
@@ -246,7 +246,7 @@ or
 
 These events are sent by Batsim to the scheduler.
 ```
-BATSIM ---> DECISION
+BATSIM ---> SCHEDULER
 ```
 
 ### SIMULATION_BEGINS
@@ -613,7 +613,7 @@ This message is a response to the [CALL_ME_LATER](#call_me_later) message.
 ## Scheduler to Batsim events
 These events are sent by the scheduler to Batsim.
 ```
-BATSIM <--- DECISION
+BATSIM <--- SCHEDULER
 ```
 
 ### REJECT_JOB
@@ -653,8 +653,8 @@ In order to select what is the resource that corresponds to the
 ``"storage_mapping": { "pfs": 2 }``. If no mapping is provided, Batsim will guess
 the storage mapping only if one storage resource is provided on the platform.
 
-Another optional field is ``additional_io_job`` that permits to the decision
-process to add a job, that represents the IO traffic, dynamically at execution
+Another optional field is ``additional_io_job`` that permits the scheduler 
+to add a job, that represents the IO traffic, dynamically at execution
 time. This dynamicity is necessary when the IO traffic depends on the job
 allocation. It only works for MSG based job profile types for the additional IO
 job and the job itself. The given IO job will be merged to the actual job before
