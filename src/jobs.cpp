@@ -120,11 +120,16 @@ void BatTask::compute_leaf_progress()
 
     if (profile->is_parallel_task())
     {
-        xbt_assert(ptask != nullptr, "Internal error");
-
-        // WARNING: This is not returning the flops amount but the remainin quantity of work
-        // from 1 (not started yet) to 0 (completely finished)
-        current_task_progress_ratio = 1 - MSG_task_get_remaining_work_ratio(ptask);
+        if (ptask != nullptr) // The parallel task has already started
+        {
+            // WARNING: This is not returning the flops amount but the remainin quantity of work
+            // from 1 (not started yet) to 0 (completely finished)
+            current_task_progress_ratio = 1 - MSG_task_get_remaining_work_ratio(ptask);
+        }
+        else
+        {
+            current_task_progress_ratio = 0;
+        }
     }
     else if (profile->type == ProfileType::DELAY)
     {

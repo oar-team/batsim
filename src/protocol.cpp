@@ -330,10 +330,21 @@ Value generate_task_tree(BatTask* task_tree, rapidjson::Document::AllocatorType 
     else
     {
         task.AddMember("profile_name", Value().SetString(task_tree->profile->name.c_str(), _alloc), _alloc);
-        task.AddMember("current_task_index", Value().SetInt(task_tree->current_task_index), _alloc);
 
-        BatTask * btask = task_tree->sub_tasks[task_tree->current_task_index];
-        task.AddMember("current_task", generate_task_tree(btask, _alloc, forward_profiles), _alloc);
+        if (task_tree->current_task_index != (unsigned int)-1) // Started parallel task
+        {
+            task.AddMember("current_task_index", Value().SetInt(task_tree->current_task_index), _alloc);
+
+            BatTask * btask = task_tree->sub_tasks[task_tree->current_task_index];
+            task.AddMember("current_task", generate_task_tree(btask, _alloc, forward_profiles), _alloc);
+        }
+        else
+        {
+            task.AddMember("current_task_index", Value().SetInt(-1), _alloc);
+            XBT_WARN("Cannot generate the execution task tree of job %s, "
+                     "as its execution has not started.",
+                     task_tree->parent_job->id.to_string().c_str());
+        }
     }
     return task;
 }
