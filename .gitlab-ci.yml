@@ -3,60 +3,32 @@ image: oarteam/batsim_ci
 variables:
   GIT_SUBMODULE_STRATEGY: none
 
-################################################################################
+###############################################################################
 # Build stage
 ###############################################################################
-build_clang:
+build:
   stage: build
   script:
-    - export CC=/usr/bin/clang
-    - export CXX=/usr/bin/clang++
-    - rm -rf /builds/batsim/batsim/build
-    - mkdir  /builds/batsim/batsim/build
-    - cd /builds/batsim/batsim/build
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
-    - make
+    - mkdir -p ${CI_PROJECT_DIR}/build
+    - cd ${CI_PROJECT_DIR}/build
+    - nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix \
+                --command "cmake .. \
+                                 -DCMAKE_BUILD_TYPE=Debug \
+                                 -Denable_warnings=ON \
+                                 -Dtreat_warnings_as_errors=OFF"
+    - nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix --command "make"
   artifacts:
     paths:
       - /builds/batsim/batsim/build
 
-build_gcc:
-  stage: build
-  script:
-    - export CC=/usr/bin/gcc
-    - export CXX=/usr/bin/g++
-    - rm -rf /builds/batsim/batsim/build
-    - mkdir  /builds/batsim/batsim/build
-    - cd /builds/batsim/batsim/build
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
-    - make
-
-build_batsched:
-  stage: build
-  script:
-    - rm -rf /builds/batsim/batsim/schedulers/batsched
-    # Get the code at the expected revision
-    - git clone https://gitlab.inria.fr/batsim/batsched.git /builds/batsim/batsim/schedulers/batsched
-    - cd /builds/batsim/batsim/schedulers/batsched
-    - git reset --hard f2632a1 # 2018-02-16
-    # Build batsched
-    - rm -rf   /builds/batsim/batsim/schedulers/batsched/build
-    - mkdir -p /builds/batsim/batsim/schedulers/batsched/build
-    - cd /builds/batsim/batsim/schedulers/batsched/build
-    - cmake /builds/batsim/batsim/schedulers/batsched
-    - make
-  artifacts:
-    paths:
-      - /builds/batsim/batsim/schedulers/batsched/build
-
-################################################################################
+###############################################################################
 # Test stage
-################################################################################
+###############################################################################
 test_doc:
   stage: test
   script:
-    - cd /builds/batsim/batsim/doc
-    - doxygen
+    - cd ${CI_PROJECT_DIR}/doc
+    - nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix --command "doxygen"
     - cat doxygen_warnings.log
     # The next line fails if doxygen generated warnings
     - eval "[ $(wc -c doxygen_warnings.log | cut -d ' ' -f1) -eq 0 ]"
@@ -67,73 +39,28 @@ test_doc:
 test_test:
   stage: test
   script:
-    # Install Batsim
-    - cd /builds/batsim/batsim/build
-    - make install
-
-    # Install the Batsched scheduler
-    - cd /builds/batsim/batsim/schedulers/batsched/build
-    - make install
-
     # Run the redis server
-    - |
-      redis-server>/dev/null &
-      while ! nc -z localhost 6379; do
-        sleep 1
-      done
+    - nix-shell .ci-shell.nix --command "redis-server>/dev/null &"
+    - sleep 1
 
     # Finally run the tests
-    - cd /builds/batsim/batsim/build
-    - ctest --output-on-failure -E 'remote|smpi|pybatsim|send_recv'
+    - export PATH=${CI_PROJECT_DIR}/build:${PATH}
+    - nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix \
+                --command "ctest --output-on-failure"
   dependencies:
-    - build_clang
-    - build_batsched
+    - build
 
 test_unittest:
   stage: test
   script:
-    # Install Batsim
-    - cd /builds/batsim/batsim/build
-    - make install
-
     # Run unit tests
-    - batsim --unittest
+    - ${CI_PROJECT_DIR}/build/batsim --unittest
   dependencies:
-    - build_clang
+    - build
 
-test_version_git:
-  stage: test
-  script:
-    # Checks that 'batsim --version' matches the latest batsim release
-    - /builds/batsim/batsim/tools/check_batsim_version.py --batsim-command /builds/batsim/batsim/build/batsim --batsim-git-dir /builds/batsim/batsim
-  dependencies:
-    - build_clang
-
-test_version_no_git:
-  stage: test
-  script:
-    # copy Batsim directory
-    - rm -rf /tmp/batsim
-    - mkdir /tmp/batsim
-    - cp -r {/builds/batsim/batsim,/tmp/batsim}/src
-    - cp -r {/builds/batsim/batsim,/tmp/batsim}/CMakeLists.txt
-    - cp -r {/builds/batsim/batsim,/tmp/batsim}/cmake
-
-    # compile Batsim outside the git directory
-    - export CC=/usr/bin/clang
-    - export CXX=/usr/bin/clang++
-    - rm -rf /tmp/batsim/build
-    - mkdir  /tmp/batsim/build
-    - cd /tmp/batsim/build
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
-    - make
-
-    # Checks that 'batsim --version' matches the latest batsim release
-    - /builds/batsim/batsim/tools/check_batsim_version.py --batsim-command /tmp/batsim/build/batsim --batsim-git-dir /builds/batsim/batsim
-
-################################################################################
+###############################################################################
 # Deploy stage
-################################################################################
+###############################################################################
 deploy_code_doc:
   stage: deploy
   script:
