@@ -11,11 +11,13 @@ build:
   script:
     - mkdir -p ${CI_PROJECT_DIR}/build
     - cd ${CI_PROJECT_DIR}/build
-    - nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix \
+    - |
+      nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix \
                 --command "cmake .. \
                                  -DCMAKE_BUILD_TYPE=Debug \
                                  -Denable_warnings=ON \
                                  -Dtreat_warnings_as_errors=OFF"
+
     - nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix --command "make"
   artifacts:
     paths:
@@ -45,7 +47,8 @@ test_test:
 
     # Finally run the tests
     - export PATH=${CI_PROJECT_DIR}/build:${PATH}
-    - nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix \
+    - |
+      nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix \
                 --command "ctest --output-on-failure"
   dependencies:
     - build
