@@ -1,15 +1,15 @@
 {
     "nb_res": 4,
     "jobs": [
-        {"id":1, "subtime":100, "walltime": 100, "res": 4, "profile": "msg_hg_10"},
-        {"id":2, "subtime":200, "walltime": 100, "res": 2, "profile": "msg_hg_10"},
-        {"id":3, "subtime":300, "walltime": 200, "res": 4, "profile": "msg_hg_10"}
+        {"id":1, "subtime":100, "walltime": 1000, "res": 4, "profile": "msg_hg_10"},
+        {"id":2, "subtime":200, "walltime": 1000, "res": 2, "profile": "msg_hg_10"},
+        {"id":3, "subtime":300, "walltime": 2000, "res": 4, "profile": "msg_hg_10"}
     ],
 
     "profiles": {
         "msg_hg_10": {
             "type": "msg_par_hg_tot",
-            "cpu": 1e10,
+            "cpu": 1e8,
             "com": 1e7
         }
     }
