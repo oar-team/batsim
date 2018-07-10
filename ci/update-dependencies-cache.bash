@@ -2,10 +2,8 @@
 #! nix-shell -i bash ./default.nix
 set -eu
 
-# Avoid pushing everything on the binary cache
-excluder='texlive|biber|pdftk|qpdf|pdfdiff|gitflow|cachix|nox|nix-2|dia|asymptote|direnv|yamldiff'
-deps=$(cat .nixdeps | grep -E -v ${excluder})
-printf "About to push paths:\n${deps}\n\n"
+# (re)build up-to-date CI batsim package, push it on binary cache
+nix-build ci/default.nix | cachix push batsim
 
-# Push non-excluded paths to the remote cache
-cachix push batsim $(echo ${deps} | tr '\n' ' ')
+# Build up-to-date batsim_dev package, push it on binary cache
+nix-build ${DATAMOVEPKGS:-~/datamovepkgs} -A batsim_dev | cachix push batsim

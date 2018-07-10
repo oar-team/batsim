@@ -4,7 +4,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: none
 
 stages:
-  - dependencies
+  - update_binary_cache
   - build
   - test
   - deploy
@@ -12,10 +12,9 @@ stages:
 ###############################################################################
 # Dependencies stage
 ###############################################################################
-update_batsim_dependencies:
-  stage: dependencies
+update_binary_cache:
+  stage: update_binary_cache
   script:
-    - ./ci/generate-dependencies-paths.bash
     - ./ci/update-dependencies-cache.bash
 
 ###############################################################################
@@ -29,7 +28,7 @@ build:
     paths:
       - /builds/batsim/batsim/build
   dependencies:
-    - update_batsim_dependencies
+    - update_binary_cache
 
 ###############################################################################
 # Test stage
