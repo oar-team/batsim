@@ -610,9 +610,11 @@ void initialize_msg(const MainArguments & main_args, int argc, char * argv[])
     {
         string sg_trace_filename = main_args.export_prefix + "_sg_processes.trace";
 
-        MSG_config("tracing", "1");
-        MSG_config("tracing/msg/process", "1");
+        MSG_config("tracing", "yes");
+        MSG_config("tracing/msg/process", "yes");
+        MSG_config("tracing/uncategorized", "yes");
         MSG_config("tracing/filename", sg_trace_filename.c_str());
+        MSG_config("smpi/privatization", "yes");
     }
 }
 
