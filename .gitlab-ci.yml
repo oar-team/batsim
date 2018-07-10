@@ -15,6 +15,7 @@ stages:
 update_binary_cache:
   stage: update_binary_cache
   script:
+    - cachix authtoken ${CACHIX_AUTH_TOKEN}
     - ./ci/update-dependencies-cache.bash
 
 ###############################################################################
