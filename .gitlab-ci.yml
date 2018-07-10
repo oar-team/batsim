@@ -3,25 +3,33 @@ image: oarteam/batsim_ci
 variables:
   GIT_SUBMODULE_STRATEGY: none
 
+stages:
+  - dependencies
+  - build
+  - test
+  - deploy
+
+###############################################################################
+# Dependencies stage
+###############################################################################
+update_batsim_dependencies:
+  stage: dependencies
+  script:
+    - ./ci/generate-dependencies-paths.bash
+    - ./ci/update-dependencies-cache.bash
+
 ###############################################################################
 # Build stage
 ###############################################################################
 build:
   stage: build
   script:
-    - mkdir -p ${CI_PROJECT_DIR}/build
-    - cd ${CI_PROJECT_DIR}/build
-    - |
-      nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix \
-                --command "cmake .. \
-                                 -DCMAKE_BUILD_TYPE=Debug \
-                                 -Denable_warnings=ON \
-                                 -Dtreat_warnings_as_errors=OFF"
-
-    - nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix --command "make"
+    - ./ci/build.bash
   artifacts:
     paths:
       - /builds/batsim/batsim/build
+  dependencies:
+    - update_batsim_dependencies
 
 ###############################################################################
 # Test stage
@@ -41,23 +49,14 @@ test_doc:
 test_test:
   stage: test
   script:
-    # Run the redis server
-    - nix-shell .ci-shell.nix --command "redis-server>/dev/null &"
-    - sleep 1
-
-    # Finally run the tests
-    - export PATH=${CI_PROJECT_DIR}/build:${PATH}
-    - |
-      nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix \
-                --command "ctest --output-on-failure"
+    - ./ci/run-tests.bash
   dependencies:
     - build
 
 test_unittest:
   stage: test
   script:
-    # Run unit tests
-    - ${CI_PROJECT_DIR}/build/batsim --unittest
+    - ./ci/run-tests.bash
   dependencies:
     - build
 

@@ -14,3 +14,4 @@ dump.rdb
 .sshkeys
 *.swp
 *.dia~
+.nixdeps

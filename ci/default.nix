@@ -10,7 +10,9 @@ with pkgs;
 
 (batsim_dev.override {}).overrideAttrs (attrs: rec {
     name = "batsim-ci";
-    src = ./.;
+    src = ../.;
     enableParallelBuilding = true;
     doCheck = false;
+
+    nativeBuildInputs = attrs.nativeBuildInputs ++ [nix];
 })
