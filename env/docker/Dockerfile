@@ -2,7 +2,34 @@
 FROM lnl7/nix:2018-04-17
 
 # Survival kit
-RUN nix-env -i git gnutar gzip
+RUN nix-env -i git gnutar gzip gnused
+
+#########################
+# Cachix (binary cache) #
+#########################
+# Network setup
+RUN nix-env -i iana-etc
+RUN export IANA_PATH=$(nix-env -q --out-path | \
+                       sed -n -E 'sWiana-etc-\S+\s+(.*)W\1Wp'); \
+    cp ${IANA_PATH}/etc/protocols /etc/; \
+    cp ${IANA_PATH}/etc/services /etc/
+
+RUN nix-env -i nss-cacert
+RUN export CACERT_PATH=$(nix-env -q --out-path | \
+                       sed -n -E 'sWnss-cacert-\S+\s+(.*)W\1Wp'); \
+    cp -r ${CACERT_PATH}/etc/ssl /etc/
+
+# Cachix
+RUN nix-env -if https://github.com/cachix/cachix/tarball/master \
+    --substituters https://cachix.cachix.org \
+    --trusted-public-keys \
+        cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=
+ENV USER=root
+RUN cachix use batsim
+
+##########
+# Batsim #
+##########
 
 # Retrieve datamove nix packages
 RUN git clone https://gitlab.inria.fr/vreis/datamove-nix.git /datamovepkgs
