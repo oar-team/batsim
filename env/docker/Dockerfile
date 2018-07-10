@@ -32,13 +32,15 @@ RUN cachix use batsim
 ##########
 
 # Retrieve datamove nix packages
-RUN git clone https://gitlab.inria.fr/vreis/datamove-nix.git /datamovepkgs
+ENV DATAMOVEPKGS=/datamovepkgs
+RUN git clone https://gitlab.inria.fr/vreis/datamove-nix.git ${DATAMOVEPKGS}
 
 # Clone batsim repo
-RUN git clone https://github.com/oar-team/batsim.git /batsim
+ENV BATSIM_DIR=/batsim
+RUN git clone https://github.com/oar-team/batsim.git ${BATSIM_DIR}
 
 # Pre build all test dependencies
-RUN nix-build /datamovepkgs -A batsim_dev \
+RUN nix-build ${BATSIM_DIR}/ci \
               --command "echo Dependencies pre-building done"
 
 # CI dependencies
