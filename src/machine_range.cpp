@@ -238,25 +238,40 @@ bool MachineRange::operator==(const MachineRange &other)
     return set == other.set;
 }
 
-MachineRange & intersection(const MachineRange & one, const MachineRange & other)
+MachineRange intersection(const MachineRange & one, const MachineRange & other)
 {
-    MachineRange * result = new MachineRange();
-    result->set = one.set & other.set;
-    return *result;
+    MachineRange result;
+    result.set = one.set & other.set;
+    return result;
 }
 
-MachineRange & difference(const MachineRange & one, const MachineRange &other)
+MachineRange operator&(const MachineRange & one, const MachineRange & other)
 {
-    MachineRange * result = new MachineRange();
-    result->set = one.set - other.set;
-    return *result;
+    return intersection(one, other);
 }
 
-MachineRange & union_itvs(const MachineRange & one, const MachineRange &other)
+MachineRange difference(const MachineRange & one, const MachineRange &other)
 {
-    MachineRange * result = new MachineRange();
-    result->set = one.set + other.set;
-    return *result;
+    MachineRange result;
+    result.set = one.set - other.set;
+    return result;
+}
+
+MachineRange operator-(const MachineRange & one, const MachineRange &other)
+{
+    return one - other;
+}
+
+MachineRange union_itvs(const MachineRange & one, const MachineRange &other)
+{
+    MachineRange result;
+    result.set = one.set + other.set;
+    return result;
+}
+
+MachineRange operator|(const MachineRange & one, const MachineRange &other)
+{
+    return union_itvs(one, other);
 }
 
 MachineRange & MachineRange::operator&=(const MachineRange & other)
@@ -268,6 +283,12 @@ MachineRange & MachineRange::operator&=(const MachineRange & other)
 MachineRange & MachineRange::operator-=(const MachineRange &other)
 {
     set -= other.set;
+    return *this;
+}
+
+MachineRange &MachineRange::operator|=(const MachineRange &other)
+{
+    set |= other.set;
     return *this;
 }
 

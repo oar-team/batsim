@@ -185,28 +185,25 @@ public:
     bool operator==(const MachineRange & other);
 
     /**
-     * @breif Returns the intersection of two MachineRange
-     */
-    //MachineRange & operator&(const MachineRange & other);
-
-    /**
-     * @breif Returns the difference of two MachineRange
-     */
-    //MachineRange & operator-(const MachineRange & other);
-
-    /**
-     * @brief Sets the set as the intersection between itself and another MachineRange
+     * @brief In-place set intersection operation.
      * @param[in] other The other MachineRange
-     * @return The current MachineRange after the operation
+     * @return The current MachineRange after the intersection.
      */
-    MachineRange & operator &=(const MachineRange & other);
+    MachineRange & operator&=(const MachineRange & other);
 
     /**
-     * @brief Sets the set as the difference between itself and another MachineRange
+     * @brief In-place set difference operation.
      * @param[in] other The other MachineRange
-     * @return The current MachineRange after the operation
+     * @return The current MachineRange after the difference
      */
     MachineRange & operator-=(const MachineRange & other);
+
+    /**
+     * @brief In-place set union operation.
+     * @param[in] other The other MachineRange
+     * @return The current MachineRange after the union.
+     */
+    MachineRange & operator|=(const MachineRange & other);
 
     /**
      * @brief Returns the index-th machine of the MachineRange
@@ -233,9 +230,50 @@ public:
     Set set; //!< The internal set of machines
 };
 
+/**
+ * @brief Returns the (set) intersection of two MachineRange
+ * @param[in] one A MachineRange
+ * @param[in] other Another MachineRange
+ * @return The intersection of the two given MachineRange
+ */
+MachineRange intersection(const MachineRange & one, const MachineRange & other);
 
-MachineRange & difference(const MachineRange & one, const MachineRange & other);
+/**
+ * @brief Returns the (set) intersection of two MachineRange
+ * @param[in] one A MachineRange
+ * @param[in] other Another MachineRange
+ * @return The intersection of the two given MachineRange
+ */
+MachineRange operator&(const MachineRange & one, const MachineRange & other);
 
-MachineRange & intersection(const MachineRange & one, const MachineRange & other);
+/**
+ * @brief Returns the (set) difference of two MachineRange
+ * @param[in] one A MachineRange
+ * @param[in] other Another MachineRange
+ * @return The difference (one \ other) of the two given MachineRange
+ */
+MachineRange difference(const MachineRange & one, const MachineRange &other);
 
-MachineRange & union_itvs(const MachineRange & one, const MachineRange & other);
+/**
+ * @brief Returns the (set) difference of two MachineRange
+ * @param[in] one A MachineRange
+ * @param[in] other Another MachineRange
+ * @return The difference (one \ other) of the two given MachineRange
+ */
+MachineRange operator-(const MachineRange & one, const MachineRange &other);
+
+/**
+ * @brief Returns the (set) union of two MachineRange
+ * @param[in] one A MachineRange
+ * @param[in] other Another MachineRange
+ * @return The union of the two given MachineRange
+ */
+MachineRange union_itvs(const MachineRange & one, const MachineRange &other);
+
+/**
+ * @brief Returns the (set) union of two MachineRange
+ * @param[in] one A MachineRange
+ * @param[in] other Another MachineRange
+ * @return The union of the two given MachineRange
+ */
+MachineRange operator|(const MachineRange & one, const MachineRange &other);
