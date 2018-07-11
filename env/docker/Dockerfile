@@ -43,5 +43,8 @@ RUN git clone https://github.com/oar-team/batsim.git ${BATSIM_DIR}
 RUN nix-build ${BATSIM_DIR}/ci \
               --command "echo Dependencies pre-building done"
 
+# Pre build batsim_dev
+RUN nix-shell ${DATAMOVEPKGS} -A batsim_dev
+
 # CI dependencies
 RUN nix-env -i ssh-ident rsync
