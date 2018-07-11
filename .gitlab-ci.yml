@@ -47,7 +47,7 @@ test_test:
 test_unittest:
   stage: test
   script:
-    - ./ci/run-tests.bash
+    - ./ci/run-unittests.bash
   dependencies:
     - build
 
