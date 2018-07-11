@@ -216,6 +216,7 @@ set(BSALGO_submitter "submitter!submitter")
 ##############################################
 # Delegate generation of tests to subscripts #
 ##############################################
+add_subdirectory(doxygen-warnings)
 add_subdirectory(nosched)
 add_subdirectory(simple)
 add_subdirectory(energy)
