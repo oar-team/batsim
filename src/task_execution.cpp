@@ -302,7 +302,15 @@ void generate_msg_data_staginig_task(double *&  computation_amount,
     }
 }
 
-void print_matrices(double * computation_vector, double * communication_matrix, unsigned int nb_res)
+/**
+ * @brief Debug print of a parallel task (via XBT_DEBUG)
+ * @param[in] computation_vector The ptask computation vector
+ * @param[in] communication_matrix The ptask communication matrix
+ * @param[in] nb_res The number of hosts involved in the parallel task
+ */
+void debug_print_ptask(const double * computation_vector,
+                       const double * communication_matrix,
+                       unsigned int nb_res)
 {
     string comp = "";
     string comm = "";
@@ -326,16 +334,15 @@ void print_matrices(double * computation_vector, double * communication_matrix, 
     XBT_DEBUG("Generated matrices: \nCompute: \n%s\nComm:\n%s", comp.c_str(), comm.c_str());
 }
 /**
- * }
- * @brief Generate communication and computation matrix depending on the profile
- *
- * @param[out] computation_amount the computation matrix to be simulated by the msg task
- * @param[out] communication_amount the communication matrix to be simulated by the msg task
- * @param[in,out] hosts_to_use the list of host to be used by the task
- * @param[in] the profile to be converted to compute/comm matrix
- * @param[in] context the batsim context
+ * @brief
+ * @param[out] computation_vector The computation vector to be simulated by the msg task
+ * @param[out] communication_matrix The communication matrix to be simulated by the msg task
+ * @param[in,out] hosts_to_use The list of host to be used by the task
+ * @param[in] profile The profile to be converted to a compute/comm matrix
+ * @param[in] storage_mapping The storage mapping
+ * @param[in] context The BatsimContext
  */
-void generate_matices_from_profile(double *& computation_matrix,
+void generate_matices_from_profile(double *& computation_vector,
                                    double *& communication_matrix,
                                    std::vector<msg_host_t> & hosts_to_use,
                                    Profile * profile,
@@ -350,25 +357,25 @@ void generate_matices_from_profile(double *& computation_matrix,
     switch(profile->type)
     {
     case ProfileType::MSG_PARALLEL:
-        generate_msg_parallel_task(computation_matrix,
+        generate_msg_parallel_task(computation_vector,
                                    communication_matrix,
                                    nb_res,
                                    profile->data);
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS:
-        generate_msg_parallel_homogeneous(computation_matrix,
+        generate_msg_parallel_homogeneous(computation_vector,
                                           communication_matrix,
                                           nb_res,
                                           profile->data);
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
-        generate_msg_parallel_homogeneous_total_amount(computation_matrix,
+        generate_msg_parallel_homogeneous_total_amount(computation_vector,
                                                        communication_matrix,
                                                        nb_res,
                                                        profile->data);
         break;
     case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS:
-        generate_msg_parallel_homogeneous_with_pfs(computation_matrix,
+        generate_msg_parallel_homogeneous_with_pfs(computation_vector,
                                                    communication_matrix,
                                                    hosts_to_use,
                                                    *storage_mapping,
@@ -376,7 +383,7 @@ void generate_matices_from_profile(double *& computation_matrix,
                                                    context);
         break;
     case ProfileType::MSG_DATA_STAGING:
-        generate_msg_data_staginig_task(computation_matrix,
+        generate_msg_data_staginig_task(computation_vector,
                                         communication_matrix,
                                         hosts_to_use,
                                         *storage_mapping,
@@ -386,16 +393,24 @@ void generate_matices_from_profile(double *& computation_matrix,
     default:
         xbt_die("Should not be reached.");
     }
-    print_matrices(computation_matrix, communication_matrix, hosts_to_use.size());
+    debug_print_ptask(computation_vector, communication_matrix, hosts_to_use.size());
 
 }
 
-void enforce_role_permission(MachineRange alloc,
-                             double * computation_matrix,
-                             BatsimContext * context)
+/**
+ * @brief Checks if the machines allocated to a ptask can execute it
+ * @param[in] alloc The machines on which the ptask should run
+ * @param[in] computation_matrix The ptask communication matrix
+ * @param[in] context The BatsimContext
+ */
+void check_ptask_execution_permission(const MachineRange & alloc,
+                                      const double * computation_matrix,
+                                      BatsimContext * context)
 {
     // TODO: simplify the roles because it is very simple in the end
     // Enforce role permission
+
+    // TODO: handle mapping (ptasks can be executed with non-unique hosts)
     for (unsigned int i = 0; i < alloc.size(); i++)
     {
         int machine_id = alloc[i];
@@ -435,7 +450,7 @@ int execute_msg_task(BatTask * btask,
                                   & allocation->storage_mapping,
                                   context);
 
-    enforce_role_permission(allocation->machine_ids, computation_vector, context);
+    check_ptask_execution_permission(allocation->machine_ids, computation_vector, context);
 
     //FIXME: This will not work for the PFS profiles
     // Manage additional io job
@@ -578,9 +593,9 @@ int execute_msg_task(BatTask * btask,
         hosts_to_use = new_hosts_to_use;
         // TODO Free old job and io structures
         XBT_DEBUG("Merged Job+IO matrices");
-        print_matrices(computation_vector, communication_matrix, hosts_to_use.size());
+        debug_print_ptask(computation_vector, communication_matrix, hosts_to_use.size());
 
-        enforce_role_permission(new_alloc, computation_vector, context);
+        check_ptask_execution_permission(new_alloc, computation_vector, context);
     }
 
 

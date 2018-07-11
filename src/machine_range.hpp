@@ -189,7 +189,7 @@ public:
      * @param[in] other The other MachineRange
      * @return The current MachineRange after the intersection.
      */
-    MachineRange & operator&=(const MachineRange & other);
+    MachineRange & operator &=(const MachineRange & other);
 
     /**
      * @brief In-place set difference operation.

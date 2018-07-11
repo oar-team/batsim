@@ -69,7 +69,9 @@ struct Machine
     std::map<std::string, std::string> properties; //!< Properties defined in the platform file
 
     /**
-     * @brief Returns wether the Machine has the given role
+     * @brief Returns whether the Machine has the given role
+     * @param[in] role The role whose presence is to be checked
+     * @return Whether the Machine has the given role
      */
     bool has_role(roles::Permissions role);
 
@@ -142,11 +144,12 @@ public:
      * @brief Fill the Machines with SimGrid hosts
      * @param[in] hosts The SimGrid hosts
      * @param[in] context The Batsim Context
+     * @param[in] roles The roles of each machine
      * @param[in] limit_machine_count If set to -1, all the machines are used. If set to a strictly positive number N, only the first machines N will be used to compute jobs
      */
     void create_machines(xbt_dynar_t hosts,
                          const BatsimContext * context,
-                         std::map<std::string, std::string> roles,
+                         const std::map<std::string, std::string> & roles,
                          int limit_machine_count = -1);
 
     /**
@@ -211,11 +214,13 @@ public:
 
     /**
      * @brief Returns a const reference to the vector of computing Machine
+     * @return A const reference to the vector of computing Machine
      */
     const std::vector<Machine *> & compute_machines() const;
 
     /**
      * @brief Returns a const reference to the vector of storage Machine
+     * @return A const reference to the vector of storage Machine
      */
     const std::vector<Machine *> & storage_machines() const;
 
@@ -241,16 +246,19 @@ public:
 
     /**
      * @brief Returns the total number of machines
+     * @return The total number of machines
      */
     int nb_machines() const;
 
     /**
      * @brief Returns the number of computing machines
+     * @return The nubmer of computing machines
      */
     int nb_compute_machines() const;
 
     /**
      * @brief Returns the number of storage machines
+     * @return The number of storage machines
      */
     int nb_storage_machines() const;
 
@@ -303,7 +311,8 @@ long double consumed_energy_on_machines(BatsimContext * context,
 
 /**
  * @brief Sorts the given vector of machines by ascending name (lexicographically speaking)
+ * @param[in,out] machines_vect The vector of machines to sort
  */
-void sort_machines_by_ascending_name(std::vector<Machine *>);
+void sort_machines_by_ascending_name(std::vector<Machine *> machines_vect);
 
 

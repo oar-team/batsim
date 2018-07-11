@@ -348,6 +348,13 @@ int execute_task_cleanup(void * unknown, void * data)
     return 0;
 }
 
+/**
+ * @brief Initializes logging structures associated with a task (job execution)
+ * @param[in] job The job that is about to be executed
+ * @param[in] profile The profile that is about to be executed
+ * @param[in] io_profile The IO profile that may also be executed
+ * @return The BatTask* associated with the sequential task
+ */
 BatTask * initialize_sequential_tasks(Job * job, Profile * profile, Profile * io_profile)
 {
     BatTask * task = new BatTask(job, profile);

@@ -47,7 +47,7 @@ Machines::~Machines()
 
 void Machines::create_machines(xbt_dynar_t hosts,
                                const BatsimContext *context,
-                               map<string, string> role_map,
+                               const std::map<string, string> & role_map,
                                int limit_machine_count)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
@@ -81,11 +81,11 @@ void Machines::create_machines(xbt_dynar_t hosts,
             if (machine->properties.count("role"))
             {
                 // there is an existing role property
-                machine->properties["role"] = machine->properties["role"] + "," + role_map[machine->name];
+                machine->properties["role"] = machine->properties["role"] + "," + role_map.at(machine->name);
             }
             else
             {
-                machine->properties["role"] = role_map[machine->name];
+                machine->properties["role"] = role_map.at(machine->name);
             }
         }
 
