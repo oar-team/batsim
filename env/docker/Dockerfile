@@ -47,4 +47,4 @@ RUN nix-build ${BATSIM_DIR}/ci \
 RUN nix-shell ${DATAMOVEPKGS} -A batsim_dev
 
 # CI dependencies
-RUN nix-env -i openssh rsync
+RUN nix-env -i openssh rsync netcat-gnu psmisc
