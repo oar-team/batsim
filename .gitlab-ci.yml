@@ -9,6 +9,9 @@ stages:
   - test
   - deploy
 
+before_script:
+  - cachix authtoken ${CACHIX_AUTH_TOKEN}
+
 ###############################################################################
 # Build stage
 ###############################################################################
@@ -26,7 +29,6 @@ build:
 update_dependencies_cache:
   stage: update_dependencies_cache
   script:
-    - cachix authtoken ${CACHIX_AUTH_TOKEN}
     - ./ci/update-dependencies-cache.bash
 
 ###############################################################################
@@ -55,7 +57,6 @@ test_unittest:
 update_batsim_dev_cache:
   stage: deploy
   script:
-    - cachix authtoken ${CACHIX_AUTH_TOKEN}
     - ./ci/update-batsim_dev-cache.bash
   dependencies:
     - test_test
