@@ -4,19 +4,10 @@ variables:
   GIT_SUBMODULE_STRATEGY: none
 
 stages:
-  - update_binary_cache
   - build
+  - update_dependencies_cache
   - test
   - deploy
-
-###############################################################################
-# Dependencies stage
-###############################################################################
-update_binary_cache:
-  stage: update_binary_cache
-  script:
-    - cachix authtoken ${CACHIX_AUTH_TOKEN}
-    - ./ci/update-dependencies-cache.bash
 
 ###############################################################################
 # Build stage
@@ -28,30 +19,28 @@ build:
   artifacts:
     paths:
       - /builds/batsim/batsim/build
-  dependencies:
-    - update_binary_cache
+
+###############################################################################
+# Dependencies cache stage
+###############################################################################
+update_dependencies_cache:
+  stage: update_dependencies_cache
+  script:
+    - cachix authtoken ${CACHIX_AUTH_TOKEN}
+    - ./ci/update-dependencies-cache.bash
 
 ###############################################################################
 # Test stage
 ###############################################################################
-test_doc:
-  stage: test
-  script:
-    - cd ${CI_PROJECT_DIR}/doc
-    - nix-shell ${CI_PROJECT_DIR}/.ci-shell.nix --command "doxygen"
-    - cat doxygen_warnings.log
-    # The next line fails if doxygen generated warnings
-    - eval "[ $(wc -c doxygen_warnings.log | cut -d ' ' -f1) -eq 0 ]"
-  artifacts:
-    paths:
-      - /builds/batsim/batsim/doc/doxygen_doc/html
-
 test_test:
   stage: test
   script:
     - ./ci/run-tests.bash
   dependencies:
     - build
+  artifacts:
+    paths:
+      - /builds/batsim/batsim/doc/doxygen_doc/html
 
 test_unittest:
   stage: test
@@ -63,33 +52,28 @@ test_unittest:
 ###############################################################################
 # Deploy stage
 ###############################################################################
+update_batsim_dev_cache:
+  stage: deploy
+  script:
+    - cachix authtoken ${CACHIX_AUTH_TOKEN}
+    - ./ci/update-batsim_dev-cache.bash
+  dependencies:
+    - test_test
+    - test_unittest
+
 deploy_code_doc:
   stage: deploy
   script:
-      # The script below is done to push Batsim's code doc onto the gforge website.
-      # Information found on https://docs.gitlab.com/ee/ci/ssh_keys/README.html
-
-      # Install ssh-agent if not already installed, it is required by Docker.
-      # (change apt-get to yum if you use a CentOS-based image)
-      - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
-
-      # Run ssh-agent (inside the build environment)
+      # Pushes Batsim's code doc (doxygen) onto the gforge website.
+      # SSH setup (do NOT run these commands on your machine)
       - eval $(ssh-agent -s)
-
-      # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
       - ssh-add <(echo "$SSH_PRIVATE_KEY")
-
-      # For Docker builds disable host key checking. Be aware that by adding that
-      # you are suspectible to man-in-the-middle attacks.
-      # WARNING: Use this only with the Docker executor, if you use it with shell
-      # you will overwrite your user's SSH config.
       - mkdir -p ~/.ssh
       - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
-
       # Finally push the code documentation on the gforge website
       - cd /builds/batsim/batsim/doc
       - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
   dependencies:
-    - test_doc
+    - test_test
   only:
     - master
