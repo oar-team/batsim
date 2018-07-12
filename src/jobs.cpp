@@ -28,6 +28,78 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(jobs, "jobs"); //!< Logging
 
+
+BatTask::BatTask(Job * parent_job, Profile * profile) :
+    parent_job(parent_job),
+    profile(profile)
+{
+}
+
+BatTask::~BatTask()
+{
+    for (auto & sub_btask : this->sub_tasks)
+    {
+        delete sub_btask;
+        sub_btask = nullptr;
+    }
+}
+
+void BatTask::compute_leaf_progress()
+{
+    xbt_assert(sub_tasks.empty(), "Leaves should not contain sub tasks");
+
+    if (profile->is_parallel_task())
+    {
+        xbt_assert(ptask != nullptr, "Internal error");
+
+        // WARNING: This is not returning the flops amount but the remainin quantity of work
+        // from 1 (not started yet) to 0 (completely finished)
+        current_task_progress_ratio = 1 - MSG_task_get_flops_amount(ptask);
+    }
+    else if (profile->type == ProfileType::DELAY)
+    {
+        xbt_assert(delay_task_start != -1, "Internal error");
+
+        double runtime = MSG_get_clock() - delay_task_start;
+
+        // Manages empty delay job (why?!)
+        if (delay_task_required == 0)
+        {
+            current_task_progress_ratio = 1;
+        }
+        else
+        {
+            current_task_progress_ratio = runtime / delay_task_required;
+        }
+    }
+    else
+    {
+        XBT_WARN("Computing the progress of %s profiles is not implemented.",
+                 profile_type_to_string(profile->type).c_str());
+    }
+}
+
+void BatTask::compute_tasks_progress()
+{
+    if (profile->type == ProfileType::SEQUENCE)
+    {
+        sub_tasks[current_task_index]->compute_tasks_progress();
+    }
+    else
+    {
+        this->compute_leaf_progress();
+    }
+}
+
+BatTask* Job::compute_job_progress()
+{
+    xbt_assert(task != nullptr, "Internal error");
+
+    task->compute_tasks_progress();
+    return task;
+}
+
+
 Jobs::Jobs()
 {
 
@@ -41,12 +113,12 @@ Jobs::~Jobs()
     }
 }
 
-void Jobs::setProfiles(Profiles *profiles)
+void Jobs::set_profiles(Profiles *profiles)
 {
     _profiles = profiles;
 }
 
-void Jobs::setWorkload(Workload *workload)
+void Jobs::set_workload(Workload *workload)
 {
     _workload = workload;
 }
@@ -172,7 +244,21 @@ Job::~Job()
 {
     xbt_assert(execution_processes.size() == 0,
                "Internal error: job %s has %d execution processes on destruction (should be 0).",
-               this->id.c_str(), (int)execution_processes.size());
+               this->id.to_string().c_str(), (int)execution_processes.size());
+
+    if (task != nullptr)
+    {
+        delete task;
+        task = nullptr;
+    }
+}
+
+bool Job::is_complete() const
+{
+    return (state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY) ||
+           (state == JobState::JOB_STATE_COMPLETED_KILLED) ||
+           (state == JobState::JOB_STATE_COMPLETED_FAILED) ||
+           (state == JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED);
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
@@ -351,6 +437,9 @@ string job_state_to_string(const JobState & state)
     case JobState::JOB_STATE_COMPLETED_FAILED:
         job_state = "COMPLETED_FAILED";
         break;
+    case JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED:
+        job_state = "COMPLETED_WALLTIME_REACHED";
+        break;
     case JobState::JOB_STATE_COMPLETED_KILLED:
         job_state = "COMPLETED_KILLED";
         break;
@@ -388,6 +477,10 @@ JobState job_state_from_string(const std::string & state)
     else if (state == "COMPLETED_KILLED")
     {
         new_state = JobState::JOB_STATE_COMPLETED_KILLED;
+    }
+    else if (state == "COMPLETED_WALLTIME_REACHED")
+    {
+        new_state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
     }
     else if (state == "REJECTED")
     {

@@ -9,7 +9,7 @@
         {"id":1, "subtime":10, "walltime": 100, "res": 4, "profile": "2"},
         {"id":2, "subtime":20, "walltime": 100, "res": 4, "profile": "1"},
         {"id":3, "subtime":30, "walltime": 3,   "res": 4, "profile": "1"},
-        {"id":4, "subtime":32, "walltime": 100, "res": 4, "profile": "1"},
+        {"id":4, "subtime":32, "walltime": 100, "res": 4, "profile": "3"},
         {"id":5, "subtime":15, "walltime": 30,  "res": 1, "profile": "4"}
     ],
 

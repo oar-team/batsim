@@ -1,29 +1,11 @@
-image: oarteam/batsim_ci:2017-09-12
+image: oarteam/batsim_ci
 
 variables:
-  GIT_SUBMODULE_STRATEGY: normal
+  GIT_SUBMODULE_STRATEGY: none
 
-# The before_script part above is done in order to push Batsim's code doc
-# onto the gforge website.
-# Information found on https://docs.gitlab.com/ee/ci/ssh_keys/README.html
-before_script:
-  # Install ssh-agent if not already installed, it is required by Docker.
-  # (change apt-get to yum if you use a CentOS-based image)
-  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
-
-  # Run ssh-agent (inside the build environment)
-  - eval $(ssh-agent -s)
-
-  # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
-  - ssh-add <(echo "$SSH_PRIVATE_KEY")
-
-  # For Docker builds disable host key checking. Be aware that by adding that
-  # you are suspectible to man-in-the-middle attacks.
-  # WARNING: Use this only with the Docker executor, if you use it with shell
-  # you will overwrite your user's SSH config.
-  - mkdir -p ~/.ssh
-  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
-
+################################################################################
+# Build stage
+###############################################################################
 build_clang:
   stage: build
   script:
@@ -50,15 +32,34 @@ build_gcc:
 build_batsched:
   stage: build
   script:
-    - cd /builds/batsim/batsim/schedulers
-    - mkdir batsched_build
-    - cd batsched_build
+    - rm -rf /builds/batsim/batsim/schedulers/batsched
+    # Get the code at the expected revision
+    - git clone https://gitlab.inria.fr/batsim/batsched.git /builds/batsim/batsim/schedulers/batsched
+    - cd /builds/batsim/batsim/schedulers/batsched
+    - git reset --hard c2bbc1f2a9ab12856ea782a30321f0b22c5b1a13 # 2017-06-20
+    # Build batsched
+    - mkdir -p /builds/batsim/batsim/schedulers/batsched/build
+    - cd /builds/batsim/batsim/schedulers/batsched/build
     - cmake /builds/batsim/batsim/schedulers/batsched
     - make
   artifacts:
     paths:
-      - /builds/batsim/batsim/schedulers/batsched_build
+      - /builds/batsim/batsim/schedulers/batsched/build
 
+retrieve_pybatsim:
+  stage: build
+  script:
+    - rm -rf /builds/batsim/batsim/schedulers/pybatsim
+    - git clone https://gitlab.inria.fr/batsim/pybatsim.git /builds/batsim/batsim/schedulers/pybatsim
+    - cd /builds/batsim/batsim/schedulers/pybatsim
+    - git reset --hard 450d9a43be89688f874b89b4b4839e8b021ec908 # 2017-09-11
+  artifacts:
+    paths:
+      - /builds/batsim/batsim/schedulers/pybatsim
+
+################################################################################
+# Test stage
+################################################################################
 test_doc:
   stage: test
   script:
@@ -74,24 +75,31 @@ test_doc:
 test_test:
   stage: test
   script:
-    # Let's run the redis server
+    # Install Batsim
+    - cd /builds/batsim/batsim/build
+    - make install
+
+    # Install the Batsched scheduler
+    - cd /builds/batsim/batsim/schedulers/batsched/build
+    - make install
+
+    # Install the pybatsim scheduler
+    - pip3 install /builds/batsim/batsim/schedulers/pybatsim
+
+    # Run the redis server
     - |
       redis-server>/dev/null &
       while ! nc -z localhost 6379; do
         sleep 1
       done
 
-    - cd /builds/batsim/batsim/build
-    - make install
-
-    - cd /builds/batsim/batsim/schedulers/batsched_build
-    - make install
-
+    # Finally run the tests
     - cd /builds/batsim/batsim/build
     - ctest --output-on-failure -E 'remote|smpi'
   dependencies:
     - build_clang
     - build_batsched
+    - retrieve_pybatsim
 
 test_version:
   stage: test
@@ -106,10 +114,34 @@ test_version:
   dependencies:
     - build_clang
 
+################################################################################
+# Deploy stage
+################################################################################
 deploy_code_doc:
   stage: deploy
   script:
-    - cd /builds/batsim/batsim/doc
-    - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
+      # The script below is done to push Batsim's code doc onto the gforge website.
+      # Information found on https://docs.gitlab.com/ee/ci/ssh_keys/README.html
+
+      # Install ssh-agent if not already installed, it is required by Docker.
+      # (change apt-get to yum if you use a CentOS-based image)
+      - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+
+      # Run ssh-agent (inside the build environment)
+      - eval $(ssh-agent -s)
+
+      # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+      - ssh-add <(echo "$SSH_PRIVATE_KEY")
+
+      # For Docker builds disable host key checking. Be aware that by adding that
+      # you are suspectible to man-in-the-middle attacks.
+      # WARNING: Use this only with the Docker executor, if you use it with shell
+      # you will overwrite your user's SSH config.
+      - mkdir -p ~/.ssh
+      - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
+
+      # Finally push the code documentation on the gforge website
+      - cd /builds/batsim/batsim/doc
+      - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
   dependencies:
     - test_doc

@@ -295,6 +295,12 @@ add_test(kill_multiple
          -bod /tmp/batsim_tests/kill_multiple
          -bwd ${CMAKE_SOURCE_DIR})
 
+add_test(kill_progress
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_kill_progress.yaml
+         -bod /tmp/batsim_tests/kill_progress
+         -bwd ${CMAKE_SOURCE_DIR})
+
 add_test(pybatsim_tests
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/pybatsim_tests.yaml
