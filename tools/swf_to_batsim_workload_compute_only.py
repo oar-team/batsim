@@ -9,8 +9,9 @@
 
 from sortedcontainers import SortedSet
 import argparse
-import re
 import json
+import math
+import re
 import sys
 import datetime
 
@@ -26,7 +27,8 @@ def generate_workload(input_swf, output_json, computation_speed,
                       translate_submit_times=False,
                       keep_only=False,
                       verbose=False,
-                      quiet=False):
+                      quiet=False,
+                      job_size_function_string='1*nb_res'):
     """Generate a Batsim workload from a SWF trace."""
     element = '([-+]?\d+(?:\.\d+)?)'
     r = re.compile('\s*' + (element + '\s+') * 17 + element + '\s*')
@@ -55,6 +57,9 @@ def generate_workload(input_swf, output_json, computation_speed,
             submit_time = max(0, float(res.group(SwfField.SUBMIT_TIME.value)))
             walltime = max(job_walltime_factor * run_time,
                            float(res.group(SwfField.REQUESTED_TIME.value)))
+
+            # nb_res may be changed by calling a user-given function
+            nb_res = eval(job_size_function_string)
 
             if given_walltime_only:
                 walltime = float(res.group(SwfField.REQUESTED_TIME.value))
@@ -94,13 +99,18 @@ def generate_workload(input_swf, output_json, computation_speed,
                                 'cpu': profile * computation_speed,
                                 'com': 0.0}
 
-    platform_size = max([nb_res for (job_id, nb_res, run_time, submit_time,
-                                     profile, walltime) in jobs])
+    biggest_job = max([nb_res for (job_id, nb_res, run_time, submit_time,
+                                   profile, walltime) in jobs])
+
     if platform_size is not None:
         if platform_size < 1:
-            print('Invalid input: platform size must be strictly positive')
-            exit(1)
-        platform_size = platform_size
+            raise Exception('Invalid input: platform size must be strictly positive')
+        if platform_size < biggest_job:
+            print('Warning: platform size {size} is smaller than '
+                  'the biggest job ({big})'.format(size=platform_size,
+                                                   big=biggest_job))
+    else:
+        platform_size = biggest_job
 
     data = {
         'version': version,
@@ -144,6 +154,11 @@ def main():
                         type=float, required=True,
                         help='The computation speed of the machines, in number of floating-point operations per second. This parameter is used to convert logged seconds to a number of floating-point operations')
 
+    parser.add_argument('-jsf', '--job-size-function',
+                        type=str,
+                        default='1*nb_res',
+                        help='The function to apply on the jobs size. '
+                             'The identity is used by default.')
     parser.add_argument('-jwf', '--job_walltime_factor',
                         type=float, default=2,
                         help='Jobs walltimes are computed by the formula max(givenWalltime, jobWalltimeFactor*givenRuntime)')
@@ -182,7 +197,8 @@ def main():
                       translate_submit_times=args.translate_submit_times,
                       keep_only=args.keep_only,
                       verbose=args.verbose,
-                      quiet=args.quiet)
+                      quiet=args.quiet,
+                      job_size_function_string=args.job_size_function)
 
 if __name__ == "__main__":
     main()

@@ -12,6 +12,55 @@ Batsim's public API includes:
 ## [Unreleased]
 
 [//]: ==========================================================================
+## [2.0.0] - 2018-02-20
+
+### Changed (**breaks protocol**)
+- The ``QUERY_REQUEST`` and ``QUERY_REPLY`` messages have been respectively
+  renamed ``QUERY`` and ``ANSWER``. This pair of messages is now bidirectional
+  (Batsim can now ask information to the scheduler).  
+  Redis interactions with this pair of messages is no longer in the protocol
+  (as it has never been implemented).
+- When submitting dynamic jobs (``SUBMIT_JOB``), the ``job_id`` and ``id``
+  fields should now have the same value.  
+  Furthermore, jobs id are no longer integers but strings:
+  ``my_wload!hello readers`` is now a valid job identifier.
+- Removal of the ``job_status`` field from ``JOB_COMPLETED`` messages.
+- ``JOB_COMPLETED`` messages should now be sent even for killed jobs.  
+  In this case, ``JOB_COMPLETED`` should be sent before ``JOB_KILLED``.
+
+### Added
+- Added the ``--simgrid-version`` command-line option to show which SimGrid
+  is used by Batsim.
+- Added the ``--unittest`` command-line option to run unit tests.
+  Executed by Batsim's continuous integration system.
+- New ``SET_JOB_METADATA`` protocol message, which allows to set
+  set metadata to jobs.
+  Such metadata is written in the ``_jobs.csv`` output file.
+- The ``_schedule.csv`` output file now contains a batsim_version field.
+- The ``energy_query`` test checks that ``QUERY``/``ANSWER`` work as expected
+  for the ``consumed_energy`` request.
+- Added the ``estimate_waiting_time`` QUERY from Batsim to the scheduler.
+- The ``SIMULATION_BEGINS`` message now contains information about workloads:
+  a map from workload identifiers to their filenames.
+- Added the ``job_alloc`` field to ``JOB_COMPLETED`` messages, which mentions
+  which machines have been allocated to the finished job.
+
+### Changed
+- The ``_jobs.csv`` output file is now written more cleanly.  
+  The order of the columns within it may have changed.  
+  Removal of the deprecated ``hacky_job_id`` field.
+
+### Fixed
+- Numeric sort should now work as expected (this is now tested).
+- Power stace tracing now works when the number of machines is big.
+- Output buffers now work even if incoming texts are bigger than the buffer.
+- The ``QUERY_REQUEST``/``QUERY_REPLY`` messages were not respecting the
+  protocol definition (probably never tested since the JSON protocol update).
+- Dynamically submitted jobs could not be used right away after being submitted
+  (by the following events, or at least the events of the same timestamp).
+  This should now be possible.
+
+[//]: ==========================================================================
 ## [1.4.0] - 2017-10-07
 ### Added
 - New ``SUBMIT_PROFILE`` protocol message that allows the decision process
@@ -53,6 +102,7 @@ Batsim's public API includes:
   - ``JOB_COMPLETED``:
     - ``return_code`` indicates whether the job has succeeded
     - The ``FAILED`` status can now be received.
+
 ### Changed
 - The ``repeat`` value of sequence (composed) profiles is now optional.  
   Default value is 1 (executed once, no repeat).
@@ -63,6 +113,7 @@ Batsim's public API includes:
 - Commit ``587483ebe`` on ``https://github.com/mpoquet/simgrid.git``.  
   Please notice that energy consumption of parallel tasks does not work
   as expected.
+
 ### Added
 - Stated LGPL-3.0 license.
 - Code cosmetics standards are now checked by Codacy.
@@ -108,7 +159,8 @@ Batsim's public API includes:
 [changelog]: http://keepachangelog.com/en/1.0.0/
 [semver]: http://semver.org/spec/v2.0.0.html
 
-[Unreleased]: https://github.com/oar-team/batsim/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/oar-team/batsim/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/oar-team/batsim/compare/v1.4.0...v2.0.0
 [1.4.0]: https://github.com/oar-team/batsim/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/oar-team/batsim/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/oar-team/batsim/compare/v1.1.0...v1.2.0

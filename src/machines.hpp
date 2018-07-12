@@ -93,12 +93,12 @@ struct Machine
 
 /**
  * @brief Compares two strings. If both strings contain integers at the same place, the integers themselves are compared.
- * @details For example, "machine2" < "machine10", "machine10_12" < "machine10_153"...
+ * @details For example, "machine2" < "machine10", "machine10_12" < "machine10_153", "machine001" == "machine1"...
  * @param s1 The first string to compare
  * @param s2 The second string to compare
- * @return True if and only if s1 < s2, taking numbers into account
+ * @return Similar result than strcmp. ret<0 if s1 < s2. ret==0 if s1 == s2. Ret>0 if s1 > s2.
  */
-bool string_including_integers_comparator(const std::string & s1, const std::string & s2);
+int string_numeric_comparator(const std::string & s1, const std::string & s2);
 
 /**
  * @brief Compares two machines according to their names, taking into account numbers within them

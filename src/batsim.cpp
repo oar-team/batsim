@@ -57,6 +57,8 @@
 #include "workload.hpp"
 #include "workflow.hpp"
 
+#include "unittest/test_main.hpp"
+
 #include "docopt/docopt.h"
 
 using namespace std;
@@ -88,6 +90,28 @@ string default_configuration = R"({
 bool file_exists(const std::string & filename)
 {
     return boost::filesystem::exists(filename);
+}
+
+/**
+ * @brief Computes the absolute filename of a given file
+ * @param[in] filename The name of the file (not necessarily existing).
+ * @return The absolute filename corresponding to the given filename
+ */
+std::string absolute_filename(const std::string & filename)
+{
+    xbt_assert(filename.length() > 0);
+
+    // Let's assume filenames starting by "/" are absolute.
+    if (filename[0] == '/')
+    {
+        return filename;
+    }
+
+    char cwd_buf[PATH_MAX];
+    char * getcwd_ret = getcwd(cwd_buf, PATH_MAX);
+    xbt_assert(getcwd_ret == cwd_buf, "getcwd failed");
+
+    return string(getcwd_ret) + '/' + filename;
 }
 
 /**
@@ -147,7 +171,8 @@ string generate_sha1_string(std::string string_to_hash, int output_length)
     return result;
 }
 
-bool parse_main_args(int argc, char * argv[], MainArguments & main_args)
+void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code,
+                     bool & run_simulation, bool & run_unit_tests)
 {
     static const char usage[] =
 R"(A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.
@@ -158,6 +183,9 @@ Usage:
                             [--WS (<cut_workflow_file> <start_time>)...]
                             [options]
   batsim --help
+  batsim --version
+  batsim --simgrid-version
+  batsim --unittest
 
 Input options:
   -p --platform <platform_file>     The SimGrid platform to simulate.
@@ -229,22 +257,42 @@ Other options:
                                     as data sink/source for the high-performance
                                     storage tier [default: hpst_host].
   -h --help                         Shows this help.
-  --version                         Shows Batsim version.
 )";
 
+    run_simulation = false,
+    run_unit_tests = false;
+    return_code = 1;
     map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc },
                                                      true, STR(BATSIM_VERSION));
 
     // Let's do some checks on the arguments!
     bool error = false;
+    return_code = 0;
+
+    if (args["--simgrid-version"].asBool())
+    {
+        int sg_major, sg_minor, sg_patch;
+        sg_version(&sg_major, &sg_minor, &sg_patch);
+
+        printf("%d.%d.%d\n", sg_major, sg_minor, sg_patch);
+        return;
+    }
+
+    if (args["--unittest"].asBool())
+    {
+        run_unit_tests = true;
+        return;
+    }
 
     // Input files
     // ***********
     main_args.platform_filename = args["--platform"].asString();
+    printf("platform_filename: %s\n", main_args.platform_filename.c_str());
     if (!file_exists(main_args.platform_filename))
     {
         XBT_ERROR("Platform file '%s' cannot be read.", main_args.platform_filename.c_str());
         error = true;
+        return_code |= 0x01;
     }
 
     // Workloads
@@ -255,6 +303,7 @@ Other options:
         {
             XBT_ERROR("Workload file '%s' cannot be read.", workload_file.c_str());
             error = true;
+            return_code |= 0x02;
         }
         else
         {
@@ -276,6 +325,7 @@ Other options:
         {
             XBT_ERROR("Workflow file '%s' cannot be read.", workflow_file.c_str());
             error = true;
+            return_code |= 0x04;
         }
         else
         {
@@ -301,6 +351,7 @@ Other options:
                   "sizes (%zu and %zu)", cut_workflow_files.size(),
                   cut_workflow_times.size());
         error = true;
+        return_code |= 0x08;
     }
     else
     {
@@ -312,6 +363,7 @@ Other options:
             {
                 XBT_ERROR("Cut workflow file '%s' cannot be read.", cut_workflow_file.c_str());
                 error = true;
+                return_code |= 0x10;
             }
             else
             {
@@ -328,6 +380,7 @@ Other options:
                         XBT_ERROR("<start_time> %g ('%s') should be positive.",
                                   desc.start_time, cut_workflow_time_str.c_str());
                         error = true;
+                        return_code |= 0x20;
                     }
                     else
                     {
@@ -341,6 +394,7 @@ Other options:
                     XBT_ERROR("Cannot read the <start_time> '%s' as a double.",
                               cut_workflow_time_str.c_str());
                     error = true;
+                    return_code |= 0x40;
                 }
             }
         }
@@ -462,7 +516,7 @@ Other options:
     main_args.pfs_host_name = args["--pfs-host"].asString();
     main_args.hpst_host_name = args["--hpst-host"].asString();
 
-    return !error;
+    run_simulation = !error;
 }
 
 void configure_batsim_logging_output(const MainArguments & main_args)
@@ -536,7 +590,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     // Let's create the workloads
     for (const MainArguments::WorkloadDescription & desc : main_args.workload_descriptions)
     {
-        Workload * workload = new Workload(desc.name);
+        Workload * workload = new Workload(desc.name, desc.filename);
 
         int nb_machines_in_workload = -1;
         workload->load_from_json(desc.filename, nb_machines_in_workload);
@@ -548,7 +602,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     // Let's create the workflows
     for (const MainArguments::WorkflowDescription & desc : main_args.workflow_descriptions)
     {
-        Workload * workload = new Workload(desc.workload_name); // Is creating the Workload now necessary? Workloads::add_job_if_not_exists may be enough
+        Workload * workload = new Workload(desc.workload_name, desc.filename); // Is creating the Workload now necessary? Workloads::add_job_if_not_exists may be enough
         workload->jobs = new Jobs;
         workload->profiles = new Profiles;
         context->workloads.insert_workload(desc.workload_name, workload);
@@ -642,9 +696,21 @@ int main(int argc, char * argv[])
 {
     // Let's parse command-line arguments
     MainArguments main_args;
-    if (!parse_main_args(argc, argv, main_args))
+    int return_code = 1;
+    bool run_simulation = false;
+    bool run_unittests = false;
+
+    parse_main_args(argc, argv, main_args, return_code, run_simulation, run_unittests);
+
+    if (run_unittests)
     {
-        return 1;
+        MSG_init(&argc, argv);
+        test_entry_point();
+    }
+
+    if (!run_simulation)
+    {
+        return return_code;
     }
 
     // Let's configure how Batsim should be logged
@@ -656,6 +722,9 @@ int main(int argc, char * argv[])
     // Let's create the BatsimContext, which stores information about the current instance
     BatsimContext context;
     set_configuration(&context, main_args);
+
+    context.batsim_version = STR(BATSIM_VERSION);
+    XBT_INFO("Batsim version: %s", context.batsim_version.c_str());
 
     // Let's load the workloads and workflows
     int max_nb_machines_to_use = -1;

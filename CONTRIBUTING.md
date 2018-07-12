@@ -1,21 +1,43 @@
+# Table of contents
+- [Overview](#overview)
+- [How to contribute?](#how-to-contribute)
+- [Hacking Batsim](#hacking-batsim)
+- [How to release a new version?](#how-to-release-a-new-version)
+
 # Overview
 Batsim uses different git repositories.
 The main repositories and their role are listed below:
 
 - [github](https://github.com/oar-team/batsim)
-  - the [issues](https://github.com/oar-team/batsim/issues) stores known bugs
-    and enhancement proposals
-  - [pull requests](https://github.com/oar-team/batsim/pulls) can be done to
-    share your modification with us
-- [gitlab](https://gitlab.inria.fr/batsim/batsim):
-  - the [continuous integration](https://gitlab.inria.fr/batsim/batsim/pipelines)
-    is built on Gitlab CI
-  - the [dev board](https://gitlab.inria.fr/batsim/batsim/boards) (kanban)
-    stores tasks *to do* and taks that are being done.
+  - used as a **public gateway** for **external** contributors:
+    - external [issues](https://github.com/oar-team/batsim/issues)
+      and enhancement proposals
+    - external [pull requests](https://github.com/oar-team/batsim/pulls)
+      can be done to share your modification with us
+- [inria's gitlab](https://gitlab.inria.fr/batsim/batsim):
+  - used as a perennial public gateway (Github may disappear randomly)
+  - main entry point for **internal contributors** (*not* for main developers):
+    - internal [issues](https://gitlab.inria.fr/batsim/batsim/issues)
+      (some of them may be confidential and require login)
+    - internal [merge requests](https://gitlab.inria.fr/batsim/batsim/merge_requests)
+      can be done to share your modifications
+- [GRICAD's gitlab](https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/)
+  - entry point for **main developers**:
+    - [continuous integration](https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/pipelines)
+      is there.
+      This CI setup is built on top of Gitlab CI.
+      There are existing runners on GRICAD's infrastructure.
+      More information on our CI setup can be found
+      [there](https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/blob/master/doc/continuous_integration.md)
+
 
 Furthermore, these repositories are in the Batsim ecosystem:
 - [evalys](https://github.com/oar-team/evalys) includes visualisation tools of
   most Batsim outputs
+- [batexpe](https://gitlab.inria.fr/batsim/batexpe) contains scripts to ease
+  the management of experiments with Batsim.
+  Such scripts are expected to deprecate ``tools/experiments`` scripts located
+  in Batsim's repository.
 - Different schedulers can be plugged to Batsim:
   - the schedulers from [OAR 3](https://github.com/oar-team/oar3), thanks to
     the [bataar](https://github.com/oar-team/oar3/blob/master/oar/kao/bataar.py)
@@ -30,18 +52,21 @@ Furthermore, these repositories are in the Batsim ecosystem:
     [there](https://gitlab.inria.fr/users/adfaure/projects)
 
 # How to contribute?
-If you encounter any bug in Batsim, please open an issue
-[on github](https://github.com/oar-team/batsim/issues).
+If you encounter any bug in Batsim, please open an issue:
+- external user: use [github](https://github.com/oar-team/batsim/issues)
+- internal user: use [inria's gitlab](https://gitlab.inria.fr/batsim/batsim/issues)
+
 It will allow us to know that the bug exists, and will help a lot resolving the
 problem ;).
 
-If you want to request a new feature, you may contact us by email and/or
-open a thread about it on
-[the github issues page](https://github.com/oar-team/batsim/issues).
+If you want to request a new feature, you may also write an issue or
+contact us by email.
 
-If you want to share any improvement on the Batsim code, you can use the
-[github pull request](https://github.com/oar-team/batsim/pulls) mechanism so
-we can include your modifications.
+If you want to share any improvement on the Batsim code,
+please make sure you follow [coding conventions](#coding-conventions)
+then you can use the following mechanisms so we can include your modifications:
+- external user: [github pull request](https://github.com/oar-team/batsim/pulls)
+- internal user: [inria's gitlab merge request](https://gitlab.inria.fr/batsim/batsim/merge_requests)
 
 # Hacking Batsim
 This little section explains a few choices that have been made when implementing
@@ -189,3 +214,14 @@ it should be done as follows:
   ``std::string ip_message_type_to_string(IPMessageType type);`` function.
 - make sure the new message type is destroyed correctly in the ``IPMessage``
   destructor.
+
+# How to release a new version?
+
+1. Determine what version should be released,
+   following [semantic versioning](https://semver.org/) rules.  
+   Major version should be changed whenever an incompatible change occurs on the CLI or the protocol.
+2. Update the [changelog](doc/changelog.md).  
+   Try to mention all modifications since last release: ``git diff``
+3. Bump version in [CMakeLists.txt](./CMakeLists.txt)
+4. Tag new version (with annotations): ``git tag -a vX.Y.Z``  
+   Put the changelog of the new release in the long description.

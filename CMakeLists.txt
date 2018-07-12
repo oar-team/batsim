@@ -83,7 +83,7 @@ include_directories(${ZMQ_INCLUDE_DIRS})
 ##################
 # Batsim version #
 ##################
-set(default_batsim_version "v1.4.0")
+set(default_batsim_version "v2.0.0")
 include(GetGitRevisionDescription)
 git_describe(batsim_version)
 message(STATUS "Batsim version from git: ${batsim_version}")
@@ -108,7 +108,9 @@ file(GLOB batsim_SRC
     "src/pugixml-1.7/*.hpp"
     "src/pugixml-1.7/*.cpp"
     "src/docopt/*.cpp"
-    "src/docopt/*.h")
+    "src/docopt/*.h"
+    "src/unittest/*.hpp"
+    "src/unittest/*.cpp")
 
 # Executables
 add_executable(batsim ${batsim_SRC})
@@ -213,6 +215,12 @@ add_test(energy
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
          ${CMAKE_SOURCE_DIR}/test/test_energy.yaml
          -bod /tmp/batsim_tests/energy
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(energy_query
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_energy_query.yaml
+         -bod /tmp/batsim_tests/energy_query
          -bwd ${CMAKE_SOURCE_DIR})
 
 add_test(walltime
@@ -324,8 +332,26 @@ add_test(pybatsim_tests
          -bod /tmp/pybatsim_tests
          -bwd ${CMAKE_SOURCE_DIR})
 
-add_test(fewer_resources
+add_test(fewer_resources_mapping
          ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
-         ${CMAKE_SOURCE_DIR}/test/test_fewer_resources.yaml
-         -bod /tmp/fewer_resources
+         ${CMAKE_SOURCE_DIR}/test/test_fewer_resources_mapping.yaml
+         -bod /tmp/batsim_tests/fewer_resources_mapping
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(fewer_resources_total
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_fewer_resources_total.yaml
+         -bod /tmp/batsim_tests/fewer_resources_total
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(set_job_metadata
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_set_job_metadata.yaml
+         -bod /tmp/batsim_tests/set_job_metadata
+         -bwd ${CMAKE_SOURCE_DIR})
+
+add_test(send_recv
+         ${CMAKE_SOURCE_DIR}/tools/experiments/execute_instances.py
+         ${CMAKE_SOURCE_DIR}/test/test_send_recv.yaml
+         -bod /tmp/send_recv
          -bwd ${CMAKE_SOURCE_DIR})

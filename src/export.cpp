@@ -138,26 +138,32 @@ WriteBuffer::~WriteBuffer()
 
 void WriteBuffer::append_text(const char * text)
 {
-    const int textLength = strlen(text);
+    const int text_length = strlen(text);
 
-    // If the buffer is big enough
-    if (buffer_pos + textLength < buffer_size)
+    // Is the buffer big enough?
+    if (buffer_pos + text_length < buffer_size)
     {
-        // Let's append the text to the buffer
-        memcpy(buffer + buffer_pos, text, textLength * sizeof(char));
-        buffer_pos += textLength;
+        // Append the text into the buffer
+        memcpy(buffer + buffer_pos, text, text_length * sizeof(char));
+        buffer_pos += text_length;
     }
     else
     {
-        // Let's write the current buffer content in the file
+        // Write the current buffer content in the file
         flush_buffer();
 
-        // Let's write the text in the buffer
-        xbt_assert(textLength < buffer_size,
-                   "Text too large to fit in the buffer (%d required, only got %d)",
-                   textLength, buffer_size);
-        memcpy(buffer, text, textLength * sizeof(char));
-        buffer_pos = textLength;
+        // Does the text fit in the (now empty) buffer?
+        if (text_length < buffer_size)
+        {
+            // Copy the text into the buffer
+            memcpy(buffer, text, text_length * sizeof(char));
+            buffer_pos = text_length;
+        }
+        else
+        {
+            // Directly write the text into the file
+            f.write(text, text_length);
+        }
     }
 }
 
@@ -505,7 +511,7 @@ void PajeTracer::register_new_job(const Job *job)
                           "%d %s%s %s \"%s\" %s\n",
                           DEFINE_ENTITY_VALUE, jobPrefix, job->id.to_string().c_str(),
                           machineState, job->id.to_string().c_str(),
-                          _colors[job->number % (int)_colors.size()].c_str());
+                          _colors[nb_total_jobs++ % (int)_colors.size()].c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -689,14 +695,39 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
     ofstream f(filename, ios_base::trunc);
     xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
 
-    // write headers
-    f << "job_id,hacky_job_id,workload_name,submission_time,requested_number_of_processors,requested_time,success,starting_time,execution_time,finish_time,waiting_time,turnaround_time,stretch,consumed_energy,allocated_processors\n";
+    // List all features (columns)
+    map<string, string> job_map;
+    job_map["job_id"] = "unset";
+    job_map["workload_name"] = "unset";
+    job_map["submission_time"] = "unset";
+    job_map["requested_number_of_processors"] = "unset";
+    job_map["requested_time"] = "unset";
+    job_map["success"] = "unset";
+    job_map["starting_time"] = "unset";
+    job_map["execution_time"] = "unset";
+    job_map["finish_time"] = "unset";
+    job_map["waiting_time"] = "unset";
+    job_map["turnaround_time"] = "unset";
+    job_map["stretch"] = "unset";
+    job_map["consumed_energy"] = "unset";
+    job_map["allocated_processors"] = "unset";
+    job_map["metadata"] = "unset";
+
+    // Write headers (columns) to the output file
+    vector<string> row_content;
+    row_content.reserve(job_map.size());
+
+    for (auto mit : job_map)
+    {
+         row_content.push_back(mit.first);
+    }
+
+    f << boost::algorithm::join(row_content, ",") << "\n";
 
     for (const auto mit : context->workloads.workloads())
     {
         string workload_name = mit.first;
         const Workload * workload = mit.second;
-        int workload_num = distance((context->workloads.workloads()).begin(), (context->workloads.workloads()).find(mit.first));
 
         if(workload->jobs)
         {
@@ -707,32 +738,33 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
 
                 if (job->is_complete())
                 {
-                    char * buf = nullptr;
                     int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
-                    xbt_assert(job->runtime >= 0);
 
-                    int ret = asprintf(&buf, "%d,%d,%s,%lf,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%Lf,", // finished by a ',' because the next part is written after asprintf
-                                       job->number,
-                                       job->number*10 + workload_num, // hacky_job_id
-                                       workload_name.c_str(), // workload_name
-                                       (double)job->submission_time, // submission_time
-                                       job->required_nb_res, // requested_number_of_processors
-                                       (double)job->walltime, // requested_time
-                                       success, // success
-                                       (double)job->starting_time, // starting_time
-                                       (double)job->runtime, // execution_time
-                                       (double)(job->starting_time + job->runtime), // finish_time
-                                       (double)(job->starting_time - job->submission_time), // waiting_time
-                                       (double)(job->starting_time + job->runtime - job->submission_time), // turnaround_time
-                                       (double)((job->starting_time + job->runtime - job->submission_time) / job->runtime), // stretch
-                                       job->consumed_energy // consumed energy
-                                       );
-                    (void) ret; // Avoids a warning if assertions are ignored
-                    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-                    f << buf;
-                    free(buf);
+                    // Update all values
+                    job_map["job_id"] = job->id.job_name;
+                    job_map["workload_name"] = string(workload_name);
+                    job_map["submission_time"] = to_string((double)job->submission_time);
+                    job_map["requested_number_of_processors"] = to_string(job->requested_nb_res);
+                    job_map["requested_time"] = to_string((double)job->walltime);
+                    job_map["success"] = to_string(success);
+                    job_map["starting_time"] = to_string((double)job->starting_time);
+                    job_map["execution_time"] = to_string((double)job->runtime);
+                    job_map["finish_time"] = to_string((double)(job->starting_time + job->runtime));
+                    job_map["waiting_time"] = to_string((double)(job->starting_time - job->submission_time));
+                    job_map["turnaround_time"] = to_string((double)(job->starting_time + job->runtime - job->submission_time));
+                    job_map["stretch"] = to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
+                    job_map["consumed_energy"] = to_string(job->consumed_energy);
+                    job_map["allocated_processors"] = job->allocation.to_string_hyphen(" ");
+                    job_map["metadata"] = '"' + job->metadata + '"';
 
-                    f << job->allocation.to_string_hyphen(" ") << "\n";
+                    // Write values to the output file
+                    row_content.resize(0);
+                    for (auto mit : job_map)
+                    {
+                        row_content.push_back(mit.second);
+                    }
+
+                    f << boost::algorithm::join(row_content, ",") << "\n";
                 }
             }
         }
@@ -862,6 +894,7 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     double mean_turnaround_time = (double)sum_turnaround_time/nb_jobs;
     double mean_slowdown = (double)sum_slowdown/nb_jobs;
 
+    output_map["batsim_version"] = context->batsim_version;
     output_map["nb_jobs"] = to_string(nb_jobs);
     output_map["nb_jobs_finished"] = to_string(nb_jobs_finished);
     output_map["nb_jobs_success"] = to_string(nb_jobs_success);
@@ -935,7 +968,8 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
 
 PStateChangeTracer::PStateChangeTracer()
 {
-
+    xbt_assert(_temporary_buffer == nullptr);
+    _temporary_buffer = (char*) malloc(512 * sizeof(char));
 }
 
 void PStateChangeTracer::setFilename(const string &filename)
@@ -953,26 +987,33 @@ PStateChangeTracer::~PStateChangeTracer()
         delete _wbuf;
         _wbuf = nullptr;
     }
+
+    if (_temporary_buffer != nullptr)
+    {
+        free(_temporary_buffer);
+        _temporary_buffer = nullptr;
+    }
 }
 
 void PStateChangeTracer::add_pstate_change(double time, MachineRange machines, int pstate_after)
 {
     xbt_assert(_wbuf != nullptr);
 
-    const int buf_size = 256;
+    const string machines_as_string = machines.to_string_hyphen(" ", "-");
+    const int minimum_buf_size = 256 + machines_as_string.size();
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Couldn't allocate memory");
 
-    nb_printed = snprintf(buf, buf_size, "%g,%s,%d\n",
-                          time, machines.to_string_hyphen(" ", "-").c_str(), pstate_after);
-    xbt_assert(nb_printed < buf_size - 1,
+    // Increases the buffer size if needed
+    _temporary_buffer = (char*) realloc(_temporary_buffer, minimum_buf_size);
+    xbt_assert(_temporary_buffer != 0, "Couldn't allocate memory!");
+
+    nb_printed = snprintf(_temporary_buffer, minimum_buf_size, "%g,%s,%d\n",
+                          time, machines_as_string.c_str(), pstate_after);
+    xbt_assert(nb_printed < minimum_buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
-    _wbuf->append_text(buf);
-
-    free(buf);
+    _wbuf->append_text(_temporary_buffer);
 }
 
 void PStateChangeTracer::flush()
@@ -991,9 +1032,6 @@ void PStateChangeTracer::close_buffer()
 }
 
 
-EnergyConsumptionTracer::EnergyConsumptionTracer()
-{
-}
 
 EnergyConsumptionTracer::~EnergyConsumptionTracer()
 {
@@ -1018,13 +1056,13 @@ void EnergyConsumptionTracer::set_filename(const string &filename)
     _wbuf->append_text("time,energy,event_type,wattmin,epower\n");
 }
 
-void EnergyConsumptionTracer::add_job_start(double date, int job_id)
+void EnergyConsumptionTracer::add_job_start(double date, JobIdentifier job_id)
 {
     (void) job_id;
     add_entry(date, 's');
 }
 
-void EnergyConsumptionTracer::add_job_end(double date, int job_id)
+void EnergyConsumptionTracer::add_job_end(double date, JobIdentifier job_id)
 {
     (void) job_id;
     _context->energy_last_job_completion = add_entry(date, 'e');
@@ -1098,10 +1136,6 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     return energy;
 }
 
-MachineStateTracer::MachineStateTracer()
-{
-
-}
 
 MachineStateTracer::~MachineStateTracer()
 {

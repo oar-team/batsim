@@ -18,8 +18,8 @@ implicit_instances:
       timeout: 10
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${instance_id}
-      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out -m ${platform[master_host]} -vnetwork-only
-      sched_command: batsched -v ${algo[sched_name]} --variant_options_filepath ${output_directory}/sched_input.json
+      batsim_command: ${BATSIM_BIN:=batsim} -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/out -m ${platform[master_host]} -vnetwork-only
+      sched_command: ${BATSCHED_BIN:=batsched} -v ${algo[sched_name]} --variant_options_filepath ${output_directory}/sched_input.json
       commands_before_execution:
         # Generate sched input
         - |

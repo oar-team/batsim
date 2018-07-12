@@ -9,8 +9,9 @@
 
 from sortedcontainers import SortedSet
 import argparse
-import re
 import json
+import math
+import re
 import sys
 import datetime
 
@@ -22,6 +23,11 @@ parser = argparse.ArgumentParser(
 parser.add_argument('inputSWF', type=argparse.FileType('r'),
                     help='The input SWF file')
 parser.add_argument('outputJSON', type=str, help='The output JSON file')
+parser.add_argument('-jsf', '--job-size-function',
+                    type=str,
+                    default='1*nb_res',
+                    help='The function to apply on the jobs size. '
+                         'The identity is used by default.')
 parser.add_argument('-jwf', '--jobWalltimeFactor',
                     type=float, default=2,
                     help='Jobs walltimes are computed by the formula max(givenWalltime, jobWalltimeFactor*givenRuntime)')
@@ -74,6 +80,9 @@ for line in args.inputSWF:
         walltime = max(args.jobWalltimeFactor * run_time,
                        float(res.group(SwfField.REQUESTED_TIME.value)))
 
+        # nb_res may be changed by calling a user-given function
+        nb_res = eval(args.job_size_function)
+
         if args.givenWalltimeOnly:
             walltime = float(res.group(SwfField.REQUESTED_TIME.value))
 
@@ -105,13 +114,20 @@ dprofs = {}
 for profile in profiles:
     dprofs[str(profile)] = {'type': 'delay', 'delay': profile}
 
-platform_size = max([nb_res for (job_id, nb_res, run_time, submit_time,
-                                 profile, walltime) in jobs])
+
+biggest_job = max([nb_res for (job_id, nb_res, run_time, submit_time,
+                               profile, walltime) in jobs])
+
 if args.platformSize is not None:
     if args.platformSize < 1:
-        print('Invalid input: platform size must be strictly positive')
-        exit(1)
+        raise Exception('Invalid input: platform size must be strictly positive')
+    if args.platformSize < biggest_job:
+        print('Warning: platform size {size} is smaller than '
+              'the biggest job ({big})'.format(size=args.platformSize,
+                                               big=biggest_job))
     platform_size = args.platformSize
+else:
+    platform_size = biggest_job
 
 data = {
     'version': version,

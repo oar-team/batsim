@@ -1,4 +1,4 @@
-base_output_directory: /tmp/batsim_tests/fewer_resources
+base_output_directory: /tmp/batsim_tests/fewer_resources_total
 
 base_variables:
   batsim_dir: ${base_working_directory}
@@ -10,7 +10,7 @@ implicit_instances:
       platform :
         - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
       workload :
-        - {"name":"one_job", "filename":"${batsim_dir}/workload_profiles/one_computation_job.json"}
+        - {"name":"one_job_tot", "filename":"${batsim_dir}/workload_profiles/one_computation_job_tot.json"}
       algo:
         - {"name":"filler", "algo_name":"filler"}
       resource_fraction: [0.25, 0.5, 0.75, 1.0]
@@ -18,8 +18,8 @@ implicit_instances:
       timeout: 10
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${instance_id}
-      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/${instance_id} --mmax-workload --redis-prefix ${instance_id}
-      sched_command: batsched -v ${algo[algo_name]} --variant_options_filepath ${output_directory}/sched_input.json
+      batsim_command: ${BATSIM_BIN:=batsim} -p ${platform[filename]} -w ${workload[filename]} -e ${output_directory}/${instance_id} --mmax-workload --redis-prefix ${instance_id}
+      sched_command: ${BATSCHED_BIN:=batsched} -v ${algo[algo_name]} --variant_options_filepath ${output_directory}/sched_input.json
       commands_before_execution:
         # Generate sched options
         - |
@@ -31,7 +31,8 @@ implicit_instances:
             # Let's generate an input file for the scheduler
             cat > ${output_directory}/sched_input.json << EOF
             {
-              "fraction_of_machines_to_use": ${resource_fraction}
+              "fraction_of_machines_to_use": ${resource_fraction},
+              "custom_mapping": false
             }
             EOF
 
@@ -85,10 +86,9 @@ commands_after_instances:
 
       base_makespan = 10
 
-      assert(len(joined_df) == 4), "Wrong number of instances (expected 4, got {})".format(len(joined_df))
-
       # Only one machine (resource_fraction == 0.25).
       # The machine is used 4 times more than usual.
+      print(joined_df)
       assert(joined_df['resource_fraction'][0] == 0.25), "Wrong resource_fraction (expected {}, got {})".format(0.25, joined_df['resource_fraction'][0])
       assert(joined_df['makespan'][0] == base_makespan * 4), "Wrong makespan (expected {}, got {})".format(base_makespan*4, joined_df['makespan'][0])
 
@@ -100,7 +100,7 @@ commands_after_instances:
       # Only three machines (resource_fraction == 0.75).
       # One machine is used 2 times more than usual. The used is used as usual.
       assert(joined_df['resource_fraction'][2] == 0.75), "Wrong resource_fraction (expected {}, got {})".format(0.75, joined_df['resource_fraction'][2])
-      assert(joined_df['makespan'][2] == base_makespan * 2), "Wrong makespan (expected {}, got {})".format(base_makespan*2, joined_df['makespan'][2])
+      assert(abs(joined_df['makespan'][2] - (float(base_makespan) * 1.33333)) < 0.001), "Wrong makespan (expected {}, got {})".format(float(base_makespan) * 1.33333, joined_df['makespan'][2])
 
       # Three machines (resource_fraction == 1).
       # All machines are used as usual.

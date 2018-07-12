@@ -10,6 +10,7 @@
 
 #include "machine_range.hpp"
 #include "machines.hpp"
+#include "workload.hpp"
 #include "ipp.hpp"
 
 struct BatsimContext;
@@ -73,11 +74,13 @@ public:
     /**
      * @brief Appends a SIMULATION_BEGINS event.
      * @param[in] machines The machines usable to compute jobs
+     * @param[in] workloads The workloads given to batsim
      * @param[in] configuration The simulation configuration
      * @param[in] allow_time_sharing Whether time sharing is enabled
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_simulation_begins(Machines & machines,
+                                          Workloads & workloads,
                                           const rapidjson::Document & configuration,
                                           bool allow_time_sharing,
                                           double date) = 0;
@@ -104,16 +107,16 @@ public:
     /**
      * @brief Appends a JOB_COMPLETED event.
      * @param[in] job_id The identifier of the job that has completed.
-     * @param[in] job_status The job status
      * @param[in] job_state The job state
      * @param[in] kill_reason The kill reason (if any)
+     * @param[in] job_alloc last allocation of the job
      * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_job_completed(const std::string & job_id,
-                                      const std::string & job_status,
                                       const std::string & job_state,
                                       const std::string & kill_reason,
+                                      const std::string & job_alloc,
                                       int return_code,
                                       double date) = 0;
 
@@ -124,7 +127,7 @@ public:
      * @param[in] job_progress Contains the progress of each job that has really been killed.
      */
     virtual void append_job_killed(const std::vector<std::string> & job_ids,
-                                   const std::map<std::string, BatTask *> job_progress,
+                                   const std::map<std::string, BatTask *> & job_progress,
                                    double date) = 0;
 
     /**
@@ -148,12 +151,22 @@ public:
                                                double date) = 0;
 
     /**
-     * @brief Appends a QUERY_REPLY (energy) event.
+     * @brief Appends a QUERY message to ask the scheduler about the waiting time of a potential job.
+     * @param[in] job_id The identifier of the potential job
+     * @param[in] job_json_description The job JSON description of the potential job
+     * @param[in] date The event date. Must be greater than or equal to the previous event.
+     */
+    virtual void append_query_estimate_waiting_time(const std::string & job_id,
+                                                    const std::string & job_json_description,
+                                                    double date) = 0;
+
+    /**
+     * @brief Appends an ANSWER (energy) event.
      * @param[in] consumed_energy The total consumed energy in joules
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_query_reply_energy(double consumed_energy,
-                                           double date) = 0;
+    virtual void append_answer_energy(double consumed_energy,
+                                      double date) = 0;
 
     /**
      * @brief Appends a REQUESTED_CALL message.
@@ -209,11 +222,13 @@ public:
     /**
      * @brief Appends a SIMULATION_BEGINS event.
      * @param[in] machines The machines usable to compute jobs
+     * @param[in] workloads The workloads given to batsim
      * @param[in] configuration The simulation configuration
      * @param[in] allow_time_sharing Whether time sharing is enabled
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_simulation_begins(Machines & machines,
+                                  Workloads & workloads,
                                   const rapidjson::Document & configuration,
                                   bool allow_time_sharing,
                                   double date);
@@ -240,16 +255,16 @@ public:
     /**
      * @brief Appends a JOB_COMPLETED event.
      * @param[in] job_id The identifier of the job that has completed.
-     * @param[in] job_status The job status
      * @param[in] job_state The job state
      * @param[in] kill_reason The kill reason (if any)
+     * @param[in] job_alloc last allocation of the job
      * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_job_completed(const std::string & job_id,
-                              const std::string & job_status,
                               const std::string & job_state,
                               const std::string & kill_reason,
+                              const std::string & job_alloc,
                               int return_code,
                               double date);
 
@@ -260,7 +275,7 @@ public:
      * @param[in] job_progress Contains the progress of each job that has really been killed.
      */
     void append_job_killed(const std::vector<std::string> & job_ids,
-                           const std::map<std::string, BatTask *> job_progress,
+                           const std::map<std::string, BatTask *> & job_progress,
                            double date);
 
     /**
@@ -284,12 +299,22 @@ public:
                                        double date);
 
     /**
-     * @brief Appends a QUERY_REPLY (energy) event.
+     * @brief Appends a QUERY message to ask the scheduler about the waiting time of a potential job.
+     * @param[in] job_id The identifier of the potential job
+     * @param[in] job_json_description The job JSON description of the potential job
+     * @param[in] date The event date. Must be greater than or equal to the previous event.
+     */
+    void append_query_estimate_waiting_time(const std::string & job_id,
+                                            const std::string & job_json_description,
+                                            double date);
+
+    /**
+     * @brief Appends an ANSWER (energy) event.
      * @param[in] consumed_energy The total consumed energy in joules
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_query_reply_energy(double consumed_energy,
-                                   double date);
+    void append_answer_energy(double consumed_energy,
+                              double date);
 
     /**
      * @brief Appends a REQUESTED_CALL message.
@@ -332,7 +357,6 @@ private:
     rapidjson::Document _doc; //!< A rapidjson document
     rapidjson::Document::AllocatorType & _alloc; //!< The allocated of _doc
     rapidjson::Value _events = rapidjson::Value(rapidjson::kArrayType); //!< A rapidjson array in which the events are pushed
-    const std::vector<std::string> accepted_completion_statuses = {"SUCCESS", "FAILED", "TIMEOUT"}; //!< The list of accepted statuses for the JOB_COMPLETED message
 };
 
 
@@ -394,15 +418,23 @@ public:
 
 
     /**
-     * @brief Handles a QUERY_REQUEST event
+     * @brief Handles a QUERY event
      * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
-    void handle_query_request(int event_number, double timestamp, const rapidjson::Value & data_object);
+    void handle_query(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
-     * @brief Handles a QUERY_REQUEST event
+     * @brief Handles an ANSWER event
+     * @param[in] event_number The event number in [0,nb_events[.
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_answer(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
+     * @brief Handles a REJECT_JOB event
      * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
@@ -440,6 +472,14 @@ public:
      * @param[in] data_object The data associated with the event (JSON object)
      */
     void handle_set_resource_state(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
+     * @brief Handles a SET_JOB_METADATA event
+     * @param[in] event_number The event number in [0,nb_events[.
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_set_job_metadata(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
      * @brief Handles a NOTIFY event

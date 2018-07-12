@@ -19,8 +19,8 @@ variables:
 output_directory: /tmp/pyfiller/tiny
 
 # The commands
-batsim_command: batsim -p ${platform["filename"]} -w ${workload["filename"]} -e ${output_directory}/out
-sched_command: batsched -v ${algo}
+batsim_command: ${BATSIM_BIN:=batsim} -p ${platform["filename"]} -w ${workload["filename"]} -e ${output_directory}/out
+sched_command: ${BATSCHED_BIN:=batsched} -v ${algo}
 
 # These commands will be executed before the instance, in this order
 # One-line commands will be executed in a bash environment.

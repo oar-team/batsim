@@ -16,6 +16,7 @@
 #include <simgrid/msg.h>
 
 #include "machines.hpp"
+#include "jobs.hpp"
 
 struct BatsimContext;
 struct Job;
@@ -43,7 +44,8 @@ public:
      * @param[in] filename The file that will be written
      * @param[in] buffer_size The size of the buffer (in bytes).
      */
-    WriteBuffer(const std::string & filename, int buffer_size = 64*1024);
+    explicit WriteBuffer(const std::string & filename,
+                         int buffer_size = 64*1024);
 
     /**
      * @brief WriteBuffers cannot be copied.
@@ -260,6 +262,7 @@ private:
     std::vector<std::string> _colors; //!< Strings associated with colors, used for the jobs
 
     PajeTracerState state = UNINITIALIZED; //!< The state of the PajeTracer
+    int nb_total_jobs = 0;      //!< The total number of jobs added to Paje
 };
 
 
@@ -312,6 +315,7 @@ public:
 
 private:
     WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
+    char * _temporary_buffer = nullptr; //!< The buffer used to generate text
 };
 
 /**
@@ -323,7 +327,7 @@ public:
     /**
      * @brief Constructs a EnergyConsumptionTracer
      */
-    EnergyConsumptionTracer();
+    EnergyConsumptionTracer() = default;
 
     /**
      * @brief EnergyConsumptionTracer cannot be copied.
@@ -354,14 +358,14 @@ public:
      * @param[in] date The date at which the job has been started
      * @param[in] job_id The job unique number
      */
-    void add_job_start(double date, int job_id);
+    void add_job_start(double date, JobIdentifier job_id);
 
     /**
      * @brief Adds a job end in the tracer
      * @param[in] date The date at which the job has ended
      * @param[in] job_id The job unique number
      */
-    void add_job_end(double date, int job_id);
+    void add_job_end(double date, JobIdentifier job_id);
 
     /**
      * @brief Adds a power state change in the tracer
@@ -407,7 +411,7 @@ public:
     /**
      * @brief Constructs a MachineStateTracer
      */
-    MachineStateTracer();
+    MachineStateTracer() = default;
 
     /**
      * @brief MachineStateTracer cannot be copied.

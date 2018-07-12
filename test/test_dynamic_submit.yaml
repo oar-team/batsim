@@ -35,8 +35,8 @@ implicit_instances:
       timeout: 3600
       working_directory: ${base_working_directory}
       output_directory: ${base_output_directory}/results/${instance_id}
-      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} ${energy[option]} -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vdebug -m ${platform[master_node]} -s "tcp://localhost:${socket_port}"
-      sched_command: batsched -v ${algo[sched_name]} --variant_options_filepath ${output_directory}/sched_input.json -s "tcp://*:${socket_port}"
+      batsim_command: ${BATSIM_BIN:=batsim} -p ${platform[filename]} -w ${workload[filename]} ${energy[option]} -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vdebug -m ${platform[master_node]} -s "tcp://localhost:${socket_port}"
+      sched_command: ${BATSCHED_BIN:=batsched} -v ${algo[sched_name]} --variant_options_filepath ${output_directory}/sched_input.json -s "tcp://*:${socket_port}"
       commands_before_execution:
         # Generate Batsim config file
         - |

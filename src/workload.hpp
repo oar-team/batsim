@@ -23,8 +23,16 @@ public:
     /**
      * @brief Builds an empty Workload
      * @param[in] workload_name The workload name
+     * @param[in] workload_file The workload file name
      */
-    explicit Workload(const std::string & workload_name);
+    explicit Workload(const std::string & workload_name,
+                      const std::string & workload_file);
+
+    /**
+     * @brief Builds an empty dynamic Workload
+     * @param[in] workload_name The workload name
+     */
+    explicit Workload(const std::string & workload_name) : Workload(workload_name, DYNAMIC_WORKLOAD) {};
 
     /**
      * @brief Workloads cannot be copied.
@@ -55,10 +63,18 @@ public:
      */
     void check_validity();
 
+    /**
+     * @brief Returns the workload name
+     * @return The workload name
+     */
+    std::string to_string();
+
 public:
     std::string name; //!< The Workload name
+    std::string file = ""; //!< The Workload file if it exists
     Jobs * jobs = nullptr; //!< The Jobs of the Workload
     Profiles * profiles = nullptr; //!< The Profiles associated to the Jobs of the Workload
+    std::string DYNAMIC_WORKLOAD = "DYNAMIC"; //!< The default workload id for dynamic workloads
 };
 
 
@@ -71,7 +87,7 @@ public:
     /**
      * @brief Builds an empty Workloads
      */
-    Workloads();
+    Workloads() = default;
 
     /**
      * @brief Workloads cannot be copied.
@@ -117,22 +133,10 @@ public:
     const Workload * at(const std::string & workload_name) const;
 
     /**
-     * @brief Allows to get a job from the Workloads
-     * @param[in] workload_name The name of the workload the job is in
-     * @param[in] job_number The job number within its workload
-     * @return The job which has been asked
-     * @pre The requested job exists
+     * @brief Returns the number of workloads
+     * @return The number of workloads
      */
-    Job * job_at(const std::string & workload_name, int job_number);
-
-    /**
-     * @brief Allows to get a job from the Workloads (const version)
-     * @param[in] workload_name The name of the workload the job is in
-     * @param[in] job_number The job number within its workload
-     * @return The (const) job which has been asked
-     * @pre The requested job exists
-     */
-    const Job * job_at(const std::string & workload_name, int job_number) const;
+    int nb_workloads() const;
 
     /**
      * @brief Allows to get a job from the Workloads
@@ -151,20 +155,20 @@ public:
     const Job * job_at(const JobIdentifier & job_id) const;
 
     /**
-     * @brief Checks whether a job exist
-     * @param[in] workload_name The name of the workload in which the job should be
-     * @param[in] job_number The job number
-     * @return True if the given job exists, false otherwise
+     * @brief Checks whether a job is registered in the associated workload
+     * @param[in] job_id The JobIdentifier
+     * @return True if the given is registered in the associated workload, false otherwise
      */
-    bool job_exists(const std::string & workload_name,
-                    const int job_number);
+    bool job_is_registered(const JobIdentifier & job_id);
 
     /**
-     * @brief Checks whether a job exist
+     * @brief Checks whether a job profile is registered in the workload it
+     * is attached to
      * @param[in] job_id The JobIdentifier
-     * @return True if the given job exists, false otherwise
+     * @return True if the given is registered in the associated workload, false otherwise
      */
-    bool job_exists(const JobIdentifier & job_id);
+    bool job_profile_is_registered(const JobIdentifier & job_id);
+
 
     /**
      * @brief Inserts a new Workload into a Workloads
@@ -204,6 +208,13 @@ public:
      * @return The internal map (const version)
      */
     const std::map<std::string, Workload*> & workloads() const;
+
+    /**
+     * @brief Returns a string representation of a Workloads
+     * @return A string representation of a Workloads
+     *
+     */
+    std::string to_string();
 
 private:
     std::map<std::string, Workload*> _workloads; //!< Associates Workloads with their names

@@ -7,14 +7,14 @@ all: pdf png
 pdf: ${PDF}
 png: ${PNG}
 
+%.svg: %.dia
+	dia -e $@ -t svg $^
+
 %.pdf: %.svg
 	inkscape -A $@ $^ -b "#ffffff"
 
-%.png: %.svg
+%.png: %.pdf
 	inkscape -e $@ $^ -b "#ffffff"
-
-%.svg: %.dia
-	dia -e $@ -t svg $^
 
 clean:
 	rm -f *.pdf *.png

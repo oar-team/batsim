@@ -1,19 +1,68 @@
 Batsim
 ======
 
-Batsim is a Batch scheduler simulator.  
+Batsim is a Batch scheduler simulator.
 A batch scheduler -- AKA Resources and Jobs Management System (RJMS) --
 is a system that manages resources in large-scale computing centers,
-notably by scheduling and placing jobs, and by setting up energy policies.  
+notably by scheduling and placing jobs, and by setting up energy policies.
 Batsim is open source and distributed under LGPL-3.0 license.
 See [copyright](copyright) for more details.
 
 ![Batsim overview figure]
 
-Batsim simulates a computing center behavior.  
-It is made such that any event-based scheduling algorithm can be plugged to it.  
+Batsim simulates a computing center behavior.
+It is made such that any event-based scheduling algorithm can be plugged to it.
 Thus, it allows to compare decision algorithms coming from production and
 academics worlds.
+
+Getting started
+---------------
+
+First install batsim and batsched using one of the methods defined the
+[install and Run](doc/run_batsim.md) documentation page.
+
+You will also need a platform file that defines the cluster hardware and
+topology, and a workload that defines the set of jobs that will be submitted
+to the scheduler and when they will be submitted. Some examples are
+available in this repository so you can grab individual files or clone the
+whole repo:
+```sh
+git clone https://gitlab.inria.fr/batsim/batsim.git
+cd batsim
+```
+
+Now, you can run batsim for a simple workload:
+```bash
+batsim -p platforms/small_platform.xml -w workload_profiles/test_workload_profile.json
+```
+
+Then in an *other terminal* execute the scheduler:
+```bash
+batsched
+```
+
+**Note**: Others workloads and platforms examples can be found in the
+current repository. More sophisticated (and more up-to-date) platforms can be
+found in the [SimGrid repository](https://github.com/simgrid/simgrid).
+
+External References
+-------------------
+* Chapters 2 and 3 of Millian Poquet's
+  [PhD manuscript](https://mpoquet.github.io/research/phd/manuscript.pdf)
+  explain in detail some of Batsim design choices and how Batsim works
+  internally. The corresponding
+  [defense slides](https://mpoquet.github.io/research/phd/defense_slides.pdf)
+  may also interest you.
+
+* Batsim scientific publication pre-print is available on HAL:
+  https://hal.inria.fr/hal-01333471v1.
+  The corresponding [slides](./publications/Batsim\_JSSPP\_2016.pdf) may
+  also interest you for a better understanding of what Batsim is
+  and for seeking whether it may be interesting for you.
+  These slides have been made for the JSSPP 2016 IPDPS workshop.
+
+* Batsim internal documentation can be found
+  [there](http://batsim.gforge.inria.fr/).
 
 Quick links
 -----------
@@ -30,46 +79,6 @@ Quick links
 - The [protocol documentation](doc/proto_description.md) defines the protocol
   used between Batsim and the scheduling algorithms
 
-Run batsim example
-------------------
-
-**Important note**: It is highly recommended to use Batsim with the provided
-container, as up-to-date packages (like boost) that may not be easily available
-in your distribution yet.
-
-To test simply test batsim you can directly run it though docker.  First run
-batsim in your container for a simple workload:
-```bash
-# launch a batsim container
-docker run -ti --name batsim oarteam/batsim bash
-
-# inside the container
-cd /root/batsim
-redis-server &
-batsim -p platforms/small_platform.xml \
-  -w workload_profiles/test_workload_profile.json
-```
-
-Then in an *other terminal* execute the scheduler:
-```bash
-# Run an other bash in the same container
-docker exec -ti batsim bash
-
-# inside the container
-cd /root/batsim
-python schedulers/pybatsim/launcher.py fillerSched
-```
-External References
--------------------
-* Batsim scientific publication pre-print is available on HAL:
-  https://hal.inria.fr/hal-01333471v1
-
-* For a better understanding of what Batsim is, and why it may be interesting
-  for you, give a look at the following presentation, that has been made for
-  the JSSPP 2016 IPDPS workshop: [./publications/Batsim\_JSSPP\_2016.pdf]
-
-* Batsim internal documentation can be found
-  [there](http://batsim.gforge.inria.fr/).
 
 Build and code status
 ------------
@@ -86,37 +95,12 @@ Build and code status
 [codacy-badge]: https://api.codacy.com/project/badge/Grade/e5990f2e9abc4573b13a0b8c9d9e0f08 "Codacy code style"
 [codacy-link]: https://www.codacy.com/app/mpoquet/batsim/dashboard
 
-Batsim uses Gitlab CI as its continuous integration system.  
+Batsim uses Gitlab CI as its continuous integration system.
 Build status of the different commits can be found
-[there][batsim ci].  
-More information about our CI setup can be found
-[there](./doc/continuous_integration.md).
+[CI pipline page][batsim ci]. More information about our CI setup can be
+found in the [continuous intefgration](./doc/continuous_integration.md)
+documentation.
 
-
-Development environment
--------------------------
-
-If you need to change te code of batsim you can use the docker environment ``oarteam/batsim_ci``
-and use the docker volumes to make your batsim version of the code inside the container.
-```bash
-# launch a batsim container
-docker run -ti -v /home/myuser/mybatrepo:/root/batsim --name batsim_dev oarteam/batsim_ci bash
-
-# inside the container
-cd /root/batsim
-rm -rf build
-mkdir build
-cd build
-cmake ..
-
-# Second step: run make
-make -j $(nproc)
-make install
-make test
-```
-With this setting you can use your own development tools outside the
-container to hack the batsim code and use the container to only to build
-and test your your code.
 
 Visualisation
 -------------
@@ -130,15 +114,20 @@ Batsim output files can be visualised using external tools:
 Tools
 -----
 
-Also, some tools can be found in the [tools](./tools) directory:
-  - scripts to do conversions between SWF and Batsim formats
-  - scripts to setup experiments with Batsim (more details
-    [here](./tools/experiments))
+As Batsim simulation involve multiple processes, they may be tricky to manage.  
+Some tools already exist to achieve this goal:
+- python tools are located [there](./tools/experiments)
+- a more robust and modular approach is conducted
+  [there](https://gitlab.inria.fr/batsim/batexpe) and is expected to deprecate
+  aforementioned python tools.
+
+You can also find other tools in the [tools](./tools) directory,
+for example to conduct convertions between SWF and Batsim workload formats.
 
 Write your own scheduler (or adapt an existing one)
 ---------------------------------------------------
 
-Schedulers must follow a text-based protocol to communicate with Batsim.  
+Schedulers must follow a text-based protocol to communicate with Batsim.
 More details about the protocol can be found in the [protocol description].
 
 You may also base your work on existing Batsim-compatible schedulers:
@@ -151,143 +140,23 @@ You may also base your work on existing Batsim-compatible schedulers:
 Installation
 ------------
 
-**Important note**: It is highly recommended to use the method describe in the 
-[Development environment](#development-environment) section.
+### For users
 
-Batsim uses [Kameleon](http://kameleon.imag.fr/index.html) to build controlled
-environments. These environments allow us to generate Docker containers, which
-are used by [our CI][batsim ci] to test
-whether Batsim can be built correctly and whether some integration tests pass.
+You can install batsim (and batsched) using one of the methods defined the
+[install and Run](doc/run_batsim.md) documentation page.
 
-Thus, the most up-to-date information about how to build Batsim dependencies
-and Batsim itself can be found in our Kameleon recipes:
-  - [batsim_ci.yaml](environments/batsim_ci.yaml), for the dependencies (Debian)
-  - [batsim.yaml](environments/batsim.yaml), for Batsim itself (Debian)
-  - Please note that [the steps directory](environments/steps/) contain
-    subcommands that can be used by the recipes.
+### For developers
 
-However, some information is also written below for the sake of simplicity, but
-please note it might be outdated.
+It is highly recommended to use the method describe in the
+[Development environment](doc/dev_batsim.md) page to get everything setup and
+running: from compilation to tests.
 
-### Dependencies
+Executing complete experiments
+------------------------------
 
-Batsim dependencies are listed below:
--   SimGrid. dev version is recommended (203ec9f99 for example).
-    To use SMPI jobs, use commit 587483ebe of
-    [mpoquet's fork](https://github.com/mpoquet/simgrid/).
-    To use energy, please consider using the Batsim upstream_sg branch and
-    SimGrid commit e96681fb8.
--   RapidJSON (1.02 or greater)
--   Boost 1.62 or greater (system, filesystem, regex, locale)
--   C++11 compiler
--   Redox (and its dependencies: hiredis and libev)
-
-### Building Batsim
-Batsim can be built via CMake. An example script is given below:
-
-``` bash
-# First step: generate a Makefile via CMake
-mkdir build
-cd build
-cmake .. #-DCMAKE_INSTALL_PREFIX=/usr
-
-# Second step: run make
-make -j $(nproc)
-sudo make install
-```
-
-Batsim Use Cases
-----------------
-
-Simulating with Batsim involves at least two processes:
-  - Batsim itself
-  - A *decision* process (or simply a *scheduler*)
-
-This section shows Batsim command-line usage and some examples on how to run
-simple experiments with Batsim.
-
-### Batsim Usage
-Batsim usage can be shown by calling the Batsim program with the ``--help``
-option. It should display something like this:
-```
-batsim --help
-A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.
-
-Usage:
-  batsim -p <platform_file> [-w <workload_file>...]
-                            [-W <workflow_file>...]
-                            [--WS (<cut_workflow_file> <start_time>)...]
-                            [options]
-  batsim --help
-
-Input options:
-  -p --platform <platform_file>     The SimGrid platform to simulate.
-  -w --workload <workload_file>     The workload JSON files to simulate.
-  -W --workflow <workflow_file>     The workflow XML files to simulate.
-  --WS --workflow-start (<cut_workflow_file> <start_time>)... The workflow XML
-                                    files to simulate, with the time at which
-                                    they should be started.
-
-Most common options:
-  -m, --master-host <name>          The name of the host in <platform_file>
-                                    which will be used as the RJMS management
-                                    host (thus NOT used to compute jobs)
-                                    [default: master_host].
-  -E --energy                       Enables the SimGrid energy plugin and
-                                    outputs energy-related files.
-
-Execution context options:
-  -s, --socket <socket_file>        The Unix Domain Socket filename
-                                    [default: /tmp/bat_socket].
-  --redis-hostname <redis_host>     The Redis server hostname
-                                    [default: 127.0.0.1]
-  --redis-port <redis_port>         The Redis server port [default: 6379].
-
-Output options:
-  -e, --export <prefix>             The export filename prefix used to generate
-                                    simulation output [default: out].
-  --enable-sg-process-tracing       Enables SimGrid process tracing
-  --disable-schedule-tracing        Disables the Pajé schedule outputting.
-  --disable-machine-state-tracing   Disables the machine state outputting.
-
-
-Platform size limit options:
-  --mmax <nb>                       Limits the number of machines to <nb>.
-                                    0 means no limit [default: 0].
-  --mmax-workload                   If set, limits the number of machines to
-                                    the 'nb_res' field of the input workloads.
-                                    If several workloads are used, the maximum
-                                    of these fields is kept.
-Verbosity options:
-  -v, --verbosity <verbosity_level> Sets the Batsim verbosity level. Available
-                                    values: quiet, network-only, information,
-                                    debug [default: information].
-  -q, --quiet                       Shortcut for --verbosity quiet
-
-Workflow options:
-  --workflow-jobs-limit <job_limit> Limits the number of possible concurrent
-                                    jobs for workflows. 0 means no limit
-                                    [default: 0].
-  --ignore-beyond-last-workflow     Ignores workload jobs that occur after all
-                                    workflows have completed.
-
-Other options:
-  --allow-time-sharing              Allows time sharing: One resource may
-                                    compute several jobs at the same time.
-  --batexec                         If set, the jobs in the workloads are
-                                    computed one by one, one after the other,
-                                    without scheduler nor Redis.
-  --pfs-host <pfs_host>             The name of the host, in <platform_file>,
-                                    which will be the parallel filesystem target
-                                    as data sink/source [default: pfs_host].
-  -h --help                         Shows this help.
-  --version                         Shows Batsim version.
-
-```
-
-#### Executing complete experiments
 If you want to run more complex scenarios, giving a look at our
-[experiment tools](./tools/experiments) may save you some time!
+[experiment tools](./tools/experiments) may save you some time! (May be
+deprecated in the future by [batexpe](https://gitlab.inria.fr/batsim/batexpe))
 
 [Batsim overview figure]: ./doc/batsim_rjms_overview.png
 [./publications/Batsim\_JSSPP\_2016.pdf]: ./publications/Batsim_JSSPP_2016.pdf

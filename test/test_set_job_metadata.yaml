@@ -1,0 +1,62 @@
+# This script should be called from Batsim's root directory
+
+# If needed, the working directory of this script can be specified within this file
+#base_working_directory: ~/proj/batsim
+
+# If needed, the output directory of this script can be specified within this file
+base_output_directory: /tmp/batsim_tests/set_job_metadata
+
+base_variables:
+  batsim_dir: ${base_working_directory}
+
+implicit_instances:
+  implicit:
+    sweep:
+      platform :
+        - {"name":"cluster", "filename":"${batsim_dir}/platforms/cluster512.xml", "master_host": "master_host0"}
+      workload :
+        - {"name":"tiny", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
+        - {"name":"medium", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example.json"}
+      algo:
+        - {"name":"filler", "algo_name":"filler", "enable_dynamic_submission": "false"}
+        - {"name":"submitter", "algo_name":"submitter", "enable_dynamic_submission": "true"}
+    generic_instance:
+      variables:
+        socket_port: "$((${instance_number} + 28000))"
+      timeout: 10
+      working_directory: ${base_working_directory}
+      output_directory: ${base_output_directory}/results/${algo[name]}_${workload[name]}_${platform[name]}
+      batsim_command: ${BATSIM_BIN:=batsim} -p ${platform[filename]} -m ${platform[master_host]} -w ${workload[filename]} -e ${output_directory}/out --mmax-workload --redis-prefix ${instance_id} --socket-endpoint="tcp://localhost:${socket_port}" --config-file ${output_directory}/batsim.conf -v debug
+      sched_command: ${BATSCHED_BIN:=batsched} -v ${algo[algo_name]} --socket-endpoint="tcp://*:${socket_port}" --variant_options_filepath ${output_directory}/sched_input.json
+      commands_before_execution:
+        # Generate Batsim options
+                # Generate Batsim config file
+        - |
+              #!/usr/bin/env bash
+              source ${output_directory}/variables.bash
+              cat > ${output_directory}/batsim.conf << EOF
+              {
+                "redis": {
+                  "enabled": false
+                },
+                "job_submission": {
+                  "forward_profiles": false,
+                  "from_scheduler":{
+                    "enabled": ${algo[enable_dynamic_submission]},
+                    "acknowledge": false
+                  }
+                }
+              }
+              EOF
+        # Generate sched options
+        - |
+              #!/usr/bin/env bash
+              cat > ${output_directory}/sched_input.json << EOF
+              {
+                "set_job_metadata": true
+              }
+              EOF
+
+commands_before_instances:
+  - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
+  - ${batsim_dir}/test/clean_output_dir.py ${base_output_directory}

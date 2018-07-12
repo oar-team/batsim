@@ -90,6 +90,32 @@ Constraints on the message format are defined here:
 
 ---
 
+## Table of Events
+
+- Bidirectional
+  - [NOP](#nop)
+  - [QUERY](#query)
+  - [ANSWER](#answer)
+- Batsim to Scheduler
+  - [SIMULATION_BEGINS](#simulation_begins)
+  - [SIMULATION_ENDS](#simulation_ends)
+  - [JOB_SUBMITTED](#job_submitted)
+  - [JOB_COMPLETED](#job_completed)
+  - [JOB_KILLED](#job_killed)
+  - [RESOURCE_STATE_CHANGED](#resource_state_changed)
+  - [REQUESTED_CALL](#requested_call)
+- Scheduler to Batsim
+  - [REJECT_JOB](#reject_job)
+  - [EXECUTE_JOB](#execute_job)
+  - [CALL_ME_LATER](#call_me_later)
+  - [KILL_JOB](#kill_job)
+  - [SUBMIT_JOB](#submit_job)
+  - [SUBMIT_PROFILE](#submit_profile)
+  - [SET_RESOURCE_STATE](#set_resource_state)
+  - [SET_JOB_METADATA](#set_job_metadata)
+  - [NOTIFY](#notify)
+  - [CHANGE_JOB_STATE](#change_job_state)
+
 ## Bidirectional events
 
 These events can be sent from Batsim to the scheduler, or in the opposite
@@ -113,6 +139,83 @@ events list is empty: ``"events": []``
 }
 ```
 
+### QUERY
+
+This message allows a peer to ask specific information to its counterpart:
+- Batsim can ask information to the scheduler.
+- The scheduler can ask information to Batsim.
+
+The other peer should answer such QUERY via an [ANSWER](#answer).
+
+For now, Batsim **answers** to the following requests:
+- "consumed_energy": the scheduler queries Batsim about the total consumed
+   energy (from time 0 to now) in Joules.
+  Only works in energy mode.  
+  This query has no argument.
+
+For now, Batsim **queries** the following requests:
+- "estimate_waiting_time": Batsim asks the scheduler what would be the waiting
+  time of a potential job.  
+  Arguments: a job description, similar to those sent in
+  [JOB_SUBMITTED](#job_submitted) messages when redis is disabled.
+
+- **data**: a dictionnary of requests.
+- **example**:
+```json
+{
+  "timestamp": 10.0,
+  "type": "QUERY",
+  "data": {
+    "requests": {"consumed_energy": {}}
+  }
+}
+```
+or
+```json
+{
+  "timestamp": 10.0,
+  "type": "QUERY",
+  "data": {
+    "requests": {
+      "estimate_waiting_time": {
+        "job_id": "workflow_submitter0!potential_job17",
+        "job": {
+          "res": 1,
+          "walltime": 12.0
+        }
+      }
+    }
+  }
+}
+```
+
+### ANSWER
+
+This is a reply to a [QUERY](#query) message.
+
+- **data**: See [QUERY](#query) documentation
+- **example**:
+```json
+{
+  "timestamp": 10.0,
+  "type": "ANSWER",
+  "data": {"consumed_energy": 12500.0}
+}
+```
+or
+```json
+{
+  "timestamp": 10.0,
+  "type": "ANSWER",
+  "data": {
+    "estimate_waiting_time": {
+      "job_id": "workflow_submitter0!potential_job17",
+      "estimated_waiting_time": 56
+    }
+  }
+}
+```
+
 ---
 
 ## Batsim to Scheduler events
@@ -123,6 +226,7 @@ BATSIM ---> DECISION
 ```
 
 ### SIMULATION_BEGINS
+
 Sent at the beginning of the simulation. Once it has been sent,
 and if redis is enabled, meta-information can be read from Redis.
 
@@ -140,28 +244,72 @@ metainformation from Batsim to any scheduler at runtime.
     - **name**: resource name
     - **state**: resource state in {sleeping, idle, computing, switching_on, switching_off}
     - **properties**: the properties specified in the SimGrid platform for the corresponding host
+  - **workloads**: the map of workloads given to batsim. The key is the id
+    that prefix each jobs (before the ``!``) and the value is the absolute path of
+    the workload
 - **example**:
 ```json
 {
-  "timestamp": 0.0,
-  "type": "SIMULATION_BEGINS",
-  "data": {
-    "allow_time_sharing": false,
-    "nb_resources": 1,
-    "config": {},
-    "resources_data": [
-      {
-        "id": 0,
-        "name": "host0",
-        "state": "idle",
-        "properties": {}
+  "now": 0,
+  "events": [
+    {
+      "timestamp": 0,
+      "type": "SIMULATION_BEGINS",
+      "data": {
+        "nb_resources": 4,
+        "allow_time_sharing": false,
+        "config": {
+          "redis": {
+            "enabled": false,
+            "hostname": "127.0.0.1",
+            "port": 6379,
+            "prefix": "default"
+          },
+          "job_submission": {
+            "forward_profiles": false,
+            "from_scheduler": {
+              "enabled": false,
+              "acknowledge": true
+            }
+          }
+        },
+        "resources_data": [
+          {
+            "id": 0,
+            "name": "Bourassa",
+            "state": "idle",
+            "properties": {}
+          },
+          {
+            "id": 1,
+            "name": "Fafard",
+            "state": "idle",
+            "properties": {}
+          },
+          {
+            "id": 2,
+            "name": "Ginette",
+            "state": "idle",
+            "properties": {}
+          },
+          {
+            "id": 3,
+            "name": "Jupiter",
+            "state": "idle",
+            "properties": {}
+          }
+        ],
+        "workloads": {
+          "26dceb": "/home/mmercier/Projects/batsim/workload_profiles/test_workload_profile.json"
+        }
       }
-    ]
-  }
+    }
+  ]
 }
 ```
 
 ### SIMULATION_ENDS
+
 Sent when Batsim thinks that the simulation is over. It means that all the jobs
 (either coming from Batsim workloads/workflows inputs, or dynamically submitted
 ones) have been submitted and executed (or rejected). The scheduler should
@@ -196,6 +344,7 @@ If redis is enabled (``{"redis": {"enabled": true}}``),
 ``job_id`` is the only forwarded field.
 Otherwise (if redis is disabled), a JSON description of the job is forwarded
 in the ``job`` field.
+
 A JSON description of the job profile is sent if and only if
 profiles forwarding is enabled
 (``{"job_submission": {"forward_profiles": true}}``).
@@ -211,7 +360,7 @@ profiles forwarding is enabled
     "job": {
       "profile": "delay_10s",
       "res": 1,
-      "id": "my_new_job",
+      "id": "dyn!my_new_job",
       "walltime": 12.0
     }
   }
@@ -227,7 +376,7 @@ profiles forwarding is enabled
     "job": {
       "profile": "delay_10s",
       "res": 1,
-      "id": "my_new_job",
+      "id": "dyn!my_new_job",
       "walltime": 12.0
     },
     "profile":{
@@ -254,19 +403,22 @@ or not, depending on whether the job completed without reaching timeout).
 
 - **data**:
   - **job_id**: the job unique identifier
-  - **status**: whether SUCCESS or TIMEOUT (**DEPRECATED**)
   - **job_state**: the job state. Possible values: "NOT_SUBMITTED", "SUBMITTED", "RUNNING", "COMPLETED_SUCCESSFULLY", "COMPLETED_FAILED", "COMPLETED_WALLTIME_REACHED", "COMPLETED_KILLED", "REJECTED"
+  - **return_code**: the return code of the job process (equals to 0 by default)
   - **kill_reason**: the kill reason (if any)
+  - **alloc**: the allocation that this job has, same as in [EXECUTE_JOB](#execute_job) message
+    message)
 - **example**:
 ```json
 {
-  "timestamp": 10.000000,
+  "timestamp": 80.087881,
   "type": "JOB_COMPLETED",
   "data": {
-    "job_id": "2cf8ca!10",
-    "status": "TIMEOUT",
-    "job_state": "COMPLETED_KILLED",
-    "kill_reason": "Walltime reached"
+    "job_id": "26dceb!4",
+    "job_state": "COMPLETED_SUCCESSFULLY",
+    "return_code": 0,
+    "kill_reason": "",
+    "alloc": "0-3"
   }
 }
 ```
@@ -274,21 +426,24 @@ or not, depending on whether the job completed without reaching timeout).
 ### JOB_KILLED
 
 Some jobs have been killed.
-It acknowledges that the actions coming from a previous [KILL_JOB](#kill_job)
-message have been done.
+
+
+This message acknowledges that the actions coming from a previous
+[KILL_JOB](#kill_job) message have been done.
 The ``job_ids`` jobs correspond to those requested in the previous
 [KILL_JOB](#kill_job) message)
 
-The ``job_progress`` map is also given for the all the jobs and tasks
-inside the job that have been killed. Key is the ``job_id`` and the value
-contains a progress value that in \]0, 1\[ with 0 for not started and 1 for
-complete task and the profile name is also given for convenience. For
-sequential job the progress map contains the 0-based index of the inner
-task that was running at the time it was killed and the details of this
-progress in the ``current_task`` field. Note that sequential jobs can be
-nested.
+The ``job_progress`` map is also given for all the jobs (and for the tasks
+inside the jobs) that have been killed. Key is the ``job_id`` and the value
+contains a progress value in \]0, 1\[, where 0 means not started and 1 means
+completed.
+The profile name is also given for convenience.
+For sequential jobs, the progress map contains the 0-based index of the inner
+task that was running at the time it was killed, and the details of this
+progress are in the ``current_task`` field.
+Please note that sequential jobs can be nested.
 
-Please remark that this message does not necessarily means that all the jobs
+Please remark that this message does not necessarily mean that all the jobs
 have been killed. It means that all the jobs have completed. Some of the jobs
 might have completed *ordinarily* before the kill.
 In this case, [JOB_COMPLETED](#job_completed) events corresponding to the
@@ -367,33 +522,6 @@ been done.
 }
 ```
 
-### QUERY_REPLY
-
-This is a reply to a [QUERY_REQUEST](#query_request) message. It depends on the
-The message content depends on whether redis is enabled in the
-[Batsim configuration](./configuration.md).
-If ``{"redis": { "enabled": true }}``, the reply will
-go in redis and only the key will be given. Otherwise, the response will be
-put directly in the message.
-
-- **data**: See [QUERY_REQUEST](#query_request) documentation
-- **example**:
-```json
-{
-  "timestamp": 10.0,
-  "type": "QUERY_REPLY",
-  "data": {"redis_keys": "/my/key/path0" }
-}
-```
-or
-```json
-{
-  "timestamp": 10.0,
-  "type": "QUERY_REPLY",
-  "data": {"consumed_energy": "12500" }
-}
-```
-
 ### REQUESTED_CALL
 This message is a response to the [CALL_ME_LATER](#call_me_later) message.
 
@@ -413,26 +541,6 @@ This message is a response to the [CALL_ME_LATER](#call_me_later) message.
 These events are sent by the scheduler to Batsim.
 ```
 BATSIM <--- DECISION
-```
-
-### QUERY_REQUEST
-
-This is a query sent to Batsim to get information about the simulation
-state (or whatever you want to know...). The supported requests are:
-- "consumed_energy" with no argument that asks Batsim about the total
-  consumed energy (from time 0 to now) in Joules. Works only in energy
-  mode.
-
-- **data**: a dictionnary of requests.
-- **example**:
-```json
-{
-  "timestamp": 10.0,
-  "type": "QUERY_REQUEST",
-  "data": {
-    "requests": {"consumed_energy": {}}
-  }
-}
 ```
 
 ### REJECT_JOB
@@ -492,7 +600,12 @@ Asks Batsim to call the scheduler later on, at a given timestamp.
 
 
 ### KILL_JOB
-Kills some jobs (almost instantaneously).
+Kill some jobs (almost instantaneously).
+
+As soon as all the jobs defined in the ``job_ids`` field have completed
+(most probably killed, but they may also have finished *ordinarily* before
+the kill),
+Batsim acknowledges it with one [JOB_KILLED](#job_killed) event.
 
 - **data**: A list of job ids
 - **example**:
@@ -512,6 +625,11 @@ be enabled in the [configuration](./configuration.md)
 The submission is acknowledged by default, but acknowledgements can be disabled
 in the configuration
 (``{"job_submission": {"from_scheduler": {"acknowledge": false}}}``).
+
+**Note:** The workload name SHOULD be present in the job description id field
+with the notation WORKLOAD!JOB_NAME. If it is not present it will be added
+to the job description provided in the acknowledgment message
+[JOB_SUBMITTED](#job_submitted)
 
 - **data**: A job id (job id duplication is forbidden), classical job and
   profile information (optional).
@@ -538,7 +656,7 @@ in the configuration
     "job":{
       "profile": "delay_10s",
       "res": 1,
-      "id": "my_new_job",
+      "id": "dyn!my_new_job",
       "walltime": 12.0
     },
     "profile":{
@@ -580,6 +698,10 @@ be enabled in the [configuration](./configuration.md)
 
 Sets some resources into a state.
 
+As soon as all the resources have been set into the given state,
+Batsim acknowledges it by sending one
+[RESOURCE_STATE_CHANGED](#resource_state_changed) event.
+
 - **data**: an interval set of resource id, and the new state
 - **example**:
 ```json
@@ -590,14 +712,43 @@ Sets some resources into a state.
 }
 ```
 
+### SET_JOB_METADATA
+
+This message is a convenient way to attach metadata to a job during
+simulation runtime that will appear in the final result file.  A column
+named ``metadata`` will be present in the output file ``PREFIX_job.csv``
+with the string provided by the scheduler, or an empty string if not set.
+
+**Note**: If you need to add **static** metadata to a job you can simply
+add one or more fields in the job profile.
+
+**Warning**: This not a way to delegate to batsim the storage of metadata.
+That should be done though Redis, (when you have to share information
+between different process for example), or using the scheduler's internal
+data structures.
+
+- **data**: a job id and its metadata
+- **example**:
+```json
+{
+  "timestamp": 13.0,
+  "type": "SET_JOB_METADATA",
+  "data": {
+    "job_id": "wload!42",
+    "metadata": "scheduler-defined string"
+  }
+}
+```
+
 ### NOTIFY
 The scheduler notifies Batsim of something.
 
-For example, the ``submission_finished`` notifies that job submissions
+For example, the ``submission_finished`` notifies that the job submissions
 from the scheduler are over, which allows Batsim to stop the simulation.
-This message **must** be sent if ``"scheduler_submission": {"enabled": false}``
-is configured. See [Configuration documentation](./configuration.md) for more
-details.
+This message **MUST** be sent if ``"scheduler_submission": {"enabled": true}``
+is configured, in order to finish the simulation. See [Configuration
+documentation](./configuration.md) for more details.
+
 If the scheduler realizes that it commited the mistake of notifying
 ``submission_finished`` prematurely, the ``continue_submission`` notification
 can be sent to make the scheduler able to submit dynamic jobs again.
