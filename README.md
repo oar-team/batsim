@@ -6,7 +6,7 @@ A batch scheduler -- AKA Resources and Jobs Management System (RJMS) --
 is a system that manages resources in large-scale computing centers,
 notably by scheduling and placing jobs, and by setting up energy policies.  
 Batsim is open source and distributed under LGPL-3.0 license.
-See [COPYING](COPYING) for more details.
+See [copyright](copyright) for more details.
 
 ![Batsim overview figure]
 
@@ -17,7 +17,8 @@ academics worlds.
 
 Quick links
 -----------
-- The [contribute](doc/contribute.md) page tells how to contribute to Batsim
+- Please read our [contribution guidelines](CONTRIBUTING.md) if you want to
+  contribute to Batsim
 - The [changelog](doc/changelog.md) summarizes information about the project
   evolution.
 - Tutorials shows how to use Batsim and how it works:
@@ -142,7 +143,7 @@ More details about the protocol can be found in the [protocol description].
 You may also base your work on existing Batsim-compatible schedulers:
 - C++: [batsched][batsched gitlab]
 - D: [datsched][datsched gitlab]
-- Perl: [there][perl sched repo] (deprecated).
+- Perl: [there][perl sched repo] (deprecated)
 - Python: [pybatsim][pybatsim gitlab]
 - Rust: [there][rust sched repo]
 

@@ -330,7 +330,7 @@ Job * Job::from_json(const std::string & json_str,
     return Job::from_json(doc, workload, error_prefix);
 }
 
-string job_state_to_string(JobState state)
+string job_state_to_string(const JobState & state)
 {
     string job_state("UNKNOWN");
 
@@ -348,6 +348,9 @@ string job_state_to_string(JobState state)
     case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
         job_state = "COMPLETED_SUCCESSFULLY";
         break;
+    case JobState::JOB_STATE_COMPLETED_FAILED:
+        job_state = "COMPLETED_FAILED";
+        break;
     case JobState::JOB_STATE_COMPLETED_KILLED:
         job_state = "COMPLETED_KILLED";
         break;
@@ -358,7 +361,7 @@ string job_state_to_string(JobState state)
     return job_state;
 }
 
-JobState job_state_from_string(std::string state)
+JobState job_state_from_string(const std::string & state)
 {
     JobState new_state;
 
@@ -377,6 +380,10 @@ JobState job_state_from_string(std::string state)
     else if (state == "COMPLETED_SUCCESSFULLY")
     {
         new_state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
+    }
+    else if (state == "COMPLETED_FAILED")
+    {
+        new_state = JobState::JOB_STATE_COMPLETED_FAILED;
     }
     else if (state == "COMPLETED_KILLED")
     {

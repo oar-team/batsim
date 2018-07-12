@@ -9,11 +9,32 @@ Batsim's public API includes:
 - The communication protocol with the decision-making component.
 
 [//]: ==========================================================================
-## Unreleased
-
+## [Unreleased]
 
 [//]: ==========================================================================
-## 1.0.0 - 2017-09-09
+## [1.1.0] - 2017-09-09
+### Added
+- New job profiles ``SCHEDULER_SEND`` and ``SCHEDULER_RECV`` that communicate
+  with the scheduler.  
+  New ``send`` and ``recv`` protocol messages that correspond to them.
+- Jobs now have a return code.  
+  Can be specified in the ``ret`` field of the jobs in their JSON description.  
+  Default value is 0 (success).
+- New job state: ``COMPLETED_FAILED``.
+- New data in existing protocol messages:
+  - ``JOB_COMPLETED``:
+    - ``return_code`` indicates whether the job has succeeded
+    - The ``FAILED`` status can now be received.
+### Changed
+- The ``repeat`` value of sequence (composed) profiles is now optional.  
+  Default value is 1 (executed once, no repeat).
+
+[//]: ==========================================================================
+## [1.0.0] - 2017-09-09
+### SimGrid version to use:
+- Commit ``587483ebe`` on ``https://github.com/mpoquet/simgrid.git``.  
+  Please notice that energy consumption of parallel tasks does not work
+  as expected.
 ### Added
 - Stated LGPL-3.0 license.
 - Code cosmetics standards are now checked by Codacy.
@@ -59,3 +80,6 @@ Batsim's public API includes:
 [changelog]: http://keepachangelog.com/en/1.0.0/
 [semver]: http://semver.org/spec/v2.0.0.html
 
+[Unreleased]: https://github.com/oar-team/batsim/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/oar-team/batsim/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/oar-team/batsim/compare/v0.99...v1.0.0

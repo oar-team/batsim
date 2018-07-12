@@ -10,9 +10,7 @@
 ---
 ## Choose one of them the following extends
 
-# Checkpoint only with btrfs
-checkpoint: btrfs.yaml
-extend: default/from_image/debian8.yaml
+extend: default/from_upstream_build/debian-stretch
 
 global:
   backend: qemu
@@ -45,21 +43,15 @@ setup:
   - "@base"
   - enable_root_ssh_login
 
-  #
-  # Simulator and schedulers install
-  #
-  - configure_apt_repo
-
-  - install_common_deps:
-
+  - install_ci_deps:
     - install_build_tools:
-      - exec_in: |
-          apt-get -y install cmake gcc clang g++
-          update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-6 100
+      - exec_in: apt-get update && apt-get -y install cmake gcc clang g++
+    - install_ci_tools:
+      - exec_in: apt-get update && apt-get -y install netcat
 
-  - simgrid:
-
+  - simgrid
   - batsim_dependencies
+  - pybatsim_dependencies
   - result_analysis
 
 export:

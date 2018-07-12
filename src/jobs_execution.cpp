@@ -2,6 +2,7 @@
  * @file jobs_execution.cpp
  * @brief Contains functions related to the execution of the jobs
  */
+#include <regex>
 
 #include "jobs_execution.hpp"
 #include "jobs.hpp"
@@ -46,6 +47,7 @@ int execute_profile(BatsimContext *context,
 {
     Workload * workload = context->workloads.at(allocation->job_id.workload_name);
     Job * job = workload->jobs->at(allocation->job_id.job_number);
+    JobIdentifier job_id(workload->name, job->number);
     Profile * profile = workload->profiles->at(profile_name);
     int nb_res = job->required_nb_res;
 
@@ -259,11 +261,11 @@ int execute_profile(BatsimContext *context,
         msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
         *remaining_time = *remaining_time - (MSG_get_clock() - time_before_execute);
 
-        int ret = 1;
+        int ret = profile->return_code;
         if (err == MSG_OK) {}
         else if (err == MSG_TIMEOUT)
         {
-            ret = 0;
+            ret = -1;
         }
         else
         {
@@ -286,14 +288,103 @@ int execute_profile(BatsimContext *context,
         {
             for (unsigned int j = 0; j < data->sequence.size(); j++)
             {
-                if (execute_profile(context, data->sequence[j], allocation,
-                                    cleanup_data, remaining_time) == 0)
+                int ret_last_profile = execute_profile(context, data->sequence[j], allocation,
+                                    cleanup_data, remaining_time);
+                if (ret_last_profile != 0)
                 {
-                    return 0;
+                    return ret_last_profile;
                 }
             }
         }
-        return 1;
+        return profile->return_code;
+    }
+    else if (profile->type == ProfileType::SCHEDULER_SEND)
+    {
+        SchedulerSendProfileData * data = (SchedulerSendProfileData *) profile->data;
+
+        XBT_INFO("Sending message to the scheduler");
+
+        FromJobMessage * message = new FromJobMessage;
+        message->job_id = job_id;
+        message->message.CopyFrom(data->message, message->message.GetAllocator());
+
+        send_message("server", IPMessageType::FROM_JOB_MSG, (void*)message);
+
+        if (delay_job(data->sleeptime, remaining_time) == -1)
+        {
+            return -1;
+        }
+
+        return profile->return_code;
+    }
+    else if (profile->type == ProfileType::SCHEDULER_RECV)
+    {
+        SchedulerRecvProfileData * data = (SchedulerRecvProfileData *) profile->data;
+
+        string profile_to_execute = "";
+        bool has_messages = false;
+
+        XBT_INFO("Trying to receive message from scheduler");
+        if (job->incoming_message_buffer.empty())
+        {
+            if (data->on_timeout == "")
+            {
+                XBT_INFO("Waiting for message from scheduler");
+                while (true)
+                {
+                    if (delay_job(data->polltime, remaining_time) == -1)
+                    {
+                        return -1;
+                    }
+
+                    if (!job->incoming_message_buffer.empty())
+                    {
+                        XBT_INFO("Finally got message from scheduler");
+                        has_messages = true;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                XBT_INFO("Timeout on waiting for message from scheduler");
+                profile_to_execute = data->on_timeout;
+            }
+        }
+        else
+        {
+            has_messages = true;
+        }
+
+        if (has_messages)
+        {
+            string first_message = job->incoming_message_buffer.front();
+            job->incoming_message_buffer.pop_front();
+
+            regex msg_regex(data->regex);
+            if (regex_match(first_message, msg_regex))
+            {
+                XBT_INFO("Message from scheduler matches");
+                profile_to_execute = data->on_success;
+            }
+            else
+            {
+                XBT_INFO("Message from scheduler does not match");
+                profile_to_execute = data->on_failure;
+            }
+        }
+
+        if (profile_to_execute != "")
+        {
+            XBT_INFO("Execute profile: %s", profile_to_execute.c_str());
+            int ret_last_profile = execute_profile(context, profile_to_execute, allocation,
+                                    cleanup_data, remaining_time);
+            if (ret_last_profile != 0)
+            {
+                return ret_last_profile;
+            }
+        }
+        return profile->return_code;
     }
     else if (profile->type == ProfileType::DELAY)
     {
@@ -305,7 +396,7 @@ int execute_profile(BatsimContext *context,
             MSG_process_sleep(data->delay);
             XBT_INFO("Sleeping done");
             *remaining_time = *remaining_time - data->delay;
-            return 1;
+            return profile->return_code;
         }
         else
         {
@@ -313,7 +404,7 @@ int execute_profile(BatsimContext *context,
             MSG_process_sleep(*remaining_time);
             XBT_INFO("Walltime reached");
             *remaining_time = 0;
-            return 0;
+            return -1;
         }
     }
     else if (profile->type == ProfileType::SMPI)
@@ -385,13 +476,31 @@ int execute_profile(BatsimContext *context,
         }
         MSG_sem_acquire(sem);
         free(sem);
-        return 1;
+        return profile->return_code;
     }
     else
         xbt_die("Cannot execute job %s: the profile type '%s' is unknown",
                 job->id.c_str(), job->profile.c_str());
 
-    return 0;
+    return 1;
+}
+
+int delay_job(double sleeptime,
+              double * remaining_time)
+{
+        if (sleeptime < *remaining_time)
+        {
+            MSG_process_sleep(sleeptime);
+            *remaining_time = *remaining_time - sleeptime;
+            return 0;
+        }
+        else
+        {
+            XBT_INFO("Job has reached walltime");
+            MSG_process_sleep(*remaining_time);
+            *remaining_time = 0;
+            return -1;
+        }
 }
 
 int execute_job_process(int argc, char *argv[])
@@ -423,10 +532,16 @@ int execute_job_process(int argc, char *argv[])
     CleanExecuteProfileData * cleanup_data = new CleanExecuteProfileData;
     cleanup_data->exec_process_args = args;
     SIMIX_process_on_exit(MSG_process_self(), execute_profile_cleanup, cleanup_data);
-    if (execute_profile(args->context, job->profile, args->allocation, cleanup_data, &remaining_time) == 1)
+    job->return_code = execute_profile(args->context, job->profile, args->allocation, cleanup_data, &remaining_time);
+    if (job->return_code == 0)
     {
-        XBT_INFO("Job %s finished in time", job->id.c_str());
+        XBT_INFO("Job %s finished in time (success)", job->id.c_str());
         job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
+    }
+    else if (job->return_code > 0)
+    {
+        XBT_INFO("Job %s finished in time (failed)", job->id.c_str());
+        job->state = JobState::JOB_STATE_COMPLETED_FAILED;
     }
     else
     {
@@ -556,7 +671,8 @@ int killer_process(int argc, char *argv[])
 
         xbt_assert(job->state == JobState::JOB_STATE_RUNNING ||
                    job->state == JobState::JOB_STATE_COMPLETED_KILLED ||
-                   job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY,
+                   job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY ||
+                   job->state == JobState::JOB_STATE_COMPLETED_FAILED,
                    "Bad kill: job %s is not running", job->id.c_str());
 
         if (job->state == JobState::JOB_STATE_RUNNING)

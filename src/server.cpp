@@ -55,6 +55,8 @@ int server_process(int argc, char *argv[])
     handler_map[IPMessageType::PSTATE_MODIFICATION] = server_on_pstate_modification;
     handler_map[IPMessageType::SCHED_EXECUTE_JOB] = server_on_execute_job;
     handler_map[IPMessageType::SCHED_CHANGE_JOB_STATE] = server_on_change_job_state;
+    handler_map[IPMessageType::TO_JOB_MSG] = server_on_to_job_msg;
+    handler_map[IPMessageType::FROM_JOB_MSG] = server_on_from_job_msg;
     handler_map[IPMessageType::SCHED_REJECT_JOB] = server_on_reject_job;
     handler_map[IPMessageType::SCHED_KILL_JOB] = server_on_kill_jobs;
     handler_map[IPMessageType::SCHED_CALL_ME_LATER] = server_on_call_me_later;
@@ -209,6 +211,10 @@ void server_on_job_completed(ServerData * data,
     {
         status = "SUCCESS";
     }
+    else if (job->state == JobState::JOB_STATE_COMPLETED_FAILED)
+    {
+        status = "FAILED";
+    }
     else if (job->state == JobState::JOB_STATE_COMPLETED_KILLED && job->kill_reason == "Walltime reached")
     {
         status = "TIMEOUT";
@@ -218,6 +224,7 @@ void server_on_job_completed(ServerData * data,
                                                       status,
                                                       job_state_to_string(job->state),
                                                       job->kill_reason,
+                                                      job->return_code,
                                                       MSG_get_clock());
 
     check_submitted_and_completed(data);
@@ -644,13 +651,16 @@ void server_on_change_job_state(ServerData * data,
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
             break;
         default:
-            xbt_assert(false, "Can only change the state of a submitted job to running or rejected");
+            xbt_assert(false,
+                       "Can only change the state of a submitted job to running or rejected. "
+                       "State was %s", job_state_to_string(job->state).c_str());
         }
         break;
     case JobState::JOB_STATE_RUNNING:
         switch (new_state)
         {
         case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
+        case JobState::JOB_STATE_COMPLETED_FAILED:
         case JobState::JOB_STATE_COMPLETED_KILLED:
             job->runtime = MSG_get_clock() - job->starting_time;
             data->nb_running_jobs--;
@@ -659,11 +669,16 @@ void server_on_change_job_state(ServerData * data,
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
             break;
         default:
-            xbt_assert(false, "Can only change the state of a running job to completed (successfully and killed)");
+            xbt_assert(false,
+                       "Can only change the state of a running job to completed "
+                       "(successfully, failed, and killed). State was %s",
+                       job_state_to_string(job->state).c_str());
         }
         break;
     default:
-        xbt_assert(false, "Can only change the state of a submitted or running job.");
+        xbt_assert(false,
+                   "Can only change the state of a submitted or running job. State was %s",
+                   job_state_to_string(job->state).c_str());
     }
 
     job->state = new_state;
@@ -671,6 +686,41 @@ void server_on_change_job_state(ServerData * data,
 
     XBT_INFO("Job state changed: Job %d (workload=%s)",
              job->number, job->workload->name.c_str());
+
+    check_submitted_and_completed(data);
+}
+
+void server_on_to_job_msg(ServerData * data,
+                          IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr);
+    ToJobMessage * message = (ToJobMessage *) task_data->data;
+
+    Job * job = data->context->workloads.job_at(message->job_id);
+
+    XBT_INFO("Send message to job: Job %d (workload=%s) message=%s",
+             job->number, job->workload->name.c_str(),
+             message->message.c_str());
+
+    job->incoming_message_buffer.push_back(message->message);
+
+    check_submitted_and_completed(data);
+}
+
+void server_on_from_job_msg(ServerData * data,
+                          IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr);
+    FromJobMessage * message = (FromJobMessage *) task_data->data;
+
+    Job * job = data->context->workloads.job_at(message->job_id);
+
+    XBT_INFO("Send message to scheduler: Job %d (workload=%s)",
+             job->number, job->workload->name.c_str());
+
+    data->context->proto_writer->append_from_job_message(message->job_id.to_string(),
+                                                         message->message,
+                                                         MSG_get_clock());
 
     check_submitted_and_completed(data);
 }

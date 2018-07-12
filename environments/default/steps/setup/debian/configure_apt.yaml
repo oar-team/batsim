@@ -1,6 +1,8 @@
 # Software Install
 - enable_contrib: true
 - enable_nonfree: true
+- enable_backports: true
+- enable_lighten: false
 
 - configure_source_list:
   - write_in:
@@ -8,12 +10,16 @@
     - |
       deb $${apt_repository} $${release} main
       deb-src $${apt_repository} $${release} main
-
-      deb $${apt_repository} $${release}-backports main
-      deb-src $${apt_repository} $${release}-backports main
-
+            
       deb http://security.debian.org/ $${release}/updates main
       deb-src http://security.debian.org/ $${release}/updates main
+
+- add_backports:
+  - exec_in: |
+      if [ $${enable_backports} = true ]; then
+        echo "deb $${apt_repository} $${release}-backports main" >> /etc/apt/sources.list
+        echo "deb-src $${apt_repository} $${release}-backports main" >> /etc/apt/sources.list
+      fi
 
 - add_contribs_and_nonfree_sources:
   - exec_in: |
@@ -29,9 +35,14 @@
 - update_repositories:
   # Deactivate the check to make the cache system works after a while...
   - exec_in: apt-get -o Acquire::Check-Valid-Until=false -y --force-yes update
-  - on_setup_clean:
-    - exec_in: apt-get -y --force-yes autoremove || true
-    - exec_in: apt-get -y --force-yes autoclean || true
-    - exec_in: apt-get -y --force-yes clean || true
-    - exec_in: apt-get -y --force-yes purge || true
-    - exec_in: rm -rf /var/lib/apt/lists/* || true
+
+- lighten_packages:
+  - exec_in: |
+      if [ $${enable_lighten} = true ]; then
+        mkdir -p /etc/dpkg/dpkg.conf.d
+        echo 'path-exclude=/usr/share/locale/*' >> /etc/dpkg/dpkg.conf.d/01_lighten
+        echo 'path-exclude=/usr/share/man/*' >> /etc/dpkg/dpkg.conf.d/01_lighten
+        echo 'path-exclude=/usr/share/doc/*' >> /etc/dpkg/dpkg.conf.d/01_lighten
+        mkdir -p /etc/apt/apt.conf.d
+        echo 'APT::Install-Recommends "0" ; APT::Install-Suggests "0" ; ' > /etc/apt/apt.conf.d/01_lighten
+      fi
