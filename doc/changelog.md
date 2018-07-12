@@ -12,6 +12,16 @@ Batsim's public API includes:
 ## [Unreleased]
 
 [//]: ==========================================================================
+## [1.4.0] - 2017-10-07
+### Added
+- New ``SUBMIT_PROFILE`` protocol message that allows the decision process
+  to submit profiles dynamically.
+- New ``msg_par_hg_tot`` profile type.  
+  This is an homogeneous parallel task whose computation and communications
+  amounts are spread over all allocated nodes.  
+  They can be seen as optimistic moldable tasks.
+
+[//]: ==========================================================================
 ## [1.3.0] - 2017-09-30
 ### Added
 - Jobs walltimes are no longer mandatory.  
@@ -98,7 +108,8 @@ Batsim's public API includes:
 [changelog]: http://keepachangelog.com/en/1.0.0/
 [semver]: http://semver.org/spec/v2.0.0.html
 
-[Unreleased]: https://github.com/oar-team/batsim/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/oar-team/batsim/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/oar-team/batsim/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/oar-team/batsim/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/oar-team/batsim/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/oar-team/batsim/compare/v1.0.0...v1.1.0

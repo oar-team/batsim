@@ -51,6 +51,7 @@ int server_process(int argc, char *argv[])
     std::map<IPMessageType, std::function<void(ServerData *, IPMessage *)>> handler_map;
     handler_map[IPMessageType::JOB_SUBMITTED] = server_on_job_submitted;
     handler_map[IPMessageType::JOB_SUBMITTED_BY_DP] = server_on_submit_job;
+    handler_map[IPMessageType::PROFILE_SUBMITTED_BY_DP] = server_on_submit_profile;
     handler_map[IPMessageType::JOB_COMPLETED] = server_on_job_completed;
     handler_map[IPMessageType::PSTATE_MODIFICATION] = server_on_pstate_modification;
     handler_map[IPMessageType::SCHED_EXECUTE_JOB] = server_on_execute_job;
@@ -74,7 +75,7 @@ int server_process(int argc, char *argv[])
     handler_map[IPMessageType::CONTINUE_DYNAMIC_SUBMIT] = server_on_continue_dynamic_submit;
 
     // Simulation loop
-    while ((data->nb_submitters == 0) ||// To enter the loop
+    while ((data->nb_submitters == 0 && !context->submission_sched_enabled) || // If dynamic submissions are not enabled: wait for the first submitter
            (data->nb_submitters_finished < data->nb_submitters) || // All submitters must have finished
            (data->nb_completed_jobs < data->nb_submitted_jobs) || // All jobs must have finished
            (!data->sched_ready) || // A scheduler answer is being injected into the simulation
@@ -624,6 +625,41 @@ void server_on_submit_job(ServerData * data,
         data->context->proto_writer->append_job_submitted(job->id.to_string(), job_json_description,
                                                           profile_json_description,
                                                           MSG_get_clock());
+    }
+}
+
+void server_on_submit_profile(ServerData * data,
+                          IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr);
+    ProfileSubmittedByDPMessage * message = (ProfileSubmittedByDPMessage *) task_data->data;
+
+    xbt_assert(data->context->submission_sched_enabled,
+               "Profile submission coming from the decision process received but the option "
+               "seems disabled... It can be activated by specifying a configuration file "
+               "to Batsim.");
+
+    // Let's create the workload if it doesn't exist, or retrieve it otherwise
+    Workload * workload = nullptr;
+    if (data->context->workloads.exists(message->workload_name))
+    {
+        workload = data->context->workloads.at(message->workload_name);
+    }
+    else
+    {
+        workload = new Workload(message->workload_name);
+        data->context->workloads.insert_workload(workload->name, workload);
+    }
+
+    if (!workload->profiles->exists(message->profile_name))
+    {
+        XBT_INFO("Adding user-submitted profile %s to workload %s",
+                message->profile_name.c_str(),
+                message->workload_name.c_str());
+        Profile * profile = Profile::from_json(message->profile_name,
+                                               message->profile,
+                                               "Invalid JSON profile received from the scheduler");
+        workload->profiles->add_profile(message->profile_name, profile);
     }
 }
 

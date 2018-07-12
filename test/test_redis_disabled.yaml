@@ -26,7 +26,7 @@ implicit_instances:
       commands_before_execution:
         # Generate Batsim config file
         - |
-              #!/bin/bash
+              #!/usr/bin/env bash
               cat > ${output_directory}/batsim.conf << EOF
               {
                 "redis": {
@@ -57,7 +57,7 @@ implicit_instances:
       commands_before_execution:
         # Generate Batsim config file
         - |
-              #!/bin/bash
+              #!/usr/bin/env bash
               cat > ${output_directory}/batsim.conf << EOF
               {
                 "redis": {
