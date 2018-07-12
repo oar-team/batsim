@@ -10,6 +10,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
 #include "context.hpp"
 #include "ipp.hpp"
@@ -886,17 +887,11 @@ void server_on_execute_job(ServerData * data,
                    allocation->machine_ids.to_string_hyphen().c_str());
     }
 
-
-    ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
-    exec_args->context = data->context;
-    exec_args->allocation = allocation;
-    exec_args->notify_server_at_end = true;
-    exec_args->io_profile = message->io_profile;
     string pname = "job_" + job->id.to_string();
-    msg_process_t process = MSG_process_create(pname.c_str(), execute_job_process,
-                                               (void*)exec_args,
-                                               data->context->machines[allocation->machine_ids.first_element()]->host);
-    job->execution_processes.insert(process);
+    simgrid::s4u::Actor::create(pname.c_str(),
+                                data->context->machines[allocation->machine_ids.first_element()]->host,
+                                execute_job_process, data->context, allocation, true, message->io_profile);
+    // job->execution_processes.insert(process); TODO S4U
 }
 
 bool is_simumation_finished(const ServerData * data)

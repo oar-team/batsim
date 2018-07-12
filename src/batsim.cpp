@@ -31,6 +31,7 @@
 #include <string>
 #include <fstream>
 
+#include <simgrid/s4u.hpp>
 #include <simgrid/msg.h>
 #include <smpi/smpi.h>
 #include <simgrid/plugins/energy.h>
@@ -595,29 +596,6 @@ void configure_batsim_logging_output(const MainArguments & main_args)
     xbt_log_control_set("surf_energy.thresh:critical");
 }
 
-void initialize_msg(const MainArguments & main_args, int argc, char * argv[])
-{
-    // Must be initialized before MSG_init
-    if (main_args.energy_used)
-    {
-        sg_host_energy_plugin_init();
-    }
-
-    MSG_init(&argc, argv);
-
-    // Setting SimGrid configuration if the SimGrid process tracing is enabled
-    if (main_args.enable_simgrid_process_tracing)
-    {
-        string sg_trace_filename = main_args.export_prefix + "_sg_processes.trace";
-
-        MSG_config("tracing", "yes");
-        MSG_config("tracing/msg/process", "yes");
-        MSG_config("tracing/uncategorized", "yes");
-        MSG_config("tracing/filename", sg_trace_filename.c_str());
-        MSG_config("smpi/privatization", "yes"); // TODO: why here?
-    }
-}
-
 void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext * context, int & max_nb_machines_to_use)
 {
     int max_nb_machines_in_workloads = -1;
@@ -678,21 +656,24 @@ void start_initial_simulation_processes(const MainArguments & main_args,
     // Let's run a static_job_submitter process for each workload
     for (const MainArguments::WorkloadDescription & desc : main_args.workload_descriptions)
     {
-        XBT_DEBUG("Creating a workload_submitter process...");
-        JobSubmitterProcessArguments * submitter_args = new JobSubmitterProcessArguments;
-        submitter_args->context = context;
-        submitter_args->workload_name = desc.name;
-
         string submitter_instance_name = "workload_submitter_" + desc.name;
+
+        XBT_DEBUG("Creating a workload_submitter process...");
         if (!is_batexec)
         {
+            JobSubmitterProcessArguments * submitter_args = new JobSubmitterProcessArguments;
+            submitter_args->context = context;
+            submitter_args->workload_name = desc.name;
+
             MSG_process_create(submitter_instance_name.c_str(), static_job_submitter_process,
                                (void*) submitter_args, master_machine->host);
         }
         else
         {
-            MSG_process_create(submitter_instance_name.c_str(), batexec_job_launcher_process,
-                               (void*) submitter_args, master_machine->host);
+            simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+                                        master_machine->host,
+                                        batexec_job_launcher_process,
+                                        context, desc.name);
         }
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
@@ -751,8 +732,27 @@ int main(int argc, char * argv[])
     // Let's configure how Batsim should be logged
     configure_batsim_logging_output(main_args);
 
-    // Let's initialize SimGrid
-    initialize_msg(main_args, argc, argv);
+    // Initialize the energy plugin before creating the engine
+    if (main_args.energy_used)
+    {
+        sg_host_energy_plugin_init();
+    }
+
+    // Instantiate SimGrid
+    MSG_init(&argc, argv); // Required for SMPI as I write these lines
+    simgrid::s4u::Engine engine(&argc, argv);
+
+    // Setting SimGrid configuration if the SimGrid process tracing is enabled
+    if (main_args.enable_simgrid_process_tracing)
+    {
+        string sg_trace_filename = main_args.export_prefix + "_sg_processes.trace";
+
+        engine.set_config("tracing:1");
+        engine.set_config("tracing/msg/process:1");
+        engine.set_config("tracing/uncategorized:1");
+        engine.set_config("tracing/filename:" + sg_trace_filename);
+        engine.set_config("smpi/privatization:1"); // TODO: why here?
+    }
 
     // Let's create the BatsimContext, which stores information about the current instance
     BatsimContext context;
@@ -771,7 +771,7 @@ int main(int argc, char * argv[])
     if (!context.smpi_used)
     {
         XBT_INFO("SMPI will NOT be used.");
-        MSG_config("host/model", "ptask_L07");
+        engine.set_config("host/model:ptask_L07");
     }
     else
     {
@@ -817,7 +817,7 @@ int main(int argc, char * argv[])
     }
 
     // Simulation main loop, handled by MSG
-    msg_error_t res = MSG_main();
+    engine.run();
 
     delete context.zmq_socket;
     context.zmq_socket = nullptr;
@@ -837,14 +837,7 @@ int main(int argc, char * argv[])
     // Let's finalize Batsim's outputs
     finalize_batsim_outputs(&context);
 
-    if (res == MSG_OK)
-    {
-        return 0;
-    }
-    else
-    {
-        return 1;
-    }
+    return 0;
 }
 
 void set_configuration(BatsimContext *context,

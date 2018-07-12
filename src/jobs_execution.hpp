@@ -69,11 +69,12 @@ int execute_task_cleanup(void * unknown, void * data);
 
 /**
  * @brief The process in charge of executing a job
- * @param[in] argc The number of arguments
- * @param[in] argv The arguments values
- * @return 0
+ * @param context The BatsimContext
+ * @param allocation The job allocation
+ * @param notify_server_at_end Whether a message to the server must be sent after job completion
+ * @param io_profile The optional IO profile
  */
-int execute_job_process(int argc, char *argv[]);
+void execute_job_process(BatsimContext *context, SchedulingAllocation *allocation, bool notify_server_at_end, Profile *io_profile);
 
 /**
  * @brief The process in charge of waiting for a given amount of time (related to the NOPMeLater message)

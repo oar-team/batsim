@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <boost/bind.hpp>
 
+#include <simgrid/s4u.hpp>
+
 #include "jobs.hpp"
 #include "jobs_execution.hpp"
 #include "ipp.hpp"
@@ -378,14 +380,10 @@ static std::tuple<int,double,double> wait_for_query_answer(string submitter_name
 }
 
 
-int batexec_job_launcher_process(int argc, char *argv[])
+void batexec_job_launcher_process(BatsimContext * context,
+                                  std::string workload_name)
 {
-    (void) argc;
-    (void) argv;
-
-    JobSubmitterProcessArguments * args = (JobSubmitterProcessArguments *) MSG_process_get_data(MSG_process_self());
-    BatsimContext * context = args->context;
-    Workload * workload = context->workloads.at(args->workload_name);
+    Workload * workload = context->workloads.at(workload_name);
 
     auto & jobs = workload->jobs->jobs();
     for (auto & mit : jobs)
@@ -412,11 +410,9 @@ int batexec_job_launcher_process(int argc, char *argv[])
         exec_args->allocation = alloc;
         exec_args->notify_server_at_end = false;
         string pname = "job" + job->id.to_string();
-        msg_process_t process = MSG_process_create(pname.c_str(), execute_job_process,
-                                                   (void*) exec_args,
-                                                   context->machines[alloc->machine_ids.first_element()]->host);
-        job->execution_processes.insert(process);
+        simgrid::s4u::Actor::create(pname.c_str(),
+                                    context->machines[alloc->machine_ids.first_element()]->host,
+                                    execute_job_process, context, alloc, false, nullptr);
+        //job->execution_processes.insert(process); TODO S4U
     }
-
-    return 0;
 }

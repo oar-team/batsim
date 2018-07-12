@@ -274,7 +274,7 @@ int execute_task(BatTask * btask,
 
         }
         MSG_sem_acquire(sem);
-        free(sem);
+        MSG_sem_destroy(sem);
         return profile->return_code;
     }
     else
@@ -400,22 +400,17 @@ BatTask * initialize_sequential_tasks(Job * job, Profile * profile, Profile * io
     return task;
 }
 
-int execute_job_process(int argc, char *argv[])
+void execute_job_process(BatsimContext * context,
+                         SchedulingAllocation * allocation,
+                         bool notify_server_at_end,
+                         Profile * io_profile)
 {
-    (void) argc;
-    (void) argv;
-
-    // Retrieving input parameters
-    ExecuteJobProcessArguments * args = (ExecuteJobProcessArguments *) MSG_process_get_data(MSG_process_self());
-
-    Workload * workload = args->context->workloads.at(args->allocation->job_id.workload_name);
-    Job * job = workload->jobs->at(args->allocation->job_id);
+    Workload * workload = context->workloads.at(allocation->job_id.workload_name);
+    Job * job = workload->jobs->at(allocation->job_id);
     Profile * profile = workload->profiles->at(job->profile);
-    Profile * io_profile = args->io_profile;
-    SchedulingAllocation * allocation = args->allocation;
 
     job->starting_time = MSG_get_clock();
-    job->allocation = args->allocation->machine_ids;
+    job->allocation = allocation->machine_ids;
     double remaining_time = (double)job->walltime;
 
     // Create the root task
@@ -442,7 +437,7 @@ int execute_job_process(int argc, char *argv[])
         int machine_id_within_allocated_resources = allocation->mapping[executor_id];
         int machine_id = allocation->machine_ids[machine_id_within_allocated_resources];
 
-        msg_host_t to_add = args->context->machines[machine_id]->host;
+        msg_host_t to_add = context->machines[machine_id]->host;
         allocation->hosts.push_back(to_add);
     }
 
@@ -450,28 +445,27 @@ int execute_job_process(int argc, char *argv[])
     allocation->io_hosts.reserve(allocation->io_allocation.size());
     for (unsigned int id = 0; id < allocation->io_allocation.size(); ++id)
     {
-        allocation->io_hosts.push_back(args->context->machines[id]->host);
+        allocation->io_hosts.push_back(context->machines[id]->host);
     }
 
     // If energy is enabled, let us compute the energy used by the machines before running the job
-    if (args->context->energy_used)
+    if (context->energy_used)
     {
-        job->consumed_energy = consumed_energy_on_machines(args->context, job->allocation);
+        job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
         // Let's trace the consumed energy
-        args->context->energy_tracer.add_job_start(MSG_get_clock(), job->id);
+        context->energy_tracer.add_job_start(MSG_get_clock(), job->id);
     }
 
     // Job computation
-    args->context->machines.update_machines_on_job_run(job,
-                                                       args->allocation->machine_ids,
-                                                       args->context);
+    context->machines.update_machines_on_job_run(job, allocation->machine_ids,
+                                                 context);
     // Add a cleanup hook on the process
     CleanExecuteTaskData * cleanup_data = new CleanExecuteTaskData;
-    cleanup_data->exec_process_args = args;
-    MSG_process_on_exit(execute_task_cleanup, cleanup_data);
+    //cleanup_data->exec_process_args = args; TODO S4U
+    //MSG_process_on_exit(execute_task_cleanup, cleanup_data); TODO S4U
 
     // Execute the process
-    job->return_code = execute_task(job->task, args->context, args->allocation,
+    job->return_code = execute_task(job->task, context, allocation,
                                     cleanup_data, &remaining_time);
     if (job->return_code == 0)
     {
@@ -489,15 +483,14 @@ int execute_job_process(int argc, char *argv[])
         XBT_INFO("Job %s had been killed (walltime %g reached)",
                  job->id.to_string().c_str(), (double) job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
-        if (args->context->trace_schedule)
+        if (context->trace_schedule)
         {
-            args->context->paje_tracer.add_job_kill(job, args->allocation->machine_ids,
-                                                    MSG_get_clock(), true);
+            context->paje_tracer.add_job_kill(job, allocation->machine_ids,
+                                              MSG_get_clock(), true);
         }
     }
 
-    args->context->machines.update_machines_on_job_end(job, args->allocation->machine_ids,
-                                                       args->context);
+    context->machines.update_machines_on_job_end(job, allocation->machine_ids, context);
     job->runtime = MSG_get_clock() - job->starting_time;
     if (job->runtime == 0)
     {
@@ -506,29 +499,28 @@ int execute_job_process(int argc, char *argv[])
     }
 
     // If energy is enabled, let us compute the energy used by the machines after running the job
-    if (args->context->energy_used)
+    if (context->energy_used)
     {
         long double consumed_energy_before = job->consumed_energy;
-        job->consumed_energy = consumed_energy_on_machines(args->context, job->allocation);
+        job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
 
         // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
         job->consumed_energy -= job->consumed_energy - consumed_energy_before;
 
         // Let's trace the consumed energy
-        args->context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
+        context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
     }
 
-    if (args->notify_server_at_end)
+    if (notify_server_at_end)
     {
         // Let us tell the server that the job completed
         JobCompletedMessage * message = new JobCompletedMessage;
-        message->job_id = args->allocation->job_id;
+        message->job_id = allocation->job_id;
 
         send_message("server", IPMessageType::JOB_COMPLETED, (void*)message);
     }
 
-    job->execution_processes.erase(MSG_process_self());
-    return 0;
+    //job->execution_processes.erase(MSG_process_self()); TODO S4U
 }
 
 int waiter_process(int argc, char *argv[])

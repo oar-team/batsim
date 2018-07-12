@@ -120,14 +120,6 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args,
 void configure_batsim_logging_output(const MainArguments & main_args);
 
 /**
- * @brief Initializes SimGrid
- * @param[in] main_args Batsim arguments
- * @param[in] argc The number of arguments given to the main function
- * @param[in] argv The values of arguments given to the main function
- */
-void initialize_msg(const MainArguments & main_args, int argc, char * argv[]);
-
-/**
  * @brief Loads the workloads defined in Batsim arguments
  * @param[in] main_args Batsim arguments
  * @param[in,out] context The BatsimContext
