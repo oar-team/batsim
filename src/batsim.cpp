@@ -614,7 +614,7 @@ void initialize_msg(const MainArguments & main_args, int argc, char * argv[])
         MSG_config("tracing/msg/process", "yes");
         MSG_config("tracing/uncategorized", "yes");
         MSG_config("tracing/filename", sg_trace_filename.c_str());
-        MSG_config("smpi/privatization", "yes");
+        MSG_config("smpi/privatization", "yes"); // TODO: why here?
     }
 }
 
