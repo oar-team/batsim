@@ -332,13 +332,24 @@ int execute_msg_task(BatTask * btask,
     btask->ptask = ptask;
 
     // Execute the MSG task (blocking)
-    double time_before_execute = MSG_get_clock();
-    XBT_INFO("Executing task '%s'", MSG_task_get_name(ptask));
-    msg_error_t err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
-    *remaining_time = *remaining_time - (MSG_get_clock() - time_before_execute);
+    msg_error_t err;
+    if (*remaining_time < 0)
+    {
+        XBT_INFO("Executing task '%s' without walltime", MSG_task_get_name(ptask));
+        err = MSG_parallel_task_execute(ptask);
+    }
+    else
+    {
+        double time_before_execute = MSG_get_clock();
+        XBT_INFO("Executing task '%s' with walltime of %g", MSG_task_get_name(ptask), *remaining_time);
+        err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
+        *remaining_time = *remaining_time - (MSG_get_clock() - time_before_execute);
+    }
 
-    ret = profile->return_code;
-    if (err == MSG_OK) {}
+    if (err == MSG_OK)
+    {
+        ret = profile->return_code;
+    }
     else if (err == MSG_TIMEOUT)
     {
         ret = -1;
