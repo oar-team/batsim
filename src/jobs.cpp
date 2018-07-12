@@ -315,9 +315,9 @@ bool job_comparator_subtime_number(const Job *a, const Job *b)
 
 Job::~Job()
 {
-    xbt_assert(execution_processes.size() == 0,
+    xbt_assert(execution_actors.size() == 0,
                "Internal error: job %s has %d execution processes on destruction (should be 0).",
-               this->id.to_string().c_str(), (int)execution_processes.size());
+               this->id.to_string().c_str(), (int)execution_actors.size());
 
     if (task != nullptr)
     {

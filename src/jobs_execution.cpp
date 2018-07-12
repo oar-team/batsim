@@ -9,6 +9,7 @@
 #include "task_execution.hpp"
 #include "server.hpp"
 
+#include <simgrid/s4u.hpp>
 #include <simgrid/plugins/energy.h>
 
 #include <smpi/smpi.h>
@@ -35,7 +36,7 @@ int smpi_replay_process(int argc, char *argv[])
         MSG_sem_release(args->semaphore);
     }
 
-    args->job->execution_processes.erase(MSG_process_self());
+    // args->job->execution_actors.erase(simgrid::s4u::Actor::self()); TODO S4U
     delete args;
     return 0;
 }
@@ -267,7 +268,8 @@ int execute_task(BatTask * btask,
 
             msg_process_t process = MSG_process_create_with_arguments(str_pname, smpi_replay_process,
                                                                       message, host_to_use, 5, argv);
-            job->execution_processes.insert(process);
+            //job->execution_processes.insert(process); TODO S4U
+            (void) process;
 
             // todo: avoid memory leaks
             free(str_pname);
@@ -522,7 +524,7 @@ void execute_job_process(BatsimContext * context,
         send_message("server", IPMessageType::JOB_COMPLETED, (void*)message);
     }
 
-    //job->execution_processes.erase(MSG_process_self()); TODO S4U
+    job->execution_actors.erase(simgrid::s4u::Actor::self());
 }
 
 void waiter_process(double target_time, const ServerData * server_data)
@@ -592,13 +594,13 @@ void killer_process(BatsimContext * context, std::vector<JobIdentifier> jobs_ids
             message->jobs_progress[job_id] = job_progress;
 
             // Let's kill all the involved processes
-            xbt_assert(job->execution_processes.size() > 0);
-            for (msg_process_t process : job->execution_processes)
+            xbt_assert(job->execution_actors.size() > 0);
+            for (simgrid::s4u::ActorPtr actor : job->execution_actors)
             {
-                XBT_INFO("Killing process '%s'", MSG_process_get_name(process));
-                MSG_process_kill(process);
+                XBT_INFO("Killing process '%s'", actor->get_cname());
+                actor->kill();
             }
-            job->execution_processes.clear();
+            job->execution_actors.clear();
 
             // Let's update the job information
             job->state = JobState::JOB_STATE_COMPLETED_KILLED;

@@ -870,10 +870,10 @@ void server_on_execute_job(ServerData * data,
     }
 
     string pname = "job_" + job->id.to_string();
-    simgrid::s4u::Actor::create(pname.c_str(),
-                                data->context->machines[allocation->machine_ids.first_element()]->host,
-                                execute_job_process, data->context, allocation, true, message->io_profile);
-    // job->execution_processes.insert(process); TODO S4U
+    auto actor = simgrid::s4u::Actor::create(pname.c_str(),
+                                             data->context->machines[allocation->machine_ids.first_element()]->host,
+                                             execute_job_process, data->context, allocation, true, message->io_profile);
+    job->execution_actors.insert(actor);
 }
 
 bool is_simumation_finished(const ServerData * data)

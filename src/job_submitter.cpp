@@ -391,9 +391,9 @@ void batexec_job_launcher_process(BatsimContext * context,
         }
 
         string pname = "job" + job->id.to_string();
-        simgrid::s4u::Actor::create(pname.c_str(),
-                                    context->machines[alloc->machine_ids.first_element()]->host,
-                                    execute_job_process, context, alloc, false, nullptr);
-        //job->execution_processes.insert(process); TODO S4U
+        auto actor = simgrid::s4u::Actor::create(pname.c_str(),
+                                                 context->machines[alloc->machine_ids.first_element()]->host,
+                                                 execute_job_process, context, alloc, false, nullptr);
+        job->execution_actors.insert(actor);
     }
 }
