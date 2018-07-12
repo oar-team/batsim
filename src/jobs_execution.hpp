@@ -16,17 +16,15 @@ struct CleanExecuteTaskData
 {
     double * computation_amount = nullptr; //!< The computation amount (may be null)
     double * communication_amount = nullptr; //!< The communication amount (may be null)
-    ExecuteJobProcessArguments * exec_process_args = nullptr; //!< The ExecuteJobProcessArguments
     msg_task_t task = nullptr; //!< The task
 };
 
 /**
  * @brief The process in charge of killing a job if it reaches its walltime
- * @param argc The number of arguments
- * @param argv The arguments values
- * @return 0
+ * @param[in] context The BatsimContext
+ * @param[in] jobs_ids The ids of the jobs to kill
  */
-int killer_process(int argc, char *argv[]);
+void killer_process(BatsimContext *context, std::vector<JobIdentifier> jobs_ids);
 
 /**
  * @brief The process in charge of executing a SMPI job
@@ -78,16 +76,7 @@ void execute_job_process(BatsimContext *context, SchedulingAllocation *allocatio
 
 /**
  * @brief The process in charge of waiting for a given amount of time (related to the NOPMeLater message)
- * @param[in] argc The number of arguments
- * @param[in] argv The arguments values
- * @return 0
+ * @param[in] target_time The time at which the waiter should stop waiting
+ * @param[in] server_data The ServerData. Used to check whether the simulation is finished or not
  */
-int waiter_process(int argc, char *argv[]);
-
-/**
- * @brief The process in charge of killing a given job
- * @param[in] argc The number of arguments
- * @param[in] argv The arguments values
- * @return 0
- */
-int killer_process(int argc, char *argv[]);
+void waiter_process(double target_time, const ServerData *server_data);

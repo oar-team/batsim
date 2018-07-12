@@ -11,19 +11,19 @@ struct BatsimContext;
 
 /**
  * @brief The process in charge of submitting static jobs (those described before running the simulations)
- * @param argc The number of arguments
- * @param argv The argument values
- * @return 0
+ * @param[in] context The BatsimContext
+ * @param[in] workload_name The name of the workload attached to the submitter
  */
-int static_job_submitter_process(int argc, char *argv[]);
+void static_job_submitter_process(BatsimContext * context,
+                                  std::string workload_name);
 
 /**
  * @brief The process in charge of submitting dynamic jobs that are part of a workflow
- * @param argc The number of arguments
- * @param argv The argument values
- * @return 0
+ * @param[in] context The BatsimContext
+ * @param[in] workflow_name The name of the workflow attached to the submitter
  */
-int workflow_submitter_process(int argc, char *argv[]);
+void workflow_submitter_process(BatsimContext * context,
+                                std::string workflow_name);
 
 /**
  * @brief Execute jobs sequentially without server and scheduler

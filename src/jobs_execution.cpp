@@ -327,6 +327,7 @@ int execute_task_cleanup(void * unknown, void * data)
     XBT_DEBUG("before freeing communication amount %p", cleanup_data->communication_amount);
     xbt_free(cleanup_data->communication_amount);
 
+    /* TODO S4U
     if (cleanup_data->exec_process_args != nullptr)
     {
         XBT_DEBUG("before deleting exec_process_args->allocation %p",
@@ -335,6 +336,7 @@ int execute_task_cleanup(void * unknown, void * data)
         XBT_DEBUG("before deleting exec_process_args %p", cleanup_data->exec_process_args);
         delete cleanup_data->exec_process_args;
     }
+    */
 
     if (cleanup_data->task != nullptr)
     {
@@ -523,35 +525,30 @@ void execute_job_process(BatsimContext * context,
     //job->execution_processes.erase(MSG_process_self()); TODO S4U
 }
 
-int waiter_process(int argc, char *argv[])
+void waiter_process(double target_time, const ServerData * server_data)
 {
-    (void) argc;
-    (void) argv;
-
-    WaiterProcessArguments * args = (WaiterProcessArguments *) MSG_process_get_data(MSG_process_self());
-
     double curr_time = MSG_get_clock();
 
-    if (curr_time < args->target_time)
+    if (curr_time < target_time)
     {
-        double time_to_wait = args->target_time - curr_time;
+        double time_to_wait = target_time - curr_time;
         // Sometimes time_to_wait is so small that it does not affect MSG_process_sleep. The value of 1e-5 have been found on trial-error.
         if(time_to_wait < 1e-5)
         {
             time_to_wait = 1e-5;
         }
-        XBT_INFO("Sleeping %g seconds to reach time %g", time_to_wait, args->target_time);
+        XBT_INFO("Sleeping %g seconds to reach time %g", time_to_wait, target_time);
         MSG_process_sleep(time_to_wait);
         XBT_INFO("Sleeping done");
     }
     else
     {
-        XBT_INFO("Time %g is already reached, skipping sleep", args->target_time);
+        XBT_INFO("Time %g is already reached, skipping sleep", target_time);
     }
 
-    if (args->server_data->end_of_simulation_in_send_buffer ||
-        args->server_data->end_of_simulation_sent ||
-        args->server_data->end_of_simulation_ack_received)
+    if (server_data->end_of_simulation_in_send_buffer ||
+        server_data->end_of_simulation_sent ||
+        server_data->end_of_simulation_ack_received)
     {
         XBT_INFO("Simulation have finished. Thus, NOT sending WAITING_DONE to the server.");
     }
@@ -559,27 +556,19 @@ int waiter_process(int argc, char *argv[])
     {
         send_message("server", IPMessageType::WAITING_DONE);
     }
-
-    delete args;
-    return 0;
 }
 
 
 
-int killer_process(int argc, char *argv[])
+void killer_process(BatsimContext * context, std::vector<JobIdentifier> jobs_ids)
 {
-    (void) argc;
-    (void) argv;
-
-    KillerProcessArguments * args = (KillerProcessArguments *) MSG_process_get_data(MSG_process_self());
-
     KillingDoneMessage * message = new KillingDoneMessage;
-    message->jobs_ids = args->jobs_ids;
+    message->jobs_ids = jobs_ids;
 
-    for (const JobIdentifier & job_id : args->jobs_ids)
+    for (const JobIdentifier & job_id : jobs_ids)
     {
-        Job * job = args->context->workloads.job_at(job_id);
-        Profile * profile = args->context->workloads.at(job_id.workload_name)->profiles->at(job->profile);
+        Job * job = context->workloads.job_at(job_id);
+        Profile * profile = context->workloads.at(job_id.workload_name)->profiles->at(job->profile);
         (void) profile;
 
         xbt_assert(! (job->state == JobState::JOB_STATE_REJECTED ||
@@ -614,9 +603,7 @@ int killer_process(int argc, char *argv[])
             // Let's update the job information
             job->state = JobState::JOB_STATE_COMPLETED_KILLED;
 
-            args->context->machines.update_machines_on_job_end(job,
-                                                               job->allocation,
-                                                               args->context);
+            context->machines.update_machines_on_job_end(job, job->allocation, context);
             job->runtime = (Rational)MSG_get_clock() - job->starting_time;
 
             xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%g)!",
@@ -629,22 +616,19 @@ int killer_process(int argc, char *argv[])
             }
 
             // If energy is enabled, let us compute the energy used by the machines after running the job
-            if (args->context->energy_used)
+            if (context->energy_used)
             {
                 long double consumed_energy_before = job->consumed_energy;
-                job->consumed_energy = consumed_energy_on_machines(args->context, job->allocation);
+                job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
 
                 // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
                 job->consumed_energy = job->consumed_energy - consumed_energy_before;
 
                 // Let's trace the consumed energy
-                args->context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
+                context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
             }
         }
     }
 
     send_message("server", IPMessageType::KILLING_DONE, (void*)message);
-    delete args;
-
-    return 0;
 }

@@ -34,21 +34,16 @@ Task* bottom_level_f (Task *child, Task *parent)
 
 using namespace std;
 
-int static_job_submitter_process(int argc, char *argv[])
+void static_job_submitter_process(BatsimContext * context,
+                                  std::string workload_name)
 {
-    (void) argc;
-    (void) argv;
-
-    JobSubmitterProcessArguments * args = (JobSubmitterProcessArguments *) MSG_process_get_data(MSG_process_self());
-    BatsimContext * context = args->context;
-
-    xbt_assert(context->workloads.exists(args->workload_name),
+    xbt_assert(context->workloads.exists(workload_name),
                "Error: a static_job_submitter_process is in charge of workload '%s', "
-               "which does not exist", args->workload_name.c_str());
+               "which does not exist", workload_name.c_str());
 
-    Workload * workload = context->workloads.at(args->workload_name);
+    Workload * workload = context->workloads.at(workload_name);
 
-    string submitter_name = args->workload_name + "_submitter";
+    string submitter_name = workload_name + "_submitter";
 
     /*  ░░░░░░░░▄▄▄███░░░░░░░░░░░░░░░░░░░░
         ░░░▄▄██████████░░░░░░░░░░░░░░░░░░░
@@ -134,8 +129,6 @@ int static_job_submitter_process(int argc, char *argv[])
     bye_msg->is_workflow_submitter = false;
     bye_msg->submitter_name = submitter_name;
     send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
-    delete args;
-    return 0;
 }
 
 
@@ -146,27 +139,23 @@ static std::tuple<int,double,double> wait_for_query_answer(string submitter_name
 /* Ugly Global */
 std::map<std::string, int> task_id_counters;
 
-int workflow_submitter_process(int argc, char *argv[])
+void workflow_submitter_process(BatsimContext * context,
+                                std::string workflow_name)
 {
-    (void) argc;
-    (void) argv;
-
     // Get the workflow
-    WorkflowSubmitterProcessArguments * args = (WorkflowSubmitterProcessArguments *) MSG_process_get_data(MSG_process_self());
-    BatsimContext * context = args->context;
-    xbt_assert(context->workflows.exists(args->workflow_name),
+    xbt_assert(context->workflows.exists(workflow_name),
                "Error: a workflow_job_submitter_process is in charge of workload '%s', "
-               "which does not exist", args->workflow_name.c_str());
-    Workflow * workflow = context->workflows.at(args->workflow_name);
+               "which does not exist", workflow_name.c_str());
+    Workflow * workflow = context->workflows.at(workflow_name);
 
     int limit = context->workflow_nb_concurrent_jobs_limit;
     bool not_limiting = (limit == 0);
     int current_nb = 0;
 
-    const string submitter_name = args->workflow_name + "_submitter";
+    const string submitter_name = workflow_name + "_submitter";
 
     XBT_INFO("New Workflow submitter for workflow %s (start time = %lf)!",
-             args->workflow_name.c_str(),workflow->start_time);
+             workflow_name.c_str(),workflow->start_time);
 
     /* Initializing my task_id counter */
     task_id_counters[workflow->name] = 0;
@@ -201,7 +190,7 @@ int workflow_submitter_process(int argc, char *argv[])
             ready_tasks.erase(ready_tasks.begin() + 0);
 
             /* Send a Job corresponding to the Task Job */
-            string job_key = submit_workflow_task_as_job(context, args->workflow_name, submitter_name, task);
+            string job_key = submit_workflow_task_as_job(context, workflow_name, submitter_name, task);
 
             XBT_INFO("Inserting task %s", job_key.c_str());
 
@@ -256,10 +245,6 @@ int workflow_submitter_process(int argc, char *argv[])
     bye_msg->is_workflow_submitter = true;
     bye_msg->submitter_name = submitter_name;
     send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
-
-
-    delete args;
-    return 0;
 }
 
 /**
@@ -405,10 +390,6 @@ void batexec_job_launcher_process(BatsimContext * context,
             alloc->hosts.push_back(context->machines[i]->host);
         }
 
-        ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
-        exec_args->context = context;
-        exec_args->allocation = alloc;
-        exec_args->notify_server_at_end = false;
         string pname = "job" + job->id.to_string();
         simgrid::s4u::Actor::create(pname.c_str(),
                                     context->machines[alloc->machine_ids.first_element()]->host,

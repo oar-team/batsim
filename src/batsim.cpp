@@ -30,6 +30,7 @@
 
 #include <string>
 #include <fstream>
+#include <functional>
 
 #include <simgrid/s4u.hpp>
 #include <simgrid/msg.h>
@@ -659,22 +660,16 @@ void start_initial_simulation_processes(const MainArguments & main_args,
         string submitter_instance_name = "workload_submitter_" + desc.name;
 
         XBT_DEBUG("Creating a workload_submitter process...");
-        if (!is_batexec)
+        auto actor_function = static_job_submitter_process;
+        if (is_batexec)
         {
-            JobSubmitterProcessArguments * submitter_args = new JobSubmitterProcessArguments;
-            submitter_args->context = context;
-            submitter_args->workload_name = desc.name;
+            actor_function = batexec_job_launcher_process;
+        }
 
-            MSG_process_create(submitter_instance_name.c_str(), static_job_submitter_process,
-                               (void*) submitter_args, master_machine->host);
-        }
-        else
-        {
-            simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
-                                        master_machine->host,
-                                        batexec_job_launcher_process,
-                                        context, desc.name);
-        }
+        simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+                                    master_machine->host,
+                                    actor_function,
+                                    context, desc.name);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
@@ -682,22 +677,19 @@ void start_initial_simulation_processes(const MainArguments & main_args,
     for (const MainArguments::WorkflowDescription & desc : main_args.workflow_descriptions)
     {
         XBT_DEBUG("Creating a workflow_submitter process...");
-
-        WorkflowSubmitterProcessArguments * submitter_args = new WorkflowSubmitterProcessArguments;
-        submitter_args->context = context;
-        submitter_args->workflow_name = desc.name;
-
         string submitter_instance_name = "workflow_submitter_" + desc.name;
-        MSG_process_create(submitter_instance_name.c_str(), workflow_submitter_process, (void*)submitter_args, master_machine->host);
+        simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+                                    master_machine->host,
+                                    workflow_submitter_process,
+                                    context, desc.name);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
     if (!is_batexec)
     {
         XBT_DEBUG("Creating the 'server' process...");
-        ServerProcessArguments * server_args = new ServerProcessArguments;
-        server_args->context = context;
-        MSG_process_create("server", server_process, (void*)server_args, master_machine->host);
+        simgrid::s4u::Actor::create("server", master_machine->host,
+                                    server_process, context);
         XBT_INFO("The process 'server' has been created.");
     }
 }

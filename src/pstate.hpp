@@ -90,17 +90,17 @@ private:
 
 /**
  * @brief Process used to switch ON a machine (transition from a sleep power state to a computation one)
- * @param[in] argc The number of arguments
- * @param[in] argv The arguments' values
- * @return 0
+ * @param[in] context The BatsimContext
+ * @param[in] machine_id The unique number of the machine whose power state should be switched
+ * @param[in] new_pstate The power state into which the machine should be put
  */
-int switch_on_machine_process(int argc, char * argv[]);
+void switch_on_machine_process(BatsimContext *context, int machine_id, int new_pstate);
 
 /**
  * @brief Process used to switch OFF a machine (transition from a computation power state to a sleep one)
- * @param[in] argc The number of arguments
- * @param[in] argv The arguments' values
- * @return 0
+ * @param[in] context The BatsimContext
+ * @param[in] machine_id The unique number of the machine whose power state should be switched
+ * @param[in] new_pstate The power state into which the machine should be put
  */
-int switch_off_machine_process(int argc, char * argv[]);
+void switch_off_machine_process(BatsimContext *context, int machine_id, int new_pstate);
 
