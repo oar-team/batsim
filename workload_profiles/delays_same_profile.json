@@ -1,0 +1,27 @@
+{
+    "version": 0,
+    "command:": "",
+    "date": "Tue, 11 Mar 2015 9:44:30 +0100",
+    "description": "workload with profile file for test",
+
+    "nb_res": 2,
+    "jobs": [
+        {"id":0, "subtime": 0, "walltime": 100, "res": 1, "profile": "delay10"},
+        {"id":1, "subtime": 3, "walltime": 100, "res": 1, "profile": "delay10"},
+        {"id":2, "subtime": 6, "walltime": 100, "res": 1, "profile": "delay10"},
+        {"id":3, "subtime": 9, "walltime": 100, "res": 1, "profile": "delay10"},
+        {"id":4, "subtime":12, "walltime": 100, "res": 1, "profile": "delay10"},
+        {"id":5, "subtime":15, "walltime": 100, "res": 1, "profile": "delay10"},
+        {"id":6, "subtime":18, "walltime": 100, "res": 1, "profile": "delay10"},
+        {"id":7, "subtime":21, "walltime": 100, "res": 1, "profile": "delay10"},
+        {"id":8, "subtime":24, "walltime": 100, "res": 1, "profile": "delay10"},
+        {"id":9, "subtime":27, "walltime": 100, "res": 1, "profile": "delay10"}
+    ],
+
+    "profiles": {
+        "delay10": {
+            "type": "delay",
+            "delay": 10
+        }
+    }
+}

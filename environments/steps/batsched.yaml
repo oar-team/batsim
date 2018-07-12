@@ -1,0 +1,21 @@
+# A C++ Batch Scheduler for Batsim
+
+#############
+# Variables #
+#############
+- batsched_remote: https://gitlab.inria.fr/batsim/batsched.git
+- batsched_commit: c2bbc1f
+- work_dir: /root
+
+##########
+# Script #
+##########
+- build_and_install:
+  - exec_in: git clone $${batsched_remote} $${work_dir}/batsched
+  - exec_in: cd $${work_dir}/batsched && git checkout $${batsched_commit}
+  - exec_in: mkdir $${work_dir}/batsched/build
+  - exec_in: >
+      cd $${work_dir}/batsched/build &&
+      cmake -DCMAKE_BUILD_TYPE=DEBUG .. &&
+      make &&
+      make install

@@ -1,0 +1,113 @@
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+
+<platform version="4">
+	<AS id="AS0" routing="Full">
+		<AS  id="my_cluster1"  routing="Cluster">
+			<cabinet id="cabinet1" prefix="algol" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="boo" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="cobol" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="dart" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="erlang" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="forth" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="graphtalk" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="haxe" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="intercal" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="java" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="ksh" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="lisp" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="malbolge" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="nu" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="ocaml" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="prolog" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+
+			<cabinet id="cabinet1" prefix="ada" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="bpcl" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="csharp" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="d" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="eiffel" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="fortran" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="groovy" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="haskell" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="ibm_rpg" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="javascript" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="kaleidoscope" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="legoscript" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="matlab" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="neko" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="oz" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+			<cabinet id="cabinet1" prefix="perl" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="10-25"/>
+
+
+
+			<cabinet id="cabinet1" prefix="master_host" suffix="" 
+				speed="3Gf" bw="56Gbps" lat="1us" radical="0-0"/>
+
+			<router  id="router1"/>
+			<backbone id="backbone1" bandwidth="2.25GBps" latency="500us"/>
+		</AS>
+	</AS>
+</platform>

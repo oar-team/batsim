@@ -1,0 +1,8 @@
+- do_export:
+  - exec_local: |
+      docker import $${appliance_filename}.tar.gz oarteam/$${kameleon_recipe_name}:latest
+  - exec_local: |
+      docker tag oarteam/$${kameleon_recipe_name}:latest oarteam/$${kameleon_recipe_name}:$(date --iso-8601)
+  - exec_local: |
+      docker push oarteam/$${kameleon_recipe_name}:latest
+      docker push oarteam/$${kameleon_recipe_name}:$(date --iso-8601)

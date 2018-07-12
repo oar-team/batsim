@@ -1,0 +1,68 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# DESCRIPTION: An applicance for batsim continuous integration (CI)
+#   It contains all the dependencies mandatory for build and tests batsim
+#
+#==============================================================================
+
+---
+## Choose one of them the following extends
+
+# Checkpoint only with btrfs
+checkpoint: btrfs.yaml
+extend: default/from_image/debian8.yaml
+
+global:
+  backend: qemu
+  btrfs_volume: "/"
+  virtualbox_memory_size: 2048
+  qemu_memory_size : 2048
+  appliance_formats: tar.gz
+  appliance_tar_compression_level: fast
+  setup_packages: git cmake build-essential e2fsprogs $${setup_packages}
+  default_keyboard_layout: fr
+  default_timezone: Europe/Paris
+  root_password: root
+  hostname: batsim
+  work_dir: /root
+
+  simgrid_remote: https://github.com/mpoquet/simgrid.git
+  simgrid_commit: 587483ebe7882e # Fri Jan 6 15:45:05 2017
+
+  #execo_remote: https://github.com/mickours/execo.git
+  execo_remote: https://github.com/mpoquet/execo.git
+  execo_commit: 406f4fa06
+
+bootstrap:
+  - "@base"
+
+setup:
+  #
+  # General configuration
+  #
+  - "@base"
+  - enable_root_ssh_login
+
+  #
+  # Simulator and schedulers install
+  #
+  - configure_apt_repo
+
+  - install_common_deps:
+
+    - install_build_tools:
+      - exec_in: |
+          apt-get -y install cmake gcc clang g++
+          update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-6 100
+
+  - simgrid:
+
+  - batsim_dependencies
+  - result_analysis
+
+export:
+  - "@base"
+  - docker_export
+

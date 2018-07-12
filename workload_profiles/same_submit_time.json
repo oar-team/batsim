@@ -1,0 +1,37 @@
+{
+    "nb_res": 1,
+    "jobs": [
+        {"id":10, "subtime":10, "walltime": 15, "res": 1, "profile": "10s"},
+        {"id":11, "subtime":10, "walltime": 15, "res": 1, "profile": "10s"},
+        {"id":12, "subtime":10, "walltime": 15, "res": 1, "profile": "10s"},
+
+        {"id":20, "subtime":20, "walltime": 15, "res": 1, "profile": "10s"},
+        {"id":22, "subtime":20, "walltime": 15, "res": 1, "profile": "10s"},
+        {"id":21, "subtime":20, "walltime": 15, "res": 1, "profile": "10s"},
+
+
+        {"id":31, "subtime":30, "walltime": 15, "res": 1, "profile": "10s"},
+        {"id":30, "subtime":30, "walltime": 15, "res": 1, "profile": "10s"},
+        {"id":32, "subtime":30, "walltime": 15, "res": 1, "profile": "10s"},
+
+        {"id":41, "subtime":40, "walltime": 15, "res": 1, "profile": "10s"},
+        {"id":42, "subtime":40, "walltime": 15, "res": 1, "profile": "10s"},
+        {"id":40, "subtime":40, "walltime": 15, "res": 1, "profile": "10s"},
+
+
+        {"id":52, "subtime":50, "walltime": 15, "res": 1, "profile": "10s"},
+        {"id":50, "subtime":50, "walltime": 15, "res": 1, "profile": "10s"},
+        {"id":51, "subtime":50, "walltime": 15, "res": 1, "profile": "10s"},
+
+        {"id":62, "subtime":60, "walltime": 15, "res": 1, "profile": "10s"},
+        {"id":61, "subtime":60, "walltime": 15, "res": 1, "profile": "10s"},
+        {"id":60, "subtime":60, "walltime": 15, "res": 1, "profile": "10s"}
+    ],
+
+    "profiles": {
+        "10s": {
+            "type": "delay",
+            "delay": 10
+        }
+    }
+}

@@ -1,0 +1,15 @@
+*.o
+*_jobs.csv
+*_schedule.csv
+*_schedule.trace
+*_pstate_changes.csv
+*.pyc
+doc/doxygen_warnings.log
+doc/doxygen_doc
+build
+test/out
+CMakeLists.txt.user
+dump.rdb
+.sshkeys
+*.swp
+*.dia~

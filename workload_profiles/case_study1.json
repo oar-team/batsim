@@ -1,0 +1,21 @@
+{
+    "description": "Represents the case study 1 of 'how it works'",
+
+    "nb_res": 4,
+    "jobs": [
+        {"id":1, "subtime":0, "walltime": 11, "res": 4, "profile": "delay10"},
+        {"id":2, "subtime":1, "walltime": 6,  "res": 2, "profile": "delay5"},
+        {"id":3, "subtime":1, "walltime": 6,  "res": 2, "profile": "delay10"}
+    ],
+
+    "profiles": {
+        "delay10": {
+            "type": "delay",
+            "delay": 10
+        },
+        "delay5": {
+            "type": "delay",
+            "delay": 5
+        }
+    }
+}

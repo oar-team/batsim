@@ -1,0 +1,35 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# DESCRIPTION: An applicance for batsim experiments en development.
+#
+#==============================================================================
+---
+extend: default/from_image/from_docker
+
+global:
+  backend: docker
+  from_docker_image: oarteam/batsim_ci:latest
+  to_docker_image: oarteam/batsim:latest
+  work_dir: /root
+
+  batsim_commit: 78465ddfc48e1
+
+bootstrap:
+  - "@base"
+
+setup:
+  - batsim_build_and_install
+
+export:
+  - "@base"
+  - tag_and_push_image:
+    - do_tag:
+      - exec_local: |
+          docker tag oarteam/$${kameleon_recipe_name}:latest oarteam/$${kameleon_recipe_name}:$(date --iso-8601)
+    - do_push:
+      - exec_local: |
+          docker push oarteam/$${kameleon_recipe_name}:latest
+          docker push oarteam/$${kameleon_recipe_name}:$(date --iso-8601)
+

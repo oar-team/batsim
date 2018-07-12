@@ -1,0 +1,17 @@
+enabled?:
+  - exec_local: test -f $KAMELEON_WORKDIR/MAIN_CONTAINER_ID
+
+create:
+  - exec_local: docker commit $(cat $KAMELEON_WORKDIR/MAIN_CONTAINER_ID) $${docker_image}:@microstep_id
+
+apply:
+  - exec_local: docker tag -f $${docker_image}:@microstep_id $${docker_image}:latest
+
+list:
+  - exec_local: |
+      docker images | grep $${docker_image} | awk '{print $2}' || true
+
+clear:
+  - exec_local: |
+      docker images | grep $${docker_image} | awk '{print $3}' \
+        | xargs -I {} bash -c "docker rmi {} | cat || true"

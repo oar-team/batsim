@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# Let's store cwd
+base_dir=$(pwd)
+
+# Let's check that the documentation produces no warning
+echo "Checking whether doxygen produces warnings..."
+cd ${base_dir}/doc
+doxygen > /dev/null
+
+if [ $(wc -c doxygen_warnings.log | cut -d ' ' -f1) -gt 0 ]
+then
+    echo "Commit cancelled: doxygen produces warnings"
+    cat doxygen_warnings.log
+    exit 1
+fi
+
+failed=0
+
+# Let's check whether Batsim compiles
+echo "Checking whether Batsim compiles..."
+mkdir -p ${base_dir}/build
+cd ${base_dir}/build
+cmake .. -Dtreat_warnings_as_errors=ON
+make -j 4
+
+# Let's run a redis server if needed
+server_launched_by_me=0
+r=$(ps faux | grep redis-server | grep -v grep | wc -l)
+if [ $r -eq 0 ]
+then
+    echo "Running a Redis server..."
+    redis-server>/dev/null &
+    server_launched_by_me=1
+
+    while ! nc -z localhost 6379; do
+      sleep 1
+    done
+fi
+
+# Let's check that tests run correctly
+echo -n "Checking whether tests pass..."
+cd ${base_dir}/build
+ctest
+failed=$?
+
+# Let's stop the redis server if it has been launched by this script
+if [ $server_launched_by_me -eq 1 ]
+then
+    echo "Stopping the Redis server..."
+    killall redis-server
+fi
+
+exit ${failed}

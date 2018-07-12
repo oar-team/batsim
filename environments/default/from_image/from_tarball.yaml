@@ -1,0 +1,20 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# DESCRIPTION: Simple recipe that only import a tarball images like provided by
+# here http://kameleon.imag.fr/rootfs/
+# It also work for kadeploy images
+#
+#==============================================================================
+---
+extend: base.yaml
+
+global:
+  rootfs_archive_url: http://kameleon.imag.fr/rootfs/$${arch}/$${distrib}$${release}.tar.xz
+
+bootstrap:
+  - "@base"
+
+export:
+  - "@base"

@@ -1,0 +1,29 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# DESCRIPTION: Image use to generate MPI workload from the NAS benchmarks
+#
+#==============================================================================
+
+---
+extend: grid5000/kameleon-g5k/virtualbox/jessie-x64-nfs.yaml
+
+global:
+  virtualbox_memory_size: 2048
+  g5k_home: /opt/
+  g5k_tgz_path: $${g5k_home}/my_g5k_images/debian8_workload_generation_nfs.tgz
+
+bootstrap:
+  - "@base"
+
+setup:
+  - "@base"
+  - extrae
+  - NAS_benchmark:
+    - NAS_home: $${g5k_home}
+  - import_batsim_experiment_tools:
+    - expe_batsim_home: $${g5k_home}
+
+export:
+  - "@base"

@@ -1,0 +1,31 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: batsim
+Upstream-Contact: Millian Poquet <millian.poquet@gmail.com>
+Source: https://gitlab.inria.fr/batsim/batsim
+
+Files: *
+Copyright:
+  2015-2017, Olivier Richard <olivier.richard@imag.fr>
+  2015-2017, Millian Poquet <millian.poquet@inria.fr>
+  2015-2016, David Glesser <david.glesser@imag.fr>
+  2015-2017, Pierre-François Dutot <pfdutot@imag.fr>
+  2016-2017, Henri Casanova <henric@hawaii.edu>
+  2015-2017, Michael Mercier <michael.mercier@inria.fr>
+  2017     , Steffen Lackner <lackner@cs.tu-darmstadt.de>
+  2017     , Adrien Faure <adrien.faure2@gmail.com>
+License: LGPL-3.0
+
+Files: src/docopt/*
+Copyright: 2013 Jared Grubb. All rights reserved.
+License: Expat
+Comment: See details in the source directory
+
+Files: src/pugixml-1.7/*
+Copyright: 2006-2017 Arseny Kapoulkine
+License: Expat
+
+Files: cmake/Modules/Findrapidjson.cmake
+Copyright:
+  2011 Milo Yip (miloyip@gmail.com)
+  2013 Rafal Jeczalik (rjeczalik@gmail.com)
+License: Expat

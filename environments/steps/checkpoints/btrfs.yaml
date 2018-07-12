@@ -1,0 +1,35 @@
+# Use BTRFS as checkpoint mechanism
+#
+# Assume that the $${btrfs_vol} is a btrfs volume and the $${rootfs} is in a
+# subpath of this volume.
+
+enabled?:
+  - exec_local: |
+      export rootfs="$${rootfs}"
+      test -f $${kameleon_cwd}/checkpoint_enabled
+      btrfs subvolume create $${rootfs} 2> /dev/null || true
+      btrfs subvolume list $${btrfs_volume} | grep -q ${rootfs#"/"}
+
+create:
+  - exec_local: btrfs subvolume snapshot $${rootfs} $${rootfs}-@microstep_id
+
+# To apply the snapshot simply remove current rootfs, mv the snapshot to
+# rootfs and make a backup
+apply:
+  - exec_local: btrfs subvolume delete $${rootfs}
+  - exec_local: mv $${rootfs}-@microstep_id $${rootfs}
+  - exec_local: btrfs subvolume snapshot $${rootfs} $${rootfs}-@microstep_id
+
+clear:
+  - exec_local: |
+      export rootfs="$${rootfs}"
+      snap_list=$(btrfs subvolume list $${btrfs_volume} | grep ${rootfs#"/"} | awk '{print "/"$9 }')
+      for snap in $snap_list
+      do
+          btrfs subvolume delete $snap
+      done
+
+list:
+  - exec_local: |
+      export rootfs="$${rootfs}"
+      btrfs subvolume list $${btrfs_volume} | grep ${rootfs#"/"} | awk '{print "/"$9 }' | grep "${rootfs}-" | sed "s#${rootfs}-##" || true

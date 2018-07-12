@@ -1,0 +1,60 @@
+# Build and install most Batsim dependencies (not Simgrid)
+
+#############
+# Variables #
+#############
+- work_dir: /root
+- rapidjson_remote: https://github.com/miloyip/rapidjson.git
+- rapidjson_commit: 3d5848a
+- redox_remote: https://github.com/hmartiro/redox.git
+- redox_commit: 520fe0c2bfb
+- execo_remote: https://github.com/mpoquet/execo.git
+- execo_commit: 406f4fa06
+- install_prefix: /usr
+
+##########
+# Script #
+##########
+
+- build:
+  # Build dependencies packaged in debian
+  - exec_in: |
+      apt-get -y install libboost-all-dev \
+                         libgmp-dev \
+                         libhiredis-dev \
+                         libev-dev \
+                         libzmq3-dev \
+                         libssl-dev \
+                         redis-server 2>&1
+
+  # Install rapidjson from source
+  - exec_in: git clone $${rapidjson_remote} $${work_dir}/rapidjson
+  - exec_in: cd $${work_dir}/rapidjson && git checkout $${rapidjson_commit}
+  - exec_in: |
+      cp -a $${work_dir}/rapidjson/include/rapidjson $${install_prefix}/include
+
+  # Install redox from source
+  - exec_in: git clone $${redox_remote} $${work_dir}/redox
+  - exec_in: cd $${work_dir}/redox && git checkout $${redox_commit}
+  - exec_in: >
+      mkdir $${work_dir}/redox/build &&
+      cd $${work_dir}/redox/build &&
+      cmake .. -DCMAKE_INSTALL_PREFIX=$${work_dir}/redox/install
+  - exec_in: cd $${work_dir}/redox/build && make -j $(nproc)
+  - exec_in: cd $${work_dir}/redox/build && make install
+  - exec_in: mv $${work_dir}/redox/install/lib64 $${work_dir}/redox/install/lib
+  - exec_in: cp -r $${work_dir}/redox/install/* $${install_prefix}/
+
+# Dependencies for managing experiments with tools/experiment scripts
+- experiment_management:
+  - exec_in: apt install -y python3-pip psmisc
+  - exec_in: |
+      pip3 install async_timeout coloredlogs pandas PyYAML redis \
+           sortedcontainers pyzmq
+  - exec_in: git clone $${execo_remote} $${work_dir}/execo
+  - exec_in: cd $${work_dir}/execo && git checkout $${execo_commit}
+  - exec_in: cd $${work_dir}/execo && pip3 install -e .
+
+# Dependencies for building Batsim documentation
+- doc:
+  - exec_in: apt install -y doxygen graphviz

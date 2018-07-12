@@ -1,0 +1,75 @@
+# This script should be called from Batsim's root directory
+
+# If needed, the working directory of this script can be specified within this file
+# base_working_directory: ~/proj/batsim
+
+# If needed, the output directory of this script can be specified within this file
+base_output_directory: /tmp/batsim_tools_tests/execN
+
+base_variables:
+  batsim_dir: ${base_working_directory}
+
+# If needed, base_variables can be defined
+# base_variables:
+#   - target_conference: IPDPS'2016
+# base_output_directory and base_working_directory are
+# added in the base_variables.
+
+# The instances defined by a combination of parameters
+implicit_instances:
+  # Several set of combinations can be defined. This one is called 'implicit'.
+  implicit:
+    # The different parameters to explore.
+    # Beware: sweep must be a dictionary whose keys are valid identifiers and
+    # whose values are lists.
+    sweep:
+      platform :
+        # We only define one platform whose name is homo128 and with a filename.
+        # Giving a 'name' field to your dictionaries is good practice, because
+        # it is used to generate instance YAML filenames for each combination.
+        # If no 'name' is found, the first value is taken instead, which could
+        # be dangerous.
+        - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
+      workload :
+        # We define two different workloads there. Please not their names MUST
+        # be different to avoid different instances pointing to the same YAML
+        # filename.
+        - {"name":"tiny", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
+        - {"name":"medium", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example.json"}
+      algo:
+        # We use only one scheduling algorithm
+        - {"name":"filler", "algo_name":"filler"}
+        - {"name":"easy", "algo_name":"easy_bf"}
+    # Defines how each instance of 'implicit' should be computed
+    generic_instance:
+      # All base_variables are added into the variables of the instance.
+      # Hence, base_working_directory can be used there for example.
+      working_directory: ${base_working_directory}
+      output_directory: ${base_output_directory}/results/${algo[name]}_${workload[name]}_${platform[name]}
+      # If you want your instances to be executable in parallel, you should
+      # specify the socket which should be used to communicate.
+      batsim_command: batsim -p ${platform["filename"]} -w ${workload["filename"]} -e ${output_directory}/out --redis-prefix ${instance_id}
+      sched_command: batsched -v ${algo["algo_name"]}
+
+# You can define instances explicitely here.
+# Beware: the explicit_instances value must be a list.
+explicit_instances:
+  - name : easy_tiny_small
+    output_directory: ${base_output_directory}/results/explicit/easybf_tiny_small
+    variables: # We use simple values here, not dictionaries (but they could have been used!)
+      platform: ${batsim_dir}/platforms/small_platform.xml
+      workload: ${batsim_dir}/workload_profiles/test_workload_profile.json
+      algo: {"name":"easy", "algo_name":"easy_bf"}
+      # All base_variables are also copied here
+
+    batsim_command: batsim -p ${platform} -w ${workload} -e ${output_directory}/out --redis-prefix easybf_tiny_small
+    sched_command: batsched -v ${algo["algo_name"]}
+
+# These commands will be executed before running the instances, in this order
+commands_before_instances:
+  - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
+  - ${batsim_dir}/test/clean_output_dir.py ${base_output_directory}
+
+# These commands will be executed after running all the instances, in this order
+# commands_after_instances:
+#   - ls

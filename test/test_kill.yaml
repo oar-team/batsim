@@ -1,0 +1,107 @@
+base_output_directory: /tmp/batsim_tests/kill
+
+base_variables:
+    batsim_dir: ${base_working_directory}
+
+implicit_instances:
+  kill_each_job_after_10s:
+    sweep:
+      platform :
+        #- {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
+        - {"name":"cluster512", "filename":"${batsim_dir}/platforms/cluster512.xml", "master_node":"master_host0"}
+      workload :
+        - {"name":"hello", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
+        - {"name":"medium_late", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example_late_job.json"}
+        - {"name":"same_profile", "filename":"${batsim_dir}/workload_profiles/delays_same_profile.json"}
+        - {"name":"issue32", "filename":"${batsim_dir}/workload_profiles/issue32.json"}
+      algo:
+        - {"name":"killer", "sched_name":"killer"}
+      redis_enabled: ["true", "false"]
+    generic_instance:
+      timeout: 3600
+      working_directory: ${base_working_directory}
+      output_directory: ${base_output_directory}/results/${instance_id}
+      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -m ${platform[master_node]} -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vdebug
+      sched_command: batsched -v ${algo[sched_name]}
+      commands_before_execution:
+        # Generate Batsim config file
+        - |
+              #!/bin/bash
+              cat > ${output_directory}/batsim.conf << EOF
+              {
+                "redis": {
+                  "enabled": ${redis_enabled}
+                },
+                "job_submission": {
+                  "forward_profiles": true
+                }
+              }
+              EOF
+      commands_after_execution:
+        # No job should have a higher runtime than 10+epsilon
+        - |
+            #!/usr/bin/env bash
+            source ${output_directory}/variables.bash
+
+            cat > ${output_directory}/jobs_analysis.py <<EOF
+            #!/usr/bin/env python3
+            from __future__ import print_function
+            import json
+            import pandas as pd
+            import sys
+
+            # Let's get when jobs have been released
+            jobs = pd.read_csv('${output_directory}/out_jobs.csv')
+
+            epsilon = 0.1
+            max_runtime = 10 + epsilon
+
+            jobs_too_long = jobs.loc[jobs['execution_time'] > max_runtime]
+
+            if jobs_too_long.empty:
+                print('All jobs have been shorter than {} s'.format(max_runtime))
+                sys.exit(0)
+            else:
+                print('Some jobs were longer than {} s'.format(max_runtime))
+                print(jobs_too_long)
+                sys.exit(1)
+            EOF
+        - chmod +x ${output_directory}/jobs_analysis.py
+        - ${output_directory}/jobs_analysis.py
+
+  kill_when_new_job_submitted:
+    sweep:
+      platform :
+        - {"name":"homo128", "filename":"${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml"}
+      workload :
+        - {"name":"hello", "filename":"${batsim_dir}/workload_profiles/test_workload_profile.json"}
+        - {"name":"medium_late", "filename":"${batsim_dir}/workload_profiles/batsim_paper_workload_example_late_job.json"}
+        - {"name":"same_profile", "filename":"${batsim_dir}/workload_profiles/delays_same_profile.json"}
+        - {"name":"issue32", "filename":"${batsim_dir}/workload_profiles/issue32.json"}
+      algo:
+        - {"name":"killer2", "sched_name":"killer2"}
+      redis_enabled: ["true", "false"]
+    generic_instance:
+      timeout: 3600
+      working_directory: ${base_working_directory}
+      output_directory: ${base_output_directory}/results/${instance_id}
+      batsim_command: batsim -p ${platform[filename]} -w ${workload[filename]} -E -e ${output_directory}/out --mmax-workload --config-file ${output_directory}/batsim.conf -vdebug
+      sched_command: batsched -v ${algo[sched_name]}
+      commands_before_execution:
+        # Generate Batsim config file
+        - |
+              #!/bin/bash
+              cat > ${output_directory}/batsim.conf << EOF
+              {
+                "redis": {
+                  "enabled": ${redis_enabled}
+                },
+                "job_submission": {
+                  "forward_profiles": true
+                }
+              }
+              EOF
+
+commands_before_instances:
+  - ${batsim_dir}/test/is_batsim_dir.py ${base_working_directory}
+  - ${batsim_dir}/test/clean_output_dir.py ${base_output_directory}

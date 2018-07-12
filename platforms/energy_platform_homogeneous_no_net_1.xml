@@ -1,0 +1,31 @@
+
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+<platform version="4">
+<config id="General">
+    <!-- <prop id="network/coordinates" value="yes"></prop> -->
+    <!-- Reduce the size of the stack_size. On huge machine, if the stack is too big (8Mb by default), Simgrid fails to initiate.
+    See http://lists.gforge.inria.fr/pipermail/simgrid-user/2015-June/003745.html-->
+        <prop id="contexts/stack_size" value="16"></prop>
+        <prop id="contexts/guard_size" value="0"></prop>
+
+</config>
+
+<AS id="AS0"  routing="Vivaldi">
+    <host id="master_host" coordinates="0 0 0" speed="100Mf">
+        <prop id="watt_per_state" value="100:100:200" />
+        <prop id="watt_off" value="10" />
+    </host>
+
+    <!-- The state 3 of Mercury is a sleep state.
+    When switching from a computing state to the state 3, passing by the virtual pstate 4 is mandatory to simulate the time and energy consumed by the switch off.
+    When switching from the state 3 to a computing state, passing by the virtual pstate 5 is mandatory to simulate the time and energy consumed by the switch on.
+     -->
+
+        <host id="host0" coordinates="0 0 0" speed="100.0Mf, 88.95899053627761Mf, 83.67952522255192Mf, 80.57142857142857Mf, 76.21621621621621Mf, 72.49357326478149Mf, 68.78048780487805Mf, 64.6788990825688Mf, 60.775862068965516Mf, 58.62785862785863Mf, 50.088809946714036Mf, 49.21465968586388Mf, 44.97607655502392Mf, 1e-9Mf, 0.1639344262295082f, 0.006599788806758183f" pstate="0" >
+            <prop id="watt_per_state" value="95.0:95.0:190.738, 95.0:95.0:171.02, 95.0:95.0:165.62, 95.0:95.0:160.47, 95.0:95.0:155.729, 95.0:95.0:151.3, 95.0:95.0:146.92, 95.0:95.0:142.95, 95.0:95.0:138.928, 95.0:95.0:135.368, 95.0:95.0:132.519, 95.0:95.0:128.87, 95.0:95.0:125.88, 9.75:9.75:9.75, 100.99672131147543:100.99672131147543:100.99672131147543, 125.1743848996832:125.1743848996832:125.1743848996832" />
+            <prop id="watt_off" value="10" />
+            <prop id="sleep_pstates" value="13:14:15" />
+        </host>
+</AS>
+</platform>
