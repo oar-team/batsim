@@ -259,7 +259,7 @@ MachineRange difference(const MachineRange & one, const MachineRange &other)
 
 MachineRange operator-(const MachineRange & one, const MachineRange &other)
 {
-    return one - other;
+    return difference(one, other);
 }
 
 MachineRange union_itvs(const MachineRange & one, const MachineRange &other)
