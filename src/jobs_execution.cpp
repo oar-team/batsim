@@ -9,6 +9,7 @@
 #include "task_execution.hpp"
 #include "server.hpp"
 
+#include <simgrid/s4u.hpp>
 #include <simgrid/plugins/energy.h>
 
 #include <smpi/smpi.h>
@@ -35,7 +36,7 @@ int smpi_replay_process(int argc, char *argv[])
         MSG_sem_release(args->semaphore);
     }
 
-    args->job->execution_processes.erase(MSG_process_self());
+    // args->job->execution_actors.erase(simgrid::s4u::Actor::self()); TODO S4U
     delete args;
     return 0;
 }
@@ -267,14 +268,15 @@ int execute_task(BatTask * btask,
 
             msg_process_t process = MSG_process_create_with_arguments(str_pname, smpi_replay_process,
                                                                       message, host_to_use, 5, argv);
-            job->execution_processes.insert(process);
+            //job->execution_processes.insert(process); TODO S4U
+            (void) process;
 
             // todo: avoid memory leaks
             free(str_pname);
 
         }
         MSG_sem_acquire(sem);
-        free(sem);
+        MSG_sem_destroy(sem);
         return profile->return_code;
     }
     else
@@ -327,6 +329,7 @@ int execute_task_cleanup(void * unknown, void * data)
     XBT_DEBUG("before freeing communication amount %p", cleanup_data->communication_amount);
     xbt_free(cleanup_data->communication_amount);
 
+    /* TODO S4U
     if (cleanup_data->exec_process_args != nullptr)
     {
         XBT_DEBUG("before deleting exec_process_args->allocation %p",
@@ -335,6 +338,7 @@ int execute_task_cleanup(void * unknown, void * data)
         XBT_DEBUG("before deleting exec_process_args %p", cleanup_data->exec_process_args);
         delete cleanup_data->exec_process_args;
     }
+    */
 
     if (cleanup_data->task != nullptr)
     {
@@ -400,22 +404,17 @@ BatTask * initialize_sequential_tasks(Job * job, Profile * profile, Profile * io
     return task;
 }
 
-int execute_job_process(int argc, char *argv[])
+void execute_job_process(BatsimContext * context,
+                         SchedulingAllocation * allocation,
+                         bool notify_server_at_end,
+                         Profile * io_profile)
 {
-    (void) argc;
-    (void) argv;
-
-    // Retrieving input parameters
-    ExecuteJobProcessArguments * args = (ExecuteJobProcessArguments *) MSG_process_get_data(MSG_process_self());
-
-    Workload * workload = args->context->workloads.at(args->allocation->job_id.workload_name);
-    Job * job = workload->jobs->at(args->allocation->job_id);
+    Workload * workload = context->workloads.at(allocation->job_id.workload_name);
+    Job * job = workload->jobs->at(allocation->job_id);
     Profile * profile = workload->profiles->at(job->profile);
-    Profile * io_profile = args->io_profile;
-    SchedulingAllocation * allocation = args->allocation;
 
     job->starting_time = MSG_get_clock();
-    job->allocation = args->allocation->machine_ids;
+    job->allocation = allocation->machine_ids;
     double remaining_time = (double)job->walltime;
 
     // Create the root task
@@ -442,7 +441,7 @@ int execute_job_process(int argc, char *argv[])
         int machine_id_within_allocated_resources = allocation->mapping[executor_id];
         int machine_id = allocation->machine_ids[machine_id_within_allocated_resources];
 
-        msg_host_t to_add = args->context->machines[machine_id]->host;
+        msg_host_t to_add = context->machines[machine_id]->host;
         allocation->hosts.push_back(to_add);
     }
 
@@ -450,28 +449,27 @@ int execute_job_process(int argc, char *argv[])
     allocation->io_hosts.reserve(allocation->io_allocation.size());
     for (unsigned int id = 0; id < allocation->io_allocation.size(); ++id)
     {
-        allocation->io_hosts.push_back(args->context->machines[id]->host);
+        allocation->io_hosts.push_back(context->machines[id]->host);
     }
 
     // If energy is enabled, let us compute the energy used by the machines before running the job
-    if (args->context->energy_used)
+    if (context->energy_used)
     {
-        job->consumed_energy = consumed_energy_on_machines(args->context, job->allocation);
+        job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
         // Let's trace the consumed energy
-        args->context->energy_tracer.add_job_start(MSG_get_clock(), job->id);
+        context->energy_tracer.add_job_start(MSG_get_clock(), job->id);
     }
 
     // Job computation
-    args->context->machines.update_machines_on_job_run(job,
-                                                       args->allocation->machine_ids,
-                                                       args->context);
+    context->machines.update_machines_on_job_run(job, allocation->machine_ids,
+                                                 context);
     // Add a cleanup hook on the process
     CleanExecuteTaskData * cleanup_data = new CleanExecuteTaskData;
-    cleanup_data->exec_process_args = args;
-    MSG_process_on_exit(execute_task_cleanup, cleanup_data);
+    //cleanup_data->exec_process_args = args; TODO S4U
+    //MSG_process_on_exit(execute_task_cleanup, cleanup_data); TODO S4U
 
     // Execute the process
-    job->return_code = execute_task(job->task, args->context, args->allocation,
+    job->return_code = execute_task(job->task, context, allocation,
                                     cleanup_data, &remaining_time);
     if (job->return_code == 0)
     {
@@ -489,15 +487,14 @@ int execute_job_process(int argc, char *argv[])
         XBT_INFO("Job %s had been killed (walltime %g reached)",
                  job->id.to_string().c_str(), (double) job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
-        if (args->context->trace_schedule)
+        if (context->trace_schedule)
         {
-            args->context->paje_tracer.add_job_kill(job, args->allocation->machine_ids,
-                                                    MSG_get_clock(), true);
+            context->paje_tracer.add_job_kill(job, allocation->machine_ids,
+                                              MSG_get_clock(), true);
         }
     }
 
-    args->context->machines.update_machines_on_job_end(job, args->allocation->machine_ids,
-                                                       args->context);
+    context->machines.update_machines_on_job_end(job, allocation->machine_ids, context);
     job->runtime = MSG_get_clock() - job->starting_time;
     if (job->runtime == 0)
     {
@@ -506,60 +503,54 @@ int execute_job_process(int argc, char *argv[])
     }
 
     // If energy is enabled, let us compute the energy used by the machines after running the job
-    if (args->context->energy_used)
+    if (context->energy_used)
     {
         long double consumed_energy_before = job->consumed_energy;
-        job->consumed_energy = consumed_energy_on_machines(args->context, job->allocation);
+        job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
 
         // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
         job->consumed_energy -= job->consumed_energy - consumed_energy_before;
 
         // Let's trace the consumed energy
-        args->context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
+        context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
     }
 
-    if (args->notify_server_at_end)
+    if (notify_server_at_end)
     {
         // Let us tell the server that the job completed
         JobCompletedMessage * message = new JobCompletedMessage;
-        message->job_id = args->allocation->job_id;
+        message->job_id = allocation->job_id;
 
         send_message("server", IPMessageType::JOB_COMPLETED, (void*)message);
     }
 
-    job->execution_processes.erase(MSG_process_self());
-    return 0;
+    job->execution_actors.erase(simgrid::s4u::Actor::self());
 }
 
-int waiter_process(int argc, char *argv[])
+void waiter_process(double target_time, const ServerData * server_data)
 {
-    (void) argc;
-    (void) argv;
-
-    WaiterProcessArguments * args = (WaiterProcessArguments *) MSG_process_get_data(MSG_process_self());
-
     double curr_time = MSG_get_clock();
 
-    if (curr_time < args->target_time)
+    if (curr_time < target_time)
     {
-        double time_to_wait = args->target_time - curr_time;
+        double time_to_wait = target_time - curr_time;
         // Sometimes time_to_wait is so small that it does not affect MSG_process_sleep. The value of 1e-5 have been found on trial-error.
         if(time_to_wait < 1e-5)
         {
             time_to_wait = 1e-5;
         }
-        XBT_INFO("Sleeping %g seconds to reach time %g", time_to_wait, args->target_time);
+        XBT_INFO("Sleeping %g seconds to reach time %g", time_to_wait, target_time);
         MSG_process_sleep(time_to_wait);
         XBT_INFO("Sleeping done");
     }
     else
     {
-        XBT_INFO("Time %g is already reached, skipping sleep", args->target_time);
+        XBT_INFO("Time %g is already reached, skipping sleep", target_time);
     }
 
-    if (args->server_data->end_of_simulation_in_send_buffer ||
-        args->server_data->end_of_simulation_sent ||
-        args->server_data->end_of_simulation_ack_received)
+    if (server_data->end_of_simulation_in_send_buffer ||
+        server_data->end_of_simulation_sent ||
+        server_data->end_of_simulation_ack_received)
     {
         XBT_INFO("Simulation have finished. Thus, NOT sending WAITING_DONE to the server.");
     }
@@ -567,27 +558,19 @@ int waiter_process(int argc, char *argv[])
     {
         send_message("server", IPMessageType::WAITING_DONE);
     }
-
-    delete args;
-    return 0;
 }
 
 
 
-int killer_process(int argc, char *argv[])
+void killer_process(BatsimContext * context, std::vector<JobIdentifier> jobs_ids)
 {
-    (void) argc;
-    (void) argv;
-
-    KillerProcessArguments * args = (KillerProcessArguments *) MSG_process_get_data(MSG_process_self());
-
     KillingDoneMessage * message = new KillingDoneMessage;
-    message->jobs_ids = args->jobs_ids;
+    message->jobs_ids = jobs_ids;
 
-    for (const JobIdentifier & job_id : args->jobs_ids)
+    for (const JobIdentifier & job_id : jobs_ids)
     {
-        Job * job = args->context->workloads.job_at(job_id);
-        Profile * profile = args->context->workloads.at(job_id.workload_name)->profiles->at(job->profile);
+        Job * job = context->workloads.job_at(job_id);
+        Profile * profile = context->workloads.at(job_id.workload_name)->profiles->at(job->profile);
         (void) profile;
 
         xbt_assert(! (job->state == JobState::JOB_STATE_REJECTED ||
@@ -611,20 +594,18 @@ int killer_process(int argc, char *argv[])
             message->jobs_progress[job_id] = job_progress;
 
             // Let's kill all the involved processes
-            xbt_assert(job->execution_processes.size() > 0);
-            for (msg_process_t process : job->execution_processes)
+            xbt_assert(job->execution_actors.size() > 0);
+            for (simgrid::s4u::ActorPtr actor : job->execution_actors)
             {
-                XBT_INFO("Killing process '%s'", MSG_process_get_name(process));
-                MSG_process_kill(process);
+                XBT_INFO("Killing process '%s'", actor->get_cname());
+                actor->kill();
             }
-            job->execution_processes.clear();
+            job->execution_actors.clear();
 
             // Let's update the job information
             job->state = JobState::JOB_STATE_COMPLETED_KILLED;
 
-            args->context->machines.update_machines_on_job_end(job,
-                                                               job->allocation,
-                                                               args->context);
+            context->machines.update_machines_on_job_end(job, job->allocation, context);
             job->runtime = (Rational)MSG_get_clock() - job->starting_time;
 
             xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%g)!",
@@ -637,22 +618,19 @@ int killer_process(int argc, char *argv[])
             }
 
             // If energy is enabled, let us compute the energy used by the machines after running the job
-            if (args->context->energy_used)
+            if (context->energy_used)
             {
                 long double consumed_energy_before = job->consumed_energy;
-                job->consumed_energy = consumed_energy_on_machines(args->context, job->allocation);
+                job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
 
                 // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
                 job->consumed_energy = job->consumed_energy - consumed_energy_before;
 
                 // Let's trace the consumed energy
-                args->context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
+                context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
             }
         }
     }
 
     send_message("server", IPMessageType::KILLING_DONE, (void*)message);
-    delete args;
-
-    return 0;
 }

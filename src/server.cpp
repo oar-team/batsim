@@ -10,6 +10,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
 #include "context.hpp"
 #include "ipp.hpp"
@@ -20,14 +21,8 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(server, "server"); //!< Logging
 
 using namespace std;
 
-int server_process(int argc, char *argv[])
+void server_process(BatsimContext * context)
 {
-    (void) argc;
-    (void) argv;
-
-    ServerProcessArguments * args = (ServerProcessArguments *) MSG_process_get_data(MSG_process_self());
-    BatsimContext * context = args->context;
-
     ServerData * data = new ServerData;
     data->context = context;
 
@@ -39,13 +34,12 @@ int server_process(int argc, char *argv[])
                                                     context->allow_time_sharing,
                                                     MSG_get_clock());
 
-    RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
-    req_rep_args->context = context;
-    req_rep_args->send_buffer = context->proto_writer->generate_current_message(MSG_get_clock());
+    string send_buffer = context->proto_writer->generate_current_message(MSG_get_clock());
     context->proto_writer->clear();
 
-    MSG_process_create("Scheduler REQ-REP", request_reply_scheduler_process,
-                       (void*)req_rep_args, MSG_host_self());
+    simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
+                                request_reply_scheduler_process,
+                                context, send_buffer);
     data->sched_ready = false;
 
     // Let's prepare a handler map to react on events
@@ -113,12 +107,12 @@ int server_process(int argc, char *argv[])
             !data->end_of_simulation_ack_received // The simulation must NOT be finished
             )
         {
-            RequestReplyProcessArguments * req_rep_args = new RequestReplyProcessArguments;
-            req_rep_args->context = context;
-            req_rep_args->send_buffer = context->proto_writer->generate_current_message(MSG_get_clock());
+            string send_buffer = context->proto_writer->generate_current_message(MSG_get_clock());
             context->proto_writer->clear();
 
-            MSG_process_create("Scheduler REQ-REP", request_reply_scheduler_process, (void*)req_rep_args, MSG_host_self());
+            simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
+                                        request_reply_scheduler_process,
+                                        context, send_buffer);
             data->sched_ready = false;
 
             if (data->end_of_simulation_in_send_buffer)
@@ -150,8 +144,6 @@ int server_process(int argc, char *argv[])
     xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
 
     delete data;
-    delete args;
-    return 0;
 }
 
 void server_on_submitter_hello(ServerData * data,
@@ -357,13 +349,10 @@ void server_on_pstate_modification(ServerData * data,
             else if (machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
             {
                 machine->update_machine_state(MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING);
-                SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
-                args->context = data->context;
-                args->machine_id = machine_id;
-                args->new_pstate = message->new_pstate;
 
                 string pname = "switch ON " + to_string(machine_id);
-                MSG_process_create(pname.c_str(), switch_off_machine_process, (void*)args, machine->host);
+                simgrid::s4u::Actor::create(pname.c_str(), machine->host, switch_off_machine_process,
+                                            data->context, machine_id, message->new_pstate);
 
                 ++data->nb_switching_machines;
             }
@@ -380,13 +369,10 @@ void server_on_pstate_modification(ServerData * data,
                     machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
 
             machine->update_machine_state(MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING);
-            SwitchPStateProcessArguments * args = new SwitchPStateProcessArguments;
-            args->context = data->context;
-            args->machine_id = machine_id;
-            args->new_pstate = message->new_pstate;
 
             string pname = "switch OFF " + to_string(machine_id);
-            MSG_process_create(pname.c_str(), switch_on_machine_process, (void*)args, machine->host);
+            simgrid::s4u::Actor::create(pname.c_str(), machine->host, switch_on_machine_process,
+                                        data->context, machine_id, message->new_pstate);
 
             ++data->nb_switching_machines;
         }
@@ -766,8 +752,7 @@ void server_on_kill_jobs(ServerData * data,
     xbt_assert(task_data->data != nullptr);
     KillJobMessage * message = (KillJobMessage *) task_data->data;
 
-    KillerProcessArguments * args = new KillerProcessArguments;
-    args->context = data->context;
+    std::vector<JobIdentifier> jobs_ids_to_kill;
 
     for (const JobIdentifier & job_id : message->jobs_ids)
     {
@@ -785,11 +770,12 @@ void server_on_kill_jobs(ServerData * data,
             job->kill_requested = true;
 
             // The job is included in the killer_process arguments
-            args->jobs_ids.push_back(job_id);
+            jobs_ids_to_kill.push_back(job_id);
         }
     }
 
-    MSG_process_create("killer_process", killer_process, (void *) args, MSG_host_self());
+    simgrid::s4u::Actor::create("killer_process", simgrid::s4u::this_actor::get_host(),
+                                killer_process, data->context, jobs_ids_to_kill);
     ++data->nb_killers;
 }
 
@@ -803,13 +789,10 @@ void server_on_call_me_later(ServerData * data,
                "You asked to be awaken in the past! (you ask: %f, it is: %f)",
                message->target_time, MSG_get_clock());
 
-    WaiterProcessArguments * args = new WaiterProcessArguments;
-    args->target_time = message->target_time;
-    args->server_data = data;
-
     string pname = "waiter " + to_string(message->target_time);
-    MSG_process_create(pname.c_str(), waiter_process, (void*) args,
-                       data->context->machines.master_machine()->host);
+    simgrid::s4u::Actor::create(pname.c_str(),
+                                data->context->machines.master_machine()->host,
+                                waiter_process, message->target_time, data);
     ++data->nb_waiters;
 }
 
@@ -886,17 +869,11 @@ void server_on_execute_job(ServerData * data,
                    allocation->machine_ids.to_string_hyphen().c_str());
     }
 
-
-    ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
-    exec_args->context = data->context;
-    exec_args->allocation = allocation;
-    exec_args->notify_server_at_end = true;
-    exec_args->io_profile = message->io_profile;
     string pname = "job_" + job->id.to_string();
-    msg_process_t process = MSG_process_create(pname.c_str(), execute_job_process,
-                                               (void*)exec_args,
-                                               data->context->machines[allocation->machine_ids.first_element()]->host);
-    job->execution_processes.insert(process);
+    auto actor = simgrid::s4u::Actor::create(pname.c_str(),
+                                             data->context->machines[allocation->machine_ids.first_element()]->host,
+                                             execute_job_process, data->context, allocation, true, message->io_profile);
+    job->execution_actors.insert(actor);
 }
 
 bool is_simumation_finished(const ServerData * data)

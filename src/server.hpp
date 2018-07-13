@@ -64,11 +64,9 @@ void check_simulation_finished(ServerData * data);
 
 /**
  * @brief Process used to orchestrate the simulation
- * @param[in] argc The number of arguments
- * @param[in] argv The arguments' values
- * @return 0
+ * @param[in] context The BatsimContext
  */
-int server_process(int argc, char *argv[]);
+void server_process(BatsimContext * context);
 
 
 /**

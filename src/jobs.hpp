@@ -12,6 +12,7 @@
 #include <rapidjson/document.h>
 
 #include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
 #include "exact_numbers.hpp"
 #include "machine_range.hpp"
@@ -170,7 +171,7 @@ struct Job
     JobIdentifier id; //!< The job unique identifier
     BatTask * task = nullptr; //!< The root task be executed by this job (profile instantiation).
     std::string json_description; //!< The JSON description of the job
-    std::set<msg_process_t> execution_processes; //!< The processes involved in running the job
+    std::set<simgrid::s4u::ActorPtr> execution_actors; //!< The actors involved in running the job
     std::deque<std::string> incoming_message_buffer; //!< The buffer for incoming messages from the scheduler.
 
     // Scheduler allocation and metadata

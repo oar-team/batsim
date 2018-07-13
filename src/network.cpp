@@ -26,18 +26,12 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(network, "network"); //!< Logging
 
 using namespace std;
 
-int request_reply_scheduler_process(int argc, char *argv[])
+void request_reply_scheduler_process(BatsimContext * context, std::string send_buffer)
 {
-    (void) argc;
-    (void) argv;
-
-    RequestReplyProcessArguments * args = (RequestReplyProcessArguments *) MSG_process_get_data(MSG_process_self());
-    BatsimContext * context = args->context;
-
-    XBT_DEBUG("Buffer received in REQ-REP: '%s'", args->send_buffer.c_str());
+    XBT_DEBUG("Buffer received in REQ-REP: '%s'", send_buffer.c_str());
 
     // Let's make sure the message is sent as UTF-8
-    string message_to_send = args->send_buffer;
+    string message_to_send = send_buffer;
 
     // Send the message
     XBT_INFO("Sending '%s'", message_to_send.c_str());
@@ -72,7 +66,4 @@ int request_reply_scheduler_process(int argc, char *argv[])
     context->microseconds_used_by_scheduler += elapsed_microseconds;
 
     context->proto_reader->parse_and_apply_message(message_received);
-
-    delete args;
-    return 0;
 }
