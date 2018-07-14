@@ -85,6 +85,10 @@ include_directories(${ZMQ_INCLUDE_DIRS})
 find_package(docopt REQUIRED)
 include_directories(${DOCOPT_INCLUDE_DIRS})
 
+## Pugixml dependency
+find_package(pugixml REQUIRED)
+include_directories(${PUGIXML_INCLUDE_DIR})
+
 ##################
 # Batsim version #
 ##################
@@ -134,6 +138,7 @@ target_link_libraries(batsim
     ${HIREDIS_LIBRARY}
     ${ZMQ_LIBRARIES}
     ${DOCOPT_LIBRARIES}
+    ${PUGIXML_LIBRARY}
 )
 
 ################
