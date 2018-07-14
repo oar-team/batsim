@@ -80,6 +80,10 @@ include_directories(${LIBEV_INCLUDE_DIRS})
 find_package(ZMQ REQUIRED)
 include_directories(${ZMQ_INCLUDE_DIRS})
 
+## Docopt dependency
+find_package(docopt REQUIRED)
+include_directories(${DOCOPT_INCLUDE_DIRS})
+
 ##################
 # Batsim version #
 ##################
@@ -127,7 +131,9 @@ target_link_libraries(batsim
                       ${REDOX_LIBRARY}
                       ${LIBEV_LIBRARY}
                       ${HIREDIS_LIBRARY}
-                      ${ZMQ_LIBRARIES})
+                      ${ZMQ_LIBRARIES}
+                      ${DOCOPT_LIBRARIES}
+)
 
 ################
 # Installation #
