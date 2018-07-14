@@ -8,8 +8,6 @@
 #include <fstream>
 #include <streambuf>
 
-#include "pugixml-1.7/pugixml.hpp"
-
 #include "context.hpp"
 #include "jobs.hpp"
 #include "profiles.hpp"
