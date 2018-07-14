@@ -43,7 +43,8 @@ endif()
 ################
 # Dependencies #
 ################
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+    "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 ## SimGrid dependency
 find_package(SimGrid REQUIRED)
@@ -76,7 +77,7 @@ include_directories(${HIREDIS_INCLUDE_DIRS})
 find_package(libev REQUIRED)
 include_directories(${LIBEV_INCLUDE_DIRS})
 
-# ZeroMQ dependency
+## ZeroMQ dependency
 find_package(ZMQ REQUIRED)
 include_directories(${ZMQ_INCLUDE_DIRS})
 
@@ -121,25 +122,25 @@ add_executable(batsim ${batsim_SRC})
 
 # Libraries to link
 target_link_libraries(batsim
-                      ${SimGrid_LIBRARY}
-                      ${GMP_LIBRARIES}
-                      ${Boost_FILESYSTEM_LIBRARY_DEBUG}
-                      ${Boost_LOCALE_LIBRARY_DEBUG}
-                      ${Boost_REGEX_LIBRARY_DEBUG}
-                      ${Boost_SYSTEM_LIBRARY_DEBUG}
-                      ${OPENSSL_LIBRARIES}
-                      ${REDOX_LIBRARY}
-                      ${LIBEV_LIBRARY}
-                      ${HIREDIS_LIBRARY}
-                      ${ZMQ_LIBRARIES}
-                      ${DOCOPT_LIBRARIES}
+    ${SimGrid_LIBRARY}
+    ${GMP_LIBRARIES}
+    ${Boost_FILESYSTEM_LIBRARY_DEBUG}
+    ${Boost_LOCALE_LIBRARY_DEBUG}
+    ${Boost_REGEX_LIBRARY_DEBUG}
+    ${Boost_SYSTEM_LIBRARY_DEBUG}
+    ${OPENSSL_LIBRARIES}
+    ${REDOX_LIBRARY}
+    ${LIBEV_LIBRARY}
+    ${HIREDIS_LIBRARY}
+    ${ZMQ_LIBRARIES}
+    ${DOCOPT_LIBRARIES}
 )
 
 ################
 # Installation #
 ################
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim
-        DESTINATION bin)
+    DESTINATION bin)
 
 # Let's enable warnings if needed
 if (enable_warnings)
