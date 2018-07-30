@@ -47,6 +47,26 @@ void JsonProtocolWriter::append_requested_call(double date)
     _events.PushBack(event, _alloc);
 }
 
+void JsonProtocolWriter::append_no_more_static_submitters(double date)
+{
+    /*{
+      "timestamp":23.0,
+      "type": "NO_MORE_STATIC_SUBMITTERS",
+      "data": {}
+    } */
+
+    xbt_assert(date >= _last_date, "Date inconsistency");
+    _last_date = date;
+    _is_empty = false;
+
+    Value event(rapidjson::kObjectType);
+    event.AddMember("timestamp", Value().SetDouble(date), _alloc);
+    event.AddMember("type", Value().SetString("NO_MORE_STATIC_SUBMITTERS"), _alloc);
+    event.AddMember("data", Value().SetObject(), _alloc);
+
+    _events.PushBack(event, _alloc);
+}
+
 void JsonProtocolWriter::append_simulation_begins(Machines & machines,
                                                   Workloads & workloads,
                                                   const Document & configuration,
