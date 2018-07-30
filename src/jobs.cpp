@@ -344,7 +344,7 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
                      Workload * workload,
                      const std::string & error_prefix)
 {
-    // Create and initialyze with default values
+    // Create and initialize with default values
     Job * j = new Job;
     j->workload = workload;
     j->starting_time = -1;

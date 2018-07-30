@@ -139,7 +139,7 @@ struct JobRejectedMessage
 struct SchedulingAllocation
 {
     JobIdentifier job_id; //!< The JobIdentifier
-    MachineRange machine_ids; //!< User defined allocation in range ot machines ids
+    MachineRange machine_ids; //!< User defined allocation in range of machines ids
     std::vector<int> mapping; //!< The mapping from executors (~=ranks) to resource ids. Can be empty, in which case it will NOT be used (a round robin will be used instead). If not empty, must be of the same size of the job, and each value must be in [0,nb_allocated_res[.
     std::map<std::string, int> storage_mapping; //!< mapping from label given in the profile and machine id
     std::vector<msg_host_t> hosts;  //!< The list of SimGrid hosts that would be used (one executor per host)

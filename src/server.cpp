@@ -858,15 +858,26 @@ void server_on_execute_job(ServerData * data,
     // Only this profile is able to manage the following scenario:
     // The scheduler allocated a different number of resources than the
     // number of requested resources.
-    if (allocation->mapping.size() != 0
-            and job->workload->profiles->at(job->profile)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
+    if (job->workload->profiles->at(job->profile)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
     {
-        xbt_assert((int)allocation->mapping.size() == job->requested_nb_res,
-                   "Job '%s' allocation is invalid. The job requires %d machines but only %d were given (%s). "
-                   "Using a different number of machines is only allowed if a custom mapping is specified. "
-                   "This mapping must specify which allocated machine each executor should use.",
-                   job->id.to_string().c_str(), job->requested_nb_res, (int)allocation->mapping.size(),
-                   allocation->machine_ids.to_string_hyphen().c_str());
+        if (allocation->mapping.size() != 0)
+        {
+            xbt_assert((int)allocation->mapping.size() == job->requested_nb_res,
+                       "Job '%s' allocation is invalid. The job requires %d machines but only %d were given (%s). "
+                       "Using a different number of machines is only allowed if a custom mapping is specified. "
+                       "This mapping must specify which allocated machine each executor should use.",
+                       job->id.to_string().c_str(), job->requested_nb_res, (int)allocation->mapping.size(),
+                       allocation->machine_ids.to_string_hyphen().c_str());
+        }
+        else
+        {
+            xbt_assert((int)allocation->machine_ids.size() == job->requested_nb_res,
+                       "Job '%s' allocation is invalid. The job requires %d machines but only %d were given (%s). "
+                       "Using a different number of machines is only allowed if a custom mapping is specified. "
+                       "This mapping must specify which allocated machine each executor should use.",
+                       job->id.to_string().c_str(), job->requested_nb_res, (int)allocation->machine_ids.size(),
+                       allocation->machine_ids.to_string_hyphen().c_str());
+        }
     }
 
     string pname = "job_" + job->id.to_string();
