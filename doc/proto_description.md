@@ -104,6 +104,7 @@ Constraints on the message format are defined here:
   - [JOB_KILLED](#job_killed)
   - [RESOURCE_STATE_CHANGED](#resource_state_changed)
   - [REQUESTED_CALL](#requested_call)
+  - [NO_MORE_STATIC_SUBMITTERS](#no_more_static_submitters)
 - Scheduler to Batsim
   - [REJECT_JOB](#reject_job)
   - [EXECUTE_JOB](#execute_job)
@@ -608,6 +609,20 @@ This message is a response to the [CALL_ME_LATER](#call_me_later) message.
 }
 ```
 
+### NO_MORE_STATIC_SUBMITTERS
+This message tells the scheduler that all jobs in the workload(s) have been submitted.
+This is meaningful only if ``"scheduler_submission": {"enabled": true}`` is configured and tells the scheduler that Batsim is waiting for a ``submission_finished`` NOTIFY event.
+
+- **data**: empty
+- **example**:
+```json
+{
+  "timestamp": 23.0,
+  "type": "NO_MORE_STATIC_SUBMITTERS",
+  "data": {}
+}
+```
+
 ---
 
 ## Scheduler to Batsim events
@@ -672,10 +687,10 @@ allocation itself, for example when some IO nodes are involved.
     "job_id": "w12!45",
     "alloc": "2-3",
     "mapping": {"0": "0", "1": "0", "2": "1", "3": "1"}
-  }
+  },
   "storage_mapping": {
     "pfs": 2
-  }
+  },
   "additional_io_job": {
     "alloc": "2-3 5-6",
     "profile_name": "my_io_job",
