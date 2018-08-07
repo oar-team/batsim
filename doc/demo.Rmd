@@ -56,11 +56,11 @@ The simulation results are in subdirectories:
 - out_schedule.csv contains aggregated information about the execution schedule
 - out_schedule.trace is the Pajé trace of the execution
 
-These output files can be visualized thanks to [Evalys](https://github.com/oar-team/evalys) or analized individually.
+These output files can be visualized thanks to [Evalys](https://github.com/oar-team/evalys) or analyzed individually.
 
 ## Visualize results with Evalys
 
-Evalys can be used to display different informations. For example the gantt charts of the two instances:
+Evalys can be used to display different information. For example the gantt charts of the two instances:
 ```{python}
 from evalys import *
 from evalys.jobset import *

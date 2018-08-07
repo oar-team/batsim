@@ -6,7 +6,7 @@ profile can be associated to multiple jobs.
 
 Each profile is defined in the workload JSON file in the ``profiles`` section.
 The only common field on the profile is the ``type``. Here is a list of all the
-profile types supported by Batsim, with an explaination on how they work and how
+profile types supported by Batsim, with an explanation on how they work and how
 to use it.
 
 **Note**: You can use scientific notation to represent big numbers, e.g.
@@ -37,7 +37,7 @@ allocated to the job.
 
 - ``cpu``: a vector containing the amount of flops to be compute on
   each nodes.
-- ``com``: a vector containing the amount of bytes to be transfered between
+- ``com``: a vector containing the amount of bytes to be transferred between
   nodes. You can see this vector as matrix where host in row is sending to the
   host in column. When row equals column it is intranode communication using
   local loopback interface.
@@ -146,7 +146,7 @@ centralized storage tier. The storage tier is represented by one node.
 This profile represents an IO transfer between two storage tiers.
 
 ### Parameters
-- ``nb_bytes``: the amount of bytes to be transfered.
+- ``nb_bytes``: the amount of bytes to be transferred.
 - ``from``: The name of the storage that send. It will be map to a specific node at the job execution time.
 - ``to``: The name of the storage that receive. It will be map to a specific node at the job execution time.
 

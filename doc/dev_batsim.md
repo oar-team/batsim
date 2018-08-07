@@ -18,14 +18,14 @@ nix-shell /path/to/datamovepkgs -A batsim_dev
 ```
 
 This command will open a new Bash shell with all the environment variable set
-correctly to find all de dependencies and build batsim.
+correctly to find all the dependencies and build batsim.
 
 **NOTE**: You can use `nix-shell --pure` to avoid the conflict with already
 installed tools.
 
 **WARNING**: The environment created by the `nix-shell` command is heavily
 based on environment variables injected in the provided Bash shell. Do NOT
-switch to an other shell (zsh, fish, ...) because environment variableswill not
+switch to an other shell (zsh, fish, ...) because environment variables will not
 be present and the build will fail.
 
 Then you can configure build batsim with these commands:

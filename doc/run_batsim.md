@@ -58,7 +58,7 @@ To make it more understandable, here is the command decomposition:
   find the platform file and so on: Batsim is running inside docker in the
   ``/data`` folder.
 - ``oarteam/batsim`` image name (you can add a tag to get a specific version like ``oarteam/batsim:1.2.0``
-- ``--platfom plt.xml --workload wl.json ...`` add batsim parameters
+- ``--platform plt.xml --workload wl.json ...`` add batsim parameters
 
 Then you can run your own scheduler to make the simulation begins.
 
