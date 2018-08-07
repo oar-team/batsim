@@ -47,26 +47,6 @@ void JsonProtocolWriter::append_requested_call(double date)
     _events.PushBack(event, _alloc);
 }
 
-void JsonProtocolWriter::append_no_more_static_submitters(double date)
-{
-    /*{
-      "timestamp":23.0,
-      "type": "NO_MORE_STATIC_SUBMITTERS",
-      "data": {}
-    } */
-
-    xbt_assert(date >= _last_date, "Date inconsistency");
-    _last_date = date;
-    _is_empty = false;
-
-    Value event(rapidjson::kObjectType);
-    event.AddMember("timestamp", Value().SetDouble(date), _alloc);
-    event.AddMember("type", Value().SetString("NO_MORE_STATIC_SUBMITTERS"), _alloc);
-    event.AddMember("data", Value().SetObject(), _alloc);
-
-    _events.PushBack(event, _alloc);
-}
-
 void JsonProtocolWriter::append_simulation_begins(Machines & machines,
                                                   Workloads & workloads,
                                                   const Document & configuration,
@@ -1332,8 +1312,6 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     JobSubmittedByDPMessage * message = new JobSubmittedByDPMessage;
 
     xbt_assert(context->submission_sched_enabled, "Invalid JSON message: dynamic job submission received but the option seems disabled...");
-
-    xbt_assert(!context->submission_sched_finished, "Invalid JSON message: dynamic job submission received but the option have been disabled (a submission_finished message have already been received)");
 
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (SUBMIT_JOB) should be an object", event_number);
 

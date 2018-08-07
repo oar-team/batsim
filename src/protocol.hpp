@@ -172,12 +172,6 @@ public:
      */
     virtual void append_requested_call(double date) = 0;
 
-    /**
-     * @brief Appends a NO_MORE_STATIC_SUBMITTERS message.
-     * @param date The event date. Must be greater than or equal to the previous event.
-     */
-    virtual void append_no_more_static_submitters(double date) =0;
-
     // Management functions
     /**
      * @brief Clears inner content. Should called directly after generate_current_message.
@@ -323,12 +317,6 @@ public:
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_requested_call(double date);
-
-    /**
-     * @brief Appends a NO_MORE_STATIC_SUBMITTERS message.
-     * @param date The event date. Must be greater than or equal to the previous event.
-     */
-    virtual void append_no_more_static_submitters(double date);
 
     // Management functions
     /**

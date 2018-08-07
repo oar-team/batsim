@@ -188,11 +188,6 @@ void server_on_submitter_bye(ServerData * data,
     XBT_DEBUG("A submitted said goodbye. Number of finished submitters: %d",
              data->nb_submitters_finished);
 
-    if(data->nb_submitters_finished == data->expected_nb_submitters)
-    {
-        data->context->proto_writer->append_no_more_static_submitters(MSG_get_clock());
-    }
-
     check_simulation_finished(data);
 }
 

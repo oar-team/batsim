@@ -134,7 +134,7 @@ centralized storage tier. The storage tier is represented by one node.
 
 ```json
 {
-    "type": "msg_par_hg_pfs",
+    "type": "msg_par_hg_pfs"
     "bytes_to_read": 10e5,
     "bytes_to_write": 10e5,
     "storage": "nfs"
