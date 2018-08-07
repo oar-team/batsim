@@ -550,6 +550,30 @@ void JsonProtocolWriter::append_answer_energy(double consumed_energy,
     _events.PushBack(event, _alloc);
 }
 
+void JsonProtocolWriter::append_notify(const std::string & notify_type,
+                                       double date)
+{
+    /* {
+       "timestamp": 23.57,
+       "type": "NOTIFY",
+       "data": { "type": "no_more_static_submitters" }
+    } */
+
+    xbt_assert(date >= _last_date, "Date inconsistency");
+    _last_date = date;
+    _is_empty = false;
+
+    Value data(rapidjson::kObjectType);
+    data.AddMember("type", Value().SetString(notify_type.c_str(), _alloc), _alloc);
+
+    Value event(rapidjson::kObjectType);
+    event.AddMember("timestamp", Value().SetDouble(date), _alloc);
+    event.AddMember("type", Value().SetString("NOTIFY"), _alloc);
+    event.AddMember("data", data, _alloc);
+
+    _events.PushBack(event, _alloc);
+}
+
 void JsonProtocolWriter::clear()
 {
     _is_empty = true;

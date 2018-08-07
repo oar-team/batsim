@@ -185,8 +185,13 @@ void server_on_submitter_bye(ServerData * data,
     {
         data->nb_workflow_submitters_finished++;
     }
-    XBT_DEBUG("A submitted said goodbye. Number of finished submitters: %d",
+    XBT_DEBUG("A submitter said goodbye. Number of finished submitters: %d",
              data->nb_submitters_finished);
+
+    if(data->nb_submitters_finished == data->expected_nb_submitters)
+    {
+        data->context->proto_writer->append_notify("no_more_static_submitters", MSG_get_clock());
+    }
 
     check_simulation_finished(data);
 }
