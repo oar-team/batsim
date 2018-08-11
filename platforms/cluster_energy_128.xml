@@ -43,6 +43,8 @@
 
     <prop id="watt_off" value="9.75" />
 
+    <prop id="role" value="master" />
+
     <!-- OFF : ON->OFF (shutdown) : OFF->ON (booting) -->
     <prop id="sleep_pstates" value="13:14:15" />
 </cluster>
