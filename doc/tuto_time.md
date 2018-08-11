@@ -128,7 +128,7 @@ This mechanism ensures that scheduler calls are consistent in time:
 ## What if something happened during the scheduler call?
 Please remark that this mechanism implies that schedulers (that wish to take
 scheduling time into account) may receive messages from the *past* when they are
-called. Indeed, Batsim can send messages whose events occured between the last
+called. Indeed, Batsim can send messages whose events occurred between the last
 call time (``now`` field of the previous request message sent by Batsim) and the
 current one (``now`` field of the current request message).
 

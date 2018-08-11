@@ -165,7 +165,7 @@ For now, Batsim **queries** the following requests:
   Arguments: a job description, similar to those sent in
   [JOB_SUBMITTED](#job_submitted) messages when redis is disabled.
 
-- **data**: a dictionnary of requests.
+- **data**: a dictionary of requests.
 - **example**:
 ```json
 {
@@ -265,12 +265,12 @@ metainformation from Batsim to any scheduler at runtime.
   - **nb_storage_resources**: the number of storage resources
   - **allow_time_sharing**: whether time sharing is enabled or not
   - **config**: the Batsim configuration
-  - **compute_resources**: informations about the compute resources
+  - **compute_resources**: information about the compute resources
     - **id**: unique resource number
     - **name**: resource name
     - **state**: resource state in {sleeping, idle, computing, switching_on, switching_off}
     - **properties**: the properties specified in the SimGrid platform for the corresponding host
-  - **storage_resources**: informations about the storage resources
+  - **storage_resources**: information's about the storage resources
   - **workloads**: the map of workloads given to Batsim. The key is the unique id of the workload
     and the value is the absolute path of the workload.
    Note that this unique id prefixes each job (before the ``!``).

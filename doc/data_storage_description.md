@@ -12,7 +12,7 @@ Decision process.
 # Keys Prefix #
 
 Since several Batsim instances can be run at the same time, all the keys
-explained in this document must be prefixed by some instance-spefific prefix.
+explained in this document must be prefixed by some instance-specific prefix.
 At the moment, this prefix is set to the absolute filename of the socket used
 in [the Batsim protocol](proto_description.md), followed by a colon ':'.
 
