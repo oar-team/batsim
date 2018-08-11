@@ -7,7 +7,7 @@
         "job1":"252->262"
     },
 
-    "nb_res": 1,
+    "nb_res": 2,
     "jobs": [
         {"id":0, "subtime":0, "walltime": 1000, "res": 2, "profile": "delay_prof"},
         {"id":1, "subtime":100, "walltime": 1000, "res": 2, "profile": "delay_prof"}
