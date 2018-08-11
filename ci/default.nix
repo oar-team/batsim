@@ -14,5 +14,5 @@ with pkgs;
     enableParallelBuilding = true;
     doCheck = false;
 
-    nativeBuildInputs = attrs.nativeBuildInputs ++ [nix];
+    nativeBuildInputs = attrs.nativeBuildInputs ++ [nix which coreutils];
 })

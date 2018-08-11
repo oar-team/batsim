@@ -18,6 +18,10 @@ fi
 # Add built batsim in PATH
 export PATH=$(realpath ./build):${PATH}
 
+# Print which files are executed
+echo "batsim realpath: $(realpath $(which batsim))"
+echo "batsched realpath: $(realpath $(which batsched))"
+
 # Execute the tests
 cd build
 ctest
