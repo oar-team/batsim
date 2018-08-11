@@ -9,18 +9,14 @@
 
     "nb_res": 1,
     "jobs": [
-        {"id":0, "subtime":0, "walltime": 1000, "res": 1, "profile": "msg_hg_10"},
-        {"id":1, "subtime":100, "walltime": 1000, "res": 1, "profile": "msg_hg_10"}
+        {"id":0, "subtime":0, "walltime": 1000, "res": 2, "profile": "ptask_prof"},
+        {"id":1, "subtime":100, "walltime": 1000, "res": 2, "profile": "ptask_prof"}
     ],
 
     "profiles": {
-        "delay10": {
-            "type": "delay",
-            "delay": 10
-        },
-        "msg_hg_10": {
+        "ptask_prof": {
             "type": "msg_par_hg",
-            "cpu": 4e9,
+            "cpu": 1e9,
             "com": 0
         }
     }

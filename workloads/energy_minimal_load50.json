@@ -1,0 +1,23 @@
+{
+    "comments": {
+        "period":30,
+        "extinction1": "30 -> 36",
+        "off1": "36 -> 100",
+        "boot1": "100 -> 252",
+        "job1":"252->262"
+    },
+
+    "nb_res": 2,
+    "jobs": [
+        {"id":0, "subtime":0, "walltime": 1000, "res": 2, "profile": "ptask_prof"},
+        {"id":1, "subtime":100, "walltime": 1000, "res": 2, "profile": "ptask_prof"}
+    ],
+
+    "profiles": {
+        "ptask_prof": {
+            "type": "msg_par_hg",
+            "cpu": 5e8,
+            "com": 1.25e9
+        }
+    }
+}
