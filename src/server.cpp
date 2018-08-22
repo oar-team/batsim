@@ -190,7 +190,7 @@ void server_on_submitter_bye(ServerData * data,
 
     if(data->nb_submitters_finished == data->expected_nb_submitters)
     {
-        data->context->proto_writer->append_notify("no_more_static_submitters", MSG_get_clock());
+        data->context->proto_writer->append_notify("no_more_static_job_to_submit", MSG_get_clock());
     }
 
     check_simulation_finished(data);

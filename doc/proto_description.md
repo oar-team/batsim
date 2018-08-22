@@ -246,7 +246,7 @@ This message allows a peer to notify something to its counterpart.
 There is no expected acknowledgement when sending such message.
 
 For now, Batsim can **notify** the scheduler of the following:
-- **no_more_static_submitters**: Batsim tells the scheduler that it has no more jobs to submit. This means that all jobs in the workloads have already been submitted to the scheduler and the scheduler cannot expect more jobs to arrive.
+- **no_more_static_job_to_submit**: Batsim tells the scheduler that it has no more jobs to submit from the static submitters. This means that all jobs in the workloads have already been submitted to the scheduler and the scheduler cannot expect more jobs to arrive (except the potential ones through dynamic submission).
 
 For now, the scheduler can **notify** Batsim of the following:
 - **submission_finished**: The scheduler tells Batsim that dynamic job submissions are over, which allows Batsim to stop the simulation. This message **MUST** be sent if ``"scheduler_submission": {"enabled": true}`` is configures, in order to finish the simulation. See [Configuration documentation](./configuration.md) for more details.
@@ -259,7 +259,7 @@ For now, the scheduler can **notify** Batsim of the following:
 {
   "timestamp": 23.50,
   "type": "NOTIFY",
-  "data": { "type": "no_more_static_submitters" }
+  "data": { "type": "no_more_static_job_to_submit" }
 }
 ```
 or

@@ -430,7 +430,7 @@ Other options:
         vector<string> parsed;
         boost::split(parsed, hosts_roles_maps[i], boost::is_any_of(":"));
 
-        xbt_assert(parsed.size() == 2, "The roles host mapping sould only contain one ':' charactere");
+        xbt_assert(parsed.size() == 2, "The roles host mapping should only contain one ':' character");
         string hosts = parsed[0];
         string roles = parsed[1];
         vector<string> host_list;
