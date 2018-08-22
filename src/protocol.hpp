@@ -167,6 +167,13 @@ public:
                                       double date) = 0;
 
     /**
+     * @brief Appends a NOTIFY event.
+     * @param notify_type The type of the NOTIFY event
+     * @param date The event date. Must be greater than or equal to the previous event date.
+     */
+    virtual void append_notify(const std::string & notify_type,
+                               double date) = 0;
+    /**
      * @brief Appends a REQUESTED_CALL message.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
@@ -311,6 +318,14 @@ public:
      */
     void append_answer_energy(double consumed_energy,
                               double date);
+
+    /**
+     * @brief Appends a NOTIFY event
+     * @param notify_type The type of the notify event
+     * @param date The event date. Must be greater than or equal to the previous event.
+     */
+    void append_notify(const std::string & notify_type,
+                       double date);
 
     /**
      * @brief Appends a REQUESTED_CALL message.

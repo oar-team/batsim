@@ -96,6 +96,7 @@ Constraints on the message format are defined here:
   - [NOP](#nop)
   - [QUERY](#query)
   - [ANSWER](#answer)
+  - [NOTIFY](#notify)
 - Batsim to Scheduler
   - [SIMULATION_BEGINS](#simulation_begins)
   - [SIMULATION_ENDS](#simulation_ends)
@@ -113,7 +114,6 @@ Constraints on the message format are defined here:
   - [SUBMIT_PROFILE](#submit_profile)
   - [SET_RESOURCE_STATE](#set_resource_state)
   - [SET_JOB_METADATA](#set_job_metadata)
-  - [NOTIFY](#notify)
   - [CHANGE_JOB_STATE](#change_job_state)
 
 ## Bidirectional events
@@ -148,19 +148,19 @@ This message allows a peer to ask specific information to its counterpart:
 The other peer should answer such QUERY via an [ANSWER](#answer).
 
 For now, Batsim **answers** to the following requests:
-- "consumed_energy": the scheduler queries Batsim about the total consumed
+- ``consumed_energy``: the scheduler queries Batsim about the total consumed
    energy (from time 0 to now) in Joules.
   Only works if the energy mode is enabled.
   This query has no argument.
-- "air_temperature_all": the scheduler queries Batsim about the ambient air temperature of
+- ``air_temperature_all``: the scheduler queries Batsim about the ambient air temperature of
    all hosts.
   Only works if the temperature mode is enabled.
-- "processor_temperature_all": the scheduler queries Batsim about the processor
+- ``processor_temperature_all``: the scheduler queries Batsim about the processor
    temperature of all hosts.
   Only works if the temperature mode is enabled.
 
 For now, Batsim **queries** the following requests:
-- "estimate_waiting_time": Batsim asks the scheduler what would be the waiting
+- ``estimate_waiting_time``: Batsim asks the scheduler what would be the waiting
   time of a potential job.  
   Arguments: a job description, similar to those sent in
   [JOB_SUBMITTED](#job_submitted) messages when redis is disabled.
@@ -239,6 +239,38 @@ or
   }
 }
 ```
+
+### NOTIFY
+
+This message allows a peer to notify something to its counterpart.
+There is no expected acknowledgement when sending such message.
+
+For now, Batsim can **notify** the scheduler of the following:
+- **no_more_static_job_to_submit**: Batsim tells the scheduler that it has no more jobs to submit from the static submitters. This means that all jobs in the workloads have already been submitted to the scheduler and the scheduler cannot expect more jobs to arrive (except the potential ones through dynamic submission).
+
+For now, the scheduler can **notify** Batsim of the following:
+- **submission_finished**: The scheduler tells Batsim that dynamic job submissions are over, which allows Batsim to stop the simulation. This message **MUST** be sent if ``"scheduler_submission": {"enabled": true}`` is configures, in order to finish the simulation. See [Configuration documentation](./configuration.md) for more details.
+- **continue_submission**: The scheduler tells Batsim that it have sent a ``submission_finished`` NOTIFY prematurely and that Batsim should re-enable dynamic submissions of jobs.
+
+
+- **data**: the type of notification
+- **example**:
+```json
+{
+  "timestamp": 23.50,
+  "type": "NOTIFY",
+  "data": { "type": "no_more_static_job_to_submit" }
+}
+```
+or
+```json
+{
+  "timestamp": 42.0,
+  "type": "NOTIFY",
+  "data": { "type": "submission_finished" }
+}
+```
+
 
 ---
 
@@ -672,10 +704,10 @@ allocation itself, for example when some IO nodes are involved.
     "job_id": "w12!45",
     "alloc": "2-3",
     "mapping": {"0": "0", "1": "0", "2": "1", "3": "1"}
-  }
+  },
   "storage_mapping": {
     "pfs": 2
-  }
+  },
   "additional_io_job": {
     "alloc": "2-3 5-6",
     "profile_name": "my_io_job",
@@ -844,30 +876,6 @@ data structures.
     "job_id": "wload!42",
     "metadata": "scheduler-defined string"
   }
-}
-```
-
-### NOTIFY
-The scheduler notifies Batsim of something.
-
-For example, the ``submission_finished`` notifies that the job submissions
-from the scheduler are over, which allows Batsim to stop the simulation.
-This message **MUST** be sent if ``"scheduler_submission": {"enabled": true}``
-is configured, in order to finish the simulation. See [Configuration
-documentation](./configuration.md) for more details.
-
-If the scheduler realizes that it commited the mistake of notifying
-``submission_finished`` prematurely, the ``continue_submission`` notification
-can be sent to make the scheduler able to submit dynamic jobs again.
-
-
-- **data**: empty
-- **example**:
-```json
-{
-  "timestamp": 42.0,
-  "type": "NOTIFY",
-  "data": { "type": "submission_finished" }
 }
 ```
 
