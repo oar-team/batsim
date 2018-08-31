@@ -70,7 +70,7 @@ deploy_code_doc:
       - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
       # Finally push the code documentation on the gforge website
       - cd /builds/batsim/batsim/doc
-      - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
+      - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs/batsim/doxygen
   dependencies:
     - test_test
   only:

@@ -61,8 +61,8 @@ External References
   and for seeking whether it may be interesting for you.
   These slides have been made for the JSSPP 2016 IPDPS workshop.
 
-* Batsim internal documentation can be found
-  [there](http://batsim.gforge.inria.fr/).
+* Batsim code documentation can be found
+  [there](http://batsim.gforge.inria.fr/batsim/doxygen).
 
 Quick links
 -----------
