@@ -2,7 +2,7 @@
 FROM lnl7/nix:2018-04-17
 
 # Survival kit
-RUN nix-env -i git gnutar gzip gnused
+RUN nix-env -i git gnutar gzip gnused coreutils which
 
 #########################
 # Cachix (binary cache) #
@@ -57,3 +57,10 @@ RUN nix-build ${KAPACK} -A pybatsim_dev | cachix push batsim
 
 # CI dependencies
 RUN nix-env -i openssh rsync netcat-gnu psmisc
+
+# Link bash so gitlab-runner can find it
+# (https://gitlab.com/gitlab-org/gitlab-runner/blob/master/shells/bash.go#L17)
+RUN mkdir -p /usr/local/bin /usr/bin /bin
+RUN ln -s $(realpath $(which bash)) /usr/local/bin/bash
+RUN ln -s $(realpath $(which bash)) /usr/bin/bash
+RUN ln -s $(realpath $(which bash)) /bin/bash
