@@ -45,15 +45,15 @@ RUN git clone https://github.com/oar-team/batsim.git ${BATSIM_DIR}
 RUN nix-build ${BATSIM_DIR}/ci \
               --command "echo Dependencies pre-building done"
 
-# Pre build parts of the batecosystem (and push them to batsim's cachix)
-RUN nix-build ${KAPACK} -A batexpe | cachix push batsim
-RUN nix-build ${KAPACK} -A batsim | cachix push batsim
-RUN nix-build ${KAPACK} -A batsim_dev | cachix push batsim
-RUN nix-build ${KAPACK} -A batsched | cachix push batsim
-RUN nix-build ${KAPACK} -A batsched_dev | cachix push batsim
-RUN nix-build ${KAPACK} -A evalys | cachix push batsim
-RUN nix-build ${KAPACK} -A pybatsim | cachix push batsim
-RUN nix-build ${KAPACK} -A pybatsim_dev | cachix push batsim
+# Pre build parts of the batecosystem
+RUN nix-build ${KAPACK} -A batexpe
+RUN nix-build ${KAPACK} -A batsim
+RUN nix-build ${KAPACK} -A batsim_dev
+RUN nix-build ${KAPACK} -A batsched
+RUN nix-build ${KAPACK} -A batsched_dev
+RUN nix-build ${KAPACK} -A evalys
+RUN nix-build ${KAPACK} -A pybatsim
+RUN nix-build ${KAPACK} -A pybatsim_dev
 
 # CI dependencies
 RUN nix-env -i openssh rsync netcat-gnu psmisc
