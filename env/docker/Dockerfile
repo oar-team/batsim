@@ -33,7 +33,9 @@ RUN cachix use batsim
 
 # Retrieve datamove nix packages
 ENV DATAMOVEPKGS=/datamovepkgs
-RUN git clone https://gitlab.inria.fr/vreis/datamove-nix.git ${DATAMOVEPKGS}
+ENV KAPACK=/kapack
+RUN git clone https://github.com/oar-team/kapack.git ${KAPACK}
+RUN ln -s ${KAPACK} ${DATAMOVEPKGS} # for backward compatibility
 
 # Clone batsim repo
 ENV BATSIM_DIR=/batsim
