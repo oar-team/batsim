@@ -41,12 +41,19 @@ RUN ln -s ${KAPACK} ${DATAMOVEPKGS} # for backward compatibility
 ENV BATSIM_DIR=/batsim
 RUN git clone https://github.com/oar-team/batsim.git ${BATSIM_DIR}
 
-# Pre build all test dependencies
+# Pre build batsim's CI test dependencies
 RUN nix-build ${BATSIM_DIR}/ci \
               --command "echo Dependencies pre-building done"
 
-# Pre build batsim_dev
-RUN nix-shell ${DATAMOVEPKGS} -A batsim_dev
+# Pre build parts of the batecosystem (and push them to batsim's cachix)
+RUN nix-build ${KAPACK} -A batexpe | cachix push batsim
+RUN nix-build ${KAPACK} -A batsim | cachix push batsim
+RUN nix-build ${KAPACK} -A batsim_dev | cachix push batsim
+RUN nix-build ${KAPACK} -A batsched | cachix push batsim
+RUN nix-build ${KAPACK} -A batsched_dev | cachix push batsim
+RUN nix-build ${KAPACK} -A evalys | cachix push batsim
+RUN nix-build ${KAPACK} -A pybatsim | cachix push batsim
+RUN nix-build ${KAPACK} -A pybatsim_dev | cachix push batsim
 
 # CI dependencies
 RUN nix-env -i openssh rsync netcat-gnu psmisc
