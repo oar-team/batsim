@@ -3,4 +3,4 @@
 set -eu
 
 # Build up-to-date batsim_dev package, push it on binary cache
-nix-build ${DATAMOVEPKGS:-~/datamovepkgs} -A batsim_dev | cachix push batsim
+nix-build ${KAPACK:-~/kapack} -A batsim_dev | cachix push batsim

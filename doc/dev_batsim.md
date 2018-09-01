@@ -14,7 +14,7 @@ nix-shell shell.nix
 
 If it does not work (for old batsim versions) you can do:
 ```sh
-nix-shell /path/to/datamovepkgs -A batsim_dev
+nix-shell /path/to/kapack -A batsim_dev
 ```
 
 This command will open a new Bash shell with all the environment variable set

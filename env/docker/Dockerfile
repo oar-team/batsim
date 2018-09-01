@@ -31,7 +31,7 @@ RUN cachix use batsim
 # Batsim #
 ##########
 
-# Retrieve datamove nix packages
+# Retrieve kapack packages
 ENV DATAMOVEPKGS=/datamovepkgs
 ENV KAPACK=/kapack
 RUN git clone https://github.com/oar-team/kapack.git ${KAPACK}

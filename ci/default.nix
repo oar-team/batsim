@@ -1,11 +1,11 @@
 let
   pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/18.03.tar.gz") {};
-  dmpkgs = import
-    ( fetchTarball "https://gitlab.inria.fr/vreis/datamove-nix/repository/master/archive.tar.gz")
+  kapack = import
+    ( fetchTarball "https://github.com/oar-team/kapack/archive/master.tar.gz")
   { inherit pkgs; };
 in
 
-with dmpkgs;
+with kapack;
 with pkgs;
 
 (batsim_dev.override {}).overrideAttrs (attrs: rec {

@@ -1,18 +1,18 @@
 let
   pkgs = import
     ( fetchTarball "https://github.com/NixOS/nixpkgs/archive/17.09.tar.gz") {};
-  dmpkgs = import
-    #~/Projects/datamove-nix
-    ( fetchTarball "https://gitlab.inria.fr/vreis/datamove-nix/repository/master/archive.tar.gz")
+  kapack = import
+    #~/Projects/kapack
+    ( fetchTarball "https://github.com/oar-team/kapack/archive/master.tar.gz")
   { inherit pkgs; };
 in
 # To use the batsim_dev package build environment
 #
-#dmpkgs.batsim_dev
+#kapack.batsim_dev
 
 # To use local simgrid or a simgrid fork use the folowing instead
 
-with dmpkgs;
+with kapack;
 with pkgs;
 let
   simgrid_local = simgrid_dev.overrideAttrs (attrs: {

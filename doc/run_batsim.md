@@ -24,8 +24,8 @@ source a file to access to the Nix commands:
 
 Then, get our Nix repository that contains the batsim package:
 ```sh
-git clone https://gitlab.inria.fr/vreis/datamove-nix.git datamovepkgs
-nix-env --file ./datamovepkgs --install batsim
+git clone https://github.com/oar-team/kapack.git kapack
+nix-env --file ./kapack --install batsim
 ```
 
 Batsim is now available directly:
@@ -36,7 +36,7 @@ batsim --help
 You can also install Batsched, the scheduler used for the tests and the
 examples, with the same mechanism:
 ```sh
-nix-env --file ./datamovepkgs -iA batsched
+nix-env --file ./kapack -iA batsched
 ```
 
 ## Run batsim directly with docker (Deprecated)
@@ -69,11 +69,11 @@ Then you can run your own scheduler to make the simulation begins.
 We use the [Nix package manager](https://nixos.org/nix/) to build a minimal
 docker image for batsim.
 
-Get the Nix repository that contains the batsim package [here](https://gitlab.inria.fr/vreis/datamove-nix):
+Get the Nix repository that contains the batsim package [here](https://github.com/oar-team/kapack/):
 
 ```sh
-git clone https://gitlab.inria.fr/vreis/datamove-nix.git datamovepkgs
-cd datamovepkgs
+git clone https://github.com/oar-team/kapack.git kapack
+cd kapack
 
 # For stable version
 nix-build . -A batsimDocker
