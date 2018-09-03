@@ -1,7 +1,7 @@
-
 <?xml version='1.0'?>
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
-<platform version="4">
+<platform version="4.1">
+
 <config id="General">
     <!-- <prop id="network/coordinates" value="yes"></prop> -->
     <!-- Reduce the size of the stack_size. On huge machine, if the stack is
@@ -12,7 +12,7 @@
 
 </config>
 
-<AS id="AS0"  routing="Vivaldi">
+<zone id="AS0"  routing="Vivaldi">
     <host id="master_host" coordinates="0 0 0" speed="100Mf">
         <prop id="watt_per_state" value="100:200" />
         <prop id="watt_off" value="10" />
@@ -1307,5 +1307,5 @@
             <prop id="watt_off" value="10" />
             <prop id="sleep_pstates" value="13:14:15" />
         </host>
-</AS>
+</zone>
 </platform>
