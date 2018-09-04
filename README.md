@@ -18,28 +18,8 @@ academics worlds.
 Getting started
 ---------------
 
-First install batsim and batsched using one of the methods defined the
-[install and Run](doc/run_batsim.md) documentation page.
-
-You will also need a platform file that defines the cluster hardware and
-topology, and a workload that defines the set of jobs that will be submitted
-to the scheduler and when they will be submitted. Some examples are
-available in this repository so you can grab individual files or clone the
-whole repo:
-```sh
-git clone https://gitlab.inria.fr/batsim/batsim.git
-cd batsim
-```
-
-Now, you can run batsim for a simple workload:
-```bash
-batsim -p platforms/small_platform.xml -w workloads/test_workload_profile.json
-```
-
-Then in an *other terminal* execute the scheduler:
-```bash
-batsched
-```
+The best way to start to use Batsim, or at least to see how it works, is to have
+a look at the (Batsim demo)[./demo/BatsimDemo.ipynb] jupyter notebook.
 
 **Note**: Others workloads and platforms examples can be found in the
 current repository. More sophisticated (and more up-to-date) platforms can be
