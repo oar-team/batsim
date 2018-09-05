@@ -860,10 +860,32 @@ void server_on_execute_job(ServerData * data,
         }
     }
 
-    // Only this profile is able to manage the following scenario:
-    // The scheduler allocated a different number of resources than the
-    // number of requested resources.
-    if (job->workload->profiles->at(job->profile)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
+    // Only MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT profile, or a sequence of
+    // those profile, is able to manage the following scenario: The scheduler
+    // allocated a different number of resources than the number of requested
+    // resources.
+    Profile* current_profile = job->workload->profiles->at(job->profile);
+
+    // Check for sequence profiles
+    std::vector<std::string> profile_seq;
+    bool all_profiles_ok = true;
+    if (current_profile->type == ProfileType::SEQUENCE)
+    {
+        profile_seq = ((SequenceProfileData *) current_profile->data)->sequence;
+        auto first = profile_seq.begin();
+        auto last = profile_seq.end();
+        while (first != last and all_profiles_ok)
+        {
+            if (job->workload->profiles->at(*first)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
+            {
+                all_profiles_ok = false;
+            }
+            ++first;
+        }
+    }
+
+    if (current_profile->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT
+            and (current_profile->type == ProfileType::SEQUENCE and not all_profiles_ok))
     {
         if (allocation->mapping.size() != 0)
         {
