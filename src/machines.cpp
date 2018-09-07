@@ -229,6 +229,37 @@ void Machines::create_machines(xbt_dynar_t hosts,
         // Store machines in different place depending on the role
         if (machine->permissions == Permissions::COMPUTE_NODE)
         {
+            // Check that computing speed is positive
+            if (context->energy_used)
+            {
+                int initial_pstate = MSG_host_get_pstate(machine->host);
+
+                // Check all computing pstates
+                for (auto mit : machine->pstates)
+                {
+                    int pstate_id = mit.first;
+                    PStateType & pstate_type = mit.second;
+                    if (pstate_type == PStateType::COMPUTATION_PSTATE)
+                    {
+                        // As I write these lines, determinining the pstate's computation speed without switching into it is not possible.
+                        MSG_host_set_pstate(machine->host, pstate_id);
+
+                        xbt_assert(sg_host_speed(machine->host) > 0,
+                               "Invalid platform file '%s': host '%s' has an invalid (non-positive computing speed) computing pstate %d.",
+                               context->platform_filename.c_str(), machine->name.c_str(), pstate_id);
+                    }
+                }
+
+                // Reset initial pstate
+                MSG_host_set_pstate(machine->host, initial_pstate);
+            }
+            else
+            {
+                // Only one state to check in this case.
+                xbt_assert(sg_host_speed(machine->host) > 0,
+                       "Invalid platform file '%s': host '%s' is a compute node but has an invalid (non-positive) computing speed.",
+                       context->platform_filename.c_str(), machine->name.c_str());
+            }
             _compute_nodes.push_back(machine);
         }
         else if (machine->permissions == Permissions::STORAGE)
