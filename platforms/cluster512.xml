@@ -1,8 +1,8 @@
 <?xml version='1.0'?>
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
-<platform version="4">
+<platform version="4.1">
 
-<AS id="AS0" routing="Full">
+<zone id="AS0" routing="Full">
     <cluster id="my_cluster_1" prefix="a" suffix="" radical="0-511"
         speed="1Gf" bw="125MBps" lat="50us" bb_bw="2.25GBps"
         bb_lat="500us" />
@@ -15,9 +15,9 @@
 
     <link id="backbone" bandwidth="1.25GBps" latency="500us" />
 
-    <ASroute src="my_cluster_1" dst="my_cluster_2" gw_src="amy_cluster_1_router"
+    <zoneRoute src="my_cluster_1" dst="my_cluster_2" gw_src="amy_cluster_1_router"
         gw_dst="master_hostmy_cluster_2_router">
         <link_ctn id="backbone" />
-    </ASroute>
-</AS>
+    </zoneRoute>
+</zone>
 </platform>

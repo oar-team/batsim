@@ -1,9 +1,9 @@
 <?xml version='1.0'?>
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+<platform version="4.1">
 
-<platform version="4">
-	<AS id="AS0" routing="Full">
-		<AS  id="my_cluster1"  routing="Cluster">
+	<zone id="AS0" routing="Full">
+		<zone  id="my_cluster1"  routing="Cluster">
 			<cabinet id="cabinet1" prefix="algol" suffix="" 
 				speed="3Gf" bw="56Gbps" lat="1us" radical="100-163"/>
 
@@ -33,6 +33,6 @@
 
 			<router  id="router1"/>
 			<backbone id="backbone1" bandwidth="2.25GBps" latency="500us"/>
-		</AS>
-	</AS>
+		</zone>
+	</zone>
 </platform>
