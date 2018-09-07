@@ -226,10 +226,9 @@ void Machines::create_machines(xbt_dynar_t hosts,
                        "is currently forbidden (https://github.com/oar-team/batsim/issues/21).");
         }
 
-        // Store machines in different place depending on the role
-        if (machine->permissions == Permissions::COMPUTE_NODE)
+        // Machines thay may compute flops must have a positive computing speed
+        if ((machine->permissions & Permissions::COMPUTE_FLOPS) == Permissions::COMPUTE_FLOPS)
         {
-            // Check that computing speed is positive
             if (context->energy_used)
             {
                 int initial_pstate = MSG_host_get_pstate(machine->host);
@@ -245,8 +244,8 @@ void Machines::create_machines(xbt_dynar_t hosts,
                         MSG_host_set_pstate(machine->host, pstate_id);
 
                         xbt_assert(sg_host_speed(machine->host) > 0,
-                               "Invalid platform file '%s': host '%s' has an invalid (non-positive computing speed) computing pstate %d.",
-                               context->platform_filename.c_str(), machine->name.c_str(), pstate_id);
+                                   "Invalid platform file '%s': host '%s' has an invalid (non-positive computing speed) computing pstate %d.",
+                                   context->platform_filename.c_str(), machine->name.c_str(), pstate_id);
                     }
                 }
 
@@ -257,9 +256,14 @@ void Machines::create_machines(xbt_dynar_t hosts,
             {
                 // Only one state to check in this case.
                 xbt_assert(sg_host_speed(machine->host) > 0,
-                       "Invalid platform file '%s': host '%s' is a compute node but has an invalid (non-positive) computing speed.",
-                       context->platform_filename.c_str(), machine->name.c_str());
+                           "Invalid platform file '%s': host '%s' is a compute node but has an invalid (non-positive) computing speed.",
+                           context->platform_filename.c_str(), machine->name.c_str());
             }
+        }
+
+        // Store machines in different place depending on the role
+        if (machine->permissions == Permissions::COMPUTE_NODE)
+        {
             _compute_nodes.push_back(machine);
         }
         else if (machine->permissions == Permissions::STORAGE)
