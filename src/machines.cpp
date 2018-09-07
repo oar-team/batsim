@@ -225,7 +225,7 @@ void Machines::create_machines(xbt_dynar_t hosts,
                        "Using dynamic job submissions AND plaforms with energy information "
                        "is currently forbidden (https://github.com/oar-team/batsim/issues/21).");
         }
-        
+
         // Store machines in different place depending on the role
         if (machine->permissions == Permissions::COMPUTE_NODE)
         {
@@ -273,8 +273,8 @@ void Machines::create_machines(xbt_dynar_t hosts,
         machine->id = id;
         ++id;
         _machines.push_back(machine);
-    }   
-    
+    }
+
     // then attibute ids to storage machines
     for (auto& machine : _storage_nodes)
     {
