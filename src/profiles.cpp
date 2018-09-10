@@ -318,7 +318,7 @@ Profile *Profile::from_json(const std::string & profile_name,
         xbt_assert(com.IsArray(), "%s: profile '%s' has a non-array 'com' field",
                    error_prefix.c_str(), profile_name.c_str());
         xbt_assert(com.Size() == data->nb_res * data->nb_res, "%s: profile '%s' is incoherent: "
-                   "com array has size %d whereas the required number of resources is %d",
+                   "com array has size %d whereas the required array size is %d",
                    error_prefix.c_str(), profile_name.c_str(), com.Size(), data->nb_res * data->nb_res);
 
         data->com = new double[data->nb_res * data->nb_res];

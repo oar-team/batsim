@@ -29,6 +29,10 @@ void generate_msg_parallel_task(double *& computation_amount,
                                 void * profile_data)
 {
     MsgParallelProfileData* data = (MsgParallelProfileData*)profile_data;
+    xbt_assert(nb_res == data->nb_res,
+            "the number of resources given by the allocation (%d) is different "
+            "from the number of resouces given by the profile data (%d)",
+            nb_res, data->nb_res);
     // These amounts are deallocated by SG
     computation_amount = xbt_new(double, nb_res);
     communication_amount = xbt_new(double, nb_res* nb_res);
@@ -310,7 +314,8 @@ void generate_msg_data_staginig_task(double *&  computation_amount,
  */
 void debug_print_ptask(const double * computation_vector,
                        const double * communication_matrix,
-                       unsigned int nb_res)
+                       unsigned int nb_res,
+                       const IntervalSet alloc)
 {
     string comp = "";
     string comm = "";
@@ -319,13 +324,13 @@ void debug_print_ptask(const double * computation_vector,
     {
         if (computation_vector != nullptr)
         {
-            comp += to_string(computation_vector[i]) + ", ";
+            comp += to_string(alloc[i]) + ": " + to_string(computation_vector[i]) + ", ";
         }
         if (communication_matrix != nullptr)
         {
             for (unsigned int j = 0; j < nb_res; j++)
             {
-                comm += to_string(communication_matrix[k++]) + ", ";
+                comm += to_string(alloc[i]) + "->" + to_string(alloc[j]) + ": " + to_string(communication_matrix[k++]) + ", ";
             }
             comm += "\n";
         }
@@ -393,8 +398,6 @@ void generate_matices_from_profile(double *& computation_vector,
     default:
         xbt_die("Should not be reached.");
     }
-    debug_print_ptask(computation_vector, communication_matrix, hosts_to_use.size());
-
 }
 
 /**
@@ -451,6 +454,9 @@ int execute_msg_task(BatTask * btask,
                                   & allocation->storage_mapping,
                                   context);
 
+    debug_print_ptask(computation_vector, communication_matrix,
+            hosts_to_use.size(), allocation->machine_ids);
+
     check_ptask_execution_permission(allocation->machine_ids, computation_vector, context);
 
     //FIXME: This will not work for the PFS profiles
@@ -461,7 +467,7 @@ int execute_msg_task(BatTask * btask,
         double* io_computation_vector = nullptr;
         double* io_communication_matrix = nullptr;
 
-        XBT_DEBUG("Generating comm/compute matrix for IO with alloaction: %s",
+        XBT_DEBUG("Generating comm/compute matrix for IO with allocation: %s",
                 allocation->io_allocation.to_string_hyphen().c_str());
         std::vector<simgrid::s4u::Host*> io_hosts = allocation->io_hosts;
         generate_matices_from_profile(io_computation_vector,
@@ -470,6 +476,9 @@ int execute_msg_task(BatTask * btask,
                                       io_profile,
                                       nullptr,
                                       context);
+        debug_print_ptask(io_computation_vector, io_communication_matrix,
+                hosts_to_use.size(), allocation->io_allocation);
+
         // merge the two profiles
         // First get part of the allocation that do change or not in the job
         IntervalSet immut_job_alloc = allocation->machine_ids - allocation->io_allocation;
@@ -594,7 +603,7 @@ int execute_msg_task(BatTask * btask,
         hosts_to_use = new_hosts_to_use;
         // TODO Free old job and io structures
         XBT_DEBUG("Merged Job+IO matrices");
-        debug_print_ptask(computation_vector, communication_matrix, hosts_to_use.size());
+        debug_print_ptask(computation_vector, communication_matrix, hosts_to_use.size(), new_alloc);
 
         check_ptask_execution_permission(new_alloc, computation_vector, context);
     }
