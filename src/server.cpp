@@ -567,17 +567,19 @@ void server_on_submit_job(ServerData * data,
     const Job * job = data->context->workloads.job_at(message->job_id);
 
     Workload * workload = data->context->workloads.at(message->job_id.workload_name);
-    xbt_assert(workload->profiles->exists(job->profile),
-               "Dynamically submitted job '%s' has no profile: "
-               "Workload '%s' has no profile named '%s'. "
-               "When submitting a dynamic job, its profile should either already exist "
-               "or be submitted inside the SUBMIT_JOB message. "
-               "If the profile is also dynamic, it can be submitted with the SUBMIT_PROFILE "
-               "message but you must ensure that the profile is sent (non-strictly) before "
-               "the SUBMIT_JOB message.",
-               job->id.to_string().c_str(),
-               workload->name.c_str(), job->profile.c_str());
 
+    if (!workload->profiles->exists(job->profile))
+    {
+        xbt_die(
+                   "Dynamically submitted job '%s' has no profile: "
+                   "Workload '%s' has no profile named '%s'. "
+                   "When submitting a dynamic job, its profile should already exist "
+                   "If the profile is also dynamic, it can be submitted with the SUBMIT_PROFILE "
+                   "message but you must ensure that the profile is sent (non-strictly) before "
+                   "the SUBMIT_JOB message.",
+                   job->id.to_string().c_str(),
+                   workload->name.c_str(), job->profile.c_str());
+    }
     if (data->context->submission_sched_ack)
     {
         string job_json_description, profile_json_description;
@@ -629,9 +631,10 @@ void server_on_submit_profile(ServerData * data,
     }
     else
     {
-        XBT_WARN("New submission of profile '%s' of workload '%s' is discarded (old profile kept as-is)",
-                 message->profile.c_str(), message->workload_name.c_str());
-        // TODO? check profile collisions
+        xbt_die("Invalid Profile submission: the profile '%s' of workload '%s' that was submitted was already submitted before (old profile: %s)",
+            message->profile_name.c_str(),
+            message->workload_name.c_str(),
+            workload->profiles->at(message->profile_name)->json_description.c_str());
     }
 }
 

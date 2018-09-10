@@ -446,6 +446,9 @@ void execute_job_process(BatsimContext * context,
     }
 
     // Also generate io hosts list if any
+    XBT_DEBUG("IO allocation: %s, size of the allocation: %d" ,
+            allocation->io_allocation.to_string_hyphen().c_str(),
+            allocation->io_allocation.size());
     allocation->io_hosts.reserve(allocation->io_allocation.size());
     for (unsigned int id = 0; id < allocation->io_allocation.size(); ++id)
     {
