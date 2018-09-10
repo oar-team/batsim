@@ -94,7 +94,7 @@ struct MsgParallelProfileData
      */
     ~MsgParallelProfileData();
 
-    unsigned int nb_res;             //!< The number of resources
+    unsigned int nb_res;    //!< The number of resources
     double * cpu = nullptr; //!< The computation vector
     double * com = nullptr; //!< The communication matrix
 };
