@@ -417,7 +417,7 @@ void check_ptask_execution_permission(const MachineRange & alloc,
         XBT_DEBUG("enforcing permission for machine id: %d", machine_id);
         Permissions perm = context->machines[machine_id]->permissions;
         // Check if is 0 +- epsilon
-        if (computation_matrix[i] > 1e-100 or computation_matrix[i] < 1e-100)
+        if (std::abs(computation_matrix[i]) > 1e-10)
         {
             XBT_DEBUG("found computation: %.17g", computation_matrix[i]);
             xbt_assert(perm == Permissions::COMPUTE_NODE,
