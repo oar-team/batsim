@@ -995,7 +995,9 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         {
             if (workload->profiles->exists(profile_name))
             {
-                XBT_WARN("The given profile name '%s' already exists: ignore the new one", profile_name.c_str());
+                xbt_die("The given profile name '%s' already exists! Already registered profile: %s",
+                        profile_name.c_str(),
+                        workload->profiles->at(profile_name)->json_description.c_str());
             }
             else
             {
@@ -1038,12 +1040,12 @@ void JsonProtocolReader::handle_execute_job(int event_number,
                     " IO profile sequence size (%zu) and job profile sequence size (%zu) should be the same",
                     io_data->sequence.size(),
                     job_data->sequence.size());
-            for (unsigned int i=0; i < io_data->sequence.size(); i++)
-            {
-                xbt_assert(workload->profiles->exists(io_data->sequence[i]),
-                    "The given profile name '%s' does not exists",
-                    io_data->sequence[i].c_str());
-            }
+            //for (unsigned int i=0; i < io_data->sequence.size(); i++)
+            //{
+            //    xbt_assert(workload->profiles->exists(io_data->sequence[i]),
+            //        "The given profile name '%s' does not exists",
+            //        io_data->sequence[i].c_str());
+            //}
         }
 
         message->io_profile = io_profile;
@@ -1383,6 +1385,7 @@ void JsonProtocolReader::handle_submit_job(int event_number,
         message->job_description = context->storage.get(job_key);
     }
 
+    // FIXME: All this initialization should be done in 
     // Create the job into memory now (so that following events at the same timestamp can refer to this job).
     // But first, create the workload if needed.
     Workload * workload = nullptr;
@@ -1429,31 +1432,17 @@ void JsonProtocolReader::handle_submit_job(int event_number,
         message->job_profile_description = context->storage.get(profile_key);
     }
 
-    // Put the profile into memory if needed and possible now (has been read now)
-    if (!workload->profiles->exists(job->profile))
+    if (workload->profiles->exists(job->profile))
     {
-        if (!message->job_profile_description.empty())
-        {
-            Profile * profile = Profile::from_json(job->profile,
-                                                   message->job_profile_description,
-                                                   "Invalid JSON profile received from the scheduler");
-            workload->profiles->add_profile(job->profile, profile);
-        }
-        else
-        {
-            XBT_WARN("Job '%s' has been submitted dynamically but its profile (name='%s') is unreachable for the moment. "
-                     "This profile will be needed at job's execution time.  "
-                     "To avoid such warnings, consider submitting the dynamic profile either in a previous SUBMIT_PROFILE "
-                     "event or directly in the SUBMIT_JOB event.",
-                     job->id.to_string().c_str(),
-                     job->profile.c_str());
-        }
-    }
-    else if (!message->job_profile_description.empty())
-    {
-        XBT_WARN("New submission of profile '%s' of workload '%s' is discarded (old profile kept as-is)",
-                 job->profile.c_str(), workload->name.c_str());
-        // TODO? check profile collisions
+        xbt_assert(message->job_profile_description.empty(),
+            "Profile description detected in job '%s' submission: the profile "
+            "'%s' of workload '%s' that was submitted with the job '%s' was "
+            "already submitted before. A profile description was found: %s",
+            job->id.to_string().c_str(),
+            job->profile.c_str(),
+            workload->name.c_str(),
+            job->id.to_string().c_str(),
+            message->job_profile_description.c_str());
     }
 
     workload->check_single_job_validity(job);
@@ -1509,36 +1498,6 @@ void JsonProtocolReader::handle_submit_profile(int event_number,
     profile_object.Accept(writer);
 
     message->profile = string(buffer.GetString(), buffer.GetSize());
-
-    // Add the profile into memory if needed
-    // Let's create the workload if it doesn't exist, or retrieve it otherwise
-    Workload * workload = nullptr;
-    if (context->workloads.exists(message->workload_name))
-    {
-        workload = context->workloads.at(message->workload_name);
-    }
-    else
-    {
-        workload = Workload::new_dynamic_workload(message->workload_name);
-        context->workloads.insert_workload(workload->name, workload);
-    }
-
-    if (!workload->profiles->exists(message->profile_name))
-    {
-        XBT_INFO("Adding user-submitted profile %s to workload %s",
-                message->profile_name.c_str(),
-                message->workload_name.c_str());
-        Profile * profile = Profile::from_json(message->profile_name,
-                                               message->profile,
-                                               "Invalid JSON profile received from the scheduler");
-        workload->profiles->add_profile(message->profile_name, profile);
-    }
-    else
-    {
-        XBT_WARN("New submission of profile '%s' of workload '%s' is discarded (old profile kept as-is)",
-                 message->profile.c_str(), message->workload_name.c_str());
-        // TODO? check profile collisions
-    }
 
     send_message_at_time(timestamp, "server", IPMessageType::PROFILE_SUBMITTED_BY_DP, (void *) message);
 }
