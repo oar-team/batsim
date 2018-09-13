@@ -1,5 +1,16 @@
 Batsim
 ======
+[![chat](https://img.shields.io/badge/chat-on%20mattermost-blue.svg)](http://framateam.org/batsim)
+[![external issues](https://img.shields.io/badge/external%20issues-github-orange.svg)](https://github.com/oar-team/batsim/issues)
+[![internal issues](https://img.shields.io/badge/internal%20issues-inria%20gitlab-orange.svg)](https://gitlab.inria.fr/batsim/batsim/issues)
+[![license](https://img.shields.io/badge/license-LGPL%203.0-green.svg)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
+
+[![last release](https://img.shields.io/badge/release-v2.0.0-blue.svg)](https://github.com/oar-team/batsim/releases/tag/v2.0.0)
+[![distance from previous release](https://img.shields.io/github/commits-since/oar-team/batsim/v2.0.0.svg)](https://github.com/oar-team/batsim/compare/v2.0.0...HEAD)
+[![pipeline status](https://framagit.org/batsim/batsim/badges/master/pipeline.svg)](https://framagit.org/batsim/batsim/pipelines)
+
+[![changelog](https://img.shields.io/badge/doc-changelog-blue.svg)](https://github.com/oar-team/batsim/blob/master/doc/changelog.md)
+[![protocol](https://img.shields.io/badge/doc-protocol-blue.svg)](https://github.com/oar-team/batsim/blob/master/doc/proto_description.md)
 
 Batsim is a Batch scheduler simulator.
 A batch scheduler -- AKA Resources and Jobs Management System (RJMS) --
@@ -58,29 +69,6 @@ Quick links
     overview of how Batsim works internally
 - The [protocol documentation](doc/proto_description.md) defines the protocol
   used between Batsim and the scheduling algorithms
-
-
-Build and code status
-------------
-
-
-| [master][master-link] | [upstream_sg (recent SimGrid)][upstream_sg-link] | [codacy][codacy-link] |
-| :-------------------: | :----------------------------------------------: | :-------------------: |
-| ![master-badge]       | ![upstream_sg-badge]                             | ![codacy-badge]       |
-
-[master-badge]: https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/badges/master/build.svg "Gitlab CI build status (master branch)"
-[master-link]:  https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/pipelines "Gitlab CI build status"
-[upstream_sg-badge]: https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/badges/upstream_sg/build.svg "Gitlab CI build status (upstream_sg branch)"
-[upstream_sg-link]:  https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/pipelines "Gitlab CI build status"
-[codacy-badge]: https://api.codacy.com/project/badge/Grade/e5990f2e9abc4573b13a0b8c9d9e0f08 "Codacy code style"
-[codacy-link]: https://www.codacy.com/app/mpoquet/batsim/dashboard
-
-Batsim uses Gitlab CI as its continuous integration system.
-Build status of the different commits can be found
-[CI pipline page][batsim ci]. More information about our CI setup can be
-found in the [continuous intefgration](./doc/continuous_integration.md)
-documentation.
-
 
 Visualisation
 -------------
