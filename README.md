@@ -30,7 +30,7 @@ Getting started
 ---------------
 
 The best way to start to use Batsim, or at least to see how it works, is to have
-a look at the (Batsim demo)[./demo/BatsimDemo.ipynb] jupyter notebook.
+a look at the [Batsim demo](demo/BatsimDemo.ipynb) jupyter notebook.
 
 **Note**: Others workloads and platforms examples can be found in the
 current repository. More sophisticated (and more up-to-date) platforms can be
