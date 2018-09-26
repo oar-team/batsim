@@ -7,14 +7,15 @@ Welcome to batsim's documentation!
 ==================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 1
+   :caption: Tutorials:
 
+   Running your first simulation <tuto_first_simulation/tuto.rst>
 
+.. toctree::
+   :maxdepth: 1
+   :caption: User Manual:
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. toctree::
+   :maxdepth: 1
+   :caption: Developer Manual:
