@@ -1,6 +1,6 @@
 Batsim
 ======
-[![chat](https://img.shields.io/badge/chat-on%20mattermost-blue.svg)](http://framateam.org/batsim)
+[![chat](https://img.shields.io/badge/chat-on%20mattermost-blue.svg)](https://framateam.org/signup_user_complete/?id=5xb995hph3d79yj738pokxrnuh)
 [![external issues](https://img.shields.io/badge/external%20issues-github-orange.svg)](https://github.com/oar-team/batsim/issues)
 [![internal issues](https://img.shields.io/badge/internal%20issues-inria%20gitlab-orange.svg)](https://gitlab.inria.fr/batsim/batsim/issues)
 [![license](https://img.shields.io/badge/license-LGPL%203.0-green.svg)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
