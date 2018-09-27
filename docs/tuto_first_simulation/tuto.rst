@@ -37,10 +37,11 @@ Write a file **./tuto-env.nix** with the following content.
 This Nix file describes a software environment that makes batsim, batsched and batexpe available to the user.
 The exact definition of how these packages are built is defined in the kapack_ repository.
 
-Getting into the defined environment is done thanks to **nix-shell**, which will
-build everything needed for the requested environment. In this case, batsim, batsched, batexpe **and all
-their dependencies** would be built. To speed the process up, you can use Batsim's
-binary cache to download our binaries instead of rebuilding them:
+Getting into the defined environment is done thanks to **nix-shell**.
+nix-shell first checks that all the requested packages are available in your system.
+If this is not the case, nix-shell will first build all required packages.
+In this case the required packages are batsim, batsched, batexpe **and all their dependencies**.
+To speed the process up, you can use Batsim's binary cache to download our binaries instead of rebuilding them.
 
 .. literalinclude:: ./cachix-setup.bash
     :language: bash
@@ -76,8 +77,15 @@ Retrieving these files is essentially a clone to Batsim's repository at latest r
 
 Executing the simulation
 ------------------------
-As Batsim simulations involve two different processes, launch two terminals that are both into the tutorial's environment
-— by running ``nix-shell ./tuto-env.nix`` in the two of them.
+A Batsim simulation most of the time involves two different processes.
+
+1. Batsim itself, in charge of simulating what happens on the platform
+2. A decision process, in charge of taking all the decisions about jobs and resources. This is where scheduling algorithms are implemented.
+
+In this tutorial we will use the batsched_ decision process,
+which is the reference implementation of a Batsim decision process.
+As running the simulation involves two processes,
+launch two terminals that are both into the tutorial's environment — by running ``nix-shell ./tuto-env.nix`` in the two of them.
 
 Batsim will be executed in the first terminal.
 First, define an environment variable **EXPE_RESULT_DIR** which contains the directory into which Batsim results will be written —
@@ -88,7 +96,7 @@ Make sure the **BATSIM_DIR** environment variable points to the Batsim repo clon
     :language: bash
     :lines: 3-
 
-You can now run a scheduler to start the simulation. The following command runs batsched with the EASY backfilling algorithm.
+You can now run a scheduler **in the second terminal** to start the simulation. The following command runs batsched with the EASY backfilling algorithm.
 
 .. literalinclude:: ./run_batsched.bash
     :language: bash
@@ -133,3 +141,4 @@ Please refer to ``robin --help`` for more information about these features.
 .. _Nix installation documentation: https://nixos.org/nix/
 .. _kapack: https://github.com/oar-team/kapack/
 .. _robin: https://framagit.org/batsim/batexpe/
+.. _batsched: https://framagit.org/batsim/batsched
