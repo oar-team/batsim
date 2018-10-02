@@ -1,3 +1,5 @@
+.. _tuto_first_simulation:
+
 Running your first simulation
 =============================
 

@@ -1,21 +1,41 @@
-.. batsim documentation master file, created by
-   sphinx-quickstart on Wed Sep 26 17:10:41 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Batsim
+======
 
-Welcome to batsim's documentation!
-==================================
+TODO: introduction
 
 .. toctree::
    :maxdepth: 1
-   :caption: Tutorials:
+   :caption: Tutorials
 
-   Running your first simulation <tuto_first_simulation/tuto.rst>
+   Running your first simulation <tuto-first-simulation/tuto.rst>
+   Analyzing Batsim results <tuto-result-analysis/tuto.rst>
+   Implementing your scheduling algorithm <tuto-sched-implem/tuto.rst>
+   Doing a reproducible experiment <tuto-reproducible-experiment/tuto.rst>
 
 .. toctree::
    :maxdepth: 1
-   :caption: User Manual:
+   :caption: User Manual
+
+   Installation <installation.rst>
+   Command-line interface <cli.rst>
+   Protocol <protocol.rst>
 
 .. toctree::
    :maxdepth: 1
-   :caption: Developer Manual:
+   :caption: Simulation inputs
+
+   Platform <input-platform.rst>
+   Workload <input-workload.rst>
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Simulation outputs
+
+   Schedule-centric <output-schedule.rst>
+   Job-centric <output-jobs.rst>
+   Energy-related <output-energy.rst>
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Developer Manual
+
