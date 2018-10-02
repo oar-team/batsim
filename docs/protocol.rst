@@ -31,10 +31,10 @@ The behavior of this protocol depends on Batsim :ref:`cli`.
 - If Redis is enabled, job metadata is stored into a Redis server and not sent through the protocol.
   In this case, the protocol is only used for synchronization purposes.
   More information about Redis conventions are described in :ref:`redis`.
-- Batsim may or may not forward job profile information to the scheduler when jobs are submitted (see `JOB_SUBMITTED <#job_submitted>`__ documentation).
+- Batsim may or may not forward job profile information to the scheduler when jobs are submitted (see JOB_SUBMITTED_ documentation).
 - Dynamic jobs submissions can be enabled or disabled.
   Many parameters of job submissions can be adjusted.
-  Please refer to `Dynamic submission of jobs <#dynamic-submission-of-jobs>`__ for more details.
+  Please refer to `Dynamic submission of jobs`_ for more details.
 
 Message Composition
 -------------------
