@@ -19,6 +19,7 @@ TODO: introduction
    Installation <installation.rst>
    Command-line interface <cli.rst>
    Protocol <protocol.rst>
+   Using Redis <redis.rst>
 
 .. toctree::
    :maxdepth: 1
@@ -38,4 +39,3 @@ TODO: introduction
 .. toctree::
    :maxdepth: 1
    :caption: Developer Manual
-
