@@ -557,7 +557,7 @@ In this case, none of the jobs have really been killed — they finished *ordina
      }
    }
 
-Example **with progress**.
+Example **with progress**. In this case, the three jobs have really been killed. Job ``w0!1`` has been killed after computing 52 % of the whole job (``progress`` is 0.52). As job ``w0!2`` uses a composed profile (a sequence), its progress is a bit more complex. ``w0!2`` has been killed during the second task of the sequence (``current_task_index`` is 1 and task indexes are 0-based), and 20 % of that task has been done (``progress`` is 0.2). Job ``w0!3`` uses a nested sequence of profiles. It has been stopped during the third (``current_task_index`` is 2) task of the root sequence, which is itself a sequence. This sequence has been stopped during the fourth task (``current_task_index`` is 3), which is a simple profile whose 75 % of the work (``progress`` is 0.75) could be done before the kill.
 
 .. code:: json
 
@@ -576,22 +576,22 @@ Example **with progress**.
            "progress": 0.52
          },
          "w0!2": {
-           "profile": "my_sequential_profile",
-           "current_task_index": 3,
+           "profile": "my_sequence_profile",
+           "current_task_index": 1,
            "current_task": {
              "profile": "my_simple_profile",
-             "progress": 0.52
+             "progress": 0.2
            }
          },
          "w0!3": {
-           "profile": "my_composed_profile",
+           "profile": "my_sequence_of_sequences_profile",
            "current_task_index": 2,
            "current_task": {
              "profile": "my_sequential_profile",
              "current_task_index": 3,
              "current_task": {
                "profile": "my_simple_profile",
-               "progress": 0.52
+               "progress": 0.75
              }
            }
          }
