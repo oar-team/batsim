@@ -1,10 +1,6 @@
 {
-    "version": 0,
-    "command:": "",
-    "date": "Tue, 19 Dec 2017 9:44:30 +0100",
-    "description": "workload to test send and receive profiles",
-
     "nb_res": 7,
+
     "jobs": [
         {"id":0, "subtime":0, "walltime": 100,  "res": 2, "profile": "p.composed.accept"},
         {"id":1, "subtime":0.1, "walltime": 100, "res": 6, "profile": "p.composed.accept"},

@@ -1,4 +1,5 @@
 {
+   "nb_res":7,
    "jobs":[
       {
          "profile":"10.0",
@@ -15,8 +16,6 @@
          "walltime":50.0
       }
    ],
-   "nb_res":7,
-   "command:":"",
    "profiles":{
       "5.0":{
          "com":0,
@@ -28,8 +27,5 @@
          "type":"msg_par_hg",
          "cpu":1000000000.0
       }
-   },
-   "version":0,
-   "date":"Tue, 11 Mar 2015 9:44:30 +0100",
-   "description":"workload with profile file for test"
+   }
 }

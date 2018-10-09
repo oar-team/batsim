@@ -1,10 +1,6 @@
 {
-    "version": 1,
-    "command:": "",
-    "date": "Fri, 6 Apr 2018",
-    "description": "Simple workload test",
-
     "nb_res": 4,
+
     "jobs": [
         {"id":"0", "subtime":0, "walltime": 100, "res": 4, "profile": "delay"},
         {"id":1, "subtime":60, "walltime": 100, "res": 4, "profile": "1"},
