@@ -51,7 +51,7 @@ If this is not the case, nix-shell will first build all required packages.
 In this case the required packages are batsim, batsched, batexpe **and all their dependencies**.
 To speed the process up, you can use Batsim's binary cache to download our binaries instead of rebuilding them.
 
-.. literalinclude:: ./cachix-setup.bash
+.. literalinclude:: ../cachix-setup.bash
     :language: bash
     :lines: 3-
 
