@@ -9,8 +9,8 @@ Workloads are one of the main Batsim inputs.
 They can be used to define what users desire to execute over time.
 Batsim separates workloads in two distinct sets that are **jobs** and **profiles**.
 
-- Jobs define user requests. This is the typically information that the scheduling algorithm can use to make its decisions.
-- Profiles define applications inners. This is typically the information that the platform simulator uses to simulate how the application should be executed.
+- Jobs define user requests. Typically, this is the information the scheduling algorithm can use to make its decisions.
+- Profiles define applications inners. Typically, this is the information the platform simulator uses to simulate how the application should be executed.
 
 Each job uses exacly one profile. Profiles can be shared by multiple jobs.
 
@@ -131,7 +131,12 @@ This profile type is a convenient way to generate an homogeneous `Parallel task`
 Homogeneous parallel task with total amount
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This profile type is a convenient way to generate an homogeneous `Parallel Task`_ by giving the total amount of work to be done.
-It allows such profiles to be used with any number of resources while conserving the same amount of work to do. Such jobs can therefore be moldable.
+It allows such profiles to be used with any number of resources while conserving the same amount of work to do.
+
+.. note::
+
+    This can help modeling moldable jobs with the help of
+    :ref:`dynamic_job_submission`.
 
 
 **Parameters.**

@@ -910,6 +910,8 @@ jobs information might either be transmitted through the protocol or Redis.
    :scale: 100 %
    :alt: Executing jobs
 
+.. _dynamic_job_submission:
+
 Dynamic submission of jobs
 --------------------------
 
