@@ -3,6 +3,12 @@
 Running your first simulation
 =============================
 
+.. todo::
+    Simplify installation in this tutorial (``nix-env -i`` should be enough).
+    Write :ref:`installation` and link to it for more possibilities.
+
+    Move this environment presented here to the more advanced tutorial :ref:`tuto_reproducible_experiment`.
+
 This tutorial does not assume you have installed Batsim nor any of its tools.
 A Nix_ environment is used instead.
 If you already have a working Nix installation, skip `Installing Nix`_ and go

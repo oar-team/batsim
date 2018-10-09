@@ -1,7 +1,12 @@
 Batsim
 ======
 
-TODO: introduction
+.. todo::
+   Introduction.
+
+   Talk about use cases: In which cases you may be interested in using Batsim and in which cases you may prefer another simulator.
+
+   Add a note about getting in touch (mattermost, mails...).
 
 .. toctree::
    :maxdepth: 1
@@ -39,3 +44,5 @@ TODO: introduction
 .. toctree::
    :maxdepth: 1
    :caption: Developer Manual
+
+   TODO list <todo.rst>
