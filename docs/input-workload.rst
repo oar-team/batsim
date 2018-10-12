@@ -109,7 +109,7 @@ The computing speed of the machines and the network properties (essentially the 
 
 This profile type allows to observe large-grained interference phenomena between jobs, involving shared computing machines and the bandwidth of shared network nodes.
 It can be used to model applications whose execution is very smooth.
-Please note that it is probably not realistic enough to observe fine-grained phenomena, such as the impact of network latency when the application heavily relies on short messages that limit its control flow. If you are in such a case, the SMPI_ profile type may interest you.
+Please note that it is probably not realistic enough to observe fine-grained phenomena, such as the impact of network latency when the application heavily relies on short messages that limit its control flow. If you are in such a case, the `SMPI trace replay`_ profile type may interest you.
 
 Homogeneous parallel task
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -171,24 +171,75 @@ This profile type defines a list of other profiles that should be executed in se
 
 Homogeneous parallel tasks with IO to/from a Parallel File System
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Represents an IO transfer between all the nodes of a job's allocation and a
+centralized storage tier. The storage tier is represented by one host of the :ref:`input_platform`.
 
-.. todo::
+**Parameters.**
 
-    Define profile type: Homogeneous parallel tasks with IO to/from a Parallel File System.
+- ``bytes_to_read``: The amount of bytes to read from the PFS to each node (float).
+- ``bytes_to_write``: The amount of bytes to write to the PFS from each node (float).
+- ``storage``: (optional) The name of the storage (string). It will be mapped to a specific node at the job execution time. Default value is ``pfs``.
+
+.. code:: json
+
+    {
+      "type": "msg_par_hg_pfs",
+      "bytes_to_read": 10e5,
+      "bytes_to_write": 10e5,
+      "storage": "nfs"
+    }
 
 Staging parallel tasks between two storage tiers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This profile type represents an IO transfer between two storage tiers.
 
 .. todo::
 
-    Define profile type: Staging parallel tasks between two storage tiers
+    - What is a storage tier in this case? One host of the :ref:`input_platform`?
+    - Link with execution message that manages the label->id label.
 
-SMPI
-^^^^
+**Parameters.**
 
-.. todo::
+- ``nb_bytes``: The amount of bytes to be transferred (float).
+- ``from``: The name of the sending storage tier (string). It will be mapped to a specific machine at the job execution time.
+- ``to``: The name of the receiving storage tier (string). It will be mapped to a specific machine at the job execution time.
 
-    Define profile type: SMPI
+.. code:: json
+
+    {
+      "type": "data_staging",
+      "nb_bytes": 10e5,
+      "from": "pfs",
+      "to": "nfs"
+    }
+
+SMPI trace replay
+^^^^^^^^^^^^^^^^^
+Profiles of this type correspond to the replay of a SMPI time-independent trace. Such traces allow to see the fine-grained behaviour of MPI applications.
+
+.. note::
+
+    This profile type may not be realistic with all applications, as the application is simulated *offine*: The application is first executed to get a trace, then the trace is replayed.
+
+    This may be wrong if the application logic depends on the execution context, for example if the application communication pattern depends on the observed latencies at runtime.
+
+**Parameters.**
+
+- ``trace``: The file name of the main trace file (string).
+
+.. warning::
+
+    As I write these lines, the ``trace`` filename must be relative to the Batsim workload file in which the profile is defined.
+
+    As a full example, refer to the trace in :file:`workloads/smpi/compute_only`
+    and to the :file:`workloads/test_smpi_compute_only.json` workload file.
+
+.. code:: json
+
+    {
+      "type": "smpi",
+      "trace": "smpi/compute_only/traces.txt"
+    }
 
 .. _OAR: https://oar.imag.fr/start
 .. _Batsim's initial article: https://hal.archives-ouvertes.fr/hal-01333471
