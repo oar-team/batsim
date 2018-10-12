@@ -1,6 +1,15 @@
 Batsim
 ======
 
+.. Warning::
+
+   This documentation is under construction.
+
+   Some (most?) parts are still missing but they may be written in our old documentation, probably in the :file:`doc` directory of Batsim's repository
+   `there <https://framagit.org/batsim/batsim/tree/master/doc>`_.
+
+   Do feel free to contact us `on mattermost <https://framateam.org/signup_user_complete/?id=5xb995hph3d79yj738pokxrnuh>`_ for any question or remark.
+
 .. todo::
    Introduction.
 

@@ -12,6 +12,9 @@ Batsim
 [![changelog](https://img.shields.io/badge/doc-changelog-blue.svg)](https://github.com/oar-team/batsim/blob/master/doc/changelog.md)
 [![protocol](https://img.shields.io/badge/doc-protocol-blue.svg)](https://github.com/oar-team/batsim/blob/master/doc/proto_description.md)
 
+The next vesion of Batsim documentation can be found
+[on readthedocs](https://batsim.readthedocs.io/en/latest/) (**under construction !**).
+
 Batsim is a Batch scheduler simulator.
 A batch scheduler -- AKA Resources and Jobs Management System (RJMS) --
 is a system that manages resources in large-scale computing centers,
