@@ -500,17 +500,17 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         xbt_assert(json_desc.HasMember("from"), "%s: profile '%s' has no 'from' field",
                    error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["from"].IsInt(),
+        xbt_assert(json_desc["from"].IsString(),
                    "%s: profile '%s' has a non-string 'from' field",
                    error_prefix.c_str(), profile_name.c_str());
-        data->from_storage_label = json_desc["from"].GetInt();
+        data->from_storage_label = json_desc["from"].GetString();
 
         xbt_assert(json_desc.HasMember("to"), "%s: profile '%s' has no 'to' field",
                    error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["to"].IsInt(),
+        xbt_assert(json_desc["to"].IsString(),
                    "%s: profile '%s' has a non-string 'to' field",
                    error_prefix.c_str(), profile_name.c_str());
-        data->to_storage_label = json_desc["to"].GetInt();
+        data->to_storage_label = json_desc["to"].GetString();
 
         profile->data = data;
     }
