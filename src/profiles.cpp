@@ -433,6 +433,7 @@ Profile *Profile::from_json(const std::string & profile_name,
     {
         /*
         {
+            "type": "msg_par_hs_pfs",
             "bytes_to_read": 10e5,
             "bytes_to_write": 10e5,
             "storage": "my_io_node" //optional (default: 'pfs')
@@ -482,6 +483,7 @@ Profile *Profile::from_json(const std::string & profile_name,
     {
         /*
         {
+            "type": "data_staging",
             "nb_bytes": 10e5,
             "from": "pfs",
             "to": "lcfs"

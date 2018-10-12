@@ -127,7 +127,7 @@ centralized storage tier. The storage tier is represented by one node.
 ### Parameters
 - ``bytes_to_read``: the amount of bytes to read from the PFS to each nodes.
 - ``bytes_to_write``: the amount of bytes to write to the PFS from each nodes.
-- ``storage``: The name of the storage. It will be map to a specific node at the job
+- ``storage``: The name of the storage. It will be mapped to a specific node at the job
   execution time. (optional: Default value is ``pfs``).
 
 ### Example
@@ -147,8 +147,8 @@ This profile represents an IO transfer between two storage tiers.
 
 ### Parameters
 - ``nb_bytes``: the amount of bytes to be transferred.
-- ``from``: The name of the storage that send. It will be map to a specific node at the job execution time.
-- ``to``: The name of the storage that receive. It will be map to a specific node at the job execution time.
+- ``from``: The name of the storage that sends. It will be mapped to a specific node at the job execution time.
+- ``to``: The name of the storage that receives. It will be mapped to a specific node at the job execution time.
 
 ### Example
 
