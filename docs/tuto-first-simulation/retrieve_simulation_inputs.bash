@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-# Define where Batsim should be cloned.
-export BATSIM_DIR=/tmp/batsim
+# Download a tarball of Batsim's latest release.
+curl --output /tmp/batsim-v2.0.0.tar.gz \
+    https://framagit.org/batsim/batsim/-/archive/v2.0.0/batsim-v2.0.0.tar.gz
 
-# Clone Batsim's latest release.
-git clone --single-branch -b v2.0.0 https://framagit.org/batsim/batsim.git ${BATSIM_DIR}
+# Extract tarball to /tmp/batsim-v2.0.0.
+(cd /tmp && tar -xf batsim-v2.0.0.tar.gz)

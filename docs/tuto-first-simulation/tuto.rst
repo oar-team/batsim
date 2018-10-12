@@ -38,6 +38,14 @@ Retrieving these files is essentially a clone to Batsim's repository at latest r
     :language: bash
     :lines: 3-
 
+Preparing the simulation output directory
+-----------------------------------------
+This is simply the creation of the directory in which the simulation results will be put.
+
+.. literalinclude:: ./prepare_output_directory.bash
+    :language: bash
+    :lines: 3-
+
 Executing the simulation manually
 ---------------------------------
 A Batsim simulation most of the time involves two different processes.
@@ -46,17 +54,13 @@ A Batsim simulation most of the time involves two different processes.
 2. A decision process, in charge of taking all the decisions about jobs and resources. This is where scheduling algorithms are implemented.
 
 As running the simulation involves two processes, first launch two terminals.
-
-Batsim will be executed in the first terminal.
-First, define an environment variable **EXPE_RESULT_DIR** which contains the directory into which Batsim results will be written —
-e.g., with ``export EXPE_RESULT_DIR=/tmp/expe-out``. Please note that this directory must exist.
-Make sure the **BATSIM_DIR** environment variable points to the Batsim repo cloned in `Retrieving simulation inputs`_ then run Batsim with the following command.
+Batsim can be executed in the first terminal with the following command.
 
 .. literalinclude:: ./run_batsim.bash
     :language: bash
     :lines: 3-
 
-You can now run a scheduler **in the second terminal** to start the simulation.
+The scheduler can now be run **in the second terminal** to start the simulation.
 In this tutorial we will use the batsched_ decision process,
 which is the reference implementation of a Batsim decision process.
 The following command runs batsched with the EASY backfilling algorithm.
@@ -81,7 +85,6 @@ which is convenient when simulation campaigns are to be conducted.
 One way to use robin is to first define how the simulation should be executed then to execute the simulation.
 Generating the **./expe.yaml** file, which describes the simulation instance description executed in `Executing the simulation manually`_,
 can be done thanks to the following command.
-Before running it, make sure that the two **BATSIM_DIR** and **EXPE_RESULT_DIR** environment variables are defined in your terminal.
 
 .. literalinclude:: ./run_robin_generate.bash
     :language: bash
