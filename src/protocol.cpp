@@ -1447,6 +1447,8 @@ void JsonProtocolReader::handle_submit_job(int event_number,
         // TODO? check profile collisions
     }
 
+    workload->check_single_job_validity(job);
+
     send_message(timestamp, "server", IPMessageType::JOB_SUBMITTED_BY_DP, (void *) message);
 }
 

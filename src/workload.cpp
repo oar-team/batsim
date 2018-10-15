@@ -143,28 +143,31 @@ void Workload::check_validity()
     // Let's check that the profile of each job exists
     for (auto mit : jobs->jobs())
     {
-        Job * job = mit.second;
-        xbt_assert(profiles->exists(job->profile),
-                   "Invalid job %s: the associated profile '%s' does not exist",
-                   job->id.to_string().c_str(), job->profile.c_str());
-
-        const Profile * profile = profiles->at(job->profile);
-        if (profile->type == ProfileType::MSG_PARALLEL)
-        {
-            MsgParallelProfileData * data = (MsgParallelProfileData *) profile->data;
-            (void) data; // Avoids a warning if assertions are ignored
-            xbt_assert(data->nb_res == job->requested_nb_res,
-                       "Invalid job %s: the requested number of resources (%d) do NOT match"
-                       " the number of resources of the associated profile '%s' (%d)",
-                       job->id.to_string().c_str(), job->requested_nb_res, job->profile.c_str(), data->nb_res);
-        }
-        else if (profile->type == ProfileType::SEQUENCE)
-        {
-            // TODO: check if the number of resources matches a resource-constrained composed profile
-        }
+        check_single_job_validity(mit.second);
     }
 }
 
+void Workload::check_single_job_validity(Job * job)
+{
+    xbt_assert(profiles->exists(job->profile),
+               "Invalid job %s: the associated profile '%s' does not exist",
+               job->id.to_string().c_str(), job->profile.c_str());
+
+    const Profile * profile = profiles->at(job->profile);
+    if (profile->type == ProfileType::MSG_PARALLEL)
+    {
+        MsgParallelProfileData * data = (MsgParallelProfileData *) profile->data;
+        (void) data; // Avoids a warning if assertions are ignored
+        xbt_assert(data->nb_res == job->requested_nb_res,
+                   "Invalid job %s: the requested number of resources (%d) do NOT match"
+                   " the number of resources of the associated profile '%s' (%d)",
+                   job->id.to_string().c_str(), job->requested_nb_res, job->profile.c_str(), data->nb_res);
+    }
+    else if (profile->type == ProfileType::SEQUENCE)
+    {
+        // TODO: check if the number of resources matches a resource-constrained composed profile
+    }
+}
 
 string Workload::to_string()
 {
