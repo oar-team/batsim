@@ -73,6 +73,8 @@ public:
      */
     void check_validity();
 
+    void check_single_job_validity(Job * job);
+
     /**
      * @brief Returns the workload name
      * @return The workload name

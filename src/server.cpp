@@ -615,24 +615,6 @@ void server_on_submit_profile(ServerData * data,
                "Profile submission coming from the decision process received but the option "
                "seems disabled... It can be activated by specifying a configuration file "
                "to Batsim.");
-
-    Workload * workload = data->context->workloads.at(message->workload_name);
-    if (!workload->profiles->exists(message->profile_name))
-    {
-        XBT_INFO("Adding user-submitted profile %s to workload %s",
-                message->profile_name.c_str(),
-                message->workload_name.c_str());
-        Profile * profile = Profile::from_json(message->profile_name,
-                                               message->profile,
-                                               "Invalid JSON profile received from the scheduler");
-        workload->profiles->add_profile(message->profile_name, profile);
-    }
-    else
-    {
-        XBT_WARN("New submission of profile '%s' of workload '%s' is discarded (old profile kept as-is)",
-                 message->profile.c_str(), message->workload_name.c_str());
-        // TODO? check profile collisions
-    }
 }
 
 void server_on_change_job_state(ServerData * data,
