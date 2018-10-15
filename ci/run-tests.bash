@@ -24,7 +24,7 @@ echo "batsched realpath: $(realpath $(which batsched))"
 
 # Execute the tests
 cd build
-ctest
+ctest --output-on-failure
 failed=$?
 
 # Stop the redis server if it has been launched by this script
