@@ -301,7 +301,7 @@ public:
      * @param machines The machines whose state has been changed
      * @param pstate_after The power state the machine will be in after the given time
      */
-    void add_pstate_change(double time, IntervalSet machines, int pstate_after);
+    void add_pstate_change(double time, const IntervalSet & machines, int pstate_after);
 
     /**
      * @brief Forces the flushing of what happened to the output file

@@ -995,7 +995,7 @@ PStateChangeTracer::~PStateChangeTracer()
     }
 }
 
-void PStateChangeTracer::add_pstate_change(double time, IntervalSet machines, int pstate_after)
+void PStateChangeTracer::add_pstate_change(double time, const IntervalSet & machines, int pstate_after)
 {
     xbt_assert(_wbuf != nullptr);
 
