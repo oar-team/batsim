@@ -253,15 +253,6 @@ struct IPMessage
 };
 
 /**
- * @brief The arguments of the smpi_replay_process process
- */
-struct SMPIReplayProcessArguments
-{
-    msg_sem_t semaphore; //!< The semaphore used to know when all executors have finished
-    Job * job; //!< The job the smpi_replay_process is working on
-};
-
-/**
  * @brief Sends a message from the given process to the given mailbox
  * @param[in] destination_mailbox The destination mailbox
  * @param[in] type The type of the message to send
