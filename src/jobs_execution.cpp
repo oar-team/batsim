@@ -18,27 +18,29 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(jobs_execution, "jobs_execution"); //!< Logging
 
 using namespace std;
 
-int smpi_replay_process(int argc, char *argv[])
+void smpi_replay_process(Job* job, SmpiProfileData * profile_data, simgrid::s4u::BarrierPtr barrier, int rank)
 {
-    SMPIReplayProcessArguments * args = (SMPIReplayProcessArguments *) MSG_process_get_data(MSG_process_self());
+    // Prepare data for smpi_replay_run
+    char *str_instance_id = NULL;
+    int ret = asprintf(&str_instance_id, "%s", job->id.to_string().c_str());
+    (void) ret; // Avoids a warning if assertions are ignored
+    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
-    if (args->semaphore != NULL)
-    {
-        MSG_sem_acquire(args->semaphore);
-    }
+    char * trace_filename = xbt_strdup((char*) profile_data->trace_filenames[rank].c_str());
 
-    XBT_INFO("Launching smpi_replay_run");
+    int argc    = 5;
+    char** argv = xbt_new(char*, argc);
+    argv[0]     = xbt_strdup("1");        // log only?
+    argv[1]     = str_instance_id;        // application instance
+    argv[2]     = bprintf("%d", rank);    // rank
+    argv[3]     = trace_filename;         // smpi trace file for this rank
+    argv[4]     = xbt_strdup("0");        // ?
+
+    XBT_INFO("Replaying rank %d of job %s (SMPI)", rank, job->id.to_string().c_str());
     smpi_replay_run(&argc, &argv);
-    XBT_INFO("smpi_replay_run finished");
+    XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_string().c_str());
 
-    if (args->semaphore != NULL)
-    {
-        MSG_sem_release(args->semaphore);
-    }
-
-    // args->job->execution_actors.erase(simgrid::s4u::Actor::self()); TODO S4U
-    delete args;
-    return 0;
+    barrier->wait();
 }
 
 int execute_task(BatTask * btask,
@@ -210,7 +212,6 @@ int execute_task(BatTask * btask,
     else if (profile->type == ProfileType::SMPI)
     {
         SmpiProfileData * data = (SmpiProfileData *) profile->data;
-        msg_sem_t sem = MSG_sem_init(1);
 
         int nb_ranks = data->trace_filenames.size();
 
@@ -227,56 +228,24 @@ int execute_task(BatTask * btask,
             }
         }
 
+        simgrid::s4u::BarrierPtr barrier = simgrid::s4u::Barrier::create(nb_ranks + 1);
+
         xbt_assert(nb_ranks == (int) job->smpi_ranks_to_hosts_mapping.size(),
                    "Invalid job %s: SMPI ranks_to_host mapping has an invalid size, as it should "
                    "use %d MPI ranks but the ranking states that there are %d ranks.",
                    job->id.to_string().c_str(), nb_ranks, (int) job->smpi_ranks_to_hosts_mapping.size());
 
-        for (int i = 0; i < nb_ranks; ++i)
+        for (int rank = 0; rank < nb_ranks; ++rank)
         {
-            char *str_instance_id = NULL;
-            int ret = asprintf(&str_instance_id, "%s", job->id.to_string().c_str());
-            (void) ret; // Avoids a warning if assertions are ignored
-            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-
-            char *str_rank_id  = NULL;
-            ret = asprintf(&str_rank_id, "%d", i);
-            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-
-            char *str_pname = NULL;
-            ret = asprintf(&str_pname, "%s_%d", job->id.to_string().c_str(), i);
-            xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-
-            char **argv = xbt_new(char*, 5);
-            argv[0] = xbt_strdup("1"); // Fonction_replay_label (can be ignored, for log only),
-            argv[1] = str_instance_id; // Instance Id (application) job_id is used
-            argv[2] = str_rank_id;     // Rank Id
-            argv[3] = xbt_strdup((char*) data->trace_filenames[i].c_str());
-            argv[4] = xbt_strdup("0"); //
-
-            simgrid::s4u::Host* host_to_use = allocation->hosts[job->smpi_ranks_to_hosts_mapping[i]];
-            SMPIReplayProcessArguments * message = new SMPIReplayProcessArguments;
-            message->semaphore = NULL;
-            message->job = job;
-
-            XBT_INFO("Hello!");
-
-            if (i == 0)
-            {
-                message->semaphore = sem;
-            }
-
-            msg_process_t process = MSG_process_create_with_arguments(str_pname, smpi_replay_process,
-                                                                      message, host_to_use, 5, argv);
+            std::string actor_name = job->id.to_string() + "_" + std::to_string(rank);
+            simgrid::s4u::Host* host_to_use = allocation->hosts[job->smpi_ranks_to_hosts_mapping[rank]];
+            simgrid::s4u::ActorPtr actor = simgrid::s4u::Actor::create(actor_name, host_to_use, smpi_replay_process, job, data, barrier, rank);
             //job->execution_processes.insert(process); TODO S4U
-            (void) process;
-
-            // todo: avoid memory leaks
-            free(str_pname);
-
+            (void) actor;
         }
-        MSG_sem_acquire(sem);
-        MSG_sem_destroy(sem);
+
+        barrier->wait();
+
         return profile->return_code;
     }
     else

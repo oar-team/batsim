@@ -27,12 +27,13 @@ struct CleanExecuteTaskData
 void killer_process(BatsimContext *context, std::vector<JobIdentifier> jobs_ids);
 
 /**
- * @brief The process in charge of executing a SMPI job
- * @param argc The number of arguments
- * @param argv The arguments values
- * @return 0
+ * @brief The process in charge of executing a rank of a SMPI profile
+ * @param[in] job The job associated with this profile execution
+ * @param[in] profile_data The data associated with the executed profile
+ * @param[in,out] barrier The barrier associated with this job
+ * @param[in] rank The rank whose replay is to be simulated
  */
-int smpi_replay_process(int argc, char *argv[]);
+void smpi_replay_process(Job* job, SmpiProfileData * profile_data, simgrid::s4u::BarrierPtr barrier, int rank);
 
 /**
  * @brief Simulates a delay profile (sleeps until finished or walltime)
