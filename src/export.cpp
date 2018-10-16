@@ -48,7 +48,7 @@ void prepare_batsim_outputs(BatsimContext * context)
         // Power state tracing
         context->pstate_tracer.setFilename(context->export_prefix + "_pstate_changes.csv");
 
-        std::map<int, MachineRange> pstate_to_machine_set;
+        std::map<int, IntervalSet> pstate_to_machine_set;
         for (const Machine * machine : context->machines.machines())
         {
             int machine_id = machine->id;
@@ -56,7 +56,7 @@ void prepare_batsim_outputs(BatsimContext * context)
 
             if (pstate_to_machine_set.count(pstate) == 0)
             {
-                MachineRange range;
+                IntervalSet range;
                 range.insert(machine_id);
                 pstate_to_machine_set[pstate] = range;
             }
@@ -69,7 +69,7 @@ void prepare_batsim_outputs(BatsimContext * context)
         for (auto mit : pstate_to_machine_set)
         {
             int pstate = mit.first;
-            MachineRange & range = mit.second;
+            IntervalSet & range = mit.second;
             context->pstate_tracer.add_pstate_change(MSG_get_clock(), range, pstate);
         }
     }
@@ -568,7 +568,7 @@ void PajeTracer::set_machine_as_computing_job(int machine_id, const Job * job, d
     free(buf);
 }
 
-void PajeTracer::add_job_kill(const Job *job, const MachineRange & used_machine_ids,
+void PajeTracer::add_job_kill(const Job *job, const IntervalSet & used_machine_ids,
                               double time, bool associate_kill_to_machines)
 {
     xbt_assert(state == INITIALIZED, "Bad addJobKill call: the PajeTracer object is not initialized or had been finalized");
@@ -864,7 +864,7 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
                         max_slowdown = slowdown;
                     }
 
-                    MachineRange & allocation = job->allocation;
+                    IntervalSet & allocation = job->allocation;
                     auto size = allocation.size();
                     for (size_t i=0; i < size; i++)
                     {
@@ -995,7 +995,7 @@ PStateChangeTracer::~PStateChangeTracer()
     }
 }
 
-void PStateChangeTracer::add_pstate_change(double time, MachineRange machines, int pstate_after)
+void PStateChangeTracer::add_pstate_change(double time, IntervalSet machines, int pstate_after)
 {
     xbt_assert(_wbuf != nullptr);
 
@@ -1068,7 +1068,7 @@ void EnergyConsumptionTracer::add_job_end(double date, JobIdentifier job_id)
     _context->energy_last_job_completion = add_entry(date, 'e');
 }
 
-void EnergyConsumptionTracer::add_pstate_change(double date, const MachineRange & machines, int new_pstate)
+void EnergyConsumptionTracer::add_pstate_change(double date, const IntervalSet & machines, int new_pstate)
 {
     (void) machines;
     (void) new_pstate;

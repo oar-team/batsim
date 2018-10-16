@@ -14,8 +14,9 @@
 #include <simgrid/msg.h>
 #include <simgrid/s4u.hpp>
 
+#include <intervalset.hpp>
+
 #include "exact_numbers.hpp"
-#include "machine_range.hpp"
 
 class Profiles;
 struct Profile;
@@ -175,7 +176,7 @@ struct Job
     std::deque<std::string> incoming_message_buffer; //!< The buffer for incoming messages from the scheduler.
 
     // Scheduler allocation and metadata
-    MachineRange allocation; //!< The machines on which the job has been executed.
+    IntervalSet allocation; //!< The machines on which the job has been executed.
     std::vector<int> smpi_ranks_to_hosts_mapping; //!< If the job uses a SMPI profile, stores which host number each MPI rank should use. These numbers must be in [0,required_nb_res[.
     std::string metadata; //!< Metadata that the scheduler can set on the job
 

@@ -447,7 +447,7 @@ const std::map<MachineState, int> &Machines::nb_machines_in_each_state() const
 }
 
 void Machines::update_machines_on_job_run(const Job * job,
-                                          const MachineRange & used_machines,
+                                          const IntervalSet & used_machines,
                                           BatsimContext * context)
 {
     for (auto it = used_machines.elements_begin(); it != used_machines.elements_end(); ++it)
@@ -482,7 +482,7 @@ void Machines::update_machines_on_job_run(const Job * job,
 }
 
 void Machines::update_machines_on_job_end(const Job * job,
-                                          const MachineRange & used_machines,
+                                          const IntervalSet & used_machines,
                                           BatsimContext * context)
 {
     for (auto it = used_machines.elements_begin(); it != used_machines.elements_end(); ++it)
@@ -784,7 +784,7 @@ void create_machines(const MainArguments & main_args,
 }
 
 long double consumed_energy_on_machines(BatsimContext * context,
-                                        const MachineRange & machines)
+                                        const IntervalSet & machines)
 {
     if (!context->energy_used)
     {

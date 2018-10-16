@@ -341,7 +341,7 @@ void server_on_pstate_modification(ServerData * data,
                 MSG_host_set_pstate(machine->host, message->new_pstate);
                 xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
 
-                MachineRange all_switched_machines;
+                IntervalSet all_switched_machines;
                 if (data->context->current_switches.mark_switch_as_done(machine->id, message->new_pstate,
                                                                         all_switched_machines,
                                                                         data->context))
@@ -462,7 +462,7 @@ void server_on_switched(ServerData * data,
     (void) machine; // Avoids a warning if assertions are ignored
     xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
 
-    MachineRange all_switched_machines;
+    IntervalSet all_switched_machines;
     if (data->context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate,
                                                             all_switched_machines, data->context))
     {

@@ -103,7 +103,7 @@ void switch_off_machine_process(BatsimContext * context, int machine_id, int new
     send_message("server", IPMessageType::SWITCHED_OFF, (void *) msg);
 }
 
-void CurrentSwitches::add_switch(const MachineRange &machines, int target_pstate)
+void CurrentSwitches::add_switch(const IntervalSet &machines, int target_pstate)
 {
     Switch * s = new Switch;
     s->all_machines = machines;
@@ -123,7 +123,7 @@ void CurrentSwitches::add_switch(const MachineRange &machines, int target_pstate
 
 bool CurrentSwitches::mark_switch_as_done(int machine_id,
                                           int target_pstate,
-                                          MachineRange & all_machines,
+                                          IntervalSet & all_machines,
                                           BatsimContext * context)
 {
     xbt_assert(_switches.count(target_pstate) == 1);

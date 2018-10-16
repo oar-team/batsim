@@ -8,7 +8,8 @@
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 
-#include "machine_range.hpp"
+#include <intervalset.hpp>
+
 #include "machines.hpp"
 #include "workload.hpp"
 #include "ipp.hpp"
@@ -144,7 +145,7 @@ public:
      * @param[in] new_state The state the machines are now in.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_resource_state_changed(const MachineRange & resources,
+    virtual void append_resource_state_changed(const IntervalSet & resources,
                                                const std::string & new_state,
                                                double date) = 0;
 
@@ -297,7 +298,7 @@ public:
      * @param[in] new_state The state the machines are now in.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_resource_state_changed(const MachineRange & resources,
+    void append_resource_state_changed(const IntervalSet & resources,
                                        const std::string & new_state,
                                        double date);
 

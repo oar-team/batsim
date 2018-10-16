@@ -9,10 +9,9 @@
 #include <list>
 #include <string>
 
+#include <intervalset.hpp>
+
 struct BatsimContext;
-
-#include "machine_range.hpp"
-
 struct Machine;
 
 /**
@@ -48,8 +47,8 @@ public:
     struct Switch
     {
         int target_pstate;                  //!< The power state the machines must switch to
-        MachineRange all_machines;          //!< The machines considered by this state switch
-        MachineRange switching_machines;    //!< The machines which are still switching to target_pstate
+        IntervalSet all_machines;          //!< The machines considered by this state switch
+        IntervalSet switching_machines;    //!< The machines which are still switching to target_pstate
     };
 
 public:
@@ -69,7 +68,7 @@ public:
      * @param[in] machines The machines associated with the power state switch
      * @param[in] target_pstate The power states into which the machines should be put
      */
-    void add_switch(const MachineRange & machines, int target_pstate);
+    void add_switch(const IntervalSet & machines, int target_pstate);
 
     /**
      * @brief Marks that one machine switched its power state
@@ -81,7 +80,7 @@ public:
      */
     bool mark_switch_as_done(int machine_id,
                              int target_pstate,
-                             MachineRange & all_machines,
+                             IntervalSet & all_machines,
                              BatsimContext * context);
 
 private:
