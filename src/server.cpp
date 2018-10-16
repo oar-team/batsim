@@ -81,25 +81,20 @@ void server_process(BatsimContext * context)
     // Simulation loop
     while (!data->end_of_simulation_ack_received)
     {
-        // Let's wait a message from a node or the request-reply process...
-        msg_task_t task_received = NULL;
-        IPMessage * task_data;
-        MSG_task_receive(&(task_received), "server");
-
-        // Let's handle the message
-        task_data = (IPMessage *) MSG_task_get_data(task_received);
+        // Wait and receive a message from a node or the request-reply process...
+        IPMessage * message = receive_message("server");
         XBT_DEBUG("Server received a message of type %s:",
-                 ip_message_type_to_string(task_data->type).c_str());
+                 ip_message_type_to_string(message->type).c_str());
 
-        xbt_assert(handler_map.count(task_data->type) == 1,
+        // Handle the message
+        xbt_assert(handler_map.count(message->type) == 1,
                    "The server does not know how to handle message type %s.",
-                   ip_message_type_to_string(task_data->type).c_str());
-        auto handler_function = handler_map[task_data->type];
-        handler_function(data, task_data);
+                   ip_message_type_to_string(message->type).c_str());
+        auto handler_function = handler_map[message->type];
+        handler_function(data, message);
 
-        // Let's delete the message data
-        delete task_data;
-        MSG_task_destroy(task_received);
+        // Delete the message
+        delete message;
 
         // Let's send a message to the scheduler if needed
         if (data->sched_ready && // The scheduler must be ready

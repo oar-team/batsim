@@ -33,18 +33,8 @@ void switch_on_machine_process(BatsimContext *context, int machine_id, int new_p
     MSG_host_set_pstate(machine->host, on_ps);
     //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, on_ps);
 
-    simgrid::s4u::Host* host_list[1] = {machine->host};
-//    double flop_amount[1] = {1};
-//    double bytes_amount[1] = {0};
-    double * flop_amount = xbt_new(double, 1);
-    double * bytes_amount = xbt_new(double, 1);
-    flop_amount[0] = 1;
-    bytes_amount[0] = 0;
-
-    msg_task_t bootup = MSG_parallel_task_create("switch ON", 1, host_list, flop_amount, bytes_amount, NULL);
     XBT_INFO("Computing 1 flop to simulate time & energy cost of switch ON");
-    MSG_task_execute(bootup);
-    MSG_task_destroy(bootup);
+    simgrid::s4u::this_actor::execute(1);
 
     XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to computing pstate %d",
              machine->id, machine->name.c_str(), new_pstate);
@@ -77,18 +67,8 @@ void switch_off_machine_process(BatsimContext * context, int machine_id, int new
     MSG_host_set_pstate(machine->host, off_ps);
     //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, off_ps);
 
-    simgrid::s4u::Host* host_list[1] = {machine->host};
-//    double flop_amount[1] = {1};
-//    double bytes_amount[1] = {0};
-    double * flop_amount = xbt_new(double, 1);
-    double * bytes_amount = xbt_new(double, 1);
-    flop_amount[0] = 1;
-    bytes_amount[0] = 0;
-
-    msg_task_t shutdown = MSG_parallel_task_create("switch OFF", 1, host_list, flop_amount, bytes_amount, NULL);
     XBT_INFO("Computing 1 flop to simulate time & energy cost of switch OFF");
-    MSG_task_execute(shutdown);
-    MSG_task_destroy(shutdown);
+    simgrid::s4u::this_actor::execute(1);
 
     XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to sleeping pstate %d",
              machine->id, machine->name.c_str(), new_pstate);

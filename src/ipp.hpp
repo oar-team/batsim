@@ -266,7 +266,7 @@ struct SMPIReplayProcessArguments
  * @param[in] destination_mailbox The destination mailbox
  * @param[in] type The type of the message to send
  * @param[in] data The data associated with the message
- * @param[in] detached Whether the send should be detached (MSG_task_send or MSG_task_dsend)
+ * @param[in] detached Whether the send should be detached (put or put_async)
  */
 void generic_send_message(const std::string & destination_mailbox,
                           IPMessageType type,
@@ -303,6 +303,13 @@ void dsend_message(const std::string & destination_mailbox, IPMessageType type, 
  * @param[in] data The data associated to the message
  */
 void dsend_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
+
+/**
+ * @brief Receive a message on a given mailbox
+ * @param[in] reception_mailbox The mailbox name
+ * @return The received message. Must be deallocated by the caller.
+ */
+IPMessage * receive_message(const std::string & reception_mailbox);
 
 /**
  * @brief Transforms a IPMessageType into a std::string
