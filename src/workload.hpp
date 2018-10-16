@@ -73,6 +73,10 @@ public:
      */
     void check_validity();
 
+    /**
+     * @brief Checks whether a single job is valid
+     * @param[in] job The job to examine
+     */
     void check_single_job_validity(Job * job);
 
     /**
