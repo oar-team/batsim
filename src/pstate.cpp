@@ -33,7 +33,7 @@ void switch_on_machine_process(BatsimContext *context, int machine_id, int new_p
     MSG_host_set_pstate(machine->host, on_ps);
     //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, on_ps);
 
-    msg_host_t host_list[1] = {machine->host};
+    simgrid::s4u::Host* host_list[1] = {machine->host};
 //    double flop_amount[1] = {1};
 //    double bytes_amount[1] = {0};
     double * flop_amount = xbt_new(double, 1);
@@ -77,7 +77,7 @@ void switch_off_machine_process(BatsimContext * context, int machine_id, int new
     MSG_host_set_pstate(machine->host, off_ps);
     //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, off_ps);
 
-    msg_host_t host_list[1] = {machine->host};
+    simgrid::s4u::Host* host_list[1] = {machine->host};
 //    double flop_amount[1] = {1};
 //    double bytes_amount[1] = {0};
     double * flop_amount = xbt_new(double, 1);

@@ -254,7 +254,7 @@ int execute_task(BatTask * btask,
             argv[3] = xbt_strdup((char*) data->trace_filenames[i].c_str());
             argv[4] = xbt_strdup("0"); //
 
-            msg_host_t host_to_use = allocation->hosts[job->smpi_ranks_to_hosts_mapping[i]];
+            simgrid::s4u::Host* host_to_use = allocation->hosts[job->smpi_ranks_to_hosts_mapping[i]];
             SMPIReplayProcessArguments * message = new SMPIReplayProcessArguments;
             message->semaphore = NULL;
             message->job = job;
@@ -441,7 +441,7 @@ void execute_job_process(BatsimContext * context,
         int machine_id_within_allocated_resources = allocation->mapping[executor_id];
         int machine_id = allocation->machine_ids[machine_id_within_allocated_resources];
 
-        msg_host_t to_add = context->machines[machine_id]->host;
+        simgrid::s4u::Host* to_add = context->machines[machine_id]->host;
         allocation->hosts.push_back(to_add);
     }
 

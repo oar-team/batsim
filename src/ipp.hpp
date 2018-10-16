@@ -11,7 +11,7 @@
 
 #include <rapidjson/document.h>
 
-#include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
 #include <intervalset.hpp>
 
@@ -142,8 +142,8 @@ struct SchedulingAllocation
     IntervalSet machine_ids; //!< User defined allocation in range of machines ids
     std::vector<int> mapping; //!< The mapping from executors (~=ranks) to resource ids. Can be empty, in which case it will NOT be used (a round robin will be used instead). If not empty, must be of the same size of the job, and each value must be in [0,nb_allocated_res[.
     std::map<std::string, int> storage_mapping; //!< mapping from label given in the profile and machine id
-    std::vector<msg_host_t> hosts;  //!< The list of SimGrid hosts that would be used (one executor per host)
-    std::vector<msg_host_t> io_hosts;  //!< The list of SimGrid hosts that would be used for additional io job that will be merged to the job (one executor per host)
+    std::vector<simgrid::s4u::Host*> hosts;  //!< The list of SimGrid hosts that would be used (one executor per host)
+    std::vector<simgrid::s4u::Host*> io_hosts;  //!< The list of SimGrid hosts that would be used for additional io job that will be merged to the job (one executor per host)
     IntervalSet io_allocation; //!< The user defined additional io allocation in machine ids
 };
 

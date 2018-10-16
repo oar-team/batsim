@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include <map>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <simgrid/msg.h>
@@ -56,18 +56,18 @@ struct Machine
     Machines * machines = nullptr; //!< Points to the Machines instance which contains the Machine
     int id; //!< The machine unique number
     std::string name; //!< The machine name
-    msg_host_t host; //!< The SimGrid host corresponding to the machine
+    simgrid::s4u::Host* host; //!< The SimGrid host corresponding to the machine
     roles::Permissions permissions = roles::Permissions::NONE; //!< Machine permissions
     MachineState state = MachineState::IDLE; //!< The current state of the Machine
     std::set<const Job *> jobs_being_computed; //!< The set of jobs being computed on the Machine
 
-    std::map<int, PStateType> pstates; //!< Maps power state number to their power state type
-    std::map<int, SleepPState *> sleep_pstates; //!< Maps sleep power state numbers to their SleepPState
+    std::unordered_map<int, PStateType> pstates; //!< Maps power state number to their power state type
+    std::unordered_map<int, SleepPState *> sleep_pstates; //!< Maps sleep power state numbers to their SleepPState
 
     Rational last_state_change_date = 0; //!< The time at which the last state change has been done
-    std::map<MachineState, Rational> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
+    std::unordered_map<MachineState, Rational> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
 
-    std::map<std::string, std::string> properties; //!< Properties defined in the platform file
+    std::unordered_map<std::string, std::string> properties; //!< Properties defined in the platform file
 
     /**
      * @brief Returns whether the Machine has the given role
@@ -143,13 +143,11 @@ public:
 
     /**
      * @brief Fill the Machines with SimGrid hosts
-     * @param[in] hosts The SimGrid hosts
      * @param[in] context The Batsim Context
      * @param[in] roles The roles of each machine
      * @param[in] limit_machine_count If set to -1, all the machines are used. If set to a strictly positive number N, only the first machines N will be used to compute jobs
      */
-    void create_machines(xbt_dynar_t hosts,
-                         const BatsimContext * context,
+    void create_machines(const BatsimContext * context,
                          const std::map<std::string, std::string> & roles,
                          int limit_machine_count = -1);
 
