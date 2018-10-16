@@ -403,7 +403,7 @@ void generate_matices_from_profile(double *& computation_vector,
  * @param[in] computation_matrix The ptask communication matrix
  * @param[in] context The BatsimContext
  */
-void check_ptask_execution_permission(const MachineRange & alloc,
+void check_ptask_execution_permission(const IntervalSet & alloc,
                                       const double * computation_matrix,
                                       BatsimContext * context)
 {
@@ -472,10 +472,10 @@ int execute_msg_task(BatTask * btask,
                                       context);
         // merge the two profiles
         // First get part of the allocation that do change or not in the job
-        MachineRange immut_job_alloc = difference(allocation->machine_ids, allocation->io_allocation);
-        MachineRange immut_io_alloc = difference(allocation->io_allocation, allocation->machine_ids);
-        MachineRange to_merge_alloc = intersection(allocation->machine_ids, allocation->io_allocation);
-        MachineRange new_alloc = union_itvs(allocation->machine_ids, allocation->io_allocation);
+        IntervalSet immut_job_alloc = allocation->machine_ids - allocation->io_allocation;
+        IntervalSet immut_io_alloc = allocation->io_allocation - allocation->machine_ids;
+        IntervalSet to_merge_alloc = allocation->machine_ids & allocation->io_allocation;
+        IntervalSet new_alloc = allocation->machine_ids + allocation->io_allocation;
 
         // FIXME this does not work for profiles that changes the number of hosts: where the allocation and the host to use
         // are different

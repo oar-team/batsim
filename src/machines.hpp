@@ -12,8 +12,9 @@
 
 #include <simgrid/msg.h>
 
+#include <intervalset.hpp>
+
 #include "exact_numbers.hpp"
-#include "machine_range.hpp"
 #include "pstate.hpp"
 #include "permissions.hpp"
 
@@ -160,7 +161,7 @@ public:
      * @param[in,out] context The Batsim Context
      */
     void update_machines_on_job_run(const Job * job,
-                                    const MachineRange & used_machines,
+                                    const IntervalSet & used_machines,
                                     BatsimContext * context);
 
     /**
@@ -171,7 +172,7 @@ public:
      * @param[in,out] context The BatsimContext
      */
     void update_machines_on_job_end(const Job *job,
-                                    const MachineRange & used_machines,
+                                    const IntervalSet & used_machines,
                                     BatsimContext *context);
 
     /**
@@ -307,7 +308,7 @@ void create_machines(const MainArguments & main_args, BatsimContext * context,
  * @return The energy (in joules) consumed on the machines since time 0
  */
 long double consumed_energy_on_machines(BatsimContext * context,
-                                        const MachineRange & machines);
+                                        const IntervalSet & machines);
 
 /**
  * @brief Sorts the given vector of machines by ascending name (lexicographically speaking)

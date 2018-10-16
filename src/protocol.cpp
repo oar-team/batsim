@@ -456,7 +456,7 @@ void JsonProtocolWriter::append_from_job_message(const string & job_id,
     _events.PushBack(event, _alloc);
 }
 
-void JsonProtocolWriter::append_resource_state_changed(const MachineRange & resources,
+void JsonProtocolWriter::append_resource_state_changed(const IntervalSet & resources,
                                                        const string & new_state,
                                                        double date)
 {
@@ -870,7 +870,9 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     xbt_assert(alloc_value.IsString(), "Invalid JSON message: the 'alloc' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
     string alloc = alloc_value.GetString();
 
-    message->allocation->machine_ids = MachineRange::from_string_hyphen(alloc, " ", "-", "Invalid JSON message received from the scheduler");
+    try { message->allocation->machine_ids = IntervalSet::from_string_hyphen(alloc, " ", "-"); }
+    catch(const std::exception & e) { throw std::runtime_error(std::string("Invalid JSON message: ") + e.what());}
+
     int nb_allocated_resources = message->allocation->machine_ids.size();
     (void) nb_allocated_resources; // Avoids a warning if assertions are ignored
     xbt_assert(nb_allocated_resources > 0, "Invalid JSON message: in event %d (EXECUTE_JOB): the number of allocated resources should be strictly positive (got %d).", event_number, nb_allocated_resources);
@@ -1049,7 +1051,8 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         xbt_assert(alloc_value.IsString(), "Invalid JSON message: the 'alloc' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
         string alloc = alloc_value.GetString();
 
-        message->allocation->io_allocation = MachineRange::from_string_hyphen(alloc, " ", "-", "Invalid io allocation");
+        try { message->allocation->io_allocation = IntervalSet::from_string_hyphen(alloc, " ", "-"); }
+        catch(const std::exception & e) { throw std::runtime_error(std::string("Invalid JSON message: bad IO allocation: ") + e.what());}
     }
     else
     {
@@ -1112,7 +1115,9 @@ void JsonProtocolReader::handle_set_resource_state(int event_number,
     xbt_assert(resources_value.IsString(), "Invalid JSON message: the 'resources' value in the 'data' value of event %d (SET_RESOURCE_STATE) should be a string.", event_number);
     string resources = resources_value.GetString();
 
-    message->machine_ids = MachineRange::from_string_hyphen(resources, " ", "-", "Invalid JSON message received from the scheduler");
+    try { message->machine_ids = IntervalSet::from_string_hyphen(resources, " ", "-"); }
+    catch(const std::exception & e) { throw std::runtime_error(std::string("Invalid JSON message: ") + e.what());}
+
     int nb_allocated_resources = message->machine_ids.size();
     (void) nb_allocated_resources; // Avoids a warning if assertions are ignored
     xbt_assert(nb_allocated_resources > 0, "Invalid JSON message: in event %d (SET_RESOURCE_STATE): the number of allocated resources should be strictly positive (got %d).", event_number, nb_allocated_resources);
