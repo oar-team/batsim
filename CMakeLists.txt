@@ -89,6 +89,10 @@ include_directories(${DOCOPT_INCLUDE_DIRS})
 find_package(pugixml REQUIRED)
 include_directories(${PUGIXML_INCLUDE_DIR})
 
+## Intervalset dependency
+find_package(intervalset REQUIRED)
+include_directories(${INTERVALSET_INCLUDE_DIR})
+
 ##################
 # Batsim version #
 ##################
@@ -139,6 +143,7 @@ target_link_libraries(batsim
     ${ZMQ_LIBRARIES}
     ${DOCOPT_LIBRARIES}
     ${PUGIXML_LIBRARY}
+    ${INTERVALSET_LIBRARY}
 )
 
 ################
