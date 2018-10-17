@@ -20,27 +20,24 @@ void generic_send_message(const std::string & destination_mailbox,
     message->type = type;
     message->data = data;
 
-    msg_task_t task_to_send = MSG_task_create(NULL, 0, 1e-6, message);
+    auto mailbox = simgrid::s4u::Mailbox::by_name(destination_mailbox);
+    const uint64_t message_size = 1;
 
     XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p",
-              MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
+              simgrid::s4u::this_actor::get_cname(), destination_mailbox.c_str(),
               ip_message_type_to_string(type).c_str(), data);
 
     if (detached)
     {
-        MSG_task_dsend(task_to_send, destination_mailbox.c_str(), NULL);
+        mailbox->put_async(message, message_size);
     }
     else
     {
-        msg_error_t err = MSG_task_send(task_to_send, destination_mailbox.c_str());
-        xbt_assert(err == MSG_OK,
-                   "Sending message from '%s' to '%s' of type '%s' with data %p FAILED!",
-                   MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
-                   ip_message_type_to_string(type).c_str(), data);
+        mailbox->put(message, message_size);
     }
 
     XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p done",
-              MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
+              simgrid::s4u::this_actor::get_cname(), destination_mailbox.c_str(),
               ip_message_type_to_string(type).c_str(), data);
 }
 
@@ -52,6 +49,13 @@ void send_message(const std::string & destination_mailbox, IPMessageType type, v
 void dsend_message(const std::string & destination_mailbox, IPMessageType type, void * data)
 {
     generic_send_message(destination_mailbox, type, data, true);
+}
+
+IPMessage * receive_message(const std::string & reception_mailbox)
+{
+    auto mailbox = simgrid::s4u::Mailbox::by_name(reception_mailbox);
+    IPMessage * message = static_cast<IPMessage *>(mailbox->get());
+    return message;
 }
 
 std::string ip_message_type_to_string(IPMessageType type)

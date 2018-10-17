@@ -45,16 +45,15 @@ Machines::~Machines()
     _machines.clear();
 }
 
-void Machines::create_machines(xbt_dynar_t hosts,
-                               const BatsimContext *context,
+void Machines::create_machines(const BatsimContext *context,
                                const std::map<string, string> & role_map,
                                int limit_machine_count)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
 
-    msg_host_t host;
-    unsigned int i = 0;
-    xbt_dynar_foreach(hosts, i, host)
+    std::vector<simgrid::s4u::Host *> hosts = simgrid::s4u::Engine::get_instance()->get_all_hosts();
+
+    for(simgrid::s4u::Host * host : hosts)
     {
         Machine * machine = new Machine(this);
 
@@ -62,17 +61,7 @@ void Machines::create_machines(xbt_dynar_t hosts,
         machine->host = host;
         machine->jobs_being_computed = {};
 
-        auto properties_dict = MSG_host_get_properties(machine->host);
-        xbt_dict_cursor_t cursor = nullptr;
-        char *prop_key = nullptr;
-        char *prop_value = nullptr;
-        xbt_dict_foreach(properties_dict, cursor, prop_key, prop_value)
-        {
-            if (string(prop_value) != "")
-            {
-                machine->properties[string(prop_key)] = string(prop_value);
-            }
-        }
+        machine->properties = *(host->get_properties());
 
         // set role properties on hosts if it has CLI defined role
         if (role_map.count(machine->name))
@@ -94,14 +83,14 @@ void Machines::create_machines(xbt_dynar_t hosts,
 
         if (context->energy_used)
         {
-            int nb_pstates = MSG_host_get_nb_pstates(machine->host);
-            const char * sleep_states_cstr = MSG_host_get_property_value(machine->host, "sleep_pstates");
-            bool contains_sleep_pstates = (sleep_states_cstr != NULL);
+            int nb_pstates = machine->host->get_pstate_count();
+
+            auto property_it = machine->properties.find("sleep_pstates");
 
             // Let the sleep_pstates property be traversed in order to find the sleep and virtual transition pstates
-            if (contains_sleep_pstates)
+            if (property_it != machine->properties.end())
             {
-                string sleep_states_str = sleep_states_cstr;
+                string sleep_states_str = property_it->second;
 
                 vector<string> sleep_pstate_triplets;
                 boost::split(sleep_pstate_triplets, sleep_states_str, boost::is_any_of(","), boost::token_compress_on);
@@ -219,8 +208,7 @@ void Machines::create_machines(xbt_dynar_t hosts,
             // Because of one pernicious bug (https://github.com/oar-team/batsim/issues/21),
             // let's check that the machine contains no energy information if dynamic submissions
             // are enabled.
-            const char * sleep_states_cstr = MSG_host_get_property_value(machine->host, "sleep_pstates");
-            bool contains_sleep_pstates = (sleep_states_cstr != NULL);
+            bool contains_sleep_pstates = (machine->properties.count("sleep_pstates") == 1);
             xbt_assert(!contains_sleep_pstates,
                        "Using dynamic job submissions AND plaforms with energy information "
                        "is currently forbidden (https://github.com/oar-team/batsim/issues/21).");
@@ -231,8 +219,6 @@ void Machines::create_machines(xbt_dynar_t hosts,
         {
             if (context->energy_used)
             {
-                int initial_pstate = MSG_host_get_pstate(machine->host);
-
                 // Check all computing pstates
                 for (auto mit : machine->pstates)
                 {
@@ -240,17 +226,11 @@ void Machines::create_machines(xbt_dynar_t hosts,
                     PStateType & pstate_type = mit.second;
                     if (pstate_type == PStateType::COMPUTATION_PSTATE)
                     {
-                        // As I write these lines, determinining the pstate's computation speed without switching into it is not possible.
-                        MSG_host_set_pstate(machine->host, pstate_id);
-
-                        xbt_assert(sg_host_speed(machine->host) > 0,
+                        xbt_assert(machine->host->get_pstate_speed(pstate_id) > 0,
                                    "Invalid platform file '%s': host '%s' has an invalid (non-positive computing speed) computing pstate %d.",
                                    context->platform_filename.c_str(), machine->name.c_str(), pstate_id);
                     }
                 }
-
-                // Reset initial pstate
-                MSG_host_set_pstate(machine->host, initial_pstate);
             }
             else
             {
@@ -772,12 +752,9 @@ void create_machines(const MainArguments & main_args,
 
     XBT_INFO("Looking for master host '%s'", main_args.master_host_name.c_str());
 
-    xbt_dynar_t hosts = MSG_hosts_as_dynar();
-    context->machines.create_machines(hosts,
-                                      context,
+    context->machines.create_machines(context,
                                       main_args.hosts_roles_map,
                                       max_nb_machines_to_use);
-    xbt_dynar_free(&hosts);
 
     XBT_INFO("The machines have been created successfully. There are %d computing machines.",
              context->machines.nb_compute_machines());

@@ -157,7 +157,7 @@ void generate_msg_parallel_homogeneous_total_amount(double *& computation_amount
  */
 void generate_msg_parallel_homogeneous_with_pfs(double *& computation_amount,
                                                 double *& communication_amount,
-                                                std::vector<msg_host_t> & hosts_to_use,
+                                                std::vector<simgrid::s4u::Host*> & hosts_to_use,
                                                 std::map<std::string, int> storage_mapping,
                                                 void * profile_data,
                                                 BatsimContext * context)
@@ -245,7 +245,7 @@ void generate_msg_parallel_homogeneous_with_pfs(double *& computation_amount,
  */
 void generate_msg_data_staginig_task(double *&  computation_amount,
                                      double *& communication_amount,
-                                     std::vector<msg_host_t> & hosts_to_use,
+                                     std::vector<simgrid::s4u::Host*> & hosts_to_use,
                                      std::map<std::string, int> storage_mapping,
                                      void * profile_data,
                                      BatsimContext * context)
@@ -260,7 +260,7 @@ void generate_msg_data_staginig_task(double *&  computation_amount,
     unsigned int pfs_id = nb_res - 1;
 
     // reset the alloc to use only IO nodes
-    hosts_to_use = std::vector<msg_host_t>();
+    hosts_to_use.clear();
 
     // Add the pfs_machine
     int from_machine_id = storage_mapping[data->from_storage_label];
@@ -344,7 +344,7 @@ void debug_print_ptask(const double * computation_vector,
  */
 void generate_matices_from_profile(double *& computation_vector,
                                    double *& communication_matrix,
-                                   std::vector<msg_host_t> & hosts_to_use,
+                                   std::vector<simgrid::s4u::Host*> & hosts_to_use,
                                    Profile * profile,
                                    const std::map<std::string, int> * storage_mapping,
                                    BatsimContext * context)
@@ -434,7 +434,7 @@ int execute_msg_task(BatTask * btask,
                      CleanExecuteTaskData * cleanup_data)
 {
     Profile * profile = btask->profile;
-    std::vector<msg_host_t> hosts_to_use = allocation->hosts;
+    std::vector<simgrid::s4u::Host*> hosts_to_use = allocation->hosts;
 
     double* computation_vector = nullptr;
     double* communication_matrix = nullptr;
@@ -463,7 +463,7 @@ int execute_msg_task(BatTask * btask,
 
         XBT_DEBUG("Generating comm/compute matrix for IO with alloaction: %s",
                 allocation->io_allocation.to_string_hyphen().c_str());
-        std::vector<msg_host_t> io_hosts = allocation->io_hosts;
+        std::vector<simgrid::s4u::Host*> io_hosts = allocation->io_hosts;
         generate_matices_from_profile(io_computation_vector,
                                       io_communication_matrix,
                                       io_hosts,
@@ -483,7 +483,7 @@ int execute_msg_task(BatTask * btask,
         XBT_DEBUG("Job+IO allocation: %s", new_alloc.to_string_hyphen().c_str());
 
         //Generate the new list of hosts
-        vector<msg_host_t> new_hosts_to_use;
+        vector<simgrid::s4u::Host*> new_hosts_to_use;
         for (unsigned int i = 0; i < new_alloc.size(); i++)
         {
             int machine_id = new_alloc[i];

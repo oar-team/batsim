@@ -111,7 +111,7 @@ void Workload::register_smpi_applications()
 
             XBT_INFO("Registering app. instance='%s', nb_process=%d",
                      job->id.to_string().c_str(), (int) data->trace_filenames.size());
-            SMPI_app_instance_register(job->id.to_string().c_str(), smpi_replay_process, data->trace_filenames.size());
+            SMPI_app_instance_register(job->id.to_string().c_str(), nullptr, data->trace_filenames.size());
         }
     }
 

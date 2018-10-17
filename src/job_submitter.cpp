@@ -335,14 +335,13 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
  */
 static string wait_for_job_completion(string submitter_name)
 {
-    msg_task_t task_notification = NULL;
-    IPMessage *task_notification_data;
-    MSG_task_receive(&(task_notification), submitter_name.c_str());
-    task_notification_data = (IPMessage *) MSG_task_get_data(task_notification);
-    SubmitterJobCompletionCallbackMessage *notification_data =
-        (SubmitterJobCompletionCallbackMessage *) task_notification_data->data;
+    IPMessage * notification = receive_message(submitter_name);
 
-    return  notification_data->job_id.to_string();
+    SubmitterJobCompletionCallbackMessage * notification_data =
+        (SubmitterJobCompletionCallbackMessage *) notification->data;
+
+    // TODO: memory cleanup
+    return notification_data->job_id.to_string();
 }
 
 /**
@@ -352,15 +351,12 @@ static string wait_for_job_completion(string submitter_name)
  */
 static std::tuple<int,double,double> wait_for_query_answer(string submitter_name)
 {
-    msg_task_t task_notification = NULL;
-    IPMessage *task_notification_data;
-    MSG_task_receive(&(task_notification), submitter_name.c_str());
-    task_notification_data = (IPMessage *) MSG_task_get_data(task_notification);
-    SchedWaitAnswerMessage *res =
-            (SchedWaitAnswerMessage *) task_notification_data->data;
+    IPMessage * message = receive_message(submitter_name);
+    SchedWaitAnswerMessage * res = (SchedWaitAnswerMessage *) message->data;
 
     XBT_INFO("Returning : %d  %f  %f", res->nb_resources, res->processing_time, res->expected_time);
 
+    // TODO: memory cleanup
     return std::tuple<int, double, double>(res->nb_resources, res->processing_time, res->expected_time);
 }
 
