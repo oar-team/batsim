@@ -34,6 +34,7 @@ Batsim
    Command-line interface <cli.rst>
    Protocol <protocol.rst>
    Using Redis <redis.rst>
+   Using the I/O model <IO.rst>
 
 .. toctree::
    :maxdepth: 1
