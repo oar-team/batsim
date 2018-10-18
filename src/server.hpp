@@ -42,7 +42,7 @@ struct ServerData
 
     bool end_of_simulation_in_send_buffer = false;  //!< Whether the SIMULATION_ENDS is in the decision process send buffer
     bool end_of_simulation_sent = false; //!< Whether the SIMULATION_ENDS event has been sent to the scheduler
-    bool end_of_simulation_ack_received = false; //!< Whether the SIMULATION_ENDS acknowledgement (NOP) event has been received
+    bool end_of_simulation_ack_received = false; //!< Whether the SIMULATION_ENDS acknowledgement (empty message) has been received
 
     std::map<std::string, Submitter*> submitters;   //!< The submitters
     std::map<JobIdentifier, Submitter*> origin_of_jobs; //!< Stores whether a Submitter must be notified on job completion

@@ -93,7 +93,6 @@ Constraints on the message format are defined here:
 ## Table of Events
 
 - Bidirectional
-  - [NOP](#nop)
   - [QUERY](#query)
   - [ANSWER](#answer)
   - [NOTIFY](#notify)
@@ -122,21 +121,6 @@ These events can be sent from Batsim to the scheduler, or in the opposite
 direction.
 ```
 BATSIM <---> SCHEDULER
-```
-
-### NOP
-
-The simplest message, stands either for: "nothing happened" if sent by
-Batsim, or "do nothing" if sent by the scheduler. It means that the
-events list is empty: ``"events": []``
-
-- **data**: N/A
-- **full message example**:
-```json
-{
-  "now": 1024.42,
-  "events":[]
-}
 ```
 
 ### QUERY
@@ -416,9 +400,8 @@ metainformation from Batsim to any scheduler at runtime.
 ### SIMULATION_ENDS
 
 Sent when Batsim thinks that the simulation is over. It means that all the jobs
-(either coming from Batsim workloads/workflows inputs, or dynamically submitted) 
-have been submitted and executed (or rejected). The scheduler should
-answer a [NOP](#nop) to this message then close its socket and terminate.
+(either coming from Batsim workloads/workflows inputs, or dynamically submitted)
+have been submitted and executed (or rejected). When receiving this message, the scheduler should 1. send a message without event to Batsim, 2. close its socket then 3. terminate.
 
 - **data**: empty
 - **example**:
