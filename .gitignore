@@ -15,3 +15,4 @@ dump.rdb
 *.swp
 *.dia~
 .nixdeps
+*.ipynb_checkpoints
