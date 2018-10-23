@@ -1399,6 +1399,7 @@ void JsonProtocolReader::handle_submit_job(int event_number,
                                "Invalid JSON job submitted by the scheduler");
     xbt_assert(job->id.job_name == message->job_id.job_name, "Internal error");
     xbt_assert(job->id.workload_name == message->job_id.workload_name, "Internal error");
+    xbt_assert(job->submission_time - (Rational)timestamp <= 1, "Invalid job submitted by the scheduler '%s': The desired submission time (%f) is in the future but this is not directly possible. If you really want to submit a job later on, first send a CALL_ME_LATER then submit the job at the right time.", job->id.to_string().c_str(), (double)job->submission_time);
 
     workload->jobs->add_job(job);
     job->state = JobState::JOB_STATE_SUBMITTED;
