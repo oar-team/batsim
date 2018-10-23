@@ -71,7 +71,7 @@ void static_job_submitter_process(BatsimContext * context,
 
     send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
 
-    Rational previous_submission_date = MSG_get_clock();
+    Rational current_submission_date = MSG_get_clock();
 
     vector<const Job *> jobsVector;
 
@@ -86,23 +86,39 @@ void static_job_submitter_process(BatsimContext * context,
 
     if (jobsVector.size() > 0)
     {
+        vector<JobIdentifier> jobs_to_send;
         const Job * first_submitted_job = *jobsVector.begin();
 
         for (const Job * job : jobsVector)
         {
-            if (job->submission_time > previous_submission_date)
+            if (job->submission_time > current_submission_date)
             {
-                MSG_process_sleep((double)(job->submission_time) - (double)(previous_submission_date));
+                // Next job submission time is after current time, send the message to the server for previous submitted jobs
+                if (!jobs_to_send.empty())
+                {
+                    JobSubmittedMessage * msg = new JobSubmittedMessage;
+                    msg->submitter_name = submitter_name;
+                    msg->job_ids = jobs_to_send;
+                    send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
+                    jobs_to_send.clear();
+                }
+
+                // Now let's sleep until it's time to submit the current job
+                MSG_process_sleep((double)(job->submission_time) - (double)(current_submission_date));
+                current_submission_date = MSG_get_clock();
             }
             // Setting the mailbox
             //job->completion_notification_mailbox = "SOME_MAILBOX";
 
-            // Let's put the metadata about the job into the data storage
-            string job_key = RedisStorage::job_key(job->id);
-            string profile_key = RedisStorage::profile_key(workload->name, job->profile);
+            // Populate the vetcor of job identifiers to submit
+            jobs_to_send.push_back(JobIdentifier(job->id));
 
+            // Let's put the metadata about the job into the data storage
             if (context->redis_enabled)
             {
+                string job_key = RedisStorage::job_key(job->id);
+                string profile_key = RedisStorage::profile_key(workload->name, job->profile);
+
                 context->storage.set(job_key, job->json_description);
                 if (context->submission_forward_profiles)
                 {
@@ -110,18 +126,20 @@ void static_job_submitter_process(BatsimContext * context,
                 }
             }
 
-            // Let's now continue the simulation
-            JobSubmittedMessage * msg = new JobSubmittedMessage;
-            msg->submitter_name = submitter_name;
-            msg->job_id = JobIdentifier(job->id);
-
-            send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
-            previous_submission_date = MSG_get_clock();
-
             if (job == first_submitted_job)
             {
                 context->energy_first_job_submission = context->machines.total_consumed_energy(context);
             }
+        }
+
+        // Send last vector of submitted jobs
+        if (!jobs_to_send.empty())
+        {
+            JobSubmittedMessage * msg = new JobSubmittedMessage;
+            msg->submitter_name = submitter_name;
+            msg->job_ids = jobs_to_send;
+            send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
+            jobs_to_send.clear();
         }
     }
 
@@ -306,9 +324,12 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     }
 
     // Submit the job
+    vector<JobIdentifier> job_ids;
+    job_ids.push_back(job_id);
+
     JobSubmittedMessage * msg = new JobSubmittedMessage;
     msg->submitter_name = submitter_name;
-    msg->job_id = job_id;
+    msg->job_ids = job_ids;
     send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
 
     // HOWTO Test Wait Query
