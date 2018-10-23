@@ -648,7 +648,7 @@ void JsonProtocolReader::parse_and_apply_message(const string &message)
         parse_and_apply_event(event_object, i, now);
     }
 
-    send_message(now, "server", IPMessageType::SCHED_READY);
+    send_message_at_time(now, "server", IPMessageType::SCHED_READY);
 }
 
 void JsonProtocolReader::parse_and_apply_event(const Value & event_object,
@@ -712,7 +712,7 @@ void JsonProtocolReader::handle_query(int event_number, double timestamp, const 
         if (key == "consumed_energy")
         {
             xbt_assert(value_object.ObjectEmpty(), "Invalid JSON message: the value of '%s' inside the 'requests' object of the 'data' object of event %d (QUERY) should be empty", key.c_str(), event_number);
-            send_message(timestamp, "server", IPMessageType::SCHED_TELL_ME_ENERGY);
+            send_message_at_time(timestamp, "server", IPMessageType::SCHED_TELL_ME_ENERGY);
         }
         else
         {
@@ -805,7 +805,7 @@ void JsonProtocolReader::handle_reject_job(int event_number,
                "For being rejected, a job must be submitted and not allocated yet.",
                job->id.to_string().c_str());
 
-    send_message(timestamp, "server", IPMessageType::SCHED_REJECT_JOB, (void*) message);
+    send_message_at_time(timestamp, "server", IPMessageType::SCHED_REJECT_JOB, (void*) message);
 }
 
 void JsonProtocolReader::handle_execute_job(int event_number,
@@ -1060,7 +1060,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     }
 
     // Everything has been parsed correctly, let's inject the message into the simulation.
-    send_message(timestamp, "server", IPMessageType::SCHED_EXECUTE_JOB, (void*) message);
+    send_message_at_time(timestamp, "server", IPMessageType::SCHED_EXECUTE_JOB, (void*) message);
 }
 
 void JsonProtocolReader::handle_call_me_later(int event_number,
@@ -1088,7 +1088,7 @@ void JsonProtocolReader::handle_call_me_later(int event_number,
         XBT_WARN("Event %d (CALL_ME_LATER) asks to be called at time %g but it is already reached", event_number, message->target_time);
     }
 
-    send_message(timestamp, "server", IPMessageType::SCHED_CALL_ME_LATER, (void*) message);
+    send_message_at_time(timestamp, "server", IPMessageType::SCHED_CALL_ME_LATER, (void*) message);
 }
 
 void JsonProtocolReader::handle_set_resource_state(int event_number,
@@ -1137,7 +1137,7 @@ void JsonProtocolReader::handle_set_resource_state(int event_number,
         throw;
     }
 
-    send_message(timestamp, "server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
+    send_message_at_time(timestamp, "server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
 }
 
 void JsonProtocolReader::handle_set_job_metadata(int event_number,
@@ -1233,7 +1233,7 @@ void JsonProtocolReader::handle_change_job_state(int event_number,
 
     message->job_state = job_state;
 
-    send_message(timestamp, "server", IPMessageType::SCHED_CHANGE_JOB_STATE, (void *) message);
+    send_message_at_time(timestamp, "server", IPMessageType::SCHED_CHANGE_JOB_STATE, (void *) message);
 }
 
 void JsonProtocolReader::handle_notify(int event_number,
@@ -1256,11 +1256,11 @@ void JsonProtocolReader::handle_notify(int event_number,
 
     if (notify_type == "submission_finished")
     {
-        send_message(timestamp, "server", IPMessageType::END_DYNAMIC_SUBMIT);
+        send_message_at_time(timestamp, "server", IPMessageType::END_DYNAMIC_SUBMIT);
     }
     else if (notify_type == "continue_submission")
     {
-        send_message(timestamp, "server", IPMessageType::CONTINUE_DYNAMIC_SUBMIT);
+        send_message_at_time(timestamp, "server", IPMessageType::CONTINUE_DYNAMIC_SUBMIT);
     }
     else
     {
@@ -1305,7 +1305,7 @@ void JsonProtocolReader::handle_to_job_msg(int event_number,
     }
     message->message = msg;
 
-    send_message(timestamp, "server", IPMessageType::TO_JOB_MSG, (void *) message);
+    send_message_at_time(timestamp, "server", IPMessageType::TO_JOB_MSG, (void *) message);
 }
 
 void JsonProtocolReader::handle_submit_job(int event_number,
@@ -1455,7 +1455,7 @@ void JsonProtocolReader::handle_submit_job(int event_number,
 
     workload->check_single_job_validity(job);
 
-    send_message(timestamp, "server", IPMessageType::JOB_SUBMITTED_BY_DP, (void *) message);
+    send_message_at_time(timestamp, "server", IPMessageType::JOB_SUBMITTED_BY_DP, (void *) message);
 }
 
 void JsonProtocolReader::handle_submit_profile(int event_number,
@@ -1537,7 +1537,7 @@ void JsonProtocolReader::handle_submit_profile(int event_number,
         // TODO? check profile collisions
     }
 
-    send_message(timestamp, "server", IPMessageType::PROFILE_SUBMITTED_BY_DP, (void *) message);
+    send_message_at_time(timestamp, "server", IPMessageType::PROFILE_SUBMITTED_BY_DP, (void *) message);
 }
 
 void JsonProtocolReader::handle_kill_job(int event_number,
@@ -1572,10 +1572,10 @@ void JsonProtocolReader::handle_kill_job(int event_number,
         }
     }
 
-    send_message(timestamp, "server", IPMessageType::SCHED_KILL_JOB, (void *) message);
+    send_message_at_time(timestamp, "server", IPMessageType::SCHED_KILL_JOB, (void *) message);
 }
 
-void JsonProtocolReader::send_message(double when,
+void JsonProtocolReader::send_message_at_time(double when,
                                       const string &destination_mailbox,
                                       IPMessageType type,
                                       void *data,
