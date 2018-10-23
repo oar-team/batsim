@@ -752,7 +752,7 @@ before the kill), Batsim acknowledges it with one JOB_KILLED_ event.
 SUBMIT_JOB
 ~~~~~~~~~~
 
-Submits a job (from the scheduler).
+Submit a job (from the scheduler) at the current simulation time.
 
 Job submissions from the scheduler must be enabled (see :ref:`cli`).
 The submission is acknowledged by default, but acknowledgments can be disabled (see :ref:`cli`).

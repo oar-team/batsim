@@ -741,7 +741,8 @@ Batsim acknowledges it with one [JOB_KILLED](#job_killed) event.
 
 ### SUBMIT_JOB
 
-Submits a job (from the scheduler). Job submissions from the scheduler must
+Submits a job (from the scheduler) at the current simulation time.
+Job submissions from the scheduler must
 be enabled in the [configuration](./configuration.md)
 (``{"job_submission": {"from_scheduler": {"enabled": true}}``).
 The submission is acknowledged by default, but acknowledgments can be disabled
