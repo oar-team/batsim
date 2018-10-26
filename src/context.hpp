@@ -50,7 +50,7 @@ struct BatsimContext
 
     RedisStorage storage;                           //!< The RedisStorage
 
-    rapidjson::Document config_file;                //!< The configuration file
+    rapidjson::Document config_json;                //!< The configuration information sent to the scheduler
     bool redis_enabled;                             //!< Stores whether Redis should be used
     bool submission_forward_profiles;               //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
     bool submission_sched_enabled;                  //!< Stores whether the scheduler will be able to send jobs along the simulation
