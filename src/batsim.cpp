@@ -258,7 +258,7 @@ Workflow options:
 Other options:
   --allow-time-sharing               Allows time sharing: One resource may
                                      compute several jobs at the same time.
-  --batexec                          If set, the jobs in the workloads are
+  --no-sched                         If set, the jobs in the workloads are
                                      computed one by one, one after the other,
                                      without scheduler nor Redis.
   -h, --help                         Shows this help.
@@ -521,7 +521,7 @@ Other options:
     // Other options
     // *************
     main_args.allow_time_sharing = args["--allow-time-sharing"].asBool();
-    if (args["--batexec"].asBool())
+    if (args["--no-sched"].asBool())
     {
         main_args.program_type = ProgramType::BATEXEC;
     }
