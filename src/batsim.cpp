@@ -239,8 +239,6 @@ Job-related options:
   --acknowledge-dynamic-submission   Makes Batsim send a job submission back to the scheduler when
                                      a dynamic job submission is received.
                                      [default: true]
-  --forward-profiles-on-kill         Makes Batsim send the job profile along with a kill acknowledgement
-                                     [default: false]
 
 Verbosity options:
   -v, --verbosity <verbosity_level>  Sets the Batsim verbosity level. Available
@@ -436,21 +434,18 @@ Other options:
 
     main_args.socket_endpoint = args["--socket-endpoint"].asString();
     main_args.redis_enabled = args["--enable-redis"].asBool();
-    //if (main_args.redis_enabled)
-    //{
-        main_args.redis_hostname = args["--redis-hostname"].asString();
-        try
-        {
-            main_args.redis_port = args["--redis-port"].asLong();
-        }
-        catch(const std::exception &)
-        {
-            XBT_ERROR("Cannot read the Redis port '%s' as a long integer.",
-                      args["--redis-port"].asString().c_str());
-            error = true;
-        }
-        main_args.redis_prefix = args["--redis-prefix"].asString();
-    //}
+    main_args.redis_hostname = args["--redis-hostname"].asString();
+    try
+    {
+        main_args.redis_port = args["--redis-port"].asLong();
+    }
+    catch(const std::exception &)
+    {
+        XBT_ERROR("Cannot read the Redis port '%s' as a long integer.",
+                  args["--redis-port"].asString().c_str());
+        error = true;
+    }
+    main_args.redis_prefix = args["--redis-prefix"].asString();
 
     // Output options
     // **************
@@ -464,7 +459,6 @@ Other options:
     main_args.forward_profiles_on_submission = args["--forward-profiles-on-submission"].asBool();
     main_args.dynamic_submission_enabled = args["--enable-dynamic-submission"].asBool();
     main_args.ack_dynamic_submission = args["--acknowledge-dynamic-submission"].asBool();
-    main_args.forward_profile_on_kill = args["--forward-profiles-on-kill"].asBool();
 
     // Platform size limit options
     // ***************************
@@ -828,7 +822,6 @@ void set_configuration(BatsimContext *context,
     context->submission_forward_profiles = main_args.forward_profiles_on_submission;
     context->submission_sched_enabled = main_args.dynamic_submission_enabled;
     context->submission_sched_ack = main_args.ack_dynamic_submission;
-    context->kill_forward_profiles = main_args.forward_profile_on_kill;
 
     context->platform_filename = main_args.platform_filename;
     context->export_prefix = main_args.export_prefix;
@@ -840,31 +833,20 @@ void set_configuration(BatsimContext *context,
     context->simulation_start_time = chrono::high_resolution_clock::now();
     context->terminate_with_last_workflow = main_args.terminate_with_last_workflow;
 
-    // *******************************************************************************
+    // **************************************************************************************
     // Let's write the json object holding configuration information to send to the scheduler
-    // *******************************************************************************
+    // **************************************************************************************
     context->config_json.SetObject();
     auto & alloc = context->config_json.GetAllocator();
 
     // redis
-    Value redis(rapidjson::kObjectType);
-    redis.AddMember("enabled", Value().SetBool(main_args.redis_enabled), alloc);
-    redis.AddMember("hostname", Value().SetString(main_args.redis_hostname.c_str(), alloc), alloc);
-    redis.AddMember("port", Value().SetInt(main_args.redis_port), alloc);
-    redis.AddMember("prefix", Value().SetString(main_args.redis_prefix.c_str(), alloc), alloc);
-    context->config_json.AddMember("redis", redis, alloc);
+    context->config_json.AddMember("redis-enabled", Value().SetBool(main_args.redis_enabled), alloc);
+    context->config_json.AddMember("redis-hostname", Value().SetString(main_args.redis_hostname.c_str(), alloc), alloc);
+    context->config_json.AddMember("redis-port", Value().SetInt(main_args.redis_port), alloc);
+    context->config_json.AddMember("redis-prefix", Value().SetString(main_args.redis_prefix.c_str(), alloc), alloc);
 
     // job_submission
-    Value job_submission(rapidjson::kObjectType);
-    job_submission.AddMember("forward_profiles", Value().SetBool(main_args.forward_profiles_on_submission), alloc);
-    Value from_sched(rapidjson::kObjectType);
-    from_sched.AddMember("enabled", Value().SetBool(main_args.dynamic_submission_enabled), alloc);
-    from_sched.AddMember("acknowledge", Value().SetBool(main_args.ack_dynamic_submission), alloc);
-    job_submission.AddMember("from_scheduler", from_sched, alloc);
-    context->config_json.AddMember("job_submission", job_submission, alloc);
-
-    // job_kill
-    Value job_kill(rapidjson::kObjectType);
-    job_kill.AddMember("forward_profiles", Value().SetBool(main_args.forward_profile_on_kill), alloc);
-    context->config_json.AddMember("job_kill", job_kill, alloc);
+    context->config_json.AddMember("submission_forward_profiles", Value().SetBool(main_args.forward_profiles_on_submission), alloc);
+    context->config_json.AddMember("dynamic_submission_enabled", Value().SetBool(main_args.dynamic_submission_enabled), alloc);
+    context->config_json.AddMember("acknowledge_dynamic_submission", Value().SetBool(main_args.ack_dynamic_submission), alloc);
 }
