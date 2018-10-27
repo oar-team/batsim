@@ -34,6 +34,17 @@ Task* bottom_level_f (Task *child, Task *parent)
 
 using namespace std;
 
+static void submit_jobs_to_server(const vector<JobIdentifier> & jobs_to_submit, const std::string & submitter_name)
+{
+    if (!jobs_to_submit.empty())
+    {
+        JobSubmittedMessage * msg = new JobSubmittedMessage;
+        msg->submitter_name = submitter_name;
+        msg->job_ids = jobs_to_submit;
+        send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
+    }
+}
+
 void static_job_submitter_process(BatsimContext * context,
                                   std::string workload_name)
 {
@@ -94,14 +105,8 @@ void static_job_submitter_process(BatsimContext * context,
             if (job->submission_time > current_submission_date)
             {
                 // Next job submission time is after current time, send the message to the server for previous submitted jobs
-                if (!jobs_to_send.empty())
-                {
-                    JobSubmittedMessage * msg = new JobSubmittedMessage;
-                    msg->submitter_name = submitter_name;
-                    msg->job_ids = jobs_to_send;
-                    send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
-                    jobs_to_send.clear();
-                }
+                submit_jobs_to_server(jobs_to_send, submitter_name);
+                jobs_to_send.clear();
 
                 // Now let's sleep until it's time to submit the current job
                 MSG_process_sleep((double)(job->submission_time) - (double)(current_submission_date));
@@ -110,8 +115,8 @@ void static_job_submitter_process(BatsimContext * context,
             // Setting the mailbox
             //job->completion_notification_mailbox = "SOME_MAILBOX";
 
-            // Populate the vetcor of job identifiers to submit
-            jobs_to_send.push_back(JobIdentifier(job->id));
+            // Populate the vector of job identifiers to submit
+            jobs_to_send.push_back(job->id);
 
             // Let's put the metadata about the job into the data storage
             if (context->redis_enabled)
@@ -133,14 +138,7 @@ void static_job_submitter_process(BatsimContext * context,
         }
 
         // Send last vector of submitted jobs
-        if (!jobs_to_send.empty())
-        {
-            JobSubmittedMessage * msg = new JobSubmittedMessage;
-            msg->submitter_name = submitter_name;
-            msg->job_ids = jobs_to_send;
-            send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
-            jobs_to_send.clear();
-        }
+        submit_jobs_to_server(jobs_to_send, submitter_name);
     }
 
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
@@ -324,12 +322,9 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     }
 
     // Submit the job
-    vector<JobIdentifier> job_ids;
-    job_ids.push_back(job_id);
-
     JobSubmittedMessage * msg = new JobSubmittedMessage;
     msg->submitter_name = submitter_name;
-    msg->job_ids = job_ids;
+    msg->job_ids = std::vector<JobIdentifier>({job_id});
     send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
 
     // HOWTO Test Wait Query
