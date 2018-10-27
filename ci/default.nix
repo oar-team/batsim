@@ -8,7 +8,8 @@ in
 with kapack;
 with pkgs;
 
-(batsim_dev.override {}).overrideAttrs (attrs: rec {
+(batsim_dev.override {installTestsDeps = true;
+                      installDocDeps=true;}).overrideAttrs (attrs: rec {
     name = "batsim-ci";
     src = ../.;
     enableParallelBuilding = true;
