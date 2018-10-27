@@ -244,42 +244,45 @@ void server_on_job_submitted(ServerData * data,
     xbt_assert(data->submitters.count(message->submitter_name) == 1);
 
     ServerData::Submitter * submitter = data->submitters.at(message->submitter_name);
-    if (submitter->should_be_called_back)
+    for (JobIdentifier & job_id : message->job_ids)
     {
-        xbt_assert(data->origin_of_jobs.count(message->job_id) == 0);
-        data->origin_of_jobs[message->job_id] = submitter;
-    }
-
-    // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
-    XBT_DEBUG("Job received: %s\n", message->job_id.to_string().c_str());
-
-    XBT_DEBUG("Workloads: %s", data->context->workloads.to_string().c_str());
-
-    xbt_assert(data->context->workloads.job_is_registered(message->job_id));
-    Job * job = data->context->workloads.job_at(message->job_id);
-    job->id = message->job_id;
-
-    // Update control information
-    job->state = JobState::JOB_STATE_SUBMITTED;
-    ++data->nb_submitted_jobs;
-    XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far",
-             message->job_id.to_string().c_str(), data->nb_submitted_jobs);
-
-    string job_json_description, profile_json_description;
-
-    if (!data->context->redis_enabled)
-    {
-        job_json_description = job->json_description;
-        if (data->context->submission_forward_profiles)
+        if (submitter->should_be_called_back)
         {
-            profile_json_description = job->workload->profiles->at(job->profile)->json_description;
+            xbt_assert(data->origin_of_jobs.count(job_id) == 0);
+            data->origin_of_jobs[job_id] = submitter;
         }
-    }
 
-    data->context->proto_writer->append_job_submitted(job->id.to_string(),
-                                                      job_json_description,
-                                                      profile_json_description,
-                                                      MSG_get_clock());
+        // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
+        XBT_DEBUG("Job received: %s\n", job_id.to_string().c_str());
+
+        XBT_DEBUG("Workloads: %s", data->context->workloads.to_string().c_str());
+
+        xbt_assert(data->context->workloads.job_is_registered(job_id));
+        Job * job = data->context->workloads.job_at(job_id);
+        job->id = job_id;
+
+        // Update control information
+        job->state = JobState::JOB_STATE_SUBMITTED;
+        ++data->nb_submitted_jobs;
+        XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far",
+                 job_id.to_string().c_str(), data->nb_submitted_jobs);
+
+        string job_json_description, profile_json_description;
+
+        if (!data->context->redis_enabled)
+        {
+            job_json_description = job->json_description;
+            if (data->context->submission_forward_profiles)
+            {
+                profile_json_description = job->workload->profiles->at(job->profile)->json_description;
+            }
+        }
+
+        data->context->proto_writer->append_job_submitted(job->id.to_string(),
+                                                          job_json_description,
+                                                          profile_json_description,
+                                                          MSG_get_clock());
+    }
 }
 
 void server_on_pstate_modification(ServerData * data,
