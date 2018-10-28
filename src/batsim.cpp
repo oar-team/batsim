@@ -175,7 +175,6 @@ Usage:
   batsim -p <platform_file> [-w <workload_file>...]
                             [-W <workflow_file>...]
                             [--WS (<cut_workflow_file> <start_time>)...]
-                            [-r <hosts_roles_map>...]
                             [options]
   batsim --help
   batsim --version
@@ -208,14 +207,16 @@ Most common options:
 Execution context options:
   -s, --socket-endpoint <endpoint>   The Decision process socket endpoint
                                      Decision process [default: tcp://localhost:28000].
-  --enable-redis                     Enables Redis. Options --redis-hostname, --redis-port and
+  --enable-redis                     Enables Redis to communicate with the scheduler.
+                                     Options --redis-hostname, --redis-port and
                                      --redis-prefix are ignored if this options is not set.
+                                     Please refer to Batsim's documentation for more information.
   --redis-hostname <redis_host>      The Redis server hostname. Ignored if --enable-redis is not set.
                                      [default: 127.0.0.1]
   --redis-port <redis_port>          The Redis server port. Ignored if --enable-redis is not set.
                                      [default: 6379]
   --redis-prefix <prefix>            The Redis prefix. Ignored if --enable-redis is not set.
-                                     [default: None]
+                                     [default: default]
 
 Output options:
   -e, --export <prefix>              The export filename prefix used to generate
@@ -233,11 +234,13 @@ Platform size limit options:
                                      of these fields is kept.
 Job-related options:
   --forward-profiles-on-submission   Attaches the job profile to the job information
-                                     when submittion a job to the scheduler
+                                     when the scheduler is notified about a job submission.
                                      [default: false]
-  --enable-dynamic-submission        Enables dynamic submission of jobs from the scheduler
-  --acknowledge-dynamic-submission   Makes Batsim send a job submission back to the scheduler when
-                                     a dynamic job submission is received.
+  --enable-dynamic-submission        Enables dynamic submission of jobs from the scheduler.
+                                     Please refer to Batsim's documentation for more information.
+                                     [default: false]
+  --acknowledge-dynamic-submission   Makes Batsim send a JOB_SUBMITTED back to the scheduler when
+                                     Batsim receives a SUBMIT_JOB.
                                      [default: true]
 
 Verbosity options:
@@ -262,7 +265,7 @@ Other options:
   -h, --help                         Shows this help.
 )";
 
-    run_simulation = false,
+    run_simulation = false;
     run_unit_tests = false;
     return_code = 1;
     map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc },
