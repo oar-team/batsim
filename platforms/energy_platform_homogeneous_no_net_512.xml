@@ -12,7 +12,7 @@
 
 </config>
 
-<AS id="AS0"  routing="Vivaldi">
+<zone id="AS0"  routing="Vivaldi">
     <host id="master_host" coordinates="0 0 0" speed="100Mf">
         <prop id="watt_per_state" value="100:200" />
         <prop id="watt_off" value="10" />
@@ -2587,5 +2587,5 @@
             <prop id="watt_off" value="10" />
             <prop id="sleep_pstates" value="13:14:15" />
         </host>
-</AS>
+</zone>
 </platform>

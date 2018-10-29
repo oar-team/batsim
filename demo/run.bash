@@ -21,26 +21,10 @@ fi
 echo "OK: Nix environment activated"
 
 # Install Batsim, Batshed and Batexpe
-if ! nix-env -q 'batsim' &> /dev/null;
-then
-  nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim
-fi
-if ! nix-env -q 'batsched' &> /dev/null;
-then
-  nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsched
-fi
-if ! nix-env -q 'batexpe' &> /dev/null;
-then
-  nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batexpe
-fi
+nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim_dev
+nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsched_dev
+nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batexpe
 echo "OK: Batsim, Batsched and Batexpe installed"
-
-# Install the Jupyter Notebook
-if [[ ! -x "$(command -v jupyter)" ]];
-then
-  nix-env -i python3.6-jupyter-1.0.0
-fi
-echo "OK: Jupyter Notebook installed"
 
 # Launch the notebook
 nix-shell https://github.com/oar-team/kapack/archive/master.tar.gz \

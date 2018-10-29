@@ -3,7 +3,7 @@
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
 <platform version="4.1">
 
-<AS id="AS0" routing="Full">
+<zone id="AS0" routing="Full">
 
 <cluster id="cluster_compute" prefix="host" suffix="" radical="0-127"
              bw="125MBps" lat="50us" bb_bw="2.25GBps" bb_lat="500us"
@@ -51,9 +51,9 @@
 
     <link id="backbone" bandwidth="1.25GBps" latency="500us" />
 
-    <ASroute src="cluster_compute" dst="cluster_master" gw_src="hostcluster_compute_router"
+    <zoneRoute src="cluster_compute" dst="cluster_master" gw_src="hostcluster_compute_router"
         gw_dst="master_hostcluster_master_router">
         <link_ctn id="backbone" />
-    </ASroute>
-</AS>
+    </zoneRoute>
+</zone>
 </platform>

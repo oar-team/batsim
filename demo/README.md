@@ -39,18 +39,12 @@ curl https://nixos.org/nix/install | sh
 ### Step 3: Install Batsim tools
 
 ```shell
-nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim
-nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsched
+nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim_dev
+nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsched_dev
 nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batexpe
 ```
 
-### Step 4: Install Jupyter Notebook
-
-```shell
-nix-env -i python3.6-jupyter-1.0.0
-```
-
-### Step 5: Launch the notebook
+### Step 4: Launch the notebook
 
 ```shell
 nix-shell https://github.com/oar-team/kapack/archive/master.tar.gz \
