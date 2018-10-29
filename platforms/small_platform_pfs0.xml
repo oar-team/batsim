@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
 <platform version="4.1">
- <AS  id="AS0"  routing="Full">
+ <zone id="AS0" routing="Full">
    <!-- ljlkj -->
    <host id="master_host" speed="98.095Mf"/>
    <host id="Fafard" speed="76.296Mf"/>
@@ -68,5 +68,5 @@
    <route src="Ginette" dst="Bourassa">
      <link_ctn id="3"/><link_ctn id="1"/><link_ctn id="4"/><link_ctn id="0"/>
    </route>
- </AS>
+ </zone>
  </platform>
