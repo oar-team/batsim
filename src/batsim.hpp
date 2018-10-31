@@ -95,7 +95,8 @@ struct MainArguments
     bool terminate_with_last_workflow;                      //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
     // Other
-    bool allow_time_sharing;                                //!< Allows/forbids time sharing. Two jobs can run on the same machine if and only if time sharing is allowed.
+    bool allow_time_sharing_on_compute;                     //!< Allows/forbids time sharing on compute machines. Two jobs can run on the same machine if and only if time sharing is allowed.
+    bool allow_time_sharing_on_storage;                     //!< Allows/forbids time sharing on storage machines. Two jobs can run on the same machine if and only if time sharing is allowed.
     ProgramType program_type;                               //!< The program type (Batsim or Batexec at the moment)
     std::string pfs_host_name;                              //!< The name of the SimGrid host which serves as parallel file system (a.k.a. large-capacity storage tier)
     std::string hpst_host_name;                             //!< The name of the SimGrid host which serves as the high-performance storage tier

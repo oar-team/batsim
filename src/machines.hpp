@@ -74,7 +74,7 @@ struct Machine
      * @param[in] role The role whose presence is to be checked
      * @return Whether the Machine has the given role
      */
-    bool has_role(roles::Permissions role);
+    bool has_role(roles::Permissions role) const;
 
     /**
      * @brief Returns whether the Machine has the given power state

@@ -559,7 +559,7 @@ Machine::~Machine()
     properties.clear();
 }
 
-bool Machine::has_role(Permissions role)
+bool Machine::has_role(Permissions role) const
 {
     return (role | this->permissions) == role;
 }

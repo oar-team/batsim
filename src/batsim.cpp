@@ -264,8 +264,10 @@ Workflow options:
                                      workflows have completed.
 
 Other options:
-  --allow-time-sharing               Allows time sharing: One resource may
-                                     compute several jobs at the same time.
+  --enable-time-sharing-on-compute   Enables time sharing on compute machines:
+                                     One resource may compute several jobs at the same time.
+  --disable-time-sharing-on-storage  Disables time sharing on storage machines:
+                                     IO jobs will be performed one at a time on storage machines.
   --batexec                          If set, the jobs in the workloads are
                                      computed one by one, one after the other,
                                      without scheduler nor Redis.
@@ -542,7 +544,8 @@ Other options:
 
     // Other options
     // *************
-    main_args.allow_time_sharing = args["--allow-time-sharing"].asBool();
+    main_args.allow_time_sharing_on_compute = args["--enable-time-sharing-on-compute"].asBool();
+    main_args.allow_time_sharing_on_storage = !(args["--disable-time-sharing-on-storage"].asBool());
     if (args["--batexec"].asBool())
     {
         main_args.program_type = ProgramType::BATEXEC;
@@ -979,7 +982,8 @@ void set_configuration(BatsimContext *context,
     context->export_prefix = main_args.export_prefix;
     context->workflow_nb_concurrent_jobs_limit = main_args.workflow_nb_concurrent_jobs_limit;
     context->energy_used = main_args.energy_used;
-    context->allow_time_sharing = main_args.allow_time_sharing;
+    context->allow_time_sharing_on_compute = main_args.allow_time_sharing_on_compute;
+    context->allow_time_sharing_on_storage = main_args.allow_time_sharing_on_storage;
     context->trace_schedule = main_args.enable_schedule_tracing;
     context->trace_machine_states = main_args.enable_machine_state_tracing;
     context->simulation_start_time = chrono::high_resolution_clock::now();
