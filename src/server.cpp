@@ -31,7 +31,8 @@ void server_process(BatsimContext * context)
     context->proto_writer->append_simulation_begins(context->machines,
                                                     context->workloads,
                                                     context->config_file,
-                                                    context->allow_time_sharing,
+                                                    context->allow_time_sharing_on_compute,
+                                                    context->allow_time_sharing_on_storage,
                                                     MSG_get_clock());
 
     string send_buffer = context->proto_writer->generate_current_message(MSG_get_clock());
@@ -806,18 +807,30 @@ void server_on_execute_job(ServerData * data,
     data->nb_running_jobs++;
     xbt_assert(data->nb_running_jobs <= data->nb_submitted_jobs);
 
-    if (!data->context->allow_time_sharing)
+    if (!data->context->allow_time_sharing_on_compute || !data->context->allow_time_sharing_on_storage)
     {
         for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
         {
             int machine_id = *machine_id_it;
             const Machine * machine = data->context->machines[machine_id];
-            (void) machine; // Avoids a warning if assertions are ignored
-            xbt_assert(machine->jobs_being_computed.empty(),
-                       "Job '%s': Invalid allocation: machine %d ('%s') is currently computing jobs (these ones:"
-                       " {%s}) whereas space sharing is forbidden. Space sharing can be enabled via an option,"
-                       " try --help to display the available options", job->id.to_string().c_str(), machine->id, machine->name.c_str(),
-                       machine->jobs_being_computed_as_string().c_str());
+            if (machine->has_role(roles::Permissions::COMPUTE_NODE) && !data->context->allow_time_sharing_on_compute)
+            {
+                (void) machine; // Avoids a warning if assertions are ignored
+                xbt_assert(machine->jobs_being_computed.empty(),
+                           "Job '%s': Invalid allocation: machine %d ('%s') is currently computing jobs (these ones:"
+                           " {%s}) whereas time-sharing on compute machines is disabled (try --help to display the available options).",
+                           job->id.to_string().c_str(), machine->id, machine->name.c_str(),
+                           machine->jobs_being_computed_as_string().c_str());
+            }
+            if (machine->has_role(roles::Permissions::STORAGE) && !data->context->allow_time_sharing_on_storage)
+            {
+                (void) machine; // Avoids a warning if assertions are ignored
+                xbt_assert(machine->jobs_being_computed.empty(),
+                           "Job '%s': Invalid allocation: machine %d ('%s') is currently computing jobs (these ones:"
+                           " {%s}) whereas time-sharing on storage machines is disabled (try --help to display the available options).",
+                           job->id.to_string().c_str(), machine->id, machine->name.c_str(),
+                           machine->jobs_being_computed_as_string().c_str());
+            }
         }
     }
 

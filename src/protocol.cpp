@@ -50,14 +50,16 @@ void JsonProtocolWriter::append_requested_call(double date)
 void JsonProtocolWriter::append_simulation_begins(Machines & machines,
                                                   Workloads & workloads,
                                                   const Document & configuration,
-                                                  bool allow_time_sharing,
+                                                  bool allow_time_sharing_on_compute,
+                                                  bool allow_time_sharing_on_storage,
                                                   double date)
 {
     /*{
       "timestamp": 0.0,
       "type": "SIMULATION_BEGINS",
       "data": {
-        "allow_time_sharing": false,
+        "allow_time_sharing_on_compute": false,
+        "allow_time_sharing_on_storage": true,
         "nb_compute_resources": 1,
         "nb_storage_resources": 1,
         "config": {},
@@ -116,7 +118,8 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
     data.AddMember("nb_compute_resources", Value().SetInt(machines.nb_compute_machines()), _alloc);
     data.AddMember("nb_storage_resources", Value().SetInt(machines.nb_storage_machines()), _alloc);
     // FIXME this should be in the configuration and not there
-    data.AddMember("allow_time_sharing", Value().SetBool(allow_time_sharing), _alloc);
+    data.AddMember("allow_time_sharing_on_compute", Value().SetBool(allow_time_sharing_on_compute), _alloc);
+    data.AddMember("allow_time_sharing_on_storage", Value().SetBool(allow_time_sharing_on_storage), _alloc);
     data.AddMember("config", config, _alloc);
 
     Value compute_resources(rapidjson::kArrayType);
