@@ -196,6 +196,7 @@ Usage:
                             [-W <workflow_file>...]
                             [--WS (<cut_workflow_file> <start_time>)...]
                             [-r <hosts_roles_map>...]
+                            [--sg-cfg <option_name:option_value>...]
                             [options]
   batsim --help
   batsim --version
@@ -239,10 +240,10 @@ Execution context options:
 Output options:
   -e, --export <prefix>              The export filename prefix used to generate
                                      simulation output [default: out].
-  --enable-sg-process-tracing        Enables SimGrid process tracing
   --disable-schedule-tracing         Disables the Pajé schedule outputting.
   --disable-machine-state-tracing    Disables the machine state outputting.
-
+  --sg-cfg <option_name:option_value>...  Couple option_name:option_value of SimGrid option(s)
+                                     to be forwarded to SimGrid.
 
 Platform size limit options:
   --mmax <nb>                        Limits the number of machines to <nb>.
@@ -484,9 +485,19 @@ Other options:
     // Output options
     // **************
     main_args.export_prefix = args["--export"].asString();
-    main_args.enable_simgrid_process_tracing = args["--enable-sg-process-tracing"].asBool();
     main_args.enable_schedule_tracing = !args["--disable-schedule-tracing"].asBool();
     main_args.enable_machine_state_tracing = !args["--disable-machine-state-tracing"].asBool();
+
+    vector<string> sg_cfg_list = args["--sg-cfg"].asStringList();
+    for (string cfg_string : sg_cfg_list)
+    {
+        vector<string> parsed;
+        boost::split(parsed, cfg_string, boost::is_any_of(":"));
+
+        xbt_assert(parsed.size() == 2, "A SimGrid configuration option should only contain one ':' character");
+        pair<string,string> cfg_pair(parsed[0], parsed[1]);
+        main_args.simgrid_config.push_back(cfg_pair);
+    }
 
     // Platform size limit options
     // ***************************
@@ -734,16 +745,13 @@ int main(int argc, char * argv[])
     MSG_init(&argc, argv); // Required for SMPI as I write these lines
     simgrid::s4u::Engine engine(&argc, argv);
 
-    // Setting SimGrid configuration if the SimGrid process tracing is enabled
-    if (main_args.enable_simgrid_process_tracing)
+    // Setting SimGrid configuration options, if any
+    if (main_args.simgrid_config.size() > 0)
     {
-        string sg_trace_filename = main_args.export_prefix + "_sg_processes.trace";
-
-        engine.set_config("tracing:1");
-        engine.set_config("tracing/msg/process:1");
-        engine.set_config("tracing/uncategorized:1");
-        engine.set_config("tracing/filename:" + sg_trace_filename);
-        engine.set_config("smpi/privatization:1"); // TODO: why here?
+        for (pair<string,string> cfg_pair : main_args.simgrid_config)
+        {
+            engine.set_config(cfg_pair.first + ":" + cfg_pair.second);
+        }
     }
 
     // Let's create the BatsimContext, which stores information about the current instance

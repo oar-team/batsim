@@ -79,9 +79,9 @@ struct MainArguments
 
     // Output
     std::string export_prefix;                              //!< The filename prefix used to export simulation information
-    bool enable_simgrid_process_tracing;                    //!< If set to true, this option enables the tracing of SimGrid processes
     bool enable_schedule_tracing;                           //!< If set to true, the schedule is exported to a Pajé trace file
     bool enable_machine_state_tracing;                      //!< If set to true, this option enables the tracing of the machine states into a CSV time series.
+    std::list<std::pair<std::string, std::string>> simgrid_config; //!< The list of configuration options to pass to SimGrid.
 
     // Platform size limit
     int limit_machines_count;                               //!< The number of machines to use to compute jobs. 0 : no limit. > 0 : the number of computation machines
