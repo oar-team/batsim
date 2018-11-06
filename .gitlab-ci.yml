@@ -1,4 +1,4 @@
-image: lnl7/nix:2018-09-21
+image: oarteam/batsim_ci:2018-11-06
 
 variables:
   GIT_SUBMODULE_STRATEGY: none
