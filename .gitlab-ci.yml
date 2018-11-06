@@ -4,29 +4,33 @@ variables:
   GIT_SUBMODULE_STRATEGY: none
 
 stages:
-  - build
-  - update_dependencies_cache
+  - manual_build
+  - nix_build_and_update_dependencies_cache
   - test
   - deploy
 
 ###############################################################################
 # Build stage
 ###############################################################################
-build:
-  stage: build
+manual_build:
+  stage: manual_build
   script:
-    - ./ci/build.bash
+    - ./ci/manual-build.bash
   artifacts:
     paths:
       - /builds/batsim/batsim/build
+      - /nix/store
 
 ###############################################################################
 # Dependencies cache stage
 ###############################################################################
-update_dependencies_cache:
-  stage: update_dependencies_cache
+nix_build_and_update_dependencies_cache:
+  stage: nix_build_and_update_dependencies_cache
   script:
-    - ./ci/update-dependencies-cache.bash
+    - ./ci/nix-build-and-update-dependencies-cache.bash
+  artifacts:
+    paths:
+    - /nix/store
 
 ###############################################################################
 # Test stage
@@ -36,7 +40,7 @@ test_test:
   script:
     - ./ci/run-tests.bash
   dependencies:
-    - build
+    - manual_build
   artifacts:
     paths:
       - /builds/batsim/batsim/doc/doxygen_doc/html
@@ -46,7 +50,7 @@ test_unittest:
   script:
     - ./ci/run-unittests.bash
   dependencies:
-    - build
+    - manual_build
 
 ###############################################################################
 # Deploy stage
