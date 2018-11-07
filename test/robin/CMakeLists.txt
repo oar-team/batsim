@@ -161,7 +161,7 @@ function(add_test_robintest_batsched)
     # Create main function to add tests
     add_test_robintest(NAME ${atrb_NAME}
         OUTPUT_DIR ${test_output_dir}/${atrb_NAME}
-        BATCMD "batsim -p ${atrb_PLATFORM} -w ${atrb_WORKLOAD} -e ${test_output_dir}/${atrb_NAME}/out -s tcp://localhost:${atrb_PORT} ${atrb_OTH_BATSIM_ARGS}"
+        BATCMD "batsim -v debug -p ${atrb_PLATFORM} -w ${atrb_WORKLOAD} -e ${test_output_dir}/${atrb_NAME}/out -s tcp://localhost:${atrb_PORT} ${atrb_OTH_BATSIM_ARGS}"
         SCHEDCMD "batsched -v ${atrb_ALGORITHM} -s tcp://*:${atrb_PORT} ${atrb_OTH_BATSCHED_ARGS}"
         ROBINTEST_EXPECTATION ${atrb_ROBINTEST_EXPECTATION}
         TEST_TIMEOUT ${atrb_TEST_TIMEOUT}
