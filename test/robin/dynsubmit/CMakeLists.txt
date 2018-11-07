@@ -7,11 +7,8 @@ list(APPEND algos ${BSALGO_submitter})
 
 # Submitter parameters.
 # Syntax: "name!increase_jobs_duration!send_profile_if_already_sent!send_profiles_in_separate_event"
-list(APPEND subparams "diff-profiles-bundledp!true!true!false")
 list(APPEND subparams "diff-profiles-separatep!true!true!true")
-list(APPEND subparams "same-profiles-resend-bundledp!false!true!false")
 list(APPEND subparams "same-profiles-resend-separatep!false!true!true")
-list(APPEND subparams "same-profiles-noresend-bundledp!false!false!false")
 list(APPEND subparams "same-profiles-noresend-separatep!false!false!true")
 
 # Whether redis should be enabled
