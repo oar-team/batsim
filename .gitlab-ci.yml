@@ -1,4 +1,4 @@
-image: oarteam/batsim_ci:2018-11-06
+image: oarteam/batsim_ci:2018-11-07
 
 variables:
   GIT_SUBMODULE_STRATEGY: none
@@ -8,6 +8,11 @@ stages:
   - nix_build_and_update_dependencies_cache
   - test
   - deploy
+
+cache:
+  key: nix-them-all
+  paths:
+  - /nix
 
 ###############################################################################
 # Build stage
@@ -19,7 +24,6 @@ manual_build:
   artifacts:
     paths:
       - /builds/batsim/batsim/build
-      - /nix/store
 
 ###############################################################################
 # Dependencies cache stage
@@ -28,9 +32,6 @@ nix_build_and_update_dependencies_cache:
   stage: nix_build_and_update_dependencies_cache
   script:
     - ./ci/nix-build-and-update-dependencies-cache.bash
-  artifacts:
-    paths:
-    - /nix/store
 
 ###############################################################################
 # Test stage
