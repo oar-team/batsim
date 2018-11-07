@@ -1,5 +1,6 @@
 #!/usr/bin/env nix-shell
 #! nix-shell -i bash ./default.nix
+set -eux
 
 # Run a redis server if needed
 redis_launched_here=0
@@ -16,15 +17,17 @@ then
     done
 fi
 
+BUILD_DIR=$(realpath $(dirname $(realpath $0))/../build)
+
 # Add built batsim in PATH
-export PATH=$(realpath ./build):${PATH}
+export PATH=${BUILD_DIR}:${PATH}
 
 # Print which files are executed
 echo "batsim realpath: $(realpath $(which batsim))"
 echo "batsched realpath: $(realpath $(which batsched))"
 
 # Execute the tests
-cd build
+cd $BUILD_DIR
 ctest --output-on-failure
 failed=$?
 
