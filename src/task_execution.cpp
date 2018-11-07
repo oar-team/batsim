@@ -311,11 +311,14 @@ void generate_msg_data_staginig_task(double *&  computation_amount,
  * @param[in] computation_vector The ptask computation vector
  * @param[in] communication_matrix The ptask communication matrix
  * @param[in] nb_res The number of hosts involved in the parallel task
+ * @param[in] alloc The resource ids allocated for the parallel task
+ * @param[in] mapping The mapping between executor id and resource id, if any
  */
 void debug_print_ptask(const double * computation_vector,
                        const double * communication_matrix,
                        unsigned int nb_res,
-                       const IntervalSet alloc)
+                       const IntervalSet alloc,
+                       const vector<int> mapping = vector<int>())
 {
     string comp = "";
     string comm = "";
@@ -324,13 +327,16 @@ void debug_print_ptask(const double * computation_vector,
     {
         if (computation_vector != nullptr)
         {
-            comp += to_string(alloc[i]) + ": " + to_string(computation_vector[i]) + ", ";
+            int alloc_i = mapping.empty() ? alloc[i] : alloc[mapping[i]];
+            comp += to_string(alloc_i) + ": " + to_string(computation_vector[i]) + ", ";
         }
         if (communication_matrix != nullptr)
         {
             for (unsigned int j = 0; j < nb_res; j++)
             {
-                comm += to_string(alloc[i]) + "->" + to_string(alloc[j]) + ": " + to_string(communication_matrix[k++]) + ", ";
+                int alloc_i = mapping.empty() ? alloc[i] : alloc[mapping[i]];
+                int alloc_j = mapping.empty() ? alloc[j] : alloc[mapping[j]];
+                comm += to_string(alloc_i) + "->" + to_string(alloc_j) + ": " + to_string(communication_matrix[k++]) + ", ";
             }
             comm += "\n";
         }
@@ -455,7 +461,7 @@ int execute_msg_task(BatTask * btask,
                                   context);
 
     debug_print_ptask(computation_vector, communication_matrix,
-            hosts_to_use.size(), allocation->machine_ids);
+            hosts_to_use.size(), allocation->machine_ids, allocation->mapping);
 
     check_ptask_execution_permission(allocation->machine_ids, computation_vector, context);
 
@@ -463,6 +469,10 @@ int execute_msg_task(BatTask * btask,
     // Manage additional io job
     if (btask->io_profile != nullptr)
     {
+        xbt_assert(allocation->mapping.empty(),
+                   "Mixing additional io job with a specific mapping between executors and"
+                   "resources is not supported (yet). PR welcomed!");
+
         Profile * io_profile = btask->io_profile;
         double* io_computation_vector = nullptr;
         double* io_communication_matrix = nullptr;
