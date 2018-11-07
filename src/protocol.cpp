@@ -1332,10 +1332,6 @@ void JsonProtocolReader::handle_submit_job(int event_number,
           "res": 1,
           "id": "my_new_job",
           "walltime": 12.0
-        },
-        "profile":{
-          "type": "delay",
-          "delay": 10
         }
       }
     } */
@@ -1407,42 +1403,9 @@ void JsonProtocolReader::handle_submit_job(int event_number,
     workload->jobs->add_job(job);
     job->state = JobState::JOB_STATE_SUBMITTED;
 
-    // Read the profile description if possible
-    if (data_object.HasMember("profile"))
-    {
-        xbt_assert(!context->redis_enabled, "Invalid JSON message: in event %d (SUBMIT_JOB): 'profile' object is given but redis seems disabled...", event_number);
-
-        const Value & profile_object = data_object["profile"];
-        xbt_assert(profile_object.IsObject(), "Invalid JSON message: in event %d (SUBMIT_JOB): ['data']['profile'] should be an object", event_number);
-
-        StringBuffer buffer;
-        ::Writer<rapidjson::StringBuffer> writer(buffer);
-        profile_object.Accept(writer);
-
-        message->job_profile_description = string(buffer.GetString(), buffer.GetSize());
-        XBT_DEBUG("A profile was submited with the job '%s' : %s", job->id.to_string().c_str(), message->job_profile_description.c_str());
-    }
-    else if (context->redis_enabled)
-    {
-        string profile_key = RedisStorage::profile_key(message->job_id.workload_name,
-                                                       job->profile);
-        message->job_profile_description = context->storage.get(profile_key);
-    }
-
-    if (workload->profiles->exists(job->profile))
-    {
-        xbt_assert(message->job_profile_description.empty(),
-            "Profile description detected in job '%s' submission: the profile "
-            "'%s' of workload '%s' that was submitted with the job '%s' was "
-            "already submitted before. A profile description was found: %s",
-            job->id.to_string().c_str(),
-            job->profile.c_str(),
-            workload->name.c_str(),
-            job->id.to_string().c_str(),
-            message->job_profile_description.c_str());
-    }
-
-    workload->check_single_job_validity(job);
+    xbt_assert(!data_object.HasMember("profile"),
+               "Profile description found in SUBMIT_JOB event: this is not allowed anymore. "
+               "Please submit the profile in a separate SUBMIT_PROFILE event.");
 
     send_message_at_time(timestamp, "server", IPMessageType::JOB_SUBMITTED_BY_DP, (void *) message);
 }

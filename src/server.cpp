@@ -578,6 +578,9 @@ void server_on_submit_job(ServerData * data,
                    job->id.to_string().c_str(),
                    workload->name.c_str(), job->profile.c_str());
     }
+
+    workload->check_single_job_validity(job);
+
     if (data->context->submission_sched_ack)
     {
         string job_json_description, profile_json_description;
