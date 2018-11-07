@@ -8,6 +8,7 @@ if [ $r -eq 0 ]
 then
     echo "Running a Redis server..."
     redis-server>/dev/null &
+    REDIS_PID=$!
     redis_launched_here=1
 
     while ! nc -z localhost 6379; do
@@ -31,7 +32,7 @@ failed=$?
 if [ $redis_launched_here -eq 1 ]
 then
     echo "Stopping the Redis server..."
-    killall redis-server
+    kill $REDIS_PID
 fi
 
 exit ${failed}
