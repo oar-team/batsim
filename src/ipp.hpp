@@ -95,7 +95,6 @@ struct JobSubmittedByDPMessage
 {
     JobIdentifier job_id; //!< The JobIdentifier of the new job
     std::string job_description; //!< The job description string (empty if redis is enabled)
-    std::string job_profile_description; //!< The profile of the job (empty if redis is enabled)
 };
 
 /**
