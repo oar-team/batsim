@@ -12,7 +12,7 @@ stages:
 cache:
   key: nix-them-all
   paths:
-  - /nix
+  - /nix/store
 
 ###############################################################################
 # Build stage
