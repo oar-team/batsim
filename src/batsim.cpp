@@ -196,7 +196,7 @@ Usage:
                             [-W <workflow_file>...]
                             [--WS (<cut_workflow_file> <start_time>)...]
                             [-r <hosts_roles_map>...]
-                            [--sg-cfg <option_name:option_value>...]
+                            [--sg-cfg <opt_name:opt_value>...]
                             [options]
   batsim --help
   batsim --version
@@ -242,8 +242,6 @@ Output options:
                                      simulation output [default: out].
   --disable-schedule-tracing         Disables the Pajé schedule outputting.
   --disable-machine-state-tracing    Disables the machine state outputting.
-  --sg-cfg <option_name:option_value>...  Couple option_name:option_value of SimGrid option(s)
-                                     to be forwarded to SimGrid.
 
 Platform size limit options:
   --mmax <nb>                        Limits the number of machines to <nb>.
@@ -271,6 +269,8 @@ Other options:
   --batexec                          If set, the jobs in the workloads are
                                      computed one by one, one after the other,
                                      without scheduler nor Redis.
+  --sg-cfg <opt_name:opt_value>...   Forward a given option_name:option_value to SimGrid.
+                                     Refer to SimGrid documentation for more information.
   -h, --help                         Shows this help.
 )";
 
@@ -488,17 +488,6 @@ Other options:
     main_args.enable_schedule_tracing = !args["--disable-schedule-tracing"].asBool();
     main_args.enable_machine_state_tracing = !args["--disable-machine-state-tracing"].asBool();
 
-    vector<string> sg_cfg_list = args["--sg-cfg"].asStringList();
-    for (string cfg_string : sg_cfg_list)
-    {
-        vector<string> parsed;
-        boost::split(parsed, cfg_string, boost::is_any_of(":"));
-
-        xbt_assert(parsed.size() == 2, "A SimGrid configuration option should only contain one ':' character");
-        pair<string,string> cfg_pair(parsed[0], parsed[1]);
-        main_args.simgrid_config.push_back(cfg_pair);
-    }
-
     // Platform size limit options
     // ***************************
     string m_max_str = args["--mmax"].asString();
@@ -562,6 +551,18 @@ Other options:
     {
         main_args.program_type = ProgramType::BATSIM;
     }
+
+    vector<string> sg_cfg_list = args["--sg-cfg"].asStringList();
+    for (string cfg_string : sg_cfg_list)
+    {
+        vector<string> parsed;
+        boost::split(parsed, cfg_string, boost::is_any_of(":"));
+
+        xbt_assert(parsed.size() == 2, "A SimGrid configuration option should only contain one ':' character");
+        pair<string,string> cfg_pair(parsed[0], parsed[1]);
+        main_args.simgrid_config.push_back(cfg_pair);
+    }
+
     run_simulation = !error;
 }
 
