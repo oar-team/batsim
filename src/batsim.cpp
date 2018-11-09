@@ -175,6 +175,7 @@ Usage:
   batsim -p <platform_file> [-w <workload_file>...]
                             [-W <workflow_file>...]
                             [--WS (<cut_workflow_file> <start_time>)...]
+                            [-r <hosts_roles_map>...]
                             [options]
   batsim --help
   batsim --version
