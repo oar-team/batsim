@@ -6,4 +6,5 @@ set -eux
 echo "batsim realpath: $(realpath $(which batsim))"
 
 # Execute the unit tests
-./build/batsim --unittest
+BUILD_DIR=$(realpath $(dirname $(realpath $0))/../build)
+$BUILD_DIR/batsim --unittest

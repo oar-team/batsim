@@ -8,8 +8,7 @@ let
   inherit (kapack) batsim_dev;
   inherit (kapack.pkgs) nix which coreutils;
 in
-(batsim_dev.override {installTestsDeps = true;
-                      installDocDeps=true;}).overrideAttrs (attrs: rec {
+(batsim_dev.override { installTestsDeps = true; }).overrideAttrs (attrs: rec {
     name = "batsim-ci";
     src = ../.;
     enableParallelBuilding = true;
