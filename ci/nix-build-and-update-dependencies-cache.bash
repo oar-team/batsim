@@ -1,6 +1,6 @@
-#!/usr/bin/env nix-shell
-#! nix-shell -i bash ./default.nix
+#!/usr/bin/env bash
 set -eu
 
+CI_DIR=$(realpath $(dirname $(realpath $0)))
 # (re)build up-to-date CI batsim package, push it on binary cache
-nix-build ci/default.nix | cachix push batsim
+nix-build $CI_DIR | cachix push batsim
