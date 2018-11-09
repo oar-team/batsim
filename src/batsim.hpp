@@ -71,11 +71,16 @@ struct MainArguments
     std::map<std::string, std::string> hosts_roles_map;     //!< The hosts/roles mapping to be added to the hosts properties.
 
     // Execution context
-    rapidjson::Document config_file;                        //!< The configuration file
     std::string socket_endpoint;                            //!< The Decision process socket endpoint
+    bool redis_enabled;                                     //!< Whether Redis is enabled
     std::string redis_hostname;                             //!< The Redis (data storage) server host name
     int redis_port;                                         //!< The Redis (data storage) server port
     std::string redis_prefix;                               //!< The Redis (data storage) instance prefix
+
+    // Job related
+    bool forward_profiles_on_submission;                    //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
+    bool dynamic_submission_enabled;                        //!< Stores whether the scheduler will be able to send jobs along the simulation
+    bool ack_dynamic_submission;                            //!< Stores whether Batsim will acknowledge dynamic job submission (emit JOB_SUBMITTED events)
 
     // Output
     std::string export_prefix;                              //!< The filename prefix used to export simulation information

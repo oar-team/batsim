@@ -30,7 +30,7 @@ void server_process(BatsimContext * context)
     // (and that some data can be read from the data storage)
     context->proto_writer->append_simulation_begins(context->machines,
                                                     context->workloads,
-                                                    context->config_file,
+                                                    context->config_json,
                                                     context->allow_time_sharing_on_compute,
                                                     context->allow_time_sharing_on_storage,
                                                     MSG_get_clock());

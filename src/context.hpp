@@ -50,13 +50,12 @@ struct BatsimContext
 
     RedisStorage storage;                           //!< The RedisStorage
 
-    rapidjson::Document config_file;                //!< The configuration file
+    rapidjson::Document config_json;                //!< The configuration information sent to the scheduler
     bool redis_enabled;                             //!< Stores whether Redis should be used
     bool submission_forward_profiles;               //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
     bool submission_sched_enabled;                  //!< Stores whether the scheduler will be able to send jobs along the simulation
     bool submission_sched_finished = false;         //!< Stores whether the scheduler has finished submitting jobs.
     bool submission_sched_ack;                      //!< Stores whether Batsim will acknowledge dynamic job submission (emit JOB_SUBMITTED events)
-    bool kill_forward_profiles;                     //!< Stores whether the profile information of killed jobs should be sent to the scheduler
 
     bool terminate_with_last_workflow;              //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
