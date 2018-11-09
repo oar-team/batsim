@@ -21,17 +21,16 @@ occurs in Batsim in the simulation, the following steps occur:
 ZeroMQ is used in both processes (Batsim uses a ZMQ REQ socket, the
 scheduler a ZMQ REP one).
 
-The behavior of this protocol depends on the
-[configuration](./configuration.md):
+The behavior of this protocol depends on the command line options:
 - If Redis is enabled, job metadata is stored into a Redis server and not sent
   through the protocol. In this case, the protocol is only used for
   synchronization purposes. More information about Redis conventions are
   described [there](data_storage_description.md).
 - Batsim may or may not forward job profile information to the scheduler when
   jobs are submitted (see [JOB_SUBMITTED](#job_submitted) documentation)
-- Dynamic jobs submissions can be enabled or disabled.
-  Many parameters of job submissions can be adjusted, please refer to the
-  [Dynamic submission of jobs](#dynamic-submission-of-jobs) documentation for
+- Dynamic jobs (and profiles) registration can be enabled or disabled.
+  Many parameters of job registration can be adjusted, please refer to the
+  [Dynamic registration of jobs](#dynamic-registration-of-jobs) documentation for
   more details.
 
 # Message Composition
@@ -109,8 +108,8 @@ Constraints on the message format are defined here:
   - [EXECUTE_JOB](#execute_job)
   - [CALL_ME_LATER](#call_me_later)
   - [KILL_JOB](#kill_job)
-  - [SUBMIT_JOB](#submit_job)
-  - [SUBMIT_PROFILE](#submit_profile)
+  - [REGISTER_JOB](#register_job)
+  - [REGISTER_PROFILE](#register_profile)
   - [SET_RESOURCE_STATE](#set_resource_state)
   - [SET_JOB_METADATA](#set_job_metadata)
   - [CHANGE_JOB_STATE](#change_job_state)
@@ -230,11 +229,11 @@ This message allows a peer to notify something to its counterpart.
 There is no expected acknowledgement when sending such message.
 
 For now, Batsim can **notify** the scheduler of the following:
-- **no_more_static_job_to_submit**: Batsim tells the scheduler that it has no more jobs to submit from the static submitters. This means that all jobs in the workloads have already been submitted to the scheduler and the scheduler cannot expect more jobs to arrive (except the potential ones through dynamic submission).
+- **no_more_static_job_to_submit**: Batsim tells the scheduler that it has no more jobs to submit from the static submitters. This means that all jobs in the workloads have already been submitted to the scheduler and the scheduler cannot expect more jobs to arrive (except the potential ones through dynamic registration).
 
 For now, the scheduler can **notify** Batsim of the following:
-- **submission_finished**: The scheduler tells Batsim that dynamic job submissions are over, which allows Batsim to stop the simulation. This message **MUST** be sent if ``"scheduler_submission": {"enabled": true}`` is configures, in order to finish the simulation. See [Configuration documentation](./configuration.md) for more details.
-- **continue_submission**: The scheduler tells Batsim that it have sent a ``submission_finished`` NOTIFY prematurely and that Batsim should re-enable dynamic submissions of jobs.
+- **registration_finished**: The scheduler tells Batsim that dynamic job and profile registration are over, which allows Batsim to eventually stop the simulation. This message **MUST** be sent if the ``--enable-dynamic-jobs`` command line option is set.
+- **continue_registration**: The scheduler tells Batsim that it have sent a ``registration_finished`` NOTIFY prematurely and that Batsim should re-enable dynamic registration of jobs and profiles.
 
 
 - **data**: the type of notification
@@ -251,7 +250,15 @@ or
 {
   "timestamp": 42.0,
   "type": "NOTIFY",
-  "data": { "type": "submission_finished" }
+  "data": { "type": "registration_finished" }
+}
+```
+or
+```json
+{
+  "timestamp": 42.0,
+  "type": "NOTIFY",
+  "data": { "type": "continue_registration" }
 }
 ```
 
@@ -270,16 +277,15 @@ BATSIM ---> SCHEDULER
 Sent at the beginning of the simulation. Once it has been sent,
 and if redis is enabled, meta-information can be read from Redis.
 
-Batsim configuration is sent through the ``config`` object (in ``data``).
-Any custom information can be added into the
-[Batsim configuration](./configuration.md), which gives a generic way to give
-metainformation from Batsim to any scheduler at runtime.
+Batsim configuration is sent through the ``config`` object (in ``data``) and forwards multiple command line
+options to the scheduler.
 
 - **data**:
   - **nb_resources**: the number of resources
   - **nb_compute_resources**: the number of compute resources
   - **nb_storage_resources**: the number of storage resources
-  - **allow_time_sharing**: whether time sharing is enabled or not
+  - **allow_time_sharing_on_compute**: whether time sharing on compute machines is enabled or not
+  - **allow_time_sharing_on_storage**: whether time sharing on storage machines is enabled or not
   - **config**: the Batsim configuration
   - **compute_resources**: information about the compute resources
     - **id**: unique resource number
@@ -304,7 +310,8 @@ metainformation from Batsim to any scheduler at runtime.
         "nb_resources": 4,
         "nb_compute_resources": 4,
         "nb_storage_resources": 0,
-        "allow_time_sharng": false,
+        "allow_time_sharing_on_compute": false,
+        "allow_time_sharing_on_storage": true,
         "config": {
           "redis": {
             "enabled": false,
@@ -415,17 +422,14 @@ have been submitted and executed (or rejected). When receiving this message, the
 
 ### JOB_SUBMITTED
 
-The content of this message depends on the
-[Batsim configuration](./configuration.md).
+The content of this message depends whether Redis is enabled or not.
 
 This event means that one job has been submitted within Batsim.
 It is sent whenever a job coming from Batsim inputs (workloads and workflows)
 has been submitted.
-If dynamic job submissions are enabled (the configuration contains
-``{"job_submission": { "from_scheduler": {"enabled": true}}}``), this message
-is sent as a reply to a [SUBMIT_JOB](#submit_job) message if and only if
-dynamic job submissions acknowledgements are enabled
-(``{"job_submission": {"from_scheduler": {"acknowledge": true}}}``).
+If dynamic job registrations are enabled, this message
+is sent as a reply to a [REGISTER_JOB](#register_job) message if and only if
+dynamic job registration acknowledgements are enabled.
 
 The ``job_id`` field is always sent and contains a unique job identifier.
 If redis is enabled (``{"redis": {"enabled": true}}``),
@@ -434,8 +438,7 @@ Otherwise (if redis is disabled), a JSON description of the job is forwarded
 in the ``job`` field.
 
 A JSON description of the job profile is sent if and only if
-profiles forwarding is enabled
-(``{"job_submission": {"forward_profiles": true}}``).
+profiles forwarding is enabled.
 
 - **data**: a job id and optional information depending on the configuration
 - **example without redis and without forwarded profiles**:
@@ -739,15 +742,14 @@ Batsim acknowledges it with one [JOB_KILLED](#job_killed) event.
 }
 ```
 
-### SUBMIT_JOB
+### REGISTER_JOB
 
-Submits a job (from the scheduler) at the current simulation time.
-Job submissions from the scheduler must
-be enabled in the [configuration](./configuration.md)
-(``{"job_submission": {"from_scheduler": {"enabled": true}}``).
-The submission is acknowledged by default, but acknowledgments can be disabled
-in the configuration
-(``{"job_submission": {"from_scheduler": {"acknowledge": false}}}``).
+Registers a job (from the scheduler) at the current simulation time.
+Jobs registration from the scheduler must
+be enabled with a command line option (`--enable-dynamic-jobs`).
+Acknowledgment of job registrations can be enabled by the `acknowledge-dynamic-jobs` command
+line option, which makes Batsim send a [JOB_SUBMITTED](#job_submitted) event
+back to the scheduler.
 
 **Note:** The workload name SHOULD be present in the job description id field
 with the notation ``WORKLOAD!JOB_NAME``. If it is not present it will be added
@@ -763,7 +765,7 @@ to the job description provided in the acknowledgment message
 ```json
 {
   "timestamp": 10.0,
-  "type": "SUBMIT_JOB",
+  "type": "REGISTER_JOB",
   "data": {
     "job_id": "w12!45",
   }
@@ -773,7 +775,7 @@ to the job description provided in the acknowledgment message
 ```json
 {
   "timestamp": 10.0,
-  "type": "SUBMIT_JOB",
+  "type": "REGISTER_JOB",
   "data": {
     "job_id": "dyn!my_new_job",
     "job":{
@@ -781,20 +783,15 @@ to the job description provided in the acknowledgment message
       "res": 1,
       "id": "dyn!my_new_job",
       "walltime": 12.0
-    },
-    "profile":{
-      "type": "delay",
-      "delay": 10
     }
   }
 }
 ```
 
-### SUBMIT_PROFILE
+### REGISTER_PROFILE
 
-Submits a profile (from the scheduler). Job submissions from the scheduler must
-be enabled in the [configuration](./configuration.md)
-(``{"job_submission": {"from_scheduler": {"enabled": true}}``).
+Registers a profile (from the scheduler). Jobs registration from the scheduler must
+be enabled with a command line option (`--enable-dynamic-jobs`).
 
 - **data**: A workload name, profile name, and the data of the profile.
 
@@ -805,7 +802,7 @@ be enabled in the [configuration](./configuration.md)
 ```json
 {
   "timestamp": 10.0,
-  "type": "SUBMIT_PROFILE",
+  "type": "REGISTER_PROFILE",
   "data": {
     "workload_name": "dyn_wl1",
     "profile_name":  "delay_10s",
@@ -884,19 +881,18 @@ complex dynamic jobs.
 The way to do some operations with the protocol is shown in this section.
 
 ## Executing jobs
-Depending on the [configuration](./configuration.md), jobs information might
+Depending on the command line options, jobs information might
 either be transmitted through the protocol or Redis.
 ![executing_jobs_figure](protocol_img/job_submission_and_execution.png)
 
-## Dynamic submission of jobs
+## Dynamic registration of jobs
 Jobs are in most cases given as Batsim inputs, which are submitted within
 Batsim (the scheduler knows about them via [JOB_SUBMITTED](#job_submitted) events).
 
-However, jobs can also be submitted from the scheduler throughout the
+However, jobs can also be submitted from the scheduler (via registration events) throughout the
 simulation. For this purpose:
-- dynamic job submissions **must** be enabled in the
-  [Batsim configuration](./configuration.md)
-- the scheduler **must** tell Batsim when it has finished submitting dynamic
+- dynamic jobs registration **must** be enabled via the `--enable-dynamic-jobs` command line option.
+- the scheduler **must** tell Batsim when it has finished registering dynamic
   jobs (via a [NOTIFY](#notify) event).
   Otherwise, Batsim will wait for new simulation events forever,
   causing either a SimGrid deadlock or an infinite loop at the end of the
@@ -905,21 +901,20 @@ simulation. For this purpose:
   SimGrid deadlocks during the simulation. If at some simulation time all
   Batsim workloads/workflows inputs have been executed and nothing is happening
   on the platform, this might lead to a SimGrid deadlock. If the scheduler
-  knows that it will submit a dynamic job in the future, it should ask Batsim
+  knows that it will register a dynamic job in the future, it should ask Batsim
   to call it at this timestamp via a [CALL_ME_LATER](#call_me_later) event.
 
-The protocol behavior of dynamic submissions is customizable in the
-  [Batsim configuration](./configuration.md):
-- Batsim might or might not send acknowledgements when jobs have been submitted.
+The protocol behavior of dynamic registrations is customizable via the command line options.
+- Batsim might or might not send acknowledgements when jobs have been registered.
 - Metainformation are sent via Redis if Redis is enabled, or directly via the
   protocol otherwise.
 
-A simple scheduling algorithm using dynamic job submissions can be found in
+A simple scheduling algorithm using dynamic jobs registration can be found in
 [Batsched](https://gitlab.inria.fr/batsim/batsched/blob/master/src/algo/submitter.cpp).
 This implementation should work whether Redis is enabled and whether dynamic
-job submissions are acknowledged.
+jobs registration are acknowledged.
 
-The following two figures outline how submissions should be done
+The following two figures outline how registrations should be done
 (depending whether Redis is enabled or not).
 
 ### Without Redis
