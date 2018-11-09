@@ -6,11 +6,12 @@ variables:
 stages:
   - manual_build
   - nix_build_and_update_dependencies_cache
+  - nix_build_clang
   - test
   - deploy
 
 ###############################################################################
-# Build stage
+# Manual Build stage
 ###############################################################################
 manual_build:
   stage: manual_build
@@ -21,12 +22,17 @@ manual_build:
       - /builds/batsim/batsim/build
 
 ###############################################################################
-# Dependencies cache stage
+# Nix Builds + Dependencies cache stage
 ###############################################################################
 nix_build_and_update_dependencies_cache:
   stage: nix_build_and_update_dependencies_cache
   script:
     - ./ci/nix-build-and-update-dependencies-cache.bash
+
+nix_build_clang:
+  stage: nix_build_clang
+  script:
+    - ./ci/nix-build-clang.bash
 
 ###############################################################################
 # Test stage
