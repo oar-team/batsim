@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -eu
 
+CI_DIR=$(realpath $(dirname $(realpath $0)))
 # (re)build up-to-date batsim and test dependancies with Clang
-nix build -f ./ci/default.nix --arg kapack "import ~/Projects/kapack {useClang = true;}"
+nix-build $CI_DIR --arg kapack "import ~/Projects/kapack {useClang = true;}"
