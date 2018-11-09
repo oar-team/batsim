@@ -6,7 +6,6 @@ variables:
 stages:
   - manual_build
   - nix_build_and_update_dependencies_cache
-  - nix_build_clang
   - test
   - deploy
 
@@ -30,7 +29,7 @@ nix_build_and_update_dependencies_cache:
     - ./ci/nix-build-and-update-dependencies-cache.bash
 
 nix_build_clang:
-  stage: nix_build_clang
+  stage: nix_build_and_update_dependencies_cache
   script:
     - ./ci/nix-build-clang.bash
 
