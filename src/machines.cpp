@@ -203,18 +203,16 @@ void Machines::create_machines(const BatsimContext *context,
             }
         }
 
-        if (context->submission_sched_enabled)
+        /* Guard related to the famous OBFH (https://github.com/oar-team/batsim/issues/21), which may not occur anymore.
+        if (context->registration_sched_enabled)
         {
-            // Because of one pernicious bug (https://github.com/oar-team/batsim/issues/21),
-            // let's check that the machine contains no energy information if dynamic submissions
-            // are enabled.
             bool contains_sleep_pstates = (machine->properties.count("sleep_pstates") == 1);
             xbt_assert(!contains_sleep_pstates,
                        "Using dynamic job submissions AND plaforms with energy information "
                        "is currently forbidden (https://github.com/oar-team/batsim/issues/21).");
-        }
+        }*/
 
-        // Machines thay may compute flops must have a positive computing speed
+        // Machines that may compute flops must have a positive computing speed
         if ((machine->permissions & Permissions::COMPUTE_FLOPS) == Permissions::COMPUTE_FLOPS)
         {
             if (context->energy_used)

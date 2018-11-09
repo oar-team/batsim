@@ -514,20 +514,20 @@ public:
     void handle_to_job_msg(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
-     * @brief Handles a SUBMIT_JOB event
+     * @brief Handles a REGISTER_JOB event
      * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
-    void handle_submit_job(int event_number, double timestamp, const rapidjson::Value & data_object);
+    void handle_register_job(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
-     * @brief Handles a SUBMIT_PROFILE event
+     * @brief Handles a REGISTER_PROFILE event
      * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
-    void handle_submit_profile(int event_number, double timestamp, const rapidjson::Value & data_object);
+    void handle_register_profile(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
      * @brief Handles a KILL_JOB event

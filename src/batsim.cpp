@@ -237,11 +237,11 @@ Job-related options:
   --forward-profiles-on-submission   Attaches the job profile to the job information
                                      when the scheduler is notified about a job submission.
                                      [default: false]
-  --enable-dynamic-submission        Enables dynamic submission of jobs from the scheduler.
+  --enable-dynamic-jobs              Enables dynamic registration of jobs and profiles from the scheduler.
                                      Please refer to Batsim's documentation for more information.
                                      [default: false]
-  --acknowledge-dynamic-submission   Makes Batsim send a JOB_SUBMITTED back to the scheduler when
-                                     Batsim receives a SUBMIT_JOB.
+  --acknowledge-dynamic-jobs         Makes Batsim send a JOB_SUBMITTED back to the scheduler when
+                                     Batsim receives a REGISTER_JOB.
                                      [default: true]
 
 Verbosity options:
@@ -464,8 +464,8 @@ Other options:
     // Job-related options
     // *******************
     main_args.forward_profiles_on_submission = args["--forward-profiles-on-submission"].asBool();
-    main_args.dynamic_submission_enabled = args["--enable-dynamic-submission"].asBool();
-    main_args.ack_dynamic_submission = args["--acknowledge-dynamic-submission"].asBool();
+    main_args.dynamic_registration_enabled = args["--enable-dynamic-jobs"].asBool();
+    main_args.ack_dynamic_registration = args["--acknowledge-dynamic-jobs"].asBool();
 
     // Platform size limit options
     // ***************************
@@ -837,8 +837,8 @@ void set_configuration(BatsimContext *context,
     // *************************************
     context->redis_enabled = main_args.redis_enabled;
     context->submission_forward_profiles = main_args.forward_profiles_on_submission;
-    context->submission_sched_enabled = main_args.dynamic_submission_enabled;
-    context->submission_sched_ack = main_args.ack_dynamic_submission;
+    context->registration_sched_enabled = main_args.dynamic_registration_enabled;
+    context->registration_sched_ack = main_args.ack_dynamic_registration;
 
     context->platform_filename = main_args.platform_filename;
     context->export_prefix = main_args.export_prefix;
@@ -865,6 +865,6 @@ void set_configuration(BatsimContext *context,
 
     // job_submission
     context->config_json.AddMember("submission_forward_profiles", Value().SetBool(main_args.forward_profiles_on_submission), alloc);
-    context->config_json.AddMember("dynamic_submission_enabled", Value().SetBool(main_args.dynamic_submission_enabled), alloc);
-    context->config_json.AddMember("acknowledge_dynamic_submission", Value().SetBool(main_args.ack_dynamic_submission), alloc);
+    context->config_json.AddMember("dynamic_registration_enabled", Value().SetBool(main_args.dynamic_registration_enabled), alloc);
+    context->config_json.AddMember("acknowledge_dynamic_registration", Value().SetBool(main_args.ack_dynamic_registration), alloc);
 }

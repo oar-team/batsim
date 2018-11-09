@@ -79,8 +79,8 @@ struct MainArguments
 
     // Job related
     bool forward_profiles_on_submission;                    //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
-    bool dynamic_submission_enabled;                        //!< Stores whether the scheduler will be able to send jobs along the simulation
-    bool ack_dynamic_submission;                            //!< Stores whether Batsim will acknowledge dynamic job submission (emit JOB_SUBMITTED events)
+    bool dynamic_registration_enabled;                      //!< Stores whether the scheduler will be able to register jobs and profiles during the simulation
+    bool ack_dynamic_registration;                          //!< Stores whether Batsim will acknowledge dynamic job registrations (emit JOB_SUBMITTED events)
 
     // Output
     std::string export_prefix;                              //!< The filename prefix used to export simulation information
