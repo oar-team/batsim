@@ -906,14 +906,14 @@ void server_on_execute_job(ServerData * data,
     {
         if (allocation->mapping.size() != 0)
         {
-            xbt_assert((int)allocation->mapping.size() == job->requested_nb_res,
+            xbt_assert((unsigned int)allocation->mapping.size() == job->requested_nb_res,
                        "Job '%s' allocation is invalid. The decision process set a custom mapping for this job, "
                        "but the custom mapping size (%d) does not match the job requested number of machines (%d).",
                        job->id.to_string().c_str(), (int)allocation->mapping.size(), job->requested_nb_res);
         }
         else
         {
-            xbt_assert((int)allocation->machine_ids.size() == job->requested_nb_res,
+            xbt_assert((unsigned int)allocation->machine_ids.size() == job->requested_nb_res,
                        "Job '%s' allocation is invalid. The job requires %d machines but only %d were given (%s). "
                        "Using a different number of machines than the one requested is prevented by default. "
                        "If you meant to use multiple executors per machine, please specify a custom execution mapping "
