@@ -542,7 +542,7 @@ private:
      * @param[in] data The message data
      * @param[in] detached Whether the send should be detached
      */
-    void send_message(double when,
+    void send_message_at_time(double when,
                       const std::string & destination_mailbox,
                       IPMessageType type,
                       void * data = nullptr,

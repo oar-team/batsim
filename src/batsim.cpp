@@ -757,15 +757,14 @@ int main(int argc, char * argv[])
     int max_nb_machines_to_use = -1;
     load_workloads_and_workflows(main_args, &context, max_nb_machines_to_use);
 
+    // initialyse Ptask L07 model
+    engine.set_config("host/model:ptask_L07");
+
     // Let's choose which SimGrid computing model should be used
     XBT_INFO("Checking whether SMPI is used or not...");
     context.smpi_used = context.workloads.contains_smpi_job(); // todo: SMPI workflows
-    if (!context.smpi_used)
-    {
-        XBT_INFO("SMPI will NOT be used.");
-        engine.set_config("host/model:ptask_L07");
-    }
-    else
+
+    if (context.smpi_used)
     {
         XBT_INFO("SMPI will be used.");
         context.workloads.register_smpi_applications(); // todo: SMPI workflows

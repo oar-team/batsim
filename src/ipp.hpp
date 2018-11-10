@@ -26,7 +26,7 @@ struct ServerData;
  */
 enum class IPMessageType
 {
-    JOB_SUBMITTED           //!< Submitter -> Server. The submitter tells the server a new job has been submitted.
+    JOB_SUBMITTED          //!< Submitter -> Server. The submitter tells the server that one or several new jobs have been submitted.
     ,JOB_SUBMITTED_BY_DP    //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to submit a job
     ,PROFILE_SUBMITTED_BY_DP //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to submit a profile
     ,JOB_COMPLETED          //!< Launcher -> Server. The job launcher tells the server a job has been completed.
@@ -84,8 +84,8 @@ struct SubmitterJobCompletionCallbackMessage
  */
 struct JobSubmittedMessage
 {
-    std::string submitter_name; //!< The name of the submitter which submitted the job.
-    JobIdentifier job_id; //!< The JobIdentifier
+    std::string submitter_name; //!< The name of the submitter which submitted the jobs.
+    std::vector<JobIdentifier> job_ids; //!< The list of JobIdentifiers
 };
 
 /**
