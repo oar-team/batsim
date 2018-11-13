@@ -66,7 +66,7 @@ Finally, Batsim will merge this I/O job profile with the normal job
 profile before to delegate the actual simulation to Simgrid.
 
 Full example
-------------
+~~~~~~~~~~~~
 
 .. todo::
    Add more detailed to the example:
@@ -171,7 +171,7 @@ selection. Also, dynamic job can be created to model internal file
 system I/O transfer at any time during the simulation.
 
 Limitations and Evolutions
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The file system model described above has some limitations that are discuss
 here.
