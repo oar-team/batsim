@@ -73,6 +73,8 @@ def main():
                                 core_attrs = {"id": core_id}
                                 core_attrs.update(proc_template["core_attributes"])
                                 core_el = xml.SubElement(cluster_el, "host", attrib=core_attrs)
+                                # Processor type
+                                xml.SubElement(core_el, "prop", attrib={"id": "type", "value": proc["type"]})
                                 for prop in proc_template["core_properties"]:
                                     xml.SubElement(core_el, "prop", attrib=prop)
                                 # Link association
