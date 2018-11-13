@@ -1,0 +1,58 @@
+{
+  "cpu": {
+    "Xeon Sandy Bridge E5-2670": {
+      "id": "xsbe52670",
+      "nb_cores": "8",
+      "_metadata": {
+        "clock": "2.6GHz",
+        "tdp": "115W",
+        "vector": "AVX",
+        "vector_length_bits": "128"
+      },
+      "core_attributes": {
+        "speed": "20.4Gf, 18.36Gf, 16.32Gf, 14.28Gf, 12.24Gf, 0.0Gf, 0.0Gf, 0.0Gf"
+      },
+      "core_properties": [
+        { "id": "sleep_pstates", "value": "5:6:7"},
+        { "id": "watt_per_state", "value": "5.0:14.375, 5.0:12.9375, 5.0:11.5, 5.0:10.0625, 5.0:8.625, 2.0:2.0, 7.0:7.0, 6.0:6.0" },
+        { "id": "watt_off", "value": "2.0" }
+      ]
+    },
+    "POWER 7": {
+      "id": "power7",
+      "nb_cores": "8",
+      "_metadata": {
+        "clock": "3.0GHz",
+        "tdp": "180W",
+        "vector": "VMX and VSX",
+        "vector_length_bits": "128"
+      },
+      "core_attributes": {
+        "speed": "24.0Gf, 21.6Gf, 19.2Gf, 16.8Gf, 14.4Gf, 0.0Gf, 0.0Gf, 0.0Gf"
+      },
+      "core_properties": [
+        { "id": "sleep_pstates", "value": "5:6:7"},
+        { "id": "watt_per_state", "value": "8.0:22.5, 8.0:20.25, 8.0:18.0, 8.0:15.75, 8.0:13.5, 3.0:3.0, 11.0:11.0, 9.0:9.0" },
+        { "id": "watt_off", "value": "3.0" }
+      ]
+    }
+  },
+  "gpu": {
+    "Tesla M2090": {
+      "id": "teslam2090",
+      "nb_cores": "512",
+      "_metadata": {
+        "clock": "650MHz",
+        "tdp": "250W"
+      },
+      "core_attributes": {
+        "speed": "1.3Gf, 1.17Gf, 1.04Gf, 0.91Gf, 0.78Gf, 0.0Gf, 0.0Gf, 0.0Gf"
+      },
+      "core_properties": [
+        { "id": "sleep_pstates", "value": "5:6:7"},
+        { "id": "watt_per_state", "value": "0.2:0.5, 0.2:0.45, 0.2:0.4, 0.2:0.35, 0.2:0.3, 0.05:0.05, 0.25:0.25, 0.22:0.22" },
+        { "id": "watt_off", "value": "0.05" }
+      ]
+    }
+  }
+}

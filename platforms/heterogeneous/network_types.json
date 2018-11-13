@@ -1,0 +1,6 @@
+{
+  "InfiniBand FDR x4": {
+    "bandwidth": "54.54Gbps",
+    "latency": "0.7us"
+  }
+}
