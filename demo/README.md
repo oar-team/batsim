@@ -4,7 +4,7 @@ Simple notebook experiment running Batsim and analysing the results visually wit
 
 ## Dependencies
 
-- *curl* for installing Nix package manager.
+-   *curl* for installing Nix package manager.
 
 ## Automatic setup
 
@@ -12,7 +12,7 @@ The file *run.bash* allows for setting up and launching the notebook automatical
 
 ### Requirements
 
-- Run without privileges from a sudo-capable user.
+-   Run without privileges from a sudo-capable user.
 
 ### Running
 
