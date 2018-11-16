@@ -86,7 +86,6 @@ struct MainArguments
     std::string export_prefix;                              //!< The filename prefix used to export simulation information
     bool enable_schedule_tracing;                           //!< If set to true, the schedule is exported to a Pajé trace file
     bool enable_machine_state_tracing;                      //!< If set to true, this option enables the tracing of the machine states into a CSV time series.
-    std::list<std::pair<std::string, std::string>> simgrid_config; //!< The list of configuration options to pass to SimGrid.
 
     // Platform size limit
     int limit_machines_count;                               //!< The number of machines to use to compute jobs. 0 : no limit. > 0 : the number of computation machines
@@ -100,6 +99,7 @@ struct MainArguments
     bool terminate_with_last_workflow;                      //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
     // Other
+    std::list<std::pair<std::string, std::string>> simgrid_config; //!< The list of configuration options to pass to SimGrid.
     bool allow_time_sharing_on_compute;                     //!< Allows/forbids time sharing on compute machines. Two jobs can run on the same machine if and only if time sharing is allowed.
     bool allow_time_sharing_on_storage;                     //!< Allows/forbids time sharing on storage machines. Two jobs can run on the same machine if and only if time sharing is allowed.
     ProgramType program_type;                               //!< The program type (Batsim or Batexec at the moment)

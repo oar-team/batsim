@@ -210,8 +210,7 @@ Execution context options:
   -s, --socket-endpoint <endpoint>   The Decision process socket endpoint
                                      Decision process [default: tcp://localhost:28000].
   --enable-redis                     Enables Redis to communicate with the scheduler.
-                                     Options --redis-hostname, --redis-port and
-                                     --redis-prefix are ignored if this options is not set.
+                                     Other redis options are ignored if this option is not set.
                                      Please refer to Batsim's documentation for more information.
   --redis-hostname <redis_host>      The Redis server hostname. Ignored if --enable-redis is not set.
                                      [default: 127.0.0.1]
@@ -297,7 +296,6 @@ Other options:
     // Input files
     // ***********
     main_args.platform_filename = args["--platform"].asString();
-    printf("platform_filename: %s\n", main_args.platform_filename.c_str());
     if (!file_exists(main_args.platform_filename))
     {
         XBT_ERROR("Platform file '%s' cannot be read.", main_args.platform_filename.c_str());
