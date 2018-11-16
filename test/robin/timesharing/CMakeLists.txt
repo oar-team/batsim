@@ -29,7 +29,7 @@ foreach(simu_instance IN LISTS simu_instances)
             PLATFORM ${platform_filename}
             WORKLOAD ${workload_filename}
             ALGORITHM ${algo_realname}
-            OTH_BATSIM_ARGS "--allow-time-sharing"
+            OTH_BATSIM_ARGS "--enable-time-sharing-on-compute"
             ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end --expect-robin-success --expect-sched-success --expect-batsim-success"
         )
 
