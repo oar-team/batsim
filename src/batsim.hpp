@@ -100,6 +100,7 @@ struct MainArguments
 
     // Other
     std::list<std::pair<std::string, std::string>> simgrid_config; //!< The list of configuration options to pass to SimGrid.
+    bool dump_execution_context;                            //!< Instead of running the simulation, print the execution context as JSON on the standard output.
     bool allow_time_sharing_on_compute;                     //!< Allows/forbids time sharing on compute machines. Two jobs can run on the same machine if and only if time sharing is allowed.
     bool allow_time_sharing_on_storage;                     //!< Allows/forbids time sharing on storage machines. Two jobs can run on the same machine if and only if time sharing is allowed.
     ProgramType program_type;                               //!< The program type (Batsim or Batexec at the moment)

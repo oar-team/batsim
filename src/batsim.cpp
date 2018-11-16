@@ -257,6 +257,8 @@ Workflow options:
                                      workflows have completed.
 
 Other options:
+  --dump-execution-context           Does not run the actual simulation but dumps the execution
+                                     context on stdout (formatted as a JSON object).
   --enable-time-sharing-on-compute   Enables time sharing on compute machines:
                                      One resource may compute several jobs at the same time.
   --disable-time-sharing-on-storage  Disables time sharing on storage machines:
@@ -519,6 +521,7 @@ Other options:
 
     // Other options
     // *************
+    main_args.dump_execution_context = args["--dump-execution-context"].asBool();
     main_args.allow_time_sharing_on_compute = args["--enable-time-sharing-on-compute"].asBool();
     main_args.allow_time_sharing_on_storage = !(args["--disable-time-sharing-on-storage"].asBool());
     if (args["--no-sched"].asBool())
@@ -699,6 +702,36 @@ int main(int argc, char * argv[])
     bool run_unittests = false;
 
     parse_main_args(argc, argv, main_args, return_code, run_simulation, run_unittests);
+
+    if (main_args.dump_execution_context)
+    {
+        using namespace rapidjson;
+        Document object;
+        auto & alloc = object.GetAllocator();
+        object.SetObject();
+
+        // Generate the content to dump
+        object.AddMember("socket_endpoint", Value().SetString(main_args.socket_endpoint.c_str(), alloc), alloc);
+        object.AddMember("redis_enabled", Value().SetBool(main_args.redis_enabled), alloc);
+        object.AddMember("redis_hostname", Value().SetString(main_args.redis_hostname.c_str(), alloc), alloc);
+        object.AddMember("redis_port", Value().SetInt(main_args.redis_port), alloc);
+        object.AddMember("redis_prefix", Value().SetString(main_args.redis_prefix.c_str(), alloc), alloc);
+
+        object.AddMember("export_prefix", Value().SetString(main_args.export_prefix.c_str(), alloc), alloc);
+
+        object.AddMember("external_scheduler", Value().SetBool(main_args.program_type == ProgramType::BATSIM), alloc);
+
+        // Dump the object to a string
+        StringBuffer buffer;
+        rapidjson::Writer<StringBuffer> writer(buffer);
+        object.Accept(writer);
+
+        // Print the string then terminate
+        printf("%s\n", buffer.GetString());
+        //std::cout << buffer.GetString() << std::endl;
+
+        return 0;
+    }
 
     if (run_unittests)
     {
