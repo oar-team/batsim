@@ -32,7 +32,7 @@ foreach(simu_instance IN LISTS simu_instances)
 
     add_test_robintest(NAME ${thistest_NAME}
         OUTPUT_DIR ${thistest_OUTPUT_DIR}
-        BATCMD "batsim -p ${platform_filename} -w ${workload_filename} -e ${thistest_OUTPUT_DIR}/out --batexec"
+        BATCMD "batsim -p ${platform_filename} -w ${workload_filename} -e ${thistest_OUTPUT_DIR}/out --no-sched"
         SCHEDCMD ""
         ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end --expect-robin-success --expect-no-sched --expect-batsim-success"
     )
