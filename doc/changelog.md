@@ -10,6 +10,34 @@ Batsim's public API includes:
 
 [//]: ==========================================================================
 ## [Unreleased]
+### Changed (**breaks protocol**)
+- ``SUBMIT_PROFILE`` has been renamed ``REGISTER_PROFILE``.
+  Trying to register an already existing profile will now fail.
+- ``SUBMIT_JOB`` has been renamed ``REGISTER_JOB``.
+  Trying to register an already existing job will now fail.
+  The possibility to register profiles from within a ``REGISTER_JOB`` event has
+  been discarded: Now use ``REGISTER_PROFILE`` then ``REGISTER_JOB``.
+- The content of the ``config`` object of the ``SIMULATION_BEGINS`` event has
+  been changed. It is now flattened and contains the following keys:
+  ``redis-enabled``, ``redis-hostname``, ``redis-port``, ``redis-prefix``,
+  ``profiles-forwarded-on-submission``, ``dynamic-jobs-enabled`` and
+  ``dynamic-jobs-acknowledged``.
+
+### Changed (**breaks command-line interface**)
+- Removal of the ``--config-file`` option.
+  Now specify your desired features by the Batsim CLI options.
+- Removal of the ``--enable-sg-process-tracing`` option.
+  You can now use ``--sg-cfg`` to do the same.
+- ``--batexec`` has been renamed ``--no-sched``.
+- ``--allow-time-sharing`` has been split into two options
+  ``--enable-time-sharing-on-compute`` and
+  ``--disable-time-sharing-on-storage``, as resource roles have been introduced.
+
+### Added (new command-line options)
+- New ``--sg-cfg`` option, that allows to set SimGrid configuration options.
+- New ``--dump-execution-context`` option, that dumps the command execution
+  context on the standard output. This allows external tools to understand
+  the execution context of a batsim command without actually parsing it.
 
 [//]: ==========================================================================
 ## [2.0.0] - 2018-02-20
