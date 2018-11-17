@@ -71,15 +71,19 @@ struct MainArguments
     std::map<std::string, std::string> hosts_roles_map;     //!< The hosts/roles mapping to be added to the hosts properties.
 
     // Execution context
-    rapidjson::Document config_file;                        //!< The configuration file
     std::string socket_endpoint;                            //!< The Decision process socket endpoint
+    bool redis_enabled;                                     //!< Whether Redis is enabled
     std::string redis_hostname;                             //!< The Redis (data storage) server host name
     int redis_port;                                         //!< The Redis (data storage) server port
     std::string redis_prefix;                               //!< The Redis (data storage) instance prefix
 
+    // Job related
+    bool forward_profiles_on_submission;                    //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
+    bool dynamic_registration_enabled;                      //!< Stores whether the scheduler will be able to register jobs and profiles during the simulation
+    bool ack_dynamic_registration;                          //!< Stores whether Batsim will acknowledge dynamic job registrations (emit JOB_SUBMITTED events)
+
     // Output
     std::string export_prefix;                              //!< The filename prefix used to export simulation information
-    bool enable_simgrid_process_tracing;                    //!< If set to true, this option enables the tracing of SimGrid processes
     bool enable_schedule_tracing;                           //!< If set to true, the schedule is exported to a Pajé trace file
     bool enable_machine_state_tracing;                      //!< If set to true, this option enables the tracing of the machine states into a CSV time series.
 
@@ -95,7 +99,10 @@ struct MainArguments
     bool terminate_with_last_workflow;                      //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
     // Other
-    bool allow_time_sharing;                                //!< Allows/forbids time sharing. Two jobs can run on the same machine if and only if time sharing is allowed.
+    std::list<std::pair<std::string, std::string>> simgrid_config; //!< The list of configuration options to pass to SimGrid.
+    bool dump_execution_context;                            //!< Instead of running the simulation, print the execution context as JSON on the standard output.
+    bool allow_time_sharing_on_compute;                     //!< Allows/forbids time sharing on compute machines. Two jobs can run on the same machine if and only if time sharing is allowed.
+    bool allow_time_sharing_on_storage;                     //!< Allows/forbids time sharing on storage machines. Two jobs can run on the same machine if and only if time sharing is allowed.
     ProgramType program_type;                               //!< The program type (Batsim or Batexec at the moment)
     std::string pfs_host_name;                              //!< The name of the SimGrid host which serves as parallel file system (a.k.a. large-capacity storage tier)
     std::string hpst_host_name;                             //!< The name of the SimGrid host which serves as the high-performance storage tier

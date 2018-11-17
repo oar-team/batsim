@@ -30,8 +30,9 @@ void server_process(BatsimContext * context)
     // (and that some data can be read from the data storage)
     context->proto_writer->append_simulation_begins(context->machines,
                                                     context->workloads,
-                                                    context->config_file,
-                                                    context->allow_time_sharing,
+                                                    context->config_json,
+                                                    context->allow_time_sharing_on_compute,
+                                                    context->allow_time_sharing_on_storage,
                                                     MSG_get_clock());
 
     string send_buffer = context->proto_writer->generate_current_message(MSG_get_clock());
@@ -45,8 +46,8 @@ void server_process(BatsimContext * context)
     // Let's prepare a handler map to react on events
     std::map<IPMessageType, std::function<void(ServerData *, IPMessage *)>> handler_map;
     handler_map[IPMessageType::JOB_SUBMITTED] = server_on_job_submitted;
-    handler_map[IPMessageType::JOB_SUBMITTED_BY_DP] = server_on_submit_job;
-    handler_map[IPMessageType::PROFILE_SUBMITTED_BY_DP] = server_on_submit_profile;
+    handler_map[IPMessageType::JOB_REGISTERED_BY_DP] = server_on_register_job;
+    handler_map[IPMessageType::PROFILE_REGISTERED_BY_DP] = server_on_register_profile;
     handler_map[IPMessageType::JOB_COMPLETED] = server_on_job_completed;
     handler_map[IPMessageType::PSTATE_MODIFICATION] = server_on_pstate_modification;
     handler_map[IPMessageType::SCHED_EXECUTE_JOB] = server_on_execute_job;
@@ -66,8 +67,8 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SUBMITTER_BYE] = server_on_submitter_bye;
     handler_map[IPMessageType::SWITCHED_ON] = server_on_switched;
     handler_map[IPMessageType::SWITCHED_OFF] = server_on_switched;
-    handler_map[IPMessageType::END_DYNAMIC_SUBMIT] = server_on_end_dynamic_submit;
-    handler_map[IPMessageType::CONTINUE_DYNAMIC_SUBMIT] = server_on_continue_dynamic_submit;
+    handler_map[IPMessageType::END_DYNAMIC_REGISTER] = server_on_end_dynamic_register;
+    handler_map[IPMessageType::CONTINUE_DYNAMIC_REGISTER] = server_on_continue_dynamic_register;
 
     /* Currently, there is one submtiter per input file (workload or workflow).
        As workflows use an inner workload, calling nb_static_workloads() should
@@ -527,30 +528,30 @@ void server_on_killing_done(ServerData * data,
     check_simulation_finished(data);
 }
 
-void server_on_end_dynamic_submit(ServerData * data,
+void server_on_end_dynamic_register(ServerData * data,
                                   IPMessage * task_data)
 {
     (void) task_data;
 
-    data->context->submission_sched_finished = true;
+    data->context->registration_sched_finished = true;
 
     check_simulation_finished(data);
 }
 
-void server_on_continue_dynamic_submit(ServerData * data,
+void server_on_continue_dynamic_register(ServerData * data,
                                   IPMessage * task_data)
 {
     (void) task_data;
-    data->context->submission_sched_finished = false;
+    data->context->registration_sched_finished = false;
 
     check_simulation_finished(data);
 }
 
-void server_on_submit_job(ServerData * data,
+void server_on_register_job(ServerData * data,
                           IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr);
-    JobSubmittedByDPMessage * message = (JobSubmittedByDPMessage *) task_data->data;
+    JobRegisteredByDPMessage * message = (JobRegisteredByDPMessage *) task_data->data;
 
     // Let's update global states
     ++data->nb_submitted_jobs;
@@ -565,18 +566,23 @@ void server_on_submit_job(ServerData * data,
     const Job * job = data->context->workloads.job_at(message->job_id);
 
     Workload * workload = data->context->workloads.at(message->job_id.workload_name);
-    xbt_assert(workload->profiles->exists(job->profile),
-               "Dynamically submitted job '%s' has no profile: "
-               "Workload '%s' has no profile named '%s'. "
-               "When submitting a dynamic job, its profile should either already exist "
-               "or be submitted inside the SUBMIT_JOB message. "
-               "If the profile is also dynamic, it can be submitted with the SUBMIT_PROFILE "
-               "message but you must ensure that the profile is sent (non-strictly) before "
-               "the SUBMIT_JOB message.",
-               job->id.to_string().c_str(),
-               workload->name.c_str(), job->profile.c_str());
 
-    if (data->context->submission_sched_ack)
+    if (!workload->profiles->exists(job->profile))
+    {
+        xbt_die(
+                   "Dynamically registered job '%s' has no profile: "
+                   "Workload '%s' has no profile named '%s'. "
+                   "When registering a dynamic job, its profile should already exist "
+                   "If the profile is also dynamic, it can be registered with the REGISTER_PROFILE "
+                   "message but you must ensure that the profile is sent (non-strictly) before "
+                   "the REGISTER_JOB message.",
+                   job->id.to_string().c_str(),
+                   workload->name.c_str(), job->profile.c_str());
+    }
+
+    workload->check_single_job_validity(job);
+
+    if (data->context->registration_sched_ack)
     {
         string job_json_description, profile_json_description;
 
@@ -596,23 +602,37 @@ void server_on_submit_job(ServerData * data,
     }
 }
 
-void server_on_submit_profile(ServerData * data,
+void server_on_register_profile(ServerData * data,
                           IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr);
-    ProfileSubmittedByDPMessage * message = (ProfileSubmittedByDPMessage *) task_data->data;
+    ProfileRegisteredByDPMessage * message = (ProfileRegisteredByDPMessage *) task_data->data;
     (void) message;
 
-    XBT_DEBUG("New user-submitted profile %s to workload %s",
+    XBT_DEBUG("New dynamically registered profile %s to workload %s",
                 message->profile_name.c_str(),
                 message->workload_name.c_str());
     // Does nothing.
     // Just here to keep the usual time increases from protocol reader to orchestrator.
 
-    xbt_assert(data->context->submission_sched_enabled,
-               "Profile submission coming from the decision process received but the option "
-               "seems disabled... It can be activated by specifying a configuration file "
-               "to Batsim.");
+    Workload * workload = data->context->workloads.at(message->workload_name);
+    if (!workload->profiles->exists(message->profile_name))
+    {
+        XBT_INFO("Adding dynamically registered profile %s to workload %s",
+                message->profile_name.c_str(),
+                message->workload_name.c_str());
+        Profile * profile = Profile::from_json(message->profile_name,
+                                               message->profile,
+                                               "Invalid JSON profile received from the scheduler");
+        workload->profiles->add_profile(message->profile_name, profile);
+    }
+    else
+    {
+        xbt_die("Invalid profile registration: the profile '%s' of workload '%s' that was registered has already been registered (old profile: %s)",
+            message->profile_name.c_str(),
+            message->workload_name.c_str(),
+            workload->profiles->at(message->profile_name)->json_description.c_str());
+    }
 }
 
 void server_on_change_job_state(ServerData * data,
@@ -806,18 +826,30 @@ void server_on_execute_job(ServerData * data,
     data->nb_running_jobs++;
     xbt_assert(data->nb_running_jobs <= data->nb_submitted_jobs);
 
-    if (!data->context->allow_time_sharing)
+    if (!data->context->allow_time_sharing_on_compute || !data->context->allow_time_sharing_on_storage)
     {
         for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
         {
             int machine_id = *machine_id_it;
             const Machine * machine = data->context->machines[machine_id];
-            (void) machine; // Avoids a warning if assertions are ignored
-            xbt_assert(machine->jobs_being_computed.empty(),
-                       "Job '%s': Invalid allocation: machine %d ('%s') is currently computing jobs (these ones:"
-                       " {%s}) whereas space sharing is forbidden. Space sharing can be enabled via an option,"
-                       " try --help to display the available options", job->id.to_string().c_str(), machine->id, machine->name.c_str(),
-                       machine->jobs_being_computed_as_string().c_str());
+            if (machine->has_role(roles::Permissions::COMPUTE_NODE) && !data->context->allow_time_sharing_on_compute)
+            {
+                (void) machine; // Avoids a warning if assertions are ignored
+                xbt_assert(machine->jobs_being_computed.empty(),
+                           "Job '%s': Invalid allocation: machine %d ('%s') is currently computing jobs (these ones:"
+                           " {%s}) whereas time-sharing on compute machines is disabled (try --help to display the available options).",
+                           job->id.to_string().c_str(), machine->id, machine->name.c_str(),
+                           machine->jobs_being_computed_as_string().c_str());
+            }
+            if (machine->has_role(roles::Permissions::STORAGE) && !data->context->allow_time_sharing_on_storage)
+            {
+                (void) machine; // Avoids a warning if assertions are ignored
+                xbt_assert(machine->jobs_being_computed.empty(),
+                           "Job '%s': Invalid allocation: machine %d ('%s') is currently computing jobs (these ones:"
+                           " {%s}) whereas time-sharing on storage machines is disabled (try --help to display the available options).",
+                           job->id.to_string().c_str(), machine->id, machine->name.c_str(),
+                           machine->jobs_being_computed_as_string().c_str());
+            }
         }
     }
 
@@ -869,14 +901,14 @@ void server_on_execute_job(ServerData * data,
     {
         if (allocation->mapping.size() != 0)
         {
-            xbt_assert((int)allocation->mapping.size() == job->requested_nb_res,
+            xbt_assert((unsigned int)allocation->mapping.size() == job->requested_nb_res,
                        "Job '%s' allocation is invalid. The decision process set a custom mapping for this job, "
                        "but the custom mapping size (%d) does not match the job requested number of machines (%d).",
                        job->id.to_string().c_str(), (int)allocation->mapping.size(), job->requested_nb_res);
         }
         else
         {
-            xbt_assert((int)allocation->machine_ids.size() == job->requested_nb_res,
+            xbt_assert((unsigned int)allocation->machine_ids.size() == job->requested_nb_res,
                        "Job '%s' allocation is invalid. The job requires %d machines but only %d were given (%s). "
                        "Using a different number of machines than the one requested is prevented by default. "
                        "If you meant to use multiple executors per machine, please specify a custom execution mapping "
@@ -896,7 +928,7 @@ void server_on_execute_job(ServerData * data,
 bool is_simumation_finished(const ServerData * data)
 {
     return (data->nb_submitters_finished == data->expected_nb_submitters) && // All static submitters have finished
-           (!data->context->submission_sched_enabled || data->context->submission_sched_finished) && // Dynamic submissions are disabled or finished
+           (!data->context->registration_sched_enabled || data->context->registration_sched_finished) && // Dynamic submissions are disabled or finished
            (data->nb_completed_jobs == data->nb_submitted_jobs) && // All submitted jobs have been completed (either computed and finished or rejected)
            (data->nb_running_jobs == 0) && // No jobs are being executed
            (data->nb_switching_machines == 0) && // No machine is being switched

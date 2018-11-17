@@ -147,7 +147,7 @@ void Workload::check_validity()
     }
 }
 
-void Workload::check_single_job_validity(Job * job)
+void Workload::check_single_job_validity(const Job * job)
 {
     xbt_assert(profiles->exists(job->profile),
                "Invalid job %s: the associated profile '%s' does not exist",
