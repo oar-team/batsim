@@ -703,7 +703,12 @@ int main(int argc, char * argv[])
 
     parse_main_args(argc, argv, main_args, return_code, run_simulation, run_unittests);
 
-    if (main_args.dump_execution_context)
+    if (run_unittests)
+    {
+        MSG_init(&argc, argv);
+        test_entry_point();
+    }
+    else if (main_args.dump_execution_context)
     {
         using namespace rapidjson;
         Document object;
@@ -728,15 +733,7 @@ int main(int argc, char * argv[])
 
         // Print the string then terminate
         printf("%s\n", buffer.GetString());
-        //std::cout << buffer.GetString() << std::endl;
-
         return 0;
-    }
-
-    if (run_unittests)
-    {
-        MSG_init(&argc, argv);
-        test_entry_point();
     }
 
     if (!run_simulation)
