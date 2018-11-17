@@ -8,7 +8,6 @@ list(APPEND algos ${BSALGO_submitter})
 # Submitter parameters.
 # Syntax: "name!increase_jobs_duration!send_profile_if_already_sent!send_profiles_in_separate_event"
 list(APPEND subparams "diff-profiles-separatep!true!true!true")
-list(APPEND subparams "same-profiles-resend-separatep!false!true!true")
 list(APPEND subparams "same-profiles-noresend-separatep!false!false!true")
 
 # Whether redis should be enabled
@@ -79,22 +78,16 @@ foreach(simu_instance IN LISTS simu_instances)
                     set(thistest_BATSIM_CONFIG_FILE "${thistest_OUTPUT_DIR}/batconf.json")
                     set(thistest_SCHED_INPUT_FILE "${thistest_OUTPUT_DIR}/sched_input.json")
 
+                    set(thistest_OTH_BATSIM_ARGS "--enable-dynamic-jobs")
+                    if (${redis_mode_value} EQUAL "true")
+                        set(thistest_OTH_BATSIM_ARGS "${thistest_OTH_BATSIM_ARGS} --enable-redis")
+                    endif()
+                    if (${dsam_value} EQUAL "true")
+                        set(thistest_OTH_BATSIM_ARGS "${thistest_OTH_BATSIM_ARGS} --acknowledge-dynamic-jobs")
+                    endif()
+
                     # Generate batsim configuration file
                     file(MAKE_DIRECTORY ${thistest_OUTPUT_DIR})
-                    file(WRITE ${thistest_BATSIM_CONFIG_FILE}
-"{\n\
-  \"redis\": {\n\
-    \"enabled\": ${redis_mode_value}\n\
-  },\n\
-  \"job_submission\": {\n\
-    \"forward_profiles\": false,\n\
-    \"from_scheduler\":{\n\
-        \"enabled\": true,
-        \"acknowledge\": ${dsam_value}\n\
-    }\n\
-  }\n\
-}"
-                    )
 
                     # Generate batsched input file
                     file(WRITE ${thistest_SCHED_INPUT_FILE}
@@ -111,7 +104,7 @@ foreach(simu_instance IN LISTS simu_instances)
                         PLATFORM ${platform_filename}
                         WORKLOAD ${workload_filename}
                         ALGORITHM ${algo_realname}
-                        OTH_BATSIM_ARGS "--config-file ${thistest_BATSIM_CONFIG_FILE}"
+                        OTH_BATSIM_ARGS "${thistest_OTH_BATSIM_ARGS}"
                         OTH_BATSCHED_ARGS "--variant_options_filepath=${thistest_SCHED_INPUT_FILE}"
                         ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end --expect-robin-success --expect-sched-success --expect-batsim-success"
                     )
