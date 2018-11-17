@@ -31,7 +31,7 @@ nix_build_and_update_dependencies_cache:
 nix_build_clang:
   stage: nix_build_and_update_dependencies_cache
   script:
-    - ./ci/nix-build-clang.bash
+    - ./ci/nix-build-clang-and-update-dependencies-cache.bash
 
 ###############################################################################
 # Test stage
