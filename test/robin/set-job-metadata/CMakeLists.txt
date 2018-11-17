@@ -46,24 +46,13 @@ foreach(mdm IN LISTS metadatamodes)
             set(thistest_BATSIM_CONFIG_FILE "${thistest_OUTPUT_DIR}/batconf.json")
             set(thistest_SCHED_INPUT_FILE "${thistest_OUTPUT_DIR}/sched_input.json")
 
-            # Generate batsim configuration file
-            file(MAKE_DIRECTORY ${thistest_OUTPUT_DIR})
-            file(WRITE ${thistest_BATSIM_CONFIG_FILE}
-"{\n\
-  \"redis\": {\n\
-    \"enabled\": false\n\
-  },\n\
-  \"job_submission\": {\n\
-    \"forward_profiles\": false,\n\
-    \"from_scheduler\":{\n\
-        \"enabled\": ${dynsubmitmode_value},
-        \"acknowledge\": false\n\
-    }\n\
-  }\n\
-}"
-            )
+            set(thistest_OTH_BATSIM_ARGS "")
+            if (${dynsubmitmode_value} MATCHES "true")
+                set(thistest_OTH_BATSIM_ARGS "--enable-dynamic-jobs")
+            endif()
 
             # Generate scheduler input
+            file(MAKE_DIRECTORY ${thistest_OUTPUT_DIR})
             file(WRITE ${thistest_SCHED_INPUT_FILE}
 "{\n\
     \"set_job_metadata\": ${mdm_value}\n\
@@ -74,7 +63,7 @@ foreach(mdm IN LISTS metadatamodes)
                 PLATFORM ${platform_filename}
                 WORKLOAD ${workload_filename}
                 ALGORITHM ${algo_realname}
-                OTH_BATSIM_ARGS "--config-file ${thistest_BATSIM_CONFIG_FILE}"
+                OTH_BATSIM_ARGS "${thistest_OTH_BATSIM_ARGS}"
                 OTH_BATSCHED_ARGS "--variant_options_filepath=${thistest_SCHED_INPUT_FILE}"
                 ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end --expect-robin-success --expect-sched-success --expect-batsim-success"
                 CHECK_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/check_metadata_presence.py"
