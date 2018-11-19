@@ -39,7 +39,8 @@ release = ''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.todo'
+    'sphinx.ext.todo',
+    'sphinx.ext.mathjax'
 ]
 
 todo_include_todos = True
