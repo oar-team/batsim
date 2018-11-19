@@ -136,7 +136,7 @@ It allows such profiles to be used with any number of resources while conserving
 .. note::
 
     This can help modeling moldable jobs with the help of
-    :ref:`dynamic_job_submission`.
+    :ref:`dynamic_job_registration`.
 
 
 **Parameters.**

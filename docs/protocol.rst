@@ -436,7 +436,7 @@ The content of this event depends on how Batsim has been called (see :ref:`cli`)
 This event means that one job has been submitted within Batsim. It is
 sent whenever a job coming from Batsim inputs (workloads and workflows)
 has been submitted. If dynamic jobs registration is enabled, this
-event is sent as a reply to a SUBMIT_JOB_ event if
+event is sent as a reply to a REGISTER_JOB_ event if
 and only if dynamic jobs registration acknowledgements are also enabled.
 More information can be found in `Dynamic registration of jobs`_.
 
@@ -761,7 +761,7 @@ before the kill), Batsim acknowledges it with one JOB_KILLED_ event.
    }
 
 REGISTER_JOB
-~~~~~~~~~~
+~~~~~~~~~~~~
 
 REgisters a job (from the scheduler) at the current simulation time.
 
@@ -808,7 +808,7 @@ Example **with redis** : The job and profile description, if unknown to Batsim y
 
 
 REGISTER_PROFILE
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 Registers a profile (from the scheduler).
 
@@ -920,7 +920,7 @@ jobs information might either be transmitted through the protocol or Redis.
 .. _dynamic_job_registration:
 
 Dynamic registration of jobs
---------------------------
+----------------------------
 
 Jobs are in most cases given as Batsim inputs, which are submitted
 within Batsim (the scheduler knows about them via
