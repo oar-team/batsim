@@ -18,6 +18,9 @@ Whenever an event which may require making decision occurs in Batsim in the simu
 4. Batsim receives the reply
 5. Batsim resumes the simulation, applying the decision which have been made
 
+.. todo::
+  Fix wrong image scale on readthedocs.
+
 .. image:: img/proto/request_reply.png
    :scale: 100 %
    :alt: Protocol overview

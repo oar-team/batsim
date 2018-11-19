@@ -64,6 +64,11 @@ This can be done with ``nix-env --install``.
     # Or experiment management tools...
     nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batexpe
 
+.. todo::
+    Talk about the different available versions.
+
+    At least last stable and master upstream. Maybe link to the advanced Nix tutorial (doing a reproducible experiment) for custom builds.
+
 Build it yourself
 -----------------
 Batsim uses the CMake_ build system.

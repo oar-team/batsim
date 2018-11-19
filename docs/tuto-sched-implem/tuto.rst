@@ -3,4 +3,5 @@
 Implementing your scheduling algorithm
 ======================================
 
-TODO
+.. todo::
+    Write the "Implementing your scheduling algorithm" tutorial
