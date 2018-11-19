@@ -35,6 +35,7 @@ Batsim
    Protocol <protocol.rst>
    Using Redis <redis.rst>
    Using the I/O model <IO.rst>
+   Changelog <changelog.rst>
 
 .. toctree::
    :maxdepth: 1
@@ -55,4 +56,6 @@ Batsim
    :maxdepth: 1
    :caption: Developer Manual
 
+   Contributing <contributing.rst>
+   Continuous Integration <ci.rst>
    TODO list <todo.rst>
