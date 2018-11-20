@@ -64,10 +64,12 @@ This can be done with ``nix-env --install``.
     # Or experiment management tools...
     nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batexpe
 
-.. todo::
-    Talk about the different available versions.
+.. note::
 
-    At least last stable and master upstream. Maybe link to the advanced Nix tutorial (doing a reproducible experiment) for custom builds.
+    Most package have at least two versions in kapack_, named ``PACKAGE`` and ``PACKAGE_dev``. ``PACKAGE`` stands for the latest release of the package, while the ``_dev`` version is the latest unstable commit from the main git branch.
+
+    You can therefore get an upstream Batsim and batsched with the following command. ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim_dev batsched_dev``
+
 
 Build it yourself
 -----------------
