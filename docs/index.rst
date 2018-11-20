@@ -14,7 +14,7 @@ Batsim is a scientific simulator to analyze batch schedulers.
 Batch schedulers — or Resource and Jobs Management Systems, RJMSs — are systems that manage resources in large-scale computing centers, notably by scheduling and placing jobs.
 
 .. image:: ../doc/batsim_rjms_overview.png
-   :scale: 100 %
+   :width: 100 %
    :alt: Batsim overview
 
 - Analyze and compare online scheduling algorithms.
