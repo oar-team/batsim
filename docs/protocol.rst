@@ -18,11 +18,8 @@ Whenever an event which may require making decision occurs in Batsim in the simu
 4. Batsim receives the reply
 5. Batsim resumes the simulation, applying the decision which have been made
 
-.. todo::
-  Fix wrong image scale on readthedocs.
-
 .. image:: img/proto/request_reply.png
-   :scale: 100 %
+   :width: 100 %
    :alt: Protocol overview
 
 Communication is implemented using the `ZeroMQ request-reply pattern`_.
@@ -914,7 +911,7 @@ Depending on how Batsim is called (see :ref:`cli`),
 jobs information might either be transmitted through the protocol or Redis.
 
 .. image:: img/proto/job_submission_and_execution.png
-   :scale: 100 %
+   :width: 100 %
    :alt: Executing jobs
 
 .. _dynamic_job_registration:
@@ -951,14 +948,14 @@ Without Redis
 ~~~~~~~~~~~~~
 
 .. image:: img/proto/dynamic_job_submission.png
-   :scale: 75 %
+   :width: 75 %
    :alt: Dynamic submission without Redis
 
 With Redis
 ~~~~~~~~~~
 
 .. image:: img/proto/dynamic_job_submission_redis.png
-   :scale: 100 %
+   :width: 100 %
    :alt: Dynamic submission with Redis
 
 
