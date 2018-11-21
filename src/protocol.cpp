@@ -1370,7 +1370,7 @@ void JsonProtocolReader::handle_register_job(int event_number,
         message->job_description = context->storage.get(job_key);
     }
 
-    // FIXME: All this initialization should be done in the server
+    // FIXME: All this initialization should be done in the server?
     // Create the job into memory now (so that following events at the same timestamp can refer to this job).
     // But first, create the workload if needed.
     Workload * workload = nullptr;
