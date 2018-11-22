@@ -1,0 +1,17 @@
+{
+    "clusters": [
+      {
+        "nodes": [
+          { "type": "Example Node", "number": "2" }
+        ],
+        "cluster_network": "Example Network"
+      },
+      { "nodes": [
+          { "type": "Example Node", "number": "1" }
+        ],
+        "cluster_network": "Example Network"
+      }
+    ],
+    "dc_network": "Example Network"
+  }
+  

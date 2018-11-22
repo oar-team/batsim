@@ -1,4 +1,8 @@
 {
+  "Example Network": {
+    "bandwidth": "10.0Gbps",
+    "latency": "0.5us"
+  },
   "InfiniBand FDR x4": {
     "bandwidth": "54.54Gbps",
     "latency": "0.7us"

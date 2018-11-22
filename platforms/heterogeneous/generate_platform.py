@@ -1,123 +1,254 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import xml.etree.ElementTree as xml
 import xml.dom.minidom as xml_format
+import xml.etree.ElementTree as xml
 
 def main():
-    description = "Generate Batsim heterogeneous platforms"
-    ap = argparse.ArgumentParser(description=description)
+    """
+    Transform an heterogeneous platform description into a valid Batsim XML.
+    """
 
-    ap.add_argument("-p", "--platform-file", type=str, required=True,
-                    help="JSON with platform description")
-    ap.add_argument("-o", "--output-xml", type=str, default="platform.xml",
-                    help="XML output with platform ready for Batsim")
-    args = ap.parse_args()
+    def cmd_args():
+        """
+        Parses command line arguments.
+        """
 
-    with open(args.output_xml, "w") as output_f,\
-         open(args.platform_file, "r") as platform_f,\
-         open("network_types.json", "r") as network_types_f,\
-         open("node_types.json", "r") as node_types_f,\
-         open("processor_types.json", "r") as processor_types_f:
-        platform = json.load(platform_f)
-        network_types = json.load(network_types_f)
-        node_types = json.load(node_types_f)
-        processor_types = json.load(processor_types_f)
-        # DOCTYPE specification
-        doctype = "<!DOCTYPE platform SYSTEM \"https://simgrid.org/simgrid.dtd\">"
-        # Platform
-        platform_attrs = {"version": "4.1"}
-        platform_el = xml.Element("platform", attrib=platform_attrs)
-        # Main zone
-        main_zone_attrs = {"id": "main", "routing": "Full"}
-        main_zone_el = xml.SubElement(platform_el, "zone", attrib=main_zone_attrs)
-        # Master zone and master host
-        master_zone_attrs = {"id": "master", "routing": "None"}
-        master_zone_el = xml.SubElement(main_zone_el, "zone", attrib=master_zone_attrs)
-        mhost_attrs = {"id": "master_host", "speed": "1Gf"}
-        xml.SubElement(master_zone_el, "host", attrib=mhost_attrs)
-        # User config zone
-        config_zone_attrs = {"id": "config", "routing": "None"}
-        config_zone_el = xml.SubElement(main_zone_el, "zone", attrib=config_zone_attrs)
-        # Clusters
-        recorded_nodes = {}
-        cluster_idx = 0
-        for cluster in platform["clusters"]:
-            # Cluster
-            cluster_id = "clu_{}".format(cluster_idx)
-            cluster_attrs = {"id": cluster_id, "routing": "Cluster"}
-            cluster_el = xml.SubElement(main_zone_el, "zone", attrib=cluster_attrs)
-            # Nodes
-            for node in cluster["nodes"]:
-                node_template = node_types[node["type"]]
-                # Memory info
-                if node["type"] not in recorded_nodes:
-                    mem_id = "mem_{}".format(node_template["id"])
-                    mem_attrs = {"id": mem_id, "value": node_template["memory_gib"]}
-                    xml.SubElement(config_zone_el, "prop", attrib=mem_attrs)
-                for node_idx in range(int(node["number"])):
-                    node_id = "{}_{}_{}".format(node_template["id"], node_idx, cluster_id)
-                    # Up / down link
+        ap = argparse.ArgumentParser(description="Generate Batsim heterogeneous platforms")
+        ap.add_argument("-p", "--platform-file", type=str, required=True,
+                        help="JSON with platform description")
+        ap.add_argument("-o", "--output-xml", type=str, default="platform.xml",
+                        help="XML output with platform ready for Batsim")
+        return ap.parse_args()
+
+    def load_data():
+        """
+        Loads data for user's platform, network, node and processor types.
+        """
+
+        with open(args.platform_file, "r") as platform_f,\
+             open("network_types.json", "r") as network_types_f,\
+             open("node_types.json", "r") as node_types_f,\
+             open("processor_types.json", "r") as processor_types_f:
+            data = (json.load(platform_f), json.load(network_types_f),
+                    json.load(node_types_f), json.load(processor_types_f))
+        return data
+
+    def generate_tree():
+        """
+        Creates an XML tree complying to SimGrid DTD.
+        """
+
+        def main_zone():
+            """
+            Contains master zone and all clusters.
+            """
+
+            return xml.SubElement(platform_xml, "zone",
+                attrib={"id": "main", "routing": "Full"})
+
+        def master_zone():
+            """
+            Hosts the master node which schedules jobs onto resources.
+            """
+
+            def master_host():
+                """
+                Executes the scheduling algorithms.
+                """
+
+                xml.SubElement(master_zone_xml, "host",
+                    attrib={"id": "master_host", "speed": "1Gf"})
+
+            master_zone_xml = xml.SubElement(main_zone_xml, "zone",
+                attrib={"id": "master", "routing": "None"})
+            master_host()
+
+        def config_node():
+            """
+            Holds user defined properties concerning node types.
+            """
+
+            def config_zone():
+                """
+                Define node and proc config properties.
+                """
+                return xml.SubElement(main_zone_xml, "zone",
+                    attrib={"id": "config", "routing": "None"})
+
+            return xml.SubElement(config_zone(), "zone",
+                attrib={"id": "node", "routing": "None"})
+
+        def clusters():
+            """
+            Groups of nodes inside the data centre.
+            """
+
+            def nodes():
+                """
+                Systems available in the data centre, contain processors and other resources (v. gr. memory).
+                They are connected to a common cluster backbone by up / down links.
+                """
+
+                def record_node_type():
+                    """
+                    Inserts the node type in the already configured ones.
+                    """
+
+                    if node["type"] not in recorded_nodes:
+                        config_node_type_xml = xml.SubElement(config_node_xml, "zone",
+                            attrib={"id": node["type"], "routing": "None"})
+                        xml.SubElement(config_node_type_xml, "prop",
+                            attrib={"id": "memory", "value": node_template["memory_gib"]})
+                        recorded_nodes[node["type"]] = True
+
+                def udlink():
+                    """
+                    Link between the node and the backbone.
+                    """
+
                     udlink_id = "udl_{}".format(node_id)
-                    udlink_attrs = {"id": udlink_id, "sharing_policy": "SHARED"}
-                    udlink_attrs.update(network_types[cluster["cluster_network"]])
-                    xml.SubElement(cluster_el, "link", attrib=udlink_attrs)
-                    # Processors
+                    _udlink_attrs = {"id": udlink_id, "sharing_policy": "SHARED"}
+                    _udlink_attrs.update(network_types[cluster["cluster_network"]])
+                    xml.SubElement(cluster_xml, "link", attrib=_udlink_attrs)
+                    return udlink_id
+
+                def procs():
+                    """
+                    Computing resources available in the data centre. These can be CPUs, GPUs, MICs, ...
+                    They have a set of cores and power consumption properties.
+                    """
+
+                    def cores():
+                        """
+                        Individual computing units inside a processor.
+                        """
+
+                        def core_properties():
+                            """
+                            Defines node type and power consumption properties.
+                            """
+
+                            xml.SubElement(core_xml, "prop",
+                                attrib={"id": "node_type", "value": node["type"]})
+                            for prop in proc_template["core_properties"]:
+                                xml.SubElement(core_xml, "prop", attrib=prop)
+
+                        def link_association():
+                            """
+                            Associates up / down link with the core.
+                            """
+
+                            xml.SubElement(cluster_xml, "host_link",
+                                attrib={"id": core_id, "up": udlink_id, "down": udlink_id})
+                        
+                        for core_idx in range(int(proc_template["nb_cores"])):
+                            core_id = "cor_{}_{}".format(core_idx, proc_id)
+                            _core_attrs = {"id": core_id}
+                            _core_attrs.update(proc_template["core_attributes"])
+                            core_xml = xml.SubElement(cluster_xml, "host", attrib=_core_attrs)
+                            core_properties()
+                            link_association()
+
                     for proc in node_template["processors"]:
                         proc_template = processor_types[proc["type"]][proc["model"]]
-                        for proc_idx in range(int(proc["number"])):
+                        for proc_idx in range(int(proc_template["nb_cores"])):
                             proc_id = "{}_{}_{}".format(proc_template["id"], proc_idx, node_id)
-                            # Cores
-                            for core_idx in range(int(proc_template["nb_cores"])):
-                                core_id = "cor_{}_{}".format(core_idx, proc_id)
-                                core_attrs = {"id": core_id}
-                                core_attrs.update(proc_template["core_attributes"])
-                                core_el = xml.SubElement(cluster_el, "host", attrib=core_attrs)
-                                # Processor type
-                                xml.SubElement(core_el, "prop", attrib={"id": "type", "value": proc["type"]})
-                                for prop in proc_template["core_properties"]:
-                                    xml.SubElement(core_el, "prop", attrib=prop)
-                                # Link association
-                                hlink_attrs = {"id": core_id, "up": udlink_id, "down": udlink_id}
-                                xml.SubElement(cluster_el, "host_link", attrib=hlink_attrs)
-            # Router
-            router_id = "rou_{}".format(cluster_idx)
-            router_attrs = {"id": router_id}
-            xml.SubElement(cluster_el, "router", attrib=router_attrs)
-            # Backbone network
-            backbone_id = "bbo_{}".format(cluster_idx)
-            backbone_attrs = {"id": backbone_id}
-            backbone_attrs.update(network_types[cluster["cluster_network"]])
-            xml.SubElement(cluster_el, "backbone", attrib=backbone_attrs)
-            cluster_idx += 1
+                            cores()
 
-        # Links from clusters to master host
-        # Required to be stated after all clusters have been configured
-        cluster_idx = 0
-        for cluster in platform["clusters"]:
-            cluster_id = "clu_{}".format(cluster_idx)
-            ctmhlink_id = "tomh_{}".format(cluster_id)
-            ctmhlink_attrs = {"id": ctmhlink_id}
-            ctmhlink_attrs.update(network_types[platform["dc_network"]])
-            xml.SubElement(main_zone_el, "link", attrib=ctmhlink_attrs)
-            cluster_idx += 1
+                for node in cluster["nodes"]:
+                    node_template = node_types[node["type"]]
+                    record_node_type()
+                    for node_idx in range(int(node["number"])):
+                        node_id = "{}_{}_{}".format(node_template["id"], node_idx, cluster_id)
+                        udlink_id = udlink()
+                        procs()
 
-        # Routes to master zone
-        # Required to be stated after all links have been configured
-        cluster_idx = 0
-        for cluster in platform["clusters"]:
-            cluster_id = "clu_{}".format(cluster_idx)
-            router_id = "rou_{}".format(cluster_idx)
-            ctmhlink_id = "tomh_{}".format(cluster_id)
-            route_attrs = {"src": cluster_id, "dst": "master", "gw_src": router_id, "gw_dst": "master_host"}
-            route_el = xml.SubElement(main_zone_el, "zoneRoute", attrib=route_attrs)
-            # Link association inside route
-            xml.SubElement(route_el, "link_ctn", attrib={"id": ctmhlink_id})
-            cluster_idx += 1
+            def router():
+                """
+                Gateway for inter-cluster connections.
+                """
 
-        # Write the output
-        output_xml = xml_format.parseString("{}{}".format(doctype, xml.tostring(platform_el).decode()))
-        output_f.write(output_xml.toprettyxml(indent="  ", encoding="utf-8").decode())
+                xml.SubElement(cluster_xml, "router",
+                    attrib={"id": "rou_{}".format(cluster_idx)})
+
+            def backbone():
+                """
+                Intra-cluster connections.
+                """
+
+                _backbone_attrs = {"id": "bbo_{}".format(cluster_idx)}
+                _backbone_attrs.update(network_types[cluster["cluster_network"]])
+                xml.SubElement(cluster_xml, "backbone", attrib=_backbone_attrs)
+
+            cluster_idx = 0
+            recorded_nodes = {}
+            for cluster in platform["clusters"]:
+                cluster_id = "clu_{}".format(cluster_idx)
+                cluster_xml = xml.SubElement(main_zone_xml, "zone",
+                    attrib={"id": cluster_id, "routing": "Cluster"})
+                nodes()
+                router()
+                backbone()
+                cluster_idx += 1
+
+        def global_links():
+            """
+            Links from clusters to the master zone.
+            """
+
+            for cluster_idx in range(len(platform["clusters"])):
+                _global_link_attrs = {"id": "tomh_clu_{}".format(cluster_idx)}
+                _global_link_attrs.update(network_types[platform["dc_network"]])
+                xml.SubElement(main_zone_xml, "link", attrib=_global_link_attrs)
+
+        def routes():
+            """
+            Routes over global links.
+            """
+
+            for cluster_idx in range(len(platform["clusters"])):
+                route_xml = xml.SubElement(main_zone_xml, "zoneRoute",
+                    attrib={"src": "clu_{}".format(cluster_idx), "dst": "master",
+                        "gw_src": "rou_{}".format(cluster_idx), "gw_dst": "master_host"})
+                xml.SubElement(route_xml, "link_ctn",
+                    attrib={"id": "tomh_clu_{}".format(cluster_idx)})
+
+        platform_xml = xml.Element("platform",
+            attrib={"version": "4.1"})
+        main_zone_xml = main_zone()
+        master_zone()
+        config_node_xml = config_node()
+        clusters()
+        global_links()
+        routes()
+        return platform_xml
+
+    def write_result():
+        """
+        Writes the Batsim formatted platform.
+        """
+
+        def doctype():
+            """
+            Provides SimGrid doctype.
+            """
+
+            return "<!DOCTYPE platform SYSTEM \"https://simgrid.org/simgrid.dtd\">"
+
+        with open(args.output_xml, "w", ) as output_f:
+            output_f.write(xml_format.parseString("{}{}".format(doctype(),
+                xml.tostring(xml_tree).decode())).toprettyxml(indent="  ",
+                    encoding="utf-8").decode())
+
+    # Command line arguments
+    args = cmd_args()
+    # User's defined platform and type data
+    platform, network_types, node_types, processor_types = load_data()
+    # Resulting XML tree
+    xml_tree = generate_tree()
+    # Write result to the output file
+    write_result()
 
 if __name__ == "__main__":
     main()
