@@ -559,7 +559,7 @@ Machine::~Machine()
 
 bool Machine::has_role(Permissions role) const
 {
-    return (role | this->permissions) == role;
+    return (role & this->permissions) == role;
 }
 
 bool Machine::has_pstate(int pstate) const

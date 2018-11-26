@@ -572,7 +572,7 @@ void server_on_register_job(ServerData * data,
         xbt_die(
                    "Dynamically registered job '%s' has no profile: "
                    "Workload '%s' has no profile named '%s'. "
-                   "When registering a dynamic job, its profile should already exist "
+                   "When registering a dynamic job, its profile should already exist. "
                    "If the profile is also dynamic, it can be registered with the REGISTER_PROFILE "
                    "message but you must ensure that the profile is sent (non-strictly) before "
                    "the REGISTER_JOB message.",
@@ -609,13 +609,22 @@ void server_on_register_profile(ServerData * data,
     ProfileRegisteredByDPMessage * message = (ProfileRegisteredByDPMessage *) task_data->data;
     (void) message;
 
+    // Retrieve the workload, or create if it does not exist yet
+    Workload * workload = nullptr;
+    if (data->context->workloads.exists(message->workload_name))
+    {
+        workload = data->context->workloads.at(message->workload_name);
+    }
+    else
+    {
+        workload = Workload::new_dynamic_workload(message->workload_name);
+        data->context->workloads.insert_workload(workload->name, workload);
+    }
+
     XBT_DEBUG("New dynamically registered profile %s to workload %s",
                 message->profile_name.c_str(),
                 message->workload_name.c_str());
-    // Does nothing.
-    // Just here to keep the usual time increases from protocol reader to orchestrator.
 
-    Workload * workload = data->context->workloads.at(message->workload_name);
     if (!workload->profiles->exists(message->profile_name))
     {
         XBT_INFO("Adding dynamically registered profile %s to workload %s",
