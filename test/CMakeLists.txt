@@ -203,6 +203,7 @@ set(BATWLOAD_smpi_compute1 "smpicomp1!${CMAKE_SOURCE_DIR}/workloads/test_smpi_co
 set(BATWLOAD_smpi_compute2 "smpicomp2!${CMAKE_SOURCE_DIR}/workloads/test_smpi_compute_only_2_jobs.json")
 set(BATWLOAD_smpi_mixed "smpimixed!${CMAKE_SOURCE_DIR}/workloads/test_smpi_mixed_comp_comm.json")
 set(BATWLOAD_smpi_mapping "smpimapping!${CMAKE_SOURCE_DIR}/workloads/test_smpi_mapping.json")
+set(BATWLOAD_smpi_collectives "smpicollectives!${CMAKE_SOURCE_DIR}/workloads/test_smpi_collectives.json")
 
 # Algorithm input syntax:
 # "algo_name!algo_name_in_batsched"
