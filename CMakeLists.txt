@@ -96,7 +96,8 @@ include_directories(${INTERVALSET_INCLUDE_DIR})
 ##################
 # Batsim version #
 ##################
-set(default_batsim_version "v2.0.0")
+file(READ "VERSION" from_file_version)
+set(default_batsim_version "${from_file_version}")
 include(GetGitRevisionDescription)
 git_describe(batsim_version)
 message(STATUS "Batsim version from git: ${batsim_version}")
