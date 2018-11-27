@@ -36,7 +36,11 @@ Fundamental architecture approach:
                 -   **Memory**: amount of storage shared by all processors in the node.
 
 Energy and computational power are expressed per core for fine grain analysis. Cores are SimGrid *hosts*, so they are considered as individual resources.  
-Network types apply to both the node up / down links, the cluster backbones and the global links in the main zone. 
+Network types apply to both the node up / down links, the cluster backbones and the global links in the main zone.
+
+## Requirements
+
+-   [LXML](https://pypi.org/project/lxml/) Python package
 
 ## Usage
 
