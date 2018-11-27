@@ -41,21 +41,19 @@ found in the [SimGrid repository](https://github.com/simgrid/simgrid).
 
 External References
 -------------------
-*   Chapters 2 and 3 of Millian Poquet's
+-   Chapters 2 and 3 of Millian Poquet's
     [PhD manuscript](https://mpoquet.github.io/research/phd/manuscript.pdf)
     explain in detail some of Batsim design choices and how Batsim works
     internally. The corresponding
     [defense slides](https://mpoquet.github.io/research/phd/defense_slides.pdf)
     may also interest you.
-
-*   Batsim scientific publication pre-print is available on HAL:
+-   Batsim scientific publication pre-print is available on HAL:
     <https://hal.inria.fr/hal-01333471v1>.
     The corresponding [slides](./publications/Batsim\_JSSPP\_2016.pdf) may
     also interest you for a better understanding of what Batsim is
     and for seeking whether it may be interesting for you.
     These slides have been made for the JSSPP 2016 IPDPS workshop.
-
-*   Batsim code documentation can be found
+-   Batsim code documentation can be found
     [there](http://batsim.gforge.inria.fr/batsim/doxygen).
 
 Quick links
@@ -87,8 +85,8 @@ Tools
 
 As Batsim simulation involve multiple processes, they may be tricky to manage.  
 Some tools already exist to achieve this goal:
--   python tools are located [there](./tools/experiments)
--   a more robust and modular approach is conducted
+-   Python tools are located [there](./tools/experiments)
+-   A more robust and modular approach is conducted
     [there](https://gitlab.inria.fr/batsim/batexpe) and is expected to deprecate
     aforementioned python tools.
 
