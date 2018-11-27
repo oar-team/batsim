@@ -26,18 +26,8 @@ void smpi_replay_process(Job* job, SmpiProfileData * profile_data, simgrid::s4u:
     (void) ret; // Avoids a warning if assertions are ignored
     xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
-    char * trace_filename = xbt_strdup((char*) profile_data->trace_filenames[rank].c_str());
-
-    int argc    = 5;
-    char** argv = xbt_new(char*, argc);
-    argv[0]     = xbt_strdup("1");        // log only?
-    argv[1]     = str_instance_id;        // application instance
-    argv[2]     = bprintf("%d", rank);    // rank
-    argv[3]     = trace_filename;         // smpi trace file for this rank
-    argv[4]     = xbt_strdup("0");        // ?
-
     XBT_INFO("Replaying rank %d of job %s (SMPI)", rank, job->id.to_string().c_str());
-    smpi_replay_run(&argc, &argv);
+    smpi_replay_run(str_instance_id, rank, 0, profile_data->trace_filenames[rank].c_str());
     XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_string().c_str());
 
     barrier->wait();
