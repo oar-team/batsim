@@ -360,7 +360,7 @@ options to the scheduler.
         "profiles": {
           "26dceb":{
             "simple": {
-              "type": "msg_par",
+              "type": "parallel",
               "cpu": [5e6,  0,  0,  0],
               "com": [5e6,  0,  0,  0,
                       5e6,5e6,  0,  0,
@@ -368,17 +368,17 @@ options to the scheduler.
                       5e6,5e6,5e6,  0]
             },
             "homogeneous": {
-              "type": "msg_par_hg",
+              "type": "parallel_homogeneous",
               "cpu": 10e6,
               "com": 1e6
             },
             "homogeneous_no_cpu": {
-              "type": "msg_par_hg",
+              "type": "parallel_homogeneous",
               "cpu": 0,
               "com": 1e6
             },
             "homogeneous_no_com": {
-              "type": "msg_par_hg",
+              "type": "parallel_homogeneous",
               "cpu": 2e5,
               "com": 0
             },
@@ -392,7 +392,7 @@ options to the scheduler.
               "delay": 20.20
             },
             "homogeneous_total": {
-              "type": "msg_par_hg_tot",
+              "type": "parallel_homogeneous_total",
               "cpu": 10e6,
               "com": 1e6
             }
@@ -665,7 +665,7 @@ for resource id 3).
 For certain job profiles that involve storage you may need to define a
 ``storage_mapping`` between the storage label defined in the job profile
 definition and the storage resource id on the platform. For example, the job
-profile of type ``msg_par_hg_pfs`` contains this field ``"storage": "pfs"``.
+profile of type ``parallel_homogeneous_pfs`` contains this field ``"storage": "pfs"``.
 In order to select what is the resource that corresponds to the
 ``"pfs"`` storage, you should provide a mapping for this label:
 ``"storage_mapping": { "pfs": 2 }``. If no mapping is provided, Batsim will guess
@@ -674,7 +674,7 @@ the storage mapping only if one storage resource is provided on the platform.
 Another optional field is ``additional_io_job`` that permits the scheduler 
 to add a job, that represents the IO traffic, dynamically at execution
 time. This dynamicity is necessary when the IO traffic depends on the job
-allocation. It only works for MSG based job profile types for the additional IO
+allocation. It only works for parallel task based job profile types for the additional IO
 job and the job itself. The given IO job will be merged to the actual job before
 its execution. The additional job allocation may be different from the job
 allocation itself, for example when some IO nodes are involved.
@@ -698,7 +698,7 @@ allocation itself, for example when some IO nodes are involved.
     "alloc": "2-3 5-6",
     "profile_name": "my_io_job",
     "profile": {
-      "type": "msg_par",
+      "type": "parallel",
       "cpu": 0,
       "com": [0  ,5e6,5e6,5e6,
               5e6,0  ,5e6,0  ,

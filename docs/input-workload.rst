@@ -96,7 +96,7 @@ Here is an example of a parallel task that can be used by any job requesting 4 m
 .. code:: json
 
     {
-      "type": "msg_par",
+      "type": "parallel",
       "cpu": [5e6,  0,  0,  0],
       "com": [5e6,  0,  0,  0,
               5e6,5e6,  0,  0,
@@ -123,7 +123,7 @@ This profile type is a convenient way to generate an homogeneous `Parallel task`
 .. code:: json
 
     {
-      "type": "msg_par_hg",
+      "type": "parallel_homogeneous",
       "cpu": 10e6,
       "com": 1e6
     }
@@ -147,7 +147,7 @@ It allows such profiles to be used with any number of resources while conserving
 .. code:: json
 
     {
-      "type": "msg_par_hg_tot",
+      "type": "parallel_homogeneous_total",
       "cpu": 10e6,
       "com": 1e6
     }
@@ -183,7 +183,7 @@ centralized storage tier. The storage tier is represented by one host of the :re
 .. code:: json
 
     {
-      "type": "msg_par_hg_pfs",
+      "type": "parallel_homogeneous_pfs",
       "bytes_to_read": 10e5,
       "bytes_to_write": 10e5,
       "storage": "nfs"

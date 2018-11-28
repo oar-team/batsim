@@ -44,6 +44,14 @@ Changed (**breaks command-line interface**)
   ``--enable-time-sharing-on-compute`` and ``--disable-time-sharing-on-storage``,
   as resource roles have been introduced.
 
+Changed (**breaks workload format**)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Profile types of parallel jobs has been renamed:
+  - ``msg_par`` into ``parallel``
+  - ``msg_par_hg`` into ``parallel_homogeneous``
+  - ``msg_par_hg_tot`` into ``parallel_homogeneous_total``
+  - ``msg_par_hg_pfs`` into ``parallel_homogeneous_pfs``
+
 Added (new command-line options)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
