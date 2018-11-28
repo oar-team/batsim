@@ -287,17 +287,17 @@
   "profiles": {
     "5.0": {
       "com": 0,
-      "type": "msg_par_hg",
+      "type": "parallel_homogeneous",
       "cpu": 500000000.0
     },
     "10.0": {
       "com": 0,
-      "type": "msg_par_hg",
+      "type": "parallel_homogeneous",
       "cpu": 1000000000.0
     },
     "1.0": {
       "com": 0,
-      "type": "msg_par_hg",
+      "type": "parallel_homogeneous",
       "cpu": 100000000.0
     }
   }
