@@ -154,7 +154,7 @@ void Workload::check_single_job_validity(const Job * job)
                job->id.to_string().c_str(), job->profile.c_str());
 
     const Profile * profile = profiles->at(job->profile);
-    if (profile->type == ProfileType::MSG_PARALLEL)
+    if (profile->type == ProfileType::PARALLEL)
     {
         MsgParallelProfileData * data = (MsgParallelProfileData *) profile->data;
         (void) data; // Avoids a warning if assertions are ignored
