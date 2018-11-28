@@ -1,0 +1,56 @@
+{
+  "Xeon E5540": {
+    "_arch": "Nehalem",
+    "id": "xe5540",
+    "type": "CPU",
+    "nb_cores": "4",
+    "clock_ghz": "2.53",
+    "tdp_watts": "80",
+    "dpflops_per_cycle": "4"
+  },
+  "Xeon E5-4657L v2": {
+    "_arch": "Ivy Bridge",
+    "id": "xe54657Lv2",
+    "type": "CPU",
+    "nb_cores": "12",
+    "clock_ghz": "2.4",
+    "tdp_watts": "115",
+    "dpflops_per_cycle": "8"
+  },
+  "Xeon E5-4669 v3": {
+    "_arch": "Haswell",
+    "id": "xe54669v3",
+    "type": "CPU",
+    "nb_cores": "18",
+    "clock_ghz": "2.1",
+    "tdp_watts": "135",
+    "dpflops_per_cycle": "16"
+  },
+  "Xeon Silver 4114": {
+    "_arch": "Skylake",
+    "id": "xs4114",
+    "type": "CPU",
+    "nb_cores": "10",
+    "clock_ghz": "2.2",
+    "tdp_watts": "85",
+    "dpflops_per_cycle": "16"
+  },
+  "Xeon Platinum 8180": {
+    "_arch": "Skylake",
+    "id": "xp8180",
+    "type": "CPU",
+    "nb_cores": "28",
+    "clock_ghz": "3.8",
+    "tdp_watts": "205",
+    "dpflops_per_cycle": "32"
+  },
+  "Xeon Phi 7290F": {
+    "_arch": "Knights Landing",
+    "id": "xphi7290f",
+    "type": "MIC",
+    "nb_cores": "72",
+    "clock_ghz": "1.5",
+    "tdp_watts": "260",
+    "dpflops_per_cycle": "32"
+  }
+}

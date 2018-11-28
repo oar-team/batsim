@@ -1,0 +1,21 @@
+{
+  "clusters": [
+    {
+      "nodes": [
+        { "type": "System x iDataPlex dx360 M4", "number": "158" }
+      ],
+      "cluster_network": "InfiniBand FDR x4"
+    },
+    { "nodes": [
+        { "type": "System x iDataPlex dx360 M3", "number": "5" }
+      ],
+      "cluster_network": "InfiniBand FDR x4"
+    },
+    { "nodes": [
+        { "type": "POWER 730 Express", "number": "10" }
+      ],
+      "cluster_network": "InfiniBand FDR x4"
+    }
+  ],
+  "dc_network": "InfiniBand FDR x4"
+}

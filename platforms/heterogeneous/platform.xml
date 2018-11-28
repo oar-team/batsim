@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE platform
+  SYSTEM 'https://simgrid.org/simgrid.dtd'>
+<platform version="4.1">
+  <zone id="main" routing="Full">
+    <zone id="master" routing="None">
+      <host id="master_host" speed="1Gf"/>
+    </zone>
+    <zone id="config" routing="None">
+      <zone id="node" routing="None">
+        <zone id="Example Node" routing="None">
+          <prop id="memory" value="128"/>
+        </zone>
+      </zone>
+    </zone>
+    <zone id="clu_0" routing="Cluster">
+      <link bandwidth="10.0Gbps" id="udl_example_node_0_clu_0" latency="0.5us" sharing_policy="SHARED"/>
+      <host id="cor_0_example_cpu_0_example_node_0_clu_0" speed="10.0Gf, 9.0Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="4.0:8.0, 4.0:7.2, 1.0:1.0, 3.0:3.0, 3.0:3.0"/>
+        <prop id="watt_off" value="2.0"/>
+      </host>
+      <host_link down="udl_example_node_0_clu_0" id="cor_0_example_cpu_0_example_node_0_clu_0" up="udl_example_node_0_clu_0"/>
+      <host id="cor_0_example_gpu_0_example_node_0_clu_0" speed="1.0Gf, 0.9Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="0.2:0.5, 0.2:0.45, 0.05:0.05, 0.25:0.25, 0.22:0.22"/>
+        <prop id="watt_off" value="0.05"/>
+      </host>
+      <host_link down="udl_example_node_0_clu_0" id="cor_0_example_gpu_0_example_node_0_clu_0" up="udl_example_node_0_clu_0"/>
+      <host id="cor_1_example_gpu_0_example_node_0_clu_0" speed="1.0Gf, 0.9Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="0.2:0.5, 0.2:0.45, 0.05:0.05, 0.25:0.25, 0.22:0.22"/>
+        <prop id="watt_off" value="0.05"/>
+      </host>
+      <host_link down="udl_example_node_0_clu_0" id="cor_1_example_gpu_0_example_node_0_clu_0" up="udl_example_node_0_clu_0"/>
+      <host id="cor_0_example_gpu_1_example_node_0_clu_0" speed="1.0Gf, 0.9Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="0.2:0.5, 0.2:0.45, 0.05:0.05, 0.25:0.25, 0.22:0.22"/>
+        <prop id="watt_off" value="0.05"/>
+      </host>
+      <host_link down="udl_example_node_0_clu_0" id="cor_0_example_gpu_1_example_node_0_clu_0" up="udl_example_node_0_clu_0"/>
+      <host id="cor_1_example_gpu_1_example_node_0_clu_0" speed="1.0Gf, 0.9Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="0.2:0.5, 0.2:0.45, 0.05:0.05, 0.25:0.25, 0.22:0.22"/>
+        <prop id="watt_off" value="0.05"/>
+      </host>
+      <host_link down="udl_example_node_0_clu_0" id="cor_1_example_gpu_1_example_node_0_clu_0" up="udl_example_node_0_clu_0"/>
+      <link bandwidth="10.0Gbps" id="udl_example_node_1_clu_0" latency="0.5us" sharing_policy="SHARED"/>
+      <host id="cor_0_example_cpu_0_example_node_1_clu_0" speed="10.0Gf, 9.0Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="4.0:8.0, 4.0:7.2, 1.0:1.0, 3.0:3.0, 3.0:3.0"/>
+        <prop id="watt_off" value="2.0"/>
+      </host>
+      <host_link down="udl_example_node_1_clu_0" id="cor_0_example_cpu_0_example_node_1_clu_0" up="udl_example_node_1_clu_0"/>
+      <host id="cor_0_example_gpu_0_example_node_1_clu_0" speed="1.0Gf, 0.9Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="0.2:0.5, 0.2:0.45, 0.05:0.05, 0.25:0.25, 0.22:0.22"/>
+        <prop id="watt_off" value="0.05"/>
+      </host>
+      <host_link down="udl_example_node_1_clu_0" id="cor_0_example_gpu_0_example_node_1_clu_0" up="udl_example_node_1_clu_0"/>
+      <host id="cor_1_example_gpu_0_example_node_1_clu_0" speed="1.0Gf, 0.9Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="0.2:0.5, 0.2:0.45, 0.05:0.05, 0.25:0.25, 0.22:0.22"/>
+        <prop id="watt_off" value="0.05"/>
+      </host>
+      <host_link down="udl_example_node_1_clu_0" id="cor_1_example_gpu_0_example_node_1_clu_0" up="udl_example_node_1_clu_0"/>
+      <host id="cor_0_example_gpu_1_example_node_1_clu_0" speed="1.0Gf, 0.9Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="0.2:0.5, 0.2:0.45, 0.05:0.05, 0.25:0.25, 0.22:0.22"/>
+        <prop id="watt_off" value="0.05"/>
+      </host>
+      <host_link down="udl_example_node_1_clu_0" id="cor_0_example_gpu_1_example_node_1_clu_0" up="udl_example_node_1_clu_0"/>
+      <host id="cor_1_example_gpu_1_example_node_1_clu_0" speed="1.0Gf, 0.9Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="0.2:0.5, 0.2:0.45, 0.05:0.05, 0.25:0.25, 0.22:0.22"/>
+        <prop id="watt_off" value="0.05"/>
+      </host>
+      <host_link down="udl_example_node_1_clu_0" id="cor_1_example_gpu_1_example_node_1_clu_0" up="udl_example_node_1_clu_0"/>
+      <router id="rou_0"/>
+      <backbone bandwidth="10.0Gbps" id="bbo_0" latency="0.5us"/>
+    </zone>
+    <zone id="clu_1" routing="Cluster">
+      <link bandwidth="10.0Gbps" id="udl_example_node_0_clu_1" latency="0.5us" sharing_policy="SHARED"/>
+      <host id="cor_0_example_cpu_0_example_node_0_clu_1" speed="10.0Gf, 9.0Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="4.0:8.0, 4.0:7.2, 1.0:1.0, 3.0:3.0, 3.0:3.0"/>
+        <prop id="watt_off" value="2.0"/>
+      </host>
+      <host_link down="udl_example_node_0_clu_1" id="cor_0_example_cpu_0_example_node_0_clu_1" up="udl_example_node_0_clu_1"/>
+      <host id="cor_0_example_gpu_0_example_node_0_clu_1" speed="1.0Gf, 0.9Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="0.2:0.5, 0.2:0.45, 0.05:0.05, 0.25:0.25, 0.22:0.22"/>
+        <prop id="watt_off" value="0.05"/>
+      </host>
+      <host_link down="udl_example_node_0_clu_1" id="cor_0_example_gpu_0_example_node_0_clu_1" up="udl_example_node_0_clu_1"/>
+      <host id="cor_1_example_gpu_0_example_node_0_clu_1" speed="1.0Gf, 0.9Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="0.2:0.5, 0.2:0.45, 0.05:0.05, 0.25:0.25, 0.22:0.22"/>
+        <prop id="watt_off" value="0.05"/>
+      </host>
+      <host_link down="udl_example_node_0_clu_1" id="cor_1_example_gpu_0_example_node_0_clu_1" up="udl_example_node_0_clu_1"/>
+      <host id="cor_0_example_gpu_1_example_node_0_clu_1" speed="1.0Gf, 0.9Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="0.2:0.5, 0.2:0.45, 0.05:0.05, 0.25:0.25, 0.22:0.22"/>
+        <prop id="watt_off" value="0.05"/>
+      </host>
+      <host_link down="udl_example_node_0_clu_1" id="cor_0_example_gpu_1_example_node_0_clu_1" up="udl_example_node_0_clu_1"/>
+      <host id="cor_1_example_gpu_1_example_node_0_clu_1" speed="1.0Gf, 0.9Gf">
+        <prop id="node_type" value="Example Node"/>
+        <prop id="sleep_pstates" value="2:3:4"/>
+        <prop id="watt_per_state" value="0.2:0.5, 0.2:0.45, 0.05:0.05, 0.25:0.25, 0.22:0.22"/>
+        <prop id="watt_off" value="0.05"/>
+      </host>
+      <host_link down="udl_example_node_0_clu_1" id="cor_1_example_gpu_1_example_node_0_clu_1" up="udl_example_node_0_clu_1"/>
+      <router id="rou_1"/>
+      <backbone bandwidth="10.0Gbps" id="bbo_1" latency="0.5us"/>
+    </zone>
+    <link bandwidth="10.0Gbps" id="tomh_clu_0" latency="0.5us"/>
+    <link bandwidth="10.0Gbps" id="tomh_clu_1" latency="0.5us"/>
+    <zoneRoute dst="master" gw_dst="master_host" gw_src="rou_0" src="clu_0">
+      <link_ctn id="tomh_clu_0"/>
+    </zoneRoute>
+    <zoneRoute dst="master" gw_dst="master_host" gw_src="rou_1" src="clu_1">
+      <link_ctn id="tomh_clu_1"/>
+    </zoneRoute>
+  </zone>
+</platform>

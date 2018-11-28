@@ -1,0 +1,12 @@
+{
+  "Superserver SYS-6019P-MT": {
+    "id": "sys6019p",
+    "processors": [
+      { "type": "Xeon Silver 4114", "number": "2" }
+    ],
+    "memory": {
+      "type": "DDR4-2400",
+      "capacity_gib": "32"
+    }
+  }
+}
