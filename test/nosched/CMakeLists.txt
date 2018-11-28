@@ -9,6 +9,7 @@ list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_tuto1}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_smpi_compute1}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_smpi_compute2}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_smpi_mixed}")
+list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_smpi_collectives}")
 list(APPEND simu_instances "${SGPLATFORM_cluster512}?${BATWLOAD_delays}")
 list(APPEND simu_instances "${SGPLATFORM_cluster512}?${BATWLOAD_long}")
 
