@@ -33,7 +33,7 @@ foreach(simu_instance IN LISTS simu_instances)
             ALGORITHM ${algo_realname}
             OTH_BATSIM_ARGS ""
             OTH_BATSCHED_ARGS ""
-            ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end --expect-robin-success --expect-sched-success --expect-batsim-success"
+            ROBINTEST_EXPECTATION "--expect-ctx-clean-at-begin --expect-robin-success --expect-sched-success --expect-batsim-success"
             CHECK_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/check_duration_consistency.py"
         )
     endforeach()
