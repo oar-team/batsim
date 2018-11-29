@@ -49,7 +49,7 @@ foreach(simu_instance IN LISTS simu_instances)
             PLATFORM ${platform_filename}
             WORKLOAD ${workload_filename}
             ALGORITHM ${algo_realname}
-            OTH_BATSIM_ARGS "--enable-redis"
+            OTH_BATSIM_ARGS "--enable-redis --redis-prefix '${thistest_NAME}'"
             OTH_BATSCHED_ARGS ""
             ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-robin-success --expect-sched-success --expect-batsim-success"
         )

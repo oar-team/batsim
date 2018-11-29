@@ -45,7 +45,7 @@ foreach(simu_instance IN LISTS simu_instances)
 
         set(thistest_OTH_BATSIM_ARGS "--forward-profiles-on-submission")
         if (${redis_mode_value} MATCHES "true")
-            set(thistest_OTH_BATSIM_ARGS "${thistest_OTH_BATSIM_ARGS} --enable-redis")
+            set(thistest_OTH_BATSIM_ARGS "${thistest_OTH_BATSIM_ARGS} --enable-redis --redis-prefix '${thistest_NAME}'")
         endif()
 
         # Create the test
