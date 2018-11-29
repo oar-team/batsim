@@ -1166,14 +1166,11 @@ void JsonProtocolReader::handle_set_job_metadata(int event_number,
     boost::regex r("[^\"]*");
     xbt_assert(boost::regex_match(metadata, r), "Invalid JSON message: the 'metadata' value in the 'data' value of event %d (SET_JOB_METADATA) should not contain double quotes (got ###%s###)", event_number, metadata.c_str());
 
-    JobIdentifier job_identifier = JobIdentifier(job_id);
-    if (!(context->workloads.job_is_registered(job_identifier)))
-    {
-        xbt_assert(false, "Invalid message in event %d (SET_JOB_METADATA): The following job does not exist: %s", event_number, job_id.c_str());
-    }
+    SetJobMetadataMessage * message = new SetJobMetadataMessage;
+    message->job_id = JobIdentifier(job_id);
+    message->metadata = metadata;
 
-    Job * job = context->workloads.job_at(job_identifier);
-    job->metadata = metadata;
+    send_message_at_time(timestamp, "server", IPMessageType::SCHED_SET_JOB_METADATA, (void *) message);
 }
 
 void JsonProtocolReader::handle_change_job_state(int event_number,

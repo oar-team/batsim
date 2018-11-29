@@ -58,6 +58,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_KILL_JOB] = server_on_kill_jobs;
     handler_map[IPMessageType::SCHED_CALL_ME_LATER] = server_on_call_me_later;
     handler_map[IPMessageType::SCHED_TELL_ME_ENERGY] = server_on_sched_tell_me_energy;
+    handler_map[IPMessageType::SCHED_SET_JOB_METADATA] = server_on_set_job_metadata;
     handler_map[IPMessageType::SCHED_WAIT_ANSWER] = server_on_sched_wait_answer;
     handler_map[IPMessageType::WAIT_QUERY] = server_on_wait_query;
     handler_map[IPMessageType::SCHED_READY] = server_on_sched_ready;
@@ -642,6 +643,23 @@ void server_on_register_profile(ServerData * data,
             message->workload_name.c_str(),
             workload->profiles->at(message->profile_name)->json_description.c_str());
     }
+}
+
+void server_on_set_job_metadata(ServerData * data,
+                                IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr);
+    SetJobMetadataMessage * message = (SetJobMetadataMessage *)task_data->data;
+
+    JobIdentifier job_identifier = JobIdentifier(message->job_id);
+    if (!(data->context->workloads.job_is_registered(job_identifier)))
+    {
+        xbt_die("The job '%s' does not exist, cannot set its metadata", message->job_id.to_string().c_str());
+    }
+
+    Job * job = data->context->workloads.job_at(job_identifier);
+    job->metadata = message->metadata;
+    XBT_DEBUG("Metadata of job '%s' has been set", message->job_id.to_string().c_str());
 }
 
 void server_on_change_job_state(ServerData * data,
