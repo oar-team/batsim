@@ -37,6 +37,7 @@ enum class IPMessageType
     ,SCHED_KILL_JOB         //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (kill a job).
     ,SCHED_CALL_ME_LATER    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to be called in the future).
     ,SCHED_TELL_ME_ENERGY   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform consumed energy).
+    ,SCHED_SET_JOB_METADATA //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a SET_JOB_METADATA message).
     ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,WAIT_QUERY             //!< Server -> Scheduler. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,SCHED_READY            //!< Scheduler -> Server. The scheduler tells the server that the scheduler is ready (the scheduler is ready, messages can be sent to it).
@@ -105,6 +106,15 @@ struct ProfileRegisteredByDPMessage
     std::string workload_name; //!< The workload name
     std::string profile_name; //!< The profile name
     std::string profile; //!< The registered profile data
+};
+
+/**
+ * @brief The content of the SetJobMetadataMessage message
+ */
+struct SetJobMetadataMessage
+{
+    JobIdentifier job_id; //!< The JobIdentifier of the new job
+    std::string metadata; //!< The job metadata string (empty if redis is enabled)
 };
 
 /**

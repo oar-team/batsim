@@ -286,7 +286,7 @@ void Jobs::displayDebug() const
     s += "Jobs : [" + boost::algorithm::join(jobsVector, ", ") + "]";
 
     // Let us display the string which has been built
-    XBT_INFO("%s", s.c_str());
+    XBT_DEBUG("%s", s.c_str());
 }
 
 const std::map<JobIdentifier, Job* > &Jobs::jobs() const

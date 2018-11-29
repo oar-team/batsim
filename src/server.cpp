@@ -58,6 +58,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_KILL_JOB] = server_on_kill_jobs;
     handler_map[IPMessageType::SCHED_CALL_ME_LATER] = server_on_call_me_later;
     handler_map[IPMessageType::SCHED_TELL_ME_ENERGY] = server_on_sched_tell_me_energy;
+    handler_map[IPMessageType::SCHED_SET_JOB_METADATA] = server_on_set_job_metadata;
     handler_map[IPMessageType::SCHED_WAIT_ANSWER] = server_on_sched_wait_answer;
     handler_map[IPMessageType::WAIT_QUERY] = server_on_wait_query;
     handler_map[IPMessageType::SCHED_READY] = server_on_sched_ready;
@@ -559,13 +560,17 @@ void server_on_register_job(ServerData * data,
     xbt_assert(data->context->workloads.exists(message->job_id.workload_name),
                "Internal error: Workload '%s' should exist.",
                message->job_id.workload_name.c_str());
-    xbt_assert(data->context->workloads.job_is_registered(message->job_id),
-               "Internal error: job '%s' should exist.",
-               message->job_id.to_string().c_str());
-
-    const Job * job = data->context->workloads.job_at(message->job_id);
+    xbt_assert(!data->context->workloads.job_is_registered(message->job_id),
+               "Cannot register new job '%s', it already exists in the workload.", message->job_id.to_string().c_str());
 
     Workload * workload = data->context->workloads.at(message->job_id.workload_name);
+
+    // Create the job.
+    XBT_DEBUG("Parsing user-submitted job %s", message->job_id.to_string().c_str());
+    Job * job = Job::from_json(message->job_description, workload,
+                               "Invalid JSON job submitted by the scheduler");
+    xbt_assert(job->id.job_name == message->job_id.job_name, "Internal error");
+    xbt_assert(job->id.workload_name == message->job_id.workload_name, "Internal error");
 
     if (!workload->profiles->exists(job->profile))
     {
@@ -581,9 +586,12 @@ void server_on_register_job(ServerData * data,
     }
 
     workload->check_single_job_validity(job);
+    workload->jobs->add_job(job);
+    job->state = JobState::JOB_STATE_SUBMITTED;
 
     if (data->context->registration_sched_ack)
     {
+        // TODO Sleep until submit time is reached before sending the ack (JOB_SUBMITTED)
         string job_json_description, profile_json_description;
 
         if (!data->context->redis_enabled)
@@ -644,12 +652,33 @@ void server_on_register_profile(ServerData * data,
     }
 }
 
+void server_on_set_job_metadata(ServerData * data,
+                                IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr);
+    SetJobMetadataMessage * message = (SetJobMetadataMessage *)task_data->data;
+
+    JobIdentifier job_identifier = JobIdentifier(message->job_id);
+    if (!(data->context->workloads.job_is_registered(job_identifier)))
+    {
+        xbt_die("The job '%s' does not exist, cannot set its metadata", message->job_id.to_string().c_str());
+    }
+
+    Job * job = data->context->workloads.job_at(job_identifier);
+    job->metadata = message->metadata;
+    XBT_DEBUG("Metadata of job '%s' has been set", message->job_id.to_string().c_str());
+}
+
 void server_on_change_job_state(ServerData * data,
                                 IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr);
     ChangeJobStateMessage * message = (ChangeJobStateMessage *) task_data->data;
 
+    if (!(data->context->workloads.job_is_registered(message->job_id)))
+    {
+        xbt_die("The job '%s' does not exist.", message->job_id.to_string().c_str());
+    }
     Job * job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Change job state: Job %s to state %s",
@@ -715,9 +744,14 @@ void server_on_to_job_msg(ServerData * data,
     xbt_assert(task_data->data != nullptr);
     ToJobMessage * message = (ToJobMessage *) task_data->data;
 
+    if (!(data->context->workloads.job_is_registered(message->job_id)))
+    {
+        xbt_die("The job '%s' does not exist, cannot send a message to that job.",
+                message->job_id.to_string().c_str());
+    }
     Job * job = data->context->workloads.job_at(message->job_id);
 
-    XBT_INFO("Send message to job: Job %s message=%s",
+    XBT_INFO("Send message to job: Job '%s' message='%s'",
              job->id.to_string().c_str(),
              message->message.c_str());
 
@@ -750,11 +784,22 @@ void server_on_reject_job(ServerData * data,
     xbt_assert(task_data->data != nullptr);
     JobRejectedMessage * message = (JobRejectedMessage *) task_data->data;
 
+    if (!(data->context->workloads.job_is_registered(message->job_id)))
+    {
+        xbt_die("Job '%s' does not exist.", message->job_id.to_string().c_str());
+    }
+
     Job * job = data->context->workloads.job_at(message->job_id);
+    (void) job; // Avoids a warning if assertions are ignored
+    xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
+               "Invalid rejection received: job '%s' cannot be rejected at the present time. "
+               "To be rejected, a job must be submitted and not allocated yet.",
+               job->id.to_string().c_str());
+
     job->state = JobState::JOB_STATE_REJECTED;
     data->nb_completed_jobs++;
 
-    XBT_INFO("Job %s has been rejected",
+    XBT_INFO("Job '%s' has been rejected",
              job->id.to_string().c_str());
 
     check_simulation_finished(data);
@@ -770,6 +815,9 @@ void server_on_kill_jobs(ServerData * data,
 
     for (const JobIdentifier & job_id : message->jobs_ids)
     {
+        xbt_assert(data->context->workloads.job_is_registered(job_id),
+                   "Trying to kill job '%s' but it does not exist.", job_id.to_string().c_str());
+
         Job * job = data->context->workloads.job_at(job_id);
 
         // Let's discard jobs whose kill has already been requested
