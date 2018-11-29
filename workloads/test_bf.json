@@ -96,17 +96,17 @@
 
     "profiles": {
         "1": {
-            "type": "msg_par_hg",
+            "type": "parallel_homogeneous",
             "cpu": 100e6,
             "com": 0
         },
         "5": {
-            "type": "msg_par_hg",
+            "type": "parallel_homogeneous",
             "cpu": 500e6,
             "com": 0
         },
         "10": {
-            "type": "msg_par_hg",
+            "type": "parallel_homogeneous",
             "cpu": 1000e6,
             "com": 0
         }

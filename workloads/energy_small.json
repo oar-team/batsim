@@ -716,7 +716,7 @@
             ],
             "np": 1,
             "runtime": 88.51,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.B.16": {
             "com": [
@@ -998,7 +998,7 @@
             ],
             "np": 16,
             "runtime": 10.346,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.B.2": {
             "com": [
@@ -1014,7 +1014,7 @@
             ],
             "np": 2,
             "runtime": 62.08,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.B.32": {
             "com": [
@@ -2080,7 +2080,7 @@
             ],
             "np": 32,
             "runtime": 6.31,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.B.4": {
             "com": [
@@ -2110,7 +2110,7 @@
             ],
             "np": 4,
             "runtime": 35.932,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.B.8": {
             "com": [
@@ -2192,7 +2192,7 @@
             ],
             "np": 8,
             "runtime": 19.294,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.C.1": {
             "com": [
@@ -2204,7 +2204,7 @@
             ],
             "np": 1,
             "runtime": 386.48,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.C.16": {
             "com": [
@@ -2486,7 +2486,7 @@
             ],
             "np": 16,
             "runtime": 31.998,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.C.2": {
             "com": [
@@ -2502,7 +2502,7 @@
             ],
             "np": 2,
             "runtime": 265.8,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.C.32": {
             "com": [
@@ -3568,7 +3568,7 @@
             ],
             "np": 32,
             "runtime": 22.671,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.C.4": {
             "com": [
@@ -3598,7 +3598,7 @@
             ],
             "np": 4,
             "runtime": 151.94,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.C.8": {
             "com": [
@@ -3680,7 +3680,7 @@
             ],
             "np": 8,
             "runtime": 80.71,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.D.16": {
             "com": [
@@ -3962,7 +3962,7 @@
             ],
             "np": 16,
             "runtime": 1119.22,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.D.32": {
             "com": [
@@ -5028,7 +5028,7 @@
             ],
             "np": 32,
             "runtime": 568.66,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "ft.D.8": {
             "com": [
@@ -5110,7 +5110,7 @@
             ],
             "np": 8,
             "runtime": 2190.82,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "is.B.1": {
             "com": [
@@ -5122,7 +5122,7 @@
             ],
             "np": 1,
             "runtime": 9.257,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "is.B.16": {
             "com": [
@@ -5404,7 +5404,7 @@
             ],
             "np": 16,
             "runtime": 1.561,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "is.B.2": {
             "com": [
@@ -5420,7 +5420,7 @@
             ],
             "np": 2,
             "runtime": 6.609,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "is.B.32": {
             "com": [
@@ -6486,7 +6486,7 @@
             ],
             "np": 32,
             "runtime": 1.908,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "is.B.4": {
             "com": [
@@ -6516,7 +6516,7 @@
             ],
             "np": 4,
             "runtime": 3.983,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "is.B.8": {
             "com": [
@@ -6598,7 +6598,7 @@
             ],
             "np": 8,
             "runtime": 2.33,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "is.C.16": {
             "com": [
@@ -6880,7 +6880,7 @@
             ],
             "np": 16,
             "runtime": 5.59,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "is.C.2": {
             "com": [
@@ -6896,7 +6896,7 @@
             ],
             "np": 2,
             "runtime": 26.481,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "is.C.32": {
             "com": [
@@ -7962,7 +7962,7 @@
             ],
             "np": 32,
             "runtime": 3.3,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "is.C.4": {
             "com": [
@@ -7992,7 +7992,7 @@
             ],
             "np": 4,
             "runtime": 16.684,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "is.C.8": {
             "com": [
@@ -8074,7 +8074,7 @@
             ],
             "np": 8,
             "runtime": 9.567,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "is.D.32": {
             "com": [
@@ -9140,7 +9140,7 @@
             ],
             "np": 32,
             "runtime": 46.028,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "lu.B.1": {
             "com": [
@@ -9152,7 +9152,7 @@
             ],
             "np": 1,
             "runtime": 279.99,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "lu.B.16": {
             "com": [
@@ -9434,7 +9434,7 @@
             ],
             "np": 16,
             "runtime": 25.905,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "lu.B.2": {
             "com": [
@@ -9450,7 +9450,7 @@
             ],
             "np": 2,
             "runtime": 140.95,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "lu.B.32": {
             "com": [
@@ -10516,7 +10516,7 @@
             ],
             "np": 32,
             "runtime": 13.385,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "lu.B.4": {
             "com": [
@@ -10546,7 +10546,7 @@
             ],
             "np": 4,
             "runtime": 87.69,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "lu.B.8": {
             "com": [
@@ -10628,7 +10628,7 @@
             ],
             "np": 8,
             "runtime": 48.8,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "lu.C.1": {
             "com": [
@@ -10640,7 +10640,7 @@
             ],
             "np": 1,
             "runtime": 1176.93,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "lu.C.16": {
             "com": [
@@ -10922,7 +10922,7 @@
             ],
             "np": 16,
             "runtime": 95.56,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "lu.C.2": {
             "com": [
@@ -10938,7 +10938,7 @@
             ],
             "np": 2,
             "runtime": 593.59,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "lu.C.32": {
             "com": [
@@ -12004,7 +12004,7 @@
             ],
             "np": 32,
             "runtime": 52.81,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "lu.C.4": {
             "com": [
@@ -12034,7 +12034,7 @@
             ],
             "np": 4,
             "runtime": 290.53,
-            "type": "msg_par"
+            "type": "parallel"
         },
         "lu.C.8": {
             "com": [
@@ -12116,7 +12116,7 @@
             ],
             "np": 8,
             "runtime": 179.08,
-            "type": "msg_par"
+            "type": "parallel"
         }
     }
 }

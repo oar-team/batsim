@@ -6,12 +6,12 @@
     "profiles": {
         "application_1499844549859_0004": {
         "type": "composed", "seq": ["stage_0", "stage_1", "stage_2", "stage_3", "stage_4", "stage_5", "stage_6"]},
-        "stage_0": {"type": "msg_par_hg_tot", "cpu": 20827859103336, "com": 138910339342},
-        "stage_1": {"type": "msg_par_hg_tot", "cpu": 20678869780758, "com": 130181927182},
-        "stage_2": {"type": "msg_par_hg_tot", "cpu": 33008899862280, "com": 207718142435},
-        "stage_3": {"type": "msg_par_hg_tot", "cpu": 41146654204716, "com": 269360833052},
-        "stage_4": {"type": "msg_par_hg_tot", "cpu": 26824581538062, "com": 157679274119},
-        "stage_5": {"type": "msg_par_hg_tot", "cpu": 26963809786644, "com": 166664858275},
-        "stage_6": {"type": "msg_par_hg_tot", "cpu": 22385001149094, "com": 129046216704}
+        "stage_0": {"type": "parallel_homogeneous_total", "cpu": 20827859103336, "com": 138910339342},
+        "stage_1": {"type": "parallel_homogeneous_total", "cpu": 20678869780758, "com": 130181927182},
+        "stage_2": {"type": "parallel_homogeneous_total", "cpu": 33008899862280, "com": 207718142435},
+        "stage_3": {"type": "parallel_homogeneous_total", "cpu": 41146654204716, "com": 269360833052},
+        "stage_4": {"type": "parallel_homogeneous_total", "cpu": 26824581538062, "com": 157679274119},
+        "stage_5": {"type": "parallel_homogeneous_total", "cpu": 26963809786644, "com": 166664858275},
+        "stage_6": {"type": "parallel_homogeneous_total", "cpu": 22385001149094, "com": 129046216704}
     }
 }

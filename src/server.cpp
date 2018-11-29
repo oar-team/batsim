@@ -254,7 +254,7 @@ void server_on_job_submitted(ServerData * data,
         }
 
         // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
-        XBT_DEBUG("Job received: %s\n", job_id.to_string().c_str());
+        XBT_DEBUG("Job received: %s", job_id.to_string().c_str());
 
         XBT_DEBUG("Workloads: %s", data->context->workloads.to_string().c_str());
 
@@ -881,7 +881,7 @@ void server_on_execute_job(ServerData * data,
         }
     }
 
-    // Only MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT profile, or a sequence of
+    // Only PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT profile, or a sequence of
     // those profile, is able to manage the following scenario: The scheduler
     // allocated a different number of resources than the number of requested
     // resources.
@@ -897,7 +897,7 @@ void server_on_execute_job(ServerData * data,
         auto last = profile_seq.end();
         while (first != last and all_profiles_ok)
         {
-            if (job->workload->profiles->at(*first)->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
+            if (job->workload->profiles->at(*first)->type != ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
             {
                 all_profiles_ok = false;
             }
@@ -905,7 +905,7 @@ void server_on_execute_job(ServerData * data,
         }
     }
 
-    if (current_profile->type != ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT
+    if (current_profile->type != ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT
             and (current_profile->type == ProfileType::SEQUENCE and not all_profiles_ok))
     {
         if (allocation->mapping.size() != 0)

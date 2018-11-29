@@ -88,7 +88,7 @@ resources. The profile of the job called is defined by a Json object,
    .. code:: js
 
       "job1_profile": {
-          "type": "msg_par_hg_tot",
+          "type": "parallel_homogeneous_total",
           "cpu": 1e10,
           "com": 1e7,
           "io_reads":  8e8,
@@ -100,7 +100,7 @@ resources. The profile of the job called is defined by a Json object,
    that each node will read half of the data from only one centralized
    storage (located at the resource id 10), but the nodes of the
    application will write on local their local disks (id 2 and 3). A new
-   profile of type ``msg_par`` is generated an submitted to batsim with
+   profile of type ``parallel`` is generated an submitted to batsim with
    the name ``io_for_this_alloc_on_job1``. The kind job profile is
    composed of a computation matrix that may reflect I/O related
    computation (here set to 0), and a communication matrix that
@@ -114,7 +114,7 @@ resources. The profile of the job called is defined by a Json object,
    .. code:: js
 
       "io_for_this_alloc_on_job1": {
-          "type": "msg_par",
+          "type": "parallel",
           "cpu": [0  ,0  ,0  ,0  ,0]
           "com": [0  ,0  ,1e8,0  ,0
           0  ,0  ,0  ,1e8,0

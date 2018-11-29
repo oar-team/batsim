@@ -1,15 +1,15 @@
 {
     "nb_res": 4,
     "jobs": [
-        {"id":1, "subtime":0, "res": 1, "profile": "msg_tot_test"},
-        {"id":2, "subtime":0, "res": 2, "profile": "msg_tot_test"},
-        {"id":3, "subtime":0, "res": 4, "profile": "msg_tot_test"},
-        {"id":4, "subtime":0, "res": 1, "profile": "msg_tot_test"}
+        {"id":1, "subtime":0, "res": 1, "profile": "tot_test"},
+        {"id":2, "subtime":0, "res": 2, "profile": "tot_test"},
+        {"id":3, "subtime":0, "res": 4, "profile": "tot_test"},
+        {"id":4, "subtime":0, "res": 1, "profile": "tot_test"}
     ],
 
     "profiles": {
-        "msg_tot_test": {
-            "type": "msg_par_hg_tot",
+        "tot_test": {
+            "type": "parallel_homogeneous_total",
             "cpu": 1e10,
             "com": 1e7
         }

@@ -23,7 +23,7 @@ using namespace roles;
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  */
-void generate_msg_parallel_task(double *& computation_amount,
+void generate_parallel_task(double *& computation_amount,
                                 double *& communication_amount,
                                 unsigned int nb_res,
                                 void * profile_data)
@@ -50,7 +50,7 @@ void generate_msg_parallel_task(double *& computation_amount,
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  */
-void generate_msg_parallel_homogeneous(double *& computation_amount,
+void generate_parallel_homogeneous(double *& computation_amount,
                                        double *& communication_amount,
                                        unsigned int nb_res,
                                        void * profile_data)
@@ -104,7 +104,7 @@ void generate_msg_parallel_homogeneous(double *& computation_amount,
  *          to be done per host, the user gives the total amounts that should be spread
  *          homogeneously across the hosts.
  */
-void generate_msg_parallel_homogeneous_total_amount(double *& computation_amount,
+void generate_parallel_homogeneous_total_amount(double *& computation_amount,
                                                     double *& communication_amount,
                                                     unsigned int nb_res,
                                                     void * profile_data)
@@ -159,7 +159,7 @@ void generate_msg_parallel_homogeneous_total_amount(double *& computation_amount
  * @details Note that the number of resource is also altered because of the
  *          pfs node that is addded.
  */
-void generate_msg_parallel_homogeneous_with_pfs(double *& computation_amount,
+void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
                                                 double *& communication_amount,
                                                 std::vector<simgrid::s4u::Host*> & hosts_to_use,
                                                 std::map<std::string, int> storage_mapping,
@@ -247,7 +247,7 @@ void generate_msg_parallel_homogeneous_with_pfs(double *& computation_amount,
  * @param[in] profile_data the profile data
  * @param[in] context the batsim context
  */
-void generate_msg_data_staginig_task(double *&  computation_amount,
+void generate_data_staginig_task(double *&  computation_amount,
                                      double *& communication_amount,
                                      std::vector<simgrid::s4u::Host*> & hosts_to_use,
                                      std::map<std::string, int> storage_mapping,
@@ -367,34 +367,34 @@ void generate_matices_from_profile(double *& computation_vector,
 
     switch(profile->type)
     {
-    case ProfileType::MSG_PARALLEL:
-        generate_msg_parallel_task(computation_vector,
+    case ProfileType::PARALLEL:
+        generate_parallel_task(computation_vector,
                                    communication_matrix,
                                    nb_res,
                                    profile->data);
         break;
-    case ProfileType::MSG_PARALLEL_HOMOGENEOUS:
-        generate_msg_parallel_homogeneous(computation_vector,
+    case ProfileType::PARALLEL_HOMOGENEOUS:
+        generate_parallel_homogeneous(computation_vector,
                                           communication_matrix,
                                           nb_res,
                                           profile->data);
         break;
-    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
-        generate_msg_parallel_homogeneous_total_amount(computation_vector,
+    case ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
+        generate_parallel_homogeneous_total_amount(computation_vector,
                                                        communication_matrix,
                                                        nb_res,
                                                        profile->data);
         break;
-    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS:
-        generate_msg_parallel_homogeneous_with_pfs(computation_vector,
+    case ProfileType::PARALLEL_HOMOGENEOUS_PFS:
+        generate_parallel_homogeneous_with_pfs(computation_vector,
                                                    communication_matrix,
                                                    hosts_to_use,
                                                    *storage_mapping,
                                                    profile->data,
                                                    context);
         break;
-    case ProfileType::MSG_DATA_STAGING:
-        generate_msg_data_staginig_task(computation_vector,
+    case ProfileType::DATA_STAGING:
+        generate_data_staginig_task(computation_vector,
                                         communication_matrix,
                                         hosts_to_use,
                                         *storage_mapping,

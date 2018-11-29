@@ -90,7 +90,7 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
               "delay": 10
             },
             "compute_only_10s":{
-              "type":"msg_par_hg",
+              "type":"parallel_homogeneous",
               "cpu": 1e9,
               "com": 0
             }
@@ -98,7 +98,7 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
           "41d51f8d4f": {
             "no_com": {
               "com": 0,
-              "type": "msg_par_hg",
+              "type": "parallel_homogeneous",
               "cpu": 1000000000.0
             }
           }
@@ -819,7 +819,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
           "alloc": "2-3 5-6",
           "profile_name": "my_io_job",
           "profile": {
-            "type": "msg_par",
+            "type": "parallel",
             "cpu": 0,
             "com": [0  ,5e6,5e6,5e6,
                     5e6,0  ,5e6,0  ,
