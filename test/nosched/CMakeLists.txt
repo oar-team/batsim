@@ -35,6 +35,6 @@ foreach(simu_instance IN LISTS simu_instances)
         OUTPUT_DIR ${thistest_OUTPUT_DIR}
         BATCMD "batsim -p ${platform_filename} -w ${workload_filename} -e ${thistest_OUTPUT_DIR}/out --no-sched"
         SCHEDCMD ""
-        ROBINTEST_EXPECTATION "--expect-ctx-clean-at-begin --expect-robin-success --expect-no-sched --expect-batsim-success"
+        ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-robin-success --expect-no-sched --expect-batsim-success"
     )
 endforeach()

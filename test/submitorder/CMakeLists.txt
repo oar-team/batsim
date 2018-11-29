@@ -35,7 +35,7 @@ foreach(simu_instance IN LISTS simu_instances)
             PLATFORM ${platform_filename}
             WORKLOAD ${workload_filename}
             ALGORITHM ${algo_realname}
-            ROBINTEST_EXPECTATION "--expect-ctx-clean-at-begin --expect-robin-success --expect-sched-success --expect-batsim-success"
+            ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-robin-success --expect-sched-success --expect-batsim-success"
             CHECK_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/caller.bash"
             WORKING_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
         )

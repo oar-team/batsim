@@ -30,14 +30,14 @@ foreach(simu_instance IN LISTS simu_instances)
             WORKLOAD ${workload_filename}
             ALGORITHM ${algo_realname}
             OTH_BATSIM_ARGS "--enable-time-sharing-on-compute"
-            ROBINTEST_EXPECTATION "--expect-ctx-clean-at-begin --expect-robin-success --expect-sched-success --expect-batsim-success"
+            ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-robin-success --expect-sched-success --expect-batsim-success"
         )
 
         add_test_robintest_batsched(NAME "timesharing-efail-${workload_name}-${platform_name}-${algo_name}"
             PLATFORM ${platform_filename}
             WORKLOAD ${workload_filename}
             ALGORITHM ${algo_realname}
-            ROBINTEST_EXPECTATION "--expect-ctx-clean-at-begin --expect-robin-failure --expect-sched-killed --expect-batsim-failure"
+            ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-robin-failure --expect-sched-killed --expect-batsim-failure"
         )
     endforeach()
 endforeach()
