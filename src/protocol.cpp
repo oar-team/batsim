@@ -784,18 +784,6 @@ void JsonProtocolReader::handle_reject_job(int event_number,
 
     JobRejectedMessage * message = new JobRejectedMessage;
     message->job_id = JobIdentifier(job_id);
-    if (!(context->workloads.job_is_registered(message->job_id)))
-    {
-        xbt_assert(false, "Job '%s' does not exist.", job_id.c_str());
-    }
-
-    Job * job = context->workloads.job_at(message->job_id);
-    (void) job; // Avoids a warning if assertions are ignored
-    xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
-               "Invalid JSON message: "
-               "Invalid rejection received: job %s cannot be rejected at the present time."
-               "For being rejected, a job must be submitted and not allocated yet.",
-               job->id.to_string().c_str());
 
     send_message_at_time(timestamp, "server", IPMessageType::SCHED_REJECT_JOB, (void*) message);
 }
@@ -847,10 +835,6 @@ void JsonProtocolReader::handle_execute_job(int event_number,
 
     // Let's retrieve the job identifier
     JobIdentifier job_id = JobIdentifier(job_id_str);
-    if (!(context->workloads.job_is_registered(job_id)))
-    {
-        xbt_assert(false, "Invalid message in event %d (EXECUTE_JOB): job with job_id '%s' does not exists", event_number, job_id_str.c_str());
-    }
     message->allocation->job_id = job_id;
 
     // *********************
@@ -1215,13 +1199,7 @@ void JsonProtocolReader::handle_change_job_state(int event_number,
     }
 
     ChangeJobStateMessage * message = new ChangeJobStateMessage;
-
     message->job_id = JobIdentifier(job_id);
-    if (!(context->workloads.job_is_registered(message->job_id)))
-    {
-        xbt_assert(false, "The job '%s' does not exist.", job_id.c_str());
-    }
-
     message->job_state = job_state;
 
     send_message_at_time(timestamp, "server", IPMessageType::SCHED_CHANGE_JOB_STATE, (void *) message);
@@ -1288,12 +1266,7 @@ void JsonProtocolReader::handle_to_job_msg(int event_number,
     string msg = msg_value.GetString();
 
     ToJobMessage * message = new ToJobMessage;
-
     message->job_id = JobIdentifier(job_id);
-    if (!(context->workloads.job_is_registered(message->job_id)))
-    {
-        xbt_assert(false, "The job '%s' does not exist.", job_id.c_str());
-    }
     message->message = msg;
 
     send_message_at_time(timestamp, "server", IPMessageType::TO_JOB_MSG, (void *) message);
@@ -1338,12 +1311,7 @@ void JsonProtocolReader::handle_register_job(int event_number,
     const Value & job_id_value = data_object["job_id"];
     xbt_assert(job_id_value.IsString(), "Invalid JSON message: in event %d (REGISTER_JOB): ['data']['job_id'] should be a string", event_number);
     string job_id = job_id_value.GetString();
-
     message->job_id = JobIdentifier(job_id);
-    if (context->workloads.exists(message->job_id.workload_name))
-    {
-        xbt_assert(!context->workloads.job_is_registered(message->job_id), "Invalid message in event %d (REGISTER_JOB): job_id '%s' already exists", event_number, job_id.c_str());
-    }
 
     // Read the job description, either directly or from Redis
     if (data_object.HasMember("job"))
@@ -1366,35 +1334,6 @@ void JsonProtocolReader::handle_register_job(int event_number,
         string job_key = RedisStorage::job_key(message->job_id);
         message->job_description = context->storage.get(job_key);
     }
-
-    // FIXME: All this initialization should be done in the server?
-    // Create the job into memory now (so that following events at the same timestamp can refer to this job).
-    // But first, create the workload if needed.
-    Workload * workload = nullptr;
-    if (context->workloads.exists(message->job_id.workload_name))
-    {
-        workload = context->workloads.at(message->job_id.workload_name);
-    }
-    else
-    {
-        workload = Workload::new_dynamic_workload(message->job_id.workload_name);
-        context->workloads.insert_workload(workload->name, workload);
-    }
-
-    // Create the job.
-    XBT_DEBUG("Parsing user-submitted job %s", message->job_id.to_string().c_str());
-    Job * job = Job::from_json(message->job_description, workload,
-                               "Invalid JSON job submitted by the scheduler");
-    xbt_assert(job->id.job_name == message->job_id.job_name, "Internal error");
-    xbt_assert(job->id.workload_name == message->job_id.workload_name, "Internal error");
-    xbt_assert(job->submission_time - (Rational)timestamp <= 1, "Invalid job registered by the scheduler '%s': The desired submission time (%f) is in the future but this is not directly possible. If you really want to submit a job later on, first send a CALL_ME_LATER then register the job at the right time.", job->id.to_string().c_str(), (double)job->submission_time);
-
-    workload->jobs->add_job(job);
-    job->state = JobState::JOB_STATE_SUBMITTED;
-
-    xbt_assert(!data_object.HasMember("profile"),
-               "Profile description found in REGISTER_JOB event: this is not allowed anymore. "
-               "Please submit the profile in a separate REGISTER_PROFILE event.");
 
     send_message_at_time(timestamp, "server", IPMessageType::JOB_REGISTERED_BY_DP, (void *) message);
 }
@@ -1480,10 +1419,6 @@ void JsonProtocolReader::handle_kill_job(int event_number,
     {
         const Value & job_id_value = job_ids_array[i];
         message->jobs_ids[i] = JobIdentifier(job_id_value.GetString());
-        if (!(context->workloads.job_is_registered(message->jobs_ids[i])))
-        {
-            xbt_assert(false, "Invalid message in event %d (KILL_JOB): job %d with job_id:'%s' does not exists", event_number, i, message->jobs_ids[i].to_string().c_str());
-        }
     }
 
     send_message_at_time(timestamp, "server", IPMessageType::SCHED_KILL_JOB, (void *) message);
