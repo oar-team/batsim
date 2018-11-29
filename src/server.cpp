@@ -799,7 +799,7 @@ void server_on_reject_job(ServerData * data,
     job->state = JobState::JOB_STATE_REJECTED;
     data->nb_completed_jobs++;
 
-    XBT_INFO("Job %s has been rejected",
+    XBT_INFO("Job '%s' has been rejected",
              job->id.to_string().c_str());
 
     check_simulation_finished(data);

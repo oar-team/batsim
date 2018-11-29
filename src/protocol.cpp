@@ -1183,13 +1183,13 @@ void JsonProtocolReader::handle_change_job_state(int event_number,
     xbt_assert(job_state_value.IsString(), "Invalid JSON message: in event %d (CHANGE_JOB_STATE): ['data']['job_state'] should be a string", event_number);
     string job_state = job_state_value.GetString();
 
+    // Put this as a 'global' set?
     set<string> allowed_states = {"NOT_SUBMITTED",
                                   "RUNNING",
                                   "COMPLETED_SUCCESSFULLY",
                                   "COMPLETED_WALLTIME_REACHED",
                                   "COMPLETED_KILLED",
                                   "REJECTED"};
-
 
     if (allowed_states.count(job_state) != 1)
     {

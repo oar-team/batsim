@@ -277,6 +277,7 @@ void Workloads::register_smpi_applications()
 
 bool Workloads::job_is_registered(const JobIdentifier &job_id)
 {
+    at(job_id.workload_name)->jobs->displayDebug();
     return at(job_id.workload_name)->jobs->exists(job_id);
 }
 
@@ -303,7 +304,7 @@ string Workloads::to_string()
     {
         string key = mit.first;
         Workload * workload = mit.second;
-        str += key + ": " + workload->to_string() + " ";
+        str += workload->to_string() + " ";
     }
     return str;
 }
