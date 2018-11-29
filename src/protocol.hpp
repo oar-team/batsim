@@ -77,15 +77,15 @@ public:
      * @param[in] machines The machines usable to compute jobs
      * @param[in] workloads The workloads given to batsim
      * @param[in] configuration The simulation configuration
-     * @param[in] allow_time_sharing_on_compute Whether time sharing is enabled on compute machines
-     * @param[in] allow_time_sharing_on_storage Whether time sharing is enabled on storage machines
+     * @param[in] allow_compute_sharing Whether sharing is enabled on compute machines
+     * @param[in] allow_storage_sharing Whether sharing is enabled on storage machines
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_simulation_begins(Machines & machines,
                                           Workloads & workloads,
                                           const rapidjson::Document & configuration,
-                                          bool allow_time_sharing_on_compute,
-                                          bool allow_time_sharing_on_storage,
+                                          bool allow_compute_sharing,
+                                          bool allow_storage_sharing,
                                           double date) = 0;
 
     /**
@@ -232,15 +232,15 @@ public:
      * @param[in] machines The machines usable to compute jobs
      * @param[in] workloads The workloads given to batsim
      * @param[in] configuration The simulation configuration
-     * @param[in] allow_time_sharing_on_compute Whether time sharing is enabled on compute machines
-     * @param[in] allow_time_sharing_on_storage Whether time sharing is enabled on storage machines
+     * @param[in] allow_compute_sharing Whether sharing is enabled on compute machines
+     * @param[in] allow_storage_sharing Whether sharing is enabled on storage machines
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_simulation_begins(Machines & machines,
                                   Workloads & workloads,
                                   const rapidjson::Document & configuration,
-                                  bool allow_time_sharing_on_compute,
-                                  bool allow_time_sharing_on_storage,
+                                  bool allow_compute_sharing,
+                                  bool allow_storage_sharing,
                                   double date);
 
     /**
