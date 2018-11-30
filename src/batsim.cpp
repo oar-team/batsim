@@ -176,6 +176,7 @@ Usage:
                             [-W <workflow_file>...]
                             [--WS (<cut_workflow_file> <start_time>)...]
                             [--sg-cfg <opt_name:opt_value>...]
+                            [--sg-log <log_option>...]
                             [-r <hosts_roles_map>...]
                             [options]
   batsim --help
@@ -266,8 +267,10 @@ Other options:
   --no-sched                         If set, the jobs in the workloads are
                                      computed one by one, one after the other,
                                      without scheduler nor Redis.
-  --sg-cfg <opt_name:opt_value>...   Forward a given option_name:option_value to SimGrid.
-                                     Refer to SimGrid documentation for more information.
+  --sg-cfg <opt_name:opt_value>...   Forwards a given option_name:option_value to SimGrid.
+                                     Refer to SimGrid configuring documentation for more information.
+  --sg-log <log_option>...           Forwards a given logging option to SimGrid.
+                                     Refer to SimGrid simulation logging documentation for more information.
   -h, --help                         Shows this help.
 )";
 
@@ -536,12 +539,13 @@ Other options:
     vector<string> sg_cfg_list = args["--sg-cfg"].asStringList();
     for (string cfg_string : sg_cfg_list)
     {
-        vector<string> parsed;
-        boost::split(parsed, cfg_string, boost::is_any_of(":"));
+        main_args.simgrid_config.push_back(cfg_string);
+    }
 
-        xbt_assert(parsed.size() == 2, "A SimGrid configuration option should only contain one ':' character");
-        pair<string,string> cfg_pair(parsed[0], parsed[1]);
-        main_args.simgrid_config.push_back(cfg_pair);
+    vector<string> sg_log_list = args["--sg-log"].asStringList();
+    for (string log_string : sg_log_list)
+    {
+        main_args.simgrid_logging.push_back(log_string);
     }
 
     run_simulation = !error;
@@ -757,9 +761,18 @@ int main(int argc, char * argv[])
     // Setting SimGrid configuration options, if any
     if (main_args.simgrid_config.size() > 0)
     {
-        for (pair<string,string> cfg_pair : main_args.simgrid_config)
+        for (string cfg_string : main_args.simgrid_config)
         {
-            engine.set_config(cfg_pair.first + ":" + cfg_pair.second);
+            engine.set_config(cfg_string);
+        }
+    }
+
+    // Setting SimGrid logging options, if any
+    if (main_args.simgrid_logging.size() > 0)
+    {
+        for (string log_string : main_args.simgrid_logging)
+        {
+            xbt_log_control_set(log_string.c_str());
         }
     }
 

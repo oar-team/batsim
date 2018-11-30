@@ -99,7 +99,8 @@ struct MainArguments
     bool terminate_with_last_workflow = false;              //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
     // Other
-    std::list<std::pair<std::string, std::string>> simgrid_config; //!< The list of configuration options to pass to SimGrid.
+    std::list<std::string> simgrid_config;                  //!< The list of configuration options to pass to SimGrid.
+    std::list<std::string> simgrid_logging;                 //!< The list of simulation logging options to pass to SimGrid.
     bool dump_execution_context = false;                    //!< Instead of running the simulation, print the execution context as JSON on the standard output.
     bool allow_time_sharing_on_compute = false;             //!< Allows/forbids time sharing on compute machines. Two jobs can run on the same machine if and only if time sharing is allowed.
     bool allow_time_sharing_on_storage = false;             //!< Allows/forbids time sharing on storage machines. Two jobs can run on the same machine if and only if time sharing is allowed.
