@@ -536,17 +536,8 @@ Other options:
         main_args.program_type = ProgramType::BATSIM;
     }
 
-    vector<string> sg_cfg_list = args["--sg-cfg"].asStringList();
-    for (string cfg_string : sg_cfg_list)
-    {
-        main_args.simgrid_config.push_back(cfg_string);
-    }
-
-    vector<string> sg_log_list = args["--sg-log"].asStringList();
-    for (string log_string : sg_log_list)
-    {
-        main_args.simgrid_logging.push_back(log_string);
-    }
+    main_args.simgrid_config = args["--sg-cfg"].asStringList();
+    main_args.simgrid_config = args["--sg-log"].asStringList();
 
     run_simulation = !error;
 }
@@ -759,21 +750,15 @@ int main(int argc, char * argv[])
     simgrid::s4u::Engine engine(&argc, argv);
 
     // Setting SimGrid configuration options, if any
-    if (main_args.simgrid_config.size() > 0)
+    for (const string & cfg_string : main_args.simgrid_config)
     {
-        for (string cfg_string : main_args.simgrid_config)
-        {
-            engine.set_config(cfg_string);
-        }
+        engine.set_config(cfg_string);
     }
 
     // Setting SimGrid logging options, if any
-    if (main_args.simgrid_logging.size() > 0)
+    for (const string & log_string : main_args.simgrid_logging)
     {
-        for (string log_string : main_args.simgrid_logging)
-        {
-            xbt_log_control_set(log_string.c_str());
-        }
+        xbt_log_control_set(log_string.c_str());
     }
 
     // Let's create the BatsimContext, which stores information about the current instance
