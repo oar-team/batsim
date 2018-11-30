@@ -11,6 +11,12 @@ Starting with version `v1.0.0`_, Batsim adheres to `Semantic Versioning`_ and it
 - The format of the Batsim input files.
 - The communication protocol with the decision-making component.
 
+.. todo::
+
+    Define a recommended SimGrid version for each batsim version.
+
+    Link to protocol messages of the rst doc rather than doing ``THIS``.
+
 ........................................................................................................................
 
 Unreleased
@@ -22,21 +28,27 @@ Unreleased
 Changed (**breaks protocol**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- Removal of the ``NOP`` event.
 - ``SUBMIT_PROFILE`` has been renamed ``REGISTER_PROFILE``.
   Trying to register an already existing profile will now fail.
 - ``SUBMIT_JOB`` has been renamed ``REGISTER_JOB``.
   Trying to register an already existing job will now fail.
-  The possibility to register profiles from within a ``REGISTER_JOB`` event has been discarded:
+  The possibility to register profiles from within a ``REGISTER_JOB`` event has been discarded.
   Now use ``REGISTER_PROFILE`` then ``REGISTER_JOB``.
-- The content of the ``config`` object of the ``SIMULATION_BEGINS`` event has been changed.
-  It is now flattened and contains the following keys:
-  ``redis-enabled``, ``redis-hostname``, ``redis-port``, ``redis-prefix``,``profiles-forwarded-on-submission``, ``dynamic-jobs-enabled`` and ``dynamic-jobs-acknowledged``.
+- The ``SIMULATION_BEGINS`` event has been changed:
+
+  - The ``resources_data`` array has been split into
+    the ``compute_resources`` and ``storage_resources`` arrays.
+  - The content of the ``config`` object has been flattened and now contains the following keys:
+    ``redis-enabled``, ``redis-hostname``, ``redis-port``, ``redis-prefix``, ``profiles-forwarded-on-submission``, ``dynamic-jobs-enabled`` and ``dynamic-jobs-acknowledged``.
+- The ``submission_finished`` ``NOTIFY`` event has been renamed ``registration_finished``.
+- The ``continue_submission`` ``NOTIFY`` event has been renamed ``continue_registration``.
 
 Changed (**breaks command-line interface**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Removal of the ``--config-file`` option.
-  Now specify your desired features by the Batsim CLI options.
+  Everything should now be doable via the Batsim CLI.
 - Removal of the ``--enable-sg-process-tracing`` option.
   You can now use ``--sg-cfg`` to do the same.
 - ``--batexec`` has been renamed ``--no-sched``.
@@ -45,25 +57,76 @@ Changed (**breaks command-line interface**)
   as resource roles have been introduced.
 
 Changed (**breaks workload format**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Profile types of parallel jobs has been renamed:
-    - ``msg_par`` into ``parallel``
-    - ``msg_par_hg`` into ``parallel_homogeneous``
-    - ``msg_par_hg_tot`` into ``parallel_homogeneous_total``
-    - ``msg_par_hg_pfs`` into ``parallel_homogeneous_pfs``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Added (new command-line options)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Profile types of parallel jobs have been renamed:
 
+  - ``msg_par`` into ``parallel``
+  - ``msg_par_hg`` into ``parallel_homogeneous``
+  - ``msg_par_hg_tot`` into ``parallel_homogeneous_total``
+  - ``msg_par_hg_pfs`` into ``parallel_homogeneous_pfs``
+
+Changed (**breaks platform format**)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Batsim now uses SimGrid version **TO BE DEFINED** and therefore the
+  SimGrid platform version 4.1, which broke things on how to define platforms.
+  Please refer to SimGrid documentation for more information on this.
+
+Changed (new dependencies)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- `docopt-cpp`_ and pugixml_ are now external dependencies and no longer provided with Batsim sources.
+- New `intervalset` dependency, which replaces the previous `MachineRange` class.
+- batexpe_ is now an optional dependency to test batsim.
+
+Added (protocol)
+~~~~~~~~~~~~~~~~
+
+- Addition of the ``no_more_static_job_to_submit`` ``NOTIFY`` event,
+  which is sent by Batsim when all the jobs described in the static
+  workloads/workflows have been submitted.
+- Addition of the ``profiles`` object in the ``SIMULATION_BEGINS`` event.
+  The key is the workload_id and the value is the list of profiles of that workload.
+- Addition of the optional ``storage_mapping`` object in the ``EXECUTE_JOB`` event,
+  which allows to define which resource id should be used for a named IO resource.
+- Addition of the optional ``additional_io_job`` object in the ``EXECUTE_JOB`` event,
+  which allows to add IO movements to a job execution.
+  This is done by merging a traditional parallel task (within the allocated hosts that *compute* the job)
+  with another parallel task that define IO movements (within the allocated hosts that compute the jobs, but also potentially with IO resources).
+
+Added (platform format)
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- Roles can now be specified for the hosts of a platform.
+  This is done by setting the ``role`` XML property of a host.
+  A default master host can be specified this way by using the ``master`` role value.
+  The ``storage`` value is for hosts that describe storage resources ; such hosts are allowed to send and receive bytes but not to compute.
+  The ``compute_node`` value (used by default if no role is specified) is for hosts that describe computing resources that can both compute and communicate.
+
+Added (command-line interface)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- New ``--add-role-to-hosts`` option, that allows to add a role to some hosts.
 - New ``--sg-cfg`` option, that allows to set SimGrid configuration options.
 - New ``--sg-log`` option, that allows to set SimGrid logging options.
 - New ``--dump-execution-context`` option,
   that dumps the command execution context on the standard output.
   This allows external tools to understand the execution context of a batsim command without actually parsing it.
 
-.. todo::
-
-    Update changelog for Unreleased, as many changes are missing.
+Miscellaneous
+~~~~~~~~~~~~~
+- Various bug fixes.
+- Removal of the python experiment scripts that were located in ``${BATROOT}/tools/experiments``,
+  as robin_ became the standard tool to execute Batsim experiments.
+- Removed git submodules. Please now use schedulers directly from their repositories or from kapack_.
+- Batsim now mainly uses the s4u SimGrid interface.
+  If you used to set SimGrid configuration/logging options through Batsim CLI,
+  the name of such options should therefore have changed.
+- Documentation moved to readthedocs.
+- The ``workload_profiles`` directory has been renamed ``workloads``.
+- New generator for heteregenous platforms (code and documentation in ``platforms/heterogeneous``).
+- New demo (in ``demo/``).
 
 ........................................................................................................................
 
@@ -95,7 +158,6 @@ Added
 - New ``SET_JOB_METADATA`` protocol message, which allows to set set metadata to jobs.
   Such metadata is written in the ``_jobs.csv`` output file.
 - The ``_schedule.csv`` output file now contains a batsim_version field.
-- The ``energy_query`` test checks that ``QUERY``/``ANSWER`` work as expected for the ``consumed_energy`` request.
 - Added the ``estimate_waiting_time`` QUERY from Batsim to the scheduler.
 - The ``SIMULATION_BEGINS`` message now contains information about workloads:
   A map from workload identifiers to their filenames.
@@ -219,6 +281,8 @@ Added
 - New data to the ``JOB_COMPLETED`` protocol event.
   ``job_state`` contains the job state (as stored by Batsim).
   ``kill_reason`` contains why the job has been killed (if relevant).
+- New ``continue_submission`` ``NOTIFY`` event,
+  which cancels a previous ``submission_finished`` ``NOTIFY`` event.
 
 Modified
 ~~~~~~~~
@@ -248,3 +312,8 @@ Changed
 
 .. _Keep a Changelog: http://keepachangelog.com/en/1.0.0/
 .. _Semantic Versioning: http://semver.org/spec/v2.0.0.html
+.. _batexpe: https://framagit.org/batsim/batexpe/
+.. _robin: https://framagit.org/batsim/batexpe/blob/master/doc/robin.md
+.. _kapack: https://github.com/oar-team/kapack/
+.. _`docopt-cpp`: https://github.com/docopt/docopt.cpp
+.. _pugixml: https://pugixml.org/
