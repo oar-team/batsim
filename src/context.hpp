@@ -71,8 +71,8 @@ struct BatsimContext
 
     bool energy_used;                               //!< Stores whether the energy part of Batsim should be used
     bool smpi_used;                                 //!< Stores whether SMPI should be used
-    bool allow_time_sharing_on_compute;             //!< Stores whether time sharing (using the same machines to compute different jobs) should be allowed on compute machines
-    bool allow_time_sharing_on_storage;             //!< Stores whether time sharing (using the same machines to compute different jobs) should be allowed on storage machines
+    bool allow_compute_sharing;                     //!< Stores whether sharing (using the same machine to run different jobs concurrently) should be allowed on compute machines
+    bool allow_storage_sharing;                     //!< Stores whether sharing (using the same machine to run different jobs concurrently) should be allowed on storage machines
     bool trace_schedule;                            //!< Stores whether the resulting schedule should be outputted
     bool trace_machine_states;                      //!< Stores whether the machines states should be outputted
     std::string platform_filename;                  //!< The name of the platform file

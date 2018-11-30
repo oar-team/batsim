@@ -30,8 +30,8 @@ Batsim's public API includes:
   You can now use ``--sg-cfg`` to do the same.
 - ``--batexec`` has been renamed ``--no-sched``.
 - ``--allow-time-sharing`` has been split into two options
-  ``--enable-time-sharing-on-compute`` and
-  ``--disable-time-sharing-on-storage``, as resource roles have been introduced.
+  ``--enable-compute-sharing`` and
+  ``--disable-storage-sharing``, as resource roles have been introduced.
 
 ### Changed (**breaks workload format**)
 - Profile types of parallel jobs has been renamed:
