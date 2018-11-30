@@ -56,6 +56,7 @@ Added (new command-line options)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - New ``--sg-cfg`` option, that allows to set SimGrid configuration options.
+- New ``--sg-log`` option, that allows to set SimGrid logging options.
 - New ``--dump-execution-context`` option,
   that dumps the command execution context on the standard output.
   This allows external tools to understand the execution context of a batsim command without actually parsing it.
