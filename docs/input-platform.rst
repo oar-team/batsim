@@ -5,6 +5,8 @@ Platform
 A Batsim platform is essentially a SimGrid platform.
 This page describes the specificities of Batsim platforms in comparison with SimGrid platforms. More information on how to define the SimGrid platform of your dreams can be found on the SimGrid documentation ;).
 
+.. _platform_host_roles:
+
 Types of hosts
 --------------
 

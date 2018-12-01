@@ -225,6 +225,8 @@ This is a reply to a QUERY_ event.
      }
    }
 
+.. _proto_NOTIFY:
+
 NOTIFY
 ~~~~~~
 
@@ -272,6 +274,8 @@ Batsim to Scheduler events
 --------------------------
 
 These events are sent by Batsim to the scheduler.
+
+.. _proto_SIMULATION_BEGINS:
 
 SIMULATION_BEGINS
 ~~~~~~~~~~~~~~~~~
@@ -661,6 +665,8 @@ The rejected job will not appear into the final jobs trace.
      "data": { "job_id": "w12!45" }
    }
 
+.. _proto_EXECUTE_JOB:
+
 EXECUTE_JOB
 ~~~~~~~~~~~
 
@@ -757,6 +763,8 @@ before the kill), Batsim acknowledges it with one JOB_KILLED_ event.
      "data": {"job_ids": ["w0!1", "w0!2"]}
    }
 
+.. _proto_REGISTER_JOB:
+
 REGISTER_JOB
 ~~~~~~~~~~~~
 
@@ -803,6 +811,7 @@ Example **with redis** : The job and profile description, if unknown to Batsim y
      }
    }
 
+.. _proto_REGISTER_PROFILE:
 
 REGISTER_PROFILE
 ~~~~~~~~~~~~~~~~

@@ -82,6 +82,8 @@ The following example defines a profile that always waits for 20.20 seconds.
 
     In fact, a job execution with the previous delay can be faster than 20.20 seconds if the job's walltime is smaller that 20.20.
 
+.. _profile_parallel:
+
 Parallel task
 ^^^^^^^^^^^^^
 This profile type defines a set of computations and communications whose execution is tightly bound. In other words, at any given time during the profile execution, the progress rate of every communication and computation will be the same.
@@ -111,6 +113,8 @@ This profile type allows to observe large-grained interference phenomena between
 It can be used to model applications whose execution is very smooth.
 Please note that it is probably not realistic enough to observe fine-grained phenomena, such as the impact of network latency when the application heavily relies on short messages that limit its control flow. If you are in such a case, the `SMPI trace replay`_ profile type may interest you.
 
+.. _profile_parallel_homogeneous:
+
 Homogeneous parallel task
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 This profile type is a convenient way to generate an homogeneous `Parallel task`_ that can be used by any job, regardless of the number of machines it requests.
@@ -127,6 +131,8 @@ This profile type is a convenient way to generate an homogeneous `Parallel task`
       "cpu": 10e6,
       "com": 1e6
     }
+
+.. _profile_parallel_homogeneous_total:
 
 Homogeneous parallel task with total amount
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -168,6 +174,8 @@ This profile type defines a list of other profiles that should be executed in se
       "repeat" : 4,
       "seq": ["prof1","prof2","prof1"]
     }
+
+.. _profile_parallel_homogeneous_pfs:
 
 Homogeneous parallel tasks with IO to/from a Parallel File System
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
