@@ -467,11 +467,9 @@ void execute_job_process(BatsimContext * context,
     // If energy is enabled, let us compute the energy used by the machines after running the job
     if (context->energy_used)
     {
-        long double consumed_energy_before = job->consumed_energy;
-        job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
-
         // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
-        job->consumed_energy -= job->consumed_energy - consumed_energy_before;
+        long double consumed_energy_before = job->consumed_energy;
+        job->consumed_energy = consumed_energy_on_machines(context, job->allocation) - consumed_energy_before;
 
         // Let's trace the consumed energy
         context->energy_tracer.add_job_end(MSG_get_clock(), job->id);

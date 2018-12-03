@@ -185,7 +185,7 @@ struct Job
     Rational starting_time; //!< The time at which the job starts to be executed.
     Rational runtime; //!< The amount of time during which the job has been executed.
     bool kill_requested = false; //!< Whether the job kill has been requested
-    long double consumed_energy; //!< The sum, for each machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
+    long double consumed_energy; //!< The sum, for all machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
 
     // User inputs
     std::string profile; //!< The job profile name. The corresponding profile tells how the job should be computed
