@@ -126,6 +126,8 @@ Miscellaneous
 - The ``workload_profiles`` directory has been renamed ``workloads``.
 - New generator for heteregenous platforms (code and documentation in ``platforms/heterogeneous``).
 - New demo (in ``demo/``).
+- The order of columns of the output file `out_jobs.csv` has changed. Moreover,
+  the columns `requested_number_of_processors` and `allocated_processors` have been renamed in `requested_number_of_resources` and `allocated_resources`.
 
 ........................................................................................................................
 
