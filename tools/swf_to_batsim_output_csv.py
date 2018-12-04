@@ -130,7 +130,7 @@ for event in events:
 writer = csv.DictWriter(args.outputCSV,
                         fieldnames=["job_id",
                                     "submission_time",
-                                    "requested_number_of_processors",
+                                    "requested_number_of_resources",
                                     "requested_time",
                                     "success",
                                     "starting_time",
@@ -140,7 +140,7 @@ writer = csv.DictWriter(args.outputCSV,
                                     "turnaround_time",
                                     "stretch",
                                     "consumed_energy",
-                                    "allocated_processors"])
+                                    "allocated_resources"])
 writer.writeheader()
 
 for job_id in jobs:
@@ -148,7 +148,7 @@ for job_id in jobs:
 
     d = {"job_id": job.job_id,
          "submission_time": job.submit_time,
-         "requested_number_of_processors": job.nb_res,
+         "requested_number_of_resources": job.nb_res,
          "requested_time": job.wall_time,
          "success": 1,
          "starting_time": job.start_time,
@@ -158,7 +158,7 @@ for job_id in jobs:
          "turnaround_time": job.turnaround_time,
          "stretch": job.stretch,
          "consumed_energy": -1,
-         "allocated_processors": ' '.join(str(res) for res in job.resources)
+         "allocated_resources": ' '.join(str(res) for res in job.resources)
          }
 
     writer.writerow(d)
