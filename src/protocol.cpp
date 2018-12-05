@@ -1301,7 +1301,7 @@ void JsonProtocolReader::handle_register_job(int event_number,
     JobRegisteredByDPMessage * message = new JobRegisteredByDPMessage;
 
     xbt_assert(context->registration_sched_enabled, "Invalid JSON message: dynamic job registration received but the option seems disabled... "
-                                                  "It can be activated with the '--enable-dyn-jobs-registration' command line option.");
+                                                  "It can be activated with the '--enable-dynamic-jobs' command line option.");
 
     xbt_assert(!context->registration_sched_finished, "Invalid JSON message: dynamic job registration received but the option has been disabled (a registration_finished message have already been received)");
 
@@ -1360,7 +1360,7 @@ void JsonProtocolReader::handle_register_profile(int event_number,
     ProfileRegisteredByDPMessage * message = new ProfileRegisteredByDPMessage;
 
     xbt_assert(context->registration_sched_enabled, "Invalid JSON message: dynamic profile registration received but the option seems disabled... "
-                                                  "It can be activated with the '--enable-dyn-jobs-registration' command line option.");
+                                                  "It can be activated with the '--enable-dynamic-jobs' command line option.");
 
     xbt_assert(!context->registration_sched_finished, "Invalid JSON message: dynamic profile registration received but the option has been disabled (a registration_finished message have already been received)");
 
