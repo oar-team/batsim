@@ -71,6 +71,12 @@ Changed (**breaks platform format**)
   SimGrid platform version 4.1, which broke things on how to define platforms.
   Please refer to SimGrid documentation for more information on this.
 
+Changed (**breaks jobs output file format**)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- The columns ``requested_number_of_processors`` and ``allocated_processors`` have been respectively renamed ``requested_number_of_resources`` and ``allocated_resources``.
+- The order of the columns has changed.
+
 Changed (new dependencies)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

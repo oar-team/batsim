@@ -697,29 +697,31 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
 
     // List all features (columns)
     map<string, string> job_map;
-    job_map["job_id"] = "unset";
-    job_map["workload_name"] = "unset";
-    job_map["submission_time"] = "unset";
-    job_map["requested_number_of_processors"] = "unset";
-    job_map["requested_time"] = "unset";
-    job_map["success"] = "unset";
-    job_map["starting_time"] = "unset";
-    job_map["execution_time"] = "unset";
-    job_map["finish_time"] = "unset";
-    job_map["waiting_time"] = "unset";
-    job_map["turnaround_time"] = "unset";
-    job_map["stretch"] = "unset";
-    job_map["consumed_energy"] = "unset";
-    job_map["allocated_processors"] = "unset";
-    job_map["metadata"] = "unset";
+    vector<string> key_list = {
+        "job_id",
+        "workload_name",
+        "submission_time",
+        "requested_number_of_resources",
+        "requested_time",
+        "success",
+        "starting_time",
+        "execution_time",
+        "finish_time",
+        "waiting_time",
+        "turnaround_time",
+        "stretch",
+        "allocated_resources",
+        "consumed_energy",
+        "metadata"
+    };
 
     // Write headers (columns) to the output file
     vector<string> row_content;
     row_content.reserve(job_map.size());
 
-    for (auto mit : job_map)
+    for (string & mit : key_list)
     {
-         row_content.push_back(mit.first);
+        row_content.push_back(mit);
     }
 
     f << boost::algorithm::join(row_content, ",") << "\n";
@@ -744,7 +746,7 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
                     job_map["job_id"] = job->id.job_name;
                     job_map["workload_name"] = string(workload_name);
                     job_map["submission_time"] = to_string((double)job->submission_time);
-                    job_map["requested_number_of_processors"] = to_string(job->requested_nb_res);
+                    job_map["requested_number_of_resources"] = to_string(job->requested_nb_res);
                     job_map["requested_time"] = to_string((double)job->walltime);
                     job_map["success"] = to_string(success);
                     job_map["starting_time"] = to_string((double)job->starting_time);
@@ -754,14 +756,14 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
                     job_map["turnaround_time"] = to_string((double)(job->starting_time + job->runtime - job->submission_time));
                     job_map["stretch"] = to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
                     job_map["consumed_energy"] = to_string(job->consumed_energy);
-                    job_map["allocated_processors"] = job->allocation.to_string_hyphen(" ");
+                    job_map["allocated_resources"] = job->allocation.to_string_hyphen(" ");
                     job_map["metadata"] = '"' + job->metadata + '"';
 
                     // Write values to the output file
                     row_content.resize(0);
-                    for (auto mit : job_map)
+                    for (string & mit : key_list)
                     {
-                        row_content.push_back(mit.second);
+                        row_content.push_back(job_map[mit]);
                     }
 
                     f << boost::algorithm::join(row_content, ",") << "\n";
