@@ -515,7 +515,7 @@ It acknowledges that the actions coming from a previous EXECUTE_JOB_ event have 
 - ``return_code``: The return code of the job process (equals to 0
   by default, see :ref:`input_workload`).
 - ``kill_reason``: The kill reason (if any).
-- ``alloc``: The resources allocated to this job in the previous EXECUTE_JOB_ event.
+- ``alloc``: The :ref:`interval_set` of resources allocated to this job in the previous EXECUTE_JOB_ event.
 
 .. code:: json
 
@@ -617,7 +617,7 @@ RESOURCE_STATE_CHANGED
 This event means that the state of some resources has changed.
 It acknowledges that the actions coming from a previous SET_RESOURCE_STATE_ event have been done.
 
-**data**: An interval set of resource ids and their new state.
+**data**: An :ref:`interval_set` of ``resources`` and their new ``state``.
 
 .. code:: json
 
@@ -670,7 +670,7 @@ The rejected job will not appear into the final jobs trace.
 EXECUTE_JOB
 ~~~~~~~~~~~
 
-Execute a job on a given set of resources.
+Execute a job on a given :ref:`interval_set` of resources.
 
 An optional ``mapping`` field can be added to tell Batsim how to map
 executors to resources: Where the executors will be placed inside the
@@ -700,7 +700,8 @@ merged to the actual job before its execution. The additional job
 allocation may be different from the job allocation itself, for example
 when some IO nodes are involved.
 
-**data**: A job id, an allocation of resources, a mapping (optional), an additional IO job (optional).
+**data**: A job id, an allocation of resources ``alloc`` (see :ref:`interval_set_string_representation` for format),
+a mapping (optional), an additional IO job (optional).
 
 .. code:: json
 
@@ -850,7 +851,7 @@ Sets some resources into a state.
 As soon as all the resources have been set into the given state, Batsim
 acknowledges it by sending one RESOURCE_STATE_CHANGED_ event.
 
-**data**: An interval set of resource id, and their new state.
+**data**: An :ref:`interval_set` of ``resources`` and their new ``state``.
 
 .. code:: json
 
