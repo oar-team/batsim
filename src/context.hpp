@@ -12,7 +12,6 @@
 
 #include <rapidjson/document.h>
 
-#include "exact_numbers.hpp"
 #include "export.hpp"
 #include "jobs.hpp"
 #include "machines.hpp"
@@ -59,10 +58,10 @@ struct BatsimContext
 
     bool terminate_with_last_workflow;              //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
-    Rational energy_first_job_submission = -1;      //!< The amount of consumed energy (J) when the first job is submitted
-    Rational energy_last_job_completion = -1;       //!< The amount of consumed energy (J) when the last job is completed
+    long double energy_first_job_submission = -1;   //!< The amount of consumed energy (J) when the first job is submitted
+    long double energy_last_job_completion = -1;    //!< The amount of consumed energy (J) when the last job is completed
 
-    Rational microseconds_used_by_scheduler = 0;    //!< The number of microseconds used by the scheduler
+    long double microseconds_used_by_scheduler = 0; //!< The number of microseconds used by the scheduler
     my_timestamp simulation_start_time;             //!< The moment in time at which the simulation has started
     my_timestamp simulation_end_time;               //!< The moment in time at which the simulation has ended
 

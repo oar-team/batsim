@@ -636,9 +636,9 @@ string Machine::jobs_being_computed_as_string() const
 
 void Machine::update_machine_state(MachineState new_state)
 {
-    Rational current_date = MSG_get_clock();
+    long double current_date = MSG_get_clock();
 
-    Rational delta_time = current_date - last_state_change_date;
+    long double delta_time = current_date - last_state_change_date;
     xbt_assert(delta_time >= 0);
 
     time_spent_in_each_state[state] += delta_time;

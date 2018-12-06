@@ -109,7 +109,7 @@ Dependencies
 As I write these lines, here is the list of Batsim dependencies.
 
 - Decent clang/gcc and CMake.
-- Decent boost, GMP (C and C++).
+- Decent boost.
 - Recent SimGrid.
 - ZeroMQ (C and C++).
 - Redox and its dependencies (hiredis, libev).
