@@ -14,7 +14,6 @@
 
 #include <intervalset.hpp>
 
-#include "exact_numbers.hpp"
 #include "pstate.hpp"
 #include "permissions.hpp"
 
@@ -64,8 +63,8 @@ struct Machine
     std::unordered_map<int, PStateType> pstates; //!< Maps power state number to their power state type
     std::unordered_map<int, SleepPState *> sleep_pstates; //!< Maps sleep power state numbers to their SleepPState
 
-    Rational last_state_change_date = 0; //!< The time at which the last state change has been done
-    std::unordered_map<MachineState, Rational> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
+    long double last_state_change_date = 0; //!< The time at which the last state change has been done
+    std::unordered_map<MachineState, long double> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
 
     std::unordered_map<std::string, std::string> properties; //!< Properties defined in the platform file
 

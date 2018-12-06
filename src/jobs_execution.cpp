@@ -461,7 +461,7 @@ void execute_job_process(BatsimContext * context,
     if (job->runtime == 0)
     {
         XBT_WARN("Job '%s' computed in null time. Putting epsilon instead.", job->id.to_string().c_str());
-        job->runtime = Rational(1e-5);
+        job->runtime = 1e-5l;
     }
 
     // If energy is enabled, let us compute the energy used by the machines after running the job
@@ -566,7 +566,7 @@ void killer_process(BatsimContext * context, std::vector<JobIdentifier> jobs_ids
             job->state = JobState::JOB_STATE_COMPLETED_KILLED;
 
             context->machines.update_machines_on_job_end(job, job->allocation, context);
-            job->runtime = (Rational)MSG_get_clock() - job->starting_time;
+            job->runtime = (long double)MSG_get_clock() - job->starting_time;
 
             xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%g)!",
                        job->id.to_string().c_str(), (double)job->runtime);
@@ -574,7 +574,7 @@ void killer_process(BatsimContext * context, std::vector<JobIdentifier> jobs_ids
             {
                 XBT_WARN("Killed job '%s' has a null runtime. Putting epsilon instead.",
                          job->id.to_string().c_str());
-                job->runtime = Rational(1e-5);
+                job->runtime = 1e-5l;
             }
 
             // If energy is enabled, let us compute the energy used by the machines after running the job

@@ -62,7 +62,7 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
     }
 
     auto end = chrono::steady_clock::now();
-    Rational elapsed_microseconds = (double) chrono::duration <long double, micro> (end - start).count();
+    long double elapsed_microseconds = (long double) chrono::duration <long double, micro> (end - start).count();
     context->microseconds_used_by_scheduler += elapsed_microseconds;
 
     context->proto_reader->parse_and_apply_message(message_received);
