@@ -122,9 +122,10 @@ Added (command-line interface)
 Miscellaneous
 ~~~~~~~~~~~~~
 - Various bug fixes.
-- Removal of the python experiment scripts that were located in ``tools/experiments``,
+- Removed the python experiment scripts that were located in ``tools/experiments``,
   as robin_ became the standard tool to execute Batsim experiments.
 - Removed git submodules. Please now use schedulers directly from their repositories or from kapack_.
+- Removed the dependency to GMP.
 - Batsim now mainly uses the s4u SimGrid interface.
   If you used to set SimGrid configuration/logging options through Batsim CLI,
   the name of such options should therefore have changed.
