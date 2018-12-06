@@ -54,10 +54,6 @@ include_directories(BEFORE SYSTEM ${SimGrid_INCLUDE_DIR})
 find_package(Boost 1.58 REQUIRED COMPONENTS system filesystem regex locale)
 include_directories(${Boost_INCLUDE_DIR})
 
-## GMP
-find_package(GMP REQUIRED)
-include_directories(${GMP_INCLUDE_DIR})
-
 ## Rapidjson dependency
 find_package(rapidjson REQUIRED)
 include_directories(${RAPIDJSON_INCLUDE_DIRS})
@@ -131,7 +127,6 @@ add_executable(batsim ${batsim_SRC})
 # Libraries to link
 target_link_libraries(batsim
     ${SimGrid_LIBRARY}
-    ${GMP_LIBRARIES}
     ${Boost_FILESYSTEM_LIBRARY_DEBUG}
     ${Boost_LOCALE_LIBRARY_DEBUG}
     ${Boost_REGEX_LIBRARY_DEBUG}
