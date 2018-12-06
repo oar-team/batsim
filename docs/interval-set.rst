@@ -29,11 +29,26 @@ As an example, the interval set :math:`[1,3]\cup[5,5]\cup[7,7] = \{1, 2, 3, 5, 7
 
 .. note::
     The same set of resources can have **many** string representations.
-    For example, :math:`\{1, 2, 3, 5, 7\}` can be represented as ``1-3 5 7``, ``1-2 3 5 7`` or ``1 2 3 5 7``.
-    Intervals are not necessarily disjoint nor sorted in ascending order, so the ``5 1-2 5 1-3 7 2`` is also valid.
+    For example, :math:`\{1, 2, 3, 5, 7\}` can be represented as ``1-3 5 7``, ``1-2 3 5 7``, ``1 2 3 5 7``,
+    ``1-2 1-3 5 7`` or even ``5 2-2 7 1-3``.
 
-    All implementations should support reading from string representations composed of disjoint sets in ascending order.
-    This is therefore the way to go if you need to manually generate interval set string representations.
+Canonical string representation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The canonical string representation of an interval set respects the following rules.
+
+- Intervals are disjoint (their intersection is empty).
+- Intervals are as big as possible — *e.g.*, ``1-3 4-5`` is not a canonical representation of :math:`[1,5]`.
+- Intervals of size 1 are represented as ``a``, not ``a-a``.
+- Intervals are sorted in ascending order.
+
+This representation is unique for an interval set and is the way to go if you
+need to manually generate interval set string representations.
+
+All implementations should be able to read canonical string representations and to generate them.
+Canonical string representations are the only representations that are ensured to remain the same
+by being converted into an interval set and by being converted back to a string representation.
+:math:`canon\_repr \rightarrow interval set \rightarrow canon\_repr`.
 
 Interval set libraries
 ~~~~~~~~~~~~~~~~~~~~~~
