@@ -806,8 +806,12 @@ int main(int argc, char * argv[])
         }
 
         // Let's create the socket
-        context.zmq_socket = new zmq::socket_t(context.zmq_context, ZMQ_REQ);
-        context.zmq_socket->connect(main_args.socket_endpoint);
+        context.zmq_context = zmq_ctx_new();
+        xbt_assert(context.zmq_context != nullptr, "Cannot create ZMQ context");
+        context.zmq_socket = zmq_socket(context.zmq_context, ZMQ_REQ);
+        xbt_assert(context.zmq_socket != nullptr, "Cannot create ZMQ REQ socket (errno=%s)", strerror(errno));
+        int err = zmq_connect(context.zmq_socket, main_args.socket_endpoint.c_str());
+        xbt_assert(err == 0, "Cannot connect ZMQ socket to '%s' (errno=%s)", main_args.socket_endpoint.c_str(), strerror(errno));
 
         // Let's create the protocol reader and writer
         context.proto_reader = new JsonProtocolReader(&context);
@@ -825,7 +829,10 @@ int main(int argc, char * argv[])
     // Simulation main loop, handled by MSG
     engine.run();
 
-    delete context.zmq_socket;
+    zmq_close(context.zmq_socket);
+    context.zmq_socket = nullptr;
+
+    zmq_ctx_destroy(context.zmq_context);
     context.zmq_socket = nullptr;
 
     delete context.proto_reader;

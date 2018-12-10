@@ -8,7 +8,7 @@
 #include <chrono>
 #include <vector>
 
-#include <zmq.hpp>
+#include <zmq.h>
 
 #include <rapidjson/document.h>
 
@@ -33,8 +33,8 @@ typedef std::chrono::time_point<std::chrono::high_resolution_clock> my_timestamp
  */
 struct BatsimContext
 {
-    zmq::context_t zmq_context;                     //!< The Zero MQ context
-    zmq::socket_t * zmq_socket = nullptr;           //!< The Zero MQ socket (REQ)
+    void * zmq_context = nullptr;                   //!< The Zero MQ context
+    void * zmq_socket = nullptr;                    //!< The Zero MQ socket (REQ)
     AbstractProtocolReader * proto_reader = nullptr;//!< The protocol reader
     AbstractProtocolWriter * proto_writer = nullptr;//!< The protocol writer
 
