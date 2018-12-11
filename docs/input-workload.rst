@@ -16,9 +16,9 @@ Each job uses exacly one profile. Profiles can be shared by multiple jobs.
 
 Workloads are defined in JSON.
 Here is an example of a Batsim workload from Batsim's repository
-(:file:`workloads/test_workload_profile.json`).
+(:file:`workloads/test_various_profile_types.json`).
 
-.. literalinclude:: ../workloads/test_workload_profile.json
+.. literalinclude:: ../workloads/test_various_profile_types.json
     :language: json
 
 Job definition

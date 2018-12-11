@@ -33,11 +33,13 @@ foreach(simu_instance IN LISTS simu_instances)
             ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-robin-success --expect-sched-success --expect-batsim-success"
         )
 
-        add_test_robintest_batsched(NAME "resourcesharing-efail-${workload_name}-${platform_name}-${algo_name}"
-            PLATFORM ${platform_filename}
-            WORKLOAD ${workload_filename}
-            ALGORITHM ${algo_realname}
-            ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-robin-failure --expect-sched-killed --expect-batsim-failure"
-        )
+        # This should be re-enabled once a very basic algorithm can be used instead of random
+        #
+        # add_test_robintest_batsched(NAME "resourcesharing-efail-${workload_name}-${platform_name}-${algo_name}"
+        #     PLATFORM ${platform_filename}
+        #     WORKLOAD ${workload_filename}
+        #     ALGORITHM ${algo_realname}
+        #     ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-robin-failure --expect-sched-killed --expect-batsim-failure"
+        # )
     endforeach()
 endforeach()
