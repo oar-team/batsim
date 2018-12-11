@@ -364,7 +364,7 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
            ],
            "storage_resources": [],
            "workloads": {
-             "26dceb": "/home/mmercier/Projects/batsim/workloads/test_workload_profile.json"
+             "26dceb": "/home/mmercier/Projects/batsim/workloads/test_various_profile_types.json"
            },
            "profiles": {
              "26dceb":{
