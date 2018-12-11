@@ -190,7 +190,7 @@ set(BATWLOAD_delays "delays!${CMAKE_SOURCE_DIR}/workloads/test_simple_delay_work
 set(BATWLOAD_energy_minimal_load0 "energymini0!${CMAKE_SOURCE_DIR}/workloads/test_energy_minimal_load0.json")
 set(BATWLOAD_energy_minimal_load50 "energymini50!${CMAKE_SOURCE_DIR}/workloads/test_energy_minimal_load50.json")
 set(BATWLOAD_energy_minimal_load100 "energymini100!${CMAKE_SOURCE_DIR}/workloads/test_energy_minimal_load100.json")
-set(BATWLOAD_long "long!${CMAKE_SOURCE_DIR}/workloads/test_batsim_paper_workload_example.json")
+set(BATWLOAD_long "long!${CMAKE_SOURCE_DIR}/workloads/test_batsim_paper_workload_seed1.json")
 set(BATWLOAD_mixed "mixed!${CMAKE_SOURCE_DIR}/workloads/test_workload_profile.json")
 set(BATWLOAD_verylong "verylong!${CMAKE_SOURCE_DIR}/workloads/test_long_workload.json")
 set(BATWLOAD_walltime "walltime!${CMAKE_SOURCE_DIR}/workloads/test_walltime_test.json")
