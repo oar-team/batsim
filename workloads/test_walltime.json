@@ -54,7 +54,7 @@
             "delay": 10
         },
         "compute_only_10s":{
-            "type":"msg_par_hg",
+            "type":"parallel_homogeneous",
             "cpu": 1e9,
             "com": 0
         }

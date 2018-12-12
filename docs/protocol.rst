@@ -225,6 +225,8 @@ This is a reply to a QUERY_ event.
      }
    }
 
+.. _proto_NOTIFY:
+
 NOTIFY
 ~~~~~~
 
@@ -272,6 +274,8 @@ Batsim to Scheduler events
 --------------------------
 
 These events are sent by Batsim to the scheduler.
+
+.. _proto_SIMULATION_BEGINS:
 
 SIMULATION_BEGINS
 ~~~~~~~~~~~~~~~~~
@@ -360,12 +364,12 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
            ],
            "storage_resources": [],
            "workloads": {
-             "26dceb": "/home/mmercier/Projects/batsim/workloads/test_workload_profile.json"
+             "26dceb": "/home/mmercier/Projects/batsim/workloads/test_various_profile_types.json"
            },
            "profiles": {
              "26dceb":{
                "simple": {
-                 "type": "msg_par",
+                 "type": "parallel",
                  "cpu": [5e6,  0,  0,  0],
                  "com": [5e6,  0,  0,  0,
                          5e6,5e6,  0,  0,
@@ -373,17 +377,17 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
                          5e6,5e6,5e6,  0]
                },
                "homogeneous": {
-                 "type": "msg_par_hg",
+                 "type": "parallel_homogeneous",
                  "cpu": 10e6,
                  "com": 1e6
                },
                "homogeneous_no_cpu": {
-                 "type": "msg_par_hg",
+                 "type": "parallel_homogeneous",
                  "cpu": 0,
                  "com": 1e6
                },
                "homogeneous_no_com": {
-                 "type": "msg_par_hg",
+                 "type": "parallel_homogeneous",
                  "cpu": 2e5,
                  "com": 0
                },
@@ -397,7 +401,7 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
                  "delay": 20.20
                },
                "homogeneous_total": {
-                 "type": "msg_par_hg_tot",
+                 "type": "parallel_homogeneous_total",
                  "cpu": 10e6,
                  "com": 1e6
                }
@@ -511,7 +515,7 @@ It acknowledges that the actions coming from a previous EXECUTE_JOB_ event have 
 - ``return_code``: The return code of the job process (equals to 0
   by default, see :ref:`input_workload`).
 - ``kill_reason``: The kill reason (if any).
-- ``alloc``: The resources allocated to this job in the previous EXECUTE_JOB_ event.
+- ``alloc``: The :ref:`interval_set` of resources allocated to this job in the previous EXECUTE_JOB_ event.
 
 .. code:: json
 
@@ -613,7 +617,7 @@ RESOURCE_STATE_CHANGED
 This event means that the state of some resources has changed.
 It acknowledges that the actions coming from a previous SET_RESOURCE_STATE_ event have been done.
 
-**data**: An interval set of resource ids and their new state.
+**data**: An :ref:`interval_set` of ``resources`` and their new ``state``.
 
 .. code:: json
 
@@ -661,10 +665,12 @@ The rejected job will not appear into the final jobs trace.
      "data": { "job_id": "w12!45" }
    }
 
+.. _proto_EXECUTE_JOB:
+
 EXECUTE_JOB
 ~~~~~~~~~~~
 
-Execute a job on a given set of resources.
+Execute a job on a given :ref:`interval_set` of resources.
 
 An optional ``mapping`` field can be added to tell Batsim how to map
 executors to resources: Where the executors will be placed inside the
@@ -678,7 +684,7 @@ second machine (1, which stands for resource id 3).
 For certain job profiles that involve storage you may need to define a
 ``storage_mapping`` between the storage label defined in the job profile
 definition and the storage resource id on the platform. For example, the
-job profile of type ``msg_par_hg_pfs_tiers`` contains this field
+job profile of type ``parallel_homogeneous_pfs`` contains this field
 ``"storage": "pfs"``. In order to select what is the resource that
 corresponds to the ``"pfs"`` storage, you should provide a mapping for
 this label: ``"storage_mapping": { "pfs": 2 }``. If no mapping is
@@ -688,13 +694,14 @@ resource is provided on the platform.
 Another optional field is ``additional_io_job`` that permits the
 scheduler to add a job, that represents the IO traffic, dynamically at
 execution time. This dynamicity is necessary when the IO traffic depends
-on the job allocation. It only works for MSG based job profile types for
+on the job allocation. It only works for parallel task based job profile types for
 the additional IO job and the job itself. The given IO job will be
 merged to the actual job before its execution. The additional job
 allocation may be different from the job allocation itself, for example
 when some IO nodes are involved.
 
-**data**: A job id, an allocation of resources, a mapping (optional), an additional IO job (optional).
+**data**: A job id, an allocation of resources ``alloc`` (see :ref:`interval_set_string_representation` for format),
+a mapping (optional), an additional IO job (optional).
 
 .. code:: json
 
@@ -713,7 +720,7 @@ when some IO nodes are involved.
        "alloc": "2-3 5-6",
        "profile_name": "my_io_job",
        "profile": {
-         "type": "msg_par",
+         "type": "parallel",
          "cpu": 0,
          "com": [0  ,5e6,5e6,5e6,
                  5e6,0  ,5e6,0  ,
@@ -756,6 +763,8 @@ before the kill), Batsim acknowledges it with one JOB_KILLED_ event.
      "type": "KILL_JOB",
      "data": {"job_ids": ["w0!1", "w0!2"]}
    }
+
+.. _proto_REGISTER_JOB:
 
 REGISTER_JOB
 ~~~~~~~~~~~~
@@ -803,6 +812,7 @@ Example **with redis** : The job and profile description, if unknown to Batsim y
      }
    }
 
+.. _proto_REGISTER_PROFILE:
 
 REGISTER_PROFILE
 ~~~~~~~~~~~~~~~~
@@ -841,7 +851,7 @@ Sets some resources into a state.
 As soon as all the resources have been set into the given state, Batsim
 acknowledges it by sending one RESOURCE_STATE_CHANGED_ event.
 
-**data**: An interval set of resource id, and their new state.
+**data**: An :ref:`interval_set` of ``resources`` and their new ``state``.
 
 .. code:: json
 

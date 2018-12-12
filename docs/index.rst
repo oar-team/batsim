@@ -41,6 +41,7 @@ Batch schedulers — or Resource and Jobs Management Systems, RJMSs — are syst
    Protocol <protocol.rst>
    Using Redis <redis.rst>
    Using the I/O model <IO.rst>
+   Interval set <interval-set.rst>
    Changelog <changelog.rst>
 
 .. toctree::

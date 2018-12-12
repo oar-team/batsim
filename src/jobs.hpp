@@ -16,8 +16,6 @@
 
 #include <intervalset.hpp>
 
-#include "exact_numbers.hpp"
-
 class Profiles;
 struct Profile;
 class Workload;
@@ -182,15 +180,15 @@ struct Job
 
     // Current state
     JobState state; //!< The current state of the job
-    Rational starting_time; //!< The time at which the job starts to be executed.
-    Rational runtime; //!< The amount of time during which the job has been executed.
+    long double starting_time; //!< The time at which the job starts to be executed.
+    long double runtime; //!< The amount of time during which the job has been executed.
     bool kill_requested = false; //!< Whether the job kill has been requested
-    long double consumed_energy; //!< The sum, for each machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
+    long double consumed_energy; //!< The sum, for all machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
 
     // User inputs
     std::string profile; //!< The job profile name. The corresponding profile tells how the job should be computed
-    Rational submission_time; //!< The job submission time: The time at which the becomes available
-    Rational walltime = -1; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed. Set at -1 to disable this behavior
+    long double submission_time; //!< The job submission time: The time at which the becomes available
+    long double walltime = -1; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed. Set at -1 to disable this behavior
     unsigned int requested_nb_res; //!< The number of resources the job is requested to be executed on
     int return_code = -1; //!< The return code of the job
 

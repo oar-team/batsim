@@ -67,7 +67,7 @@ strings:
 
 ``` json
 {
-    "type": "msg_par",
+    "type": "parallel",
     "cpu": [5e6,5e6,5e6,5e6],
     "com": [5e6,5e6,5e6,5e6,
             5e6,5e6,5e6,5e6,
@@ -78,7 +78,7 @@ strings:
 
 ``` json
 {
-    "type": "msg_par_hg",
+    "type": "parallel_homogeneous",
     "cpu": 10e6,
     "com": 1e6
 }

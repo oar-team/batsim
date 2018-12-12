@@ -136,7 +136,7 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::MSG_PARALLEL)
+    else if (type == ProfileType::PARALLEL)
     {
         MsgParallelProfileData * d = (MsgParallelProfileData *) data;
         if (d != nullptr)
@@ -145,7 +145,7 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS)
+    else if (type == ProfileType::PARALLEL_HOMOGENEOUS)
     {
         MsgParallelHomogeneousProfileData * d = (MsgParallelHomogeneousProfileData *) data;
         if (d != nullptr)
@@ -154,7 +154,7 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
+    else if (type == ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
     {
         MsgParallelHomogeneousTotalAmountProfileData * d = (MsgParallelHomogeneousTotalAmountProfileData *) data;
         if (d != nullptr)
@@ -181,7 +181,7 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS)
+    else if (type == ProfileType::PARALLEL_HOMOGENEOUS_PFS)
     {
         MsgParallelHomogeneousPFSProfileData * d = (MsgParallelHomogeneousPFSProfileData *) data;
         if (d != nullptr)
@@ -190,7 +190,7 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::MSG_DATA_STAGING)
+    else if (type == ProfileType::DATA_STAGING)
     {
         MsgDataStagingProfileData * d = (MsgDataStagingProfileData *) data;
         if (d != nullptr)
@@ -273,11 +273,11 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "msg_par")
+    else if (profile_type == "parallel")
     {
         /*
         {
-            "type": "msg_par",
+            "type": "parallel",
             "cpu": [5e6,  0,  0,  0],
             "com": [5e6,  0,  0,  0,
                     5e6,5e6,  0,  0,
@@ -285,7 +285,7 @@ Profile *Profile::from_json(const std::string & profile_name,
                     5e6,5e6,5e6,  0]
         }
         */
-        profile->type = ProfileType::MSG_PARALLEL;
+        profile->type = ProfileType::PARALLEL;
         MsgParallelProfileData * data = new MsgParallelProfileData;
 
         // basic checks
@@ -333,16 +333,16 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "msg_par_hg")
+    else if (profile_type == "parallel_homogeneous")
     {
         /*
         {
-            "type": "msg_par_hg",
+            "type": "parallel_homogeneous",
             "cpu": 10e6,
             "com": 1e6
         }
         */
-        profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS;
+        profile->type = ProfileType::PARALLEL_HOMOGENEOUS;
         MsgParallelHomogeneousProfileData * data = new MsgParallelHomogeneousProfileData;
 
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
@@ -363,16 +363,16 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "msg_par_hg_tot")
+    else if (profile_type == "parallel_homogeneous_total")
     {
         /*
         {
-            "type": "msg_par_hg_tot",
+            "type": "parallel_homogeneous_total",
             "cpu": 10e6,
             "com": 1e6
         }
         */
-        profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT;
+        profile->type = ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT;
         MsgParallelHomogeneousTotalAmountProfileData * data = new MsgParallelHomogeneousTotalAmountProfileData;
 
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
@@ -432,17 +432,17 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "msg_par_hg_pfs")
+    else if (profile_type == "parallel_homogeneous_pfs")
     {
         /*
         {
-            "type": "msg_par_hs_pfs",
+            "type": "parallel_homogeneous_pfs",
             "bytes_to_read": 10e5,
             "bytes_to_write": 10e5,
             "storage": "my_io_node" //optional (default: 'pfs')
         }
         */
-        profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS;
+        profile->type = ProfileType::PARALLEL_HOMOGENEOUS_PFS;
         MsgParallelHomogeneousPFSProfileData * data = new MsgParallelHomogeneousPFSProfileData;
 
         xbt_assert(json_desc.HasMember("bytes_to_read") or json_desc.HasMember("bytes_to_write"), "%s: profile '%s' has no 'bytes_to_read' or 'bytes_to_write' field (0 if not set)",
@@ -492,7 +492,7 @@ Profile *Profile::from_json(const std::string & profile_name,
             "to": "lcfs"
         }
         */
-        profile->type = ProfileType::MSG_DATA_STAGING;
+        profile->type = ProfileType::DATA_STAGING;
         MsgDataStagingProfileData * data = new MsgDataStagingProfileData;
 
         xbt_assert(json_desc.HasMember("nb_bytes"), "%s: profile '%s' has no 'nb_bytes' field",
@@ -636,6 +636,12 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
+    else
+    {
+        xbt_die("Cannot create the profile '%s' of unknown type '%s'",
+                profile_name.c_str(), profile_type.c_str());
+    }
+
 
     // Let's get the JSON string which describes the profile (to conserve potential fields unused by Batsim)
     rapidjson::StringBuffer buffer;
@@ -661,31 +667,31 @@ Profile *Profile::from_json(const std::string & profile_name,
 
 bool Profile::is_parallel_task() const
 {
-    return (type == ProfileType::MSG_PARALLEL) ||
-           (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS) ||
-           (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT) ||
-           (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS) ||
-           (type == ProfileType::MSG_DATA_STAGING);
+    return (type == ProfileType::PARALLEL) ||
+           (type == ProfileType::PARALLEL_HOMOGENEOUS) ||
+           (type == ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT) ||
+           (type == ProfileType::PARALLEL_HOMOGENEOUS_PFS) ||
+           (type == ProfileType::DATA_STAGING);
 }
 
 
 std::string profile_type_to_string(const ProfileType & type)
 {
-    string str = "unset";
+    string str;
 
     switch(type)
     {
     case ProfileType::DELAY:
         str = "DELAY";
         break;
-    case ProfileType::MSG_PARALLEL:
-        str = "MSG_PARALLEL";
+    case ProfileType::PARALLEL:
+        str = "PARALLEL";
         break;
-    case ProfileType::MSG_PARALLEL_HOMOGENEOUS:
-        str = "MSG_PARALLEL_HOMOGENEOUS";
+    case ProfileType::PARALLEL_HOMOGENEOUS:
+        str = "PARALLEL_HOMOGENEOUS";
         break;
-    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
-        str = "MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT";
+    case ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
+        str = "PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT";
         break;
     case ProfileType::SMPI:
         str = "SMPI";
@@ -693,17 +699,20 @@ std::string profile_type_to_string(const ProfileType & type)
     case ProfileType::SEQUENCE:
         str = "SEQUENCE";
         break;
-    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS:
-        str = "MSG_PARALLEL_HOMOGENEOUS_PFS";
+    case ProfileType::PARALLEL_HOMOGENEOUS_PFS:
+        str = "PARALLEL_HOMOGENEOUS_PFS";
         break;
-    case ProfileType::MSG_DATA_STAGING:
-        str = "MSG_DATA_STAGING";
+    case ProfileType::DATA_STAGING:
+        str = "DATA_STAGING";
         break;
     case ProfileType::SCHEDULER_SEND:
         str = "SCHEDULER_SEND";
         break;
     case ProfileType::SCHEDULER_RECV:
         str = "SCHEDULER_RECV";
+        break;
+    default:
+        str = "unset";
         break;
     }
 

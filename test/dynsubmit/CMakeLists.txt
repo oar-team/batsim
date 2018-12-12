@@ -80,7 +80,7 @@ foreach(simu_instance IN LISTS simu_instances)
 
                     set(thistest_OTH_BATSIM_ARGS "--enable-dynamic-jobs")
                     if (${redis_mode_value} EQUAL "true")
-                        set(thistest_OTH_BATSIM_ARGS "${thistest_OTH_BATSIM_ARGS} --enable-redis")
+                        set(thistest_OTH_BATSIM_ARGS "${thistest_OTH_BATSIM_ARGS} --enable-redis --redis-prefix '${thistest_NAME}'")
                     endif()
                     if (${dsam_value} EQUAL "true")
                         set(thistest_OTH_BATSIM_ARGS "${thistest_OTH_BATSIM_ARGS} --acknowledge-dynamic-jobs")
@@ -106,7 +106,7 @@ foreach(simu_instance IN LISTS simu_instances)
                         ALGORITHM ${algo_realname}
                         OTH_BATSIM_ARGS "${thistest_OTH_BATSIM_ARGS}"
                         OTH_BATSCHED_ARGS "--variant_options_filepath=${thistest_SCHED_INPUT_FILE}"
-                        ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end --expect-robin-success --expect-sched-success --expect-batsim-success"
+                        ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-robin-success --expect-sched-success --expect-batsim-success"
                     )
                 endforeach()
             endforeach()

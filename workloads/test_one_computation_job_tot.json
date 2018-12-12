@@ -1,0 +1,14 @@
+{
+    "nb_res": 4,
+    "jobs": [
+        {"id":1, "subtime":0, "walltime": 100, "res": 4, "profile": "hg_10"}
+    ],
+
+    "profiles": {
+        "hg_10": {
+            "type": "parallel_homogeneous_total",
+            "cpu": 4e9,
+            "com": 0
+        }
+    }
+}

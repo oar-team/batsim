@@ -1,16 +1,15 @@
 # Simulation instances
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_compute1}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_delay1}")
+list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_delays}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_mixed}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_verylong}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_delay_sequences}")
-list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_delay_same_profiles}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_tuto1}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_smpi_compute1}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_smpi_compute2}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_smpi_mixed}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_smpi_collectives}")
-list(APPEND simu_instances "${SGPLATFORM_cluster512}?${BATWLOAD_delays}")
 list(APPEND simu_instances "${SGPLATFORM_cluster512}?${BATWLOAD_long}")
 
 foreach(simu_instance IN LISTS simu_instances)
@@ -35,6 +34,6 @@ foreach(simu_instance IN LISTS simu_instances)
         OUTPUT_DIR ${thistest_OUTPUT_DIR}
         BATCMD "batsim -p ${platform_filename} -w ${workload_filename} -e ${thistest_OUTPUT_DIR}/out --no-sched"
         SCHEDCMD ""
-        ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end --expect-robin-success --expect-no-sched --expect-batsim-success"
+        ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-robin-success --expect-no-sched --expect-batsim-success"
     )
 endforeach()

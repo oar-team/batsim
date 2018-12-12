@@ -200,6 +200,14 @@ void server_on_register_profile(ServerData * data,
                                IPMessage * task_data);
 
 /**
+ * @brief Server SCHED_SET_JOB_METADATA handler
+ * @param[in,out] data The data asssociated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_set_job_metadata(ServerData * data,
+                                IPMessage * task_data);
+
+/**
  * @brief Server SCHED_REJECT_JOB handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received

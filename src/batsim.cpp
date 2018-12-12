@@ -176,6 +176,7 @@ Usage:
                             [-W <workflow_file>...]
                             [--WS (<cut_workflow_file> <start_time>)...]
                             [--sg-cfg <opt_name:opt_value>...]
+                            [--sg-log <log_option>...]
                             [-r <hosts_roles_map>...]
                             [options]
   batsim --help
@@ -259,15 +260,17 @@ Workflow options:
 Other options:
   --dump-execution-context           Does not run the actual simulation but dumps the execution
                                      context on stdout (formatted as a JSON object).
-  --enable-time-sharing-on-compute   Enables time sharing on compute machines:
-                                     One resource may compute several jobs at the same time.
-  --disable-time-sharing-on-storage  Disables time sharing on storage machines:
-                                     IO jobs will be performed one at a time on storage machines.
+  --enable-compute-sharing           Enables compute resource sharing:
+                                     One compute resource may be used by several jobs at the same time.
+  --disable-storage-sharing          Disables storage resource sharing:
+                                     One storage resource may be used by several jobs at the same time.
   --no-sched                         If set, the jobs in the workloads are
                                      computed one by one, one after the other,
                                      without scheduler nor Redis.
-  --sg-cfg <opt_name:opt_value>...   Forward a given option_name:option_value to SimGrid.
-                                     Refer to SimGrid documentation for more information.
+  --sg-cfg <opt_name:opt_value>...   Forwards a given option_name:option_value to SimGrid.
+                                     Refer to SimGrid configuring documentation for more information.
+  --sg-log <log_option>...           Forwards a given logging option to SimGrid.
+                                     Refer to SimGrid simulation logging documentation for more information.
   -h, --help                         Shows this help.
 )";
 
@@ -522,8 +525,8 @@ Other options:
     // Other options
     // *************
     main_args.dump_execution_context = args["--dump-execution-context"].asBool();
-    main_args.allow_time_sharing_on_compute = args["--enable-time-sharing-on-compute"].asBool();
-    main_args.allow_time_sharing_on_storage = !(args["--disable-time-sharing-on-storage"].asBool());
+    main_args.allow_compute_sharing = args["--enable-compute-sharing"].asBool();
+    main_args.allow_storage_sharing = !(args["--disable-storage-sharing"].asBool());
     if (args["--no-sched"].asBool())
     {
         main_args.program_type = ProgramType::BATEXEC;
@@ -533,16 +536,8 @@ Other options:
         main_args.program_type = ProgramType::BATSIM;
     }
 
-    vector<string> sg_cfg_list = args["--sg-cfg"].asStringList();
-    for (string cfg_string : sg_cfg_list)
-    {
-        vector<string> parsed;
-        boost::split(parsed, cfg_string, boost::is_any_of(":"));
-
-        xbt_assert(parsed.size() == 2, "A SimGrid configuration option should only contain one ':' character");
-        pair<string,string> cfg_pair(parsed[0], parsed[1]);
-        main_args.simgrid_config.push_back(cfg_pair);
-    }
+    main_args.simgrid_config = args["--sg-cfg"].asStringList();
+    main_args.simgrid_config = args["--sg-log"].asStringList();
 
     run_simulation = !error;
 }
@@ -755,12 +750,15 @@ int main(int argc, char * argv[])
     simgrid::s4u::Engine engine(&argc, argv);
 
     // Setting SimGrid configuration options, if any
-    if (main_args.simgrid_config.size() > 0)
+    for (const string & cfg_string : main_args.simgrid_config)
     {
-        for (pair<string,string> cfg_pair : main_args.simgrid_config)
-        {
-            engine.set_config(cfg_pair.first + ":" + cfg_pair.second);
-        }
+        engine.set_config(cfg_string);
+    }
+
+    // Setting SimGrid logging options, if any
+    for (const string & log_string : main_args.simgrid_logging)
+    {
+        xbt_log_control_set(log_string.c_str());
     }
 
     // Let's create the BatsimContext, which stores information about the current instance
@@ -808,8 +806,12 @@ int main(int argc, char * argv[])
         }
 
         // Let's create the socket
-        context.zmq_socket = new zmq::socket_t(context.zmq_context, ZMQ_REQ);
-        context.zmq_socket->connect(main_args.socket_endpoint);
+        context.zmq_context = zmq_ctx_new();
+        xbt_assert(context.zmq_context != nullptr, "Cannot create ZMQ context");
+        context.zmq_socket = zmq_socket(context.zmq_context, ZMQ_REQ);
+        xbt_assert(context.zmq_socket != nullptr, "Cannot create ZMQ REQ socket (errno=%s)", strerror(errno));
+        int err = zmq_connect(context.zmq_socket, main_args.socket_endpoint.c_str());
+        xbt_assert(err == 0, "Cannot connect ZMQ socket to '%s' (errno=%s)", main_args.socket_endpoint.c_str(), strerror(errno));
 
         // Let's create the protocol reader and writer
         context.proto_reader = new JsonProtocolReader(&context);
@@ -827,7 +829,10 @@ int main(int argc, char * argv[])
     // Simulation main loop, handled by MSG
     engine.run();
 
-    delete context.zmq_socket;
+    zmq_close(context.zmq_socket);
+    context.zmq_socket = nullptr;
+
+    zmq_ctx_destroy(context.zmq_context);
     context.zmq_socket = nullptr;
 
     delete context.proto_reader;
@@ -872,8 +877,8 @@ void set_configuration(BatsimContext *context,
     context->export_prefix = main_args.export_prefix;
     context->workflow_nb_concurrent_jobs_limit = main_args.workflow_nb_concurrent_jobs_limit;
     context->energy_used = main_args.energy_used;
-    context->allow_time_sharing_on_compute = main_args.allow_time_sharing_on_compute;
-    context->allow_time_sharing_on_storage = main_args.allow_time_sharing_on_storage;
+    context->allow_compute_sharing = main_args.allow_compute_sharing;
+    context->allow_storage_sharing = main_args.allow_storage_sharing;
     context->trace_schedule = main_args.enable_schedule_tracing;
     context->trace_machine_states = main_args.enable_machine_state_tracing;
     context->simulation_start_time = chrono::high_resolution_clock::now();

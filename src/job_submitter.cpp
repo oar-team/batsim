@@ -82,7 +82,7 @@ void static_job_submitter_process(BatsimContext * context,
 
     send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
 
-    Rational current_submission_date = MSG_get_clock();
+    long double current_submission_date = MSG_get_clock();
 
     vector<const Job *> jobsVector;
 

@@ -1,8 +1,8 @@
 # Simulation instances
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_compute1}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_delay1}")
+list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_delays}")
 list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_mixed}")
-list(APPEND simu_instances "${SGPLATFORM_cluster512}?${BATWLOAD_delays}")
 
 # Algorithms+dynamic submit mode
 list(APPEND algos "${BSALGO_filler}!nodynsubmit!false")
@@ -65,7 +65,7 @@ foreach(mdm IN LISTS metadatamodes)
                 ALGORITHM ${algo_realname}
                 OTH_BATSIM_ARGS "${thistest_OTH_BATSIM_ARGS}"
                 OTH_BATSCHED_ARGS "--variant_options_filepath=${thistest_SCHED_INPUT_FILE}"
-                ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-ctx-clean-at-begin --expect-ctx-clean-at-end --expect-robin-success --expect-sched-success --expect-batsim-success"
+                ROBINTEST_EXPECTATION "--expect-ctx-clean --expect-robin-success --expect-sched-success --expect-batsim-success"
                 CHECK_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/check_metadata_presence.py"
             )
         endforeach()

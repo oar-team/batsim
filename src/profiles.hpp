@@ -16,16 +16,17 @@
  */
 enum class ProfileType
 {
-    DELAY                                          //!< a delay. Its data is of type DelayProfileData
-    ,MSG_PARALLEL                                  //!< composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
-    ,MSG_PARALLEL_HOMOGENEOUS                      //!< a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type MsgParallelHomogeneousProfileData
-    ,MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT         //!< a homogeneous parallel task that spreads the given amounts of computation and communication among all the nodes. Its data is of type MsgParallelHomogeneousTotalAmountProfileData
-    ,SMPI                                          //!< a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
-    ,SEQUENCE                                      //!< non-atomic: it is composed of a sequence of other profiles
-    ,MSG_PARALLEL_HOMOGENEOUS_PFS                  //!< Read and writes data to a PFS storage nodes. data type MsgParallelHomogeneousPFSProfileData
-    ,MSG_DATA_STAGING                              //!< for moving data between the pfs hosts. Its data is of type DataStagingProfileData
-    ,SCHEDULER_SEND                                //!< a profile simulating a message sent to the scheduler. Its data is of type SchedulerSendProfileData
-    ,SCHEDULER_RECV                                //!< receives a message from the scheduler and can execute a profile based on a value comparison of the message. Its data is of type SchedulerRecvProfileData
+    UNSET
+    ,DELAY                                     //!< a delay. Its data is of type DelayProfileData
+    ,PARALLEL                                  //!< composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
+    ,PARALLEL_HOMOGENEOUS                      //!< a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type MsgParallelHomogeneousProfileData
+    ,PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT         //!< a homogeneous parallel task that spreads the given amounts of computation and communication among all the nodes. Its data is of type MsgParallelHomogeneousTotalAmountProfileData
+    ,SMPI                                      //!< a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
+    ,SEQUENCE                                  //!< non-atomic: it is composed of a sequence of other profiles
+    ,PARALLEL_HOMOGENEOUS_PFS                  //!< Read and writes data to a PFS storage nodes. data type MsgParallelHomogeneousPFSProfileData
+    ,DATA_STAGING                              //!< for moving data between the pfs hosts. Its data is of type DataStagingProfileData
+    ,SCHEDULER_SEND                            //!< a profile simulating a message sent to the scheduler. Its data is of type SchedulerSendProfileData
+    ,SCHEDULER_RECV                            //!< receives a message from the scheduler and can execute a profile based on a value comparison of the message. Its data is of type SchedulerRecvProfileData
 };
 
 /**
@@ -82,7 +83,7 @@ struct Profile
 };
 
 /**
- * @brief The data associated to MSG_PARALLEL profiles
+ * @brief The data associated to PARALLEL profiles
  */
 struct MsgParallelProfileData
 {
@@ -100,7 +101,7 @@ struct MsgParallelProfileData
 };
 
 /**
- * @brief The data associated to MSG_PARALLEL_HOMOGENEOUS profiles
+ * @brief The data associated to PARALLEL_HOMOGENEOUS profiles
  */
 struct MsgParallelHomogeneousProfileData
 {
@@ -109,7 +110,7 @@ struct MsgParallelHomogeneousProfileData
 };
 
 /**
- * @brief The data associated to MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT profiles
+ * @brief The data associated to PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT profiles
  */
 struct MsgParallelHomogeneousTotalAmountProfileData
 {
@@ -142,7 +143,7 @@ struct SequenceProfileData
 };
 
 /**
- * @brief The data associated to MSG_PARALLEL_HOMOGENEOUS_PFS profiles
+ * @brief The data associated to PARALLEL_HOMOGENEOUS_PFS profiles
  */
 struct MsgParallelHomogeneousPFSProfileData
 {
@@ -152,7 +153,7 @@ struct MsgParallelHomogeneousPFSProfileData
 };
 
 /**
- * @brief The data associated to MSG_DATA_STAGING profiles
+ * @brief The data associated to DATA_STAGING profiles
  */
 struct MsgDataStagingProfileData
 {

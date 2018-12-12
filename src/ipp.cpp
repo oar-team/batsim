@@ -102,6 +102,9 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_WAIT_ANSWER:
             s = "SCHED_WAIT_ANSWER";
             break;
+        case IPMessageType::SCHED_SET_JOB_METADATA:
+            s = "SCHED_SET_JOB_METADATA";
+            break;
         case IPMessageType::WAIT_QUERY:
             s = "WAIT_QUERY";
             break;
@@ -216,6 +219,11 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
         {
+        } break;
+        case IPMessageType::SCHED_SET_JOB_METADATA:
+        {
+            SetJobMetadataMessage * msg = (SetJobMetadataMessage *) data;
+            delete msg;
         } break;
         case IPMessageType::WAIT_QUERY:
         {

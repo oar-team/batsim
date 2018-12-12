@@ -15,9 +15,9 @@
 
     "profiles": {
         "ptask_prof": {
-            "type": "msg_par_hg",
-            "cpu": 1e9,
-            "com": 0
+            "type": "parallel_homogeneous",
+            "cpu": 5e8,
+            "com": 1.25e9
         }
     }
 }

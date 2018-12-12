@@ -20,16 +20,16 @@ print(metrics) # Print aggregated metrics.
 # Visualize what you want...
 # Is there a link between jobs' waiting time and size?
 ggplot(jobs) +
-    geom_point(aes(y=waiting_time, x=requested_number_of_processors)) +
+    geom_point(aes(y=waiting_time, x=requested_number_of_resources)) +
     ggsave('plot_wt_size.pdf')
 
 # Is this still true depending on job execution time?
 ggplot(jobs) +
-    geom_point(aes(y=waiting_time, x=requested_number_of_processors)) +
+    geom_point(aes(y=waiting_time, x=requested_number_of_resources)) +
     facet_wrap(~longer_than_one_minute) +
     ggsave('plot_wt_size_exectime.pdf')
 
 # Is there a link with job size and execution time?
 ggplot(jobs) +
-    geom_violin(aes(factor(requested_number_of_processors), execution_time)) +
+    geom_violin(aes(factor(requested_number_of_resources), execution_time)) +
     ggsave('plot_exectime_size.pdf')
