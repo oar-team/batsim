@@ -537,7 +537,7 @@ Other options:
     }
 
     main_args.simgrid_config = args["--sg-cfg"].asStringList();
-    main_args.simgrid_config = args["--sg-log"].asStringList();
+    main_args.simgrid_logging = args["--sg-log"].asStringList();
 
     run_simulation = !error;
 }
