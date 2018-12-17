@@ -469,10 +469,6 @@ int execute_msg_task(BatTask * btask,
     // Manage additional io job
     if (btask->io_profile != nullptr)
     {
-        xbt_assert(allocation->mapping.empty(),
-                   "Mixing additional io job with a specific mapping between executors and"
-                   "resources is not supported (yet). PR welcomed!");
-
         Profile * io_profile = btask->io_profile;
         double* io_computation_vector = nullptr;
         double* io_communication_matrix = nullptr;
