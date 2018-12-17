@@ -4,21 +4,10 @@ variables:
   GIT_SUBMODULE_STRATEGY: none
 
 stages:
-  - manual_build
   - nix_build_and_update_dependencies_cache
+  - manual_build
   - test
   - deploy
-
-###############################################################################
-# Manual Build stage
-###############################################################################
-manual_build:
-  stage: manual_build
-  script:
-    - ./ci/manual-build.bash
-  artifacts:
-    paths:
-      - /builds/batsim/batsim/build
 
 ###############################################################################
 # Nix Builds + Dependencies cache stage
@@ -32,6 +21,17 @@ nix_build_clang:
   stage: nix_build_and_update_dependencies_cache
   script:
     - ./ci/nix-build-clang-and-update-dependencies-cache.bash
+
+###############################################################################
+# Manual Build stage
+###############################################################################
+manual_build:
+  stage: manual_build
+  script:
+    - ./ci/manual-build.bash
+  artifacts:
+    paths:
+      - /builds/batsim/batsim/build
 
 ###############################################################################
 # Test stage
