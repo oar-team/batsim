@@ -152,7 +152,7 @@ message("enable_compile_optimizations is ${enable_compile_optimizations}")
 if (enable_compile_optimizations)
     set(compile_optization_flag " -O2")
 else()
-    set(compile_optization_flag " -Og")
+    set(compile_optization_flag " -O0")
 endif()
 set_property(TARGET batsim
     APPEND_STRING PROPERTY COMPILE_FLAGS ${compile_optization_flag})
