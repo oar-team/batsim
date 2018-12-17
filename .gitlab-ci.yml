@@ -23,10 +23,10 @@ manual_build:
 ###############################################################################
 # Nix Builds + Dependencies cache stage
 ###############################################################################
-nix_build_and_update_dependencies_cache:
+nix_build_gcc:
   stage: nix_build_and_update_dependencies_cache
   script:
-    - ./ci/nix-build-and-update-dependencies-cache.bash
+    - ./ci/nix-build-gcc-and-update-dependencies-cache.bash
 
 nix_build_clang:
   stage: nix_build_and_update_dependencies_cache
