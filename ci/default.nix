@@ -2,7 +2,7 @@
 # - nix-shell ci/default.nix --arg useClang true
 # - nix-build ci/default.nix --arg useClang false
 { doCheck ? false,  # run batsim tests when building batsim-ci derivation
-  useClang ? false, # use clang instead of gcc to build batsim
+  useClang ? true,  # use clang instead of gcc to build batsim
   kapack ? import
     (fetchTarball "https://github.com/oar-team/kapack/archive/master.tar.gz")
   {}
