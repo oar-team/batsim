@@ -704,6 +704,7 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
         "requested_number_of_resources",
         "requested_time",
         "success",
+        "final_state",
         "starting_time",
         "execution_time",
         "finish_time",
@@ -712,7 +713,8 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
         "stretch",
         "allocated_resources",
         "consumed_energy",
-        "metadata"
+        "metadata",
+        "profile"
     };
 
     // Write headers (columns) to the output file
@@ -738,36 +740,36 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
             {
                 Job * job = mit.second;
 
-                if (job->is_complete())
+                int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
+
+                // Update all values
+                job_map["job_id"] = job->id.job_name;
+                job_map["workload_name"] = string(workload_name);
+                job_map["submission_time"] = to_string((double)job->submission_time);
+                job_map["requested_number_of_resources"] = to_string(job->requested_nb_res);
+                job_map["requested_time"] = to_string((double)job->walltime);
+                job_map["success"] = to_string(success);
+                job_map["final_state"] = job_state_to_string(job->state);
+                job_map["starting_time"] = to_string((double)job->starting_time);
+                job_map["execution_time"] = to_string((double)job->runtime);
+                job_map["finish_time"] = to_string((double)(job->starting_time + job->runtime));
+                job_map["waiting_time"] = to_string((double)(job->starting_time - job->submission_time));
+                job_map["turnaround_time"] = to_string((double)(job->starting_time + job->runtime - job->submission_time));
+                job_map["stretch"] = to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
+                job_map["consumed_energy"] = to_string(job->consumed_energy);
+                job_map["allocated_resources"] = job->allocation.to_string_hyphen(" ");
+                job_map["metadata"] = '"' + job->metadata + '"';
+                job_map["profile"] = job->profile;
+
+
+                // Write values to the output file
+                row_content.resize(0);
+                for (string & mit : key_list)
                 {
-                    int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
-
-                    // Update all values
-                    job_map["job_id"] = job->id.job_name;
-                    job_map["workload_name"] = string(workload_name);
-                    job_map["submission_time"] = to_string((double)job->submission_time);
-                    job_map["requested_number_of_resources"] = to_string(job->requested_nb_res);
-                    job_map["requested_time"] = to_string((double)job->walltime);
-                    job_map["success"] = to_string(success);
-                    job_map["starting_time"] = to_string((double)job->starting_time);
-                    job_map["execution_time"] = to_string((double)job->runtime);
-                    job_map["finish_time"] = to_string((double)(job->starting_time + job->runtime));
-                    job_map["waiting_time"] = to_string((double)(job->starting_time - job->submission_time));
-                    job_map["turnaround_time"] = to_string((double)(job->starting_time + job->runtime - job->submission_time));
-                    job_map["stretch"] = to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
-                    job_map["consumed_energy"] = to_string(job->consumed_energy);
-                    job_map["allocated_resources"] = job->allocation.to_string_hyphen(" ");
-                    job_map["metadata"] = '"' + job->metadata + '"';
-
-                    // Write values to the output file
-                    row_content.resize(0);
-                    for (string & mit : key_list)
-                    {
-                        row_content.push_back(job_map[mit]);
-                    }
-
-                    f << boost::algorithm::join(row_content, ",") << "\n";
+                    row_content.push_back(job_map[mit]);
                 }
+
+                f << boost::algorithm::join(row_content, ",") << "\n";
             }
         }
     }
