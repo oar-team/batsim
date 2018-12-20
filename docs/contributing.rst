@@ -3,6 +3,8 @@
 Contributing
 ============
 
+See CONTRIBUTING.md at the root of the repository.
+
 .. todo::
     Write how to contribute to Batsim.
 
