@@ -700,6 +700,7 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
     vector<string> key_list = {
         "job_id",
         "workload_name",
+        "profile",
         "submission_time",
         "requested_number_of_resources",
         "requested_time",
@@ -713,8 +714,7 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
         "stretch",
         "allocated_resources",
         "consumed_energy",
-        "metadata",
-        "profile"
+        "metadata"
     };
 
     // Write headers (columns) to the output file
@@ -741,25 +741,26 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
                 Job * job = mit.second;
 
                 int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
+                bool rejected = (job->state == JobState::JOB_STATE_REJECTED);
 
                 // Update all values
                 job_map["job_id"] = job->id.job_name;
                 job_map["workload_name"] = string(workload_name);
+                job_map["profile"] = job->profile;
                 job_map["submission_time"] = to_string((double)job->submission_time);
                 job_map["requested_number_of_resources"] = to_string(job->requested_nb_res);
                 job_map["requested_time"] = to_string((double)job->walltime);
                 job_map["success"] = to_string(success);
                 job_map["final_state"] = job_state_to_string(job->state);
-                job_map["starting_time"] = to_string((double)job->starting_time);
-                job_map["execution_time"] = to_string((double)job->runtime);
-                job_map["finish_time"] = to_string((double)(job->starting_time + job->runtime));
-                job_map["waiting_time"] = to_string((double)(job->starting_time - job->submission_time));
-                job_map["turnaround_time"] = to_string((double)(job->starting_time + job->runtime - job->submission_time));
-                job_map["stretch"] = to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
-                job_map["consumed_energy"] = to_string(job->consumed_energy);
+                job_map["starting_time"] = rejected ? "" : to_string((double)job->starting_time);
+                job_map["execution_time"] = rejected ? "" :to_string((double)job->runtime);
+                job_map["finish_time"] = rejected ? "" :to_string((double)(job->starting_time + job->runtime));
+                job_map["waiting_time"] = rejected ? "" :to_string((double)(job->starting_time - job->submission_time));
+                job_map["turnaround_time"] = rejected ? "" :to_string((double)(job->starting_time + job->runtime - job->submission_time));
+                job_map["stretch"] = rejected ? "" :to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
+                job_map["consumed_energy"] = rejected ? "" :to_string(job->consumed_energy);
                 job_map["allocated_resources"] = job->allocation.to_string_hyphen(" ");
                 job_map["metadata"] = '"' + job->metadata + '"';
-                job_map["profile"] = job->profile;
 
 
                 // Write values to the output file
@@ -903,6 +904,7 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     output_map["nb_jobs_finished"] = to_string(nb_jobs_finished);
     output_map["nb_jobs_success"] = to_string(nb_jobs_success);
     output_map["nb_jobs_killed"] = to_string(nb_jobs_killed);
+    output_map["nb_jobs_rejected"] = to_string(nb_jobs - nb_jobs_finished);
     output_map["success_rate"] = to_string(success_rate);
 
     output_map["makespan"] = to_string((double)makespan);

@@ -74,6 +74,8 @@ Changed (**breaks platform format**)
 Changed (**breaks jobs output file format**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- The rejected jobs are now present in the job and schedule CSV.
+- The columns ``final_state`` and ``profile`` have been added.
 - The columns ``requested_number_of_processors`` and ``allocated_processors`` have been respectively renamed ``requested_number_of_resources`` and ``allocated_resources``.
 - The order of the columns has changed.
 
