@@ -203,18 +203,16 @@ void Machines::create_machines(const BatsimContext *context,
             }
         }
 
-        if (context->submission_sched_enabled)
+        /* Guard related to the famous OBFH (https://github.com/oar-team/batsim/issues/21), which may not occur anymore.
+        if (context->registration_sched_enabled)
         {
-            // Because of one pernicious bug (https://github.com/oar-team/batsim/issues/21),
-            // let's check that the machine contains no energy information if dynamic submissions
-            // are enabled.
             bool contains_sleep_pstates = (machine->properties.count("sleep_pstates") == 1);
             xbt_assert(!contains_sleep_pstates,
                        "Using dynamic job submissions AND plaforms with energy information "
                        "is currently forbidden (https://github.com/oar-team/batsim/issues/21).");
-        }
+        }*/
 
-        // Machines thay may compute flops must have a positive computing speed
+        // Machines that may compute flops must have a positive computing speed
         if ((machine->permissions & Permissions::COMPUTE_FLOPS) == Permissions::COMPUTE_FLOPS)
         {
             if (context->energy_used)
@@ -559,9 +557,9 @@ Machine::~Machine()
     properties.clear();
 }
 
-bool Machine::has_role(Permissions role)
+bool Machine::has_role(Permissions role) const
 {
-    return (role | this->permissions) == role;
+    return (role & this->permissions) == role;
 }
 
 bool Machine::has_pstate(int pstate) const
@@ -638,9 +636,9 @@ string Machine::jobs_being_computed_as_string() const
 
 void Machine::update_machine_state(MachineState new_state)
 {
-    Rational current_date = MSG_get_clock();
+    long double current_date = MSG_get_clock();
 
-    Rational delta_time = current_date - last_state_change_date;
+    long double delta_time = current_date - last_state_change_date;
     xbt_assert(delta_time >= 0);
 
     time_spent_in_each_state[state] += delta_time;

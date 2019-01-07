@@ -697,29 +697,33 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
 
     // List all features (columns)
     map<string, string> job_map;
-    job_map["job_id"] = "unset";
-    job_map["workload_name"] = "unset";
-    job_map["submission_time"] = "unset";
-    job_map["requested_number_of_processors"] = "unset";
-    job_map["requested_time"] = "unset";
-    job_map["success"] = "unset";
-    job_map["starting_time"] = "unset";
-    job_map["execution_time"] = "unset";
-    job_map["finish_time"] = "unset";
-    job_map["waiting_time"] = "unset";
-    job_map["turnaround_time"] = "unset";
-    job_map["stretch"] = "unset";
-    job_map["consumed_energy"] = "unset";
-    job_map["allocated_processors"] = "unset";
-    job_map["metadata"] = "unset";
+    vector<string> key_list = {
+        "job_id",
+        "workload_name",
+        "profile",
+        "submission_time",
+        "requested_number_of_resources",
+        "requested_time",
+        "success",
+        "final_state",
+        "starting_time",
+        "execution_time",
+        "finish_time",
+        "waiting_time",
+        "turnaround_time",
+        "stretch",
+        "allocated_resources",
+        "consumed_energy",
+        "metadata"
+    };
 
     // Write headers (columns) to the output file
     vector<string> row_content;
     row_content.reserve(job_map.size());
 
-    for (auto mit : job_map)
+    for (string & mit : key_list)
     {
-         row_content.push_back(mit.first);
+        row_content.push_back(mit);
     }
 
     f << boost::algorithm::join(row_content, ",") << "\n";
@@ -736,36 +740,37 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
             {
                 Job * job = mit.second;
 
-                if (job->is_complete())
+                int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
+                bool rejected = (job->state == JobState::JOB_STATE_REJECTED);
+
+                // Update all values
+                job_map["job_id"] = job->id.job_name;
+                job_map["workload_name"] = string(workload_name);
+                job_map["profile"] = job->profile;
+                job_map["submission_time"] = to_string((double)job->submission_time);
+                job_map["requested_number_of_resources"] = to_string(job->requested_nb_res);
+                job_map["requested_time"] = to_string((double)job->walltime);
+                job_map["success"] = to_string(success);
+                job_map["final_state"] = job_state_to_string(job->state);
+                job_map["starting_time"] = rejected ? "" : to_string((double)job->starting_time);
+                job_map["execution_time"] = rejected ? "" :to_string((double)job->runtime);
+                job_map["finish_time"] = rejected ? "" :to_string((double)(job->starting_time + job->runtime));
+                job_map["waiting_time"] = rejected ? "" :to_string((double)(job->starting_time - job->submission_time));
+                job_map["turnaround_time"] = rejected ? "" :to_string((double)(job->starting_time + job->runtime - job->submission_time));
+                job_map["stretch"] = rejected ? "" :to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
+                job_map["consumed_energy"] = rejected ? "" :to_string(job->consumed_energy);
+                job_map["allocated_resources"] = job->allocation.to_string_hyphen(" ");
+                job_map["metadata"] = '"' + job->metadata + '"';
+
+
+                // Write values to the output file
+                row_content.resize(0);
+                for (string & mit : key_list)
                 {
-                    int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
-
-                    // Update all values
-                    job_map["job_id"] = job->id.job_name;
-                    job_map["workload_name"] = string(workload_name);
-                    job_map["submission_time"] = to_string((double)job->submission_time);
-                    job_map["requested_number_of_processors"] = to_string(job->requested_nb_res);
-                    job_map["requested_time"] = to_string((double)job->walltime);
-                    job_map["success"] = to_string(success);
-                    job_map["starting_time"] = to_string((double)job->starting_time);
-                    job_map["execution_time"] = to_string((double)job->runtime);
-                    job_map["finish_time"] = to_string((double)(job->starting_time + job->runtime));
-                    job_map["waiting_time"] = to_string((double)(job->starting_time - job->submission_time));
-                    job_map["turnaround_time"] = to_string((double)(job->starting_time + job->runtime - job->submission_time));
-                    job_map["stretch"] = to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
-                    job_map["consumed_energy"] = to_string(job->consumed_energy);
-                    job_map["allocated_processors"] = job->allocation.to_string_hyphen(" ");
-                    job_map["metadata"] = '"' + job->metadata + '"';
-
-                    // Write values to the output file
-                    row_content.resize(0);
-                    for (auto mit : job_map)
-                    {
-                        row_content.push_back(mit.second);
-                    }
-
-                    f << boost::algorithm::join(row_content, ",") << "\n";
+                    row_content.push_back(job_map[mit]);
                 }
+
+                f << boost::algorithm::join(row_content, ",") << "\n";
             }
         }
     }
@@ -783,28 +788,28 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     int nb_jobs_finished = 0;
     int nb_jobs_success = 0;
     int nb_jobs_killed = 0;
-    Rational makespan = 0;
-    Rational sum_waiting_time = 0;
-    Rational sum_turnaround_time = 0;
-    Rational sum_slowdown = 0;
-    Rational max_waiting_time = 0;
-    Rational max_turnaround_time = 0;
-    Rational max_slowdown = 0;
+    long double makespan = 0;
+    long double sum_waiting_time = 0;
+    long double sum_turnaround_time = 0;
+    long double sum_slowdown = 0;
+    long double max_waiting_time = 0;
+    long double max_turnaround_time = 0;
+    long double max_slowdown = 0;
 
     map<string, string> output_map;
 
-    map<int, Rational> machines_utilisation;
+    map<int, long double> machines_utilisation;
     for (int i=0; i<context->machines.nb_machines(); i++)
     {
         machines_utilisation[i] = 0;
     }
 
-    Rational seconds_used_by_scheduler = context->microseconds_used_by_scheduler / (Rational)1e6;
+    long double seconds_used_by_scheduler = context->microseconds_used_by_scheduler / 1e6l;
     output_map["scheduling_time"] = to_string((double) seconds_used_by_scheduler);
 
     // Let's compute the simulation time
     chrono::duration<long double> diff = context->simulation_end_time - context->simulation_start_time;
-    Rational seconds_used_by_the_whole_simulation = diff.count();
+    long double seconds_used_by_the_whole_simulation = diff.count();
     output_map["simulation_time"] = to_string((double) seconds_used_by_the_whole_simulation);
 
     // Let's compute jobs-oriented metrics
@@ -834,11 +839,11 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
                     }
 
 
-                    Rational starting_time = job->starting_time;
-                    Rational waiting_time = starting_time - job->submission_time;
-                    Rational completion_time = job->starting_time + job->runtime;
-                    Rational turnaround_time = completion_time - job->submission_time;
-                    Rational slowdown = turnaround_time / job->runtime;
+                    long double starting_time = job->starting_time;
+                    long double waiting_time = starting_time - job->submission_time;
+                    long double completion_time = job->starting_time + job->runtime;
+                    long double turnaround_time = completion_time - job->submission_time;
+                    long double slowdown = turnaround_time / job->runtime;
 
                     sum_waiting_time += waiting_time;
                     sum_turnaround_time += turnaround_time;
@@ -899,6 +904,7 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     output_map["nb_jobs_finished"] = to_string(nb_jobs_finished);
     output_map["nb_jobs_success"] = to_string(nb_jobs_success);
     output_map["nb_jobs_killed"] = to_string(nb_jobs_killed);
+    output_map["nb_jobs_rejected"] = to_string(nb_jobs - nb_jobs_finished);
     output_map["success_rate"] = to_string(success_rate);
 
     output_map["makespan"] = to_string((double)makespan);
@@ -921,14 +927,14 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     XBT_INFO("mean_machines_running=%lf, max_machines_running=%lf",
              (double)mean_time_running, (double)max_time_running);
 
-    Rational total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
+    long double total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
     output_map["consumed_joules"] = to_string((double) total_consumed_energy);
 
     output_map["nb_machine_switches"] = to_string(context->nb_machine_switches);
     output_map["nb_grouped_switches"] = to_string(context->nb_grouped_switches);
 
     // Let's compute machine-related metrics
-    map<MachineState, Rational> time_spent_in_each_state;
+    map<MachineState, long double> time_spent_in_each_state;
     const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
                                                  MachineState::COMPUTING,
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
@@ -1097,9 +1103,9 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     long double energy = _context->machines.total_consumed_energy(_context);
     long double wattmin = _context->machines.total_wattmin(_context);
 
-    Rational time_diff = (Rational)date - _last_entry_date;
-    Rational energy_diff = Rational(energy) - _last_entry_energy;
-    Rational epower = -1;
+    long double time_diff = (long double)date - _last_entry_date;
+    long double energy_diff = energy - _last_entry_energy;
+    long double epower = -1;
 
     if (time_diff > 0)
     {

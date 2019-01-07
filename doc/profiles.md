@@ -28,7 +28,7 @@ Waiting for 20.20 seconds.
 }
 ```
 
-## MSG parallel task
+## Parallel task
 
 This profile correspond to a parallel task executed simultaneously on each node
 allocated to the job.
@@ -46,7 +46,7 @@ allocated to the job.
 
 ```json
 {
-    "type": "msg_par",
+    "type": "parallel",
     "cpu": [5e6,  0,  0,  0],
     "com": [5e6,  0,  0,  0,
             5e6,5e6,  0,  0,
@@ -55,7 +55,7 @@ allocated to the job.
 }
 ```
 
-## MSG parallel homogeneous task
+## Parallel homogeneous task
 
 This model is a convenient way to generate homogeneous task computation and
 communication. The loopback communication is set to 0.
@@ -68,13 +68,13 @@ communication. The loopback communication is set to 0.
 
 ```json
 {
-    "type": "msg_par_hg",
+    "type": "parallel_homogeneous",
     "cpu": 10e6,
     "com": 1e6
 }
 ```
 
-## MSG parallel homogeneous task with total amount
+## Parallel homogeneous task with total amount
 
 This model is a convenient way to generate homogeneous task computation and
 communication by giving the total amount work to be done. The loopback
@@ -92,7 +92,7 @@ any number of resources while conserving the same amount of work to do.
 
 ```json
 {
-    "type": "msg_par_hg_tot",
+    "type": "parallel_homogeneous_total",
     "cpu": 10e6,
     "com": 1e6
 }
@@ -119,7 +119,7 @@ This job profile is a list of profiles to be executed in a sequence.
 ```
 
 
-## MSG homogeneous IO to/from a PFS storage (Parallel File System)
+## Homogeneous IO to/from a PFS storage (Parallel File System)
 
 Represents an IO transfer between all the nodes of a job's allocation and a
 centralized storage tier. The storage tier is represented by one node.
@@ -134,14 +134,14 @@ centralized storage tier. The storage tier is represented by one node.
 
 ```json
 {
-    "type": "msg_par_hg_pfs",
+    "type": "parallel_homogeneous_pfs",
     "bytes_to_read": 10e5,
     "bytes_to_write": 10e5,
     "storage": "nfs"
 }
 ```
 
-## MSG IO staging between two storage tiers
+## IO staging between two storage tiers
 
 This profile represents an IO transfer between two storage tiers.
 

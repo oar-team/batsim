@@ -69,11 +69,11 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::JOB_SUBMITTED:
             s = "JOB_SUBMITTED";
             break;
-        case IPMessageType::JOB_SUBMITTED_BY_DP:
-            s = "JOB_SUBMITTED_BY_DP";
+        case IPMessageType::JOB_REGISTERED_BY_DP:
+            s = "JOB_REGISTERED_BY_DP";
             break;
-        case IPMessageType::PROFILE_SUBMITTED_BY_DP:
-            s = "PROFILE_SUBMITTED_BY_DP";
+        case IPMessageType::PROFILE_REGISTERED_BY_DP:
+            s = "PROFILE_REGISTERED_BY_DP";
             break;
         case IPMessageType::JOB_COMPLETED:
             s = "JOB_COMPLETED";
@@ -102,6 +102,9 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_WAIT_ANSWER:
             s = "SCHED_WAIT_ANSWER";
             break;
+        case IPMessageType::SCHED_SET_JOB_METADATA:
+            s = "SCHED_SET_JOB_METADATA";
+            break;
         case IPMessageType::WAIT_QUERY:
             s = "WAIT_QUERY";
             break;
@@ -129,11 +132,11 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::KILLING_DONE:
             s = "KILLING_DONE";
             break;
-        case IPMessageType::END_DYNAMIC_SUBMIT:
-            s = "END_DYNAMIC_SUBMIT";
+        case IPMessageType::END_DYNAMIC_REGISTER:
+            s = "END_DYNAMIC_REGISTER";
             break;
-        case IPMessageType::CONTINUE_DYNAMIC_SUBMIT:
-            s = "CONTINUE_DYNAMIC_SUBMIT";
+        case IPMessageType::CONTINUE_DYNAMIC_REGISTER:
+            s = "CONTINUE_DYNAMIC_REGISTER";
             break;
         case IPMessageType::TO_JOB_MSG:
             s = "TO_JOB_MSG";
@@ -168,14 +171,14 @@ IPMessage::~IPMessage()
             JobSubmittedMessage * msg = (JobSubmittedMessage *) data;
             delete msg;
         } break;
-        case IPMessageType::JOB_SUBMITTED_BY_DP:
+        case IPMessageType::JOB_REGISTERED_BY_DP:
         {
-            JobSubmittedByDPMessage * msg = (JobSubmittedByDPMessage *) data;
+            JobRegisteredByDPMessage * msg = (JobRegisteredByDPMessage *) data;
             delete msg;
         } break;
-        case IPMessageType::PROFILE_SUBMITTED_BY_DP:
+        case IPMessageType::PROFILE_REGISTERED_BY_DP:
         {
-            ProfileSubmittedByDPMessage * msg = (ProfileSubmittedByDPMessage *) data;
+            ProfileRegisteredByDPMessage * msg = (ProfileRegisteredByDPMessage *) data;
             delete msg;
         } break;
         case IPMessageType::JOB_COMPLETED:
@@ -216,6 +219,11 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
         {
+        } break;
+        case IPMessageType::SCHED_SET_JOB_METADATA:
+        {
+            SetJobMetadataMessage * msg = (SetJobMetadataMessage *) data;
+            delete msg;
         } break;
         case IPMessageType::WAIT_QUERY:
         {
@@ -263,10 +271,10 @@ IPMessage::~IPMessage()
             KillingDoneMessage * msg = (KillingDoneMessage *) data;
             delete msg;
         } break;
-        case IPMessageType::END_DYNAMIC_SUBMIT:
+        case IPMessageType::END_DYNAMIC_REGISTER:
         {
         } break;
-        case IPMessageType::CONTINUE_DYNAMIC_SUBMIT:
+        case IPMessageType::CONTINUE_DYNAMIC_REGISTER:
         {
         } break;
         case IPMessageType::TO_JOB_MSG:

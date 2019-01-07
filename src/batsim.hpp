@@ -3,6 +3,7 @@
 #include <string>
 #include <list>
 #include <map>
+#include <vector>
 
 #include <rapidjson/document.h>
 
@@ -67,36 +68,44 @@ struct MainArguments
 
     // Common
     std::string master_host_name;                           //!< The name of the SimGrid host which runs scheduler processes and not user tasks
-    bool energy_used;                                       //!< True if and only if the SimGrid energy plugin should be used.
+    bool energy_used = false;                               //!< True if and only if the SimGrid energy plugin should be used.
     std::map<std::string, std::string> hosts_roles_map;     //!< The hosts/roles mapping to be added to the hosts properties.
 
     // Execution context
-    rapidjson::Document config_file;                        //!< The configuration file
     std::string socket_endpoint;                            //!< The Decision process socket endpoint
+    bool redis_enabled = false;                             //!< Whether Redis is enabled
     std::string redis_hostname;                             //!< The Redis (data storage) server host name
-    int redis_port;                                         //!< The Redis (data storage) server port
+    int redis_port = 0;                                     //!< The Redis (data storage) server port
     std::string redis_prefix;                               //!< The Redis (data storage) instance prefix
+
+    // Job related
+    bool forward_profiles_on_submission = false;            //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
+    bool dynamic_registration_enabled = false;              //!< Stores whether the scheduler will be able to register jobs and profiles during the simulation
+    bool ack_dynamic_registration = false;                  //!< Stores whether Batsim will acknowledge dynamic job registrations (emit JOB_SUBMITTED events)
 
     // Output
     std::string export_prefix;                              //!< The filename prefix used to export simulation information
-    bool enable_simgrid_process_tracing;                    //!< If set to true, this option enables the tracing of SimGrid processes
-    bool enable_schedule_tracing;                           //!< If set to true, the schedule is exported to a Pajé trace file
-    bool enable_machine_state_tracing;                      //!< If set to true, this option enables the tracing of the machine states into a CSV time series.
+    bool enable_schedule_tracing = false;                   //!< If set to true, the schedule is exported to a Pajé trace file
+    bool enable_machine_state_tracing = false;              //!< If set to true, this option enables the tracing of the machine states into a CSV time series.
 
     // Platform size limit
-    int limit_machines_count;                               //!< The number of machines to use to compute jobs. 0 : no limit. > 0 : the number of computation machines
-    bool limit_machines_count_by_workload;                  //!< If set to true, the number of computing machiens to use should be limited by the workload description
+    int limit_machines_count = 0;                           //!< The number of machines to use to compute jobs. 0 : no limit. > 0 : the number of computation machines
+    bool limit_machines_count_by_workload = false;          //!< If set to true, the number of computing machiens to use should be limited by the workload description
 
     // Verbosity
-    VerbosityLevel verbosity;                               //!< Sets the Batsim verbosity
+    VerbosityLevel verbosity = VerbosityLevel::QUIET;       //!< Sets the Batsim verbosity
 
     // Workflow
     int workflow_nb_concurrent_jobs_limit = 0;              //!< Limits the number of concurrent jobs for workflows
-    bool terminate_with_last_workflow;                      //!< If true, allows to ignore the jobs submitted after the last workflow termination
+    bool terminate_with_last_workflow = false;              //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
     // Other
-    bool allow_time_sharing;                                //!< Allows/forbids time sharing. Two jobs can run on the same machine if and only if time sharing is allowed.
-    ProgramType program_type;                               //!< The program type (Batsim or Batexec at the moment)
+    std::vector<std::string> simgrid_config;                  //!< The list of configuration options to pass to SimGrid.
+    std::vector<std::string> simgrid_logging;                 //!< The list of simulation logging options to pass to SimGrid.
+    bool dump_execution_context = false;                    //!< Instead of running the simulation, print the execution context as JSON on the standard output.
+    bool allow_compute_sharing = false;                     //!< Allows/forbids sharing on compute machines. Two jobs can run concurrently on the same machine if and only if sharing is allowed.
+    bool allow_storage_sharing = false;                     //!< Allows/forbids sharing on storage machines. Two jobs can run concurrently on the same machine if and only if sharing is allowed.
+    ProgramType program_type = ProgramType::BATSIM;         //!< The program type (Batsim or Batexec at the moment)
     std::string pfs_host_name;                              //!< The name of the SimGrid host which serves as parallel file system (a.k.a. large-capacity storage tier)
     std::string hpst_host_name;                             //!< The name of the SimGrid host which serves as the high-performance storage tier
 };

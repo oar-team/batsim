@@ -27,8 +27,8 @@ struct ServerData;
 enum class IPMessageType
 {
     JOB_SUBMITTED          //!< Submitter -> Server. The submitter tells the server that one or several new jobs have been submitted.
-    ,JOB_SUBMITTED_BY_DP    //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to submit a job
-    ,PROFILE_SUBMITTED_BY_DP //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to submit a profile
+    ,JOB_REGISTERED_BY_DP     //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to register a job
+    ,PROFILE_REGISTERED_BY_DP //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to register a profile
     ,JOB_COMPLETED          //!< Launcher -> Server. The job launcher tells the server a job has been completed.
     ,PSTATE_MODIFICATION    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (modify the state of some resources).
     ,SCHED_EXECUTE_JOB      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (execute a job).
@@ -37,6 +37,7 @@ enum class IPMessageType
     ,SCHED_KILL_JOB         //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (kill a job).
     ,SCHED_CALL_ME_LATER    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to be called in the future).
     ,SCHED_TELL_ME_ENERGY   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform consumed energy).
+    ,SCHED_SET_JOB_METADATA //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a SET_JOB_METADATA message).
     ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,WAIT_QUERY             //!< Server -> Scheduler. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,SCHED_READY            //!< Scheduler -> Server. The scheduler tells the server that the scheduler is ready (the scheduler is ready, messages can be sent to it).
@@ -47,8 +48,8 @@ enum class IPMessageType
     ,SUBMITTER_BYE          //!< Submitter -> Server. The submitter tells it stops submitting to the server.
     ,SWITCHED_ON            //!< SwitcherON -> Server. The switcherON process tells the server the machine pstate has been changed
     ,SWITCHED_OFF           //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
-    ,END_DYNAMIC_SUBMIT     //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
-    ,CONTINUE_DYNAMIC_SUBMIT //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions continue.
+    ,END_DYNAMIC_REGISTER     //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
+    ,CONTINUE_DYNAMIC_REGISTER //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions continue.
     ,TO_JOB_MSG //!< Scheduler -> Server. The scheduler sends a message to a job.
     ,FROM_JOB_MSG //!< Job -> Server. The job wants to send a message to the scheduler via the server.
 };
@@ -89,23 +90,31 @@ struct JobSubmittedMessage
 };
 
 /**
- * @brief The content of the JobSubmittedByDP message
+ * @brief The content of the JobRegisteredByDP message
  */
-struct JobSubmittedByDPMessage
+struct JobRegisteredByDPMessage
 {
     JobIdentifier job_id; //!< The JobIdentifier of the new job
     std::string job_description; //!< The job description string (empty if redis is enabled)
-    std::string job_profile_description; //!< The profile of the job (empty if redis is enabled)
 };
 
 /**
- * @brief The content of the ProfileSubmittedByDPMessage message
+ * @brief The content of the ProfileRegisteredByDPMessage message
  */
-struct ProfileSubmittedByDPMessage
+struct ProfileRegisteredByDPMessage
 {
     std::string workload_name; //!< The workload name
     std::string profile_name; //!< The profile name
-    std::string profile; //!< The submitted profile data
+    std::string profile; //!< The registered profile data
+};
+
+/**
+ * @brief The content of the SetJobMetadataMessage message
+ */
+struct SetJobMetadataMessage
+{
+    JobIdentifier job_id; //!< The JobIdentifier of the new job
+    std::string metadata; //!< The job metadata string (empty if redis is enabled)
 };
 
 /**

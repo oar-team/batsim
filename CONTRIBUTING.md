@@ -218,10 +218,10 @@ it should be done as follows:
 # How to release a new version?
 
 1. Determine what version should be released,
-   following [semantic versioning](https://semver.org/) rules.  
+   following [semantic versioning](https://semver.org/) rules.
    Major version should be changed whenever an incompatible change occurs on the CLI or the protocol.
-2. Update the [changelog](doc/changelog.md).  
+2. Update the [changelog](docs/changelog.rst).
    Try to mention all modifications since last release: ``git diff``
-3. Bump version in [CMakeLists.txt](./CMakeLists.txt)
-4. Tag new version (with annotations): ``git tag -a vX.Y.Z``  
+3. Bump version in [VERSION](./VERSION)
+4. Tag new version (with annotations): ``git tag -a vX.Y.Z``
    Put the changelog of the new release in the long description.

@@ -26,18 +26,8 @@ void smpi_replay_process(Job* job, SmpiProfileData * profile_data, simgrid::s4u:
     (void) ret; // Avoids a warning if assertions are ignored
     xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
-    char * trace_filename = xbt_strdup((char*) profile_data->trace_filenames[rank].c_str());
-
-    int argc    = 5;
-    char** argv = xbt_new(char*, argc);
-    argv[0]     = xbt_strdup("1");        // log only?
-    argv[1]     = str_instance_id;        // application instance
-    argv[2]     = bprintf("%d", rank);    // rank
-    argv[3]     = trace_filename;         // smpi trace file for this rank
-    argv[4]     = xbt_strdup("0");        // ?
-
     XBT_INFO("Replaying rank %d of job %s (SMPI)", rank, job->id.to_string().c_str());
-    smpi_replay_run(&argc, &argv);
+    smpi_replay_run(str_instance_id, rank, 0, profile_data->trace_filenames[rank].c_str());
     XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_string().c_str());
 
     barrier->wait();
@@ -415,6 +405,9 @@ void execute_job_process(BatsimContext * context,
     }
 
     // Also generate io hosts list if any
+    XBT_DEBUG("IO allocation: %s, size of the allocation: %d" ,
+            allocation->io_allocation.to_string_hyphen().c_str(),
+            allocation->io_allocation.size());
     allocation->io_hosts.reserve(allocation->io_allocation.size());
     for (unsigned int id = 0; id < allocation->io_allocation.size(); ++id)
     {
@@ -468,17 +461,15 @@ void execute_job_process(BatsimContext * context,
     if (job->runtime == 0)
     {
         XBT_WARN("Job '%s' computed in null time. Putting epsilon instead.", job->id.to_string().c_str());
-        job->runtime = Rational(1e-5);
+        job->runtime = 1e-5l;
     }
 
     // If energy is enabled, let us compute the energy used by the machines after running the job
     if (context->energy_used)
     {
-        long double consumed_energy_before = job->consumed_energy;
-        job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
-
         // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
-        job->consumed_energy -= job->consumed_energy - consumed_energy_before;
+        long double consumed_energy_before = job->consumed_energy;
+        job->consumed_energy = consumed_energy_on_machines(context, job->allocation) - consumed_energy_before;
 
         // Let's trace the consumed energy
         context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
@@ -575,7 +566,7 @@ void killer_process(BatsimContext * context, std::vector<JobIdentifier> jobs_ids
             job->state = JobState::JOB_STATE_COMPLETED_KILLED;
 
             context->machines.update_machines_on_job_end(job, job->allocation, context);
-            job->runtime = (Rational)MSG_get_clock() - job->starting_time;
+            job->runtime = (long double)MSG_get_clock() - job->starting_time;
 
             xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%g)!",
                        job->id.to_string().c_str(), (double)job->runtime);
@@ -583,7 +574,7 @@ void killer_process(BatsimContext * context, std::vector<JobIdentifier> jobs_ids
             {
                 XBT_WARN("Killed job '%s' has a null runtime. Putting epsilon instead.",
                          job->id.to_string().c_str());
-                job->runtime = Rational(1e-5);
+                job->runtime = 1e-5l;
             }
 
             // If energy is enabled, let us compute the energy used by the machines after running the job

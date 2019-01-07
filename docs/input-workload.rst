@@ -16,9 +16,9 @@ Each job uses exacly one profile. Profiles can be shared by multiple jobs.
 
 Workloads are defined in JSON.
 Here is an example of a Batsim workload from Batsim's repository
-(:file:`workloads/test_workload_profile.json`).
+(:file:`workloads/test_various_profile_types.json`).
 
-.. literalinclude:: ../workloads/test_workload_profile.json
+.. literalinclude:: ../workloads/test_various_profile_types.json
     :language: json
 
 Job definition
@@ -82,6 +82,8 @@ The following example defines a profile that always waits for 20.20 seconds.
 
     In fact, a job execution with the previous delay can be faster than 20.20 seconds if the job's walltime is smaller that 20.20.
 
+.. _profile_parallel:
+
 Parallel task
 ^^^^^^^^^^^^^
 This profile type defines a set of computations and communications whose execution is tightly bound. In other words, at any given time during the profile execution, the progress rate of every communication and computation will be the same.
@@ -96,7 +98,7 @@ Here is an example of a parallel task that can be used by any job requesting 4 m
 .. code:: json
 
     {
-      "type": "msg_par",
+      "type": "parallel",
       "cpu": [5e6,  0,  0,  0],
       "com": [5e6,  0,  0,  0,
               5e6,5e6,  0,  0,
@@ -111,6 +113,8 @@ This profile type allows to observe large-grained interference phenomena between
 It can be used to model applications whose execution is very smooth.
 Please note that it is probably not realistic enough to observe fine-grained phenomena, such as the impact of network latency when the application heavily relies on short messages that limit its control flow. If you are in such a case, the `SMPI trace replay`_ profile type may interest you.
 
+.. _profile_parallel_homogeneous:
+
 Homogeneous parallel task
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 This profile type is a convenient way to generate an homogeneous `Parallel task`_ that can be used by any job, regardless of the number of machines it requests.
@@ -123,10 +127,12 @@ This profile type is a convenient way to generate an homogeneous `Parallel task`
 .. code:: json
 
     {
-      "type": "msg_par_hg",
+      "type": "parallel_homogeneous",
       "cpu": 10e6,
       "com": 1e6
     }
+
+.. _profile_parallel_homogeneous_total:
 
 Homogeneous parallel task with total amount
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -136,7 +142,7 @@ It allows such profiles to be used with any number of resources while conserving
 .. note::
 
     This can help modeling moldable jobs with the help of
-    :ref:`dynamic_job_submission`.
+    :ref:`dynamic_job_registration`.
 
 
 **Parameters.**
@@ -147,7 +153,7 @@ It allows such profiles to be used with any number of resources while conserving
 .. code:: json
 
     {
-      "type": "msg_par_hg_tot",
+      "type": "parallel_homogeneous_total",
       "cpu": 10e6,
       "com": 1e6
     }
@@ -169,6 +175,8 @@ This profile type defines a list of other profiles that should be executed in se
       "seq": ["prof1","prof2","prof1"]
     }
 
+.. _profile_parallel_homogeneous_pfs:
+
 Homogeneous parallel tasks with IO to/from a Parallel File System
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Represents an IO transfer between all the nodes of a job's allocation and a
@@ -183,7 +191,7 @@ centralized storage tier. The storage tier is represented by one host of the :re
 .. code:: json
 
     {
-      "type": "msg_par_hg_pfs",
+      "type": "parallel_homogeneous_pfs",
       "bytes_to_read": 10e5,
       "bytes_to_write": 10e5,
       "storage": "nfs"

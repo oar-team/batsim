@@ -3,4 +3,8 @@
 Command-line Interface
 ======================
 
-TODO
+.. todo::
+   Describe command-line interface.
+
+   How to get it (batsim --help).
+   Most common use cases.

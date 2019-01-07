@@ -1,10 +1,7 @@
 let
-  pkgs = import
-    ( fetchTarball "https://github.com/NixOS/nixpkgs/archive/18.03.tar.gz") {};
   kapack = import
     #~/Projects/kapack
-    ( fetchTarball "https://github.com/oar-team/kapack/archive/master.tar.gz")
-  { inherit pkgs; };
+    ( fetchTarball "https://github.com/oar-team/kapack/archive/master.tar.gz") {};
 in
 # To use the batsim_dev package build environment
 #
@@ -13,7 +10,7 @@ in
 # To use local simgrid or a simgrid fork use the folowing instead
 
 with kapack;
-with pkgs;
+with kapack.pkgs;
 #let
 #  simgrid_local = simgrid_dev.overrideAttrs (attrs: {
 #

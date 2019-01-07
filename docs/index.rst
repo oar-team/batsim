@@ -10,12 +10,18 @@ Batsim
 
    Do feel free to contact us `on mattermost <https://framateam.org/signup_user_complete/?id=5xb995hph3d79yj738pokxrnuh>`_ for any question or remark.
 
-.. todo::
-   Introduction.
+Batsim is a scientific simulator to analyze batch schedulers.
+Batch schedulers — or Resource and Jobs Management Systems, RJMSs — are systems that manage resources in large-scale computing centers, notably by scheduling and placing jobs.
 
-   Talk about use cases: In which cases you may be interested in using Batsim and in which cases you may prefer another simulator.
+.. image:: ../doc/batsim_rjms_overview.png
+   :width: 100 %
+   :alt: Batsim overview
 
-   Add a note about getting in touch (mattermost, mails...).
+- Analyze and compare online scheduling algorithms.
+- Sound simulation models thanks to SimGrid_.
+- Develop algorithms (in any programming language) without SimGrid knowledge, or to plug existing algorithm implementations to Batsim. Done thanks to a :ref:`protocol` between Batsim and the schedulers
+- Several ways to model how jobs should be simulated. Allows multiple levels of realism regarding several phenomena. Highly customizable to your needs.
+- Keeping the implementation robust and maintenable is important to us.
 
 .. toctree::
    :maxdepth: 1
@@ -35,6 +41,8 @@ Batsim
    Protocol <protocol.rst>
    Using Redis <redis.rst>
    Using the I/O model <IO.rst>
+   Interval set <interval-set.rst>
+   Changelog <changelog.rst>
 
 .. toctree::
    :maxdepth: 1
@@ -55,4 +63,8 @@ Batsim
    :maxdepth: 1
    :caption: Developer Manual
 
+   Contributing <contributing.rst>
+   Continuous Integration <ci.rst>
    TODO list <todo.rst>
+
+.. _SimGrid: https://simgrid.frama.io/

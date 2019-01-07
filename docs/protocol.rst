@@ -19,7 +19,7 @@ Whenever an event which may require making decision occurs in Batsim in the simu
 5. Batsim resumes the simulation, applying the decision which have been made
 
 .. image:: img/proto/request_reply.png
-   :scale: 100 %
+   :width: 100 %
    :alt: Protocol overview
 
 Communication is implemented using the `ZeroMQ request-reply pattern`_.
@@ -32,9 +32,9 @@ The behavior of this protocol depends on Batsim :ref:`cli`.
   In this case, the protocol is only used for synchronization purposes.
   More information about Redis conventions are described in :ref:`redis`.
 - Batsim may or may not forward job profile information to the scheduler when jobs are submitted (see JOB_SUBMITTED_ documentation).
-- Dynamic jobs submissions can be enabled or disabled.
-  Many parameters of job submissions can be adjusted.
-  Please refer to `Dynamic submission of jobs`_ for more details.
+- Dynamic jobs (and profile) registration can be enabled or disabled.
+  Many parameters of jobs registration can be adjusted.
+  Please refer to `Dynamic registration of jobs`_ for more details.
 
 Message Composition
 -------------------
@@ -117,8 +117,8 @@ Table of Events
    - EXECUTE_JOB_
    - CALL_ME_LATER_
    - KILL_JOB_
-   - SUBMIT_JOB_
-   - SUBMIT_PROFILE_
+   - REGISTER_JOB_
+   - REGISTER_PROFILE_
    - SET_RESOURCE_STATE_
    - SET_JOB_METADATA_
    - CHANGE_JOB_STATE_
@@ -225,6 +225,8 @@ This is a reply to a QUERY_ event.
      }
    }
 
+.. _proto_NOTIFY:
+
 NOTIFY
 ~~~~~~
 
@@ -237,8 +239,8 @@ For now, Batsim can **notify** the scheduler of the following.
 
 For now, the scheduler can **notify** Batsim of the following.
 
-- ``submission_finished``: The scheduler tells Batsim that dynamic job submissions are over, therefore allowing Batsim to stop the simulation. This event **MUST** be sent if scheduler submission is enabled (see :ref:`cli`).
-- ``continue_submission``: The scheduler tells Batsim that it has sent a ``submission_finished`` NOTIFY_ prematurely and that Batsim should re-enable dynamic submissions of jobs...
+- ``registration_finished``: The scheduler tells Batsim that dynamic job registrations are over, therefore allowing Batsim to stop the simulation eventually. This event **MUST** be sent if dynamic jobs registration is enabled (see :ref:`cli`).
+- ``continue_registration``: The scheduler tells Batsim that it has sent a ``registration_finished`` NOTIFY_ prematurely and that Batsim should re-enable dynamic registration of jobs...
 
 **data**: The type of notification, as a string.
 
@@ -255,7 +257,15 @@ For now, the scheduler can **notify** Batsim of the following.
    {
      "timestamp": 42.0,
      "type": "NOTIFY",
-     "data": { "type": "submission_finished" }
+     "data": { "type": "registration_finished" }
+   }
+
+.. code:: json
+
+   {
+     "timestamp": 42.0,
+     "type": "NOTIFY",
+     "data": { "type": "continue_registration" }
    }
 
 --------------
@@ -264,6 +274,8 @@ Batsim to Scheduler events
 --------------------------
 
 These events are sent by Batsim to the scheduler.
+
+.. _proto_SIMULATION_BEGINS:
 
 SIMULATION_BEGINS
 ~~~~~~~~~~~~~~~~~
@@ -278,7 +290,8 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
 -  ``nb_resources``: The number of resources in the simulated platform.
 -  ``nb_compute_resources``: The number of compute resources in the simulated platform.
 -  ``nb_storage_resources``: The number of storage resources in the simulated platform.
--  ``allow_time_sharing``: Whether time sharing is enabled or not (see :ref:`cli`).
+-  ``allow_time_sharing_on_compute``: Whether time sharing is enabled on compute machines or not (see :ref:`cli`).
+-  ``allow_time_sharing_on_storage``: Whether time sharing is enabled on storage machines or not (see :ref:`cli`).
 -  ``config``: The Batsim configuration.
 -  ``compute_resources``: Information about the compute resources.
 
@@ -351,12 +364,12 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
            ],
            "storage_resources": [],
            "workloads": {
-             "26dceb": "/home/mmercier/Projects/batsim/workloads/test_workload_profile.json"
+             "26dceb": "/home/mmercier/Projects/batsim/workloads/test_various_profile_types.json"
            },
            "profiles": {
              "26dceb":{
                "simple": {
-                 "type": "msg_par",
+                 "type": "parallel",
                  "cpu": [5e6,  0,  0,  0],
                  "com": [5e6,  0,  0,  0,
                          5e6,5e6,  0,  0,
@@ -364,17 +377,17 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
                          5e6,5e6,5e6,  0]
                },
                "homogeneous": {
-                 "type": "msg_par_hg",
+                 "type": "parallel_homogeneous",
                  "cpu": 10e6,
                  "com": 1e6
                },
                "homogeneous_no_cpu": {
-                 "type": "msg_par_hg",
+                 "type": "parallel_homogeneous",
                  "cpu": 0,
                  "com": 1e6
                },
                "homogeneous_no_com": {
-                 "type": "msg_par_hg",
+                 "type": "parallel_homogeneous",
                  "cpu": 2e5,
                  "com": 0
                },
@@ -388,7 +401,7 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
                  "delay": 20.20
                },
                "homogeneous_total": {
-                 "type": "msg_par_hg_tot",
+                 "type": "parallel_homogeneous_total",
                  "cpu": 10e6,
                  "com": 1e6
                }
@@ -423,17 +436,16 @@ The content of this event depends on how Batsim has been called (see :ref:`cli`)
 
 This event means that one job has been submitted within Batsim. It is
 sent whenever a job coming from Batsim inputs (workloads and workflows)
-has been submitted. If dynamic job submissions are enabled, this
-event is sent as a reply to a SUBMIT_JOB_ event if
-and only if dynamic job submissions acknowledgements are also enabled.
-More information can be found in `Dynamic submission of jobs`_.
+has been submitted. If dynamic jobs registration is enabled, this
+event is sent as a reply to a REGISTER_JOB_ event if
+and only if dynamic jobs registration acknowledgements are also enabled.
+More information can be found in `Dynamic registration of jobs`_.
 
 The ``job_id`` field is always sent and contains a unique job
 identifier. If redis is enabled, ``job_id`` is the only forwarded field. Otherwise (i.e., if redis is disabled), a JSON description of the job is forwarded in the ``job``
 field.
 
-A JSON description of the job profile is sent if and only if profiles
-forwarding is enabled.
+A JSON description of the job profile is sent if and only if profiles forwarding is enabled (see :ref:`cli`).
 
 **data**: a job id and optional information depending on how Batsim has been called (see :ref:`cli`).
 
@@ -503,7 +515,7 @@ It acknowledges that the actions coming from a previous EXECUTE_JOB_ event have 
 - ``return_code``: The return code of the job process (equals to 0
   by default, see :ref:`input_workload`).
 - ``kill_reason``: The kill reason (if any).
-- ``alloc``: The resources allocated to this job in the previous EXECUTE_JOB_ event.
+- ``alloc``: The :ref:`interval_set` of resources allocated to this job in the previous EXECUTE_JOB_ event.
 
 .. code:: json
 
@@ -605,7 +617,7 @@ RESOURCE_STATE_CHANGED
 This event means that the state of some resources has changed.
 It acknowledges that the actions coming from a previous SET_RESOURCE_STATE_ event have been done.
 
-**data**: An interval set of resource ids and their new state.
+**data**: An :ref:`interval_set` of ``resources`` and their new ``state``.
 
 .. code:: json
 
@@ -653,10 +665,12 @@ The rejected job will not appear into the final jobs trace.
      "data": { "job_id": "w12!45" }
    }
 
+.. _proto_EXECUTE_JOB:
+
 EXECUTE_JOB
 ~~~~~~~~~~~
 
-Execute a job on a given set of resources.
+Execute a job on a given :ref:`interval_set` of resources.
 
 An optional ``mapping`` field can be added to tell Batsim how to map
 executors to resources: Where the executors will be placed inside the
@@ -670,7 +684,7 @@ second machine (1, which stands for resource id 3).
 For certain job profiles that involve storage you may need to define a
 ``storage_mapping`` between the storage label defined in the job profile
 definition and the storage resource id on the platform. For example, the
-job profile of type ``msg_par_hg_pfs_tiers`` contains this field
+job profile of type ``parallel_homogeneous_pfs`` contains this field
 ``"storage": "pfs"``. In order to select what is the resource that
 corresponds to the ``"pfs"`` storage, you should provide a mapping for
 this label: ``"storage_mapping": { "pfs": 2 }``. If no mapping is
@@ -680,13 +694,14 @@ resource is provided on the platform.
 Another optional field is ``additional_io_job`` that permits the
 scheduler to add a job, that represents the IO traffic, dynamically at
 execution time. This dynamicity is necessary when the IO traffic depends
-on the job allocation. It only works for MSG based job profile types for
+on the job allocation. It only works for parallel task based job profile types for
 the additional IO job and the job itself. The given IO job will be
 merged to the actual job before its execution. The additional job
 allocation may be different from the job allocation itself, for example
 when some IO nodes are involved.
 
-**data**: A job id, an allocation of resources, a mapping (optional), an additional IO job (optional).
+**data**: A job id, an allocation of resources ``alloc`` (see :ref:`interval_set_string_representation` for format),
+a mapping (optional), an additional IO job (optional).
 
 .. code:: json
 
@@ -705,7 +720,7 @@ when some IO nodes are involved.
        "alloc": "2-3 5-6",
        "profile_name": "my_io_job",
        "profile": {
-         "type": "msg_par",
+         "type": "parallel",
          "cpu": 0,
          "com": [0  ,5e6,5e6,5e6,
                  5e6,0  ,5e6,0  ,
@@ -749,14 +764,16 @@ before the kill), Batsim acknowledges it with one JOB_KILLED_ event.
      "data": {"job_ids": ["w0!1", "w0!2"]}
    }
 
-SUBMIT_JOB
-~~~~~~~~~~
+.. _proto_REGISTER_JOB:
 
-Submit a job (from the scheduler) at the current simulation time.
+REGISTER_JOB
+~~~~~~~~~~~~
 
-Job submissions from the scheduler must be enabled (see :ref:`cli`).
-The submission is acknowledged by default, but acknowledgments can be disabled (see :ref:`cli`).
-More information can be found in `Dynamic submission of jobs`_.
+REgisters a job (from the scheduler) at the current simulation time.
+
+Jobs registration from the scheduler must be enabled (see :ref:`cli`).
+Acknowledgment of registrations can be enabled (see :ref:`cli`).
+More information can be found in `Dynamic registration of jobs`_.
 
 **Important note:** The workload name SHOULD be present in the job description id
 field with the notation ``WORKLOAD!JOB_NAME``. If it is not present it
@@ -771,7 +788,7 @@ Example **without redis** : The whole job description goes through the protocol.
 
    {
      "timestamp": 10.0,
-     "type": "SUBMIT_JOB",
+     "type": "REGISTER_JOB",
      "data": {
        "job_id": "dyn!my_new_job",
        "job":{
@@ -779,10 +796,6 @@ Example **without redis** : The whole job description goes through the protocol.
          "res": 1,
          "id": "dyn!my_new_job",
          "walltime": 12.0
-       },
-       "profile":{
-         "type": "delay",
-         "delay": 10
        }
      }
    }
@@ -793,20 +806,21 @@ Example **with redis** : The job and profile description, if unknown to Batsim y
 
    {
      "timestamp": 10.0,
-     "type": "SUBMIT_JOB",
+     "type": "REGISTER_JOB",
      "data": {
        "job_id": "w12!45",
      }
    }
 
+.. _proto_REGISTER_PROFILE:
 
-SUBMIT_PROFILE
-~~~~~~~~~~~~~~
+REGISTER_PROFILE
+~~~~~~~~~~~~~~~~
 
-Submits a profile (from the scheduler).
+Registers a profile (from the scheduler).
 
-Job submissions from the scheduler must be enabled (see :ref:`cli`).
-More information can be found in `Dynamic submission of jobs`_.
+Jobs registration from the scheduler must be enabled (see :ref:`cli`).
+More information can be found in `Dynamic registration of jobs`_.
 
 **data**: A workload name, profile name, and the data of the profile.
 
@@ -816,7 +830,7 @@ Example **without redis** : The whole profile description goes through the proto
 
    {
      "timestamp": 10.0,
-     "type": "SUBMIT_PROFILE",
+     "type": "REGISTER_PROFILE",
      "data": {
        "workload_name": "dyn_wl1",
        "profile_name":  "delay_10s",
@@ -837,7 +851,7 @@ Sets some resources into a state.
 As soon as all the resources have been set into the given state, Batsim
 acknowledges it by sending one RESOURCE_STATE_CHANGED_ event.
 
-**data**: An interval set of resource id, and their new state.
+**data**: An :ref:`interval_set` of ``resources`` and their new ``state``.
 
 .. code:: json
 
@@ -907,51 +921,51 @@ Depending on how Batsim is called (see :ref:`cli`),
 jobs information might either be transmitted through the protocol or Redis.
 
 .. image:: img/proto/job_submission_and_execution.png
-   :scale: 100 %
+   :width: 100 %
    :alt: Executing jobs
 
-.. _dynamic_job_submission:
+.. _dynamic_job_registration:
 
-Dynamic submission of jobs
---------------------------
+Dynamic registration of jobs
+----------------------------
 
 Jobs are in most cases given as Batsim inputs, which are submitted
 within Batsim (the scheduler knows about them via
 JOB_SUBMITTED_ events).
 
-However, jobs can also be submitted from the scheduler throughout the
+However, jobs can also be submitted from the scheduler (via registration events) throughout the
 simulation. For this purpose:
 
-- Dynamic job submissions **must** be enabled (see :ref:`cli`).
-- The scheduler **must** tell Batsim when it has finished submitting dynamic jobs (via a NOTIFY_ event).
+- Dynamic jobs registration **must** be enabled (see :ref:`cli`).
+- The scheduler **must** tell Batsim when it has finished registering dynamic jobs (via a NOTIFY_ event).
   Otherwise, Batsim will wait for new simulation events forever, causing either a SimGrid deadlock or an infinite loop at the end of the simulation.
 - the scheduler **must** make sure that Batsim has enough information to avoid SimGrid deadlocks during the simulation.
   If at some simulation time all Batsim workloads/workflows inputs have been executed and nothing is happening on the platform, this might lead to a SimGrid deadlock.
-  If the scheduler knows that it will submit a dynamic job in the future, it should ask Batsim to call it at this timestamp via a CALL_ME_LATER_ event.
+  If the scheduler knows that it will register a dynamic job in the future, it should ask Batsim to call it at this timestamp via a CALL_ME_LATER_ event.
 
-The protocol behavior of dynamic submissions is customizable (see :ref:`cli`).
-- Batsim might or might not send acknowledgements when jobs have been submitted.
+The protocol behavior of dynamic registrations is customizable (see :ref:`cli`).
+- Batsim might or might not send acknowledgements when jobs have been registered.
 - Metainformation are sent via Redis if Redis is enabled, or directly via the protocol otherwise.
 
-A simple scheduling algorithm using dynamic job submissions can be found in
+A simple scheduling algorithm using dynamic jobs registration can be found in
 the `batsched submitter algorithm`_.
-This implementation should work whether Redis is enabled and whether dynamic job submissions are acknowledged.
+This implementation should work whether Redis is enabled and whether dynamic job registrations are acknowledged.
 
-The following two figures outline how submissions should be done
+The following two figures outline how registrations should be done
 (depending on whether Redis is enabled or not).
 
 Without Redis
 ~~~~~~~~~~~~~
 
 .. image:: img/proto/dynamic_job_submission.png
-   :scale: 75 %
+   :width: 75 %
    :alt: Dynamic submission without Redis
 
 With Redis
 ~~~~~~~~~~
 
 .. image:: img/proto/dynamic_job_submission_redis.png
-   :scale: 100 %
+   :width: 100 %
    :alt: Dynamic submission with Redis
 
 

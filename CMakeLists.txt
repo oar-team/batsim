@@ -1,10 +1,9 @@
-# Let's use at least v3.1 for sanity's sake.
+# Use at least v3.1 for sanity's sake.
 cmake_minimum_required(VERSION 3.1)
 
 project("Batsim")
 
-# Enable C++11
-# Let's check that the used compiler handles c++11 correctly
+# Check that the used compiler handles c++11 correctly
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8.1")
         message(FATAL_ERROR "Insufficient gcc version: 4.8.1 is needed to support C++11")
@@ -21,11 +20,12 @@ else()
     message(WARNING "Unknown compiler. Make sure it fully supports C++11.")
 endif()
 
-# Let's enable C++11
+# Enable C++11
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Options
+option(enable_compile_optimizations "Enable compile optimizations" ON)
 option(enable_warnings "Enable compilation warnings" ON)
 option(treat_warnings_as_errors "Treat compilation warnings as compilation errors" OFF)
 option(ignore_assertions "Ignore assertions, which could make the simulation unstable, but could improve its performance" OFF)
@@ -53,10 +53,6 @@ include_directories(BEFORE SYSTEM ${SimGrid_INCLUDE_DIR})
 ## Boost dependency
 find_package(Boost 1.58 REQUIRED COMPONENTS system filesystem regex locale)
 include_directories(${Boost_INCLUDE_DIR})
-
-## GMP
-find_package(GMP REQUIRED)
-include_directories(${GMP_INCLUDE_DIR})
 
 ## Rapidjson dependency
 find_package(rapidjson REQUIRED)
@@ -96,7 +92,8 @@ include_directories(${INTERVALSET_INCLUDE_DIR})
 ##################
 # Batsim version #
 ##################
-set(default_batsim_version "v2.0.0")
+file(READ "VERSION" from_file_version)
+set(default_batsim_version "${from_file_version}")
 include(GetGitRevisionDescription)
 git_describe(batsim_version)
 message(STATUS "Batsim version from git: ${batsim_version}")
@@ -113,7 +110,6 @@ endif()
 ################
 # Source files #
 ################
-
 ## Batsim
 file(GLOB batsim_SRC
     "src/*.hpp"
@@ -131,7 +127,6 @@ add_executable(batsim ${batsim_SRC})
 # Libraries to link
 target_link_libraries(batsim
     ${SimGrid_LIBRARY}
-    ${GMP_LIBRARIES}
     ${Boost_FILESYSTEM_LIBRARY_DEBUG}
     ${Boost_LOCALE_LIBRARY_DEBUG}
     ${Boost_REGEX_LIBRARY_DEBUG}
@@ -152,7 +147,18 @@ target_link_libraries(batsim
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim
     DESTINATION bin)
 
-# Let's enable warnings if needed
+# Enable or disable optimizations depending on user's will
+message("enable_compile_optimizations is ${enable_compile_optimizations}")
+if (enable_compile_optimizations)
+    set(compile_optization_flag " -O2")
+else()
+    set(compile_optization_flag " -O0")
+endif()
+set_property(TARGET batsim
+    APPEND_STRING PROPERTY COMPILE_FLAGS ${compile_optization_flag})
+
+# Enable warnings if needed
+message("enable_warnings is ${enable_warnings}")
 if (enable_warnings)
     set(warning_flags " -Wall -Wextra")
 
@@ -170,7 +176,7 @@ if (enable_warnings)
     endif()
 endif()
 
-# Let's ignore assertions if needed (might improve performance but can be dangerous)
+# Ignore assertions if needed (might improve performance but can be dangerous)
 if (ignore_assertions)
     target_compile_definitions(batsim PRIVATE NDEBUG)
 endif()
@@ -178,7 +184,6 @@ endif()
 ###########
 # Testing #
 ###########
-
 # Batexpe test dependency
 include("${CMAKE_SOURCE_DIR}/cmake/Modules/batexpe.cmake")
 

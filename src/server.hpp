@@ -166,38 +166,46 @@ void server_on_killing_done(ServerData * data,
                             IPMessage * task_data);
 
 /**
- * @brief Server END_DYNAMIC_SUBMIT handler
+ * @brief Server END_DYNAMIC_REGISTER handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_end_dynamic_submit(ServerData * data,
+void server_on_end_dynamic_register(ServerData * data,
                                   IPMessage * task_data);
 
 
 /**
- * @brief Server CONTINUE_DYNAMIC_SUBMIT handler
+ * @brief Server CONTINUE_DYNAMIC_REGISTER handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_continue_dynamic_submit(ServerData * data,
+void server_on_continue_dynamic_register(ServerData * data,
                                   IPMessage * task_data);
 
 
 /**
- * @brief Server JOB_SUBMITTED_BY_DP handler
+ * @brief Server JOB_REGISTERED_BY_DP handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_submit_job(ServerData * data,
+void server_on_register_job(ServerData * data,
                           IPMessage * task_data);
 
 /**
- * @brief Server PROFILE_SUBMITTED_BY_DP handler
+ * @brief Server PROFILE_REGISTERED_BY_DP handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_submit_profile(ServerData * data,
+void server_on_register_profile(ServerData * data,
                                IPMessage * task_data);
+
+/**
+ * @brief Server SCHED_SET_JOB_METADATA handler
+ * @param[in,out] data The data asssociated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_set_job_metadata(ServerData * data,
+                                IPMessage * task_data);
 
 /**
  * @brief Server SCHED_REJECT_JOB handler

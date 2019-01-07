@@ -286,7 +286,7 @@ void Jobs::displayDebug() const
     s += "Jobs : [" + boost::algorithm::join(jobsVector, ", ") + "]";
 
     // Let us display the string which has been built
-    XBT_INFO("%s", s.c_str());
+    XBT_DEBUG("%s", s.c_str());
 }
 
 const std::map<JobIdentifier, Job* > &Jobs::jobs() const
@@ -479,7 +479,7 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
                        "%d does not point to an integral number",
                        error_prefix.c_str(), j->id.to_string().c_str(), i);
             int host_number = mapping_array[i].GetInt();
-            xbt_assert(host_number >= 0 && host_number < j->requested_nb_res,
+            xbt_assert(host_number >= 0 && (unsigned int)host_number < j->requested_nb_res,
                        "%s: job '%s' has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
                        "%d has an invalid value %d : should be in [0,%d[",
                        error_prefix.c_str(), j->id.to_string().c_str(),

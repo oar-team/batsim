@@ -64,6 +64,13 @@ This can be done with ``nix-env --install``.
     # Or experiment management tools...
     nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batexpe
 
+.. note::
+
+    Most package have at least two versions in kapack_, named ``PACKAGE`` and ``PACKAGE_dev``. ``PACKAGE`` stands for the latest release of the package, while the ``_dev`` version is the latest unstable commit from the main git branch.
+
+    You can therefore get an upstream Batsim and batsched with the following command. ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim_dev batsched_dev``
+
+
 Build it yourself
 -----------------
 Batsim uses the CMake_ build system.
@@ -99,12 +106,10 @@ Dependencies
     An up-to-date list should be available in kapack_.
     The important files there should be the `Batsim package definition`_ and how it is called in `kapack's main file`_ — i.e., with which parameters and which version of each dependency.
 
-As I write these lines, here is the list of Batsim dependencies.
-
 - Decent clang/gcc and CMake.
-- Decent boost, GMP (C and C++).
+- Decent boost.
 - Recent SimGrid.
-- ZeroMQ (C and C++).
+- ZeroMQ.
 - Redox and its dependencies (hiredis, libev).
 - RapidJSON.
 - Pugixml.
