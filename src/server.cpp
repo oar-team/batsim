@@ -101,7 +101,8 @@ void server_process(BatsimContext * context)
         // Let's send a message to the scheduler if needed
         if (data->sched_ready && // The scheduler must be ready
             !context->proto_writer->is_empty() && // There must be something to send to the scheduler
-            !data->end_of_simulation_ack_received // The simulation must NOT be finished
+            !data->end_of_simulation_ack_received && // The simulation must NOT be finished
+            mailbox_empty("server") // The server mailbox must be empty
             )
         {
             string send_buffer = context->proto_writer->generate_current_message(MSG_get_clock());
