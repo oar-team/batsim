@@ -312,6 +312,13 @@ void dsend_message(const char * destination_mailbox, IPMessageType type, void * 
 IPMessage * receive_message(const std::string & reception_mailbox);
 
 /**
+ * @brief Check if the mailbox is empty
+ * @param[in] reception_mailbox The mailbox name
+ * @return Boolean indicating if the mailbox is empty
+ */
+bool mailbox_empty(const std::string & reception_mailbox);
+
+/**
  * @brief Transforms a IPMessageType into a std::string
  * @param[in] type The IPMessageType
  * @return The std::string corresponding to the type
