@@ -121,6 +121,13 @@ Added (command-line interface)
   that dumps the command execution context on the standard output.
   This allows external tools to understand the execution context of a batsim command without actually parsing it.
 
+Known introduced issues
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- Killing jobs may now crash in some (corner-case) situations.
+  This happens since Batsim upgraded its SimGrid version.
+  Tracked on `issue 37 (inria) <https://gitlab.inria.fr/batsim/batsim/issues/37/>`_.
+
 Miscellaneous
 ~~~~~~~~~~~~~
 - Various bug fixes.
