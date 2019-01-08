@@ -26,9 +26,9 @@ export PATH=${BUILD_DIR}:${PATH}
 echo "batsim realpath: $(realpath $(which batsim))"
 echo "batsched realpath: $(realpath $(which batsched))"
 
-# Execute the tests
+# Execute the tests. Command can be overriden in the CTEST_COMMAND env var.
 cd $BUILD_DIR
-ctest --output-on-failure
+${CTEST_COMMAND:-ctest --output-on-failure}
 failed=$?
 
 # Stop the redis server if it has been launched by this script
