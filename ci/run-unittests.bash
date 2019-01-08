@@ -11,5 +11,4 @@ export PATH=${BUILD_DIR}:${PATH}
 echo "batsim realpath: $(realpath $(which batsim))"
 
 # Execute the unit tests
-BUILD_DIR=$(realpath $(dirname $(realpath $0))/../build)
-$BUILD_DIR/batsim --unittest
+batsim --unittest
