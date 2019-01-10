@@ -1,12 +1,17 @@
-**Describe the bug**
+**Describe the bug**  
 A clear and concise description of what the bug is.
 
-**Provide information so the bug can be reproduced**
+**Provide information so the bug can be reproduced**  
 - Batsim commit: 
 - SimGrid version: 
 - Scheduler+version: 
 
-Attach input files if they are not in batsim's repo (workload, platform...).
+(Attach workload/platform files if they are not in Batsim's repo)
 
-**Logs**
-Please attach any relevant logs — or paste it ```like this``` if it is short.
+**Logs**  
+(Attach any relevant log — or paste it ```like this``` if it is short.)
+
+**Possible fixes**  
+(Share any insight you have about the bug.)
+
+/label ~BUG
