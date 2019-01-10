@@ -5,10 +5,8 @@ Batsim
 
    This documentation is under construction.
 
-   Some (most?) parts are still missing but they may be written in our old documentation, probably in the :file:`doc` directory of Batsim's repository
-   `there <https://framagit.org/batsim/batsim/tree/master/doc>`_.
-
-   Do feel free to contact us `on mattermost <https://framateam.org/signup_user_complete/?id=5xb995hph3d79yj738pokxrnuh>`_ for any question or remark.
+   Feel free to :ref:`contact_us` for any question or remark.
+   Here are :ref:`contributing`.
 
 Batsim is a scientific simulator to analyze batch schedulers.
 Batch schedulers — or Resource and Jobs Management Systems, RJMSs — are systems that manage resources in large-scale computing centers, notably by scheduling and placing jobs.
@@ -43,6 +41,7 @@ Batch schedulers — or Resource and Jobs Management Systems, RJMSs — are syst
    Using the I/O model <IO.rst>
    Interval set <interval-set.rst>
    Changelog <changelog.rst>
+   Contact us <contact.rst>
 
 .. toctree::
    :maxdepth: 1
