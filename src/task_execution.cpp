@@ -483,7 +483,7 @@ int execute_msg_task(BatTask * btask,
                                       nullptr,
                                       context);
         debug_print_ptask(io_computation_vector, io_communication_matrix,
-                hosts_to_use.size(), allocation->io_allocation);
+                io_hosts.size(), allocation->io_allocation);
 
         // merge the two profiles
         // First get part of the allocation that do change or not in the job
