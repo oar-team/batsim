@@ -58,6 +58,12 @@ IPMessage * receive_message(const std::string & reception_mailbox)
     return message;
 }
 
+bool mailbox_empty(const std::string & reception_mailbox)
+{
+    auto mailbox = simgrid::s4u::Mailbox::by_name(reception_mailbox);
+    return mailbox->empty();
+}
+
 std::string ip_message_type_to_string(IPMessageType type)
 {
     string s;
