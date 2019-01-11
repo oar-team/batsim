@@ -514,7 +514,6 @@ It acknowledges that the actions coming from a previous EXECUTE_JOB_ event have 
   ``COMPLETED_KILLED``, ``REJECTED``.
 - ``return_code``: The return code of the job process (equals to 0
   by default, see :ref:`input_workload`).
-- ``kill_reason``: The kill reason (if any).
 - ``alloc``: The :ref:`interval_set` of resources allocated to this job in the previous EXECUTE_JOB_ event.
 
 .. code:: json
@@ -526,7 +525,6 @@ It acknowledges that the actions coming from a previous EXECUTE_JOB_ event have 
        "job_id": "26dceb!4",
        "job_state": "COMPLETED_SUCCESSFULLY",
        "return_code": 0,
-       "kill_reason": "",
        "alloc": "0-3"
      }
    }
