@@ -560,6 +560,11 @@ void JsonProtocolWriter::append_notify(const std::string & notify_type,
        "timestamp": 23.57,
        "type": "NOTIFY",
        "data": { "type": "no_more_static_job_to_submit" }
+    }
+    or {
+       "timestamp": 23.57,
+       "type": "NOTIFY",
+       "data": { "type": "no_more_external_event_to_occurr" }
     } */
 
     xbt_assert(date >= _last_date, "Date inconsistency");

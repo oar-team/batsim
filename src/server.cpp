@@ -197,6 +197,11 @@ void server_on_submitter_bye(ServerData * data,
 
         XBT_DEBUG("An event submitter said goodbye. Number of finished event submitters: %d",
                   data->nb_event_submitters_finished);
+
+        if(data->nb_event_submitters_finished == data->expected_nb_event_submitters)
+        {
+            data->context->proto_writer->append_notify("no_more_external_event_to_occurr", simgrid::s4u::Engine::get_clock());
+        }
     }
     else
     {
