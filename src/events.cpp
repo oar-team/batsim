@@ -98,11 +98,11 @@ bool event_comparator_timestamp_number(const Event * a, const Event * b)
 
 
 // Events-related functions
-Events * Events::new_events_from_json(const std::string & name,
+EventList * EventList::new_eventList_from_json(const std::string & name,
                                       const std::string & filename)
 {
     XBT_INFO("Loading JSON events '%s' ...", filename.c_str());
-    Events * ev = new Events;
+    EventList * ev = new EventList;
     ev->_name = name;
     ev->_file = filename;
 
@@ -128,30 +128,30 @@ Events * Events::new_events_from_json(const std::string & name,
     return ev;
 }
 
-Events * Events::new_dynamic_events(const std::string & name)
+EventList * EventList::new_dynamic_eventList(const std::string & name)
 {
-    Events * ev = new Events;
+    EventList * ev = new EventList;
     ev->_name = name;
     ev->_is_static = false;
     return ev;
 }
 
-std::vector<Event*> &Events::getEvents()
+std::vector<Event*> &EventList::getEvents()
 {
     return _events;
 }
 
-const std::vector<Event*> &Events::getEvents() const
+const std::vector<Event*> &EventList::getEvents() const
 {
     return _events;
 }
 
-void Events::add_event(Event * event)
+void EventList::add_event(Event * event)
 {
     _events.push_back(event);
 }
 
-bool Events::is_static() const
+bool EventList::is_static() const
 {
     return _is_static;
 }

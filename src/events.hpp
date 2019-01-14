@@ -66,16 +66,16 @@ public:
 bool event_comparator_timestamp_number(const Event * a, const Event * b);
 
 
-struct Events
+struct EventList
 {
 public:
-    Events() = default;
-    ~Events();
+    EventList() = default;
+    ~EventList();
 
-    static Events * new_events_from_json(const std::string & filename,
+    static EventList * new_eventList_from_json(const std::string & filename,
                                          const std::string & name);
 
-    static Events * new_dynamic_events(const std::string & name);
+    static EventList * new_dynamic_eventList(const std::string & name);
 
     std::vector<Event*> & getEvents();
 
@@ -92,4 +92,4 @@ private:
     bool _is_static = true;
 };
 
-typedef std::map<std::string, Events*> EventsMap;
+typedef std::map<std::string, EventList*> EventListMap; //!< Associates EventLists with their names

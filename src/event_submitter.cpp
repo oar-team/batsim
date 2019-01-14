@@ -30,14 +30,14 @@ static void send_events_to_server(const vector<const Event *> & events_to_send,
 }
 
 void static_event_submitter_process(BatsimContext * context,
-                                    std::string events_name)
+                                    std::string eventList_name)
 {
-    xbt_assert(context->eventsMap.count(events_name) == 1,
+    xbt_assert(context->eventListsMap.count(eventList_name) == 1,
                "Error: a static_event_submitter_process is in charge of the event list '%s' "
-               "which does not exist.", events_name.c_str());
+               "which does not exist.", eventList_name.c_str());
 
-    Events * events = context->eventsMap[events_name];
-    string submitter_name = events_name + "_submitter";
+    EventList * events = context->eventListsMap[eventList_name];
+    string submitter_name = eventList_name + "_submitter";
     /*
         ███████████████████████████████─
         ──────▀█▄▀▄▀████▀──▀█▄▀▄▀████▀──

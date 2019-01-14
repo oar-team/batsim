@@ -79,7 +79,7 @@ void server_process(BatsimContext * context)
        of this count as it can finish then restart... */
     data->expected_nb_job_submitters = context->workloads.nb_static_workloads();
 
-    data->expected_nb_event_submitters = context->eventsMap.size();
+    data->expected_nb_event_submitters = context->eventListsMap.size();
 
     // Is the simulation already finished? It can occur now if there is no job to execute.
     check_simulation_finished(data);

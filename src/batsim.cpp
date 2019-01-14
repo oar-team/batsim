@@ -194,7 +194,7 @@ Input options:
   --WS, --workflow-start (<cut_workflow_file> <start_time>)  The workflow XML
                                      files to simulate, with the time at which
                                      they should be started.
-  --events <events_file>             The events files to simulate.
+  --events <events_file>             The files containing events to simulate.
 
 Most common options:
   -m, --master-host <name>           The name of the host in <platform_file>
@@ -417,7 +417,7 @@ Other options:
         }
     }
 
-    // Events
+    // EventLists
     vector<string> events_files = args["--events"].asStringList();
     for (const string & events_file : events_files)
     {
@@ -429,13 +429,13 @@ Other options:
         }
         else
         {
-            MainArguments::EventsDescription desc;
+            MainArguments::EventListDescription desc;
             desc.filename = absolute_filename(events_file);
             desc.name = generate_sha1_string(desc.filename);
 
             XBT_INFO("Event list '%s' corresponds to events file '%s'.",
                      desc.name.c_str(), desc.filename.c_str());
-            main_args.events_descriptions.push_back(desc);
+            main_args.eventList_descriptions.push_back(desc);
         }
     }
 
@@ -662,12 +662,12 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     }
 }
 
-void load_events(const MainArguments & main_args, BatsimContext * context)
+void load_eventLists(const MainArguments & main_args, BatsimContext * context)
 {
-    for (const MainArguments::EventsDescription & desc : main_args.events_descriptions)
+    for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
     {
-        Events * events = Events::new_events_from_json(desc.name, desc.filename);
-        context->eventsMap[desc.name] = events;
+        EventList * events = EventList::new_eventList_from_json(desc.name, desc.filename);
+        context->eventListsMap[desc.name] = events;
     }
 }
 
@@ -709,7 +709,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
     }
 
     // Let's run a static_event_submitter process for each list of event
-    for (const MainArguments::EventsDescription & desc : main_args.events_descriptions)
+    for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
     {
         string submitter_instance_name = "event_submitter_" + desc.name;
 
@@ -821,8 +821,8 @@ int main(int argc, char * argv[])
     int max_nb_machines_to_use = -1;
     load_workloads_and_workflows(main_args, &context, max_nb_machines_to_use);
 
-    // Let's load the events
-    load_events(main_args, &context);
+    // Let's load the eventLists
+    load_eventLists(main_args, &context);
 
     // initialyse Ptask L07 model
     engine.set_config("host/model:ptask_L07");

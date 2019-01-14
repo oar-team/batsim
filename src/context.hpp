@@ -42,7 +42,7 @@ struct BatsimContext
     Machines machines;                              //!< The machines
     Workloads workloads;                            //!< The workloads
     Workflows workflows;                            //!< The workflows
-    EventsMap eventsMap;                            //!< The map of event lists
+    EventListMap eventListsMap;                     //!< The map of EventLists
     PajeTracer paje_tracer;                         //!< The PajeTracer
     PStateChangeTracer pstate_tracer;               //!< The PStateChangeTracer
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
