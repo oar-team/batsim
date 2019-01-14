@@ -252,7 +252,9 @@ struct FromJobMessage
     rapidjson::Document message; //!< The message to send to the scheduler
 };
 
-
+/**
+ * @brief The content of the EventOccurred message
+ */
 struct EventOccurredMessage
 {
     std::string submitter_name;          //!< The name of the submitter which submitted the events.

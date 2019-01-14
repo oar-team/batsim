@@ -23,6 +23,7 @@ struct CleanExecuteTaskData
  * @brief The process in charge of killing a job if it reaches its walltime
  * @param[in] context The BatsimContext
  * @param[in] jobs_ids The ids of the jobs to kill
+ * @param[in] make_it_fail Whether to mark the jobs as COMPLETED_MACHINE_FAILURE
  */
 void killer_process(BatsimContext *context, std::vector<JobIdentifier> jobs_ids, bool make_it_fail = false);
 

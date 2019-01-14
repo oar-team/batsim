@@ -9,7 +9,7 @@
 
 #include <simgrid/s4u.hpp>
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(events, "events");
+XBT_LOG_NEW_DEFAULT_CATEGORY(events, "events"); //!< Logging
 
 using namespace std;
 using namespace rapidjson;

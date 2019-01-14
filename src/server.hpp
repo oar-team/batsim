@@ -104,6 +104,22 @@ void server_on_job_submitted(ServerData * data,
                              IPMessage * task_data);
 
 /**
+ * @brief Internal Server handler for machine_failure external event
+ * @param[in,out] data The data associated with the server_process
+ * @param[in] event The Event involved
+ */
+void server_on_event_machine_failure(ServerData * data,
+                                     const Event * event);
+
+/**
+ * @brief Internal Server handler for machine_restore external event
+ * @param[in,out] data The data associated with the server_process
+ * @param[in] event The Event involved
+ */
+void server_on_event_machine_restore(ServerData * data,
+                                     const Event * event);
+
+/**
  * @brief Server EVENT_OCCURRED handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
