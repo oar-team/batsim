@@ -100,7 +100,7 @@ public:
      * @return The created EventList
      */
     static EventList * new_event_list(const std::string & name,
-                                      const bool is_static);
+                                      const bool is_static = true);
 
     /**
      * @brief Loads static Events from a JSON filename

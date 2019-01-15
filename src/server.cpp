@@ -345,7 +345,8 @@ void server_on_event_machine_failure(ServerData * data,
             if (job_ids_to_kill.size() > 0)
             {
                 simgrid::s4u::Actor::create("failer_process", simgrid::s4u::this_actor::get_host(),
-                                            killer_process, data->context, job_ids_to_kill, true);
+                                            killer_process, data->context, job_ids_to_kill,
+                                            JobState::JOB_STATE_COMPLETED_RESOURCE_FAILED, false);
                 ++data->nb_killers;
             }
 
@@ -645,7 +646,7 @@ void server_on_killing_done(ServerData * data,
         }
     }
 
-    if (!message->make_it_fail)
+    if (message->acknowledge_kill_on_protocol)
     {
         // The kills have been asked by the decision process
         XBT_INFO("Jobs {%s} have been killed (the following ones have REALLY been killed: {%s})",
@@ -970,7 +971,8 @@ void server_on_kill_jobs(ServerData * data,
     if (jobs_ids_to_kill.size() > 0)
     {
         simgrid::s4u::Actor::create("killer_process", simgrid::s4u::this_actor::get_host(),
-                                killer_process, data->context, jobs_ids_to_kill, false);
+                                    killer_process, data->context, jobs_ids_to_kill,
+                                    JobState::JOB_STATE_COMPLETED_KILLED, true);
         ++data->nb_killers;
     }
 }

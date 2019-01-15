@@ -52,7 +52,7 @@ void static_event_submitter_process(BatsimContext * context,
 
     long double current_occurring_date = simgrid::s4u::Engine::get_clock();
 
-    const vector<Event *> & eventVector = events->getEvents();
+    const vector<Event *> & eventVector = events->events();
 
     if(eventVector.size() > 0)
     {

@@ -23,9 +23,13 @@ struct CleanExecuteTaskData
  * @brief The process in charge of killing a job if it reaches its walltime
  * @param[in] context The BatsimContext
  * @param[in] jobs_ids The ids of the jobs to kill
- * @param[in] make_it_fail Whether to mark the jobs as COMPLETED_MACHINE_FAILURE
+ * @param[in] killed_job_tate The JobState to be set for every killed Job
+ * @param[in] acknowledge_kill_on_protocol Whether to acknwoledge the kill to the decision process through the protocol
  */
-void killer_process(BatsimContext *context, std::vector<JobIdentifier> jobs_ids, bool make_it_fail = false);
+void killer_process(BatsimContext *context,
+                    std::vector<JobIdentifier> jobs_ids,
+                    JobState killed_job_state = JobState::JOB_STATE_COMPLETED_KILLED,
+                    bool acknowledge_kill_on_protocol = true);
 
 /**
  * @brief The process in charge of executing a rank of a SMPI profile

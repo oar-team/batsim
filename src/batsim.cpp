@@ -666,7 +666,8 @@ void load_eventLists(const MainArguments & main_args, BatsimContext * context)
 {
     for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
     {
-        EventList * events = EventList::new_eventList_from_json(desc.name, desc.filename);
+        EventList * events = EventList::new_event_list(desc.name);
+        events->load_from_json(desc.filename);
         context->eventListsMap[desc.name] = events;
     }
 }
