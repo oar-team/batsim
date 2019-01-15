@@ -7,7 +7,7 @@ list(APPEND simu_instances "${SGPLATFORM_small}?${BATWLOAD_mixed}")
 list(APPEND nb_kills_per_job "1kill!1")
 
 # The delay before killing each job
-list(APPEND delay_before_kill "after0!0")
+#list(APPEND delay_before_kill "after0!0") # https://gitlab.inria.fr/batsim/batsim/issues/37
 list(APPEND delay_before_kill "after5!5")
 
 foreach(simu_instance IN LISTS simu_instances)

@@ -8,7 +8,7 @@ list(APPEND nb_kills_per_job "1kill!1")
 list(APPEND nb_kills_per_job "2kills!2")
 
 # The delay before killing each job
-list(APPEND delay_before_kill "after0!0")
+#list(APPEND delay_before_kill "after0!0") # https://gitlab.inria.fr/batsim/batsim/issues/37
 list(APPEND delay_before_kill "after5!5")
 list(APPEND delay_before_kill "after10!10")
 list(APPEND delay_before_kill "after15!15")
