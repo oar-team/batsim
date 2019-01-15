@@ -983,7 +983,7 @@ void server_on_execute_job(ServerData * data,
     job->execution_actors.insert(actor);
 }
 
-bool is_simumation_finished(const ServerData * data)
+bool is_simulation_finished(const ServerData * data)
 {
     return (data->nb_submitters_finished == data->expected_nb_submitters) && // All static submitters have finished
            (!data->context->registration_sched_enabled || data->context->registration_sched_finished) && // Dynamic submissions are disabled or finished
@@ -995,7 +995,7 @@ bool is_simumation_finished(const ServerData * data)
 
 void check_simulation_finished(ServerData * data)
 {
-    if (is_simumation_finished(data) &&
+    if (is_simulation_finished(data) &&
         !data->end_of_simulation_sent &&
         !data->end_of_simulation_in_send_buffer)
     {

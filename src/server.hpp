@@ -54,7 +54,7 @@ struct ServerData
  * @param[in] data The ServerData
  * @return Whether the simulation is finished or not
  */
-bool is_simumation_finished(const ServerData * data);
+bool is_simulation_finished(const ServerData * data);
 
 /**
  * @brief Checks whether the simulation is finished, and buffers a SIMULATION_ENDS event if needed.
