@@ -80,3 +80,22 @@ deploy_code_doc:
     - test_test
   only:
     - master
+
+###############################################################################
+# Tutorials
+###############################################################################
+# tuto_first_simulation-stable:
+#   only:
+#     - schedules
+#   script:
+#     - cd docs/tuto-first-simulation
+#     - nix-shell ./tuto-env.nix --command './run_simulation_manually.bash'
+#     - nix-shell ./tuto-env.nix --command './run_simulation_robin.bash'
+
+tuto_first_simulation:
+  only:
+    - schedules
+  script:
+    - cd docs/tuto-first-simulation
+    - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-dev.nix --command './run_simulation_manually.bash'
+    - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-dev.nix --command './run_simulation_robin.bash'
