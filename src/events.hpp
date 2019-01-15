@@ -79,40 +79,46 @@ bool event_comparator_timestamp_number(const Event * a, const Event * b);
 /**
  * @brief List of Events to be submitted via an event_submitter
  */
-struct EventList
+class EventList
 {
+private:
+    /**
+     * @brief EventList cannot be constructed directly. Please refer to static methods.
+     */
+    explicit EventList() = default;
+
 public:
-    EventList() = default;
+    /**
+      * @brief Destroys an EventList
+      */
     ~EventList();
 
     /**
-     * @brief Builds an EventList from a JSON filename
-     * @param[in] filename The name of the JSON file
+     * @brief Creates an empty EventList
      * @param[in] name The name of the EventList
+     * @param[in] is_static Whether this EventList is static or not
      * @return The created EventList
      */
-    static EventList * new_eventList_from_json(const std::string & filename,
-                                         const std::string & name);
+    static EventList * new_event_list(const std::string & name,
+                                      const bool is_static);
 
     /**
-     * @brief Builds an empty dynamic EventList
-     * @details Dynamic Events are created by the decision process
-     * @param[in] name The EventList name
-     * @return The created EventList
+     * @brief Loads static Events from a JSON filename
+     * @param[in] json_filename The name of the JSON file
      */
-    static EventList * new_dynamic_eventList(const std::string & name);
+    void load_from_json(const std::string & json_filename);
 
     /**
      * @brief Gets the list of Events
      * @return The internal vector of Event*
      */
-    std::vector<Event*> & getEvents();
+    std::vector<Event*> & events();
 
     /**
      * @brief Gets the list of Events (const version)
      * @return The internal vector of Event* (const version)
      */
-    const std::vector<Event*> & getEvents() const;
+    const std::vector<Event*> & events() const;
 
     /**
      * @brief Adds an event to the EventList

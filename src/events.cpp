@@ -98,16 +98,24 @@ bool event_comparator_timestamp_number(const Event * a, const Event * b)
 
 
 // Events-related functions
-EventList * EventList::new_eventList_from_json(const std::string & name,
-                                      const std::string & filename)
+EventList * EventList::new_event_list(const std::string & name,
+                                   const bool is_static)
 {
-    XBT_INFO("Loading JSON events '%s' ...", filename.c_str());
+
     EventList * ev = new EventList;
     ev->_name = name;
-    ev->_file = filename;
+    ev->_is_static = is_static;
 
-    std::ifstream ifile(filename.c_str());
-    xbt_assert(ifile.is_open(), "Cannot read file '%s'", filename.c_str());
+    return ev;
+}
+
+void EventList::load_from_json(const std::string & json_filename)
+{
+    XBT_INFO("Loading JSON events from '%s' ...", json_filename.c_str());
+    _file = json_filename;
+
+    std::ifstream ifile(json_filename.c_str());
+    xbt_assert(ifile.is_open(), "Cannot read file '%s'", json_filename.c_str());
     string line;
     while(getline(ifile, line))
     {
@@ -115,33 +123,24 @@ EventList * EventList::new_eventList_from_json(const std::string & name,
         {
             Document doc;
             doc.Parse(line.c_str());
-            xbt_assert(!doc.HasParseError() and doc.IsObject(), "Invalid JSON event file %s, an event could not be parsed.", filename.c_str());
+            xbt_assert(!doc.HasParseError() and doc.IsObject(), "Invalid JSON event file %s, an event could not be parsed.", json_filename.c_str());
 
             Event * event = Event::from_json(doc);
-            ev->add_event(event);
+            add_event(event);
         }
     }
-    sort(ev->_events.begin(), ev->_events.end(), event_comparator_timestamp_number);
+    sort(_events.begin(), _events.end(), event_comparator_timestamp_number);
 
-    XBT_INFO("JSON events sucessfully parsed. Read %lu events.", ev->_events.size());
+    XBT_INFO("JSON events sucessfully parsed. Read %lu events.", _events.size());
     ifile.close();
-    return ev;
 }
 
-EventList * EventList::new_dynamic_eventList(const std::string & name)
-{
-    EventList * ev = new EventList;
-    ev->_name = name;
-    ev->_is_static = false;
-    return ev;
-}
-
-std::vector<Event*> &EventList::getEvents()
+std::vector<Event*> &EventList::events()
 {
     return _events;
 }
 
-const std::vector<Event*> &EventList::getEvents() const
+const std::vector<Event*> &EventList::events() const
 {
     return _events;
 }
