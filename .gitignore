@@ -9,7 +9,7 @@ doc/doxygen_warnings.log
 doc/doxygen_doc
 build
 test/out
-CMakeLists.txt.user
+CMakeLists.txt.user*
 dump.rdb
 .sshkeys
 *.swp
