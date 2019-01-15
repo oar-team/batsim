@@ -64,6 +64,7 @@ Batch schedulers — or Resource and Jobs Management Systems, RJMSs — are syst
 
    Contributing <contributing.rst>
    Continuous Integration <ci.rst>
+   Release procedure <release.rst>
    TODO list <todo.rst>
 
 .. _SimGrid: https://simgrid.frama.io/
