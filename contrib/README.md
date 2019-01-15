@@ -2,5 +2,5 @@ The file pegasus-graphviz is extracted from the pegasus github (see https://gith
 
 example usage :
 
- contrib/pegasus-graphviz workload_profiles/GENOME.d.351024866.5.dax -o /tmp/bla.dot
+ contrib/pegasus-graphviz workloads/untested/GENOME.d.351024866.5.dax -o /tmp/bla.dot
  dot -Tjpeg -o /tmp/bla.jpg /tmp/bla.dot 

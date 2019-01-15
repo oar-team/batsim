@@ -1,0 +1,24 @@
+{
+    "nb_res": 4,
+    "jobs": [
+        {"id":1, "subtime":1, "walltime": 30e9, "res": 2, "profile": "1",
+         "description": "default mapping (round robin on nodes)"},
+        {"id":2, "subtime":1e13, "walltime": 30e9, "res":2, "profile":"1",
+         "NOT_A_smpi_ranks_to_hosts_mapping":[0,1],
+         "description": "should be the same as the default mapping"},
+
+        {"id":3, "subtime":2e13, "walltime": 30e9, "res":1, "profile":"1",
+         "description": "execute it on a single node"},
+        {"id":4, "subtime":3e13, "walltime": 30e9, "res":1, "profile":"1",
+         "NOT_A_smpi_ranks_to_hosts_mapping":[0,0],
+         "description": "should be the same as 3"}
+    ],
+
+    "profiles": {
+        "1": {
+            "type": "smpi",
+            "mpi_size": 2,
+            "trace": "smpi/mixed_comm_comp/traces.txt"
+        }
+    }
+}

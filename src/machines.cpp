@@ -17,8 +17,10 @@
 #include "context.hpp"
 #include "export.hpp"
 #include "jobs.hpp"
+#include "permissions.hpp"
 
 using namespace std;
+using namespace roles;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(machines, "machines"); //!< Logging
 
@@ -41,42 +43,17 @@ Machines::~Machines()
         delete machine;
     }
     _machines.clear();
-
-    if (_master_machine != nullptr)
-    {
-        delete _master_machine;
-        _master_machine = nullptr;
-    }
-
-    if (_pfs_machine != nullptr)
-    {
-        delete _pfs_machine;
-        _pfs_machine = nullptr;
-    }
-
-    if (_hpst_machine != nullptr)
-    {
-        delete _hpst_machine;
-        _hpst_machine = nullptr;
-    }
-
 }
 
-void Machines::create_machines(xbt_dynar_t hosts,
-                               const BatsimContext *context,
-                               const string & master_host_name,
-                               const string & pfs_host_name,
-                               const string & hpst_host_name,
+void Machines::create_machines(const BatsimContext *context,
+                               const std::map<string, string> & role_map,
                                int limit_machine_count)
 {
     xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
 
-    int nb_machines = xbt_dynar_length(hosts);
-    _machines.reserve(nb_machines);
+    std::vector<simgrid::s4u::Host *> hosts = simgrid::s4u::Engine::get_instance()->get_all_hosts();
 
-    msg_host_t host;
-    unsigned int i, id=0;
-    xbt_dynar_foreach(hosts, i, host)
+    for(simgrid::s4u::Host * host : hosts)
     {
         Machine * machine = new Machine(this);
 
@@ -84,24 +61,36 @@ void Machines::create_machines(xbt_dynar_t hosts,
         machine->host = host;
         machine->jobs_being_computed = {};
 
-        auto properties_dict = MSG_host_get_properties(machine->host);
-        xbt_dict_cursor_t cursor = nullptr;
-        char *prop_key = nullptr;
-        char *prop_value = nullptr;
-        xbt_dict_foreach(properties_dict, cursor, prop_key, prop_value) {
-            machine->properties[string(prop_key)] = string(prop_value);
+        machine->properties = *(host->get_properties());
+
+        // set role properties on hosts if it has CLI defined role
+        if (role_map.count(machine->name))
+        {
+            // there is role to set
+            if (machine->properties.count("role"))
+            {
+                // there is an existing role property
+                machine->properties["role"] = machine->properties["role"] + "," + role_map.at(machine->name);
+            }
+            else
+            {
+                machine->properties["role"] = role_map.at(machine->name);
+            }
         }
+
+        // set the permissions using the role
+        machine->permissions = permissions_from_role(machine->properties["role"]);
 
         if (context->energy_used)
         {
-            int nb_pstates = MSG_host_get_nb_pstates(machine->host);
-            const char * sleep_states_cstr = MSG_host_get_property_value(machine->host, "sleep_pstates");
-            bool contains_sleep_pstates = (sleep_states_cstr != NULL);
+            int nb_pstates = machine->host->get_pstate_count();
+
+            auto property_it = machine->properties.find("sleep_pstates");
 
             // Let the sleep_pstates property be traversed in order to find the sleep and virtual transition pstates
-            if (contains_sleep_pstates)
+            if (property_it != machine->properties.end())
             {
-                string sleep_states_str = sleep_states_cstr;
+                string sleep_states_str = property_it->second;
 
                 vector<string> sleep_pstate_triplets;
                 boost::split(sleep_pstate_triplets, sleep_states_str, boost::is_any_of(","), boost::token_compress_on);
@@ -214,68 +203,67 @@ void Machines::create_machines(xbt_dynar_t hosts,
             }
         }
 
-        if (context->submission_sched_enabled)
+        /* Guard related to the famous OBFH (https://github.com/oar-team/batsim/issues/21), which may not occur anymore.
+        if (context->registration_sched_enabled)
         {
-            // Because of one pernicious bug (https://github.com/oar-team/batsim/issues/21),
-            // let's check that the machine contains no energy information if dynamic submissions
-            // are enabled.
-            const char * sleep_states_cstr = MSG_host_get_property_value(machine->host, "sleep_pstates");
-            bool contains_sleep_pstates = (sleep_states_cstr != NULL);
+            bool contains_sleep_pstates = (machine->properties.count("sleep_pstates") == 1);
             xbt_assert(!contains_sleep_pstates,
                        "Using dynamic job submissions AND plaforms with energy information "
                        "is currently forbidden (https://github.com/oar-team/batsim/issues/21).");
-        }
+        }*/
 
-        if ((machine->name != master_host_name) && (machine->name != pfs_host_name) && (machine->name != hpst_host_name))
+        // Machines that may compute flops must have a positive computing speed
+        if ((machine->permissions & Permissions::COMPUTE_FLOPS) == Permissions::COMPUTE_FLOPS)
         {
-            machine->id = id;
-            ++id;
-            _machines.push_back(machine);
-        }
-        else
-        {
-            if (machine->name == master_host_name)
+            if (context->energy_used)
             {
-                xbt_assert(_master_machine == nullptr, "There are two master hosts...");
-                machine->id = -1;
-                _master_machine = machine;
-            }
-            else if (machine->name == pfs_host_name)
-            {
-                xbt_assert(_pfs_machine == nullptr, "There are two pfs hosts...");
-                machine->id = -2;
-                _pfs_machine = machine;
-            }
-            else if (machine->name == hpst_host_name)
-            {
-                xbt_assert(_hpst_machine == nullptr, "There are two hpst hosts...");
-                machine->id = -3;
-                _hpst_machine = machine;
+                // Check all computing pstates
+                for (auto mit : machine->pstates)
+                {
+                    int pstate_id = mit.first;
+                    PStateType & pstate_type = mit.second;
+                    if (pstate_type == PStateType::COMPUTATION_PSTATE)
+                    {
+                        xbt_assert(machine->host->get_pstate_speed(pstate_id) > 0,
+                                   "Invalid platform file '%s': host '%s' has an invalid (non-positive computing speed) computing pstate %d.",
+                                   context->platform_filename.c_str(), machine->name.c_str(), pstate_id);
+                    }
+                }
             }
             else
             {
-                xbt_die("Invalid machine found");
+                // Only one state to check in this case.
+                xbt_assert(sg_host_speed(machine->host) > 0,
+                           "Invalid platform file '%s': host '%s' is a compute node but has an invalid (non-positive) computing speed.",
+                           context->platform_filename.c_str(), machine->name.c_str());
             }
+        }
+
+        // Store machines in different place depending on the role
+        if (machine->permissions == Permissions::COMPUTE_NODE)
+        {
+            _compute_nodes.push_back(machine);
+        }
+        else if (machine->permissions == Permissions::STORAGE)
+        {
+            // wait to give ids until we know how many compute node there is
+            _storage_nodes.push_back(machine);
+        }
+        else if (machine->permissions == Permissions::MASTER)
+        {
+            xbt_assert(_master_machine == nullptr, "There are two master hosts...");
+            machine->id = -1;
+            _master_machine = machine;
         }
     }
 
-    xbt_assert(_master_machine != nullptr,
-               "Cannot find the MasterHost '%s' in the platform file", master_host_name.c_str());
-    if (_pfs_machine == nullptr)
-    {
-         XBT_WARN("Could not find pfs_host '%s'!", pfs_host_name.c_str());
-    }
-    if (_hpst_machine == nullptr)
-    {
-         XBT_WARN("Could not find hpst_host '%s'!", hpst_host_name.c_str());
-    }
-
-    sort_machines_by_ascending_name();
+    // sort the machines by name
+    sort_machines_by_ascending_name(_compute_nodes);
 
     // Let's limit the number of machines
     if (limit_machine_count != 0)
     {
-        int nb_machines_without_limitation = (int)_machines.size();
+        int nb_machines_without_limitation = (int)_compute_nodes.size();
         xbt_assert(limit_machine_count > 0);
         xbt_assert(limit_machine_count <= nb_machines_without_limitation,
                    "Impossible to compute on M=%d machines: "
@@ -285,13 +273,33 @@ void Machines::create_machines(xbt_dynar_t hosts,
 
         for (int machine_id = limit_machine_count; machine_id < nb_machines_without_limitation; ++machine_id)
         {
-            delete _machines[machine_id];
+            delete _compute_nodes[machine_id];
         }
 
-        _machines.resize(limit_machine_count);
+        _compute_nodes.resize(limit_machine_count);
     }
 
-    _nb_machines_in_each_state[MachineState::IDLE] = (int)_machines.size();
+    // Now add machines to global list and add ids
+    unsigned int id = 0;
+    for (auto& machine : _compute_nodes)
+    {
+        machine->id = id;
+        ++id;
+        _machines.push_back(machine);
+    }
+
+    // then attibute ids to storage machines
+    for (auto& machine : _storage_nodes)
+    {
+        machine->id = id;
+        ++id;
+        _machines.push_back(machine);
+    }
+
+    xbt_assert(_master_machine != nullptr,
+               "Cannot find the \"master\" role in the platform file");
+
+    _nb_machines_in_each_state[MachineState::IDLE] = (int)_compute_nodes.size();
 }
 
 const Machine * Machines::operator[](int machineID) const
@@ -335,35 +343,21 @@ const std::vector<Machine *> &Machines::machines() const
     return _machines;
 }
 
+const std::vector<Machine *> &Machines::compute_machines() const
+{
+    return _compute_nodes;
+}
+
+const std::vector<Machine *> &Machines::storage_machines() const
+{
+    return _storage_nodes;
+}
+
 const Machine *Machines::master_machine() const
 {
     xbt_assert(_master_machine != nullptr,
                "Trying to access the master machine, which does not exist.");
     return _master_machine;
-}
-
-const Machine *Machines::pfs_machine() const
-{
-    xbt_assert(_pfs_machine != nullptr,
-               "Trying to access the PFS machine, which does not exist.");
-    return _pfs_machine;
-}
-
-bool Machines::has_pfs_machine() const
-{
-    return _pfs_machine != nullptr;
-}
-
-const Machine *Machines::hpst_machine() const
-{
-    xbt_assert(_hpst_machine != nullptr,
-               "Trying to access the hpst machine, which does not exist.");
-    return _hpst_machine;
-}
-
-bool Machines::has_hpst_machine() const
-{
-    return _hpst_machine != nullptr;
 }
 
 long double Machines::total_consumed_energy(const BatsimContext *context) const
@@ -409,6 +403,16 @@ int Machines::nb_machines() const
     return _machines.size();
 }
 
+int Machines::nb_compute_machines() const
+{
+    return _compute_nodes.size();
+}
+
+int Machines::nb_storage_machines() const
+{
+    return _storage_nodes.size();
+}
+
 void Machines::update_nb_machines_in_each_state(MachineState old_state, MachineState new_state)
 {
     _nb_machines_in_each_state[old_state]--;
@@ -421,7 +425,7 @@ const std::map<MachineState, int> &Machines::nb_machines_in_each_state() const
 }
 
 void Machines::update_machines_on_job_run(const Job * job,
-                                          const MachineRange & used_machines,
+                                          const IntervalSet & used_machines,
                                           BatsimContext * context)
 {
     for (auto it = used_machines.elements_begin(); it != used_machines.elements_end(); ++it)
@@ -456,7 +460,7 @@ void Machines::update_machines_on_job_run(const Job * job,
 }
 
 void Machines::update_machines_on_job_end(const Job * job,
-                                          const MachineRange & used_machines,
+                                          const IntervalSet & used_machines,
                                           BatsimContext * context)
 {
     for (auto it = used_machines.elements_begin(); it != used_machines.elements_end(); ++it)
@@ -494,16 +498,6 @@ void Machines::update_machines_on_job_end(const Job * job,
     if (context->trace_machine_states)
     {
         context->machine_state_tracer.write_machine_states(MSG_get_clock());
-    }
-}
-
-void Machines::sort_machines_by_ascending_name()
-{
-    std::sort(_machines.begin(), _machines.end(), machine_comparator_name);
-
-    for (unsigned int i = 0; i < _machines.size(); ++i)
-    {
-        _machines[i]->id = i;
     }
 }
 
@@ -560,6 +554,12 @@ Machine::~Machine()
     }
 
     sleep_pstates.clear();
+    properties.clear();
+}
+
+bool Machine::has_role(Permissions role) const
+{
+    return (role & this->permissions) == role;
 }
 
 bool Machine::has_pstate(int pstate) const
@@ -636,9 +636,9 @@ string Machine::jobs_being_computed_as_string() const
 
 void Machine::update_machine_state(MachineState new_state)
 {
-    Rational current_date = MSG_get_clock();
+    long double current_date = MSG_get_clock();
 
-    Rational delta_time = current_date - last_state_change_date;
+    long double delta_time = current_date - last_state_change_date;
     xbt_assert(delta_time >= 0);
 
     time_spent_in_each_state[state] += delta_time;
@@ -731,30 +731,35 @@ bool machine_comparator_name(const Machine *m1, const Machine *m2)
     return cmp_ret <= 0;
 }
 
+void sort_machines_by_ascending_name(std::vector<Machine *> machines_vect)
+{
+    std::sort(machines_vect.begin(), machines_vect.end(), machine_comparator_name);
+
+    for (unsigned int i = 0; i < machines_vect.size(); ++i)
+    {
+        machines_vect[i]->id = i;
+    }
+}
 
 void create_machines(const MainArguments & main_args,
                      BatsimContext * context,
                      int max_nb_machines_to_use)
 {
+    XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
     MSG_create_environment(main_args.platform_filename.c_str());
 
-    XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
     XBT_INFO("Looking for master host '%s'", main_args.master_host_name.c_str());
-    XBT_INFO("Looking for parallel file system host (LCST) '%s'", main_args.pfs_host_name.c_str());
-    XBT_INFO("Looking for parallel file system host (HPST) '%s'", main_args.hpst_host_name.c_str());
 
-    xbt_dynar_t hosts = MSG_hosts_as_dynar();
-    context->machines.create_machines(hosts, context, main_args.master_host_name,
-                                      main_args.pfs_host_name, main_args.hpst_host_name,
+    context->machines.create_machines(context,
+                                      main_args.hosts_roles_map,
                                       max_nb_machines_to_use);
-    xbt_dynar_free(&hosts);
 
     XBT_INFO("The machines have been created successfully. There are %d computing machines.",
-             context->machines.nb_machines());
+             context->machines.nb_compute_machines());
 }
 
 long double consumed_energy_on_machines(BatsimContext * context,
-                                        const MachineRange & machines)
+                                        const IntervalSet & machines)
 {
     if (!context->energy_used)
     {

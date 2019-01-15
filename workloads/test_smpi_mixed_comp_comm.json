@@ -1,0 +1,12 @@
+{
+    "nb_res": 4,
+    "jobs": [
+        {"id":1, "subtime":10, "walltime": 100, "res": 2, "profile": "1"}
+    ],
+    "profiles": {
+        "1": {
+            "type": "smpi",
+            "trace": "smpi/mixed_comm_comp/traces.txt"
+        }
+    }
+}

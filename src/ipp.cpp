@@ -20,27 +20,24 @@ void generic_send_message(const std::string & destination_mailbox,
     message->type = type;
     message->data = data;
 
-    msg_task_t task_to_send = MSG_task_create(NULL, 0, 1e-6, message);
+    auto mailbox = simgrid::s4u::Mailbox::by_name(destination_mailbox);
+    const uint64_t message_size = 1;
 
     XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p",
-              MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
+              simgrid::s4u::this_actor::get_cname(), destination_mailbox.c_str(),
               ip_message_type_to_string(type).c_str(), data);
 
     if (detached)
     {
-        MSG_task_dsend(task_to_send, destination_mailbox.c_str(), NULL);
+        mailbox->put_async(message, message_size);
     }
     else
     {
-        msg_error_t err = MSG_task_send(task_to_send, destination_mailbox.c_str());
-        xbt_assert(err == MSG_OK,
-                   "Sending message from '%s' to '%s' of type '%s' with data %p FAILED!",
-                   MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
-                   ip_message_type_to_string(type).c_str(), data);
+        mailbox->put(message, message_size);
     }
 
     XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p done",
-              MSG_process_get_name(MSG_process_self()), destination_mailbox.c_str(),
+              simgrid::s4u::this_actor::get_cname(), destination_mailbox.c_str(),
               ip_message_type_to_string(type).c_str(), data);
 }
 
@@ -54,6 +51,19 @@ void dsend_message(const std::string & destination_mailbox, IPMessageType type, 
     generic_send_message(destination_mailbox, type, data, true);
 }
 
+IPMessage * receive_message(const std::string & reception_mailbox)
+{
+    auto mailbox = simgrid::s4u::Mailbox::by_name(reception_mailbox);
+    IPMessage * message = static_cast<IPMessage *>(mailbox->get());
+    return message;
+}
+
+bool mailbox_empty(const std::string & reception_mailbox)
+{
+    auto mailbox = simgrid::s4u::Mailbox::by_name(reception_mailbox);
+    return mailbox->empty();
+}
+
 std::string ip_message_type_to_string(IPMessageType type)
 {
     string s;
@@ -65,11 +75,11 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::JOB_SUBMITTED:
             s = "JOB_SUBMITTED";
             break;
-        case IPMessageType::JOB_SUBMITTED_BY_DP:
-            s = "JOB_SUBMITTED_BY_DP";
+        case IPMessageType::JOB_REGISTERED_BY_DP:
+            s = "JOB_REGISTERED_BY_DP";
             break;
-        case IPMessageType::PROFILE_SUBMITTED_BY_DP:
-            s = "PROFILE_SUBMITTED_BY_DP";
+        case IPMessageType::PROFILE_REGISTERED_BY_DP:
+            s = "PROFILE_REGISTERED_BY_DP";
             break;
         case IPMessageType::JOB_COMPLETED:
             s = "JOB_COMPLETED";
@@ -98,6 +108,9 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_WAIT_ANSWER:
             s = "SCHED_WAIT_ANSWER";
             break;
+        case IPMessageType::SCHED_SET_JOB_METADATA:
+            s = "SCHED_SET_JOB_METADATA";
+            break;
         case IPMessageType::WAIT_QUERY:
             s = "WAIT_QUERY";
             break;
@@ -125,11 +138,11 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::KILLING_DONE:
             s = "KILLING_DONE";
             break;
-        case IPMessageType::END_DYNAMIC_SUBMIT:
-            s = "END_DYNAMIC_SUBMIT";
+        case IPMessageType::END_DYNAMIC_REGISTER:
+            s = "END_DYNAMIC_REGISTER";
             break;
-        case IPMessageType::CONTINUE_DYNAMIC_SUBMIT:
-            s = "CONTINUE_DYNAMIC_SUBMIT";
+        case IPMessageType::CONTINUE_DYNAMIC_REGISTER:
+            s = "CONTINUE_DYNAMIC_REGISTER";
             break;
         case IPMessageType::TO_JOB_MSG:
             s = "TO_JOB_MSG";
@@ -164,14 +177,14 @@ IPMessage::~IPMessage()
             JobSubmittedMessage * msg = (JobSubmittedMessage *) data;
             delete msg;
         } break;
-        case IPMessageType::JOB_SUBMITTED_BY_DP:
+        case IPMessageType::JOB_REGISTERED_BY_DP:
         {
-            JobSubmittedByDPMessage * msg = (JobSubmittedByDPMessage *) data;
+            JobRegisteredByDPMessage * msg = (JobRegisteredByDPMessage *) data;
             delete msg;
         } break;
-        case IPMessageType::PROFILE_SUBMITTED_BY_DP:
+        case IPMessageType::PROFILE_REGISTERED_BY_DP:
         {
-            ProfileSubmittedByDPMessage * msg = (ProfileSubmittedByDPMessage *) data;
+            ProfileRegisteredByDPMessage * msg = (ProfileRegisteredByDPMessage *) data;
             delete msg;
         } break;
         case IPMessageType::JOB_COMPLETED:
@@ -212,6 +225,11 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
         {
+        } break;
+        case IPMessageType::SCHED_SET_JOB_METADATA:
+        {
+            SetJobMetadataMessage * msg = (SetJobMetadataMessage *) data;
+            delete msg;
         } break;
         case IPMessageType::WAIT_QUERY:
         {
@@ -259,10 +277,10 @@ IPMessage::~IPMessage()
             KillingDoneMessage * msg = (KillingDoneMessage *) data;
             delete msg;
         } break;
-        case IPMessageType::END_DYNAMIC_SUBMIT:
+        case IPMessageType::END_DYNAMIC_REGISTER:
         {
         } break;
-        case IPMessageType::CONTINUE_DYNAMIC_SUBMIT:
+        case IPMessageType::CONTINUE_DYNAMIC_REGISTER:
         {
         } break;
         case IPMessageType::TO_JOB_MSG:

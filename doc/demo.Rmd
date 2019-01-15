@@ -22,7 +22,7 @@ We can move them to our new experiment directory.
 export BATSIM_DIR=~/proj/batsim
 export EXPE_DIR=/tmp/batsim_demo
 
-cp ${BATSIM_DIR}/workload_profiles/batsim_paper_workload_example.json ${EXPE_DIR}/workload.json
+cp ${BATSIM_DIR}/workloads/batsim_paper_workload_example.json ${EXPE_DIR}/workload.json
 cp ${BATSIM_DIR}/platforms/energy_platform_homogeneous_no_net_128.xml ${EXPE_DIR}/platform.xml
 ```
 
@@ -56,11 +56,11 @@ The simulation results are in subdirectories:
 - out_schedule.csv contains aggregated information about the execution schedule
 - out_schedule.trace is the Pajé trace of the execution
 
-These output files can be visualized thanks to [Evalys](https://github.com/oar-team/evalys) or analized individually.
+These output files can be visualized thanks to [Evalys](https://github.com/oar-team/evalys) or analyzed individually.
 
 ## Visualize results with Evalys
 
-Evalys can be used to display different informations. For example the gantt charts of the two instances:
+Evalys can be used to display different information. For example the gantt charts of the two instances:
 ```{python}
 from evalys import *
 from evalys.jobset import *
@@ -137,7 +137,7 @@ base_variables:
 # These pre commands are done before executing any instance
 commands_before_instances:
   - cp ${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml ${base_output_directory}/platform.xml
-  - cp ${batsim_dir}/workload_profiles/batsim_paper_workload_example.json ${base_output_directory}/workload.json
+  - cp ${batsim_dir}/workloads/batsim_paper_workload_example.json ${base_output_directory}/workload.json
 
 # Description of "implicit" instances: a combination of the sweep parameters will be done
 implicit_instances:
@@ -169,7 +169,7 @@ base_variables:
 # These pre commands are done before executing any instance
 commands_before_instances:
   - cp ${batsim_dir}/platforms/energy_platform_homogeneous_no_net_128.xml ${base_output_directory}/platform.xml
-  - cp ${batsim_dir}/workload_profiles/batsim_paper_workload_example.json ${base_output_directory}/workload.json
+  - cp ${batsim_dir}/workloads/batsim_paper_workload_example.json ${base_output_directory}/workload.json
 
 # Description of "implicit" instances: a combination of the sweep parameters will be done
 implicit_instances:

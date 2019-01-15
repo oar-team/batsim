@@ -5,16 +5,17 @@
 
 #pragma once
 
-#include <map>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <simgrid/msg.h>
 
-#include "exact_numbers.hpp"
-#include "machine_range.hpp"
+#include <intervalset.hpp>
+
 #include "pstate.hpp"
+#include "permissions.hpp"
 
 struct BatsimContext;
 struct Job;
@@ -33,6 +34,7 @@ enum class MachineState
     ,TRANSITING_FROM_SLEEPING_TO_COMPUTING  //!< The machine is in transition from a sleeping state to a computing state
     ,TRANSITING_FROM_COMPUTING_TO_SLEEPING  //!< The machine is in transition from a computing state to a sleeping state
 };
+
 
 /**
  * @brief Represents a machine
@@ -53,17 +55,25 @@ struct Machine
     Machines * machines = nullptr; //!< Points to the Machines instance which contains the Machine
     int id; //!< The machine unique number
     std::string name; //!< The machine name
-    msg_host_t host; //!< The SimGrid host corresponding to the machine
+    simgrid::s4u::Host* host; //!< The SimGrid host corresponding to the machine
+    roles::Permissions permissions = roles::Permissions::NONE; //!< Machine permissions
     MachineState state = MachineState::IDLE; //!< The current state of the Machine
     std::set<const Job *> jobs_being_computed; //!< The set of jobs being computed on the Machine
 
-    std::map<int, PStateType> pstates; //!< Maps power state number to their power state type
-    std::map<int, SleepPState *> sleep_pstates; //!< Maps sleep power state numbers to their SleepPState
+    std::unordered_map<int, PStateType> pstates; //!< Maps power state number to their power state type
+    std::unordered_map<int, SleepPState *> sleep_pstates; //!< Maps sleep power state numbers to their SleepPState
 
-    Rational last_state_change_date = 0; //!< The time at which the last state change has been done
-    std::map<MachineState, Rational> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
+    long double last_state_change_date = 0; //!< The time at which the last state change has been done
+    std::unordered_map<MachineState, long double> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
 
-    std::map<std::string, std::string> properties; //!< Properties defined in the platform file
+    std::unordered_map<std::string, std::string> properties; //!< Properties defined in the platform file
+
+    /**
+     * @brief Returns whether the Machine has the given role
+     * @param[in] role The role whose presence is to be checked
+     * @return Whether the Machine has the given role
+     */
+    bool has_role(roles::Permissions role) const;
 
     /**
      * @brief Returns whether the Machine has the given power state
@@ -132,18 +142,12 @@ public:
 
     /**
      * @brief Fill the Machines with SimGrid hosts
-     * @param[in] hosts The SimGrid hosts
      * @param[in] context The Batsim Context
-     * @param[in] master_host_name The name of the host which should be used as the Master host
-     * @param[in] pfs_host_name The name of the host which should be used as the parallel filestem host (large-capacity storage tier)
-     * @param[in] hpst_host_name The name of the host which should be used as the HPST host (high-performance storage tier)
+     * @param[in] roles The roles of each machine
      * @param[in] limit_machine_count If set to -1, all the machines are used. If set to a strictly positive number N, only the first machines N will be used to compute jobs
      */
-    void create_machines(xbt_dynar_t hosts,
-                         const BatsimContext * context,
-                         const std::string & master_host_name,
-                         const std::string & pfs_host_name,
-                         const std::string & hpst_host_name,
+    void create_machines(const BatsimContext * context,
+                         const std::map<std::string, std::string> & roles,
                          int limit_machine_count = -1);
 
     /**
@@ -154,7 +158,7 @@ public:
      * @param[in,out] context The Batsim Context
      */
     void update_machines_on_job_run(const Job * job,
-                                    const MachineRange & used_machines,
+                                    const IntervalSet & used_machines,
                                     BatsimContext * context);
 
     /**
@@ -165,13 +169,8 @@ public:
      * @param[in,out] context The BatsimContext
      */
     void update_machines_on_job_end(const Job *job,
-                                    const MachineRange & used_machines,
+                                    const IntervalSet & used_machines,
                                     BatsimContext *context);
-
-    /**
-     * @brief Sorts the machine by ascending name (lexicographically speaking)
-     */
-    void sort_machines_by_ascending_name();
 
     /**
      * @brief Sets the PajeTracer
@@ -212,36 +211,22 @@ public:
     const std::vector<Machine *> & machines() const;
 
     /**
+     * @brief Returns a const reference to the vector of computing Machine
+     * @return A const reference to the vector of computing Machine
+     */
+    const std::vector<Machine *> & compute_machines() const;
+
+    /**
+     * @brief Returns a const reference to the vector of storage Machine
+     * @return A const reference to the vector of storage Machine
+     */
+    const std::vector<Machine *> & storage_machines() const;
+
+    /**
      * @brief Returns a const pointer to the Master host machine
      * @return A const pointer to the Master host machine
      */
     const Machine * master_machine() const;
-
-    /**
-     * @brief Returns a const pointer to the Parallel File System host machine
-     * for the large-capacity storage tier.
-     * @return A const pointer to the Parallel File System host machine
-     */
-    const Machine * pfs_machine() const;
-
-    /**
-     * @brief Returns whether or not a pfs host is registered in the system.
-     * @return Whether or not a pfs host is present
-     */
-    bool has_pfs_machine() const;
-
-    /**
-     * @brief Returns a const pointer to the Parallel File System host machine
-     * for the high-performance storage tier.
-     * @return A const pointer to the Parallel File System host machine
-     */
-    const Machine * hpst_machine() const;
-
-    /**
-     * @brief Returns whether or not a hpst host is registered in the system.
-     * @return Whether or not a hpst host is present
-     */
-    bool has_hpst_machine() const;
 
     /**
      * @brief Computes and returns the total consumed energy of all the computing machines
@@ -258,10 +243,22 @@ public:
     long double total_wattmin(const BatsimContext * context) const;
 
     /**
-     * @brief Returns the number of computing machines
-     * @return The number of computing machines
+     * @brief Returns the total number of machines
+     * @return The total number of machines
      */
     int nb_machines() const;
+
+    /**
+     * @brief Returns the number of computing machines
+     * @return The nubmer of computing machines
+     */
+    int nb_compute_machines() const;
+
+    /**
+     * @brief Returns the number of storage machines
+     * @return The number of storage machines
+     */
+    int nb_storage_machines() const;
 
     /**
      * @brief Updates the number of machines in each state after a MachineState transition
@@ -277,11 +274,11 @@ public:
     const std::map<MachineState, int> & nb_machines_in_each_state() const;
 
 private:
-    std::vector<Machine *> _machines; //!< The vector of computing machines
-    Machine * _master_machine = nullptr; //!< The master machine
-    Machine * _pfs_machine = nullptr; //!< The PFS machine
-    Machine * _hpst_machine = nullptr; //!< The HPST machine
-    PajeTracer * _tracer = nullptr; //!< The PajeTracer
+    std::vector<Machine *> _machines;       //!< The vector of all machines
+    std::vector<Machine *> _storage_nodes;  //!< The vector of storage machines
+    std::vector<Machine *> _compute_nodes;  //!< The vector of computing machines
+    Machine * _master_machine = nullptr;    //!< The master machine
+    PajeTracer * _tracer = nullptr;         //!< The PajeTracer
     std::map<MachineState, int> _nb_machines_in_each_state; //!< Counts how many machines are in each state
 };
 
@@ -308,4 +305,12 @@ void create_machines(const MainArguments & main_args, BatsimContext * context,
  * @return The energy (in joules) consumed on the machines since time 0
  */
 long double consumed_energy_on_machines(BatsimContext * context,
-                                        const MachineRange & machines);
+                                        const IntervalSet & machines);
+
+/**
+ * @brief Sorts the given vector of machines by ascending name (lexicographically speaking)
+ * @param[in,out] machines_vect The vector of machines to sort
+ */
+void sort_machines_by_ascending_name(std::vector<Machine *> machines_vect);
+
+

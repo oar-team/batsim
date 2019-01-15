@@ -12,7 +12,7 @@ Decision process.
 # Keys Prefix #
 
 Since several Batsim instances can be run at the same time, all the keys
-explained in this document must be prefixed by some instance-spefific prefix.
+explained in this document must be prefixed by some instance-specific prefix.
 At the moment, this prefix is set to the absolute filename of the socket used
 in [the Batsim protocol](proto_description.md), followed by a colon ':'.
 
@@ -67,7 +67,7 @@ strings:
 
 ``` json
 {
-    "type": "msg_par",
+    "type": "parallel",
     "cpu": [5e6,5e6,5e6,5e6],
     "com": [5e6,5e6,5e6,5e6,
             5e6,5e6,5e6,5e6,
@@ -78,7 +78,7 @@ strings:
 
 ``` json
 {
-    "type": "msg_par_hg",
+    "type": "parallel_homogeneous",
     "cpu": 10e6,
     "com": 1e6
 }

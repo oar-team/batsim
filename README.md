@@ -1,5 +1,19 @@
 Batsim
 ======
+[![chat](https://img.shields.io/badge/chat-on%20mattermost-blue.svg)](https://framateam.org/signup_user_complete/?id=5xb995hph3d79yj738pokxrnuh)
+[![external issues](https://img.shields.io/badge/external%20issues-github-orange.svg)](https://github.com/oar-team/batsim/issues)
+[![internal issues](https://img.shields.io/badge/internal%20issues-inria%20gitlab-orange.svg)](https://gitlab.inria.fr/batsim/batsim/issues)
+[![license](https://img.shields.io/badge/license-LGPL%203.0-green.svg)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
+
+[![last release](https://img.shields.io/badge/release-v3.0.0-blue.svg)](https://github.com/oar-team/batsim/releases/tag/v3.0.0)
+[![distance from previous release](https://img.shields.io/github/commits-since/oar-team/batsim/v3.0.0.svg)](https://github.com/oar-team/batsim/compare/v3.0.0...HEAD)
+[![pipeline status](https://framagit.org/batsim/batsim/badges/master/pipeline.svg)](https://framagit.org/batsim/batsim/pipelines)
+
+[![changelog](https://img.shields.io/badge/doc-changelog-blue.svg)](https://github.com/oar-team/batsim/blob/master/doc/changelog.md)
+[![protocol](https://img.shields.io/badge/doc-protocol-blue.svg)](https://github.com/oar-team/batsim/blob/master/doc/proto_description.md)
+
+The next vesion of Batsim documentation can be found
+[on readthedocs](https://batsim.readthedocs.io/en/latest/) (**under construction !**).
 
 Batsim is a Batch scheduler simulator.
 A batch scheduler -- AKA Resources and Jobs Management System (RJMS) --
@@ -18,28 +32,8 @@ academics worlds.
 Getting started
 ---------------
 
-First install batsim and batsched using one of the methods defined the
-[install and Run](doc/run_batsim.md) documentation page.
-
-You will also need a platform file that defines the cluster hardware and
-topology, and a workload that defines the set of jobs that will be submitted
-to the scheduler and when they will be submitted. Some examples are
-available in this repository so you can grab individual files or clone the
-whole repo:
-```sh
-git clone https://gitlab.inria.fr/batsim/batsim.git
-cd batsim
-```
-
-Now, you can run batsim for a simple workload:
-```bash
-batsim -p platforms/small_platform.xml -w workload_profiles/test_workload_profile.json
-```
-
-Then in an *other terminal* execute the scheduler:
-```bash
-batsched
-```
+The best way to start to use Batsim, or at least to see how it works, is to have
+a look at the [Batsim demo](demo).
 
 **Note**: Others workloads and platforms examples can be found in the
 current repository. More sophisticated (and more up-to-date) platforms can be
@@ -61,8 +55,8 @@ External References
   and for seeking whether it may be interesting for you.
   These slides have been made for the JSSPP 2016 IPDPS workshop.
 
-* Batsim internal documentation can be found
-  [there](http://batsim.gforge.inria.fr/).
+* Batsim code documentation can be found
+  [there](http://batsim.gforge.inria.fr/batsim/doxygen).
 
 Quick links
 -----------
@@ -78,29 +72,6 @@ Quick links
     overview of how Batsim works internally
 - The [protocol documentation](doc/proto_description.md) defines the protocol
   used between Batsim and the scheduling algorithms
-
-
-Build and code status
-------------
-
-
-| [master][master-link] | [upstream_sg (recent SimGrid)][upstream_sg-link] | [codacy][codacy-link] |
-| :-------------------: | :----------------------------------------------: | :-------------------: |
-| ![master-badge]       | ![upstream_sg-badge]                             | ![codacy-badge]       |
-
-[master-badge]: https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/badges/master/build.svg "Gitlab CI build status (master branch)"
-[master-link]:  https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/pipelines "Gitlab CI build status"
-[upstream_sg-badge]: https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/badges/upstream_sg/build.svg "Gitlab CI build status (upstream_sg branch)"
-[upstream_sg-link]:  https://gricad-gitlab.univ-grenoble-alpes.fr/batsim/batsim/pipelines "Gitlab CI build status"
-[codacy-badge]: https://api.codacy.com/project/badge/Grade/e5990f2e9abc4573b13a0b8c9d9e0f08 "Codacy code style"
-[codacy-link]: https://www.codacy.com/app/mpoquet/batsim/dashboard
-
-Batsim uses Gitlab CI as its continuous integration system.
-Build status of the different commits can be found
-[CI pipline page][batsim ci]. More information about our CI setup can be
-found in the [continuous intefgration](./doc/continuous_integration.md)
-documentation.
-
 
 Visualisation
 -------------

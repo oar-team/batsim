@@ -1,0 +1,21 @@
+{
+  "_comments": "Latency values obtained from http://www.crucial.com/usa/en/memory-performance-speed-latency",
+  "DDR3-1333": {
+    "latency": "13.50ns"
+  },
+  "DDR3-1600": {
+    "latency": "13.75ns"
+  },
+  "DDR4-1866": {
+    "latency": "13.93ns"
+  },
+  "DDR4-2133": {
+    "latency": "14.06ns"
+  },
+  "DDR4-2400": {
+    "latency": "14.17ns"
+  },
+  "DDR4-2666": {
+    "latency": "13.50ns"
+  }
+}

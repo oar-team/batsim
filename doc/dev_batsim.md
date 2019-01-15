@@ -6,12 +6,54 @@ See the [install and run](run_batsim.md) page to setup Nix with our
 repository.
 
 You can simply enter a shell that comes with all you need to build and
-test Batsim with this command:
+test Batsim with this command at the root of the repository:
 ```sh
-nix-shell /path/to/datamovepkgs -A batsim_dev
+cd batsim
+nix-shell shell.nix
 ```
 
-## Using Docker
+If it does not work (for old batsim versions) you can do:
+```sh
+nix-shell /path/to/kapack -A batsim_dev
+```
+
+This command will open a new Bash shell with all the environment variable set
+correctly to find all the dependencies and build batsim.
+
+**NOTE**: You can use `nix-shell --pure` to avoid the conflict with already
+installed tools.
+
+**WARNING**: The environment created by the `nix-shell` command is heavily
+based on environment variables injected in the provided Bash shell. Do NOT
+switch to an other shell (zsh, fish, ...) because environment variables will not
+be present and the build will fail.
+
+Then you can configure build batsim with these commands:
+```
+rm -rf build
+mkdir build
+cd build
+cmake .. $cmakeFlags
+make -j $(nproc)
+```
+
+To run the test you need to start redis on the same shell:
+```sh
+redis-server &
+```
+
+Or in an other shell:
+```sh
+nix-shell -p redis --command redis-server
+```
+
+Finally run the tests without the remote test (that requires self SSH):
+```
+ctest --output-on-failure -E 'remote'
+```
+
+
+## Using Docker (**DEPRECATED**)
 
 If you need to change the code of Batsim you can use the docker environment ``oarteam/batsim_ci``
 and use the docker volumes to make your Batsim version of the code inside the container.
@@ -56,7 +98,7 @@ Batsim dependencies are listed below:
 -   Redox (and its dependencies: hiredis and libev)
 
 
-# Compile and Test
+### Compile and Test
 
 When you have setup your environment (see previous section), you can
 go to the already cloned Batsim repository (or clone this repository)

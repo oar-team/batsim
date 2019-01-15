@@ -79,8 +79,8 @@ def generate_flat_platform(nb_hosts, output_file):
     <!-- Reduce the size of the stack_size. On huge machine, if the stack is
          too big (8Mb by default), Simgrid fails to initiate.
     See http://lists.gforge.inria.fr/pipermail/simgrid-user/2015-June/003745.html-->
-        <prop id="contexts/stack_size" value="16"></prop>
-        <prop id="contexts/guard_size" value="0"></prop>
+        <prop id="contexts/stack-size" value="16"></prop>
+        <prop id="contexts/guard-size" value="0"></prop>
 
 </config>
 

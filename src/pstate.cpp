@@ -14,24 +14,16 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(pstate, "pstate"); //!< Logging
 
-int switch_on_machine_process(int argc, char *argv[])
+void switch_on_machine_process(BatsimContext *context, int machine_id, int new_pstate)
 {
-    (void) argc;
-    (void) argv;
-
-    SwitchPStateProcessArguments * args = (SwitchPStateProcessArguments *) MSG_process_get_data(MSG_process_self());
-
-    int machineID = args->machine_id;
-    int pstate = args->new_pstate;
-
-    xbt_assert(args->context->machines.exists(machineID));
-    Machine * machine = args->context->machines[machineID];
+    xbt_assert(context->machines.exists(machine_id));
+    Machine * machine = context->machines[machine_id];
 
     xbt_assert(machine->host == MSG_process_get_host(MSG_process_self()));
     xbt_assert(machine->state == MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING);
     xbt_assert(machine->jobs_being_computed.empty());
-    xbt_assert(machine->has_pstate(pstate));
-    xbt_assert(machine->pstates[pstate] == PStateType::COMPUTATION_PSTATE);
+    xbt_assert(machine->has_pstate(new_pstate));
+    xbt_assert(machine->pstates[new_pstate] == PStateType::COMPUTATION_PSTATE);
 
     int current_pstate = MSG_host_get_pstate(machine->host);
     int on_ps = machine->sleep_pstates[current_pstate]->switch_on_virtual_pstate;
@@ -41,91 +33,57 @@ int switch_on_machine_process(int argc, char *argv[])
     MSG_host_set_pstate(machine->host, on_ps);
     //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, on_ps);
 
-    msg_host_t host_list[1] = {machine->host};
-//    double flop_amount[1] = {1};
-//    double bytes_amount[1] = {0};
-    double * flop_amount = xbt_new(double, 1);
-    double * bytes_amount = xbt_new(double, 1);
-    flop_amount[0] = 1;
-    bytes_amount[0] = 0;
-
-    msg_task_t bootup = MSG_parallel_task_create("switch ON", 1, host_list, flop_amount, bytes_amount, NULL);
     XBT_INFO("Computing 1 flop to simulate time & energy cost of switch ON");
-    MSG_task_execute(bootup);
-    MSG_task_destroy(bootup);
+    simgrid::s4u::this_actor::execute(1);
 
     XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to computing pstate %d",
-             machine->id, machine->name.c_str(), pstate);
-    MSG_host_set_pstate(machine->host, pstate);
+             machine->id, machine->name.c_str(), new_pstate);
+    MSG_host_set_pstate(machine->host, new_pstate);
     //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, pstate);
 
     machine->update_machine_state(MachineState::IDLE);
 
     SwitchMessage * msg = new SwitchMessage;
-    msg->machine_id = args->machine_id;
-    msg->new_pstate = args->new_pstate;
+    msg->machine_id = machine_id;
+    msg->new_pstate = new_pstate;
     send_message("server", IPMessageType::SWITCHED_ON, (void *) msg);
-
-    delete args;
-    return 0;
 }
 
-int switch_off_machine_process(int argc, char *argv[])
+void switch_off_machine_process(BatsimContext * context, int machine_id, int new_pstate)
 {
-    (void) argc;
-    (void) argv;
-
-    SwitchPStateProcessArguments * args = (SwitchPStateProcessArguments *) MSG_process_get_data(MSG_process_self());
-
-    int machineID = args->machine_id;
-    int pstate = args->new_pstate;
-
-    xbt_assert(args->context->machines.exists(machineID));
-    Machine * machine = args->context->machines[machineID];
+    xbt_assert(context->machines.exists(machine_id));
+    Machine * machine = context->machines[machine_id];
 
     xbt_assert(machine->host == MSG_process_get_host(MSG_process_self()));
     xbt_assert(machine->state == MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING);
     xbt_assert(machine->jobs_being_computed.empty());
-    xbt_assert(machine->has_pstate(pstate));
-    xbt_assert(machine->pstates[pstate] == PStateType::SLEEP_PSTATE);
+    xbt_assert(machine->has_pstate(new_pstate));
+    xbt_assert(machine->pstates[new_pstate] == PStateType::SLEEP_PSTATE);
 
-    int off_ps = machine->sleep_pstates[pstate]->switch_off_virtual_pstate;
+    int off_ps = machine->sleep_pstates[new_pstate]->switch_off_virtual_pstate;
 
     XBT_INFO("Switching machine %d ('%s') OFF. Passing in virtual pstate %d to do so", machine->id,
              machine->name.c_str(), off_ps);
     MSG_host_set_pstate(machine->host, off_ps);
     //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, off_ps);
 
-    msg_host_t host_list[1] = {machine->host};
-//    double flop_amount[1] = {1};
-//    double bytes_amount[1] = {0};
-    double * flop_amount = xbt_new(double, 1);
-    double * bytes_amount = xbt_new(double, 1);
-    flop_amount[0] = 1;
-    bytes_amount[0] = 0;
-
-    msg_task_t shutdown = MSG_parallel_task_create("switch OFF", 1, host_list, flop_amount, bytes_amount, NULL);
     XBT_INFO("Computing 1 flop to simulate time & energy cost of switch OFF");
-    MSG_task_execute(shutdown);
-    MSG_task_destroy(shutdown);
+    simgrid::s4u::this_actor::execute(1);
 
     XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to sleeping pstate %d",
-             machine->id, machine->name.c_str(), pstate);
-    MSG_host_set_pstate(machine->host, pstate);
+             machine->id, machine->name.c_str(), new_pstate);
+    MSG_host_set_pstate(machine->host, new_pstate);
     //args->context->pstate_tracer.add_pstate_change(MSG_get_clock(), machine->id, pstate);
 
     machine->update_machine_state(MachineState::SLEEPING);
 
     SwitchMessage * msg = new SwitchMessage;
-    msg->machine_id = args->machine_id;
-    msg->new_pstate = args->new_pstate;
+    msg->machine_id = machine_id;
+    msg->new_pstate = new_pstate;
     send_message("server", IPMessageType::SWITCHED_OFF, (void *) msg);
-
-    delete args;
-    return 0;
 }
 
-void CurrentSwitches::add_switch(const MachineRange &machines, int target_pstate)
+void CurrentSwitches::add_switch(const IntervalSet &machines, int target_pstate)
 {
     Switch * s = new Switch;
     s->all_machines = machines;
@@ -145,7 +103,7 @@ void CurrentSwitches::add_switch(const MachineRange &machines, int target_pstate
 
 bool CurrentSwitches::mark_switch_as_done(int machine_id,
                                           int target_pstate,
-                                          MachineRange & all_machines,
+                                          IntervalSet & all_machines,
                                           BatsimContext * context)
 {
     xbt_assert(_switches.count(target_pstate) == 1);

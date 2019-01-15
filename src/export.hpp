@@ -203,7 +203,7 @@ public:
      * @param[in] time The simulation time at which the kill is done
      * @param[in] associate_kill_to_machines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
      */
-    void add_job_kill(const Job * job, const MachineRange & used_machine_ids,
+    void add_job_kill(const Job * job, const IntervalSet & used_machine_ids,
                       double time, bool associate_kill_to_machines = false);
 
 public:
@@ -301,7 +301,7 @@ public:
      * @param machines The machines whose state has been changed
      * @param pstate_after The power state the machine will be in after the given time
      */
-    void add_pstate_change(double time, MachineRange machines, int pstate_after);
+    void add_pstate_change(double time, const IntervalSet & machines, int pstate_after);
 
     /**
      * @brief Forces the flushing of what happened to the output file
@@ -373,7 +373,7 @@ public:
      * @param[in] machines The machines whose power state has changed
      * @param[in] new_pstate The new power state of the machine
      */
-    void add_pstate_change(double date, const MachineRange & machines, int new_pstate);
+    void add_pstate_change(double date, const IntervalSet & machines, int new_pstate);
 
     /**
      * @brief Forces the flushing of what happened to the output file
@@ -394,8 +394,8 @@ private:
      */
     long double add_entry(double date, char event_type);
 
-    Rational _last_entry_date = 0; //!< The date of the last entry
-    Rational _last_entry_energy = 0; //!< The energy of the last entry
+    long double _last_entry_date = 0; //!< The date of the last entry
+    long double _last_entry_energy = 0; //!< The energy of the last entry
 
 private:
     BatsimContext * _context = nullptr; //!< The Batsim context

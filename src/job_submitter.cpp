@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <boost/bind.hpp>
 
+#include <simgrid/s4u.hpp>
+
 #include "jobs.hpp"
 #include "jobs_execution.hpp"
 #include "ipp.hpp"
@@ -32,21 +34,27 @@ Task* bottom_level_f (Task *child, Task *parent)
 
 using namespace std;
 
-int static_job_submitter_process(int argc, char *argv[])
+static void submit_jobs_to_server(const vector<JobIdentifier> & jobs_to_submit, const std::string & submitter_name)
 {
-    (void) argc;
-    (void) argv;
+    if (!jobs_to_submit.empty())
+    {
+        JobSubmittedMessage * msg = new JobSubmittedMessage;
+        msg->submitter_name = submitter_name;
+        msg->job_ids = jobs_to_submit;
+        send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
+    }
+}
 
-    JobSubmitterProcessArguments * args = (JobSubmitterProcessArguments *) MSG_process_get_data(MSG_process_self());
-    BatsimContext * context = args->context;
-
-    xbt_assert(context->workloads.exists(args->workload_name),
+void static_job_submitter_process(BatsimContext * context,
+                                  std::string workload_name)
+{
+    xbt_assert(context->workloads.exists(workload_name),
                "Error: a static_job_submitter_process is in charge of workload '%s', "
-               "which does not exist", args->workload_name.c_str());
+               "which does not exist", workload_name.c_str());
 
-    Workload * workload = context->workloads.at(args->workload_name);
+    Workload * workload = context->workloads.at(workload_name);
 
-    string submitter_name = args->workload_name + "_submitter";
+    string submitter_name = workload_name + "_submitter";
 
     /*  ░░░░░░░░▄▄▄███░░░░░░░░░░░░░░░░░░░░
         ░░░▄▄██████████░░░░░░░░░░░░░░░░░░░
@@ -74,7 +82,7 @@ int static_job_submitter_process(int argc, char *argv[])
 
     send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
 
-    Rational previous_submission_date = MSG_get_clock();
+    long double current_submission_date = MSG_get_clock();
 
     vector<const Job *> jobsVector;
 
@@ -89,23 +97,33 @@ int static_job_submitter_process(int argc, char *argv[])
 
     if (jobsVector.size() > 0)
     {
+        vector<JobIdentifier> jobs_to_send;
         const Job * first_submitted_job = *jobsVector.begin();
 
         for (const Job * job : jobsVector)
         {
-            if (job->submission_time > previous_submission_date)
+            if (job->submission_time > current_submission_date)
             {
-                MSG_process_sleep((double)(job->submission_time) - (double)(previous_submission_date));
+                // Next job submission time is after current time, send the message to the server for previous submitted jobs
+                submit_jobs_to_server(jobs_to_send, submitter_name);
+                jobs_to_send.clear();
+
+                // Now let's sleep until it's time to submit the current job
+                MSG_process_sleep((double)(job->submission_time) - (double)(current_submission_date));
+                current_submission_date = MSG_get_clock();
             }
             // Setting the mailbox
             //job->completion_notification_mailbox = "SOME_MAILBOX";
 
-            // Let's put the metadata about the job into the data storage
-            string job_key = RedisStorage::job_key(job->id);
-            string profile_key = RedisStorage::profile_key(workload->name, job->profile);
+            // Populate the vector of job identifiers to submit
+            jobs_to_send.push_back(job->id);
 
+            // Let's put the metadata about the job into the data storage
             if (context->redis_enabled)
             {
+                string job_key = RedisStorage::job_key(job->id);
+                string profile_key = RedisStorage::profile_key(workload->name, job->profile);
+
                 context->storage.set(job_key, job->json_description);
                 if (context->submission_forward_profiles)
                 {
@@ -113,27 +131,20 @@ int static_job_submitter_process(int argc, char *argv[])
                 }
             }
 
-            // Let's now continue the simulation
-            JobSubmittedMessage * msg = new JobSubmittedMessage;
-            msg->submitter_name = submitter_name;
-            msg->job_id = JobIdentifier(job->id);
-
-            send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
-            previous_submission_date = MSG_get_clock();
-
             if (job == first_submitted_job)
             {
                 context->energy_first_job_submission = context->machines.total_consumed_energy(context);
             }
         }
+
+        // Send last vector of submitted jobs
+        submit_jobs_to_server(jobs_to_send, submitter_name);
     }
 
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
     bye_msg->is_workflow_submitter = false;
     bye_msg->submitter_name = submitter_name;
     send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
-    delete args;
-    return 0;
 }
 
 
@@ -144,27 +155,23 @@ static std::tuple<int,double,double> wait_for_query_answer(string submitter_name
 /* Ugly Global */
 std::map<std::string, int> task_id_counters;
 
-int workflow_submitter_process(int argc, char *argv[])
+void workflow_submitter_process(BatsimContext * context,
+                                std::string workflow_name)
 {
-    (void) argc;
-    (void) argv;
-
     // Get the workflow
-    WorkflowSubmitterProcessArguments * args = (WorkflowSubmitterProcessArguments *) MSG_process_get_data(MSG_process_self());
-    BatsimContext * context = args->context;
-    xbt_assert(context->workflows.exists(args->workflow_name),
+    xbt_assert(context->workflows.exists(workflow_name),
                "Error: a workflow_job_submitter_process is in charge of workload '%s', "
-               "which does not exist", args->workflow_name.c_str());
-    Workflow * workflow = context->workflows.at(args->workflow_name);
+               "which does not exist", workflow_name.c_str());
+    Workflow * workflow = context->workflows.at(workflow_name);
 
     int limit = context->workflow_nb_concurrent_jobs_limit;
     bool not_limiting = (limit == 0);
     int current_nb = 0;
 
-    const string submitter_name = args->workflow_name + "_submitter";
+    const string submitter_name = workflow_name + "_submitter";
 
     XBT_INFO("New Workflow submitter for workflow %s (start time = %lf)!",
-             args->workflow_name.c_str(),workflow->start_time);
+             workflow_name.c_str(),workflow->start_time);
 
     /* Initializing my task_id counter */
     task_id_counters[workflow->name] = 0;
@@ -199,7 +206,7 @@ int workflow_submitter_process(int argc, char *argv[])
             ready_tasks.erase(ready_tasks.begin() + 0);
 
             /* Send a Job corresponding to the Task Job */
-            string job_key = submit_workflow_task_as_job(context, args->workflow_name, submitter_name, task);
+            string job_key = submit_workflow_task_as_job(context, workflow_name, submitter_name, task);
 
             XBT_INFO("Inserting task %s", job_key.c_str());
 
@@ -254,10 +261,6 @@ int workflow_submitter_process(int argc, char *argv[])
     bye_msg->is_workflow_submitter = true;
     bye_msg->submitter_name = submitter_name;
     send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
-
-
-    delete args;
-    return 0;
 }
 
 /**
@@ -321,7 +324,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     // Submit the job
     JobSubmittedMessage * msg = new JobSubmittedMessage;
     msg->submitter_name = submitter_name;
-    msg->job_id = job_id;
+    msg->job_ids = std::vector<JobIdentifier>({job_id});
     send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
 
     // HOWTO Test Wait Query
@@ -348,14 +351,13 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
  */
 static string wait_for_job_completion(string submitter_name)
 {
-    msg_task_t task_notification = NULL;
-    IPMessage *task_notification_data;
-    MSG_task_receive(&(task_notification), submitter_name.c_str());
-    task_notification_data = (IPMessage *) MSG_task_get_data(task_notification);
-    SubmitterJobCompletionCallbackMessage *notification_data =
-        (SubmitterJobCompletionCallbackMessage *) task_notification_data->data;
+    IPMessage * notification = receive_message(submitter_name);
 
-    return  notification_data->job_id.to_string();
+    SubmitterJobCompletionCallbackMessage * notification_data =
+        (SubmitterJobCompletionCallbackMessage *) notification->data;
+
+    // TODO: memory cleanup
+    return notification_data->job_id.to_string();
 }
 
 /**
@@ -365,27 +367,20 @@ static string wait_for_job_completion(string submitter_name)
  */
 static std::tuple<int,double,double> wait_for_query_answer(string submitter_name)
 {
-    msg_task_t task_notification = NULL;
-    IPMessage *task_notification_data;
-    MSG_task_receive(&(task_notification), submitter_name.c_str());
-    task_notification_data = (IPMessage *) MSG_task_get_data(task_notification);
-    SchedWaitAnswerMessage *res =
-            (SchedWaitAnswerMessage *) task_notification_data->data;
+    IPMessage * message = receive_message(submitter_name);
+    SchedWaitAnswerMessage * res = (SchedWaitAnswerMessage *) message->data;
 
     XBT_INFO("Returning : %d  %f  %f", res->nb_resources, res->processing_time, res->expected_time);
 
+    // TODO: memory cleanup
     return std::tuple<int, double, double>(res->nb_resources, res->processing_time, res->expected_time);
 }
 
 
-int batexec_job_launcher_process(int argc, char *argv[])
+void batexec_job_launcher_process(BatsimContext * context,
+                                  std::string workload_name)
 {
-    (void) argc;
-    (void) argv;
-
-    JobSubmitterProcessArguments * args = (JobSubmitterProcessArguments *) MSG_process_get_data(MSG_process_self());
-    BatsimContext * context = args->context;
-    Workload * workload = context->workloads.at(args->workload_name);
+    Workload * workload = context->workloads.at(workload_name);
 
     auto & jobs = workload->jobs->jobs();
     for (auto & mit : jobs)
@@ -407,16 +402,10 @@ int batexec_job_launcher_process(int argc, char *argv[])
             alloc->hosts.push_back(context->machines[i]->host);
         }
 
-        ExecuteJobProcessArguments * exec_args = new ExecuteJobProcessArguments;
-        exec_args->context = context;
-        exec_args->allocation = alloc;
-        exec_args->notify_server_at_end = false;
         string pname = "job" + job->id.to_string();
-        msg_process_t process = MSG_process_create(pname.c_str(), execute_job_process,
-                                                   (void*) exec_args,
-                                                   context->machines[alloc->machine_ids.first_element()]->host);
-        job->execution_processes.insert(process);
+        auto actor = simgrid::s4u::Actor::create(pname.c_str(),
+                                                 context->machines[alloc->machine_ids.first_element()]->host,
+                                                 execute_job_process, context, alloc, false, nullptr);
+        job->execution_actors.insert(actor);
     }
-
-    return 0;
 }

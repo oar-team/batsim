@@ -30,6 +30,7 @@ struct ServerData
 
     int nb_completed_jobs = 0;  //!< The number of completed jobs
     int nb_submitted_jobs = 0;  //!< The number of submitted jobs
+    int expected_nb_submitters = -1; //!< The expected number of total submitters
     int nb_submitters = 0;  //!< The number of submitters
     int nb_submitters_finished = 0; //!< The number of finished submitters
     int nb_workflow_submitters_finished = 0;    //!< The number of finished workflow submitters
@@ -38,8 +39,10 @@ struct ServerData
     int nb_waiters = 0; //!< The number of pending CALL_ME_LATER waiters
     int nb_killers = 0; //!< The number of killers
     bool sched_ready = true;    //!< Whether the scheduler can be called now
-    bool all_jobs_submitted_and_completed = false;  //!< Whether all jobs (static and dynamic) have been submitted and completed.
-    bool end_of_simulation_sent = false; //!< Whether the SIMULATION_ENDS event has been sent to the scheduler.
+
+    bool end_of_simulation_in_send_buffer = false;  //!< Whether the SIMULATION_ENDS is in the decision process send buffer
+    bool end_of_simulation_sent = false; //!< Whether the SIMULATION_ENDS event has been sent to the scheduler
+    bool end_of_simulation_ack_received = false; //!< Whether the SIMULATION_ENDS acknowledgement (empty message) has been received
 
     std::map<std::string, Submitter*> submitters;   //!< The submitters
     std::map<JobIdentifier, Submitter*> origin_of_jobs; //!< Stores whether a Submitter must be notified on job completion
@@ -47,18 +50,23 @@ struct ServerData
 };
 
 /**
- * @brief Checks whether all jobs are submitted and completed
+ * @brief Returns whether the simulation is finished or not.
+ * @param[in] data The ServerData
+ * @return Whether the simulation is finished or not
+ */
+bool is_simulation_finished(const ServerData * data);
+
+/**
+ * @brief Checks whether the simulation is finished, and buffers a SIMULATION_ENDS event if needed.
  * @param[in,out] data The data associated with the server_process
  */
-void check_submitted_and_completed(ServerData * data);
+void check_simulation_finished(ServerData * data);
 
 /**
  * @brief Process used to orchestrate the simulation
- * @param[in] argc The number of arguments
- * @param[in] argv The arguments' values
- * @return 0
+ * @param[in] context The BatsimContext
  */
-int server_process(int argc, char *argv[]);
+void server_process(BatsimContext * context);
 
 
 /**
@@ -158,38 +166,46 @@ void server_on_killing_done(ServerData * data,
                             IPMessage * task_data);
 
 /**
- * @brief Server END_DYNAMIC_SUBMIT handler
+ * @brief Server END_DYNAMIC_REGISTER handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_end_dynamic_submit(ServerData * data,
+void server_on_end_dynamic_register(ServerData * data,
                                   IPMessage * task_data);
 
 
 /**
- * @brief Server CONTINUE_DYNAMIC_SUBMIT handler
+ * @brief Server CONTINUE_DYNAMIC_REGISTER handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_continue_dynamic_submit(ServerData * data,
+void server_on_continue_dynamic_register(ServerData * data,
                                   IPMessage * task_data);
 
 
 /**
- * @brief Server JOB_SUBMITTED_BY_DP handler
+ * @brief Server JOB_REGISTERED_BY_DP handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_submit_job(ServerData * data,
+void server_on_register_job(ServerData * data,
                           IPMessage * task_data);
 
 /**
- * @brief Server PROFILE_SUBMITTED_BY_DP handler
+ * @brief Server PROFILE_REGISTERED_BY_DP handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_submit_profile(ServerData * data,
+void server_on_register_profile(ServerData * data,
                                IPMessage * task_data);
+
+/**
+ * @brief Server SCHED_SET_JOB_METADATA handler
+ * @param[in,out] data The data asssociated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_set_job_metadata(ServerData * data,
+                                IPMessage * task_data);
 
 /**
  * @brief Server SCHED_REJECT_JOB handler

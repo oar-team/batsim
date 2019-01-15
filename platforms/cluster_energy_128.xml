@@ -1,0 +1,59 @@
+
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+<platform version="4.1">
+
+<zone id="AS0" routing="Full">
+
+<cluster id="cluster_compute" prefix="host" suffix="" radical="0-127"
+             bw="125MBps" lat="50us" bb_bw="2.25GBps" bb_lat="500us"
+             speed="100.0Mf, 88.95899053627761Mf, 83.67952522255192Mf, 80.57142857142857Mf, 76.21621621621621Mf, 72.49357326478149Mf, 68.78048780487805Mf, 64.6788990825688Mf, 60.775862068965516Mf, 58.62785862785863Mf, 50.088809946714036Mf, 49.21465968586388Mf, 44.97607655502392Mf, 1e-9Mf, 0.1639344262295082f, 0.006599788806758183f">
+    <!-- real pstates: 0 to 12
+         off: pstate: 13
+              consumption: 9.75 W
+         shutdown: pstate: 14
+                   time: 6.1 s,
+                   consumption: 100.99672131147543 W
+         boot: pstate: 15
+               time: 151.52 s,
+               consumption: 125.1743848996832 W
+    -->
+    <prop id="watt_per_state" value="95.0:190.738, 95.0:171.02, 95.0:165.62, 95.0:160.47, 95.0:155.729, 95.0:151.3, 95.0:146.92, 95.0:142.95, 95.0:138.928, 95.0:135.368, 95.0:132.519, 95.0:128.87, 95.0:125.88, 9.75:9.75, 100.99672131147543:100.99672131147543, 125.1743848996832:125.1743848996832" />
+
+    <prop id="watt_off" value="9.75" />
+
+    <!-- OFF : ON->OFF (shutdown) : OFF->ON (booting) -->
+    <prop id="sleep_pstates" value="13:14:15" />
+</cluster>
+
+<cluster id="cluster_master" prefix="master_host" suffix="" radical="0-0"
+             bw="125MBps" lat="50us" bb_bw="2.25GBps" bb_lat="500us"
+             speed="100.0Mf, 88.95899053627761Mf, 83.67952522255192Mf, 80.57142857142857Mf, 76.21621621621621Mf, 72.49357326478149Mf, 68.78048780487805Mf, 64.6788990825688Mf, 60.775862068965516Mf, 58.62785862785863Mf, 50.088809946714036Mf, 49.21465968586388Mf, 44.97607655502392Mf, 1e-9Mf, 0.1639344262295082f, 0.006599788806758183f">
+    <!-- real pstates: 0 to 12
+         off: pstate: 13
+              consumption: 9.75 W
+         shutdown: pstate: 14
+                   time: 6.1 s,
+                   consumption: 100.99672131147543 W
+         boot: pstate: 15
+               time: 151.52 s,
+               consumption: 125.1743848996832 W
+    -->
+    <prop id="watt_per_state" value="95.0:190.738, 95.0:171.02, 95.0:165.62, 95.0:160.47, 95.0:155.729, 95.0:151.3, 95.0:146.92, 95.0:142.95, 95.0:138.928, 95.0:135.368, 95.0:132.519, 95.0:128.87, 95.0:125.88, 9.75:9.75, 100.99672131147543:100.99672131147543, 125.1743848996832:125.1743848996832" />
+
+    <prop id="watt_off" value="9.75" />
+
+    <prop id="role" value="master" />
+
+    <!-- OFF : ON->OFF (shutdown) : OFF->ON (booting) -->
+    <prop id="sleep_pstates" value="13:14:15" />
+</cluster>
+
+    <link id="backbone" bandwidth="1.25GBps" latency="500us" />
+
+    <zoneRoute src="cluster_compute" dst="cluster_master" gw_src="hostcluster_compute_router"
+        gw_dst="master_hostcluster_master_router">
+        <link_ctn id="backbone" />
+    </zoneRoute>
+</zone>
+</platform>

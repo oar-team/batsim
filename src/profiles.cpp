@@ -136,7 +136,7 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::MSG_PARALLEL)
+    else if (type == ProfileType::PARALLEL)
     {
         MsgParallelProfileData * d = (MsgParallelProfileData *) data;
         if (d != nullptr)
@@ -145,7 +145,7 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS)
+    else if (type == ProfileType::PARALLEL_HOMOGENEOUS)
     {
         MsgParallelHomogeneousProfileData * d = (MsgParallelHomogeneousProfileData *) data;
         if (d != nullptr)
@@ -154,7 +154,7 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
+    else if (type == ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
     {
         MsgParallelHomogeneousTotalAmountProfileData * d = (MsgParallelHomogeneousTotalAmountProfileData *) data;
         if (d != nullptr)
@@ -181,16 +181,16 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS)
+    else if (type == ProfileType::PARALLEL_HOMOGENEOUS_PFS)
     {
-        MsgParallelHomogeneousPFSMultipleTiersProfileData * d = (MsgParallelHomogeneousPFSMultipleTiersProfileData *) data;
+        MsgParallelHomogeneousPFSProfileData * d = (MsgParallelHomogeneousPFSProfileData *) data;
         if (d != nullptr)
         {
             delete d;
             d = nullptr;
         }
     }
-    else if (type == ProfileType::MSG_DATA_STAGING)
+    else if (type == ProfileType::DATA_STAGING)
     {
         MsgDataStagingProfileData * d = (MsgDataStagingProfileData *) data;
         if (d != nullptr)
@@ -253,6 +253,12 @@ Profile *Profile::from_json(const std::string & profile_name,
 
     if (profile_type == "delay")
     {
+        /*
+        {
+            "type": "delay",
+            "delay": 20.20
+        }
+        */
         profile->type = ProfileType::DELAY;
         DelayProfileData * data = new DelayProfileData;
 
@@ -267,23 +273,36 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "msg_par")
+    else if (profile_type == "parallel")
     {
-        profile->type = ProfileType::MSG_PARALLEL;
+        /*
+        {
+            "type": "parallel",
+            "cpu": [5e6,  0,  0,  0],
+            "com": [5e6,  0,  0,  0,
+                    5e6,5e6,  0,  0,
+                    5e6,5e6,  0,  0,
+                    5e6,5e6,5e6,  0]
+        }
+        */
+        profile->type = ProfileType::PARALLEL;
         MsgParallelProfileData * data = new MsgParallelProfileData;
 
+        // basic checks
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
                    error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc.HasMember("com"), "%s: profile '%s' has no 'com' field",
+                   error_prefix.c_str(), profile_name.c_str());
+
+        // get and check CPU vector
         const Value & cpu = json_desc["cpu"];
         xbt_assert(cpu.IsArray(), "%s: profile '%s' has a non-array 'cpu' field",
                    error_prefix.c_str(), profile_name.c_str());
-        data->nb_res = cpu.Size();
-        xbt_assert(data->nb_res > 0, "%s: profile '%s' has an invalid-sized array 'cpu' (size=%d): "
+        xbt_assert(cpu.Size() > 0, "%s: profile '%s' has an invalid-sized array 'cpu' (size=%d): "
                    "must be strictly positive",
-                   error_prefix.c_str(), profile_name.c_str(), (int) cpu.Size());
-        xbt_assert((int)cpu.Size() == data->nb_res, "%s: profile '%s' is incoherent: cpu array has "
-                   "size %d whereas nb_res is %d",
-                   error_prefix.c_str(), profile_name.c_str(), cpu.Size(), data->nb_res);
+                   error_prefix.c_str(), profile_name.c_str(), cpu.Size());
+
+        data->nb_res = cpu.Size();
         data->cpu = new double[data->nb_res];
         for (unsigned int i = 0; i < cpu.Size(); ++i)
         {
@@ -294,14 +313,14 @@ Profile *Profile::from_json(const std::string & profile_name,
                        "elements must be non-negative", error_prefix.c_str(), profile_name.c_str());
         }
 
-        xbt_assert(json_desc.HasMember("com"), "%s: profile '%s' has no 'com' field",
-                   error_prefix.c_str(), profile_name.c_str());
+        // get and check Comm vector
         const Value & com = json_desc["com"];
         xbt_assert(com.IsArray(), "%s: profile '%s' has a non-array 'com' field",
                    error_prefix.c_str(), profile_name.c_str());
-        xbt_assert((int)com.Size() == data->nb_res * data->nb_res, "%s: profile '%s' is incoherent:"
-                   "com array has size %d whereas nb_res is %d",
-                   error_prefix.c_str(), profile_name.c_str(), com.Size(), data->nb_res);
+        xbt_assert(com.Size() == data->nb_res * data->nb_res, "%s: profile '%s' is incoherent: "
+                   "com array has size %d whereas the required array size is %d",
+                   error_prefix.c_str(), profile_name.c_str(), com.Size(), data->nb_res * data->nb_res);
+
         data->com = new double[data->nb_res * data->nb_res];
         for (unsigned int i = 0; i < com.Size(); ++i)
         {
@@ -314,9 +333,16 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "msg_par_hg")
+    else if (profile_type == "parallel_homogeneous")
     {
-        profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS;
+        /*
+        {
+            "type": "parallel_homogeneous",
+            "cpu": 10e6,
+            "com": 1e6
+        }
+        */
+        profile->type = ProfileType::PARALLEL_HOMOGENEOUS;
         MsgParallelHomogeneousProfileData * data = new MsgParallelHomogeneousProfileData;
 
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
@@ -337,9 +363,16 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "msg_par_hg_tot")
+    else if (profile_type == "parallel_homogeneous_total")
     {
-        profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT;
+        /*
+        {
+            "type": "parallel_homogeneous_total",
+            "cpu": 10e6,
+            "com": 1e6
+        }
+        */
+        profile->type = ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT;
         MsgParallelHomogeneousTotalAmountProfileData * data = new MsgParallelHomogeneousTotalAmountProfileData;
 
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
@@ -362,19 +395,26 @@ Profile *Profile::from_json(const std::string & profile_name,
     }
     else if (profile_type == "composed")
     {
+        /*
+        {
+            "type": "composed",
+            "repeat" : 4,
+            "seq": ["simple","homogeneous","simple"]
+        }
+        */
         profile->type = ProfileType::SEQUENCE;
         SequenceProfileData * data = new SequenceProfileData;
 
         int repeat = 1;
-        if (json_desc.HasMember("nb"))
+        if (json_desc.HasMember("repeat"))
         {
-            xbt_assert(json_desc["nb"].IsInt(), "%s: profile '%s' has a non-integral 'nb' field",
+            xbt_assert(json_desc["repeat"].IsInt(), "%s: profile '%s' has a non-integral 'repeat' field",
                    error_prefix.c_str(), profile_name.c_str());
-            repeat = json_desc["nb"].GetInt();
+            repeat = json_desc["repeat"].GetInt();
         }
         data->repeat = repeat;
 
-        xbt_assert(data->repeat > 0, "%s: profile '%s' has a non-strictly-positive 'nb' field (%d)",
+        xbt_assert(data->repeat > 0, "%s: profile '%s' has a non-strictly-positive 'repeat' field (%d)",
                    error_prefix.c_str(), profile_name.c_str(), data->repeat);
 
         xbt_assert(json_desc.HasMember("seq"), "%s: profile '%s' has no 'seq' field",
@@ -392,105 +432,90 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "msg_par_hg_pfs_tiers" || profile_type == "msg_par_hg_pfs0")
+    else if (profile_type == "parallel_homogeneous_pfs")
     {
-        profile->type = ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS;
-        MsgParallelHomogeneousPFSMultipleTiersProfileData * data = new MsgParallelHomogeneousPFSMultipleTiersProfileData;
-
-        xbt_assert(json_desc.HasMember("size"), "%s: profile '%s' has no 'size' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["size"].IsNumber(), "%s: profile '%s' has a non-number 'size' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        data->size = json_desc["size"].GetDouble();
-        xbt_assert(data->size >= 0, "%s: profile '%s' has a non-positive 'size' field (%g)",
-                   error_prefix.c_str(), profile_name.c_str(), data->size);
-
-        if (json_desc.HasMember("direction"))
+        /*
         {
-            xbt_assert(json_desc["direction"].IsString(),
-                       "%s: profile '%s' has a non-string 'direction' field",
-                       error_prefix.c_str(), profile_name.c_str());
-            string direction = json_desc["direction"].GetString();
+            "type": "parallel_homogeneous_pfs",
+            "bytes_to_read": 10e5,
+            "bytes_to_write": 10e5,
+            "storage": "my_io_node" //optional (default: 'pfs')
+        }
+        */
+        profile->type = ProfileType::PARALLEL_HOMOGENEOUS_PFS;
+        MsgParallelHomogeneousPFSProfileData * data = new MsgParallelHomogeneousPFSProfileData;
 
-            if (direction == "to_storage")
+        xbt_assert(json_desc.HasMember("bytes_to_read") or json_desc.HasMember("bytes_to_write"), "%s: profile '%s' has no 'bytes_to_read' or 'bytes_to_write' field (0 if not set)",
+                   error_prefix.c_str(), profile_name.c_str());
+        if (json_desc.HasMember("bytes_to_read"))
+        {
+            xbt_assert(json_desc["bytes_to_read"].IsNumber(), "%s: profile '%s' has a non-number 'bytes_to_read' field",
+                       error_prefix.c_str(), profile_name.c_str());
+            data->bytes_to_read = json_desc["bytes_to_read"].GetDouble();
+        }
+        if (json_desc.HasMember("bytes_to_write"))
+        {
+            xbt_assert(json_desc["bytes_to_write"].IsNumber(), "%s: profile '%s' has a non-number 'bytes_to_write' field",
+                       error_prefix.c_str(), profile_name.c_str());
+            data->bytes_to_write = json_desc["bytes_to_write"].GetDouble();
+        }
+
+        // If not set Use the "pfs" label by default
+        if (json_desc.HasMember("storage") or json_desc.HasMember("host"))
+        {
+            string key;
+            if (json_desc.HasMember("storage"))
             {
-                data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::TO_STORAGE;
-            }
-            else if (direction == "from_storage")
-            {
-                data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::FROM_STORAGE;
+                key = "storage";
             }
             else
             {
-                xbt_assert(false, "%s: profile '%s' has an invalid 'direction' field (%s)",
-                           error_prefix.c_str(), profile_name.c_str(), direction.c_str());
-            }
-        }
-        else
-        {
-            data->direction = MsgParallelHomogeneousPFSMultipleTiersProfileData::Direction::TO_STORAGE;
-        }
+                key = "host";
 
-        if (json_desc.HasMember("host"))
-        {
-            xbt_assert(json_desc["host"].IsString(),
-                       "%s: profile '%s' has a non-string 'host' field",
-                       error_prefix.c_str(), profile_name.c_str());
-            string host = json_desc["host"].GetString();
-            if (host == "HPST")
-            {
-                data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::HPST;
             }
-            else if (host == "LCST" || host == "PFS")
-            {
-                data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::LCST;
-            }
-            else
-            {
-                xbt_assert(false, "%s: profile '%s' has an invalid 'host' field (%s)",
-                           error_prefix.c_str(), profile_name.c_str(), host.c_str());
-            }
-        }
-        else
-        {
-            data->host = MsgParallelHomogeneousPFSMultipleTiersProfileData::Host::LCST;
+            xbt_assert(json_desc[key.c_str()].IsString(),
+                           "%s: profile '%s' has a non-string '%s' field",
+                           error_prefix.c_str(), profile_name.c_str(),
+                           key.c_str());
+            data->storage_label = json_desc[key.c_str()].GetString();
         }
 
         profile->data = data;
     }
     else if (profile_type == "data_staging")
     {
-        profile->type = ProfileType::MSG_DATA_STAGING;
+        /*
+        {
+            "type": "data_staging",
+            "nb_bytes": 10e5,
+            "from": "pfs",
+            "to": "lcfs"
+        }
+        */
+        profile->type = ProfileType::DATA_STAGING;
         MsgDataStagingProfileData * data = new MsgDataStagingProfileData;
 
-        xbt_assert(json_desc.HasMember("size"), "%s: profile '%s' has no 'size' field",
+        xbt_assert(json_desc.HasMember("nb_bytes"), "%s: profile '%s' has no 'nb_bytes' field",
                    error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["size"].IsNumber(), "%s: profile '%s' has a non-number 'size' field",
+        xbt_assert(json_desc["nb_bytes"].IsNumber(), "%s: profile '%s' has a non-number 'nb_bytes' field",
                    error_prefix.c_str(), profile_name.c_str());
-        data->size = json_desc["size"].GetDouble();
-        xbt_assert(data->size >= 0, "%s: profile '%s' has a non-positive 'size' field (%g)",
-                   error_prefix.c_str(), profile_name.c_str(), data->size);
+        data->nb_bytes = json_desc["nb_bytes"].GetDouble();
+        xbt_assert(data->nb_bytes >= 0, "%s: profile '%s' has a non-positive 'nb_bytes' field (%g)",
+                   error_prefix.c_str(), profile_name.c_str(), data->nb_bytes);
 
-        xbt_assert(json_desc.HasMember("direction"), "%s: profile '%s' has no 'direction' field",
+        xbt_assert(json_desc.HasMember("from"), "%s: profile '%s' has no 'from' field",
                    error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["direction"].IsString(),
-                   "%s: profile '%s' has a non-string 'direction' field",
+        xbt_assert(json_desc["from"].IsString(),
+                   "%s: profile '%s' has a non-string 'from' field",
                    error_prefix.c_str(), profile_name.c_str());
-        string direction = json_desc["direction"].GetString();
+        data->from_storage_label = json_desc["from"].GetString();
 
-        if (direction == std::string("hpst_to_lcst"))
-        {
-            data->direction = MsgDataStagingProfileData::Direction::HPST_TO_LCST;
-        }
-        else if (direction == std::string("lcst_to_hpst"))
-        {
-            data->direction = MsgDataStagingProfileData::Direction::LCST_TO_HPST;
-        }
-        else
-        {
-            xbt_assert(false, "%s: profile '%s' has an invalid 'direction' field (%s)",
-                       error_prefix.c_str(), profile_name.c_str(), direction.c_str());
-        }
+        xbt_assert(json_desc.HasMember("to"), "%s: profile '%s' has no 'to' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["to"].IsString(),
+                   "%s: profile '%s' has a non-string 'to' field",
+                   error_prefix.c_str(), profile_name.c_str());
+        data->to_storage_label = json_desc["to"].GetString();
 
         profile->data = data;
     }
@@ -611,6 +636,12 @@ Profile *Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
+    else
+    {
+        xbt_die("Cannot create the profile '%s' of unknown type '%s'",
+                profile_name.c_str(), profile_type.c_str());
+    }
+
 
     // Let's get the JSON string which describes the profile (to conserve potential fields unused by Batsim)
     rapidjson::StringBuffer buffer;
@@ -636,31 +667,31 @@ Profile *Profile::from_json(const std::string & profile_name,
 
 bool Profile::is_parallel_task() const
 {
-    return (type == ProfileType::MSG_PARALLEL) ||
-           (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS) ||
-           (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT) ||
-           (type == ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS) ||
-           (type == ProfileType::MSG_DATA_STAGING);
+    return (type == ProfileType::PARALLEL) ||
+           (type == ProfileType::PARALLEL_HOMOGENEOUS) ||
+           (type == ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT) ||
+           (type == ProfileType::PARALLEL_HOMOGENEOUS_PFS) ||
+           (type == ProfileType::DATA_STAGING);
 }
 
 
 std::string profile_type_to_string(const ProfileType & type)
 {
-    string str = "unset";
+    string str;
 
     switch(type)
     {
     case ProfileType::DELAY:
         str = "DELAY";
         break;
-    case ProfileType::MSG_PARALLEL:
-        str = "MSG_PARALLEL";
+    case ProfileType::PARALLEL:
+        str = "PARALLEL";
         break;
-    case ProfileType::MSG_PARALLEL_HOMOGENEOUS:
-        str = "MSG_PARALLEL_HOMOGENEOUS";
+    case ProfileType::PARALLEL_HOMOGENEOUS:
+        str = "PARALLEL_HOMOGENEOUS";
         break;
-    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
-        str = "MSG_PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT";
+    case ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
+        str = "PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT";
         break;
     case ProfileType::SMPI:
         str = "SMPI";
@@ -668,17 +699,20 @@ std::string profile_type_to_string(const ProfileType & type)
     case ProfileType::SEQUENCE:
         str = "SEQUENCE";
         break;
-    case ProfileType::MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS:
-        str = "MSG_PARALLEL_HOMOGENEOUS_PFS_MULTIPLE_TIERS";
+    case ProfileType::PARALLEL_HOMOGENEOUS_PFS:
+        str = "PARALLEL_HOMOGENEOUS_PFS";
         break;
-    case ProfileType::MSG_DATA_STAGING:
-        str = "MSG_DATA_STAGING";
+    case ProfileType::DATA_STAGING:
+        str = "DATA_STAGING";
         break;
     case ProfileType::SCHEDULER_SEND:
         str = "SCHEDULER_SEND";
         break;
     case ProfileType::SCHEDULER_RECV:
         str = "SCHEDULER_RECV";
+        break;
+    default:
+        str = "unset";
         break;
     }
 

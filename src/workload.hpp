@@ -19,26 +19,36 @@ struct BatsimContext;
  */
 class Workload
 {
-public:
+private:
     /**
-     * @brief Builds an empty Workload
-     * @param[in] workload_name The workload name
-     * @param[in] workload_file The workload file name
+     * @brief Workload cannot be constructed directly. Please refer to static methods.
      */
-    explicit Workload(const std::string & workload_name,
-                      const std::string & workload_file);
-
-    /**
-     * @brief Builds an empty dynamic Workload
-     * @param[in] workload_name The workload name
-     */
-    explicit Workload(const std::string & workload_name) : Workload(workload_name, DYNAMIC_WORKLOAD) {};
+    explicit Workload() = default;
 
     /**
      * @brief Workloads cannot be copied.
      * @param[in] other Another instance
      */
     Workload(const Workload & other) = delete;
+
+public:
+    /**
+     * @brief Builds an empty static Workload (via dynamic allocation)
+     * @details Static workloads correspond to Batsim input files (workloads or workflows)
+     * @param[in] workload_name The workload name
+     * @param[in] workload_file The workload file name
+     * @return The newly created workload
+     */
+    static Workload * new_static_workload(const std::string & workload_name,
+                                          const std::string & workload_file);
+
+    /**
+     * @brief Builds an empty dynamic Workload (via dynamic allocation)
+     * @details Dynamic workloads are created by the decision process
+     * @param[in] workload_name The workload name
+     * @return The newly created workload
+     */
+    static Workload * new_dynamic_workload(const std::string & workload_name);
 
     /**
      * @brief Destroys a Workload
@@ -64,17 +74,29 @@ public:
     void check_validity();
 
     /**
+     * @brief Checks whether a single job is valid
+     * @param[in] job The job to examine
+     */
+    void check_single_job_validity(const Job * job);
+
+    /**
      * @brief Returns the workload name
      * @return The workload name
      */
     std::string to_string();
+
+    /**
+     * @brief Returns whether the workload is static (corresponding to a Batsim input workload/workflow) or not
+     * @return Whether the workload is static or not
+     */
+    bool is_static() const;
 
 public:
     std::string name; //!< The Workload name
     std::string file = ""; //!< The Workload file if it exists
     Jobs * jobs = nullptr; //!< The Jobs of the Workload
     Profiles * profiles = nullptr; //!< The Profiles associated to the Jobs of the Workload
-    std::string DYNAMIC_WORKLOAD = "DYNAMIC"; //!< The default workload id for dynamic workloads
+    bool _is_static = false; //!< Whether the workload is dynamic or not
 };
 
 
@@ -137,6 +159,13 @@ public:
      * @return The number of workloads
      */
     int nb_workloads() const;
+
+    /**
+     * @brief Returns the number of static workloads
+     * @details Static workloads are those corresponding to Batsim input files (input workloads or workflows)
+     * @return The number of static workloads
+     */
+    int nb_static_workloads() const;
 
     /**
      * @brief Allows to get a job from the Workloads

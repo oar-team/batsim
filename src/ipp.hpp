@@ -11,13 +11,14 @@
 
 #include <rapidjson/document.h>
 
-#include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
-#include "machine_range.hpp"
+#include <intervalset.hpp>
 
 #include "jobs.hpp"
 
 struct BatsimContext;
+struct ServerData;
 
 
 /**
@@ -25,9 +26,9 @@ struct BatsimContext;
  */
 enum class IPMessageType
 {
-    JOB_SUBMITTED           //!< Submitter -> Server. The submitter tells the server a new job has been submitted.
-    ,JOB_SUBMITTED_BY_DP    //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to submit a job
-    ,PROFILE_SUBMITTED_BY_DP //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to submit a profile
+    JOB_SUBMITTED          //!< Submitter -> Server. The submitter tells the server that one or several new jobs have been submitted.
+    ,JOB_REGISTERED_BY_DP     //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to register a job
+    ,PROFILE_REGISTERED_BY_DP //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to register a profile
     ,JOB_COMPLETED          //!< Launcher -> Server. The job launcher tells the server a job has been completed.
     ,PSTATE_MODIFICATION    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (modify the state of some resources).
     ,SCHED_EXECUTE_JOB      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (execute a job).
@@ -36,6 +37,7 @@ enum class IPMessageType
     ,SCHED_KILL_JOB         //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (kill a job).
     ,SCHED_CALL_ME_LATER    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to be called in the future).
     ,SCHED_TELL_ME_ENERGY   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform consumed energy).
+    ,SCHED_SET_JOB_METADATA //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a SET_JOB_METADATA message).
     ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,WAIT_QUERY             //!< Server -> Scheduler. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,SCHED_READY            //!< Scheduler -> Server. The scheduler tells the server that the scheduler is ready (the scheduler is ready, messages can be sent to it).
@@ -46,8 +48,8 @@ enum class IPMessageType
     ,SUBMITTER_BYE          //!< Submitter -> Server. The submitter tells it stops submitting to the server.
     ,SWITCHED_ON            //!< SwitcherON -> Server. The switcherON process tells the server the machine pstate has been changed
     ,SWITCHED_OFF           //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
-    ,END_DYNAMIC_SUBMIT     //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
-    ,CONTINUE_DYNAMIC_SUBMIT //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions continue.
+    ,END_DYNAMIC_REGISTER     //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
+    ,CONTINUE_DYNAMIC_REGISTER //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions continue.
     ,TO_JOB_MSG //!< Scheduler -> Server. The scheduler sends a message to a job.
     ,FROM_JOB_MSG //!< Job -> Server. The job wants to send a message to the scheduler via the server.
 };
@@ -83,28 +85,36 @@ struct SubmitterJobCompletionCallbackMessage
  */
 struct JobSubmittedMessage
 {
-    std::string submitter_name; //!< The name of the submitter which submitted the job.
-    JobIdentifier job_id; //!< The JobIdentifier
+    std::string submitter_name; //!< The name of the submitter which submitted the jobs.
+    std::vector<JobIdentifier> job_ids; //!< The list of JobIdentifiers
 };
 
 /**
- * @brief The content of the JobSubmittedByDP message
+ * @brief The content of the JobRegisteredByDP message
  */
-struct JobSubmittedByDPMessage
+struct JobRegisteredByDPMessage
 {
     JobIdentifier job_id; //!< The JobIdentifier of the new job
     std::string job_description; //!< The job description string (empty if redis is enabled)
-    std::string job_profile_description; //!< The profile of the job (empty if redis is enabled)
 };
 
 /**
- * @brief The content of the ProfileSubmittedByDPMessage message
+ * @brief The content of the ProfileRegisteredByDPMessage message
  */
-struct ProfileSubmittedByDPMessage
+struct ProfileRegisteredByDPMessage
 {
     std::string workload_name; //!< The workload name
     std::string profile_name; //!< The profile name
-    std::string profile; //!< The submitted profile data
+    std::string profile; //!< The registered profile data
+};
+
+/**
+ * @brief The content of the SetJobMetadataMessage message
+ */
+struct SetJobMetadataMessage
+{
+    JobIdentifier job_id; //!< The JobIdentifier of the new job
+    std::string metadata; //!< The job metadata string (empty if redis is enabled)
 };
 
 /**
@@ -122,7 +132,6 @@ struct ChangeJobStateMessage
 {
     JobIdentifier job_id; //!< The JobIdentifier
     std::string job_state; //!< The new job state
-    std::string kill_reason; //!< The optional kill reason if the new job state is COMPLETED_KILLED
 };
 
 /**
@@ -139,9 +148,12 @@ struct JobRejectedMessage
 struct SchedulingAllocation
 {
     JobIdentifier job_id; //!< The JobIdentifier
-    MachineRange machine_ids; //!< The IDs of the machines on which the job should be allocated
+    IntervalSet machine_ids; //!< User defined allocation in range of machines ids
     std::vector<int> mapping; //!< The mapping from executors (~=ranks) to resource ids. Can be empty, in which case it will NOT be used (a round robin will be used instead). If not empty, must be of the same size of the job, and each value must be in [0,nb_allocated_res[.
-    std::vector<msg_host_t> hosts;  //!< The corresponding SimGrid hosts
+    std::map<std::string, int> storage_mapping; //!< mapping from label given in the profile and machine id
+    std::vector<simgrid::s4u::Host*> hosts;  //!< The list of SimGrid hosts that would be used (one executor per host)
+    std::vector<simgrid::s4u::Host*> io_hosts;  //!< The list of SimGrid hosts that would be used for additional io job that will be merged to the job (one executor per host)
+    IntervalSet io_allocation; //!< The user defined additional io allocation in machine ids
 };
 
 /**
@@ -150,6 +162,7 @@ struct SchedulingAllocation
 struct ExecuteJobMessage
 {
     SchedulingAllocation * allocation; //!< The allocation itself
+    Profile * io_profile = nullptr; //!< Tho optional io profile
 };
 
 /**
@@ -165,7 +178,7 @@ struct KillJobMessage
  */
 struct PStateModificationMessage
 {
-    MachineRange machine_ids; //!< The IDs of the machines on which the pstate should be changed
+    IntervalSet machine_ids; //!< The IDs of the machines on which the pstate should be changed
     int new_pstate; //!< The power state into which the machines should be put
 };
 
@@ -249,93 +262,11 @@ struct IPMessage
 };
 
 /**
- * @brief The arguments of the request_reply_scheduler_process process
- */
-struct RequestReplyProcessArguments
-{
-    BatsimContext * context;    //!< The BatsimContext
-    std::string send_buffer;    //!< The message to send to the Decision real process
-};
-
-/**
- * @brief The arguments of the server_process process
- */
-struct ServerProcessArguments
-{
-    BatsimContext * context;    //!< The BatsimContext
-};
-
-/**
- * @brief The arguments of the execute_job_process process
- */
-struct ExecuteJobProcessArguments
-{
-    BatsimContext * context;            //!< The BatsimContext
-    SchedulingAllocation * allocation;  //!< The SchedulingAllocation
-    bool notify_server_at_end;          //!< Whether a message to the server must be sent after job completion
-};
-
-/**
- * @brief The arguments of the switch_on_machine_process and switch_off_machine_process processes
- */
-struct SwitchPStateProcessArguments
-{
-    BatsimContext * context;    //!< The BatsimContext
-    int machine_id;             //!< The unique number of the machine whose power state should be switched
-    int new_pstate;             //!< The power state into which the machine should be put
-};
-
-/**
- * @brief The arguments of the static_job_submitter_process process
- */
-struct JobSubmitterProcessArguments
-{
-    BatsimContext * context;    //!< The BatsimContext
-    std::string workload_name; //!< The name of the workload the submitter should use
-};
-
-/**
- * @brief The arguments of the workflow_submitter_process process
- */
-struct WorkflowSubmitterProcessArguments
-{
-    BatsimContext * context;       //!< The BatsimContext
-    std::string workflow_name; //!< The name of the workflow the submitter should use
-};
-
-
-/**
- * @brief The arguments of the waiter_process process
- */
-struct WaiterProcessArguments
-{
-    double target_time; //!< The time at which the waiter should stop waiting
-};
-
-/**
- * @brief The arguments of the killer_process process
- */
-struct KillerProcessArguments
-{
-    BatsimContext * context;           //!< The BatsimContext
-    std::vector<JobIdentifier> jobs_ids; //!< The ids of the jobs to kill
-};
-
-/**
- * @brief The arguments of the smpi_replay_process process
- */
-struct SMPIReplayProcessArguments
-{
-    msg_sem_t semaphore; //!< The semaphore used to know when all executors have finished
-    Job * job; //!< The job the smpi_replay_process is working on
-};
-
-/**
  * @brief Sends a message from the given process to the given mailbox
  * @param[in] destination_mailbox The destination mailbox
  * @param[in] type The type of the message to send
  * @param[in] data The data associated with the message
- * @param[in] detached Whether the send should be detached (MSG_task_send or MSG_task_dsend)
+ * @param[in] detached Whether the send should be detached (put or put_async)
  */
 void generic_send_message(const std::string & destination_mailbox,
                           IPMessageType type,
@@ -372,6 +303,20 @@ void dsend_message(const std::string & destination_mailbox, IPMessageType type, 
  * @param[in] data The data associated to the message
  */
 void dsend_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
+
+/**
+ * @brief Receive a message on a given mailbox
+ * @param[in] reception_mailbox The mailbox name
+ * @return The received message. Must be deallocated by the caller.
+ */
+IPMessage * receive_message(const std::string & reception_mailbox);
+
+/**
+ * @brief Check if the mailbox is empty
+ * @param[in] reception_mailbox The mailbox name
+ * @return Boolean indicating if the mailbox is empty
+ */
+bool mailbox_empty(const std::string & reception_mailbox);
 
 /**
  * @brief Transforms a IPMessageType into a std::string

@@ -22,16 +22,31 @@ using namespace rapidjson;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(workload, "workload"); //!< Logging
 
-Workload::Workload(const std::string & workload_name, const std::string & workload_file)
+Workload *Workload::new_static_workload(const string & workload_name,
+                                        const string & workload_file)
 {
-    jobs = new Jobs;
-    profiles = new Profiles;
+    Workload * workload = new Workload;
 
-    jobs->set_profiles(profiles);
-    jobs->set_workload(this);
-    this->name = workload_name;
-    this->file = workload_file;
+    workload->jobs = new Jobs;
+    workload->profiles = new Profiles;
+
+    workload->jobs->set_profiles(workload->profiles);
+    workload->jobs->set_workload(workload);
+    workload->name = workload_name;
+    workload->file = workload_file;
+
+    workload->_is_static = true;
+    return workload;
 }
+
+Workload *Workload::new_dynamic_workload(const string & workload_name)
+{
+    Workload * workload = new_static_workload(workload_name, "dynamic");
+
+    workload->_is_static = false;
+    return workload;
+}
+
 
 Workload::~Workload()
 {
@@ -96,7 +111,7 @@ void Workload::register_smpi_applications()
 
             XBT_INFO("Registering app. instance='%s', nb_process=%d",
                      job->id.to_string().c_str(), (int) data->trace_filenames.size());
-            SMPI_app_instance_register(job->id.to_string().c_str(), smpi_replay_process, data->trace_filenames.size());
+            SMPI_app_instance_register(job->id.to_string().c_str(), nullptr, data->trace_filenames.size());
         }
     }
 
@@ -128,32 +143,40 @@ void Workload::check_validity()
     // Let's check that the profile of each job exists
     for (auto mit : jobs->jobs())
     {
-        Job * job = mit.second;
-        xbt_assert(profiles->exists(job->profile),
-                   "Invalid job %s: the associated profile '%s' does not exist",
-                   job->id.to_string().c_str(), job->profile.c_str());
-
-        const Profile * profile = profiles->at(job->profile);
-        if (profile->type == ProfileType::MSG_PARALLEL)
-        {
-            MsgParallelProfileData * data = (MsgParallelProfileData *) profile->data;
-            (void) data; // Avoids a warning if assertions are ignored
-            xbt_assert(data->nb_res == job->requested_nb_res,
-                       "Invalid job %s: the requested number of resources (%d) do NOT match"
-                       " the number of resources of the associated profile '%s' (%d)",
-                       job->id.to_string().c_str(), job->requested_nb_res, job->profile.c_str(), data->nb_res);
-        }
-        else if (profile->type == ProfileType::SEQUENCE)
-        {
-            // TODO: check if the number of resources matches a resource-constrained composed profile
-        }
+        check_single_job_validity(mit.second);
     }
 }
 
+void Workload::check_single_job_validity(const Job * job)
+{
+    xbt_assert(profiles->exists(job->profile),
+               "Invalid job %s: the associated profile '%s' does not exist",
+               job->id.to_string().c_str(), job->profile.c_str());
+
+    const Profile * profile = profiles->at(job->profile);
+    if (profile->type == ProfileType::PARALLEL)
+    {
+        MsgParallelProfileData * data = (MsgParallelProfileData *) profile->data;
+        (void) data; // Avoids a warning if assertions are ignored
+        xbt_assert(data->nb_res == job->requested_nb_res,
+                   "Invalid job %s: the requested number of resources (%d) do NOT match"
+                   " the number of resources of the associated profile '%s' (%d)",
+                   job->id.to_string().c_str(), job->requested_nb_res, job->profile.c_str(), data->nb_res);
+    }
+    else if (profile->type == ProfileType::SEQUENCE)
+    {
+        // TODO: check if the number of resources matches a resource-constrained composed profile
+    }
+}
 
 string Workload::to_string()
 {
     return this->name;
+}
+
+bool Workload::is_static() const
+{
+    return _is_static;
 }
 
 Workloads::~Workloads()
@@ -189,6 +212,20 @@ const Workload *Workloads::at(const std::string &workload_name) const
 int Workloads::nb_workloads() const
 {
     return _workloads.size();
+}
+
+int Workloads::nb_static_workloads() const
+{
+    int count = 0;
+
+    for (auto mit : _workloads)
+    {
+        Workload * workload = mit.second;
+
+        count += int(workload->is_static());
+    }
+
+    return count;
 }
 
 Job *Workloads::job_at(const JobIdentifier &job_id)
@@ -240,6 +277,7 @@ void Workloads::register_smpi_applications()
 
 bool Workloads::job_is_registered(const JobIdentifier &job_id)
 {
+    at(job_id.workload_name)->jobs->displayDebug();
     return at(job_id.workload_name)->jobs->exists(job_id);
 }
 
@@ -266,7 +304,7 @@ string Workloads::to_string()
     {
         string key = mit.first;
         Workload * workload = mit.second;
-        str += key + ": " + workload->to_string() + " ";
+        str += workload->to_string() + " ";
     }
     return str;
 }

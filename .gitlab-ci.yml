@@ -1,166 +1,101 @@
-image: oarteam/batsim_ci
+image: oarteam/batsim_ci:2018-11-07
 
 variables:
   GIT_SUBMODULE_STRATEGY: none
 
-################################################################################
-# Build stage
+stages:
+  - nix_build_and_update_dependencies_cache
+  - manual_build
+  - test
+  - deploy
+
 ###############################################################################
-build_clang:
-  stage: build
+# Nix Builds + Dependencies cache stage
+###############################################################################
+nix_build_gcc:
+  stage: nix_build_and_update_dependencies_cache
   script:
-    - export CC=/usr/bin/clang
-    - export CXX=/usr/bin/clang++
-    - rm -rf /builds/batsim/batsim/build
-    - mkdir  /builds/batsim/batsim/build
-    - cd /builds/batsim/batsim/build
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
-    - make
+    - ./ci/nix-build-gcc-and-update-dependencies-cache.bash
+
+nix_build_clang:
+  stage: nix_build_and_update_dependencies_cache
+  script:
+    - ./ci/nix-build-clang-and-update-dependencies-cache.bash
+
+###############################################################################
+# Manual Build stage
+###############################################################################
+manual_build:
+  stage: manual_build
+  script:
+    - ./ci/manual-build.bash
   artifacts:
     paths:
       - /builds/batsim/batsim/build
 
-build_gcc:
-  stage: build
-  script:
-    - export CC=/usr/bin/gcc
-    - export CXX=/usr/bin/g++
-    - rm -rf /builds/batsim/batsim/build
-    - mkdir  /builds/batsim/batsim/build
-    - cd /builds/batsim/batsim/build
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
-    - make
-
-build_batsched:
-  stage: build
-  script:
-    - rm -rf /builds/batsim/batsim/schedulers/batsched
-    # Get the code at the expected revision
-    - git clone https://gitlab.inria.fr/batsim/batsched.git /builds/batsim/batsim/schedulers/batsched
-    - cd /builds/batsim/batsim/schedulers/batsched
-    - git reset --hard f2632a1 # 2018-02-16
-    # Build batsched
-    - rm -rf   /builds/batsim/batsim/schedulers/batsched/build
-    - mkdir -p /builds/batsim/batsim/schedulers/batsched/build
-    - cd /builds/batsim/batsim/schedulers/batsched/build
-    - cmake /builds/batsim/batsim/schedulers/batsched
-    - make
-  artifacts:
-    paths:
-      - /builds/batsim/batsim/schedulers/batsched/build
-
-################################################################################
+###############################################################################
 # Test stage
-################################################################################
-test_doc:
+###############################################################################
+test_test:
   stage: test
   script:
-    - cd /builds/batsim/batsim/doc
-    - doxygen
-    - cat doxygen_warnings.log
-    # The next line fails if doxygen generated warnings
-    - eval "[ $(wc -c doxygen_warnings.log | cut -d ' ' -f1) -eq 0 ]"
+    - ./ci/run-tests.bash
+  dependencies:
+    - manual_build
   artifacts:
     paths:
       - /builds/batsim/batsim/doc/doxygen_doc/html
 
-test_test:
-  stage: test
-  script:
-    # Install Batsim
-    - cd /builds/batsim/batsim/build
-    - make install
-
-    # Install the Batsched scheduler
-    - cd /builds/batsim/batsim/schedulers/batsched/build
-    - make install
-
-    # Run the redis server
-    - |
-      redis-server>/dev/null &
-      while ! nc -z localhost 6379; do
-        sleep 1
-      done
-
-    # Finally run the tests
-    - cd /builds/batsim/batsim/build
-    - ctest --output-on-failure -E 'remote|smpi|pybatsim|send_recv'
-  dependencies:
-    - build_clang
-    - build_batsched
-
 test_unittest:
   stage: test
   script:
-    # Install Batsim
-    - cd /builds/batsim/batsim/build
-    - make install
-
-    # Run unit tests
-    - batsim --unittest
+    - ./ci/run-unittests.bash
   dependencies:
-    - build_clang
+    - manual_build
 
-test_version_git:
-  stage: test
-  script:
-    # Checks that 'batsim --version' matches the latest batsim release
-    - /builds/batsim/batsim/tools/check_batsim_version.py --batsim-command /builds/batsim/batsim/build/batsim --batsim-git-dir /builds/batsim/batsim
-  dependencies:
-    - build_clang
-
-test_version_no_git:
-  stage: test
-  script:
-    # copy Batsim directory
-    - rm -rf /tmp/batsim
-    - mkdir /tmp/batsim
-    - cp -r {/builds/batsim/batsim,/tmp/batsim}/src
-    - cp -r {/builds/batsim/batsim,/tmp/batsim}/CMakeLists.txt
-    - cp -r {/builds/batsim/batsim,/tmp/batsim}/cmake
-
-    # compile Batsim outside the git directory
-    - export CC=/usr/bin/clang
-    - export CXX=/usr/bin/clang++
-    - rm -rf /tmp/batsim/build
-    - mkdir  /tmp/batsim/build
-    - cd /tmp/batsim/build
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -Dtreat_warnings_as_errors=ON
-    - make
-
-    # Checks that 'batsim --version' matches the latest batsim release
-    - /builds/batsim/batsim/tools/check_batsim_version.py --batsim-command /tmp/batsim/build/batsim --batsim-git-dir /builds/batsim/batsim
-
-################################################################################
+###############################################################################
 # Deploy stage
-################################################################################
+###############################################################################
+update_batsim_dev_cache:
+  stage: deploy
+  script:
+    - ./ci/update-batsim_dev-cache.bash
+  dependencies:
+    - test_test
+    - test_unittest
+
 deploy_code_doc:
   stage: deploy
   script:
-      # The script below is done to push Batsim's code doc onto the gforge website.
-      # Information found on https://docs.gitlab.com/ee/ci/ssh_keys/README.html
-
-      # Install ssh-agent if not already installed, it is required by Docker.
-      # (change apt-get to yum if you use a CentOS-based image)
-      - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
-
-      # Run ssh-agent (inside the build environment)
+      # Pushes Batsim's code doc (doxygen) onto the gforge website.
+      # SSH setup (do NOT run these commands on your machine)
       - eval $(ssh-agent -s)
-
-      # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
       - ssh-add <(echo "$SSH_PRIVATE_KEY")
-
-      # For Docker builds disable host key checking. Be aware that by adding that
-      # you are suspectible to man-in-the-middle attacks.
-      # WARNING: Use this only with the Docker executor, if you use it with shell
-      # you will overwrite your user's SSH config.
       - mkdir -p ~/.ssh
       - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
-
       # Finally push the code documentation on the gforge website
       - cd /builds/batsim/batsim/doc
-      - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs
+      - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs/batsim/doxygen
   dependencies:
-    - test_doc
+    - test_test
   only:
     - master
+
+###############################################################################
+# Tutorials
+###############################################################################
+# tuto_first_simulation-stable:
+#   only:
+#     - schedules
+#   script:
+#     - cd docs/tuto-first-simulation
+#     - nix-shell ./tuto-env.nix --command './run_simulation_manually.bash'
+#     - nix-shell ./tuto-env.nix --command './run_simulation_robin.bash'
+
+tuto_first_simulation:
+  only:
+    - schedules
+  script:
+    - cd docs/tuto-first-simulation
+    - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-dev.nix --command './run_simulation_manually.bash'
+    - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-dev.nix --command './run_simulation_robin.bash'

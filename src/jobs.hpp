@@ -12,9 +12,9 @@
 #include <rapidjson/document.h>
 
 #include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
-#include "exact_numbers.hpp"
-#include "machine_range.hpp"
+#include <intervalset.hpp>
 
 class Profiles;
 struct Profile;
@@ -137,6 +137,7 @@ private:
 public:
     Job * parent_job; //!< The parent job that owns this task
     Profile * profile; //!< The task profile. The corresponding profile tells how the job should be computed
+    Profile * io_profile = nullptr; //!< The task additional io profile. This profile, if defined will b merge to the task profile before execution
 
     // Manage MSG profiles
     msg_task_t ptask = nullptr; //!< The final task to execute (only set for BatTask leaves with MSG profiles)
@@ -169,27 +170,26 @@ struct Job
     JobIdentifier id; //!< The job unique identifier
     BatTask * task = nullptr; //!< The root task be executed by this job (profile instantiation).
     std::string json_description; //!< The JSON description of the job
-    std::set<msg_process_t> execution_processes; //!< The processes involved in running the job
+    std::set<simgrid::s4u::ActorPtr> execution_actors; //!< The actors involved in running the job
     std::deque<std::string> incoming_message_buffer; //!< The buffer for incoming messages from the scheduler.
 
     // Scheduler allocation and metadata
-    MachineRange allocation; //!< The machines on which the job has been executed.
+    IntervalSet allocation; //!< The machines on which the job has been executed.
     std::vector<int> smpi_ranks_to_hosts_mapping; //!< If the job uses a SMPI profile, stores which host number each MPI rank should use. These numbers must be in [0,required_nb_res[.
     std::string metadata; //!< Metadata that the scheduler can set on the job
 
     // Current state
     JobState state; //!< The current state of the job
-    Rational starting_time; //!< The time at which the job starts to be executed.
-    Rational runtime; //!< The amount of time during which the job has been executed.
-    std::string kill_reason; //!< If the job has been killed, the kill reason is stored in this variable
+    long double starting_time; //!< The time at which the job starts to be executed.
+    long double runtime; //!< The amount of time during which the job has been executed.
     bool kill_requested = false; //!< Whether the job kill has been requested
-    long double consumed_energy; //!< The sum, for each machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
+    long double consumed_energy; //!< The sum, for all machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
 
     // User inputs
     std::string profile; //!< The job profile name. The corresponding profile tells how the job should be computed
-    Rational submission_time; //!< The job submission time: The time at which the becomes available
-    Rational walltime = -1; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed. Set at -1 to disable this behavior
-    int requested_nb_res; //!< The number of resources the job is requested to be executed on
+    long double submission_time; //!< The job submission time: The time at which the becomes available
+    long double walltime = -1; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed. Set at -1 to disable this behavior
+    unsigned int requested_nb_res; //!< The number of resources the job is requested to be executed on
     int return_code = -1; //!< The return code of the job
 
 public:

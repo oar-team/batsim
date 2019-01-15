@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
-<platform version="4">
+<platform version="4.1">
 <config id="General">
     <!-- Reduce the size of the stack_size. On huge machine, if the stack is too big (8Mb by default), Simgrid fails to initiate.
     See http://lists.gforge.inria.fr/pipermail/simgrid-user/2015-June/003745.html-->
@@ -8,7 +8,7 @@
         <prop id="contexts/guard_size" value="0"></prop>
 </config>
 
-<AS  id="AS0"  routing="Full">
+<zone id="AS0" routing="Full">
     <host id="master_host" speed="98.095Mf"/>
 
     <host id="lcst_host" speed="76.296Mf">
@@ -726,5 +726,5 @@
     <route src="host29" dst="host31"><link_ctn id="node_node1"/><link_ctn id="node_node2"/></route>
 
     <route src="host30" dst="host31"><link_ctn id="node_node1"/><link_ctn id="node_node2"/></route>
-</AS>
+</zone>
 </platform>

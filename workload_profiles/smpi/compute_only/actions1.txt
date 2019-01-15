@@ -1,3 +1,0 @@
-1 init
-1 compute 1e18
-1 finalize

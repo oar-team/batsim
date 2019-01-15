@@ -8,7 +8,8 @@
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 
-#include "machine_range.hpp"
+#include <intervalset.hpp>
+
 #include "machines.hpp"
 #include "workload.hpp"
 #include "ipp.hpp"
@@ -76,13 +77,15 @@ public:
      * @param[in] machines The machines usable to compute jobs
      * @param[in] workloads The workloads given to batsim
      * @param[in] configuration The simulation configuration
-     * @param[in] allow_time_sharing Whether time sharing is enabled
+     * @param[in] allow_compute_sharing Whether sharing is enabled on compute machines
+     * @param[in] allow_storage_sharing Whether sharing is enabled on storage machines
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_simulation_begins(Machines & machines,
                                           Workloads & workloads,
                                           const rapidjson::Document & configuration,
-                                          bool allow_time_sharing,
+                                          bool allow_compute_sharing,
+                                          bool allow_storage_sharing,
                                           double date) = 0;
 
     /**
@@ -108,14 +111,12 @@ public:
      * @brief Appends a JOB_COMPLETED event.
      * @param[in] job_id The identifier of the job that has completed.
      * @param[in] job_state The job state
-     * @param[in] kill_reason The kill reason (if any)
      * @param[in] job_alloc last allocation of the job
      * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     virtual void append_job_completed(const std::string & job_id,
                                       const std::string & job_state,
-                                      const std::string & kill_reason,
                                       const std::string & job_alloc,
                                       int return_code,
                                       double date) = 0;
@@ -146,7 +147,7 @@ public:
      * @param[in] new_state The state the machines are now in.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    virtual void append_resource_state_changed(const MachineRange & resources,
+    virtual void append_resource_state_changed(const IntervalSet & resources,
                                                const std::string & new_state,
                                                double date) = 0;
 
@@ -168,6 +169,13 @@ public:
     virtual void append_answer_energy(double consumed_energy,
                                       double date) = 0;
 
+    /**
+     * @brief Appends a NOTIFY event.
+     * @param notify_type The type of the NOTIFY event
+     * @param date The event date. Must be greater than or equal to the previous event date.
+     */
+    virtual void append_notify(const std::string & notify_type,
+                               double date) = 0;
     /**
      * @brief Appends a REQUESTED_CALL message.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
@@ -224,13 +232,15 @@ public:
      * @param[in] machines The machines usable to compute jobs
      * @param[in] workloads The workloads given to batsim
      * @param[in] configuration The simulation configuration
-     * @param[in] allow_time_sharing Whether time sharing is enabled
+     * @param[in] allow_compute_sharing Whether sharing is enabled on compute machines
+     * @param[in] allow_storage_sharing Whether sharing is enabled on storage machines
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_simulation_begins(Machines & machines,
                                   Workloads & workloads,
                                   const rapidjson::Document & configuration,
-                                  bool allow_time_sharing,
+                                  bool allow_compute_sharing,
+                                  bool allow_storage_sharing,
                                   double date);
 
     /**
@@ -256,14 +266,12 @@ public:
      * @brief Appends a JOB_COMPLETED event.
      * @param[in] job_id The identifier of the job that has completed.
      * @param[in] job_state The job state
-     * @param[in] kill_reason The kill reason (if any)
      * @param[in] job_alloc last allocation of the job
      * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
     void append_job_completed(const std::string & job_id,
                               const std::string & job_state,
-                              const std::string & kill_reason,
                               const std::string & job_alloc,
                               int return_code,
                               double date);
@@ -294,7 +302,7 @@ public:
      * @param[in] new_state The state the machines are now in.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      */
-    void append_resource_state_changed(const MachineRange & resources,
+    void append_resource_state_changed(const IntervalSet & resources,
                                        const std::string & new_state,
                                        double date);
 
@@ -315,6 +323,14 @@ public:
      */
     void append_answer_energy(double consumed_energy,
                               double date);
+
+    /**
+     * @brief Appends a NOTIFY event
+     * @param notify_type The type of the notify event
+     * @param date The event date. Must be greater than or equal to the previous event.
+     */
+    void append_notify(const std::string & notify_type,
+                       double date);
 
     /**
      * @brief Appends a REQUESTED_CALL message.
@@ -498,20 +514,20 @@ public:
     void handle_to_job_msg(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
-     * @brief Handles a SUBMIT_JOB event
+     * @brief Handles a REGISTER_JOB event
      * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
-    void handle_submit_job(int event_number, double timestamp, const rapidjson::Value & data_object);
+    void handle_register_job(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
-     * @brief Handles a SUBMIT_PROFILE event
+     * @brief Handles a REGISTER_PROFILE event
      * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
      * @param[in] data_object The data associated with the event (JSON object)
      */
-    void handle_submit_profile(int event_number, double timestamp, const rapidjson::Value & data_object);
+    void handle_register_profile(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
      * @brief Handles a KILL_JOB event
@@ -530,7 +546,7 @@ private:
      * @param[in] data The message data
      * @param[in] detached Whether the send should be detached
      */
-    void send_message(double when,
+    void send_message_at_time(double when,
                       const std::string & destination_mailbox,
                       IPMessageType type,
                       void * data = nullptr,

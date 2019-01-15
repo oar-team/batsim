@@ -120,11 +120,16 @@ void BatTask::compute_leaf_progress()
 
     if (profile->is_parallel_task())
     {
-        xbt_assert(ptask != nullptr, "Internal error");
-
-        // WARNING: This is not returning the flops amount but the remainin quantity of work
-        // from 1 (not started yet) to 0 (completely finished)
-        current_task_progress_ratio = 1 - MSG_task_get_flops_amount(ptask);
+        if (ptask != nullptr) // The parallel task has already started
+        {
+            // WARNING: This is not returning the flops amount but the remainin quantity of work
+            // from 1 (not started yet) to 0 (completely finished)
+            current_task_progress_ratio = 1 - MSG_task_get_remaining_work_ratio(ptask);
+        }
+        else
+        {
+            current_task_progress_ratio = 0;
+        }
     }
     else if (profile->type == ProfileType::DELAY)
     {
@@ -281,7 +286,7 @@ void Jobs::displayDebug() const
     s += "Jobs : [" + boost::algorithm::join(jobsVector, ", ") + "]";
 
     // Let us display the string which has been built
-    XBT_INFO("%s", s.c_str());
+    XBT_DEBUG("%s", s.c_str());
 }
 
 const std::map<JobIdentifier, Job* > &Jobs::jobs() const
@@ -310,9 +315,9 @@ bool job_comparator_subtime_number(const Job *a, const Job *b)
 
 Job::~Job()
 {
-    xbt_assert(execution_processes.size() == 0,
+    xbt_assert(execution_actors.size() == 0,
                "Internal error: job %s has %d execution processes on destruction (should be 0).",
-               this->id.to_string().c_str(), (int)execution_processes.size());
+               this->id.to_string().c_str(), (int)execution_actors.size());
 
     if (task != nullptr)
     {
@@ -339,7 +344,7 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
                      Workload * workload,
                      const std::string & error_prefix)
 {
-    // Create and initialyze with default values
+    // Create and initialize with default values
     Job * j = new Job;
     j->workload = workload;
     j->starting_time = -1;
@@ -474,7 +479,7 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
                        "%d does not point to an integral number",
                        error_prefix.c_str(), j->id.to_string().c_str(), i);
             int host_number = mapping_array[i].GetInt();
-            xbt_assert(host_number >= 0 && host_number < j->requested_nb_res,
+            xbt_assert(host_number >= 0 && (unsigned int)host_number < j->requested_nb_res,
                        "%s: job '%s' has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
                        "%d has an invalid value %d : should be in [0,%d[",
                        error_prefix.c_str(), j->id.to_string().c_str(),

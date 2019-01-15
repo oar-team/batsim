@@ -1,0 +1,11 @@
+{
+  "Example Network": {
+    "bandwidth": "10.0Gbps"
+  },
+  "InfiniBand FDR x4": {
+    "bandwidth": "54.54Gbps"
+  },
+  "Gigabit Ethernet 1000BASE-T": {
+    "badwidth": "1.0Gbps"
+  }
+}

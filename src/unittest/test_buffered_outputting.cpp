@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+#include <intervalset.hpp>
+
 #include "../export.hpp"
 
 void test_buffered_writer()
@@ -41,7 +43,7 @@ void test_pstate_writer()
     PStateChangeTracer * tracer = new PStateChangeTracer;
     tracer->setFilename(filename);
 
-    MachineRange range;
+    IntervalSet range;
 
     // One machine
     range.insert(0);

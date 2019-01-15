@@ -30,7 +30,9 @@
 
 #include <string>
 #include <fstream>
+#include <functional>
 
+#include <simgrid/s4u.hpp>
 #include <simgrid/msg.h>
 #include <smpi/smpi.h>
 #include <simgrid/plugins/energy.h>
@@ -64,23 +66,6 @@
 using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "batsim"); //!< Logging
-
-//! Batsim default JSON configuration
-string default_configuration = R"({
-                               "redis": {
-                                 "enabled": false,
-                                 "hostname": "127.0.0.1",
-                                 "port": 6379,
-                                 "prefix": "default"
-                               },
-                               "job_submission": {
-                                 "forward_profiles": false,
-                                 "from_scheduler": {
-                                   "enabled": false,
-                                   "acknowledge": true
-                                 }
-                               }
-                             })";
 
 /**
  * @brief Checks whether a file exists
@@ -174,6 +159,15 @@ string generate_sha1_string(std::string string_to_hash, int output_length)
 void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code,
                      bool & run_simulation, bool & run_unit_tests)
 {
+
+    // TODO: change hosts format in roles to support intervals
+    // The <hosts> should be formated as follow:
+    // hostname[intervals],hostname[intervals],...
+    // Where `intervals` is a comma separated list of simple integer
+    // or closed interval separated with a '-'.
+    // Example: -r host[1-5,8]:role1,role2 -r toto,tata:myrole
+ 
+
     static const char usage[] =
 R"(A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.
 
@@ -181,6 +175,9 @@ Usage:
   batsim -p <platform_file> [-w <workload_file>...]
                             [-W <workflow_file>...]
                             [--WS (<cut_workflow_file> <start_time>)...]
+                            [--sg-cfg <opt_name:opt_value>...]
+                            [--sg-log <log_option>...]
+                            [-r <hosts_roles_map>...]
                             [options]
   batsim --help
   batsim --version
@@ -188,83 +185,100 @@ Usage:
   batsim --unittest
 
 Input options:
-  -p --platform <platform_file>     The SimGrid platform to simulate.
-  -w --workload <workload_file>     The workload JSON files to simulate.
-  -W --workflow <workflow_file>     The workflow XML files to simulate.
-  --WS --workflow-start (<cut_workflow_file> <start_time>)... The workflow XML
-                                    files to simulate, with the time at which
-                                    they should be started.
+  -p, --platform <platform_file>     The SimGrid platform to simulate.
+  -w, --workload <workload_file>     The workload JSON files to simulate.
+  -W, --workflow <workflow_file>     The workflow XML files to simulate.
+  --WS, --workflow-start (<cut_workflow_file> <start_time>)...  The workflow XML
+                                     files to simulate, with the time at which
+                                     they should be started.
 
 Most common options:
-  -m, --master-host <name>          The name of the host in <platform_file>
-                                    which will be used as the RJMS management
-                                    host (thus NOT used to compute jobs)
-                                    [default: master_host].
-  -E --energy                       Enables the SimGrid energy plugin and
-                                    outputs energy-related files.
+  -m, --master-host <name>           The name of the host in <platform_file>
+                                     which will be used as the RJMS management
+                                     host (thus NOT used to compute jobs)
+                                     [default: master_host].
+  -r, --add-role-to-hosts <hosts_role_map>... Add a `role` property to the specify host(s).
+                                     The <hosts-roles-map> is formated as <hosts>:<role>
+                                     The <hosts> should be formated as follow:
+                                     hostname1,hostname2,..
+                                     Supported roles are: master, storage, compute_node
+                                     By default, no role means 'compute_node'
+                                     Example: -r host8:master -r host1,host2:storage
+  -E, --energy                       Enables the SimGrid energy plugin and
+                                     outputs energy-related files.
 
 Execution context options:
-  --config-file <cfg_file>          Configuration file name (optional). [default: None]
-  -s, --socket-endpoint <endpoint>  The Decision process socket endpoint
-                                    Decision process [default: tcp://localhost:28000].
-  --redis-hostname <redis_host>     The Redis server hostname. Read from config file by default.
-                                    [default: None]
-  --redis-port <redis_port>         The Redis server port. Read from config file by default.
-                                    [default: -1]
-  --redis-prefix <prefix>           The Redis prefix. Read from config file by default.
-                                    [default: None]
+  -s, --socket-endpoint <endpoint>   The Decision process socket endpoint
+                                     Decision process [default: tcp://localhost:28000].
+  --enable-redis                     Enables Redis to communicate with the scheduler.
+                                     Other redis options are ignored if this option is not set.
+                                     Please refer to Batsim's documentation for more information.
+  --redis-hostname <redis_host>      The Redis server hostname. Ignored if --enable-redis is not set.
+                                     [default: 127.0.0.1]
+  --redis-port <redis_port>          The Redis server port. Ignored if --enable-redis is not set.
+                                     [default: 6379]
+  --redis-prefix <prefix>            The Redis prefix. Ignored if --enable-redis is not set.
+                                     [default: default]
 
 Output options:
-  -e, --export <prefix>             The export filename prefix used to generate
-                                    simulation output [default: out].
-  --enable-sg-process-tracing       Enables SimGrid process tracing
-  --disable-schedule-tracing        Disables the Pajé schedule outputting.
-  --disable-machine-state-tracing   Disables the machine state outputting.
-
+  -e, --export <prefix>              The export filename prefix used to generate
+                                     simulation output [default: out].
+  --disable-schedule-tracing         Disables the Pajé schedule outputting.
+  --disable-machine-state-tracing    Disables the machine state outputting.
 
 Platform size limit options:
-  --mmax <nb>                       Limits the number of machines to <nb>.
-                                    0 means no limit [default: 0].
-  --mmax-workload                   If set, limits the number of machines to
-                                    the 'nb_res' field of the input workloads.
-                                    If several workloads are used, the maximum
-                                    of these fields is kept.
+  --mmax <nb>                        Limits the number of machines to <nb>.
+                                     0 means no limit [default: 0].
+  --mmax-workload                    If set, limits the number of machines to
+                                     the 'nb_res' field of the input workloads.
+                                     If several workloads are used, the maximum
+                                     of these fields is kept.
+Job-related options:
+  --forward-profiles-on-submission   Attaches the job profile to the job information
+                                     when the scheduler is notified about a job submission.
+                                     [default: false]
+  --enable-dynamic-jobs              Enables dynamic registration of jobs and profiles from the scheduler.
+                                     Please refer to Batsim's documentation for more information.
+                                     [default: false]
+  --acknowledge-dynamic-jobs         Makes Batsim send a JOB_SUBMITTED back to the scheduler when
+                                     Batsim receives a REGISTER_JOB.
+                                     [default: true]
+
 Verbosity options:
-  -v, --verbosity <verbosity_level> Sets the Batsim verbosity level. Available
-                                    values: quiet, network-only, information,
-                                    debug [default: information].
-  -q, --quiet                       Shortcut for --verbosity quiet
+  -v, --verbosity <verbosity_level>  Sets the Batsim verbosity level. Available
+                                     values: quiet, network-only, information,
+                                     debug [default: information].
+  -q, --quiet                        Shortcut for --verbosity quiet
 
 Workflow options:
-  --workflow-jobs-limit <job_limit> Limits the number of possible concurrent
-                                    jobs for workflows. 0 means no limit
-                                    [default: 0].
-  --ignore-beyond-last-workflow     Ignores workload jobs that occur after all
-                                    workflows have completed.
+  --workflow-jobs-limit <job_limit>  Limits the number of possible concurrent
+                                     jobs for workflows. 0 means no limit
+                                     [default: 0].
+  --ignore-beyond-last-workflow      Ignores workload jobs that occur after all
+                                     workflows have completed.
 
 Other options:
-  --allow-time-sharing              Allows time sharing: One resource may
-                                    compute several jobs at the same time.
-  --batexec                         If set, the jobs in the workloads are
-                                    computed one by one, one after the other,
-                                    without scheduler nor Redis.
-  --pfs-host <pfs_host>             The name of the host, in <platform_file>,
-                                    which will be the parallel filesystem target
-                                    as data sink/source for the large-capacity
-                                    storage tier [default: pfs_host].
-  --hpst-host <hpst_host>           The name of the host, in <platform_file>,
-                                    which will be the parallel filesystem target
-                                    as data sink/source for the high-performance
-                                    storage tier [default: hpst_host].
-  -h --help                         Shows this help.
+  --dump-execution-context           Does not run the actual simulation but dumps the execution
+                                     context on stdout (formatted as a JSON object).
+  --enable-compute-sharing           Enables compute resource sharing:
+                                     One compute resource may be used by several jobs at the same time.
+  --disable-storage-sharing          Disables storage resource sharing:
+                                     One storage resource may be used by several jobs at the same time.
+  --no-sched                         If set, the jobs in the workloads are
+                                     computed one by one, one after the other,
+                                     without scheduler nor Redis.
+  --sg-cfg <opt_name:opt_value>...   Forwards a given option_name:option_value to SimGrid.
+                                     Refer to SimGrid configuring documentation for more information.
+  --sg-log <log_option>...           Forwards a given logging option to SimGrid.
+                                     Refer to SimGrid simulation logging documentation for more information.
+  -h, --help                         Shows this help.
 )";
 
-    run_simulation = false,
+    run_simulation = false;
     run_unit_tests = false;
     return_code = 1;
     map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc },
                                                      true, STR(BATSIM_VERSION));
-
     // Let's do some checks on the arguments!
     bool error = false;
     return_code = 0;
@@ -272,7 +286,7 @@ Other options:
     if (args["--simgrid-version"].asBool())
     {
         int sg_major, sg_minor, sg_patch;
-        sg_version(&sg_major, &sg_minor, &sg_patch);
+        sg_version_get(&sg_major, &sg_minor, &sg_patch);
 
         printf("%d.%d.%d\n", sg_major, sg_minor, sg_patch);
         return;
@@ -287,7 +301,6 @@ Other options:
     // Input files
     // ***********
     main_args.platform_filename = args["--platform"].asString();
-    printf("platform_filename: %s\n", main_args.platform_filename.c_str());
     if (!file_exists(main_args.platform_filename))
     {
         XBT_ERROR("Platform file '%s' cannot be read.", main_args.platform_filename.c_str());
@@ -402,33 +415,36 @@ Other options:
 
     // Common options
     // **************
+    main_args.hosts_roles_map = map<string, string>();
+
     main_args.master_host_name = args["--master-host"].asString();
+    main_args.hosts_roles_map[main_args.master_host_name] = "master";
+
     main_args.energy_used = args["--energy"].asBool();
 
-    // Execution context options
-    // *************************
-    string config_filename = args["--config-file"].asString();
-    if (config_filename != "None")
-    {
-        XBT_INFO("Reading configuration file '%s'", config_filename.c_str());
 
-        ifstream file(config_filename);
-        string file_content((istreambuf_iterator<char>(file)),
-                            istreambuf_iterator<char>());
-        main_args.config_file.Parse(file_content.c_str());
-        xbt_assert(!main_args.config_file.HasParseError(),
-                   "Invalid configuration file '%s': could not be parsed.",
-                   config_filename.c_str());
-    }
-    else
+    // get roles mapping
+    vector<string> hosts_roles_maps = args["--add-role-to-hosts"].asStringList();
+    for (unsigned int i = 0; i < hosts_roles_maps.size(); ++i)
     {
-        main_args.config_file.Parse(default_configuration.c_str());
-        xbt_assert(!main_args.config_file.HasParseError(),
-                   "Invalid default configuration file : could not be parsed.");
-    }
+        vector<string> parsed;
+        boost::split(parsed, hosts_roles_maps[i], boost::is_any_of(":"));
 
+        xbt_assert(parsed.size() == 2, "The roles host mapping should only contain one ':' character");
+        string hosts = parsed[0];
+        string roles = parsed[1];
+        vector<string> host_list;
+
+        boost::split(host_list, hosts, boost::is_any_of(","));
+
+        for (auto & host: host_list)
+        {
+            main_args.hosts_roles_map[host] = roles;
+        }
+    }
 
     main_args.socket_endpoint = args["--socket-endpoint"].asString();
+    main_args.redis_enabled = args["--enable-redis"].asBool();
     main_args.redis_hostname = args["--redis-hostname"].asString();
     try
     {
@@ -442,13 +458,17 @@ Other options:
     }
     main_args.redis_prefix = args["--redis-prefix"].asString();
 
-
     // Output options
     // **************
     main_args.export_prefix = args["--export"].asString();
-    main_args.enable_simgrid_process_tracing = args["--enable-sg-process-tracing"].asBool();
     main_args.enable_schedule_tracing = !args["--disable-schedule-tracing"].asBool();
     main_args.enable_machine_state_tracing = !args["--disable-machine-state-tracing"].asBool();
+
+    // Job-related options
+    // *******************
+    main_args.forward_profiles_on_submission = args["--forward-profiles-on-submission"].asBool();
+    main_args.dynamic_registration_enabled = args["--enable-dynamic-jobs"].asBool();
+    main_args.ack_dynamic_registration = args["--acknowledge-dynamic-jobs"].asBool();
 
     // Platform size limit options
     // ***************************
@@ -504,8 +524,10 @@ Other options:
 
     // Other options
     // *************
-    main_args.allow_time_sharing = args["--allow-time-sharing"].asBool();
-    if (args["--batexec"].asBool())
+    main_args.dump_execution_context = args["--dump-execution-context"].asBool();
+    main_args.allow_compute_sharing = args["--enable-compute-sharing"].asBool();
+    main_args.allow_storage_sharing = !(args["--disable-storage-sharing"].asBool());
+    if (args["--no-sched"].asBool())
     {
         main_args.program_type = ProgramType::BATEXEC;
     }
@@ -513,8 +535,9 @@ Other options:
     {
         main_args.program_type = ProgramType::BATSIM;
     }
-    main_args.pfs_host_name = args["--pfs-host"].asString();
-    main_args.hpst_host_name = args["--hpst-host"].asString();
+
+    main_args.simgrid_config = args["--sg-cfg"].asStringList();
+    main_args.simgrid_logging = args["--sg-log"].asStringList();
 
     run_simulation = !error;
 }
@@ -523,7 +546,7 @@ void configure_batsim_logging_output(const MainArguments & main_args)
 {
     vector<string> log_categories_to_set = {"workload", "job_submitter", "redis", "jobs", "machines", "pstate",
                                             "workflow", "jobs_execution", "server", "export", "profiles", "machine_range",
-                                            "network", "ipp"};
+                                            "network", "ipp", "task_execution"};
     string log_threshold_to_set = "critical";
 
     if (main_args.verbosity == VerbosityLevel::QUIET || main_args.verbosity == VerbosityLevel::NETWORK_ONLY)
@@ -562,27 +585,6 @@ void configure_batsim_logging_output(const MainArguments & main_args)
     xbt_log_control_set("surf_energy.thresh:critical");
 }
 
-void initialize_msg(const MainArguments & main_args, int argc, char * argv[])
-{
-    // Must be initialized before MSG_init
-    if (main_args.energy_used)
-    {
-        sg_energy_plugin_init();
-    }
-
-    MSG_init(&argc, argv);
-
-    // Setting SimGrid configuration if the SimGrid process tracing is enabled
-    if (main_args.enable_simgrid_process_tracing)
-    {
-        string sg_trace_filename = main_args.export_prefix + "_sg_processes.trace";
-
-        MSG_config("tracing", "1");
-        MSG_config("tracing/msg/process", "1");
-        MSG_config("tracing/filename", sg_trace_filename.c_str());
-    }
-}
-
 void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext * context, int & max_nb_machines_to_use)
 {
     int max_nb_machines_in_workloads = -1;
@@ -590,7 +592,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     // Let's create the workloads
     for (const MainArguments::WorkloadDescription & desc : main_args.workload_descriptions)
     {
-        Workload * workload = new Workload(desc.name, desc.filename);
+        Workload * workload = Workload::new_static_workload(desc.name, desc.filename);
 
         int nb_machines_in_workload = -1;
         workload->load_from_json(desc.filename, nb_machines_in_workload);
@@ -602,7 +604,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     // Let's create the workflows
     for (const MainArguments::WorkflowDescription & desc : main_args.workflow_descriptions)
     {
-        Workload * workload = new Workload(desc.workload_name, desc.filename); // Is creating the Workload now necessary? Workloads::add_job_if_not_exists may be enough
+        Workload * workload = Workload::new_static_workload(desc.workload_name, desc.filename);
         workload->jobs = new Jobs;
         workload->profiles = new Profiles;
         context->workloads.insert_workload(desc.workload_name, workload);
@@ -643,22 +645,19 @@ void start_initial_simulation_processes(const MainArguments & main_args,
     // Let's run a static_job_submitter process for each workload
     for (const MainArguments::WorkloadDescription & desc : main_args.workload_descriptions)
     {
-        XBT_DEBUG("Creating a workload_submitter process...");
-        JobSubmitterProcessArguments * submitter_args = new JobSubmitterProcessArguments;
-        submitter_args->context = context;
-        submitter_args->workload_name = desc.name;
-
         string submitter_instance_name = "workload_submitter_" + desc.name;
-        if (!is_batexec)
+
+        XBT_DEBUG("Creating a workload_submitter process...");
+        auto actor_function = static_job_submitter_process;
+        if (is_batexec)
         {
-            MSG_process_create(submitter_instance_name.c_str(), static_job_submitter_process,
-                               (void*) submitter_args, master_machine->host);
+            actor_function = batexec_job_launcher_process;
         }
-        else
-        {
-            MSG_process_create(submitter_instance_name.c_str(), batexec_job_launcher_process,
-                               (void*) submitter_args, master_machine->host);
-        }
+
+        simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+                                    master_machine->host,
+                                    actor_function,
+                                    context, desc.name);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
@@ -666,22 +665,19 @@ void start_initial_simulation_processes(const MainArguments & main_args,
     for (const MainArguments::WorkflowDescription & desc : main_args.workflow_descriptions)
     {
         XBT_DEBUG("Creating a workflow_submitter process...");
-
-        WorkflowSubmitterProcessArguments * submitter_args = new WorkflowSubmitterProcessArguments;
-        submitter_args->context = context;
-        submitter_args->workflow_name = desc.name;
-
         string submitter_instance_name = "workflow_submitter_" + desc.name;
-        MSG_process_create(submitter_instance_name.c_str(), workflow_submitter_process, (void*)submitter_args, master_machine->host);
+        simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+                                    master_machine->host,
+                                    workflow_submitter_process,
+                                    context, desc.name);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
     if (!is_batexec)
     {
         XBT_DEBUG("Creating the 'server' process...");
-        ServerProcessArguments * server_args = new ServerProcessArguments;
-        server_args->context = context;
-        MSG_process_create("server", server_process, (void*)server_args, master_machine->host);
+        simgrid::s4u::Actor::create("server", master_machine->host,
+                                    server_process, context);
         XBT_INFO("The process 'server' has been created.");
     }
 }
@@ -707,6 +703,33 @@ int main(int argc, char * argv[])
         MSG_init(&argc, argv);
         test_entry_point();
     }
+    else if (main_args.dump_execution_context)
+    {
+        using namespace rapidjson;
+        Document object;
+        auto & alloc = object.GetAllocator();
+        object.SetObject();
+
+        // Generate the content to dump
+        object.AddMember("socket_endpoint", Value().SetString(main_args.socket_endpoint.c_str(), alloc), alloc);
+        object.AddMember("redis_enabled", Value().SetBool(main_args.redis_enabled), alloc);
+        object.AddMember("redis_hostname", Value().SetString(main_args.redis_hostname.c_str(), alloc), alloc);
+        object.AddMember("redis_port", Value().SetInt(main_args.redis_port), alloc);
+        object.AddMember("redis_prefix", Value().SetString(main_args.redis_prefix.c_str(), alloc), alloc);
+
+        object.AddMember("export_prefix", Value().SetString(main_args.export_prefix.c_str(), alloc), alloc);
+
+        object.AddMember("external_scheduler", Value().SetBool(main_args.program_type == ProgramType::BATSIM), alloc);
+
+        // Dump the object to a string
+        StringBuffer buffer;
+        rapidjson::Writer<StringBuffer> writer(buffer);
+        object.Accept(writer);
+
+        // Print the string then terminate
+        printf("%s\n", buffer.GetString());
+        return 0;
+    }
 
     if (!run_simulation)
     {
@@ -716,8 +739,27 @@ int main(int argc, char * argv[])
     // Let's configure how Batsim should be logged
     configure_batsim_logging_output(main_args);
 
-    // Let's initialize SimGrid
-    initialize_msg(main_args, argc, argv);
+    // Initialize the energy plugin before creating the engine
+    if (main_args.energy_used)
+    {
+        sg_host_energy_plugin_init();
+    }
+
+    // Instantiate SimGrid
+    MSG_init(&argc, argv); // Required for SMPI as I write these lines
+    simgrid::s4u::Engine engine(&argc, argv);
+
+    // Setting SimGrid configuration options, if any
+    for (const string & cfg_string : main_args.simgrid_config)
+    {
+        engine.set_config(cfg_string);
+    }
+
+    // Setting SimGrid logging options, if any
+    for (const string & log_string : main_args.simgrid_logging)
+    {
+        xbt_log_control_set(log_string.c_str());
+    }
 
     // Let's create the BatsimContext, which stores information about the current instance
     BatsimContext context;
@@ -730,15 +772,14 @@ int main(int argc, char * argv[])
     int max_nb_machines_to_use = -1;
     load_workloads_and_workflows(main_args, &context, max_nb_machines_to_use);
 
+    // initialyse Ptask L07 model
+    engine.set_config("host/model:ptask_L07");
+
     // Let's choose which SimGrid computing model should be used
     XBT_INFO("Checking whether SMPI is used or not...");
     context.smpi_used = context.workloads.contains_smpi_job(); // todo: SMPI workflows
-    if (!context.smpi_used)
-    {
-        XBT_INFO("SMPI will NOT be used.");
-        MSG_config("host/model", "ptask_L07");
-    }
-    else
+
+    if (context.smpi_used)
     {
         XBT_INFO("SMPI will be used.");
         context.workloads.register_smpi_applications(); // todo: SMPI workflows
@@ -756,7 +797,7 @@ int main(int argc, char * argv[])
     {
         if (context.redis_enabled)
         {
-            // Let's prepare Redis's connection
+            // Let's prepare Redis' connection
             context.storage.set_instance_key_prefix(main_args.redis_prefix);
             context.storage.connect_to_server(main_args.redis_hostname, main_args.redis_port);
 
@@ -765,8 +806,12 @@ int main(int argc, char * argv[])
         }
 
         // Let's create the socket
-        context.zmq_socket = new zmq::socket_t(context.zmq_context, ZMQ_REQ);
-        context.zmq_socket->connect(main_args.socket_endpoint);
+        context.zmq_context = zmq_ctx_new();
+        xbt_assert(context.zmq_context != nullptr, "Cannot create ZMQ context");
+        context.zmq_socket = zmq_socket(context.zmq_context, ZMQ_REQ);
+        xbt_assert(context.zmq_socket != nullptr, "Cannot create ZMQ REQ socket (errno=%s)", strerror(errno));
+        int err = zmq_connect(context.zmq_socket, main_args.socket_endpoint.c_str());
+        xbt_assert(err == 0, "Cannot connect ZMQ socket to '%s' (errno=%s)", main_args.socket_endpoint.c_str(), strerror(errno));
 
         // Let's create the protocol reader and writer
         context.proto_reader = new JsonProtocolReader(&context);
@@ -782,9 +827,12 @@ int main(int argc, char * argv[])
     }
 
     // Simulation main loop, handled by MSG
-    msg_error_t res = MSG_main();
+    engine.run();
 
-    delete context.zmq_socket;
+    zmq_close(context.zmq_socket);
+    context.zmq_socket = nullptr;
+
+    zmq_ctx_destroy(context.zmq_context);
     context.zmq_socket = nullptr;
 
     delete context.proto_reader;
@@ -802,14 +850,7 @@ int main(int argc, char * argv[])
     // Let's finalize Batsim's outputs
     finalize_batsim_outputs(&context);
 
-    if (res == MSG_OK)
-    {
-        return 0;
-    }
-    else
-    {
-        return 1;
-    }
+    return 0;
 }
 
 void set_configuration(BatsimContext *context,
@@ -821,222 +862,42 @@ void set_configuration(BatsimContext *context,
     // Let's load default values from the default configuration
     // ********************************************************
     Document default_config_doc;
-    default_config_doc.Parse(default_configuration.c_str());
     xbt_assert(!default_config_doc.HasParseError(),
                "Invalid default configuration file : could not be parsed.");
-
-    bool redis_enabled = default_config_doc["redis"]["enabled"].GetBool();
-    string redis_hostname = default_config_doc["redis"]["hostname"].GetString();
-    int redis_port = default_config_doc["redis"]["port"].GetInt();
-    string redis_prefix = default_config_doc["redis"]["prefix"].GetString();
-
-    bool submission_forward_profiles = default_config_doc["job_submission"]["forward_profiles"].GetBool();
-
-    bool submission_sched_enabled = default_config_doc["job_submission"]["from_scheduler"]["enabled"].GetBool();
-    bool submission_sched_ack = default_config_doc["job_submission"]["from_scheduler"]["acknowledge"].GetBool();
-
-    // **********************************
-    // Let's parse the configuration file
-    // **********************************
-    const Value & main_object = main_args.config_file;
-    xbt_assert(main_object.IsObject(), "Invalid JSON configuration: not an object.");
-
-    if(main_object.HasMember("redis"))
-    {
-        const Value & redis_object = main_object["redis"];
-        xbt_assert(redis_object.IsObject(), "Invalid JSON configuration: ['redis'] should be an object.");
-
-        if (redis_object.HasMember("enabled"))
-        {
-            const Value & redis_enabled_value = redis_object["enabled"];
-            xbt_assert(redis_enabled_value.IsBool(), "Invalid JSON configuration: ['redis']['enabled'] should be a boolean.");
-            redis_enabled = redis_enabled_value.GetBool();
-        }
-
-        if (redis_object.HasMember("hostname"))
-        {
-            const Value & redis_hostname_value = redis_object["hostname"];
-            xbt_assert(redis_hostname_value.IsString(), "Invalid JSON configuration: ['redis']['hostname'] should be a string.");
-            redis_hostname = redis_hostname_value.GetString();
-        }
-
-        if (redis_object.HasMember("port"))
-        {
-            const Value & redis_port_value = redis_object["port"];
-            xbt_assert(redis_port_value.IsInt(), "Invalid JSON configuration: ['redis']['port'] should be an integer.");
-            redis_port = redis_port_value.GetInt();
-        }
-
-        if (redis_object.HasMember("prefix"))
-        {
-            const Value & redis_prefix_value = redis_object["prefix"];
-            xbt_assert(redis_prefix_value.IsString(), "Invalid JSON configuration: ['redis']['prefix'] should be a string.");
-            redis_prefix = redis_prefix_value.GetString();
-        }
-    }
-    if (main_object.HasMember("job_submission"))
-    {
-        const Value & job_submission_object = main_object["job_submission"];
-        xbt_assert(job_submission_object.IsObject(), "Invalid JSON configuration: ['job_submission'] should be an object.");
-
-        if (job_submission_object.HasMember("forward_profiles"))
-        {
-            const Value & forward_profiles_value = job_submission_object["forward_profiles"];
-            xbt_assert(forward_profiles_value.IsBool(), "Invalid JSON configuration: ['job_submission']['forward_profiles'] should be a boolean.");
-            submission_forward_profiles = forward_profiles_value.GetBool();
-        }
-
-        if (job_submission_object.HasMember("from_scheduler"))
-        {
-            const Value & from_sched_object = job_submission_object["from_scheduler"];
-            xbt_assert(from_sched_object.IsObject(), "Invalid JSON configuration: ['job_submission']['from_scheduler'] should be an object.");
-
-            if (from_sched_object.HasMember("enabled"))
-            {
-                const Value & submission_sched_enabled_value = from_sched_object["enabled"];
-                xbt_assert(submission_sched_enabled_value.IsBool(), "Invalid JSON configuration: ['job_submission']['enabled'] should be a boolean.");
-                submission_sched_enabled = submission_sched_enabled_value.GetBool();
-            }
-
-            if (from_sched_object.HasMember("acknowledge"))
-            {
-                const Value & submission_sched_ack_value = from_sched_object["acknowledge"];
-                xbt_assert(submission_sched_ack_value.IsBool(), "Invalid JSON configuration: ['job_submission']['acknowledge'] should be a boolean.");
-                submission_sched_ack = submission_sched_ack_value.GetBool();
-            }
-        }
-    }
-
-    // *****************************************************************
-    // Let's override configuration values from main arguments if needed
-    // *****************************************************************
-    if (main_args.redis_hostname != "None")
-    {
-        redis_hostname = main_args.redis_hostname;
-    }
-    if (main_args.redis_port != -1)
-    {
-        redis_port = main_args.redis_port;
-    }
-    if (main_args.redis_prefix != "None")
-    {
-        redis_prefix = main_args.redis_prefix;
-    }
 
     // *************************************
     // Let's update the BatsimContext values
     // *************************************
-    context->redis_enabled = redis_enabled;
-    context->submission_forward_profiles = submission_forward_profiles;
-    context->submission_sched_enabled = submission_sched_enabled;
-    context->submission_sched_ack = submission_sched_ack;
+    context->redis_enabled = main_args.redis_enabled;
+    context->submission_forward_profiles = main_args.forward_profiles_on_submission;
+    context->registration_sched_enabled = main_args.dynamic_registration_enabled;
+    context->registration_sched_ack = main_args.ack_dynamic_registration;
 
     context->platform_filename = main_args.platform_filename;
     context->export_prefix = main_args.export_prefix;
     context->workflow_nb_concurrent_jobs_limit = main_args.workflow_nb_concurrent_jobs_limit;
     context->energy_used = main_args.energy_used;
-    context->allow_time_sharing = main_args.allow_time_sharing;
+    context->allow_compute_sharing = main_args.allow_compute_sharing;
+    context->allow_storage_sharing = main_args.allow_storage_sharing;
     context->trace_schedule = main_args.enable_schedule_tracing;
     context->trace_machine_states = main_args.enable_machine_state_tracing;
     context->simulation_start_time = chrono::high_resolution_clock::now();
     context->terminate_with_last_workflow = main_args.terminate_with_last_workflow;
 
-    // *************************************
-    // Let's update the MainArguments values
-    // *************************************
-    main_args.redis_hostname = redis_hostname;
-    main_args.redis_port = redis_port;
-    main_args.redis_prefix = redis_prefix;
+    // **************************************************************************************
+    // Let's write the json object holding configuration information to send to the scheduler
+    // **************************************************************************************
+    context->config_json.SetObject();
+    auto & alloc = context->config_json.GetAllocator();
 
-    // *******************************************************************************
-    // Let's write the output config file (the one that will be sent to the scheduler)
-    // *******************************************************************************
-    auto & alloc = context->config_file.GetAllocator();
-
-    // Let's retrieve all data specified in the input config file (to let the user give custom info to the scheduler)
-    context->config_file.CopyFrom(main_args.config_file, alloc);
-
-    // Let's make sure all used data is written too.
     // redis
-    auto mit_redis = context->config_file.FindMember("redis");
-    if (mit_redis == context->config_file.MemberEnd())
-    {
-        context->config_file.AddMember("redis", Value().SetObject(), alloc);
-        mit_redis = context->config_file.FindMember("redis");
-    }
-
-    // redis->enabled
-    if (mit_redis->value.FindMember("enabled") == mit_redis->value.MemberEnd())
-    {
-        mit_redis->value.AddMember("enabled", Value().SetBool(redis_enabled), alloc);
-    }
-
-    // redis->hostname
-    Value::MemberIterator mit_redis_hostname = mit_redis->value.FindMember("hostname");
-    if (mit_redis_hostname == mit_redis->value.MemberEnd())
-    {
-        mit_redis->value.AddMember("hostname", Value().SetString(redis_hostname.c_str(), alloc), alloc);
-    }
-    else
-    {
-        mit_redis_hostname->value.SetString(redis_hostname.c_str(), alloc);
-    }
-
-    // redis->port
-    Value::MemberIterator mit_redis_port = mit_redis->value.FindMember("port");
-    if (mit_redis_port == mit_redis->value.MemberEnd())
-    {
-        mit_redis->value.AddMember("port", Value().SetInt(redis_port), alloc);
-    }
-    else
-    {
-        mit_redis_port->value.SetInt(redis_port);
-    }
-
-    // redis->prefix
-    Value::MemberIterator mit_redis_prefix = mit_redis->value.FindMember("prefix");
-    if (mit_redis_prefix == mit_redis->value.MemberEnd())
-    {
-        mit_redis->value.AddMember("prefix", Value().SetString(redis_prefix.c_str(), alloc), alloc);
-    }
-    else
-    {
-        mit_redis_prefix->value.SetString(redis_prefix.c_str(), alloc);
-    }
-
+    context->config_json.AddMember("redis-enabled", Value().SetBool(main_args.redis_enabled), alloc);
+    context->config_json.AddMember("redis-hostname", Value().SetString(main_args.redis_hostname.c_str(), alloc), alloc);
+    context->config_json.AddMember("redis-port", Value().SetInt(main_args.redis_port), alloc);
+    context->config_json.AddMember("redis-prefix", Value().SetString(main_args.redis_prefix.c_str(), alloc), alloc);
 
     // job_submission
-    auto mit_job_submission = context->config_file.FindMember("job_submission");
-    if (mit_job_submission == context->config_file.MemberEnd())
-    {
-        context->config_file.AddMember("job_submission", Value().SetObject(), alloc);
-        mit_job_submission = context->config_file.FindMember("job_submission");
-    }
-
-    // job_submission->forward_profiles
-    if (mit_job_submission->value.FindMember("forward_profiles") == mit_job_submission->value.MemberEnd())
-    {
-        mit_job_submission->value.AddMember("forward_profiles", Value().SetBool(submission_forward_profiles), alloc);
-    }
-
-    // job_submission->from_scheduler
-    auto mit_job_submission_from_sched = mit_job_submission->value.FindMember("from_scheduler");
-    if (mit_job_submission_from_sched == mit_job_submission->value.MemberEnd())
-    {
-        mit_job_submission->value.AddMember("from_scheduler", Value().SetObject(), alloc);
-        mit_job_submission_from_sched = mit_job_submission->value.FindMember("from_scheduler");
-    }
-    Value & from_sched_value = mit_job_submission_from_sched->value;
-
-    // job_submission_from_scheduler->enabled
-    if (from_sched_value.FindMember("enabled") == from_sched_value.MemberEnd())
-    {
-        from_sched_value.AddMember("enabled", Value().SetBool(submission_sched_enabled), alloc);
-    }
-
-    // job_submission_from_scheduler->acknowledge
-    if (from_sched_value.FindMember("acknowledge") == from_sched_value.MemberEnd())
-    {
-        from_sched_value.AddMember("acknowledge", Value().SetBool(submission_sched_ack), alloc);
-    }
+    context->config_json.AddMember("profiles-forwarded-on-submission", Value().SetBool(main_args.forward_profiles_on_submission), alloc);
+    context->config_json.AddMember("dynamic-jobs-enabled", Value().SetBool(main_args.dynamic_registration_enabled), alloc);
+    context->config_json.AddMember("dynamic-jobs-acknowledged", Value().SetBool(main_args.ack_dynamic_registration), alloc);
 }
