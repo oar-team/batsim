@@ -20,8 +20,17 @@ Starting with version `v1.0.0`_, Batsim adheres to `Semantic Versioning`_ and it
 Unreleased
 ----------
 
-- `Commits since v2.0.0 <https://github.com/oar-team/batsim/compare/v2.0.0...HEAD>`_
+- `Commits since v3.0.0 <https://github.com/oar-team/batsim/compare/v3.0.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim_dev``
+
+........................................................................................................................
+
+v3.0.0
+------
+
+- `Commits since v2.0.0 <https://github.com/oar-team/batsim/compare/v2.0.0...v3.0.0>`_
+- Release date: 2019-01-15
+- ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-3.0.0``
 
 Changed (**breaks protocol**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
