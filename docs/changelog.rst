@@ -11,10 +11,6 @@ Starting with version `v1.0.0`_, Batsim adheres to `Semantic Versioning`_ and it
 - The format of the Batsim input files.
 - The communication protocol with the decision-making component.
 
-.. todo::
-
-    Define a recommended SimGrid version for each batsim version.
-
 ........................................................................................................................
 
 Unreleased
@@ -31,6 +27,8 @@ v3.0.0
 - `Commits since v2.0.0 <https://github.com/oar-team/batsim/compare/v2.0.0...v3.0.0>`_
 - Release date: 2019-01-15
 - ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-3.0.0``
+- Recommended SimGrid commit:
+  `97b4fd8e4 <https://framagit.org/simgrid/simgrid/commit/97b4fd8e435a44171d471a245142e6fd0eb992b2>`_
 
 Changed (**breaks protocol**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -164,6 +162,8 @@ v2.0.0
 - `Commits since v1.4.0 <https://github.com/oar-team/batsim/compare/v1.4.0...v2.0.0>`_
 - Release date: 2018-02-20
 - ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-2.0.0``
+- Recommended SimGrid commit:
+  `587483ebe <https://framagit.org/batsim/simgrid/commit/587483ebe7882eae38ca9aba161fa168834c21e4>`_
 
 Changed (**breaks protocol**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -218,6 +218,8 @@ v1.4.0
 - `Commits since v1.3.0 <https://github.com/oar-team/batsim/compare/v1.3.0...v1.4.0>`_
 - Release date: 2017-10-07
 - ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-1.4.0``
+- Recommended SimGrid commit:
+  `587483ebe <https://framagit.org/batsim/simgrid/commit/587483ebe7882eae38ca9aba161fa168834c21e4>`_
 
 Added
 ~~~~~
