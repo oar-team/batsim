@@ -6,11 +6,11 @@ let
 in
 
 pkgs.stdenv.mkDerivation rec {
-  name = "tuto-env";
+  name = "tuto-env-dev";
   env = pkgs.buildEnv { name = name; paths = buildInputs; };
   buildInputs = [
-    kapack.batsim # simulator
-    kapack.batsched # scheduler
-    kapack.batexpe # experiment management tools
+    kapack.batsim_dev # simulator
+    kapack.batsched_dev # scheduler
+    kapack.batexpe_dev # experiment management tools
   ];
 }
