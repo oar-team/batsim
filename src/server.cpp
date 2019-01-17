@@ -206,7 +206,7 @@ void server_on_submitter_bye(ServerData * data,
             data->context->proto_writer->append_notify("no_more_external_event_to_occur", simgrid::s4u::Engine::get_clock());
         }
     }
-    else // It's a JOB_SUBMITTER
+    else if (submitter_type == SubmitterType::JOB_SUBMITTER)
     {
         if(data->submitter_counters[submitter_type].nb_submitters_finished == data->submitter_counters[submitter_type].expected_nb_submitters)
         {
