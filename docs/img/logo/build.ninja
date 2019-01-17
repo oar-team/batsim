@@ -1,0 +1,22 @@
+YELLOW="#F9DE2D"
+
+rule svg_to_png
+    command = inkscape --export-png=$out -f $in
+
+rule svg_to_png_yellow
+    command = inkscape --export-png=$out --export-background=$YELLOW -f $in
+
+rule svg_to_png_high_dpi
+    command = inkscape -d 1024 --export-png=$out -f $in
+
+rule resize_png_256x256
+    command = convert -background transparent -gravity center $in -resize 256x256 -extent 256x256 $out
+
+rule resize_png_256x256_yellow
+    command = convert -background $YELLOW -gravity center $in -resize 256x256 -extent 256x256 $out
+
+build logo.png: svg_to_png logo.svg
+build logo_small.png: resize_png_256x256 logo.png
+
+build logo_yellow.png: svg_to_png_yellow logo.svg
+build logo_yellow_small.png: resize_png_256x256_yellow logo_yellow.png
