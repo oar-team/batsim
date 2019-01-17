@@ -346,3 +346,10 @@ bool mailbox_empty(const std::string & reception_mailbox);
  * @return The std::string corresponding to the type
  */
 std::string ip_message_type_to_string(IPMessageType type);
+
+/**
+ * @brief Transforms a SumbitterType into a std::string
+ * @param[in] type The SubmitterType
+ * @return The std::string corresponding to the type
+ */
+std::string submitter_type_to_string(SubmitterType type);

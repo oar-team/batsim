@@ -174,8 +174,8 @@ void server_on_submitter_hello(ServerData * data,
     ++data->submitter_counters[submitter_type].nb_submitters;
 
     XBT_DEBUG("New %s submitter said hello. Number of polite %s submitters: %d",
-              (submitter_type == SubmitterType::EVENT_SUBMITTER ? "event" : "job"),
-              (submitter_type == SubmitterType::EVENT_SUBMITTER ? "event" : "job"),
+              submitter_type_to_string(submitter_type).c_str(),
+              submitter_type_to_string(submitter_type).c_str(),
               data->submitter_counters[submitter_type].nb_submitters);
 
 }
@@ -195,8 +195,8 @@ void server_on_submitter_bye(ServerData * data,
     ++data->submitter_counters[submitter_type].nb_submitters_finished;
 
     XBT_DEBUG("%s submitter said goodbye. Number of finished %s submitters: %d",
-              (submitter_type == SubmitterType::EVENT_SUBMITTER ? "Event" : "Job"),
-              (submitter_type == SubmitterType::EVENT_SUBMITTER ? "event" : "job"),
+              submitter_type_to_string(submitter_type).c_str(),
+              submitter_type_to_string(submitter_type).c_str(),
               data->submitter_counters[submitter_type].nb_submitters);
 
     if (submitter_type == SubmitterType::EVENT_SUBMITTER)

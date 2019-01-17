@@ -304,3 +304,20 @@ IPMessage::~IPMessage()
 
     data = nullptr;
 }
+
+std::string submitter_type_to_string(SubmitterType type)
+{
+    string s;
+    // Do not remove the switch. If one adds a new SubmitterType but forgets to handle it in
+    // the switch, a compilation warning should help avoiding this bug.
+    switch(type)
+    {
+        case SubmitterType::EVENT_SUBMITTER:
+            s = "Event";
+            break;
+        case SubmitterType::JOB_SUBMITTER:
+            s = "Job";
+            break;
+    }
+    return s;
+}
