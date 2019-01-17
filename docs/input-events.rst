@@ -15,7 +15,7 @@ Input File Format
 -----------------
 
 An example of an input file for external events can be found in ``events/test_events_4hosts.txt``.
-Such file should contain on each line a JSON description of an event, as follows:
+Such file should contain on each line a JSON description of an event, as follows.
 
 .. code:: json
 
@@ -46,4 +46,3 @@ Machine_restore
 ~~~~~~~~~~~~~~~
 
 Simulates a restoration of the previously failed machines, putting them in ``IDLE`` state.
-
