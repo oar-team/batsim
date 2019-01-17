@@ -1,7 +1,7 @@
 .. _input_EVENTS:
 
 External Events
-=============
+===============
 
 0verview and example
 --------------------

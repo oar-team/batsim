@@ -61,7 +61,7 @@ struct MainArguments
         double start_time;          //!< The moment in time at which the workflow should be started
     };
 
-    /**
+   /**
     * @brief Stores the command-line description of an eventList
     */
    struct EventListDescription
