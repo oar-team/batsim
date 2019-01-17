@@ -128,6 +128,18 @@ Added (command-line interface)
   that dumps the command execution context on the standard output.
   This allows external tools to understand the execution context of a batsim command without actually parsing it.
 
+Added (external events mechanism)
+~~~~~~~~~~~~~~~~~~~~~
+
+- A new mechanism allowing the injection of external events was added (see :ref: `input_EVENTS` for more details).
+- For the moment the following external events are supported:
+
+  - `machine_failure`: Some machines have crashed and are no longer available.
+  - `machine_restore`: Some previously failed machines have been restored.
+- A new ``NOTIFY`` :ref:`proto_NOTIFY` protocol event, ``no_more_external_event_to_occurr``, was added to tell the scheduler
+  that no more external events coming from Batsim can occurr during the simulation.
+- The metric regarding the time spend for all machines in ``FAILED`` state was added in the schedule output file.
+
 Known issues
 ~~~~~~~~~~~~
 
