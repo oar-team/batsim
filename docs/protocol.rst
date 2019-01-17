@@ -236,7 +236,7 @@ is no expected acknowledgement when sending such an event.
 For now, Batsim can **notify** the scheduler of the following.
 
 - ``no_more_static_job_to_submit``: Batsim tells the scheduler that it has no more jobs to submit from the static submitters. This means that all jobs in the workloads have already been submitted to the scheduler and the scheduler cannot expect more jobs to arrive (except the potential ones through dynamic submission).
-- `no_more_external_event_to_occurr`: Only appliable if a list of events are given as input to Batsim via the ``--events`` command-line option. Batsim tells the scheduler that there is no more external event to occurr from the event submitters. That means that all external events have occurred and the scheduler cannot expect a new event to occurr.
+- `no_more_external_event_to_occur`: Only appliable if a list of events are given as input to Batsim via the ``--events`` command-line option. Batsim tells the scheduler that there is no more external event to occur from the event submitters. That means that all external events have occurred and the scheduler cannot expect a new event to occur.
 
 For now, the scheduler can **notify** Batsim of the following.
 
@@ -258,7 +258,7 @@ For now, the scheduler can **notify** Batsim of the following.
    {
      "timestamp": 23.50,
      "type": "NOTIFY",
-     "data": { "type": "no_more_external_event_to_occurr" }
+     "data": { "type": "no_more_external_event_to_occur" }
    }
 
 .. code:: json
