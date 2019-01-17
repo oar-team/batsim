@@ -74,7 +74,7 @@ Changed (**breaks workload format**)
 Changed (**breaks platform format**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Batsim now uses SimGrid version **TO BE DEFINED** and therefore the
+- Batsim now uses SimGrid version 3.21 and therefore the
   SimGrid platform version 4.1, which broke things on how to define platforms.
   Please refer to SimGrid documentation for more information on this.
 
