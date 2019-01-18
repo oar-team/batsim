@@ -19,7 +19,7 @@ void switch_on_machine_process(BatsimContext *context, int machine_id, int new_p
     xbt_assert(context->machines.exists(machine_id));
     Machine * machine = context->machines[machine_id];
 
-    xbt_assert(machine->host == MSG_process_get_host(MSG_process_self()));
+    xbt_assert(machine->host == simgrid::s4u::this_actor::get_host());
     xbt_assert(machine->state == MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING);
     xbt_assert(machine->jobs_being_computed.empty());
     xbt_assert(machine->has_pstate(new_pstate));
@@ -54,7 +54,7 @@ void switch_off_machine_process(BatsimContext * context, int machine_id, int new
     xbt_assert(context->machines.exists(machine_id));
     Machine * machine = context->machines[machine_id];
 
-    xbt_assert(machine->host == MSG_process_get_host(MSG_process_self()));
+    xbt_assert(machine->host == simgrid::s4u::this_actor::get_host());
     xbt_assert(machine->state == MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING);
     xbt_assert(machine->jobs_being_computed.empty());
     xbt_assert(machine->has_pstate(new_pstate));
