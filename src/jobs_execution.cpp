@@ -190,7 +190,7 @@ int execute_task(BatTask * btask,
     {
         DelayProfileData * data = (DelayProfileData *) profile->data;
 
-        btask->delay_task_start = MSG_get_clock();
+        btask->delay_task_start = simgrid::s4u::Engine::get_clock();
         btask->delay_task_required = data->delay;
 
         if (do_delay_task(data->delay, remaining_time) == -1)
@@ -372,7 +372,7 @@ void execute_job_process(BatsimContext * context,
     Job * job = workload->jobs->at(allocation->job_id);
     Profile * profile = workload->profiles->at(job->profile);
 
-    job->starting_time = MSG_get_clock();
+    job->starting_time = simgrid::s4u::Engine::get_clock();
     job->allocation = allocation->machine_ids;
     double remaining_time = (double)job->walltime;
 
@@ -419,7 +419,7 @@ void execute_job_process(BatsimContext * context,
     {
         job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
         // Let's trace the consumed energy
-        context->energy_tracer.add_job_start(MSG_get_clock(), job->id);
+        context->energy_tracer.add_job_start(simgrid::s4u::Engine::get_clock(), job->id);
     }
 
     // Job computation
@@ -452,12 +452,12 @@ void execute_job_process(BatsimContext * context,
         if (context->trace_schedule)
         {
             context->paje_tracer.add_job_kill(job, allocation->machine_ids,
-                                              MSG_get_clock(), true);
+                                              simgrid::s4u::Engine::get_clock(), true);
         }
     }
 
     context->machines.update_machines_on_job_end(job, allocation->machine_ids, context);
-    job->runtime = MSG_get_clock() - job->starting_time;
+    job->runtime = simgrid::s4u::Engine::get_clock() - job->starting_time;
     if (job->runtime == 0)
     {
         XBT_WARN("Job '%s' computed in null time. Putting epsilon instead.", job->id.to_string().c_str());
@@ -472,7 +472,7 @@ void execute_job_process(BatsimContext * context,
         job->consumed_energy = consumed_energy_on_machines(context, job->allocation) - consumed_energy_before;
 
         // Let's trace the consumed energy
-        context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
+        context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
     }
 
     if (notify_server_at_end)
@@ -489,7 +489,7 @@ void execute_job_process(BatsimContext * context,
 
 void waiter_process(double target_time, const ServerData * server_data)
 {
-    double curr_time = MSG_get_clock();
+    double curr_time = simgrid::s4u::Engine::get_clock();
 
     if (curr_time < target_time)
     {
@@ -566,7 +566,7 @@ void killer_process(BatsimContext * context, std::vector<JobIdentifier> jobs_ids
             job->state = JobState::JOB_STATE_COMPLETED_KILLED;
 
             context->machines.update_machines_on_job_end(job, job->allocation, context);
-            job->runtime = (long double)MSG_get_clock() - job->starting_time;
+            job->runtime = (long double)simgrid::s4u::Engine::get_clock() - job->starting_time;
 
             xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%g)!",
                        job->id.to_string().c_str(), (double)job->runtime);
@@ -587,7 +587,7 @@ void killer_process(BatsimContext * context, std::vector<JobIdentifier> jobs_ids
                 job->consumed_energy = job->consumed_energy - consumed_energy_before;
 
                 // Let's trace the consumed energy
-                context->energy_tracer.add_job_end(MSG_get_clock(), job->id);
+                context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
             }
         }
     }

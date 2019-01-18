@@ -135,7 +135,7 @@ void BatTask::compute_leaf_progress()
     {
         xbt_assert(delay_task_start != -1, "Internal error");
 
-        double runtime = MSG_get_clock() - delay_task_start;
+        double runtime = simgrid::s4u::Engine::get_clock() - delay_task_start;
 
         // Manages empty delay job (why?!)
         if (delay_task_required == 0)

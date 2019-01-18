@@ -448,14 +448,14 @@ void Machines::update_machines_on_job_run(const Job * job,
             {
                 _tracer->set_machine_as_computing_job(machine->id,
                                                       *machine->jobs_being_computed.begin(),
-                                                      MSG_get_clock());
+                                                      simgrid::s4u::Engine::get_clock());
             }
         }
     }
 
     if (context->trace_machine_states)
     {
-        context->machine_state_tracer.write_machine_states(MSG_get_clock());
+        context->machine_state_tracer.write_machine_states(simgrid::s4u::Engine::get_clock());
     }
 }
 
@@ -481,7 +481,7 @@ void Machines::update_machines_on_job_end(const Job * job,
             machine->update_machine_state(MachineState::IDLE);
             if (_tracer != nullptr)
             {
-                _tracer->set_machine_idle(machine->id, MSG_get_clock());
+                _tracer->set_machine_idle(machine->id, simgrid::s4u::Engine::get_clock());
             }
         }
         else if (*machine->jobs_being_computed.begin() != previous_top_job)
@@ -490,14 +490,14 @@ void Machines::update_machines_on_job_end(const Job * job,
             {
                 _tracer->set_machine_as_computing_job(machine->id,
                                                       *machine->jobs_being_computed.begin(),
-                                                      MSG_get_clock());
+                                                      simgrid::s4u::Engine::get_clock());
             }
         }
     }
 
     if (context->trace_machine_states)
     {
-        context->machine_state_tracer.write_machine_states(MSG_get_clock());
+        context->machine_state_tracer.write_machine_states(simgrid::s4u::Engine::get_clock());
     }
 }
 
@@ -636,7 +636,7 @@ string Machine::jobs_being_computed_as_string() const
 
 void Machine::update_machine_state(MachineState new_state)
 {
-    long double current_date = MSG_get_clock();
+    long double current_date = simgrid::s4u::Engine::get_clock();
 
     long double delta_time = current_date - last_state_change_date;
     xbt_assert(delta_time >= 0);

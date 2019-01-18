@@ -30,7 +30,7 @@ void prepare_batsim_outputs(BatsimContext * context)
     {
         context->paje_tracer.set_filename(context->export_prefix + "_schedule.trace");
         context->machines.set_tracer(&context->paje_tracer);
-        context->paje_tracer.initialize(context, MSG_get_clock());
+        context->paje_tracer.initialize(context, simgrid::s4u::Engine::get_clock());
     }
 
     if (context->trace_machine_states)
@@ -70,7 +70,7 @@ void prepare_batsim_outputs(BatsimContext * context)
         {
             int pstate = mit.first;
             IntervalSet & range = mit.second;
-            context->pstate_tracer.add_pstate_change(MSG_get_clock(), range, pstate);
+            context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), range, pstate);
         }
     }
 }
@@ -83,7 +83,7 @@ void finalize_batsim_outputs(BatsimContext * context)
     // Schedule (Pajé)
     if (context->trace_schedule)
     {
-        context->paje_tracer.finalize(context, MSG_get_clock());
+        context->paje_tracer.finalize(context, simgrid::s4u::Engine::get_clock());
     }
 
     if (context->trace_machine_states)
