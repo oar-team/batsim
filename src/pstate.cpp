@@ -30,7 +30,7 @@ void switch_on_machine_process(BatsimContext *context, int machine_id, int new_p
 
     XBT_INFO("Switching machine %d ('%s') ON. Passing in virtual pstate %d to do so", machine->id,
              machine->name.c_str(), on_ps);
-    MSG_host_set_pstate(machine->host, on_ps);
+    machine->host->set_pstate(on_ps);
     //args->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), machine->id, on_ps);
 
     XBT_INFO("Computing 1 flop to simulate time & energy cost of switch ON");
@@ -38,7 +38,7 @@ void switch_on_machine_process(BatsimContext *context, int machine_id, int new_p
 
     XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to computing pstate %d",
              machine->id, machine->name.c_str(), new_pstate);
-    MSG_host_set_pstate(machine->host, new_pstate);
+    machine->host->set_pstate(new_pstate);
     //args->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), machine->id, pstate);
 
     machine->update_machine_state(MachineState::IDLE);
@@ -64,7 +64,7 @@ void switch_off_machine_process(BatsimContext * context, int machine_id, int new
 
     XBT_INFO("Switching machine %d ('%s') OFF. Passing in virtual pstate %d to do so", machine->id,
              machine->name.c_str(), off_ps);
-    MSG_host_set_pstate(machine->host, off_ps);
+    machine->host->set_pstate(off_ps);
     //args->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), machine->id, off_ps);
 
     XBT_INFO("Computing 1 flop to simulate time & energy cost of switch OFF");
@@ -72,7 +72,7 @@ void switch_off_machine_process(BatsimContext * context, int machine_id, int new
 
     XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to sleeping pstate %d",
              machine->id, machine->name.c_str(), new_pstate);
-    MSG_host_set_pstate(machine->host, new_pstate);
+    machine->host->set_pstate(new_pstate);
     //args->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), machine->id, pstate);
 
     machine->update_machine_state(MachineState::SLEEPING);

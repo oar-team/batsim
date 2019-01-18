@@ -339,7 +339,7 @@ void server_on_pstate_modification(ServerData * data,
             {
                 XBT_INFO("Switching machine %d ('%s') pstate : %d -> %d.", machine->id,
                          machine->name.c_str(), curr_pstate, message->new_pstate);
-                MSG_host_set_pstate(machine->host, message->new_pstate);
+                machine->host->set_pstate(message->new_pstate);
                 xbt_assert(machine->host->get_pstate() == message->new_pstate);
 
                 IntervalSet all_switched_machines;
