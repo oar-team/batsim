@@ -33,9 +33,9 @@ void server_process(BatsimContext * context)
                                                     context->config_json,
                                                     context->allow_compute_sharing,
                                                     context->allow_storage_sharing,
-                                                    MSG_get_clock());
+                                                    simgrid::s4u::Engine::get_clock());
 
-    string send_buffer = context->proto_writer->generate_current_message(MSG_get_clock());
+    string send_buffer = context->proto_writer->generate_current_message(simgrid::s4u::Engine::get_clock());
     context->proto_writer->clear();
 
     simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
@@ -105,7 +105,7 @@ void server_process(BatsimContext * context)
             mailbox_empty("server") // The server mailbox must be empty
             )
         {
-            string send_buffer = context->proto_writer->generate_current_message(MSG_get_clock());
+            string send_buffer = context->proto_writer->generate_current_message(simgrid::s4u::Engine::get_clock());
             context->proto_writer->clear();
 
             simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
@@ -188,7 +188,7 @@ void server_on_submitter_bye(ServerData * data,
 
     if(data->nb_submitters_finished == data->expected_nb_submitters)
     {
-        data->context->proto_writer->append_notify("no_more_static_job_to_submit", MSG_get_clock());
+        data->context->proto_writer->append_notify("no_more_static_job_to_submit", simgrid::s4u::Engine::get_clock());
     }
 
     check_simulation_finished(data);
@@ -225,7 +225,7 @@ void server_on_job_completed(ServerData * data,
                                                       job_state_to_string(job->state),
                                                       job->allocation.to_string_hyphen(" "),
                                                       job->return_code,
-                                                      MSG_get_clock());
+                                                      simgrid::s4u::Engine::get_clock());
 
     check_simulation_finished(data);
 }
@@ -284,7 +284,7 @@ void server_on_job_submitted(ServerData * data,
         data->context->proto_writer->append_job_submitted(job->id.to_string(),
                                                           job_json_description,
                                                           profile_json_description,
-                                                          MSG_get_clock());
+                                                          simgrid::s4u::Engine::get_clock());
     }
 }
 
@@ -300,7 +300,7 @@ void server_on_pstate_modification(ServerData * data,
     PStateModificationMessage * message = (PStateModificationMessage *) task_data->data;
 
     data->context->current_switches.add_switch(message->machine_ids, message->new_pstate);
-    data->context->energy_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids,
+    data->context->energy_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids,
                                                    message->new_pstate);
 
     // Let's quickly check whether this is a switchON or a switchOFF
@@ -318,7 +318,7 @@ void server_on_pstate_modification(ServerData * data,
 
 
     // The pstate is set to an invalid one to know the machines are in transition.
-    data->context->pstate_tracer.add_pstate_change(MSG_get_clock(), message->machine_ids,
+    data->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids,
                                                    transition_state);
 
     // Let's mark that some switches have been requested
@@ -331,7 +331,7 @@ void server_on_pstate_modification(ServerData * data,
     {
         const int machine_id = *machine_it;
         Machine * machine = data->context->machines[machine_id];
-        int curr_pstate = MSG_host_get_pstate(machine->host);
+        int curr_pstate = machine->host->get_pstate();
 
         if (machine->pstates[curr_pstate] == PStateType::COMPUTATION_PSTATE)
         {
@@ -339,8 +339,8 @@ void server_on_pstate_modification(ServerData * data,
             {
                 XBT_INFO("Switching machine %d ('%s') pstate : %d -> %d.", machine->id,
                          machine->name.c_str(), curr_pstate, message->new_pstate);
-                MSG_host_set_pstate(machine->host, message->new_pstate);
-                xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
+                machine->host->set_pstate(message->new_pstate);
+                xbt_assert(machine->host->get_pstate() == message->new_pstate);
 
                 IntervalSet all_switched_machines;
                 if (data->context->current_switches.mark_switch_as_done(machine->id, message->new_pstate,
@@ -349,7 +349,7 @@ void server_on_pstate_modification(ServerData * data,
                 {
                     data->context->proto_writer->append_resource_state_changed(all_switched_machines,
                                                                                std::to_string(message->new_pstate),
-                                                                               MSG_get_clock());
+                                                                               simgrid::s4u::Engine::get_clock());
                 }
             }
             else if (machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
@@ -390,7 +390,7 @@ void server_on_pstate_modification(ServerData * data,
 
     if (data->context->trace_machine_states)
     {
-        data->context->machine_state_tracer.write_machine_states(MSG_get_clock());
+        data->context->machine_state_tracer.write_machine_states(simgrid::s4u::Engine::get_clock());
     }
 }
 
@@ -398,7 +398,7 @@ void server_on_waiting_done(ServerData * data,
                             IPMessage * task_data)
 {
     (void) task_data;
-    data->context->proto_writer->append_requested_call(MSG_get_clock());
+    data->context->proto_writer->append_requested_call(simgrid::s4u::Engine::get_clock());
     --data->nb_waiters;
 }
 
@@ -435,7 +435,7 @@ void server_on_sched_tell_me_energy(ServerData * data,
                "machines but energy simulation is not enabled. "
                "Try --help to enable it.");
     long double total_consumed_energy = data->context->machines.total_consumed_energy(data->context);
-    data->context->proto_writer->append_answer_energy(total_consumed_energy, MSG_get_clock());
+    data->context->proto_writer->append_answer_energy(total_consumed_energy, simgrid::s4u::Engine::get_clock());
 }
 
 void server_on_wait_query(ServerData * data,
@@ -461,7 +461,7 @@ void server_on_switched(ServerData * data,
     xbt_assert(data->context->machines.exists(message->machine_id));
     Machine * machine = data->context->machines[message->machine_id];
     (void) machine; // Avoids a warning if assertions are ignored
-    xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
+    xbt_assert(machine->host->get_pstate() == message->new_pstate);
 
     IntervalSet all_switched_machines;
     if (data->context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate,
@@ -469,12 +469,12 @@ void server_on_switched(ServerData * data,
     {
         if (data->context->trace_machine_states)
         {
-            data->context->machine_state_tracer.write_machine_states(MSG_get_clock());
+            data->context->machine_state_tracer.write_machine_states(simgrid::s4u::Engine::get_clock());
         }
 
         data->context->proto_writer->append_resource_state_changed(all_switched_machines,
                                                                    std::to_string(message->new_pstate),
-                                                                   MSG_get_clock());
+                                                                   simgrid::s4u::Engine::get_clock());
     }
 
     --data->nb_switching_machines;
@@ -516,7 +516,7 @@ void server_on_killing_done(ServerData * data,
                 job_state_to_string(job->state),
                 job->allocation.to_string_hyphen(" "),
                 job->return_code,
-                MSG_get_clock());
+                simgrid::s4u::Engine::get_clock());
         }
     }
 
@@ -524,7 +524,7 @@ void server_on_killing_done(ServerData * data,
              boost::algorithm::join(job_ids_str, ",").c_str(),
              boost::algorithm::join(really_killed_job_ids_str, ",").c_str());
 
-    data->context->proto_writer->append_job_killed(job_ids_str, jobs_progress_str, MSG_get_clock());
+    data->context->proto_writer->append_job_killed(job_ids_str, jobs_progress_str, simgrid::s4u::Engine::get_clock());
     --data->nb_killers;
 
     check_simulation_finished(data);
@@ -607,7 +607,7 @@ void server_on_register_job(ServerData * data,
         data->context->proto_writer->append_job_submitted(job->id.to_string(),
                                                           job_json_description,
                                                           profile_json_description,
-                                                          MSG_get_clock());
+                                                          simgrid::s4u::Engine::get_clock());
     }
 }
 
@@ -694,7 +694,7 @@ void server_on_change_job_state(ServerData * data,
         switch (new_state)
         {
         case JobState::JOB_STATE_RUNNING:
-            job->starting_time = MSG_get_clock();
+            job->starting_time = simgrid::s4u::Engine::get_clock();
             data->nb_running_jobs++;
             xbt_assert(data->nb_running_jobs <= data->nb_submitted_jobs);
             break;
@@ -715,7 +715,7 @@ void server_on_change_job_state(ServerData * data,
         case JobState::JOB_STATE_COMPLETED_FAILED:
         case JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED:
         case JobState::JOB_STATE_COMPLETED_KILLED:
-            job->runtime = MSG_get_clock() - job->starting_time;
+            job->runtime = simgrid::s4u::Engine::get_clock() - job->starting_time;
             data->nb_running_jobs--;
             xbt_assert(data->nb_running_jobs >= 0);
             data->nb_completed_jobs++;
@@ -774,7 +774,7 @@ void server_on_from_job_msg(ServerData * data,
 
     data->context->proto_writer->append_from_job_message(message->job_id.to_string(),
                                                          message->message,
-                                                         MSG_get_clock());
+                                                         simgrid::s4u::Engine::get_clock());
 
     check_simulation_finished(data);
 }
@@ -848,9 +848,9 @@ void server_on_call_me_later(ServerData * data,
     xbt_assert(task_data->data != nullptr);
     CallMeLaterMessage * message = (CallMeLaterMessage *) task_data->data;
 
-    xbt_assert(message->target_time > MSG_get_clock(),
+    xbt_assert(message->target_time > simgrid::s4u::Engine::get_clock(),
                "You asked to be awaken in the past! (you ask: %f, it is: %f)",
-               message->target_time, MSG_get_clock());
+               message->target_time, simgrid::s4u::Engine::get_clock());
 
     string pname = "waiter " + to_string(message->target_time);
     simgrid::s4u::Actor::create(pname.c_str(),
@@ -918,7 +918,7 @@ void server_on_execute_job(ServerData * data,
         {
             int machine_id = *machine_id_it;
             Machine * machine = data->context->machines[machine_id];
-            int ps = MSG_host_get_pstate(machine->host);
+            int ps = machine->host->get_pstate();
             (void) ps; // Avoids a warning if assertions are ignored
             xbt_assert(machine->has_pstate(ps));
             xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
@@ -1001,7 +1001,7 @@ void check_simulation_finished(ServerData * data)
     {
         XBT_INFO("The simulation seems to be finished!");
 
-        data->context->proto_writer->append_simulation_ends(MSG_get_clock());
+        data->context->proto_writer->append_simulation_ends(simgrid::s4u::Engine::get_clock());
         data->end_of_simulation_in_send_buffer = true;
     }
 }

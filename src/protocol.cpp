@@ -1061,7 +1061,7 @@ void JsonProtocolReader::handle_call_me_later(int event_number,
     xbt_assert(timestamp_value.IsNumber(), "Invalid JSON message: the 'timestamp' value in the 'data' value of event %d (CALL_ME_LATER) should be a number.", event_number);
     message->target_time = timestamp_value.GetDouble();
 
-    if (message->target_time < MSG_get_clock())
+    if (message->target_time < simgrid::s4u::Engine::get_clock())
     {
         XBT_WARN("Event %d (CALL_ME_LATER) asks to be called at time %g but it is already reached", event_number, message->target_time);
     }
@@ -1431,10 +1431,10 @@ void JsonProtocolReader::send_message_at_time(double when,
                                       bool detached) const
 {
     // Let's wait until "when" time is reached
-    double current_time = MSG_get_clock();
+    double current_time = simgrid::s4u::Engine::get_clock();
     if (when > current_time)
     {
-        MSG_process_sleep(when - current_time);
+        simgrid::s4u::this_actor::sleep_for(when - current_time);
     }
 
     // Let's actually send the message

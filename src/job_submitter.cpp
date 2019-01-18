@@ -82,7 +82,7 @@ void static_job_submitter_process(BatsimContext * context,
 
     send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
 
-    long double current_submission_date = MSG_get_clock();
+    long double current_submission_date = simgrid::s4u::Engine::get_clock();
 
     vector<const Job *> jobsVector;
 
@@ -109,8 +109,8 @@ void static_job_submitter_process(BatsimContext * context,
                 jobs_to_send.clear();
 
                 // Now let's sleep until it's time to submit the current job
-                MSG_process_sleep((double)(job->submission_time) - (double)(current_submission_date));
-                current_submission_date = MSG_get_clock();
+                simgrid::s4u::this_actor::sleep_for((double)(job->submission_time) - (double)(current_submission_date));
+                current_submission_date = simgrid::s4u::Engine::get_clock();
             }
             // Setting the mailbox
             //job->completion_notification_mailbox = "SOME_MAILBOX";
@@ -189,11 +189,11 @@ void workflow_submitter_process(BatsimContext * context,
     std::vector<Task *> ready_tasks = workflow->get_source_tasks();
 
     /* Wait until the workflow start-time */
-    if (workflow->start_time > MSG_get_clock())
+    if (workflow->start_time > simgrid::s4u::Engine::get_clock())
     {
         XBT_INFO("Warning: already past workflow start time! (%lf)", workflow->start_time);
     }
-    MSG_process_sleep(MAX(0.0, workflow->start_time - MSG_get_clock()));
+    simgrid::s4u::this_actor::sleep_for(MAX(0.0, workflow->start_time - simgrid::s4u::Engine::get_clock()));
 
 
     /* Submit all the ready tasks */
@@ -249,7 +249,7 @@ void workflow_submitter_process(BatsimContext * context,
         }
     }
 
-    double makespan = MSG_get_clock() - workflow->start_time;
+    double makespan = simgrid::s4u::Engine::get_clock() - workflow->start_time;
     XBT_INFO("WORKFLOW_MAKESPAN %s %lf  (depth = %d)\n", workflow->filename.c_str(), makespan, workflow->get_maximum_depth());
     // This is a TERRIBLE exit, but the goal is to stop the simulation (don't keep simulated the workload beyond
     // the worflow completion). This is much more brutal than the -k option. To be removed/commented-out later, but right
@@ -296,7 +296,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     double walltime = task->execution_time + 10.0;
     string job_json_description = std::string() + "{" +
             "\"id\": \"" + workload_name + "!" + job_number +  "\", " +
-            "\"subtime\":" + std::to_string(MSG_get_clock()) + ", " +
+            "\"subtime\":" + std::to_string(simgrid::s4u::Engine::get_clock()) + ", " +
             "\"walltime\":" + std::to_string(walltime) + ", " +
             "\"res\":" + std::to_string(task->num_procs) + ", " +
             "\"profile\": \"" + profile_name + "\"" +

@@ -636,10 +636,10 @@ int execute_msg_task(BatTask * btask,
     }
     else
     {
-        double time_before_execute = MSG_get_clock();
+        double time_before_execute = simgrid::s4u::Engine::get_clock();
         XBT_DEBUG("Executing task '%s' with walltime of %g", MSG_task_get_name(ptask), *remaining_time);
         err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
-        *remaining_time = *remaining_time - (MSG_get_clock() - time_before_execute);
+        *remaining_time = *remaining_time - (simgrid::s4u::Engine::get_clock() - time_before_execute);
     }
 
     int ret;
