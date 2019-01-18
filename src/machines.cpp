@@ -746,7 +746,7 @@ void create_machines(const MainArguments & main_args,
                      int max_nb_machines_to_use)
 {
     XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
-    MSG_create_environment(main_args.platform_filename.c_str());
+    simgrid::s4u::Engine::get_instance()->load_platform(main_args.platform_filename);
 
     XBT_INFO("Looking for master host '%s'", main_args.master_host_name.c_str());
 
