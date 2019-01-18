@@ -70,7 +70,7 @@ Event * Event::from_json(const rapidjson::Value & json_desc,
     event->timestamp = json_desc["timestamp"].GetDouble();
     xbt_assert(event->timestamp >= 0, "%s: one event has a non-positive timestamp.", error_prefix.c_str());
 
-    try { event->resources = IntervalSet::from_string_hyphen(json_desc["resources"].GetString(), " ", "-"); }
+    try { event->machine_ids = IntervalSet::from_string_hyphen(json_desc["resources"].GetString(), " ", "-"); }
     catch(const std::exception & e) { throw std::runtime_error(std::string("Invalid JSON message: ") + e.what());}
 
     return event;
@@ -115,7 +115,7 @@ Events * Events::new_events_from_json(const std::string & name,
         {
             Document doc;
             doc.Parse(line.c_str());
-            xbt_assert(!doc.HasParseError() and doc.IsObject(), "Invalid JSON event file, an event could not be parsed.", filename.c_str());
+            xbt_assert(!doc.HasParseError() and doc.IsObject(), "Invalid JSON event file %s, an event could not be parsed.", filename.c_str());
 
             Event * event = Event::from_json(doc);
             ev->add_event(event);

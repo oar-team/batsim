@@ -24,7 +24,7 @@ struct CleanExecuteTaskData
  * @param[in] context The BatsimContext
  * @param[in] jobs_ids The ids of the jobs to kill
  */
-void killer_process(BatsimContext *context, std::vector<JobIdentifier> jobs_ids);
+void killer_process(BatsimContext *context, std::vector<JobIdentifier> jobs_ids, bool make_it_fail = false);
 
 /**
  * @brief The process in charge of executing a rank of a SMPI profile

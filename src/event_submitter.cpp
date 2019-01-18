@@ -33,7 +33,7 @@ void static_event_submitter_process(BatsimContext * context,
                                     std::string events_name)
 {
     xbt_assert(context->eventsMap.count(events_name) == 1,
-               "Error: a static_event_submitter_process is in charge of the event list '%' "
+               "Error: a static_event_submitter_process is in charge of the event list '%s' "
                "which does not exist.", events_name.c_str());
 
     Events * events = context->eventsMap[events_name];

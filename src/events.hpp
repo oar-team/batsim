@@ -34,7 +34,7 @@ struct Event
 
     EventType type;
     long double timestamp;
-    IntervalSet resources;
+    IntervalSet machine_ids;
 
 public:
     /**

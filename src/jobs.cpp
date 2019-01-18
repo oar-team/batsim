@@ -336,6 +336,7 @@ bool Job::is_complete() const
     return (state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY) ||
            (state == JobState::JOB_STATE_COMPLETED_KILLED) ||
            (state == JobState::JOB_STATE_COMPLETED_FAILED) ||
+           (state == JobState::JOB_STATE_COMPLETED_RESOURCE_FAILED) ||
            (state == JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED);
 }
 
@@ -534,6 +535,9 @@ std::string job_state_to_string(const JobState & state)
     case JobState::JOB_STATE_COMPLETED_KILLED:
         job_state = "COMPLETED_KILLED";
         break;
+    case JobState::JOB_STATE_COMPLETED_RESOURCE_FAILED:
+        job_state = "COMPLETED_RESOURCE_FAILED";
+        break;
     case JobState::JOB_STATE_REJECTED:
         job_state = "REJECTED";
         break;
@@ -568,6 +572,10 @@ JobState job_state_from_string(const std::string & state)
     else if (state == "COMPLETED_KILLED")
     {
         new_state = JobState::JOB_STATE_COMPLETED_KILLED;
+    }
+    else if (state == "COMPLETED_RESOURCE_FAILED")
+    {
+        new_state = JobState::JOB_STATE_COMPLETED_RESOURCE_FAILED;
     }
     else if (state == "COMPLETED_WALLTIME_REACHED")
     {

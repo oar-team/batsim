@@ -285,9 +285,20 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
       "data": {
         "job_id": "w0!1",
         "job_state": "COMPLETED_KILLED",
-        "job_alloc": "0-1 5"
+        "alloc": "0-1 5"
+        "return_code": -1
       }
-    } */
+    }
+    or {
+      "timestamp": 15.0,
+      "type": "JOB_COMPLETED",
+      "data": {
+        "job_id": "w0!2",
+        "job_state": "COMPLETED_SUCCESSFULLY",
+        "alloc": "0-3"
+        "return_code": 0
+      }
+    }*/
 
     xbt_assert(date >= _last_date, "Date inconsistency");
     _last_date = date;
@@ -565,6 +576,38 @@ void JsonProtocolWriter::append_notify(const std::string & notify_type,
 
     _events.PushBack(event, _alloc);
 }
+
+void JsonProtocolWriter::append_notify_resource_event(const std::string & notify_type,
+                                          const IntervalSet & resources,
+                                          double date)
+{
+    /* {
+        "timestamp": 140.0,
+        "type": "NOTIFY",
+        "data": { "type": "event_resource_failure", "resources": "0 5-8" }
+    }
+    or {
+        "timestamp": 200.0,
+        "type": "NOTIFY",
+        "data": { "type": "event_resource_restore", "resources": "0 5 7" }
+    } */
+
+    xbt_assert(date >= _last_date, "Date inconsistency");
+    _last_date = date;
+    _is_empty = false;
+
+    Value data(rapidjson::kObjectType);
+    data.AddMember("type", Value().SetString(notify_type.c_str(), _alloc),_alloc);
+    data.AddMember("resources", Value().SetString(resources.to_string_hyphen(" ", "-").c_str(), _alloc),_alloc);
+
+    Value event(rapidjson::kObjectType);
+    event.AddMember("timestamp", Value().SetDouble(date), _alloc);
+    event.AddMember("type", Value().SetString("NOTIFY"), _alloc);
+    event.AddMember("data", data, _alloc);
+
+    _events.PushBack(event, _alloc);
+}
+
 
 void JsonProtocolWriter::clear()
 {

@@ -6,6 +6,7 @@
 #include "server.hpp"
 
 #include <string>
+#include <set>
 
 #include <boost/algorithm/string.hpp>
 
@@ -210,7 +211,7 @@ void server_on_submitter_bye(ServerData * data,
 
         if(data->nb_job_submitters_finished == data->expected_nb_job_submitters)
         {
-            data->context->proto_writer->append_notify("no_more_static_job_to_submit", MSG_get_clock());
+            data->context->proto_writer->append_notify("no_more_static_job_to_submit", simgrid::s4u::Engine::get_clock());
         }
     }
 
@@ -315,15 +316,62 @@ void server_on_job_submitted(ServerData * data,
 void server_on_event_machine_failure(ServerData * data,
                                      const Event * event)
 {
-    IntervalSet machines = event->resources;
-    XBT_INFO("Machine failure event received for machines: %s timestamp %f", machines.to_string_hyphen(" ").c_str(), event->timestamp);
+    IntervalSet machines = event->machine_ids;
+    if(machines.size() > 0)
+    {
+        for (auto machine_it = machines.elements_begin();
+             machine_it != machines.elements_end();
+             ++machine_it)
+        {
+            const int machine_id = *machine_it;
+            Machine * machine = data->context->machines[machine_id];
+
+            // Let's fail the jobs being computed on that machine
+            std::vector<JobIdentifier> job_ids_to_kill;
+            for (const Job * job : machine->jobs_being_computed)
+            {
+                job_ids_to_kill.push_back(job->id);
+            }
+            // The last argument of the killer_process being 'true' the job killed will be marked as JOB_STATE_COMPLETED_RESOURCE_FAILED
+            if (job_ids_to_kill.size() > 0)
+            {
+                simgrid::s4u::Actor::create("failer_process", simgrid::s4u::this_actor::get_host(),
+                                            killer_process, data->context, job_ids_to_kill, true);
+                ++data->nb_killers;
+            }
+
+            // Then turn off this machine
+            machine->host->turn_off();
+        }
+        // Notify the decision process that some machines have failed
+        data->context->proto_writer->append_notify_resource_event("event_machine_failure",
+                                                                  event->machine_ids,
+                                                                  simgrid::s4u::Engine::get_clock());
+    }
 }
 
 void server_on_event_machine_restore(ServerData * data,
                                      const Event * event)
 {
-    IntervalSet machines = event->resources;
-    XBT_INFO("Machine restore event received for machines: %s timestamp %f", machines.to_string_hyphen(" ").c_str(), event->timestamp);
+    IntervalSet machines = event->machine_ids;
+    if(machines.size() > 0)
+    {
+        for (auto machine_it = machines.elements_begin();
+             machine_it != machines.elements_end();
+             ++machine_it)
+        {
+            // Let's turn on the machines if need be
+            Machine * machine = data->context->machines[*machine_it];
+            if (machine->host->is_off())
+            {
+                machine->host->turn_on();
+            }
+        }
+        // Notify the decision process that some machines are restored
+        data->context->proto_writer->append_notify_resource_event("event_machine_restore",
+                                                                  event->machine_ids,
+                                                                  simgrid::s4u::Engine::get_clock());
+    }
 }
 
 void server_on_event_occurred(ServerData * data,
@@ -546,10 +594,10 @@ void server_on_killing_done(ServerData * data,
     xbt_assert(task_data->data != nullptr);
     KillingDoneMessage * message = (KillingDoneMessage *) task_data->data;
 
-    vector<string> job_ids_str;
-    vector<string> really_killed_job_ids_str;
-    job_ids_str.reserve(message->jobs_ids.size());
     map<string, BatTask *> jobs_progress_str;
+    vector<string> really_killed_job_ids_str;
+    vector<string> job_ids_str;
+    job_ids_str.reserve(message->jobs_ids.size());
 
     // manage job Id list
     for (const JobIdentifier & job_id : message->jobs_ids)
@@ -560,7 +608,8 @@ void server_on_killing_done(ServerData * data,
         jobs_progress_str[job_id.to_string()] = message->jobs_progress[job_id];
 
         const Job * job = data->context->workloads.job_at(job_id);
-        if (job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+        if ( (job->state == JobState::JOB_STATE_COMPLETED_KILLED) ||
+             (job->state == JobState::JOB_STATE_COMPLETED_RESOURCE_FAILED))
         {
             data->nb_running_jobs--;
             xbt_assert(data->nb_running_jobs >= 0);
@@ -580,13 +629,17 @@ void server_on_killing_done(ServerData * data,
         }
     }
 
-    XBT_INFO("Jobs {%s} have been killed (the following ones have REALLY been killed: {%s})",
-             boost::algorithm::join(job_ids_str, ",").c_str(),
-             boost::algorithm::join(really_killed_job_ids_str, ",").c_str());
+    if (!message->make_it_fail)
+    {
+        // The kills have been asked by the decision process
+        XBT_INFO("Jobs {%s} have been killed (the following ones have REALLY been killed: {%s})",
+                 boost::algorithm::join(job_ids_str, ",").c_str(),
+                 boost::algorithm::join(really_killed_job_ids_str, ",").c_str());
 
-    data->context->proto_writer->append_job_killed(job_ids_str, jobs_progress_str, simgrid::s4u::Engine::get_clock());
+        data->context->proto_writer->append_job_killed(job_ids_str, jobs_progress_str, simgrid::s4u::Engine::get_clock());
+    }
+
     --data->nb_killers;
-
     check_simulation_finished(data);
 }
 
@@ -773,6 +826,7 @@ void server_on_change_job_state(ServerData * data,
         {
         case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
         case JobState::JOB_STATE_COMPLETED_FAILED:
+        case JobState::JOB_STATE_COMPLETED_RESOURCE_FAILED:
         case JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED:
         case JobState::JOB_STATE_COMPLETED_KILLED:
             job->runtime = simgrid::s4u::Engine::get_clock() - job->starting_time;
@@ -897,9 +951,12 @@ void server_on_kill_jobs(ServerData * data,
         }
     }
 
-    simgrid::s4u::Actor::create("killer_process", simgrid::s4u::this_actor::get_host(),
-                                killer_process, data->context, jobs_ids_to_kill);
-    ++data->nb_killers;
+    if (jobs_ids_to_kill.size() > 0)
+    {
+        simgrid::s4u::Actor::create("killer_process", simgrid::s4u::this_actor::get_host(),
+                                killer_process, data->context, jobs_ids_to_kill, false);
+        ++data->nb_killers;
+    }
 }
 
 void server_on_call_me_later(ServerData * data,
