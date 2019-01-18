@@ -5,8 +5,6 @@
 
 #include "ipp.hpp"
 
-#include <simgrid/msg.h>
-
 using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(ipp, "ipp"); //!< Logging
@@ -149,6 +147,10 @@ std::string ip_message_type_to_string(IPMessageType type)
             break;
         case IPMessageType::FROM_JOB_MSG:
             s = "FROM_JOB_MSG";
+            break;
+        case IPMessageType::EVENT_OCCURRED:
+            s = "EVENT_OCCURRED";
+            break;
     }
 
     return s;
@@ -291,6 +293,11 @@ IPMessage::~IPMessage()
         case IPMessageType::FROM_JOB_MSG:
         {
             FromJobMessage * msg = (FromJobMessage *) data;
+            delete msg;
+        } break;
+        case IPMessageType::EVENT_OCCURRED:
+        {
+            EventOccurredMessage * msg = (EventOccurredMessage *) data;
             delete msg;
         } break;
     }

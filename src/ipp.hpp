@@ -16,6 +16,7 @@
 #include <intervalset.hpp>
 
 #include "jobs.hpp"
+#include "events.hpp"
 
 struct BatsimContext;
 struct ServerData;
@@ -50,8 +51,9 @@ enum class IPMessageType
     ,SWITCHED_OFF           //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
     ,END_DYNAMIC_REGISTER     //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
     ,CONTINUE_DYNAMIC_REGISTER //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions continue.
-    ,TO_JOB_MSG //!< Scheduler -> Server. The scheduler sends a message to a job.
-    ,FROM_JOB_MSG //!< Job -> Server. The job wants to send a message to the scheduler via the server.
+    ,TO_JOB_MSG                //!< Scheduler -> Server. The scheduler sends a message to a job.
+    ,FROM_JOB_MSG              //!< Job -> Server. The job wants to send a message to the scheduler via the server.
+    ,EVENT_OCCURRED            //!< Sumbitter -> Server. The event submitter tells the server that one or several events have occurred.
 };
 
 /**
@@ -59,8 +61,9 @@ enum class IPMessageType
  */
 struct SubmitterHelloMessage
 {
-    std::string submitter_name; //!< The name of the submitter. Must be unique. Is also used as a mailbox.
+    std::string submitter_name;             //!< The name of the submitter. Must be unique. Is also used as a mailbox.
     bool enable_callback_on_job_completion; //!< If set to true, the submitter should be called back when its jobs complete.
+    bool is_event_submitter;                //!< Stores whether the submitter in an Event submitter
 };
 
 /**
@@ -68,6 +71,7 @@ struct SubmitterHelloMessage
  */
 struct SubmitterByeMessage
 {
+    bool is_event_submitter;    //!< Stores whether the finished submitter was an Event submitter
     bool is_workflow_submitter; //!< Stores whether the finished submitter was a Workflow submitter
     std::string submitter_name; //!< The name of the submitter.
 };
@@ -245,6 +249,13 @@ struct FromJobMessage
 {
     JobIdentifier job_id; //!< The JobIdentifier
     rapidjson::Document message; //!< The message to send to the scheduler
+};
+
+
+struct EventOccurredMessage
+{
+    std::string submitter_name;          //!< The name of the submitter which submitted the events.
+    std::vector<const Event *> occurred_events; //!< The list of Event that occurred
 };
 
 /**

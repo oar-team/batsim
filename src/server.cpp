@@ -70,12 +70,15 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SWITCHED_OFF] = server_on_switched;
     handler_map[IPMessageType::END_DYNAMIC_REGISTER] = server_on_end_dynamic_register;
     handler_map[IPMessageType::CONTINUE_DYNAMIC_REGISTER] = server_on_continue_dynamic_register;
+    handler_map[IPMessageType::EVENT_OCCURRED] = server_on_event_occurred;
 
-    /* Currently, there is one submtiter per input file (workload or workflow).
+    /* Currently, there is one job submtiter per input file (workload or workflow).
        As workflows use an inner workload, calling nb_static_workloads() should
-       be enough. The dynamic submitter (from the decision process) is not part
+       be enough. The dynamic job submitter (from the decision process) is not part
        of this count as it can finish then restart... */
-    data->expected_nb_submitters = context->workloads.nb_static_workloads();
+    data->expected_nb_job_submitters = context->workloads.nb_static_workloads();
+
+    data->expected_nb_event_submitters = context->eventsMap.size();
 
     // Is the simulation already finished? It can occur now if there is no job to execute.
     check_simulation_finished(data);
@@ -156,16 +159,25 @@ void server_on_submitter_hello(ServerData * data,
                "Invalid new submitter '%s': a submitter with the same name already exists!",
                message->submitter_name.c_str());
 
-    data->nb_submitters++;
-
     ServerData::Submitter * submitter = new ServerData::Submitter;
     submitter->mailbox = message->submitter_name;
     submitter->should_be_called_back = message->enable_callback_on_job_completion;
 
     data->submitters[message->submitter_name] = submitter;
 
-    XBT_DEBUG("New submitter said hello. Number of polite submitters: %d",
-             data->nb_submitters);
+    if (message->is_event_submitter)
+    {
+        ++data->nb_event_submitters;
+        XBT_DEBUG("New event submitter said hello. Number of polite event submitters: %d",
+                 data->nb_event_submitters);
+    }
+    else
+    {
+        ++data->nb_job_submitters;
+        XBT_DEBUG("New job submitter said hello. Number of polite job submitters: %d",
+                 data->nb_job_submitters);
+    }
+
 }
 
 void server_on_submitter_bye(ServerData * data,
@@ -178,17 +190,28 @@ void server_on_submitter_bye(ServerData * data,
     delete data->submitters[message->submitter_name];
     data->submitters.erase(message->submitter_name);
 
-    data->nb_submitters_finished++;
-    if (message->is_workflow_submitter)
+    if (message->is_event_submitter)
     {
-        data->nb_workflow_submitters_finished++;
-    }
-    XBT_DEBUG("A submitter said goodbye. Number of finished submitters: %d",
-             data->nb_submitters_finished);
+        data->nb_event_submitters_finished++;
 
-    if(data->nb_submitters_finished == data->expected_nb_submitters)
+        XBT_DEBUG("An event submitter said goodbye. Number of finished event submitters: %d",
+                  data->nb_event_submitters_finished);
+    }
+    else
     {
-        data->context->proto_writer->append_notify("no_more_static_job_to_submit", simgrid::s4u::Engine::get_clock());
+        data->nb_job_submitters_finished++;
+        if (message->is_workflow_submitter)
+        {
+            data->nb_workflow_submitters_finished++;
+        }
+
+        XBT_DEBUG("A job submitter said goodbye. Number of finished job submitters: %d",
+                 data->nb_job_submitters_finished);
+
+        if(data->nb_job_submitters_finished == data->expected_nb_job_submitters)
+        {
+            data->context->proto_writer->append_notify("no_more_static_job_to_submit", MSG_get_clock());
+        }
     }
 
     check_simulation_finished(data);
@@ -286,6 +309,43 @@ void server_on_job_submitted(ServerData * data,
                                                           profile_json_description,
                                                           simgrid::s4u::Engine::get_clock());
     }
+}
+
+
+void server_on_event_machine_failure(ServerData * data,
+                                     const Event * event)
+{
+    IntervalSet machines = event->resources;
+    XBT_INFO("Machine failure event received for machines: %s timestamp %f", machines.to_string_hyphen(" ").c_str(), event->timestamp);
+}
+
+void server_on_event_machine_restore(ServerData * data,
+                                     const Event * event)
+{
+    IntervalSet machines = event->resources;
+    XBT_INFO("Machine restore event received for machines: %s timestamp %f", machines.to_string_hyphen(" ").c_str(), event->timestamp);
+}
+
+void server_on_event_occurred(ServerData * data,
+                              IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr);
+    EventOccurredMessage * message = (EventOccurredMessage *) task_data->data;
+
+    for (const Event * event : message->occurred_events)
+    {
+        switch(event->type)
+        {
+        case EventType::EVENT_MACHINE_FAILURE:
+            server_on_event_machine_failure(data, event);
+            break;
+        case EventType::EVENT_MACHINE_RESTORE:
+            server_on_event_machine_restore(data, event);
+            break;
+        }
+    }
+
+    check_simulation_finished(data);
 }
 
 void server_on_pstate_modification(ServerData * data,
@@ -985,7 +1045,8 @@ void server_on_execute_job(ServerData * data,
 
 bool is_simulation_finished(const ServerData * data)
 {
-    return (data->nb_submitters_finished == data->expected_nb_submitters) && // All static submitters have finished
+    return (data->nb_job_submitters_finished == data->expected_nb_job_submitters) && // All static job submitters have finished
+           (data->nb_event_submitters_finished == data->expected_nb_event_submitters) && // All static event submitters have finished
            (!data->context->registration_sched_enabled || data->context->registration_sched_finished) && // Dynamic submissions are disabled or finished
            (data->nb_completed_jobs == data->nb_submitted_jobs) && // All submitted jobs have been completed (either computed and finished or rejected)
            (data->nb_running_jobs == 0) && // No jobs are being executed

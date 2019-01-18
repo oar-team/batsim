@@ -30,10 +30,13 @@ struct ServerData
 
     int nb_completed_jobs = 0;  //!< The number of completed jobs
     int nb_submitted_jobs = 0;  //!< The number of submitted jobs
-    int expected_nb_submitters = -1; //!< The expected number of total submitters
-    int nb_submitters = 0;  //!< The number of submitters
-    int nb_submitters_finished = 0; //!< The number of finished submitters
+    int expected_nb_job_submitters = -1;        //!< The expected number of job submitters
+    int nb_job_submitters = 0;                  //!< The number of job submitters
+    int nb_job_submitters_finished = 0;         //!< The number of finished job submitters
     int nb_workflow_submitters_finished = 0;    //!< The number of finished workflow submitters
+    int expected_nb_event_submitters = -1;      //!< The expected number of event submitters
+    int nb_event_submitters = 0;                //!< The number of event submitters
+    int nb_event_submitters_finished = 0;       //!< The number of finished event submitters
     int nb_running_jobs = 0;    //!< The number of jobs being executed
     int nb_switching_machines = 0;  //!< The number of machines being switched
     int nb_waiters = 0; //!< The number of pending CALL_ME_LATER waiters
@@ -46,7 +49,6 @@ struct ServerData
 
     std::map<std::string, Submitter*> submitters;   //!< The submitters
     std::map<JobIdentifier, Submitter*> origin_of_jobs; //!< Stores whether a Submitter must be notified on job completion
-    //map<std::pair<int,double>, Submitter*> origin_of_wait_queries;
 };
 
 /**
@@ -100,6 +102,30 @@ void server_on_job_completed(ServerData * data,
  */
 void server_on_job_submitted(ServerData * data,
                              IPMessage * task_data);
+
+/**
+ * @brief Server EVENT_OCCURRED handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_event_occurred(ServerData * data,
+                              IPMessage * task_data);
+
+/**
+ * @brief Server handler for EVENT of type EVENT_MACHINE_FAILURE
+ * @param[in,out] data The data associated with the server_process
+ * @param[in] event The event that occurred
+ */
+void server_on_event_machine_failure(ServerData * data,
+                                     Event * event);
+
+/**
+ * @brief Server handler for EVENT of type EVENT_MACHINE_RESTORE
+ * @param[in,out] data The data associated with the server_process
+ * @param[in] event The event that occurred
+ */
+void server_on_event_machine_restore(ServerData * data,
+                                     Event * event);
 
 /**
  * @brief Server PSTATE_MODIFICATION handler

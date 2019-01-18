@@ -143,6 +143,7 @@ void static_job_submitter_process(BatsimContext * context,
 
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
     bye_msg->is_workflow_submitter = false;
+    bye_msg->is_event_submitter = false;
     bye_msg->submitter_name = submitter_name;
     send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
 }
@@ -259,6 +260,7 @@ void workflow_submitter_process(BatsimContext * context,
     /* Goodbye */
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
     bye_msg->is_workflow_submitter = true;
+    bye_msg->is_event_submitter = false;
     bye_msg->submitter_name = submitter_name;
     send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
 }
