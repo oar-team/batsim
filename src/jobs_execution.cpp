@@ -251,7 +251,7 @@ int do_delay_task(double sleeptime, double * remaining_time)
     if (*remaining_time < 0 || sleeptime < *remaining_time)
     {
         XBT_INFO("Sleeping the whole task length");
-        MSG_process_sleep(sleeptime);
+        simgrid::s4u::this_actor::sleep_for(sleeptime);
         XBT_INFO("Sleeping done");
         if (*remaining_time > 0)
         {
@@ -262,7 +262,7 @@ int do_delay_task(double sleeptime, double * remaining_time)
     else
     {
         XBT_INFO("Sleeping until walltime");
-        MSG_process_sleep(*remaining_time);
+        simgrid::s4u::this_actor::sleep_for(*remaining_time);
         XBT_INFO("Job has reached walltime");
         *remaining_time = 0;
         return -1;
@@ -494,13 +494,13 @@ void waiter_process(double target_time, const ServerData * server_data)
     if (curr_time < target_time)
     {
         double time_to_wait = target_time - curr_time;
-        // Sometimes time_to_wait is so small that it does not affect MSG_process_sleep. The value of 1e-5 have been found on trial-error.
+        // Sometimes time_to_wait is so small that it does not affect simgrid::s4u::this_actor::sleep_for. The value of 1e-5 have been found on trial-error.
         if(time_to_wait < 1e-5)
         {
             time_to_wait = 1e-5;
         }
         XBT_INFO("Sleeping %g seconds to reach time %g", time_to_wait, target_time);
-        MSG_process_sleep(time_to_wait);
+        simgrid::s4u::this_actor::sleep_for(time_to_wait);
         XBT_INFO("Sleeping done");
     }
     else

@@ -109,7 +109,7 @@ void static_job_submitter_process(BatsimContext * context,
                 jobs_to_send.clear();
 
                 // Now let's sleep until it's time to submit the current job
-                MSG_process_sleep((double)(job->submission_time) - (double)(current_submission_date));
+                simgrid::s4u::this_actor::sleep_for((double)(job->submission_time) - (double)(current_submission_date));
                 current_submission_date = simgrid::s4u::Engine::get_clock();
             }
             // Setting the mailbox
@@ -193,7 +193,7 @@ void workflow_submitter_process(BatsimContext * context,
     {
         XBT_INFO("Warning: already past workflow start time! (%lf)", workflow->start_time);
     }
-    MSG_process_sleep(MAX(0.0, workflow->start_time - simgrid::s4u::Engine::get_clock()));
+    simgrid::s4u::this_actor::sleep_for(MAX(0.0, workflow->start_time - simgrid::s4u::Engine::get_clock()));
 
 
     /* Submit all the ready tasks */

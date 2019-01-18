@@ -1434,7 +1434,7 @@ void JsonProtocolReader::send_message_at_time(double when,
     double current_time = simgrid::s4u::Engine::get_clock();
     if (when > current_time)
     {
-        MSG_process_sleep(when - current_time);
+        simgrid::s4u::this_actor::sleep_for(when - current_time);
     }
 
     // Let's actually send the message
