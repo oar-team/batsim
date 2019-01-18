@@ -326,6 +326,10 @@ void server_on_event_machine_failure(ServerData * data,
             const int machine_id = *machine_it;
             Machine * machine = data->context->machines[machine_id];
 
+            xbt_assert(machine->state != MachineState::FAILED,
+                       "Failure of machine %d ('%s') requested but this machine was already in FAILED state.",
+                       machine->id, machine->name.c_str());
+
             // Let's fail the jobs being computed on that machine
             std::vector<JobIdentifier> job_ids_to_kill;
             for (const Job * job : machine->jobs_being_computed)
@@ -341,6 +345,8 @@ void server_on_event_machine_failure(ServerData * data,
             }
 
             // Then turn off this machine
+            XBT_DEBUG("Turning off machine %d %s due to failure event.", machine->id, machine->name.c_str());
+            machine->update_machine_state(MachineState::FAILED);
             machine->host->turn_off();
         }
         // Notify the decision process that some machines have failed
@@ -360,12 +366,17 @@ void server_on_event_machine_restore(ServerData * data,
              machine_it != machines.elements_end();
              ++machine_it)
         {
-            // Let's turn on the machines if need be
+            // Let's turn on the machine
             Machine * machine = data->context->machines[*machine_it];
-            if (machine->host->is_off())
-            {
-                machine->host->turn_on();
-            }
+
+            xbt_assert(machine->state == MachineState::FAILED,
+                       "Restore of machine %d ('%s') requested but this machine was not in FAILED state (current state: %s).",
+                       machine->id, machine->name.c_str(), machine_state_to_string(machine->state).c_str());
+
+            XBT_DEBUG("Turning on machine %d %s due to restore event.", machine->id, machine->name.c_str());
+            machine->update_machine_state(MachineState::IDLE);
+            machine->host->turn_on();
+
         }
         // Notify the decision process that some machines are restored
         data->context->proto_writer->append_notify_resource_event("event_machine_restore",

@@ -33,6 +33,7 @@ enum class MachineState
     ,COMPUTING                              //!< The machine is currently computing a job
     ,TRANSITING_FROM_SLEEPING_TO_COMPUTING  //!< The machine is in transition from a sleeping state to a computing state
     ,TRANSITING_FROM_COMPUTING_TO_SLEEPING  //!< The machine is in transition from a computing state to a sleeping state
+    ,FAILED                                 //!< The machine has failed
 };
 
 

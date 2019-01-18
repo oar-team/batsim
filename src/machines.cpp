@@ -29,7 +29,8 @@ Machines::Machines()
     const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
                                                  MachineState::COMPUTING,
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
-                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING,
+                                                 MachineState::FAILED};
     for (const MachineState & state : machine_states)
     {
         _nb_machines_in_each_state[state] = 0;
@@ -478,10 +479,13 @@ void Machines::update_machines_on_job_end(const Job * job,
 
         if (machine->jobs_being_computed.empty())
         {
-            machine->update_machine_state(MachineState::IDLE);
-            if (_tracer != nullptr)
+            if (machine->state != MachineState::FAILED)
             {
-                _tracer->set_machine_idle(machine->id, simgrid::s4u::Engine::get_clock());
+                machine->update_machine_state(MachineState::IDLE);
+                if (_tracer != nullptr)
+                {
+                    _tracer->set_machine_idle(machine->id, simgrid::s4u::Engine::get_clock());
+                }
             }
         }
         else if (*machine->jobs_being_computed.begin() != previous_top_job)
@@ -527,6 +531,9 @@ string machine_state_to_string(MachineState state)
     case MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING:
         s = "switching_off";
         break;
+    case MachineState::FAILED:
+        s = "failed";
+        break;
     }
 
     return s;
@@ -539,7 +546,8 @@ Machine::Machine(Machines *machines) :
     const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
                                                  MachineState::COMPUTING,
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
-                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING,
+                                                 MachineState::FAILED};
     for (const MachineState & state : machine_states)
     {
         time_spent_in_each_state[state] = 0;
