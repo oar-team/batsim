@@ -331,7 +331,7 @@ void server_on_pstate_modification(ServerData * data,
     {
         const int machine_id = *machine_it;
         Machine * machine = data->context->machines[machine_id];
-        int curr_pstate = MSG_host_get_pstate(machine->host);
+        int curr_pstate = machine->host->get_pstate();
 
         if (machine->pstates[curr_pstate] == PStateType::COMPUTATION_PSTATE)
         {
@@ -340,7 +340,7 @@ void server_on_pstate_modification(ServerData * data,
                 XBT_INFO("Switching machine %d ('%s') pstate : %d -> %d.", machine->id,
                          machine->name.c_str(), curr_pstate, message->new_pstate);
                 MSG_host_set_pstate(machine->host, message->new_pstate);
-                xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
+                xbt_assert(machine->host->get_pstate() == message->new_pstate);
 
                 IntervalSet all_switched_machines;
                 if (data->context->current_switches.mark_switch_as_done(machine->id, message->new_pstate,
@@ -461,7 +461,7 @@ void server_on_switched(ServerData * data,
     xbt_assert(data->context->machines.exists(message->machine_id));
     Machine * machine = data->context->machines[message->machine_id];
     (void) machine; // Avoids a warning if assertions are ignored
-    xbt_assert(MSG_host_get_pstate(machine->host) == message->new_pstate);
+    xbt_assert(machine->host->get_pstate() == message->new_pstate);
 
     IntervalSet all_switched_machines;
     if (data->context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate,
@@ -918,7 +918,7 @@ void server_on_execute_job(ServerData * data,
         {
             int machine_id = *machine_id_it;
             Machine * machine = data->context->machines[machine_id];
-            int ps = MSG_host_get_pstate(machine->host);
+            int ps = machine->host->get_pstate();
             (void) ps; // Avoids a warning if assertions are ignored
             xbt_assert(machine->has_pstate(ps));
             xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,

@@ -25,7 +25,7 @@ void switch_on_machine_process(BatsimContext *context, int machine_id, int new_p
     xbt_assert(machine->has_pstate(new_pstate));
     xbt_assert(machine->pstates[new_pstate] == PStateType::COMPUTATION_PSTATE);
 
-    int current_pstate = MSG_host_get_pstate(machine->host);
+    int current_pstate = machine->host->get_pstate();
     int on_ps = machine->sleep_pstates[current_pstate]->switch_on_virtual_pstate;
 
     XBT_INFO("Switching machine %d ('%s') ON. Passing in virtual pstate %d to do so", machine->id,

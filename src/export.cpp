@@ -52,7 +52,7 @@ void prepare_batsim_outputs(BatsimContext * context)
         for (const Machine * machine : context->machines.machines())
         {
             int machine_id = machine->id;
-            int pstate = MSG_host_get_pstate(machine->host);
+            int pstate = machine->host->get_pstate();
 
             if (pstate_to_machine_set.count(pstate) == 0)
             {
