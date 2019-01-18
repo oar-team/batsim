@@ -77,9 +77,13 @@ void server_process(BatsimContext * context)
        As workflows use an inner workload, calling nb_static_workloads() should
        be enough. The dynamic job submitter (from the decision process) is not part
        of this count as it can finish then restart... */
-    data->expected_nb_job_submitters = context->workloads.nb_static_workloads();
+    ServerData::SubmitterCounters job_counters;
+    job_counters.expected_nb_submitters = context->workloads.nb_static_workloads();
+    data->submitter_counters[SubmitterType::JOB_SUBMITTER] = job_counters;
 
-    data->expected_nb_event_submitters = context->eventListsMap.size();
+    ServerData::SubmitterCounters event_counters;
+    event_counters.expected_nb_submitters = context->eventListsMap.size();
+    data->submitter_counters[SubmitterType::EVENT_SUBMITTER] = event_counters;
 
     // Is the simulation already finished? It can occur now if there is no job to execute.
     check_simulation_finished(data);
@@ -166,18 +170,13 @@ void server_on_submitter_hello(ServerData * data,
 
     data->submitters[message->submitter_name] = submitter;
 
-    if (message->is_event_submitter)
-    {
-        ++data->nb_event_submitters;
-        XBT_DEBUG("New event submitter said hello. Number of polite event submitters: %d",
-                 data->nb_event_submitters);
-    }
-    else
-    {
-        ++data->nb_job_submitters;
-        XBT_DEBUG("New job submitter said hello. Number of polite job submitters: %d",
-                 data->nb_job_submitters);
-    }
+    SubmitterType submitter_type = message->submitter_type;
+    ++data->submitter_counters[submitter_type].nb_submitters;
+
+    XBT_DEBUG("New %s submitter said hello. Number of polite %s submitters: %d",
+              (submitter_type == SubmitterType::EVENT_SUBMITTER ? "event" : "job"),
+              (submitter_type == SubmitterType::EVENT_SUBMITTER ? "event" : "job"),
+              data->submitter_counters[submitter_type].nb_submitters);
 
 }
 
@@ -191,32 +190,32 @@ void server_on_submitter_bye(ServerData * data,
     delete data->submitters[message->submitter_name];
     data->submitters.erase(message->submitter_name);
 
-    if (message->is_event_submitter)
+    SubmitterType submitter_type = message->submitter_type;
+
+    ++data->submitter_counters[submitter_type].nb_submitters_finished;
+
+    XBT_DEBUG("%s submitter said goodbye. Number of finished %s submitters: %d",
+              (submitter_type == SubmitterType::EVENT_SUBMITTER ? "Event" : "Job"),
+              (submitter_type == SubmitterType::EVENT_SUBMITTER ? "event" : "job"),
+              data->submitter_counters[submitter_type].nb_submitters);
+
+    if (submitter_type == SubmitterType::EVENT_SUBMITTER)
     {
-        data->nb_event_submitters_finished++;
-
-        XBT_DEBUG("An event submitter said goodbye. Number of finished event submitters: %d",
-                  data->nb_event_submitters_finished);
-
-        if(data->nb_event_submitters_finished == data->expected_nb_event_submitters)
+        if(data->submitter_counters[submitter_type].nb_submitters_finished == data->submitter_counters[submitter_type].expected_nb_submitters)
         {
             data->context->proto_writer->append_notify("no_more_external_event_to_occurr", simgrid::s4u::Engine::get_clock());
         }
     }
-    else
+    else // It's a JOB_SUBMITTER
     {
-        data->nb_job_submitters_finished++;
+        if(data->submitter_counters[submitter_type].nb_submitters_finished == data->submitter_counters[submitter_type].expected_nb_submitters)
+        {
+          data->context->proto_writer->append_notify("no_more_static_job_to_submit", simgrid::s4u::Engine::get_clock());
+        }
+
         if (message->is_workflow_submitter)
         {
             data->nb_workflow_submitters_finished++;
-        }
-
-        XBT_DEBUG("A job submitter said goodbye. Number of finished job submitters: %d",
-                 data->nb_job_submitters_finished);
-
-        if(data->nb_job_submitters_finished == data->expected_nb_job_submitters)
-        {
-            data->context->proto_writer->append_notify("no_more_static_job_to_submit", simgrid::s4u::Engine::get_clock());
         }
     }
 
@@ -1118,10 +1117,10 @@ void server_on_execute_job(ServerData * data,
     job->execution_actors.insert(actor);
 }
 
-bool is_simulation_finished(const ServerData * data)
+bool is_simulation_finished(ServerData * data)
 {
-    return (data->nb_job_submitters_finished == data->expected_nb_job_submitters) && // All static job submitters have finished
-           (data->nb_event_submitters_finished == data->expected_nb_event_submitters) && // All static event submitters have finished
+    return (data->submitter_counters[SubmitterType::JOB_SUBMITTER].nb_submitters_finished == data->submitter_counters[SubmitterType::JOB_SUBMITTER].expected_nb_submitters) &&
+           (data->submitter_counters[SubmitterType::EVENT_SUBMITTER].nb_submitters_finished == data->submitter_counters[SubmitterType::EVENT_SUBMITTER].expected_nb_submitters) &&
            (!data->context->registration_sched_enabled || data->context->registration_sched_finished) && // Dynamic submissions are disabled or finished
            (data->nb_completed_jobs == data->nb_submitted_jobs) && // All submitted jobs have been completed (either computed and finished or rejected)
            (data->nb_running_jobs == 0) && // No jobs are being executed

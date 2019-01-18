@@ -18,26 +18,31 @@ struct BatsimContext;
 struct ServerData
 {
     /**
-     * @brief Data associated with the job submitters (used for callbacks)
+     * @brief Data associated with the job and event submitters (used for callbacks)
      */
     struct Submitter
     {
-        std::string mailbox;        //!< The Submitter mailbox
-        bool should_be_called_back; //!< Whether the submitter should be notified on events.
+        std::string mailbox;            //!< The Submitter mailbox
+        bool should_be_called_back;     //!< Whether the submitter should be notified on events.
+        SubmitterType submitter_type;   //!< The type of the submitter
+    };
+
+    /**
+     * @brief Various counters associated with submitters
+     */
+    struct SubmitterCounters
+    {
+        int expected_nb_submitters = -1;    //!< The expected number of submitters
+        int nb_submitters = 0;              //!< The number of submitters
+        int nb_submitters_finished = 0;     //!< The number of finished submitters
     };
 
     BatsimContext * context = nullptr; //!< The BatsimContext
 
     int nb_completed_jobs = 0;  //!< The number of completed jobs
     int nb_submitted_jobs = 0;  //!< The number of submitted jobs
-    int expected_nb_job_submitters = -1;        //!< The expected number of job submitters
-    int nb_job_submitters = 0;                  //!< The number of job submitters
-    int nb_job_submitters_finished = 0;         //!< The number of finished job submitters
-    int nb_workflow_submitters_finished = 0;    //!< The number of finished workflow submitters
-    int expected_nb_event_submitters = -1;      //!< The expected number of event submitters
-    int nb_event_submitters = 0;                //!< The number of event submitters
-    int nb_event_submitters_finished = 0;       //!< The number of finished event submitters
     int nb_running_jobs = 0;    //!< The number of jobs being executed
+    int nb_workflow_submitters_finished = 0; //!< The number of finished workflow submitters
     int nb_switching_machines = 0;  //!< The number of machines being switched
     int nb_waiters = 0; //!< The number of pending CALL_ME_LATER waiters
     int nb_killers = 0; //!< The number of killers
@@ -48,6 +53,7 @@ struct ServerData
     bool end_of_simulation_ack_received = false; //!< Whether the SIMULATION_ENDS acknowledgement (empty message) has been received
 
     std::map<std::string, Submitter*> submitters;   //!< The submitters
+    std::unordered_map<SubmitterType, SubmitterCounters> submitter_counters; //!< A map of counters for Job, Event and Workflow Submitters
     std::map<JobIdentifier, Submitter*> origin_of_jobs; //!< Stores whether a Submitter must be notified on job completion
 };
 
@@ -56,7 +62,7 @@ struct ServerData
  * @param[in] data The ServerData
  * @return Whether the simulation is finished or not
  */
-bool is_simulation_finished(const ServerData * data);
+bool is_simulation_finished(ServerData * data);
 
 /**
  * @brief Checks whether the simulation is finished, and buffers a SIMULATION_ENDS event if needed.

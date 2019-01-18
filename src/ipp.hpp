@@ -21,7 +21,6 @@
 struct BatsimContext;
 struct ServerData;
 
-
 /**
  * @brief Stores the different types of inter-process messages
  */
@@ -57,13 +56,22 @@ enum class IPMessageType
 };
 
 /**
+ * @brief Contains the different types of submitters
+ */
+enum class SubmitterType
+{
+     JOB_SUBMITTER              //!< A Job submitter
+    ,EVENT_SUBMITTER            //!< An Event submitter
+};
+
+/**
  * @brief The content of the SUBMITTER_HELLO message
  */
 struct SubmitterHelloMessage
 {
     std::string submitter_name;             //!< The name of the submitter. Must be unique. Is also used as a mailbox.
     bool enable_callback_on_job_completion; //!< If set to true, the submitter should be called back when its jobs complete.
-    bool is_event_submitter;                //!< Stores whether the submitter in an Event submitter
+    SubmitterType submitter_type;           //!< The type of the Submitter
 };
 
 /**
@@ -71,9 +79,9 @@ struct SubmitterHelloMessage
  */
 struct SubmitterByeMessage
 {
-    bool is_event_submitter;    //!< Stores whether the finished submitter was an Event submitter
-    bool is_workflow_submitter; //!< Stores whether the finished submitter was a Workflow submitter
-    std::string submitter_name; //!< The name of the submitter.
+    std::string submitter_name;     //!< The name of the submitter.
+    SubmitterType submitter_type;   //!< The type of the submitter.
+    bool is_workflow_submitter;     //!< Stores whether the finished submitter was a Workflow submitter
 };
 
 /**

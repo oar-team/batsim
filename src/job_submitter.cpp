@@ -79,6 +79,7 @@ void static_job_submitter_process(BatsimContext * context,
     SubmitterHelloMessage * hello_msg = new SubmitterHelloMessage;
     hello_msg->submitter_name = submitter_name;
     hello_msg->enable_callback_on_job_completion = false;
+    hello_msg->submitter_type = SubmitterType::JOB_SUBMITTER;
 
     send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
 
@@ -143,8 +144,8 @@ void static_job_submitter_process(BatsimContext * context,
 
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
     bye_msg->is_workflow_submitter = false;
-    bye_msg->is_event_submitter = false;
     bye_msg->submitter_name = submitter_name;
+    bye_msg->submitter_type = SubmitterType::JOB_SUBMITTER;
     send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
 }
 
@@ -181,6 +182,7 @@ void workflow_submitter_process(BatsimContext * context,
     SubmitterHelloMessage * hello_msg = new SubmitterHelloMessage;
     hello_msg->submitter_name = submitter_name;
     hello_msg->enable_callback_on_job_completion = true;
+    hello_msg->submitter_type = SubmitterType::JOB_SUBMITTER;
     send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
 
     /* Create submitted_tasks map */
@@ -260,7 +262,7 @@ void workflow_submitter_process(BatsimContext * context,
     /* Goodbye */
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
     bye_msg->is_workflow_submitter = true;
-    bye_msg->is_event_submitter = false;
+    bye_msg->submitter_type = SubmitterType::JOB_SUBMITTER;
     bye_msg->submitter_name = submitter_name;
     send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
 }
