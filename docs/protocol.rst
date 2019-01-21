@@ -522,7 +522,7 @@ It acknowledges that the actions coming from a previous EXECUTE_JOB_ event have 
 - ``job_state``: The job state. Possible values: ``NOT_SUBMITTED``,
   ``SUBMITTED``, ``RUNNING``, ``COMPLETED_SUCCESSFULLY``,
   ``COMPLETED_FAILED``, ``COMPLETED_WALLTIME_REACHED``,
-  ``COMPLETED_KILLED``, ``COMPLETED_RESOURCE_FAILED``, ``REJECTED``.
+  ``COMPLETED_KILLED``,  ``REJECTED``.
 - ``return_code``: The return code of the job process (equals to 0
   by default, see :ref:`input_workload`).
 - ``alloc``: The :ref:`interval_set` of resources allocated to this job in the previous EXECUTE_JOB_ event.
