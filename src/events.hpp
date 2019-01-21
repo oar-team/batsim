@@ -17,8 +17,8 @@
  */
 enum class EventType
 {
-     EVENT_MACHINE_FAILURE      //!< The machine becomes unavailable (failure)
-    ,EVENT_MACHINE_RESTORE      //!< The machine becomes available (restore)
+     EVENT_MACHINE_AVAILABLE        //!< The machine becomes available
+    ,EVENT_MACHINE_UNAVAILABLE      //!< The machine becomes unavailable
 };
 
 /**

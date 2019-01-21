@@ -30,7 +30,7 @@ Machines::Machines()
                                                  MachineState::COMPUTING,
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
                                                  MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING,
-                                                 MachineState::FAILED};
+                                                 MachineState::UNAVAILABLE};
     for (const MachineState & state : machine_states)
     {
         _nb_machines_in_each_state[state] = 0;
@@ -479,7 +479,7 @@ void Machines::update_machines_on_job_end(const Job * job,
 
         if (machine->jobs_being_computed.empty())
         {
-            if (machine->state != MachineState::FAILED)
+            if (machine->state != MachineState::UNAVAILABLE)
             {
                 machine->update_machine_state(MachineState::IDLE);
                 if (_tracer != nullptr)
@@ -531,8 +531,8 @@ string machine_state_to_string(MachineState state)
     case MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING:
         s = "switching_off";
         break;
-    case MachineState::FAILED:
-        s = "failed";
+    case MachineState::UNAVAILABLE:
+        s = "unavailable";
         break;
     }
 
@@ -547,7 +547,7 @@ Machine::Machine(Machines *machines) :
                                                  MachineState::COMPUTING,
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
                                                  MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING,
-                                                 MachineState::FAILED};
+                                                 MachineState::UNAVAILABLE};
     for (const MachineState & state : machine_states)
     {
         time_spent_in_each_state[state] = 0;

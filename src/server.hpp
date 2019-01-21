@@ -110,19 +110,19 @@ void server_on_job_submitted(ServerData * data,
                              IPMessage * task_data);
 
 /**
- * @brief Internal Server handler for machine_failure external event
+ * @brief Internal Server handler for machine_unavailable external event
  * @param[in,out] data The data associated with the server_process
  * @param[in] event The Event involved
  */
-void server_on_event_machine_failure(ServerData * data,
+void server_on_event_machine_unavailable(ServerData * data,
                                      const Event * event);
 
 /**
- * @brief Internal Server handler for machine_restore external event
+ * @brief Internal Server handler for machine_available external event
  * @param[in,out] data The data associated with the server_process
  * @param[in] event The Event involved
  */
-void server_on_event_machine_restore(ServerData * data,
+void server_on_event_machine_available(ServerData * data,
                                      const Event * event);
 
 /**
@@ -134,19 +134,19 @@ void server_on_event_occurred(ServerData * data,
                               IPMessage * task_data);
 
 /**
- * @brief Server handler for EVENT of type EVENT_MACHINE_FAILURE
+ * @brief Server handler for EVENT of type EVENT_MACHINE_UNAVAILABLE
  * @param[in,out] data The data associated with the server_process
  * @param[in] event The event that occurred
  */
-void server_on_event_machine_failure(ServerData * data,
+void server_on_event_machine_unavailable(ServerData * data,
                                      Event * event);
 
 /**
- * @brief Server handler for EVENT of type EVENT_MACHINE_RESTORE
+ * @brief Server handler for EVENT of type EVENT_MACHINE_AVAILABLE
  * @param[in,out] data The data associated with the server_process
  * @param[in] event The event that occurred
  */
-void server_on_event_machine_restore(ServerData * data,
+void server_on_event_machine_available(ServerData * data,
                                      Event * event);
 
 /**

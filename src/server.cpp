@@ -317,8 +317,8 @@ void server_on_job_submitted(ServerData * data,
 }
 
 
-void server_on_event_machine_failure(ServerData * data,
-                                     const Event * event)
+void server_on_event_machine_unavailable(ServerData * data,
+                                         const Event * event)
 {
     IntervalSet machines = event->machine_ids;
     if(machines.size() > 0)
@@ -330,39 +330,22 @@ void server_on_event_machine_failure(ServerData * data,
             const int machine_id = *machine_it;
             Machine * machine = data->context->machines[machine_id];
 
-            xbt_assert(machine->state != MachineState::FAILED,
-                       "Failure of machine %d ('%s') requested but this machine was already in FAILED state.",
+            xbt_assert(machine->state != MachineState::UNAVAILABLE,
+                       "The making of machine %d ('%s') unavailable was requested but "
+                       "this machine was already in UNAVAILABLE state.",
                        machine->id, machine->name.c_str());
 
-            // Let's fail the jobs being computed on that machine
-            std::vector<JobIdentifier> job_ids_to_kill;
-            for (const Job * job : machine->jobs_being_computed)
-            {
-                job_ids_to_kill.push_back(job->id);
-            }
-            // The last argument of the killer_process being 'true' the job killed will be marked as JOB_STATE_COMPLETED_RESOURCE_FAILED
-            if (job_ids_to_kill.size() > 0)
-            {
-                simgrid::s4u::Actor::create("failer_process", simgrid::s4u::this_actor::get_host(),
-                                            killer_process, data->context, job_ids_to_kill,
-                                            JobState::JOB_STATE_COMPLETED_RESOURCE_FAILED, false);
-                ++data->nb_killers;
-            }
-
-            // Then turn off this machine
-            XBT_DEBUG("Turning off machine %d %s due to failure event.", machine->id, machine->name.c_str());
-            machine->update_machine_state(MachineState::FAILED);
-            machine->host->turn_off();
+            machine->update_machine_state(MachineState::UNAVAILABLE);
         }
-        // Notify the decision process that some machines have failed
-        data->context->proto_writer->append_notify_resource_event("event_machine_failure",
+        // Notify the decision process that some machines have become unavailable
+        data->context->proto_writer->append_notify_resource_event("event_machine_unavailable",
                                                                   event->machine_ids,
                                                                   simgrid::s4u::Engine::get_clock());
     }
 }
 
-void server_on_event_machine_restore(ServerData * data,
-                                     const Event * event)
+void server_on_event_machine_available(ServerData * data,
+                                       const Event * event)
 {
     IntervalSet machines = event->machine_ids;
     if(machines.size() > 0)
@@ -371,20 +354,20 @@ void server_on_event_machine_restore(ServerData * data,
              machine_it != machines.elements_end();
              ++machine_it)
         {
-            // Let's turn on the machine
             Machine * machine = data->context->machines[*machine_it];
 
-            xbt_assert(machine->state == MachineState::FAILED,
-                       "Restore of machine %d ('%s') requested but this machine was not in FAILED state (current state: %s).",
+            xbt_assert(machine->state == MachineState::UNAVAILABLE,
+                       "The making of machine %d ('%s') available was requested but "
+                       "this machine was not in UNAVAILABLE state (current state: %s).",
                        machine->id, machine->name.c_str(), machine_state_to_string(machine->state).c_str());
 
-            XBT_DEBUG("Turning on machine %d %s due to restore event.", machine->id, machine->name.c_str());
-            machine->update_machine_state(MachineState::IDLE);
-            machine->host->turn_on();
-
+            if (machine->jobs_being_computed.empty())
+            {
+                machine->update_machine_state(MachineState::IDLE);
+            }
         }
-        // Notify the decision process that some machines are restored
-        data->context->proto_writer->append_notify_resource_event("event_machine_restore",
+        // Notify the decision process that some machines have become available
+        data->context->proto_writer->append_notify_resource_event("event_machine_available",
                                                                   event->machine_ids,
                                                                   simgrid::s4u::Engine::get_clock());
     }
@@ -400,11 +383,11 @@ void server_on_event_occurred(ServerData * data,
     {
         switch(event->type)
         {
-        case EventType::EVENT_MACHINE_FAILURE:
-            server_on_event_machine_failure(data, event);
+        case EventType::EVENT_MACHINE_AVAILABLE:
+            server_on_event_machine_available(data, event);
             break;
-        case EventType::EVENT_MACHINE_RESTORE:
-            server_on_event_machine_restore(data, event);
+        case EventType::EVENT_MACHINE_UNAVAILABLE:
+            server_on_event_machine_unavailable(data, event);
             break;
         }
     }
@@ -624,8 +607,7 @@ void server_on_killing_done(ServerData * data,
         jobs_progress_str[job_id.to_string()] = message->jobs_progress[job_id];
 
         const Job * job = data->context->workloads.job_at(job_id);
-        if ( (job->state == JobState::JOB_STATE_COMPLETED_KILLED) ||
-             (job->state == JobState::JOB_STATE_COMPLETED_RESOURCE_FAILED))
+        if ( job->state == JobState::JOB_STATE_COMPLETED_KILLED)
         {
             data->nb_running_jobs--;
             xbt_assert(data->nb_running_jobs >= 0);
@@ -842,7 +824,6 @@ void server_on_change_job_state(ServerData * data,
         {
         case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
         case JobState::JOB_STATE_COMPLETED_FAILED:
-        case JobState::JOB_STATE_COMPLETED_RESOURCE_FAILED:
         case JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED:
         case JobState::JOB_STATE_COMPLETED_KILLED:
             job->runtime = simgrid::s4u::Engine::get_clock() - job->starting_time;
@@ -1045,22 +1026,25 @@ void server_on_execute_job(ServerData * data,
         }
     }
 
-    if (data->context->energy_used)
+    // Check that every machine can compute the job
+    for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
     {
-        // Check that every machine is in a computation pstate
-        for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
+        int machine_id = *machine_id_it;
+        Machine * machine = data->context->machines[machine_id];
+
+        xbt_assert(machine->state == MachineState::COMPUTING || machine->state == MachineState::IDLE,
+                   "Invalid job allocation: machine %d ('%s') cannot compute jobs now (the machine is"
+                   " neither computing nor being idle)", machine->id, machine->name.c_str());
+
+        if (data->context->energy_used)
         {
-            int machine_id = *machine_id_it;
-            Machine * machine = data->context->machines[machine_id];
-            int ps = machine->host->get_pstate();
-            (void) ps; // Avoids a warning if assertions are ignored
-            xbt_assert(machine->has_pstate(ps));
-            xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
-                       "Invalid job allocation: machine %d ('%s') is not in a computation pstate (ps=%d)",
-                       machine->id, machine->name.c_str(), ps);
-            xbt_assert(machine->state == MachineState::COMPUTING || machine->state == MachineState::IDLE,
-                       "Invalid job allocation: machine %d ('%s') cannot compute jobs now (the machine is"
-                       " neither computing nor being idle)", machine->id, machine->name.c_str());
+        // Check that every machine is in a computation pstate
+        int ps = machine->host->get_pstate();
+        (void) ps; // Avoids a warning if assertions are ignored
+        xbt_assert(machine->has_pstate(ps));
+        xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
+                   "Invalid job allocation: machine %d ('%s') is not in a computation pstate (ps=%d)",
+                   machine->id, machine->name.c_str(), ps);
         }
     }
 

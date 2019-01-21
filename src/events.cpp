@@ -19,11 +19,11 @@ std::string event_type_to_string(const EventType & type)
     string event_type("UNKNOWN");
     switch(type)
     {
-    case EventType::EVENT_MACHINE_FAILURE:
-        event_type = "machine_failure";
+    case EventType::EVENT_MACHINE_AVAILABLE:
+        event_type = "machine_available";
         break;
-    case EventType::EVENT_MACHINE_RESTORE:
-        event_type = "machine_restore";
+    case EventType::EVENT_MACHINE_UNAVAILABLE:
+        event_type = "machine_unavailable";
         break;
     }
     return event_type;
@@ -32,13 +32,13 @@ std::string event_type_to_string(const EventType & type)
 EventType event_type_from_string(const std::string & type_str)
 {
     EventType type;
-    if(type_str == "machine_failure")
+    if(type_str == "machine_available")
     {
-        type = EventType::EVENT_MACHINE_FAILURE;
+        type = EventType::EVENT_MACHINE_AVAILABLE;
     }
-    else if (type_str == "machine_restore")
+    else if (type_str == "machine_unavailable")
     {
-        type = EventType::EVENT_MACHINE_RESTORE;
+        type = EventType::EVENT_MACHINE_UNAVAILABLE;
     }
     else
     {

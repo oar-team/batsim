@@ -589,12 +589,12 @@ void JsonProtocolWriter::append_notify_resource_event(const std::string & notify
     /* {
         "timestamp": 140.0,
         "type": "NOTIFY",
-        "data": { "type": "event_resource_failure", "resources": "0 5-8" }
+        "data": { "type": "event_resource_available", "resources": "0 5-8" }
     }
     or {
         "timestamp": 200.0,
         "type": "NOTIFY",
-        "data": { "type": "event_resource_restore", "resources": "0 5 7" }
+        "data": { "type": "event_resource_unavailable", "resources": "0 5 7" }
     } */
 
     xbt_assert(date >= _last_date, "Date inconsistency");
