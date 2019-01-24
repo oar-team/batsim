@@ -15,7 +15,7 @@ in
       batsim = (kapack.batsim_dev.overrideAttrs (oldAttrs: {
        src = fetchGit {
         url = https://gitlab.inria.fr/batsim/batsim.git;
-        rev = "def389f0d9feb9f63bbc8bf9458f575ee06239eb";
+        #rev = "refs/heads/102-add-replay-of-machine-failures";
         ref = "102-add-replay-of-machine-failures";
         };
       }));
