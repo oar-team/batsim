@@ -15,13 +15,9 @@ Input File Format
 -----------------
 
 An example of an input file for external events can be found in ``events/test_events_4hosts.txt``.
-Such file should contain on each line a JSON description of an event, as follows.
+Such file should contain on each line a JSON description of an event, as in
 
-.. code:: json
-
-    {"type": "machine_unavailable", "resources": "0-2", "timestamp" : 0}
-    {"type": "machine_available", "resources": "0", "timestamp" : 10}
-    {"type": "machine_available", "resources": "1-2", "timestamp" : 20.6}
+.. literalinclude:: ../events/test_events_4hosts.txt
 
 Note that it is not mandatory to have the events ordered by their timestamps in the input files, as they will be sorted anyway once all events of a file are loaded by Batsim.
 In each event description, the field ``resources`` contains the list of resources on which the event occurs (represented as an :ref:`interval_set`) and the field ``timestamp`` contains the date at which the event has to occur during the simulation.
