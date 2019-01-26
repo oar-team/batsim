@@ -134,9 +134,7 @@ void server_process(BatsimContext * context)
     xbt_assert(data->nb_running_jobs == 0, "Left simulation loop, but some jobs are running.");
     xbt_assert(data->nb_switching_machines == 0, "Left simulation loop, but some machines are being switched.");
     xbt_assert(data->nb_killers == 0, "Left simulation loop, but some killer processes (used to kill jobs) are running.");
-
-    if (data->nb_waiters > 0)
-        XBT_WARN("Left simulation loop, but some waiter processes (used to manage the CALL_ME_LATER message) are running.");
+    xbt_assert(data->nb_waiters == 0, "Left simulation loop, but some waiter processes (used to manage the CALL_ME_LATER message) are running.");
 
     // Consistency
     xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
@@ -400,6 +398,7 @@ void server_on_waiting_done(ServerData * data,
     (void) task_data;
     data->context->proto_writer->append_requested_call(simgrid::s4u::Engine::get_clock());
     --data->nb_waiters;
+    check_simulation_finished(data);
 }
 
 void server_on_sched_ready(ServerData * data,
@@ -997,7 +996,8 @@ void check_simulation_finished(ServerData * data)
 {
     if (is_simulation_finished(data) &&
         !data->end_of_simulation_sent &&
-        !data->end_of_simulation_in_send_buffer)
+        !data->end_of_simulation_in_send_buffer &&
+        !data->nb_waiters > 0)
     {
         XBT_INFO("The simulation seems to be finished!");
 
@@ -1005,5 +1005,3 @@ void check_simulation_finished(ServerData * data)
         data->end_of_simulation_in_send_buffer = true;
     }
 }
-
-
