@@ -938,7 +938,8 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
                                                  MachineState::COMPUTING,
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
-                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING,
+                                                 MachineState::UNAVAILABLE};
     for (const MachineState & state : machine_states)
     {
         time_spent_in_each_state[state] = 0;

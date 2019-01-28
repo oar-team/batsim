@@ -522,10 +522,14 @@ void waiter_process(double target_time, const ServerData * server_data)
 
 
 
-void killer_process(BatsimContext * context, std::vector<JobIdentifier> jobs_ids)
+void killer_process(BatsimContext * context,
+                    std::vector<JobIdentifier> jobs_ids,
+                    JobState killed_job_state,
+                    bool acknowledge_kill_on_protocol)
 {
     KillingDoneMessage * message = new KillingDoneMessage;
     message->jobs_ids = jobs_ids;
+    message->acknowledge_kill_on_protocol = acknowledge_kill_on_protocol;
 
     for (const JobIdentifier & job_id : jobs_ids)
     {
@@ -563,7 +567,7 @@ void killer_process(BatsimContext * context, std::vector<JobIdentifier> jobs_ids
             job->execution_actors.clear();
 
             // Let's update the job information
-            job->state = JobState::JOB_STATE_COMPLETED_KILLED;
+            job->state = killed_job_state;
 
             context->machines.update_machines_on_job_end(job, job->allocation, context);
             job->runtime = (long double)simgrid::s4u::Engine::get_clock() - job->starting_time;

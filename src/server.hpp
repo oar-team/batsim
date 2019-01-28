@@ -18,23 +18,31 @@ struct BatsimContext;
 struct ServerData
 {
     /**
-     * @brief Data associated with the job submitters (used for callbacks)
+     * @brief Data associated with the job and event submitters (used for callbacks)
      */
     struct Submitter
     {
-        std::string mailbox;        //!< The Submitter mailbox
-        bool should_be_called_back; //!< Whether the submitter should be notified on events.
+        std::string mailbox;            //!< The Submitter mailbox
+        bool should_be_called_back;     //!< Whether the submitter should be notified on events.
+        SubmitterType submitter_type;   //!< The type of the submitter
+    };
+
+    /**
+     * @brief Various counters associated with submitters
+     */
+    struct SubmitterCounters
+    {
+        int expected_nb_submitters = -1;    //!< The expected number of submitters
+        int nb_submitters = 0;              //!< The number of submitters
+        int nb_submitters_finished = 0;     //!< The number of finished submitters
     };
 
     BatsimContext * context = nullptr; //!< The BatsimContext
 
     int nb_completed_jobs = 0;  //!< The number of completed jobs
     int nb_submitted_jobs = 0;  //!< The number of submitted jobs
-    int expected_nb_submitters = -1; //!< The expected number of total submitters
-    int nb_submitters = 0;  //!< The number of submitters
-    int nb_submitters_finished = 0; //!< The number of finished submitters
-    int nb_workflow_submitters_finished = 0;    //!< The number of finished workflow submitters
     int nb_running_jobs = 0;    //!< The number of jobs being executed
+    int nb_workflow_submitters_finished = 0; //!< The number of finished workflow submitters
     int nb_switching_machines = 0;  //!< The number of machines being switched
     int nb_waiters = 0; //!< The number of pending CALL_ME_LATER waiters
     int nb_killers = 0; //!< The number of killers
@@ -45,8 +53,8 @@ struct ServerData
     bool end_of_simulation_ack_received = false; //!< Whether the SIMULATION_ENDS acknowledgement (empty message) has been received
 
     std::map<std::string, Submitter*> submitters;   //!< The submitters
+    std::unordered_map<SubmitterType, SubmitterCounters> submitter_counters; //!< A map of counters for Job, Event and Workflow Submitters
     std::map<JobIdentifier, Submitter*> origin_of_jobs; //!< Stores whether a Submitter must be notified on job completion
-    //map<std::pair<int,double>, Submitter*> origin_of_wait_queries;
 };
 
 /**
@@ -54,7 +62,7 @@ struct ServerData
  * @param[in] data The ServerData
  * @return Whether the simulation is finished or not
  */
-bool is_simulation_finished(const ServerData * data);
+bool is_simulation_finished(ServerData * data);
 
 /**
  * @brief Checks whether the simulation is finished, and buffers a SIMULATION_ENDS event if needed.
@@ -100,6 +108,46 @@ void server_on_job_completed(ServerData * data,
  */
 void server_on_job_submitted(ServerData * data,
                              IPMessage * task_data);
+
+/**
+ * @brief Internal Server handler for machine_unavailable external event
+ * @param[in,out] data The data associated with the server_process
+ * @param[in] event The Event involved
+ */
+void server_on_event_machine_unavailable(ServerData * data,
+                                     const Event * event);
+
+/**
+ * @brief Internal Server handler for machine_available external event
+ * @param[in,out] data The data associated with the server_process
+ * @param[in] event The Event involved
+ */
+void server_on_event_machine_available(ServerData * data,
+                                     const Event * event);
+
+/**
+ * @brief Server EVENT_OCCURRED handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_event_occurred(ServerData * data,
+                              IPMessage * task_data);
+
+/**
+ * @brief Server handler for EVENT of type EVENT_MACHINE_UNAVAILABLE
+ * @param[in,out] data The data associated with the server_process
+ * @param[in] event The event that occurred
+ */
+void server_on_event_machine_unavailable(ServerData * data,
+                                     Event * event);
+
+/**
+ * @brief Server handler for EVENT of type EVENT_MACHINE_AVAILABLE
+ * @param[in,out] data The data associated with the server_process
+ * @param[in] event The event that occurred
+ */
+void server_on_event_machine_available(ServerData * data,
+                                     Event * event);
 
 /**
  * @brief Server PSTATE_MODIFICATION handler

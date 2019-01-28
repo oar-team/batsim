@@ -6,6 +6,7 @@
 #include "server.hpp"
 
 #include <string>
+#include <set>
 
 #include <boost/algorithm/string.hpp>
 
@@ -70,12 +71,19 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SWITCHED_OFF] = server_on_switched;
     handler_map[IPMessageType::END_DYNAMIC_REGISTER] = server_on_end_dynamic_register;
     handler_map[IPMessageType::CONTINUE_DYNAMIC_REGISTER] = server_on_continue_dynamic_register;
+    handler_map[IPMessageType::EVENT_OCCURRED] = server_on_event_occurred;
 
-    /* Currently, there is one submtiter per input file (workload or workflow).
+    /* Currently, there is one job submtiter per input file (workload or workflow).
        As workflows use an inner workload, calling nb_static_workloads() should
-       be enough. The dynamic submitter (from the decision process) is not part
+       be enough. The dynamic job submitter (from the decision process) is not part
        of this count as it can finish then restart... */
-    data->expected_nb_submitters = context->workloads.nb_static_workloads();
+    ServerData::SubmitterCounters job_counters;
+    job_counters.expected_nb_submitters = context->workloads.nb_static_workloads();
+    data->submitter_counters[SubmitterType::JOB_SUBMITTER] = job_counters;
+
+    ServerData::SubmitterCounters event_counters;
+    event_counters.expected_nb_submitters = context->eventListsMap.size();
+    data->submitter_counters[SubmitterType::EVENT_SUBMITTER] = event_counters;
 
     // Is the simulation already finished? It can occur now if there is no job to execute.
     check_simulation_finished(data);
@@ -156,16 +164,20 @@ void server_on_submitter_hello(ServerData * data,
                "Invalid new submitter '%s': a submitter with the same name already exists!",
                message->submitter_name.c_str());
 
-    data->nb_submitters++;
-
     ServerData::Submitter * submitter = new ServerData::Submitter;
     submitter->mailbox = message->submitter_name;
     submitter->should_be_called_back = message->enable_callback_on_job_completion;
 
     data->submitters[message->submitter_name] = submitter;
 
-    XBT_DEBUG("New submitter said hello. Number of polite submitters: %d",
-             data->nb_submitters);
+    SubmitterType submitter_type = message->submitter_type;
+    ++data->submitter_counters[submitter_type].nb_submitters;
+
+    XBT_DEBUG("New %s submitter said hello. Number of polite %s submitters: %d",
+              submitter_type_to_string(submitter_type).c_str(),
+              submitter_type_to_string(submitter_type).c_str(),
+              data->submitter_counters[submitter_type].nb_submitters);
+
 }
 
 void server_on_submitter_bye(ServerData * data,
@@ -178,17 +190,33 @@ void server_on_submitter_bye(ServerData * data,
     delete data->submitters[message->submitter_name];
     data->submitters.erase(message->submitter_name);
 
-    data->nb_submitters_finished++;
-    if (message->is_workflow_submitter)
-    {
-        data->nb_workflow_submitters_finished++;
-    }
-    XBT_DEBUG("A submitter said goodbye. Number of finished submitters: %d",
-             data->nb_submitters_finished);
+    SubmitterType submitter_type = message->submitter_type;
 
-    if(data->nb_submitters_finished == data->expected_nb_submitters)
+    ++data->submitter_counters[submitter_type].nb_submitters_finished;
+
+    XBT_DEBUG("%s submitter said goodbye. Number of finished %s submitters: %d",
+              submitter_type_to_string(submitter_type).c_str(),
+              submitter_type_to_string(submitter_type).c_str(),
+              data->submitter_counters[submitter_type].nb_submitters);
+
+    if (submitter_type == SubmitterType::EVENT_SUBMITTER)
     {
-        data->context->proto_writer->append_notify("no_more_static_job_to_submit", simgrid::s4u::Engine::get_clock());
+        if(data->submitter_counters[submitter_type].nb_submitters_finished == data->submitter_counters[submitter_type].expected_nb_submitters)
+        {
+            data->context->proto_writer->append_notify("no_more_external_event_to_occur", simgrid::s4u::Engine::get_clock());
+        }
+    }
+    else if (submitter_type == SubmitterType::JOB_SUBMITTER)
+    {
+        if(data->submitter_counters[submitter_type].nb_submitters_finished == data->submitter_counters[submitter_type].expected_nb_submitters)
+        {
+          data->context->proto_writer->append_notify("no_more_static_job_to_submit", simgrid::s4u::Engine::get_clock());
+        }
+
+        if (message->is_workflow_submitter)
+        {
+            data->nb_workflow_submitters_finished++;
+        }
     }
 
     check_simulation_finished(data);
@@ -286,6 +314,85 @@ void server_on_job_submitted(ServerData * data,
                                                           profile_json_description,
                                                           simgrid::s4u::Engine::get_clock());
     }
+}
+
+
+void server_on_event_machine_unavailable(ServerData * data,
+                                         const Event * event)
+{
+    IntervalSet machines = event->machine_ids;
+    if(machines.size() > 0)
+    {
+        for (auto machine_it = machines.elements_begin();
+             machine_it != machines.elements_end();
+             ++machine_it)
+        {
+            const int machine_id = *machine_it;
+            Machine * machine = data->context->machines[machine_id];
+
+            xbt_assert(machine->state != MachineState::UNAVAILABLE,
+                       "The making of machine %d ('%s') unavailable was requested but "
+                       "this machine was already in UNAVAILABLE state.",
+                       machine->id, machine->name.c_str());
+
+            machine->update_machine_state(MachineState::UNAVAILABLE);
+        }
+        // Notify the decision process that some machines have become unavailable
+        data->context->proto_writer->append_notify_resource_event("event_machine_unavailable",
+                                                                  event->machine_ids,
+                                                                  simgrid::s4u::Engine::get_clock());
+    }
+}
+
+void server_on_event_machine_available(ServerData * data,
+                                       const Event * event)
+{
+    IntervalSet machines = event->machine_ids;
+    if(machines.size() > 0)
+    {
+        for (auto machine_it = machines.elements_begin();
+             machine_it != machines.elements_end();
+             ++machine_it)
+        {
+            Machine * machine = data->context->machines[*machine_it];
+
+            xbt_assert(machine->state == MachineState::UNAVAILABLE,
+                       "The making of machine %d ('%s') available was requested but "
+                       "this machine was not in UNAVAILABLE state (current state: %s).",
+                       machine->id, machine->name.c_str(), machine_state_to_string(machine->state).c_str());
+
+            if (machine->jobs_being_computed.empty())
+            {
+                machine->update_machine_state(MachineState::IDLE);
+            }
+        }
+        // Notify the decision process that some machines have become available
+        data->context->proto_writer->append_notify_resource_event("event_machine_available",
+                                                                  event->machine_ids,
+                                                                  simgrid::s4u::Engine::get_clock());
+    }
+}
+
+void server_on_event_occurred(ServerData * data,
+                              IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr);
+    EventOccurredMessage * message = (EventOccurredMessage *) task_data->data;
+
+    for (const Event * event : message->occurred_events)
+    {
+        switch(event->type)
+        {
+        case EventType::EVENT_MACHINE_AVAILABLE:
+            server_on_event_machine_available(data, event);
+            break;
+        case EventType::EVENT_MACHINE_UNAVAILABLE:
+            server_on_event_machine_unavailable(data, event);
+            break;
+        }
+    }
+
+    check_simulation_finished(data);
 }
 
 void server_on_pstate_modification(ServerData * data,
@@ -486,10 +593,10 @@ void server_on_killing_done(ServerData * data,
     xbt_assert(task_data->data != nullptr);
     KillingDoneMessage * message = (KillingDoneMessage *) task_data->data;
 
-    vector<string> job_ids_str;
-    vector<string> really_killed_job_ids_str;
-    job_ids_str.reserve(message->jobs_ids.size());
     map<string, BatTask *> jobs_progress_str;
+    vector<string> really_killed_job_ids_str;
+    vector<string> job_ids_str;
+    job_ids_str.reserve(message->jobs_ids.size());
 
     // manage job Id list
     for (const JobIdentifier & job_id : message->jobs_ids)
@@ -500,7 +607,7 @@ void server_on_killing_done(ServerData * data,
         jobs_progress_str[job_id.to_string()] = message->jobs_progress[job_id];
 
         const Job * job = data->context->workloads.job_at(job_id);
-        if (job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+        if ( job->state == JobState::JOB_STATE_COMPLETED_KILLED)
         {
             data->nb_running_jobs--;
             xbt_assert(data->nb_running_jobs >= 0);
@@ -520,13 +627,17 @@ void server_on_killing_done(ServerData * data,
         }
     }
 
-    XBT_INFO("Jobs {%s} have been killed (the following ones have REALLY been killed: {%s})",
-             boost::algorithm::join(job_ids_str, ",").c_str(),
-             boost::algorithm::join(really_killed_job_ids_str, ",").c_str());
+    if (message->acknowledge_kill_on_protocol)
+    {
+        // The kills have been asked by the decision process
+        XBT_INFO("Jobs {%s} have been killed (the following ones have REALLY been killed: {%s})",
+                 boost::algorithm::join(job_ids_str, ",").c_str(),
+                 boost::algorithm::join(really_killed_job_ids_str, ",").c_str());
 
-    data->context->proto_writer->append_job_killed(job_ids_str, jobs_progress_str, simgrid::s4u::Engine::get_clock());
+        data->context->proto_writer->append_job_killed(job_ids_str, jobs_progress_str, simgrid::s4u::Engine::get_clock());
+    }
+
     --data->nb_killers;
-
     check_simulation_finished(data);
 }
 
@@ -837,9 +948,13 @@ void server_on_kill_jobs(ServerData * data,
         }
     }
 
-    simgrid::s4u::Actor::create("killer_process", simgrid::s4u::this_actor::get_host(),
-                                killer_process, data->context, jobs_ids_to_kill);
-    ++data->nb_killers;
+    if (jobs_ids_to_kill.size() > 0)
+    {
+        simgrid::s4u::Actor::create("killer_process", simgrid::s4u::this_actor::get_host(),
+                                    killer_process, data->context, jobs_ids_to_kill,
+                                    JobState::JOB_STATE_COMPLETED_KILLED, true);
+        ++data->nb_killers;
+    }
 }
 
 void server_on_call_me_later(ServerData * data,
@@ -911,22 +1026,25 @@ void server_on_execute_job(ServerData * data,
         }
     }
 
-    if (data->context->energy_used)
+    // Check that every machine can compute the job
+    for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
     {
-        // Check that every machine is in a computation pstate
-        for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
+        int machine_id = *machine_id_it;
+        Machine * machine = data->context->machines[machine_id];
+
+        xbt_assert(machine->state == MachineState::COMPUTING || machine->state == MachineState::IDLE,
+                   "Invalid job allocation: machine %d ('%s') cannot compute jobs now (the machine is"
+                   " neither computing nor being idle)", machine->id, machine->name.c_str());
+
+        if (data->context->energy_used)
         {
-            int machine_id = *machine_id_it;
-            Machine * machine = data->context->machines[machine_id];
-            int ps = machine->host->get_pstate();
-            (void) ps; // Avoids a warning if assertions are ignored
-            xbt_assert(machine->has_pstate(ps));
-            xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
-                       "Invalid job allocation: machine %d ('%s') is not in a computation pstate (ps=%d)",
-                       machine->id, machine->name.c_str(), ps);
-            xbt_assert(machine->state == MachineState::COMPUTING || machine->state == MachineState::IDLE,
-                       "Invalid job allocation: machine %d ('%s') cannot compute jobs now (the machine is"
-                       " neither computing nor being idle)", machine->id, machine->name.c_str());
+        // Check that every machine is in a computation pstate
+        int ps = machine->host->get_pstate();
+        (void) ps; // Avoids a warning if assertions are ignored
+        xbt_assert(machine->has_pstate(ps));
+        xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
+                   "Invalid job allocation: machine %d ('%s') is not in a computation pstate (ps=%d)",
+                   machine->id, machine->name.c_str(), ps);
         }
     }
 
@@ -983,9 +1101,10 @@ void server_on_execute_job(ServerData * data,
     job->execution_actors.insert(actor);
 }
 
-bool is_simulation_finished(const ServerData * data)
+bool is_simulation_finished(ServerData * data)
 {
-    return (data->nb_submitters_finished == data->expected_nb_submitters) && // All static submitters have finished
+    return (data->submitter_counters[SubmitterType::JOB_SUBMITTER].nb_submitters_finished == data->submitter_counters[SubmitterType::JOB_SUBMITTER].expected_nb_submitters) &&
+           (data->submitter_counters[SubmitterType::EVENT_SUBMITTER].nb_submitters_finished == data->submitter_counters[SubmitterType::EVENT_SUBMITTER].expected_nb_submitters) &&
            (!data->context->registration_sched_enabled || data->context->registration_sched_finished) && // Dynamic submissions are disabled or finished
            (data->nb_completed_jobs == data->nb_submitted_jobs) && // All submitted jobs have been completed (either computed and finished or rejected)
            (data->nb_running_jobs == 0) && // No jobs are being executed

@@ -46,6 +46,8 @@
 
 #include "batsim.hpp"
 #include "context.hpp"
+#include "event_submitter.hpp"
+#include "events.hpp"
 #include "export.hpp"
 #include "ipp.hpp"
 #include "job_submitter.hpp"
@@ -178,6 +180,7 @@ Usage:
                             [--sg-cfg <opt_name:opt_value>...]
                             [--sg-log <log_option>...]
                             [-r <hosts_roles_map>...]
+                            [--events <events_file>...]
                             [options]
   batsim --help
   batsim --version
@@ -188,16 +191,17 @@ Input options:
   -p, --platform <platform_file>     The SimGrid platform to simulate.
   -w, --workload <workload_file>     The workload JSON files to simulate.
   -W, --workflow <workflow_file>     The workflow XML files to simulate.
-  --WS, --workflow-start (<cut_workflow_file> <start_time>)...  The workflow XML
+  --WS, --workflow-start (<cut_workflow_file> <start_time>)  The workflow XML
                                      files to simulate, with the time at which
                                      they should be started.
+  --events <events_file>             The files containing events to simulate.
 
 Most common options:
   -m, --master-host <name>           The name of the host in <platform_file>
                                      which will be used as the RJMS management
                                      host (thus NOT used to compute jobs)
                                      [default: master_host].
-  -r, --add-role-to-hosts <hosts_role_map>... Add a `role` property to the specify host(s).
+  -r, --add-role-to-hosts <hosts_role_map>  Add a `role` property to the specify host(s).
                                      The <hosts-roles-map> is formated as <hosts>:<role>
                                      The <hosts> should be formated as follow:
                                      hostname1,hostname2,..
@@ -267,9 +271,9 @@ Other options:
   --no-sched                         If set, the jobs in the workloads are
                                      computed one by one, one after the other,
                                      without scheduler nor Redis.
-  --sg-cfg <opt_name:opt_value>...   Forwards a given option_name:option_value to SimGrid.
+  --sg-cfg <opt_name:opt_value>      Forwards a given option_name:option_value to SimGrid.
                                      Refer to SimGrid configuring documentation for more information.
-  --sg-log <log_option>...           Forwards a given logging option to SimGrid.
+  --sg-log <log_option>              Forwards a given logging option to SimGrid.
                                      Refer to SimGrid simulation logging documentation for more information.
   -h, --help                         Shows this help.
 )";
@@ -410,6 +414,28 @@ Other options:
                     return_code |= 0x40;
                 }
             }
+        }
+    }
+
+    // EventLists
+    vector<string> events_files = args["--events"].asStringList();
+    for (const string & events_file : events_files)
+    {
+        if (!file_exists(events_file))
+        {
+            XBT_ERROR("Events file '%s' cannot be read.", events_file.c_str());
+            error = true;
+            return_code |= 0x02;
+        }
+        else
+        {
+            MainArguments::EventListDescription desc;
+            desc.filename = absolute_filename(events_file);
+            desc.name = generate_sha1_string(desc.filename);
+
+            XBT_INFO("Event list '%s' corresponds to events file '%s'.",
+                     desc.name.c_str(), desc.filename.c_str());
+            main_args.eventList_descriptions.push_back(desc);
         }
     }
 
@@ -636,6 +662,16 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     }
 }
 
+void load_eventLists(const MainArguments & main_args, BatsimContext * context)
+{
+    for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
+    {
+        EventList * events = EventList::new_event_list(desc.name);
+        events->load_from_json(desc.filename);
+        context->eventListsMap[desc.name] = events;
+    }
+}
+
 void start_initial_simulation_processes(const MainArguments & main_args,
                                         BatsimContext * context,
                                         bool is_batexec)
@@ -669,6 +705,20 @@ void start_initial_simulation_processes(const MainArguments & main_args,
         simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     workflow_submitter_process,
+                                    context, desc.name);
+        XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
+    }
+
+    // Let's run a static_event_submitter process for each list of event
+    for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
+    {
+        string submitter_instance_name = "event_submitter_" + desc.name;
+
+        XBT_DEBUG("Creating an event_submitter process...");
+        auto actor_function = static_event_submitter_process;
+        simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+                                    master_machine->host,
+                                    actor_function,
                                     context, desc.name);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
@@ -771,6 +821,9 @@ int main(int argc, char * argv[])
     // Let's load the workloads and workflows
     int max_nb_machines_to_use = -1;
     load_workloads_and_workflows(main_args, &context, max_nb_machines_to_use);
+
+    // Let's load the eventLists
+    load_eventLists(main_args, &context);
 
     // initialyse Ptask L07 model
     engine.set_config("host/model:ptask_L07");

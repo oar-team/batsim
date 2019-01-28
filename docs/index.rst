@@ -49,6 +49,7 @@ Batch schedulers — or Resource and Jobs Management Systems, RJMSs — are syst
 
    Platform <input-platform.rst>
    Workload <input-workload.rst>
+   Events <input-events.rst>
 
 .. toctree::
    :maxdepth: 1

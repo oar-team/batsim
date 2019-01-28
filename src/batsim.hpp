@@ -61,10 +61,20 @@ struct MainArguments
         double start_time;          //!< The moment in time at which the workflow should be started
     };
 
+   /**
+    * @brief Stores the command-line description of an eventList
+    */
+   struct EventListDescription
+   {
+       std::string filename;        //!< The filename of the eventList
+       std::string name;            //!< The name of the eventList
+   };
+
     // Input
     std::string platform_filename;                          //!< The SimGrid platform filename
     std::list<WorkloadDescription> workload_descriptions;   //!< The workloads descriptions
     std::list<WorkflowDescription> workflow_descriptions;   //!< The workflows descriptions
+    std::list<EventListDescription> eventList_descriptions; //!< The descriptions of the eventLists
 
     // Common
     std::string master_host_name;                           //!< The name of the SimGrid host which runs scheduler processes and not user tasks
@@ -136,6 +146,13 @@ void configure_batsim_logging_output(const MainArguments & main_args);
  *             This number is computed from Batsim arguments but depends on Workloads content. -1 means no limitation.
  */
 void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext * context, int & max_nb_machines_to_use);
+
+/**
+ * @brief Loads the eventLists defined in Batsim arguments
+ * @param[in] main_args Batsim arguments
+ * @param[in,out] context The BatsimContext
+ */
+void load_eventLists(const MainArguments & main_args, BatsimContext * context);
 
 /**
  * @brief Starts the SimGrid processes that should be executed at the beginning of the simulation

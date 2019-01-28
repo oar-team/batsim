@@ -16,10 +16,10 @@
 #include <intervalset.hpp>
 
 #include "jobs.hpp"
+#include "events.hpp"
 
 struct BatsimContext;
 struct ServerData;
-
 
 /**
  * @brief Stores the different types of inter-process messages
@@ -50,8 +50,18 @@ enum class IPMessageType
     ,SWITCHED_OFF           //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
     ,END_DYNAMIC_REGISTER     //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
     ,CONTINUE_DYNAMIC_REGISTER //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions continue.
-    ,TO_JOB_MSG //!< Scheduler -> Server. The scheduler sends a message to a job.
-    ,FROM_JOB_MSG //!< Job -> Server. The job wants to send a message to the scheduler via the server.
+    ,TO_JOB_MSG                //!< Scheduler -> Server. The scheduler sends a message to a job.
+    ,FROM_JOB_MSG              //!< Job -> Server. The job wants to send a message to the scheduler via the server.
+    ,EVENT_OCCURRED            //!< Sumbitter -> Server. The event submitter tells the server that one or several events have occurred.
+};
+
+/**
+ * @brief Contains the different types of submitters
+ */
+enum class SubmitterType
+{
+     JOB_SUBMITTER              //!< A Job submitter
+    ,EVENT_SUBMITTER            //!< An Event submitter
 };
 
 /**
@@ -59,8 +69,9 @@ enum class IPMessageType
  */
 struct SubmitterHelloMessage
 {
-    std::string submitter_name; //!< The name of the submitter. Must be unique. Is also used as a mailbox.
+    std::string submitter_name;             //!< The name of the submitter. Must be unique. Is also used as a mailbox.
     bool enable_callback_on_job_completion; //!< If set to true, the submitter should be called back when its jobs complete.
+    SubmitterType submitter_type;           //!< The type of the Submitter
 };
 
 /**
@@ -68,8 +79,9 @@ struct SubmitterHelloMessage
  */
 struct SubmitterByeMessage
 {
-    bool is_workflow_submitter; //!< Stores whether the finished submitter was a Workflow submitter
-    std::string submitter_name; //!< The name of the submitter.
+    std::string submitter_name;     //!< The name of the submitter.
+    SubmitterType submitter_type;   //!< The type of the submitter.
+    bool is_workflow_submitter;     //!< Stores whether the finished submitter was a Workflow submitter
 };
 
 /**
@@ -227,6 +239,7 @@ struct KillingDoneMessage
 {
     std::vector<JobIdentifier> jobs_ids; //!< The IDs of the jobs whose kill has been requested
     std::map<JobIdentifier, BatTask *> jobs_progress; //!< Stores the progress of the jobs that have really been killed.
+    bool acknowledge_kill_on_protocol; //!< Whether to send a JOB_KILLED event to acknowledge the kills
 };
 
 /**
@@ -245,6 +258,15 @@ struct FromJobMessage
 {
     JobIdentifier job_id; //!< The JobIdentifier
     rapidjson::Document message; //!< The message to send to the scheduler
+};
+
+/**
+ * @brief The content of the EventOccurred message
+ */
+struct EventOccurredMessage
+{
+    std::string submitter_name;          //!< The name of the submitter which submitted the events.
+    std::vector<const Event *> occurred_events; //!< The list of Event that occurred
 };
 
 /**
@@ -324,3 +346,10 @@ bool mailbox_empty(const std::string & reception_mailbox);
  * @return The std::string corresponding to the type
  */
 std::string ip_message_type_to_string(IPMessageType type);
+
+/**
+ * @brief Transforms a SumbitterType into a std::string
+ * @param[in] type The SubmitterType
+ * @return The std::string corresponding to the type
+ */
+std::string submitter_type_to_string(SubmitterType type);
