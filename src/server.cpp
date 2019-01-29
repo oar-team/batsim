@@ -142,9 +142,7 @@ void server_process(BatsimContext * context)
     xbt_assert(data->nb_running_jobs == 0, "Left simulation loop, but some jobs are running.");
     xbt_assert(data->nb_switching_machines == 0, "Left simulation loop, but some machines are being switched.");
     xbt_assert(data->nb_killers == 0, "Left simulation loop, but some killer processes (used to kill jobs) are running.");
-
-    if (data->nb_waiters > 0)
-        XBT_WARN("Left simulation loop, but some waiter processes (used to manage the CALL_ME_LATER message) are running.");
+    xbt_assert(data->nb_waiters == 0, "Left simulation loop, but some waiter processes (used to manage the CALL_ME_LATER message) are running.");
 
     // Consistency
     xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
@@ -1102,6 +1100,7 @@ bool is_simulation_finished(ServerData * data)
            (data->nb_completed_jobs == data->nb_submitted_jobs) && // All submitted jobs have been completed (either computed and finished or rejected)
            (data->nb_running_jobs == 0) && // No jobs are being executed
            (data->nb_switching_machines == 0) && // No machine is being switched
+           (data->nb_waiters == 0) && // No waiter process is running
            (data->nb_killers == 0); // No jobs is being killed
 }
 
