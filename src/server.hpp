@@ -65,10 +65,10 @@ struct ServerData
 bool is_simulation_finished(ServerData * data);
 
 /**
- * @brief Checks whether the simulation is finished, and buffers a SIMULATION_ENDS event if needed.
+ * @brief Generates and sends the message to the scheduler via a request_reply_scheduler_process
  * @param[in,out] data The data associated with the server_process
  */
-void check_simulation_finished(ServerData * data);
+void generate_and_send_message(ServerData * data);
 
 /**
  * @brief Process used to orchestrate the simulation

@@ -85,9 +85,6 @@ void server_process(BatsimContext * context)
     event_counters.expected_nb_submitters = context->eventListsMap.size();
     data->submitter_counters[SubmitterType::EVENT_SUBMITTER] = event_counters;
 
-    // Is the simulation already finished? It can occur now if there is no job to execute.
-    check_simulation_finished(data);
-
     // Simulation loop
     while (!data->end_of_simulation_ack_received)
     {
@@ -107,24 +104,27 @@ void server_process(BatsimContext * context)
         delete message;
 
         // Let's send a message to the scheduler if needed
-        if (data->sched_ready && // The scheduler must be ready
-            !context->proto_writer->is_empty() && // There must be something to send to the scheduler
+        if (data->sched_ready &&                     // The scheduler must be ready
             !data->end_of_simulation_ack_received && // The simulation must NOT be finished
-            mailbox_empty("server") // The server mailbox must be empty
+            mailbox_empty("server")                  // The server mailbox must be empty
             )
         {
-            string send_buffer = context->proto_writer->generate_current_message(simgrid::s4u::Engine::get_clock());
-            context->proto_writer->clear();
-
-            simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
-                                        request_reply_scheduler_process,
-                                        context, send_buffer);
-            data->sched_ready = false;
-
-            if (data->end_of_simulation_in_send_buffer)
+            if (!context->proto_writer->is_empty()) // There is something to send to the scheduler
             {
-                data->end_of_simulation_in_send_buffer = false;
-                data->end_of_simulation_sent = true;
+                generate_and_send_message(data);
+            }
+            else // There is no event to send to the scheduler
+            {
+                // Check if the simulation is finished
+                if (is_simulation_finished(data) &&
+                    !data->end_of_simulation_sent &&
+                    !data->end_of_simulation_in_send_buffer)
+                {
+                    XBT_INFO("The simulation seems finished.");
+                    data->context->proto_writer->append_simulation_ends(simgrid::s4u::Engine::get_clock());
+                    generate_and_send_message(data);
+                    data->end_of_simulation_sent = true;
+                }
             }
         }
 
@@ -150,6 +150,17 @@ void server_process(BatsimContext * context)
     xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
 
     delete data;
+}
+
+void generate_and_send_message(ServerData * data)
+{
+    string send_buffer = data->context->proto_writer->generate_current_message(simgrid::s4u::Engine::get_clock());
+    data->context->proto_writer->clear();
+
+    simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
+                                request_reply_scheduler_process,
+                                data->context, send_buffer);
+    data->sched_ready = false;
 }
 
 void server_on_submitter_hello(ServerData * data,
@@ -218,8 +229,6 @@ void server_on_submitter_bye(ServerData * data,
             data->nb_workflow_submitters_finished++;
         }
     }
-
-    check_simulation_finished(data);
 }
 
 void server_on_job_completed(ServerData * data,
@@ -255,7 +264,6 @@ void server_on_job_completed(ServerData * data,
                                                       job->return_code,
                                                       simgrid::s4u::Engine::get_clock());
 
-    check_simulation_finished(data);
 }
 
 void server_on_job_submitted(ServerData * data,
@@ -391,8 +399,6 @@ void server_on_event_occurred(ServerData * data,
             break;
         }
     }
-
-    check_simulation_finished(data);
 }
 
 void server_on_pstate_modification(ServerData * data,
@@ -638,7 +644,6 @@ void server_on_killing_done(ServerData * data,
     }
 
     --data->nb_killers;
-    check_simulation_finished(data);
 }
 
 void server_on_end_dynamic_register(ServerData * data,
@@ -647,8 +652,6 @@ void server_on_end_dynamic_register(ServerData * data,
     (void) task_data;
 
     data->context->registration_sched_finished = true;
-
-    check_simulation_finished(data);
 }
 
 void server_on_continue_dynamic_register(ServerData * data,
@@ -656,8 +659,6 @@ void server_on_continue_dynamic_register(ServerData * data,
 {
     (void) task_data;
     data->context->registration_sched_finished = false;
-
-    check_simulation_finished(data);
 }
 
 void server_on_register_job(ServerData * data,
@@ -846,8 +847,6 @@ void server_on_change_job_state(ServerData * data,
     }
 
     job->state = new_state;
-
-    check_simulation_finished(data);
 }
 
 void server_on_to_job_msg(ServerData * data,
@@ -868,8 +867,6 @@ void server_on_to_job_msg(ServerData * data,
              message->message.c_str());
 
     job->incoming_message_buffer.push_back(message->message);
-
-    check_simulation_finished(data);
 }
 
 void server_on_from_job_msg(ServerData * data,
@@ -886,8 +883,6 @@ void server_on_from_job_msg(ServerData * data,
     data->context->proto_writer->append_from_job_message(message->job_id.to_string(),
                                                          message->message,
                                                          simgrid::s4u::Engine::get_clock());
-
-    check_simulation_finished(data);
 }
 
 void server_on_reject_job(ServerData * data,
@@ -913,8 +908,6 @@ void server_on_reject_job(ServerData * data,
 
     XBT_INFO("Job '%s' has been rejected",
              job->id.to_string().c_str());
-
-    check_simulation_finished(data);
 }
 
 void server_on_kill_jobs(ServerData * data,
@@ -1111,18 +1104,4 @@ bool is_simulation_finished(ServerData * data)
            (data->nb_switching_machines == 0) && // No machine is being switched
            (data->nb_killers == 0); // No jobs is being killed
 }
-
-void check_simulation_finished(ServerData * data)
-{
-    if (is_simulation_finished(data) &&
-        !data->end_of_simulation_sent &&
-        !data->end_of_simulation_in_send_buffer)
-    {
-        XBT_INFO("The simulation seems to be finished!");
-
-        data->context->proto_writer->append_simulation_ends(simgrid::s4u::Engine::get_clock());
-        data->end_of_simulation_in_send_buffer = true;
-    }
-}
-
 
