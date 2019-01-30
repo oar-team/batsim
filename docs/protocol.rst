@@ -421,6 +421,8 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
      ]
    }
 
+.. _proto_SIMULATION_ENDS:
+
 SIMULATION_ENDS
 ~~~~~~~~~~~~~~~
 
@@ -738,6 +740,8 @@ a mapping (optional), an additional IO job (optional).
        }
      }
    }
+
+.. _proto_CALL_ME_LATER:
 
 CALL_ME_LATER
 ~~~~~~~~~~~~~
