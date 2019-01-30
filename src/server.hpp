@@ -48,7 +48,6 @@ struct ServerData
     int nb_killers = 0; //!< The number of killers
     bool sched_ready = true;    //!< Whether the scheduler can be called now
 
-    bool end_of_simulation_in_send_buffer = false;  //!< Whether the SIMULATION_ENDS is in the decision process send buffer
     bool end_of_simulation_sent = false; //!< Whether the SIMULATION_ENDS event has been sent to the scheduler
     bool end_of_simulation_ack_received = false; //!< Whether the SIMULATION_ENDS acknowledgement (empty message) has been received
 

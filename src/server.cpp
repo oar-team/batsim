@@ -117,8 +117,7 @@ void server_process(BatsimContext * context)
             {
                 // Check if the simulation is finished
                 if (is_simulation_finished(data) &&
-                    !data->end_of_simulation_sent &&
-                    !data->end_of_simulation_in_send_buffer)
+                    !data->end_of_simulation_sent)
                 {
                     XBT_INFO("The simulation seems finished.");
                     data->context->proto_writer->append_simulation_ends(simgrid::s4u::Engine::get_clock());
@@ -133,7 +132,6 @@ void server_process(BatsimContext * context)
     XBT_INFO("Simulation is finished!");
 
     // Is simulation also finished for the decision process?
-    xbt_assert(!data->end_of_simulation_in_send_buffer, "Left simulation loop, but the SIMULATION_ENDS message is still in the send buffer to the decision process.");
     xbt_assert(data->end_of_simulation_sent, "Left simulation loop, but the SIMULATION_ENDS message has not been sent to the scheduler.");
     xbt_assert(data->end_of_simulation_ack_received, "Left simulation loop, but the decision process did not ACK the SIMULATION_ENDS message.");
 
@@ -165,7 +163,7 @@ void server_on_submitter_hello(ServerData * data,
                                IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr);
-    xbt_assert(!data->end_of_simulation_in_send_buffer,
+    xbt_assert(!data->end_of_simulation_sent,
                "A new submitter said hello but the simulation is finished... Aborting.");
     SubmitterHelloMessage * message = (SubmitterHelloMessage *) task_data->data;
 

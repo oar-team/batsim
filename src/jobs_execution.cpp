@@ -508,8 +508,7 @@ void waiter_process(double target_time, const ServerData * server_data)
         XBT_INFO("Time %g is already reached, skipping sleep", target_time);
     }
 
-    if (server_data->end_of_simulation_in_send_buffer ||
-        server_data->end_of_simulation_sent ||
+    if (server_data->end_of_simulation_sent ||
         server_data->end_of_simulation_ack_received)
     {
         XBT_INFO("Simulation have finished. Thus, NOT sending WAITING_DONE to the server.");
