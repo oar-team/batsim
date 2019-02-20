@@ -246,7 +246,7 @@ Job-related options:
                                      [default: false]
   --acknowledge-dynamic-jobs         Makes Batsim send a JOB_SUBMITTED back to the scheduler when
                                      Batsim receives a REGISTER_JOB.
-                                     [default: true]
+                                     [default: false]
 
 Verbosity options:
   -v, --verbosity <verbosity_level>  Sets the Batsim verbosity level. Available
