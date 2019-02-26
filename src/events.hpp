@@ -36,6 +36,15 @@ std::string event_type_to_string(const EventType & type);
 EventType event_type_from_string(const std::string & type_str);
 
 /**
+ * @brief The data of an EVENT_MACHINE_AVAILABLE or EVENT_MACHINE_UNAVAILABLE
+ */
+struct MachineAvailabilityEventData
+{
+    IntervalSet machine_ids;    //!< The machine ids involved
+};
+
+
+/**
  * @brief Represents an event
  */
 struct Event
@@ -45,7 +54,7 @@ struct Event
 
     EventType type;             //!< The type of the Event
     long double timestamp;      //!< The occurring time of the Event
-    IntervalSet machine_ids;    //!< The machine ids involved in the Event
+    void * data;                //!< The Event data
 
 public:
     /**

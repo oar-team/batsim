@@ -42,7 +42,7 @@ EventType event_type_from_string(const std::string & type_str)
     }
     else
     {
-        xbt_assert(false, "Unknown event type.");
+        xbt_assert(false, "Unknown event type: %s", type_str.c_str());
     }
     return type;
 }
@@ -57,9 +57,6 @@ Event * Event::from_json(const rapidjson::Value & json_desc,
     xbt_assert(json_desc.HasMember("type"), "%s: one event has no 'type' field", error_prefix.c_str());
     xbt_assert(json_desc["type"].IsString(), "%s: one event type field is not valid, it should be a string.", error_prefix.c_str());
 
-    xbt_assert(json_desc.HasMember("resources"), "%s: one event has no 'resources' field", error_prefix.c_str());
-    xbt_assert(json_desc["resources"].IsString(), "%s: one event resources field is not valid, it should be a string.", error_prefix.c_str());
-
     xbt_assert(json_desc.HasMember("timestamp"), "%s: one event has no 'timestamp' field", error_prefix.c_str());
     xbt_assert(json_desc["timestamp"].IsNumber(), "%s: one event timestamp field is not valid, it should be a number.", error_prefix.c_str());
 
@@ -70,8 +67,23 @@ Event * Event::from_json(const rapidjson::Value & json_desc,
     event->timestamp = json_desc["timestamp"].GetDouble();
     xbt_assert(event->timestamp >= 0, "%s: one event has a non-positive timestamp.", error_prefix.c_str());
 
-    try { event->machine_ids = IntervalSet::from_string_hyphen(json_desc["resources"].GetString(), " ", "-"); }
-    catch(const std::exception & e) { throw std::runtime_error(std::string("Invalid JSON message: ") + e.what());}
+    if (event->type == EventType::EVENT_MACHINE_AVAILABLE ||
+        event->type == EventType::EVENT_MACHINE_UNAVAILABLE)
+    {
+        xbt_assert(json_desc.HasMember("resources"), "%s: one event has no 'resources' field", error_prefix.c_str());
+        xbt_assert(json_desc["resources"].IsString(), "%s: one event resources field is not valid, it should be a string.", error_prefix.c_str());
+
+        MachineAvailabilityEventData * data = new MachineAvailabilityEventData;
+
+        try { data->machine_ids = IntervalSet::from_string_hyphen(json_desc["resources"].GetString(), " ", "-"); }
+        catch(const std::exception & e) { throw std::runtime_error(std::string("Invalid JSON message: ") + e.what());}
+
+        event->data = (void*) data;
+    }
+    else
+    {
+        xbt_die("%s: one event has an unknown event type.", error_prefix.c_str());
+    }
 
     return event;
 }

@@ -324,7 +324,8 @@ void server_on_job_submitted(ServerData * data,
 void server_on_event_machine_unavailable(ServerData * data,
                                          const Event * event)
 {
-    IntervalSet machines = event->machine_ids;
+    MachineAvailabilityEventData * event_data = (MachineAvailabilityEventData*) event->data;
+    IntervalSet machines = event_data->machine_ids;
     if(machines.size() > 0)
     {
         for (auto machine_it = machines.elements_begin();
@@ -343,7 +344,7 @@ void server_on_event_machine_unavailable(ServerData * data,
         }
         // Notify the decision process that some machines have become unavailable
         data->context->proto_writer->append_notify_resource_event("event_machine_unavailable",
-                                                                  event->machine_ids,
+                                                                  machines,
                                                                   simgrid::s4u::Engine::get_clock());
     }
 }
@@ -351,7 +352,8 @@ void server_on_event_machine_unavailable(ServerData * data,
 void server_on_event_machine_available(ServerData * data,
                                        const Event * event)
 {
-    IntervalSet machines = event->machine_ids;
+    MachineAvailabilityEventData * event_data = (MachineAvailabilityEventData*) event->data;
+    IntervalSet machines = event_data->machine_ids;
     if(machines.size() > 0)
     {
         for (auto machine_it = machines.elements_begin();
@@ -372,7 +374,7 @@ void server_on_event_machine_available(ServerData * data,
         }
         // Notify the decision process that some machines have become available
         data->context->proto_writer->append_notify_resource_event("event_machine_available",
-                                                                  event->machine_ids,
+                                                                  machines,
                                                                   simgrid::s4u::Engine::get_clock());
     }
 }
