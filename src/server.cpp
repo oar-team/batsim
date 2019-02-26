@@ -379,6 +379,16 @@ void server_on_event_machine_available(ServerData * data,
     }
 }
 
+void server_on_event_generic(ServerData * data,
+                             const Event * event)
+{
+
+    // Just forward the json object
+    GenericEventData * event_data = (GenericEventData*) event->data;
+    data->context->proto_writer->append_notify_generic_event(event_data->json_desc_str,
+                                                             simgrid::s4u::Engine::get_clock());
+}
+
 void server_on_event_occurred(ServerData * data,
                               IPMessage * task_data)
 {
@@ -395,6 +405,11 @@ void server_on_event_occurred(ServerData * data,
         case EventType::EVENT_MACHINE_UNAVAILABLE:
             server_on_event_machine_unavailable(data, event);
             break;
+        case EventType::EVENT_GENERIC:
+            server_on_event_generic(data, event);
+            break;
+        default:
+            xbt_die("The server received an unknown event.");
         }
     }
 }

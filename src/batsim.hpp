@@ -115,6 +115,7 @@ struct MainArguments
     bool dump_execution_context = false;                    //!< Instead of running the simulation, print the execution context as JSON on the standard output.
     bool allow_compute_sharing = false;                     //!< Allows/forbids sharing on compute machines. Two jobs can run concurrently on the same machine if and only if sharing is allowed.
     bool allow_storage_sharing = false;                     //!< Allows/forbids sharing on storage machines. Two jobs can run concurrently on the same machine if and only if sharing is allowed.
+    bool forward_unknown_events = false;                    //!< Whether the unknown external events should be forwarded to the scheduler.
     ProgramType program_type = ProgramType::BATSIM;         //!< The program type (Batsim or Batexec at the moment)
     std::string pfs_host_name;                              //!< The name of the SimGrid host which serves as parallel file system (a.k.a. large-capacity storage tier)
     std::string hpst_host_name;                             //!< The name of the SimGrid host which serves as the high-performance storage tier

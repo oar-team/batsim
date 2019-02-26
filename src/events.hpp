@@ -19,6 +19,7 @@ enum class EventType
 {
      EVENT_MACHINE_AVAILABLE        //!< The machine becomes available
     ,EVENT_MACHINE_UNAVAILABLE      //!< The machine becomes unavailable
+    ,EVENT_GENERIC                  //!< A generic event
 };
 
 /**
@@ -31,9 +32,10 @@ std::string event_type_to_string(const EventType & type);
 /**
  * @brief Returns an EventType corresponding to a given std::string
  * @param type_str The std::string
+ * @param unknown_as_generic Whether an unknown event has to be treated as a generic Event
  * @return An EventType corresponding to a given std::string
  */
-EventType event_type_from_string(const std::string & type_str);
+EventType event_type_from_string(const std::string & type_str, const bool unknown_as_generic = false);
 
 /**
  * @brief The data of an EVENT_MACHINE_AVAILABLE or EVENT_MACHINE_UNAVAILABLE
@@ -43,6 +45,13 @@ struct MachineAvailabilityEventData
     IntervalSet machine_ids;    //!< The machine ids involved
 };
 
+/**
+ * @brief The data of an EVENT_GENERIC
+ */
+struct GenericEventData
+{
+    std::string json_desc_str; //!< The json description of the generic event as a string
+};
 
 /**
  * @brief Represents an event
@@ -60,19 +69,23 @@ public:
     /**
      * @brief Creates a new-allocated Event from a JSON description
      * @param[in] json_desc The JSON description of the event
+     * @param[in] unknown_as_generic Whether an unknown event has to be treated as a generic Event
      * @param[in] error_prefix The prefix to display when an error occurs
      * @return The newly allocated Event
      */
-    static Event * from_json(const rapidjson::Value & json_desc,
+    static Event * from_json(rapidjson::Value & json_desc,
+                             const bool unknown_as_generic = false,
                              const std::string & error_prefix = "Invalid JSON event");
 
     /**
      * @brief Creates a new-allocated Event from a JSON description
      * @param[in] json_str The JSON description of the event (as a string)
+     * @param[in] unknown_as_generic Whether an unknown event has to be treated as a generic Event
      * @param[in] error_prefix The prefix to display when an error occurs
      * @return The newly allocated Event
      */
     static Event * from_json(const std::string & json_str,
+                             const bool unknown_as_generic = false,
                              const std::string & error_prefix = "Invalid JSON event");
 
 };
@@ -114,8 +127,9 @@ public:
     /**
      * @brief Loads static Events from a JSON filename
      * @param[in] json_filename The name of the JSON file
+     * @param[in] unknown_as_generic Whether an unknown event has to be treated as a generic Event
      */
-    void load_from_json(const std::string & json_filename);
+    void load_from_json(const std::string & json_filename, bool unknown_as_generic = false);
 
     /**
      * @brief Gets the list of Events

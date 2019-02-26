@@ -194,7 +194,7 @@ Input options:
   --WS, --workflow-start (<cut_workflow_file> <start_time>)  The workflow XML
                                      files to simulate, with the time at which
                                      they should be started.
-  --events <events_file>             The files containing events to simulate.
+  --events <events_file>             The files containing external events to simulate.
 
 Most common options:
   -m, --master-host <name>           The name of the host in <platform_file>
@@ -275,6 +275,9 @@ Other options:
                                      Refer to SimGrid configuring documentation for more information.
   --sg-log <log_option>              Forwards a given logging option to SimGrid.
                                      Refer to SimGrid simulation logging documentation for more information.
+  --forward-unknown-events           Enables the forwarding to the scheduler of external events that
+                                     are unknown to Batsim. Ignored if there were no event inputs with --events.
+                                     [default: false]
   -h, --help                         Shows this help.
 )";
 
@@ -553,6 +556,10 @@ Other options:
     main_args.dump_execution_context = args["--dump-execution-context"].asBool();
     main_args.allow_compute_sharing = args["--enable-compute-sharing"].asBool();
     main_args.allow_storage_sharing = !(args["--disable-storage-sharing"].asBool());
+    if (!main_args.eventList_descriptions.empty())
+    {
+        main_args.forward_unknown_events = args["--forward-unknown-events"].asBool();
+    }
     if (args["--no-sched"].asBool())
     {
         main_args.program_type = ProgramType::BATEXEC;
@@ -668,7 +675,7 @@ void load_eventLists(const MainArguments & main_args, BatsimContext * context)
     for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
     {
         EventList * events = EventList::new_event_list(desc.name);
-        events->load_from_json(desc.filename);
+        events->load_from_json(desc.filename, main_args.forward_unknown_events);
         context->eventListsMap[desc.name] = events;
     }
 }

@@ -9,6 +9,9 @@
 
 #include <simgrid/s4u.hpp>
 
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
 XBT_LOG_NEW_DEFAULT_CATEGORY(events, "events"); //!< Logging
 
 using namespace std;
@@ -16,7 +19,7 @@ using namespace rapidjson;
 
 std::string event_type_to_string(const EventType & type)
 {
-    string event_type("UNKNOWN");
+    string event_type("unknown");
     switch(type)
     {
     case EventType::EVENT_MACHINE_AVAILABLE:
@@ -25,11 +28,14 @@ std::string event_type_to_string(const EventType & type)
     case EventType::EVENT_MACHINE_UNAVAILABLE:
         event_type = "machine_unavailable";
         break;
+    case EventType::EVENT_GENERIC:
+        event_type = "generic";
+        break;
     }
     return event_type;
 }
 
-EventType event_type_from_string(const std::string & type_str)
+EventType event_type_from_string(const std::string & type_str, const bool unknown_as_generic)
 {
     EventType type;
     if(type_str == "machine_available")
@@ -42,14 +48,22 @@ EventType event_type_from_string(const std::string & type_str)
     }
     else
     {
-        xbt_assert(false, "Unknown event type: %s", type_str.c_str());
+        if (unknown_as_generic)
+        {
+            type = EventType::EVENT_GENERIC;
+        }
+        else
+        {
+            xbt_assert(false, "Unknown event type: %s", type_str.c_str());
+        }
     }
     return type;
 }
 
 
 // Event-related functions
-Event * Event::from_json(const rapidjson::Value & json_desc,
+Event * Event::from_json(rapidjson::Value & json_desc,
+                         const bool unknown_as_generic,
                          const std::string & error_prefix)
 {
     xbt_assert(json_desc.IsObject(), "%s: one event is not an object", error_prefix.c_str());
@@ -62,7 +76,7 @@ Event * Event::from_json(const rapidjson::Value & json_desc,
 
     Event * event = new Event;
 
-    event->type = event_type_from_string(json_desc["type"].GetString());
+    event->type = event_type_from_string(json_desc["type"].GetString(), unknown_as_generic);
 
     event->timestamp = json_desc["timestamp"].GetDouble();
     xbt_assert(event->timestamp >= 0, "%s: one event has a non-positive timestamp.", error_prefix.c_str());
@@ -80,6 +94,16 @@ Event * Event::from_json(const rapidjson::Value & json_desc,
 
         event->data = (void*) data;
     }
+    else if ((event->type == EventType::EVENT_GENERIC) && unknown_as_generic)
+    {
+        GenericEventData * data = new GenericEventData;
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        json_desc.Accept(writer);
+
+        data->json_desc_str = std::string(buffer.GetString(), buffer.GetSize());
+        event->data = (void*) data;
+    }
     else
     {
         xbt_die("%s: one event has an unknown event type.", error_prefix.c_str());
@@ -89,6 +113,7 @@ Event * Event::from_json(const rapidjson::Value & json_desc,
 }
 
 Event * Event::from_json(const std::string & json_str,
+                         const bool unknown_as_generic,
                          const std::string & error_prefix)
 {
     Document doc;
@@ -96,7 +121,7 @@ Event * Event::from_json(const std::string & json_str,
     xbt_assert(!doc.HasParseError(),
                "%s: Cannot be parsed, Content (between '##'):\n#%s#",
                error_prefix.c_str(), json_str.c_str());
-    return Event::from_json(doc, error_prefix);
+    return Event::from_json(doc, unknown_as_generic, error_prefix);
 }
 
 bool event_comparator_timestamp_number(const Event * a, const Event * b)
@@ -121,7 +146,7 @@ EventList * EventList::new_event_list(const std::string & name,
     return ev;
 }
 
-void EventList::load_from_json(const std::string & json_filename)
+void EventList::load_from_json(const std::string & json_filename, bool unknown_as_generic)
 {
     XBT_INFO("Loading JSON events from '%s' ...", json_filename.c_str());
     _file = json_filename;
@@ -137,7 +162,7 @@ void EventList::load_from_json(const std::string & json_filename)
             doc.Parse(line.c_str());
             xbt_assert(!doc.HasParseError() and doc.IsObject(), "Invalid JSON event file %s, an event could not be parsed.", json_filename.c_str());
 
-            Event * event = Event::from_json(doc);
+            Event * event = Event::from_json(doc, unknown_as_generic);
             add_event(event);
         }
     }
