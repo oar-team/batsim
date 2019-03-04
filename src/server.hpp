@@ -138,7 +138,7 @@ void server_on_event_occurred(ServerData * data,
  * @param[in] event The event that occurred
  */
 void server_on_event_machine_unavailable(ServerData * data,
-                                     Event * event);
+                                     const Event * event);
 
 /**
  * @brief Server handler for EVENT of type EVENT_MACHINE_AVAILABLE
@@ -146,7 +146,15 @@ void server_on_event_machine_unavailable(ServerData * data,
  * @param[in] event The event that occurred
  */
 void server_on_event_machine_available(ServerData * data,
-                                     Event * event);
+                                     const Event * event);
+
+/**
+ * @brief Server handler for Event of type EVENT_GENERIC
+ * @param[in,out] data The data associated with the server_process
+ * @param event The event that occurred
+ */
+void server_on_event_generic(ServerData * data,
+                             const Event * event);
 
 /**
  * @brief Server PSTATE_MODIFICATION handler

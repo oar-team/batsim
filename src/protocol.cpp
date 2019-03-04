@@ -613,6 +613,33 @@ void JsonProtocolWriter::append_notify_resource_event(const std::string & notify
     _events.PushBack(event, _alloc);
 }
 
+void JsonProtocolWriter::append_notify_generic_event(const std::string & json_desc_str,
+                                                     double date)
+{
+    /* {
+        "timestamp" : 12.3,
+        "type": "NOTIFY",
+        "data": // A JSON object representing an external event
+      } */
+
+    xbt_assert(date >= _last_date, "Date inconsistency");
+    _last_date = date;
+    _is_empty = false;
+
+    Value event(rapidjson::kObjectType);
+
+    event.AddMember("timestamp", Value().SetDouble(date), _alloc);
+    event.AddMember("type", Value().SetString("NOTIFY"), _alloc);
+
+    Document event_doc;
+    event_doc.Parse(json_desc_str.c_str());
+    xbt_assert(!event_doc.HasParseError());
+    event.AddMember("data", Value().CopyFrom(event_doc, _alloc), _alloc);
+
+
+    _events.PushBack(event, _alloc);
+}
+
 
 void JsonProtocolWriter::clear()
 {
