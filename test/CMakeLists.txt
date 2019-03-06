@@ -33,7 +33,7 @@ function(create_robin_description_file)
     endif()
 
     if ("${crdf_SIMULATION_TIMEOUT}" STREQUAL "")
-        set(crdf_SIMULATION_TIMEOUT 30)
+        set(crdf_SIMULATION_TIMEOUT 60)
     endif()
     if ("${crdf_READY_TIMEOUT}" STREQUAL "")
         set(crdf_READY_TIMEOUT 3)
@@ -86,7 +86,7 @@ function(add_test_robintest)
 
     # The following arguments have default values
     if ("${atr_TEST_TIMEOUT}" STREQUAL "")
-        set(atr_TEST_TIMEOUT "30")
+        set(atr_TEST_TIMEOUT "60")
     endif()
     if ("${atr_ROBINTEST_EXPECTATION}" STREQUAL "")
         set(atr_ROBINTEST_EXPECTATION "--expect-ctx-clean")
