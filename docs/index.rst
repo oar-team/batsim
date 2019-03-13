@@ -5,7 +5,7 @@ Batsim
 
    This documentation is under construction.
 
-   Feel free to :ref:`contact_us` for any question or remark.
+   Feel free to :ref:`contact_us` if you have any question or remark — or if a TODO is important for you.
    Here are :ref:`contributing`.
 
 Batsim is a scientific simulator to analyze batch schedulers.
