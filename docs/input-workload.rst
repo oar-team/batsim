@@ -21,6 +21,11 @@ Here is an example of a Batsim workload from Batsim's repository
 .. literalinclude:: ../workloads/test_various_profile_types.json
     :language: json
 
+.. todo::
+
+    - Talk about ``nb_res``. Quick answer: look at the ``--mmax-workload`` option of :ref:`cli`.
+    - Tell that other fields can be used freely by users but are ignored by Batsim.
+
 Job definition
 --------------
 Jobs must have the following fields.
