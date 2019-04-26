@@ -36,7 +36,8 @@ Added
     - :ref:`events_GENERIC_EVENTS`: User-defined external events that can be forwarded to the scheduler with the option ``--forward-unknown-events``.
   - A new :ref:`proto_NOTIFY` protocol event ``no_more_external_event_to_occur`` has been added to tell the scheduler
     that no more external events coming from Batsim can occur during the simulation.
-  - A new command-line option was added: ``--forward-unknown-events`` that forwards unknown external events of the input files to the scheduler.
+  - A new command-line option was added: ``--forward-unknown-events`` that forwards unknown external events of the input files to the scheduler (ignored if there were no event inputs).
+    The boolean value of this command is forwarded to the scheduler in the ``SIMULATION_BEGINS`` event.
 
 ........................................................................................................................
 

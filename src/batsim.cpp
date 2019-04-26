@@ -961,4 +961,7 @@ void set_configuration(BatsimContext *context,
     context->config_json.AddMember("profiles-forwarded-on-submission", Value().SetBool(main_args.forward_profiles_on_submission), alloc);
     context->config_json.AddMember("dynamic-jobs-enabled", Value().SetBool(main_args.dynamic_registration_enabled), alloc);
     context->config_json.AddMember("dynamic-jobs-acknowledged", Value().SetBool(main_args.ack_dynamic_registration), alloc);
+
+    // others
+    context->config_json.AddMember("forward-unknown-events", Value().SetBool(main_args.forward_unknown_events), alloc);
 }
