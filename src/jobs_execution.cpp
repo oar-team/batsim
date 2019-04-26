@@ -269,13 +269,6 @@ int do_delay_task(double sleeptime, double * remaining_time)
     }
 }
 
-/**
- * @brief Hook function given to simgrid to cleanup the task after its
- * execution ends
- * @param unknown unknown
- * @param[in,out] data structure to clean up (cast in * CleanExecuteTaskData)
- * @return always 0
- */
 int execute_task_cleanup(void * unknown, void * data)
 {
     (void) unknown;
