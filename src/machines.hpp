@@ -36,6 +36,16 @@ enum class MachineState
     ,UNAVAILABLE                            //!< The machine is unavailable
 };
 
+/// @cond DOXYGEN_SHOULD_SKIP_THIS
+// Required by old C++ to use MachineState as a key type in a hashmap
+namespace std
+{
+    template <> struct hash<MachineState>
+    {
+        size_t operator() (const MachineState &t) const { return size_t(t); }
+    };
+}
+/// @endcond
 
 /**
  * @brief Represents a machine

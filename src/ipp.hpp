@@ -64,6 +64,17 @@ enum class SubmitterType
     ,EVENT_SUBMITTER            //!< An Event submitter
 };
 
+/// @cond DOXYGEN_SHOULD_SKIP_THIS
+// Required by old C++ to use SubmitterType as a key type in a hashmap
+namespace std
+{
+    template <> struct hash<SubmitterType>
+    {
+        size_t operator() (const SubmitterType &t) const { return size_t(t); }
+    };
+}
+/// @endcond
+
 /**
  * @brief The content of the SUBMITTER_HELLO message
  */
