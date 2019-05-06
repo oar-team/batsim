@@ -56,14 +56,6 @@ test_unittest:
 ###############################################################################
 # Deploy stage
 ###############################################################################
-update_batsim_dev_cache:
-  stage: deploy
-  script:
-    - ./ci/update-batsim_dev-cache.bash
-  dependencies:
-    - test_test
-    - test_unittest
-
 deploy_code_doc:
   stage: deploy
   script:
