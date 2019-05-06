@@ -4,57 +4,29 @@ variables:
   GIT_SUBMODULE_STRATEGY: none
 
 stages:
-  - nix_build_and_update_dependencies_cache
-  - manual_build
-  - test
+  - big_stage
   - deploy
 
 ###############################################################################
-# Nix Builds + Dependencies cache stage
+# Build and test
 ###############################################################################
-nix_build_gcc:
-  stage: nix_build_and_update_dependencies_cache
+build_and_test:
+  stage: big_stage
   script:
+    # Clean nix build with various compilers
     - ./ci/nix-build-gcc-and-update-dependencies-cache.bash
-
-nix_build_clang:
-  stage: nix_build_and_update_dependencies_cache
-  script:
     - ./ci/nix-build-clang-and-update-dependencies-cache.bash
-
-###############################################################################
-# Manual Build stage
-###############################################################################
-manual_build:
-  stage: manual_build
-  script:
+    # Local build to get coverage results, etc.
     - ./ci/manual-build.bash
-  artifacts:
-    paths:
-      - /builds/batsim/batsim/build
-
-###############################################################################
-# Test stage
-###############################################################################
-test_test:
-  stage: test
-  script:
+    # Tests
+    - ./ci/run-unittests.bash
     - ./ci/run-tests.bash
-  dependencies:
-    - manual_build
   artifacts:
     paths:
       - /builds/batsim/batsim/doc/doxygen_doc/html
 
-test_unittest:
-  stage: test
-  script:
-    - ./ci/run-unittests.bash
-  dependencies:
-    - manual_build
-
 ###############################################################################
-# Deploy stage
+# Deploy
 ###############################################################################
 deploy_code_doc:
   stage: deploy
@@ -69,7 +41,7 @@ deploy_code_doc:
       - cd /builds/batsim/batsim/doc
       - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs/batsim/doxygen
   dependencies:
-    - test_test
+    - build_and_test
   only:
     - master
 
@@ -77,6 +49,7 @@ deploy_code_doc:
 # Tutorials
 ###############################################################################
 tuto_first_simulation-stable:
+  stage: big_stage
   only:
     - schedules
   script:
@@ -85,6 +58,7 @@ tuto_first_simulation-stable:
     - nix-shell ./tuto-env.nix --command './run_simulation_robin.bash'
 
 tuto_first_simulation:
+  stage: big_stage
   only:
     - schedules
   script:
