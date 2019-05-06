@@ -1,5 +1,9 @@
-FROM oarteam/nix:2018-09-21
-RUN nix-env -f '<nixpkgs>' -iA \
+FROM nixos/nix:2.2.1
+RUN nix-channel --remove nixpkgs \
+ && nix-channel --add https://nixos.org/channels/nixos-19.03 nixpkgs \
+ && nix-channel --update \
+ && nix-env -f '<nixpkgs>' -iA \
+      bash \
       curl \
       findutils \
       gitMinimal \
