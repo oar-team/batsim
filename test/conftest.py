@@ -39,6 +39,7 @@ def pytest_generate_tests(metafunc):
         "energy128notopo": "energy_platform_homogeneous_no_net_128.xml",
         "energy128cluster": "cluster_energy_128.xml",
     }
+    energy_platforms = ["energy128notopo", "energy128cluster"]
 
     # Workloads
     workloads_def = {
@@ -81,6 +82,7 @@ def pytest_generate_tests(metafunc):
         "submitter": "submitter",
     }
     basic_algorithms = ["fcfs", "easyfast", "filler"]
+    energy_algorithms = ["sleeper", "energywatcher"]
 
     ##########################################
     # Generate fixtures from the definitions #
@@ -90,6 +92,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('platform', generate_platforms(platform_dir, platforms_def, [key for key in platforms_def]))
     if 'small_platform' in metafunc.fixturenames:
         metafunc.parametrize('small_platform', generate_platforms(platform_dir, platforms_def, ['small']))
+    if 'energy_platform' in metafunc.fixturenames:
+        metafunc.parametrize('energy_platform', generate_platforms(platform_dir, platforms_def, energy_platforms))
 
     # Workloads
     if 'workload' in metafunc.fixturenames:
@@ -104,3 +108,5 @@ def pytest_generate_tests(metafunc):
     # Algorithms
     if 'basic_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('basic_algorithm', generate_batsched_algorithms(algorithms_def, basic_algorithms))
+    if 'energy_algorithm' in metafunc.fixturenames:
+        metafunc.parametrize('energy_algorithm', generate_batsched_algorithms(algorithms_def, energy_algorithms))

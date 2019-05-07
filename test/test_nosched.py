@@ -16,8 +16,8 @@ def nosched(platform, workload):
         simulation_timeout=30, ready_timeout=5,
         success_timeout=10, failure_timeout=0
     )
-
     instance.to_file(robin_filename)
+
     ret = run_robin(robin_filename)
     if ret.returncode != 0: raise Exception(f'Bad robin return code ({ret.returncode})')
 
