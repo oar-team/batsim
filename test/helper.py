@@ -30,7 +30,7 @@ failure-timeout: {self.failure_timeout}
         write_file(filename, self.to_yaml())
 
 def gen_batsim_cmd(platform, workload, output_dir, more_flags):
-    return f"batsim -p '{platform}' -w '{workload}' -e '{output_dir}/batres_' {more_flags}"
+    return f"batsim -p '{platform}' -w '{workload}' -e '{output_dir}/batres' {more_flags}"
 
 def write_file(filename, content):
     file = open(filename, "w")
