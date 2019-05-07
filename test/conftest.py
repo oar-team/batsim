@@ -7,11 +7,32 @@ Workload = namedtuple('Workload', ['name', 'filename'])
 Platform = namedtuple('Platform', ['name', 'filename'])
 Algorithm = namedtuple('Platform', ['name', 'sched_implem', 'sched_algo_name'])
 
+def generate_platforms(platform_dir, definition, accepted_names):
+    return [Platform(
+        name=name,
+        filename=abspath(f'{platform_dir}/{filename}'))
+        for name, filename in definition.items() if name in accepted_names]
+
+def generate_workloads(workload_dir, definition, accepted_names):
+    return [Workload(
+        name=name,
+        filename=abspath(f'{workload_dir}/{filename}'))
+        for name, filename in definition.items() if name in accepted_names]
+
+def generate_batsched_algorithms(definition, accepted_names):
+    return [Algorithm(name=name, sched_implem='batsched', sched_algo_name=sched_algo_name)
+        for name, sched_algo_name in definition.items() if name in accepted_names]
+
 def pytest_generate_tests(metafunc):
     script_dir = dirname(realpath(__file__))
     batsim_dir = realpath(f'{script_dir}/..')
+    platform_dir = realpath(f'{batsim_dir}/platforms')
+    workload_dir = realpath(f'{batsim_dir}/workloads')
 
-    # Platforms definition
+    #############################
+    # Define the various inputs #
+    #############################
+    # Platforms
     platforms_def = {
         "small": "small_platform.xml",
         "cluster512": "cluster512.xml",
@@ -19,7 +40,7 @@ def pytest_generate_tests(metafunc):
         "energy128cluster": "cluster_energy_128.xml",
     }
 
-    # Workloads definition
+    # Workloads
     workloads_def = {
         "delay1": "test_one_delay_job.json",
         "delays": "test_delays.json",
@@ -42,8 +63,10 @@ def pytest_generate_tests(metafunc):
         "walltime": "test_walltime.json",
     }
     one_job_workloads = ["delay1", "compute1", "computetot1"]
+    small_workloads = ["delays", "delaysequences", "mixed"]
+    smpi_workloads = ["smpicomp1", "smpicomp2", "smpimapping", "smpimixed", "smpicollectives"]
 
-    # Algorithms definition
+    # Algorithms
     algorithms_def = {
         "easy": "easy_bf",
         "easyfast": "easy_bf_fast",
@@ -59,22 +82,25 @@ def pytest_generate_tests(metafunc):
     }
     basic_algorithms = ["fcfs", "easyfast", "filler"]
 
+    ##########################################
+    # Generate fixtures from the definitions #
+    ##########################################
+    # Platforms
     if 'platform' in metafunc.fixturenames:
-        platforms = [Platform(
-            name=name,
-            filename=abspath(f'{batsim_dir}/platforms/{filename}'))
-            for name, filename in platforms_def.items()]
-        metafunc.parametrize('platform', platforms)
+        metafunc.parametrize('platform', generate_platforms(platform_dir, platforms_def, [key for key in platforms_def]))
+    if 'small_platform' in metafunc.fixturenames:
+        metafunc.parametrize('small_platform', generate_platforms(platform_dir, platforms_def, ['small']))
 
+    # Workloads
+    if 'workload' in metafunc.fixturenames:
+        metafunc.parametrize('workload', generate_workloads(workload_dir, workloads_def, [key for key in workload_def]))
     if 'one_job_workload' in metafunc.fixturenames:
-        workloads = [Workload(
-            name=name,
-            filename=abspath(f'{batsim_dir}/workloads/{filename}'))
-            for name, filename in workloads_def.items() if name in one_job_workloads]
-        metafunc.parametrize('one_job_workload', workloads)
+        metafunc.parametrize('one_job_workload', generate_workloads(workload_dir, workloads_def, one_job_workloads))
+    if 'small_workload' in metafunc.fixturenames:
+        metafunc.parametrize('small_workload', generate_workloads(workload_dir, workloads_def, small_workloads))
+    if 'smpi_workload' in metafunc.fixturenames:
+        metafunc.parametrize('smpi_workload', generate_workloads(workload_dir, workloads_def, smpi_workloads))
 
+    # Algorithms
     if 'basic_algorithm' in metafunc.fixturenames:
-        algos = [Algorithm(name=name, sched_implem='batsched', sched_algo_name=sched_algo_name)
-            for name, sched_algo_name in algorithms_def.items() if name in basic_algorithms]
-        print(algos)
-        metafunc.parametrize('basic_algorithm', algos)
+        metafunc.parametrize('basic_algorithm', generate_batsched_algorithms(algorithms_def, basic_algorithms))
