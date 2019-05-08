@@ -47,7 +47,7 @@ def run_robin(filename):
 def init_instance(test_name):
     output_dir = os.path.abspath(f'test-out/{test_name}')
     robin_filename = os.path.abspath(f'{output_dir}/instance.yaml')
-    schedconf_filename = f'{output_dir}/schedconf.json'
+    schedconf_filename = os.path.abspath(f'{output_dir}/schedconf.json')
 
     create_dir_rec_if_needed(output_dir)
 

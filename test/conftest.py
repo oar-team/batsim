@@ -107,11 +107,15 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('smpi_workload', generate_workloads(workload_dir, workloads_def, smpi_workloads))
     if 'dynsub_workload' in metafunc.fixturenames:
         metafunc.parametrize('dynsub_workload', generate_workloads(workload_dir, workloads_def, dynsub_workloads))
+    if 'samesubmittime_workload' in metafunc.fixturenames:
+        metafunc.parametrize('samesubmittime_workload', generate_workloads(workload_dir, workloads_def, ['samesubmittime']))
 
     # Algorithms
     if 'basic_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('basic_algorithm', generate_batsched_algorithms(algorithms_def, basic_algorithms))
     if 'energy_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('energy_algorithm', generate_batsched_algorithms(algorithms_def, energy_algorithms))
+    if 'fcfs_algorithm' in metafunc.fixturenames:
+        metafunc.parametrize('fcfs_algorithm', generate_batsched_algorithms(algorithms_def, ['fcfs']))
     if 'submitter_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('submitter_algorithm', generate_batsched_algorithms(algorithms_def, ['submitter']))
