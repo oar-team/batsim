@@ -66,6 +66,7 @@ def pytest_generate_tests(metafunc):
     one_job_workloads = ["delay1", "compute1", "computetot1"]
     small_workloads = ["delays", "delaysequences", "mixed"]
     smpi_workloads = ["smpicomp1", "smpicomp2", "smpimapping", "smpimixed", "smpicollectives"]
+    dynsub_workloads = ["delay1", "mixed"]
 
     # Algorithms
     algorithms_def = {
@@ -104,9 +105,13 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('small_workload', generate_workloads(workload_dir, workloads_def, small_workloads))
     if 'smpi_workload' in metafunc.fixturenames:
         metafunc.parametrize('smpi_workload', generate_workloads(workload_dir, workloads_def, smpi_workloads))
+    if 'dynsub_workload' in metafunc.fixturenames:
+        metafunc.parametrize('dynsub_workload', generate_workloads(workload_dir, workloads_def, dynsub_workloads))
 
     # Algorithms
     if 'basic_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('basic_algorithm', generate_batsched_algorithms(algorithms_def, basic_algorithms))
     if 'energy_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('energy_algorithm', generate_batsched_algorithms(algorithms_def, energy_algorithms))
+    if 'submitter_algorithm' in metafunc.fixturenames:
+        metafunc.parametrize('submitter_algorithm', generate_batsched_algorithms(algorithms_def, ['submitter']))
