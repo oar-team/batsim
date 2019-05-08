@@ -62,6 +62,7 @@ def pytest_generate_tests(metafunc):
         "smpicollectives": "test_smpi_collectives.json",
         "tuto1": "test_case_study1.json",
         "walltime": "test_walltime.json",
+        "walltimesmpi": "test_walltime_smpi.json",
     }
     one_job_workloads = ["delay1", "compute1", "computetot1"]
     small_workloads = ["delays", "delaysequences", "mixed"]
@@ -91,10 +92,12 @@ def pytest_generate_tests(metafunc):
     # Platforms
     if 'platform' in metafunc.fixturenames:
         metafunc.parametrize('platform', generate_platforms(platform_dir, platforms_def, [key for key in platforms_def]))
-    if 'small_platform' in metafunc.fixturenames:
-        metafunc.parametrize('small_platform', generate_platforms(platform_dir, platforms_def, ['small']))
     if 'energy_platform' in metafunc.fixturenames:
         metafunc.parametrize('energy_platform', generate_platforms(platform_dir, platforms_def, energy_platforms))
+    if 'small_platform' in metafunc.fixturenames:
+        metafunc.parametrize('small_platform', generate_platforms(platform_dir, platforms_def, ['small']))
+    if 'cluster_platform' in metafunc.fixturenames:
+        metafunc.parametrize('cluster_platform', generate_platforms(platform_dir, platforms_def, ['cluster512']))
 
     # Workloads
     if 'workload' in metafunc.fixturenames:
@@ -109,6 +112,10 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('dynsub_workload', generate_workloads(workload_dir, workloads_def, dynsub_workloads))
     if 'samesubmittime_workload' in metafunc.fixturenames:
         metafunc.parametrize('samesubmittime_workload', generate_workloads(workload_dir, workloads_def, ['samesubmittime']))
+    if 'walltime_workload' in metafunc.fixturenames:
+        metafunc.parametrize('walltime_workload', generate_workloads(workload_dir, workloads_def, ['walltime']))
+    if 'walltime_smpi_workload' in metafunc.fixturenames:
+        metafunc.parametrize('walltime_smpi_workload', generate_workloads(workload_dir, workloads_def, ['walltimesmpi']))
 
     # Algorithms
     if 'basic_algorithm' in metafunc.fixturenames:
