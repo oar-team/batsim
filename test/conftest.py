@@ -84,6 +84,7 @@ def pytest_generate_tests(metafunc):
         "fcfs": "fcfs_fast",
         "filler": "filler",
         "killer": "killer",
+        "killer2": "killer2",
         "random": "random",
         "rejecter": "rejecter",
         "sequencer": "sequencer",
@@ -148,6 +149,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('filler_algorithm', generate_batsched_algorithms(algorithms_def, ['filler']))
     if 'killer_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('killer_algorithm', generate_batsched_algorithms(algorithms_def, ['killer']))
+    if 'killer2_algorithm' in metafunc.fixturenames:
+        metafunc.parametrize('killer2_algorithm', generate_batsched_algorithms(algorithms_def, ['killer2']))
     if 'submitter_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('submitter_algorithm', generate_batsched_algorithms(algorithms_def, ['submitter']))
     if 'random_algorithm' in metafunc.fixturenames:

@@ -77,3 +77,29 @@ def test_kill_after_delay0(small_platform, small_workload, killer_algorithm, red
     if small_workload.name == 'delaysequences':
         pytest.xfail("something seems wrong with sequences")
     kill_after_delay(small_platform, small_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill)
+
+
+
+def kill_on_new_submit(platform, workload, algorithm, redis_mode):
+    test_name = f'kill-onnewsubmit-{algorithm.name}-{platform.name}-{workload.name}-{redis_mode.name}'
+    output_dir, robin_filename, _ = init_instance(test_name)
+
+    if algorithm.sched_implem != 'batsched': raise Exception('This test only supports batsched for now')
+
+    batparams = "--forward-profiles-on-submission"
+    if redis_mode.enabled == True: batparams = batparams + " --enable-redis"
+    batcmd = gen_batsim_cmd(platform.filename, workload.filename, output_dir, batparams)
+
+    instance = RobinInstance(output_dir=output_dir,
+        batcmd=batcmd,
+        schedcmd=f"batsched -v '{algorithm.sched_algo_name}'",
+        simulation_timeout=30, ready_timeout=5,
+        success_timeout=10, failure_timeout=0
+    )
+
+    instance.to_file(robin_filename)
+    ret = run_robin(robin_filename)
+    if ret.returncode != 0: raise Exception(f'Bad robin return code ({ret.returncode})')
+
+def test_kill_on_new_submit(small_platform, small_workload, killer2_algorithm, redis_mode):
+    kill_on_new_submit(small_platform, small_workload, killer2_algorithm, redis_mode)
