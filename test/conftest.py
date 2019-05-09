@@ -85,6 +85,7 @@ def pytest_generate_tests(metafunc):
     }
     basic_algorithms = ["fcfs", "easyfast", "filler"]
     energy_algorithms = ["sleeper", "energywatcher"]
+    metadata_algorithms = ['filler', 'submitter']
 
     ##########################################
     # Generate fixtures from the definitions #
@@ -124,6 +125,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('basic_algorithm', generate_batsched_algorithms(algorithms_def, basic_algorithms))
     if 'energy_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('energy_algorithm', generate_batsched_algorithms(algorithms_def, energy_algorithms))
+    if 'metadata_algorithm' in metafunc.fixturenames:
+        metafunc.parametrize('metadata_algorithm', generate_batsched_algorithms(algorithms_def, metadata_algorithms))
     if 'fcfs_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('fcfs_algorithm', generate_batsched_algorithms(algorithms_def, ['fcfs']))
     if 'submitter_algorithm' in metafunc.fixturenames:

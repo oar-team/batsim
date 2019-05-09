@@ -8,7 +8,7 @@ import pytest
 from helper import *
 
 def smpi_mapping(platform, workload, algorithm):
-    test_name = f'walltime-{algorithm.name}-{platform.name}-{workload.name}'
+    test_name = f'smpimapping-{algorithm.name}-{platform.name}-{workload.name}'
     output_dir, robin_filename, _ = init_instance(test_name)
 
     if algorithm.sched_implem != 'batsched': raise Exception('This test only supports batsched for now')
