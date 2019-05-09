@@ -68,6 +68,7 @@ def pytest_generate_tests(metafunc):
     small_workloads = ["delays", "delaysequences", "mixed"]
     smpi_workloads = ["smpicomp1", "smpicomp2", "smpimapping", "smpimixed", "smpicollectives"]
     dynsub_workloads = ["delay1", "mixed"]
+    moldable_perf_degradation_workloads = ['compute1', 'computetot1']
 
     # Algorithms
     algorithms_def = {
@@ -111,6 +112,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('smpi_workload', generate_workloads(workload_dir, workloads_def, smpi_workloads))
     if 'dynsub_workload' in metafunc.fixturenames:
         metafunc.parametrize('dynsub_workload', generate_workloads(workload_dir, workloads_def, dynsub_workloads))
+    if 'moldable_perf_degradation_workload' in metafunc.fixturenames:
+        metafunc.parametrize('moldable_perf_degradation_workload', generate_workloads(workload_dir, workloads_def, moldable_perf_degradation_workloads))
     if 'samesubmittime_workload' in metafunc.fixturenames:
         metafunc.parametrize('samesubmittime_workload', generate_workloads(workload_dir, workloads_def, ['samesubmittime']))
     if 'walltime_workload' in metafunc.fixturenames:
@@ -131,6 +134,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('metadata_algorithm', generate_batsched_algorithms(algorithms_def, metadata_algorithms))
     if 'fcfs_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('fcfs_algorithm', generate_batsched_algorithms(algorithms_def, ['fcfs']))
+    if 'filler_algorithm' in metafunc.fixturenames:
+        metafunc.parametrize('filler_algorithm', generate_batsched_algorithms(algorithms_def, ['filler']))
     if 'submitter_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('submitter_algorithm', generate_batsched_algorithms(algorithms_def, ['submitter']))
     if 'random_algorithm' in metafunc.fixturenames:
