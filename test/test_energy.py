@@ -21,7 +21,7 @@ def energy_model_instance():
         "time_switch_on":152
     }
 
-def energy(platform, workload, algorithm, batsim_args_energy, expected_robin_success):
+def energy(platform, workload, algorithm, batsim_args_energy, expected_robin_success, sched_additional_param):
     success_name = ''
     if not expected_robin_success: success_name = '-efail'
     test_name = f'energy-{algorithm.name}-{platform.name}-{workload.name}{success_name}'
@@ -32,6 +32,11 @@ def energy(platform, workload, algorithm, batsim_args_energy, expected_robin_suc
     batcmd = gen_batsim_cmd(platform.filename, workload.filename, output_dir, batsim_args_energy)
 
     schedconf_content = energy_model_instance()
+    schedconf_content.update({
+        "output_dir": output_dir,
+        "trace_output_filename": f'{output_dir}/sched_trace.csv',
+    })
+    schedconf_content.update(sched_additional_param)
     write_file(schedconf_filename, json.dumps(schedconf_content))
 
     instance = RobinInstance(output_dir=output_dir,
@@ -47,7 +52,20 @@ def energy(platform, workload, algorithm, batsim_args_energy, expected_robin_suc
     if robin_success != expected_robin_success: raise Exception(f'Bad robin success state (got={robin_success}, expected={expected_robin_success}, return_code={ret.returncode})')
 
 def test_energy(energy_platform, small_workload, energy_algorithm):
-    energy(energy_platform, small_workload, energy_algorithm, '--energy', True)
+    '''Classical energy tests. Run various energy-related actions.'''
+    energy(energy_platform, small_workload, energy_algorithm, '--energy', True, {})
 
 def test_energy_forgot_cli_flag(energy_platform, small_workload, energy_algorithm):
-    energy(energy_platform, small_workload, energy_algorithm, '', False)
+    '''Same as test_energy, but without the '--energy ' Batsim CLI flag. Execution should therefore fail.'''
+    energy(energy_platform, small_workload, energy_algorithm, '', False, {})
+
+def test_energy_minimal(energy_platform, energymini_workload, idle_sleeper_algorithm):
+    '''Very small-scale tests.'''
+    additional_sched_args = {
+        "monitoring_period": 30,
+        "idle_time_to_sedate": 0,
+        "sedate_idle_on_classical_events": False,
+        "ensured_sleep_time_lower_bound": 0,
+        "ensured_sleep_time_upper_bound": 0,
+    }
+    energy(energy_platform, energymini_workload, idle_sleeper_algorithm, '--energy', True, additional_sched_args)

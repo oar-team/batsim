@@ -69,6 +69,7 @@ def pytest_generate_tests(metafunc):
     smpi_workloads = ["smpicomp1", "smpicomp2", "smpimapping", "smpimixed", "smpicollectives"]
     dynsub_workloads = ["delay1", "mixed"]
     moldable_perf_degradation_workloads = ['compute1', 'computetot1']
+    energymini_workloads = ['energymini0', 'energymini50', 'energymini100']
 
     # Algorithms
     algorithms_def = {
@@ -114,6 +115,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('dynsub_workload', generate_workloads(workload_dir, workloads_def, dynsub_workloads))
     if 'moldable_perf_degradation_workload' in metafunc.fixturenames:
         metafunc.parametrize('moldable_perf_degradation_workload', generate_workloads(workload_dir, workloads_def, moldable_perf_degradation_workloads))
+    if 'energymini_workload' in metafunc.fixturenames:
+        metafunc.parametrize('energymini_workload', generate_workloads(workload_dir, workloads_def, energymini_workloads))
     if 'samesubmittime_workload' in metafunc.fixturenames:
         metafunc.parametrize('samesubmittime_workload', generate_workloads(workload_dir, workloads_def, ['samesubmittime']))
     if 'walltime_workload' in metafunc.fixturenames:
@@ -140,3 +143,5 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('submitter_algorithm', generate_batsched_algorithms(algorithms_def, ['submitter']))
     if 'random_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('random_algorithm', generate_batsched_algorithms(algorithms_def, ['random']))
+    if 'idle_sleeper_algorithm' in metafunc.fixturenames:
+        metafunc.parametrize('idle_sleeper_algorithm', generate_batsched_algorithms(algorithms_def, ['idlesleeper']))
