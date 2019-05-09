@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-from collections import namedtuple
 import glob
+import pytest
+import subprocess
+from collections import namedtuple
 from os.path import abspath, basename, dirname, realpath
 
 Workload = namedtuple('Workload', ['name', 'filename'])
@@ -145,3 +147,23 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('random_algorithm', generate_batsched_algorithms(algorithms_def, ['random']))
     if 'idle_sleeper_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('idle_sleeper_algorithm', generate_batsched_algorithms(algorithms_def, ['idlesleeper']))
+
+@pytest.fixture(scope="session", autouse=True)
+def manage_redis_server(request):
+    print('Trying to run a redis-server...')
+    proc = subprocess.Popen('redis-server', stdout=subprocess.PIPE)
+    try:
+        out, _ = proc.communicate(timeout=1)
+        if 'Address already in use' in str(out):
+            print("Could not run redis-server (address already in use).")
+            print("Assuming that the process using the TCP port is another redis-server instance and going on.")
+        else:
+            raise Exception("Could not run redis-server (unhandled reason), aborting.")
+    except subprocess.TimeoutExpired:
+        print('redis-server has been running for 1 second.')
+        print('Assuming redis-server has started successfully and going on.')
+
+    def on_finalize():
+        print('Killing the spawned redis-server (if any)...')
+        proc.kill()
+    request.addfinalizer(on_finalize)
