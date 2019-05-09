@@ -132,6 +132,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('smpi_mapping_workload', generate_workloads(workload_dir, workloads_def, ['smpimapping']))
     if 'long_workload' in metafunc.fixturenames:
         metafunc.parametrize('long_workload', generate_workloads(workload_dir, workloads_def, ['long']))
+    if 'delaysequences_workload' in metafunc.fixturenames:
+        metafunc.parametrize('delaysequences_workload', generate_workloads(workload_dir, workloads_def, ['delaysequences']))
 
     # Algorithms
     if 'basic_algorithm' in metafunc.fixturenames:
