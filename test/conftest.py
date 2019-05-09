@@ -119,6 +119,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('walltime_smpi_workload', generate_workloads(workload_dir, workloads_def, ['walltimesmpi']))
     if 'smpi_mapping_workload' in metafunc.fixturenames:
         metafunc.parametrize('smpi_mapping_workload', generate_workloads(workload_dir, workloads_def, ['smpimapping']))
+    if 'long_workload' in metafunc.fixturenames:
+        metafunc.parametrize('long_workload', generate_workloads(workload_dir, workloads_def, ['long']))
 
     # Algorithms
     if 'basic_algorithm' in metafunc.fixturenames:
@@ -131,3 +133,5 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('fcfs_algorithm', generate_batsched_algorithms(algorithms_def, ['fcfs']))
     if 'submitter_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('submitter_algorithm', generate_batsched_algorithms(algorithms_def, ['submitter']))
+    if 'random_algorithm' in metafunc.fixturenames:
+        metafunc.parametrize('random_algorithm', generate_batsched_algorithms(algorithms_def, ['random']))
