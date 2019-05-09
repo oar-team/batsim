@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''Walltmie tests.
+'''Walltime tests.
 
 These tests checks that Batsim jobs do not exceed their walltimes.
 '''
