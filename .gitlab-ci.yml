@@ -23,6 +23,7 @@ build_and_test:
     - nix-build ./release.nix -A doxydoc && cp -rL result ./doxydoc_html
     # Run integration tests
     - nix-build ./release.nix -A integration_tests && cp -rL result ./integration_tests
+    - if [[ "$(cat ./integration_tests/pytest_returncode)" -ne 0 ]] ; then echo "pytest returned non-zero, aborting" ; exit 1 ; fi
   artifacts:
     paths:
       - /builds/batsim/batsim/doxydoc_html
