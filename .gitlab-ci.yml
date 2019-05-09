@@ -13,6 +13,10 @@ stages:
 build_and_test:
   stage: big_stage
   script:
+    # Update build cache if needed
+    - nix-shell --pure ./release.nix -A batsim --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-shell --pure ./release.nix -A doxydoc --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-shell --pure ./release.nix -A integration_tests --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
     # Build Batsim
     - nix-build ./release.nix -A batsim
     # Build doxygen documentation
