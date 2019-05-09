@@ -21,13 +21,15 @@ def energy_model_instance():
         "time_switch_on":152
     }
 
-def energy(platform, workload, algorithm):
-    test_name = f'energy-{algorithm.name}-{platform.name}-{workload.name}'
+def energy(platform, workload, algorithm, batsim_args_energy, expected_robin_success):
+    success_name = ''
+    if not expected_robin_success: success_name = '-efail'
+    test_name = f'energy-{algorithm.name}-{platform.name}-{workload.name}{success_name}'
     output_dir, robin_filename, schedconf_filename = init_instance(test_name)
 
     if algorithm.sched_implem != 'batsched': raise Exception('This test only supports batsched for now')
 
-    batcmd = gen_batsim_cmd(platform.filename, workload.filename, output_dir, "--energy")
+    batcmd = gen_batsim_cmd(platform.filename, workload.filename, output_dir, batsim_args_energy)
 
     schedconf_content = energy_model_instance()
     write_file(schedconf_filename, json.dumps(schedconf_content))
@@ -41,8 +43,11 @@ def energy(platform, workload, algorithm):
     instance.to_file(robin_filename)
 
     ret = run_robin(robin_filename)
-    if ret.returncode != 0: raise Exception(f'Bad robin return code ({ret.returncode})')
+    robin_success = ret.returncode == 0
+    if robin_success != expected_robin_success: raise Exception(f'Bad robin success state (got={robin_success}, expected={expected_robin_success}, return_code={ret.returncode})')
 
 def test_energy(energy_platform, small_workload, energy_algorithm):
-    energy(energy_platform, small_workload, energy_algorithm)
+    energy(energy_platform, small_workload, energy_algorithm, '--energy', True)
 
+def test_energy_forgot_cli_flag(energy_platform, small_workload, energy_algorithm):
+    energy(energy_platform, small_workload, energy_algorithm, '', False)
