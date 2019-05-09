@@ -9,6 +9,8 @@ Workload = namedtuple('Workload', ['name', 'filename'])
 Platform = namedtuple('Platform', ['name', 'filename'])
 Algorithm = namedtuple('Platform', ['name', 'sched_implem', 'sched_algo_name'])
 
+RedisMode = namedtuple('RedisMode', ['name', 'enabled'])
+
 def generate_platforms(platform_dir, definition, accepted_names):
     return [Platform(
         name=name,
@@ -81,6 +83,7 @@ def pytest_generate_tests(metafunc):
         "idlesleeper": "energy_bf_idle_sleeper",
         "fcfs": "fcfs_fast",
         "filler": "filler",
+        "killer": "killer",
         "random": "random",
         "rejecter": "rejecter",
         "sequencer": "sequencer",
@@ -141,12 +144,18 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('fcfs_algorithm', generate_batsched_algorithms(algorithms_def, ['fcfs']))
     if 'filler_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('filler_algorithm', generate_batsched_algorithms(algorithms_def, ['filler']))
+    if 'killer_algorithm' in metafunc.fixturenames:
+        metafunc.parametrize('killer_algorithm', generate_batsched_algorithms(algorithms_def, ['killer']))
     if 'submitter_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('submitter_algorithm', generate_batsched_algorithms(algorithms_def, ['submitter']))
     if 'random_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('random_algorithm', generate_batsched_algorithms(algorithms_def, ['random']))
     if 'idle_sleeper_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('idle_sleeper_algorithm', generate_batsched_algorithms(algorithms_def, ['idlesleeper']))
+
+    # Misc. fixtures.
+    if 'redis_mode' in metafunc.fixturenames:
+        metafunc.parametrize('redis_mode', [RedisMode('redis', True), RedisMode('noredis', False)])
 
 @pytest.fixture(scope="session", autouse=True)
 def manage_redis_server(request):

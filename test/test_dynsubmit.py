@@ -19,7 +19,6 @@ DynamicJobCount = namedtuple('DynamicJobCount', ['name', 'job_count'])
 SchedulerSubmissionMode = namedtuple('SchedulerSubmissionMode',
     ['name', 'increase_jobs_duration', 'send_profile_if_already_sent', 'send_profiles_in_separate_event'])
 
-@pytest.mark.parametrize("redis_mode", [RedisMode('redis', True), RedisMode('noredis', False)])
 @pytest.mark.parametrize("dyn_sub_ack_mode",
     [DynamicSubmissionAcknowledgementMode('ack', True),
      DynamicSubmissionAcknowledgementMode('noack', False)])
