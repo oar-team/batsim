@@ -5,27 +5,8 @@ These tests checks that Batsim submits jobs in a chronologically and
 deterministic time in the protocol.
 Jobs should be submitted sorted by (submission_time, job_id).
 '''
-import json
-import re
 import pandas as pd
 from helper import *
-
-def parse_proto_messages_from_batsim(batsim_log):
-    '''Returns a list of messages sent by Batsim (respecting the trace order).'''
-    messages = []
-    for line in batsim_log.splitlines():
-        match = re.search(r"""Sending '(.*)'""", line)
-        if match:
-            messages.append(json.loads(match.group(1)))
-    return messages
-
-def retrieve_proto_events(messages):
-    '''Returns a list of events from a list of protocol messages.'''
-    events = []
-    for msg in messages:
-        if len(msg['events']) > 0:
-            events.extend(msg['events'])
-    return events
 
 def submitorder(platform, workload, algorithm):
     test_name = f'submitorder-{algorithm.name}-{platform.name}-{workload.name}'

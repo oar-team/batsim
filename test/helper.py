@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+import json
 import os
 import os.path
+import re
 import subprocess
 from collections import namedtuple
 
@@ -52,3 +54,20 @@ def init_instance(test_name):
     create_dir_rec_if_needed(output_dir)
 
     return (output_dir, robin_filename, schedconf_filename)
+
+def parse_proto_messages_from_batsim(batsim_log):
+    '''Returns a list of messages sent by Batsim (respecting the trace order).'''
+    messages = []
+    for line in batsim_log.splitlines():
+        match = re.search(r"""Sending '(.*)'""", line)
+        if match:
+            messages.append(json.loads(match.group(1)))
+    return messages
+
+def retrieve_proto_events(messages):
+    '''Returns a list of events from a list of protocol messages.'''
+    events = []
+    for msg in messages:
+        if len(msg['events']) > 0:
+            events.extend(msg['events'])
+    return events
