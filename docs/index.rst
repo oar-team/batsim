@@ -64,6 +64,7 @@ Batch schedulers — or Resource and Jobs Management Systems, RJMSs — are syst
    :caption: Developer Manual
 
    Contributing <contributing.rst>
+   How to run tests? <howto-test.rst>
    Continuous Integration <ci.rst>
    Release procedure <release.rst>
    TODO list <todo.rst>
