@@ -16,3 +16,4 @@ dump.rdb
 *.dia~
 .nixdeps
 *.ipynb_checkpoints
+result

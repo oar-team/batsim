@@ -180,18 +180,3 @@ endif()
 if (ignore_assertions)
     target_compile_definitions(batsim PRIVATE NDEBUG)
 endif()
-
-###########
-# Testing #
-###########
-# Batexpe test dependency
-include("${CMAKE_SOURCE_DIR}/cmake/Modules/batexpe.cmake")
-
-if (${robin_COMMAND} STREQUAL "robin_COMMAND-NOTFOUND")
-    message(WARNING "Could not find robin command. Tests are not set up.")
-elseif(${robintest_COMMAND} STREQUAL "robintest_COMMAND-NOTFOUND")
-    message(WARNING "Could not find robintest command. Tests are not set up.")
-else()
-    enable_testing()
-    add_subdirectory(test)
-endif()

@@ -1,0 +1,34 @@
+{
+    "nb_res": 64,
+    "jobs": [
+        {"id":" 1", "subtime":0, "walltime": 0.1, "res": 2, "profile": "smpi_compute_only"},
+        {"id":" 2", "subtime":0, "walltime": 0.2, "res": 2, "profile": "smpi_compute_only"},
+        {"id":" 3", "subtime":0, "walltime": 0.3, "res": 2, "profile": "smpi_compute_only"},
+        {"id":" 4", "subtime":0, "walltime": 0.4, "res": 2, "profile": "smpi_compute_only"},
+        {"id":" 5", "subtime":0, "walltime": 0.5, "res": 2, "profile": "smpi_compute_only"},
+        {"id":" 6", "subtime":0, "walltime": 0.6, "res": 2, "profile": "smpi_compute_only"},
+        {"id":" 7", "subtime":0, "walltime": 0.7, "res": 2, "profile": "smpi_compute_only"},
+        {"id":" 8", "subtime":0, "walltime": 0.8, "res": 2, "profile": "smpi_compute_only"},
+        {"id":" 9", "subtime":0, "walltime": 0.9, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"10", "subtime":0, "walltime": 1.0, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"11", "subtime":0, "walltime": 1.1, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"12", "subtime":0, "walltime": 1.2, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"13", "subtime":0, "walltime": 1.3, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"14", "subtime":0, "walltime": 1.4, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"15", "subtime":0, "walltime": 1.5, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"16", "subtime":0, "walltime": 1.6, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"17", "subtime":0, "walltime": 1.7, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"18", "subtime":0, "walltime": 1.8, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"19", "subtime":0, "walltime": 1.9, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"20", "subtime":0, "walltime": 2.0, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"21", "subtime":0, "walltime": -1, "res": 2, "profile": "smpi_compute_only"},
+        {"id":"22", "subtime":10, "res": 1, "profile": "smpi_compute_only"}
+    ],
+
+    "profiles": {
+        "smpi_compute_only": {
+            "type": "smpi",
+            "trace": "smpi/compute_only/traces.txt"
+        }
+    }
+}
