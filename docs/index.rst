@@ -1,10 +1,9 @@
 Batsim
 ======
 
-.. Warning::
+.. note::
 
-   This documentation is under construction.
-
+   Parts of this documentation are still missing.
    Feel free to :ref:`contact_us` if you have any question or remark — or if a TODO is important for you.
    Here are :ref:`contributing`.
 
