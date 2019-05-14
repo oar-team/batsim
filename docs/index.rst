@@ -20,6 +20,11 @@ Batch schedulers — or Resource and Jobs Management Systems, RJMSs — are syst
 - Several ways to model how jobs should be simulated. Allows multiple levels of realism regarding several phenomena. Highly customizable to your needs.
 - Keeping the implementation robust and maintenable is important to us.
 
+The present documentation focuses on Batsim technical aspects.
+The most up-to-date scientific description of Batsim is done in `Millian Poquet's PhD thesis`_ (chapters 3 and 4).
+There is also the outdated `Batsim initial white paper`_ —
+please cite it (`bibtex <https://hal.archives-ouvertes.fr/hal-01333471v1/bibtex>`_) if you use Batsim for your research.
+
 .. toctree::
    :maxdepth: 1
    :caption: Tutorials
@@ -69,3 +74,5 @@ Batch schedulers — or Resource and Jobs Management Systems, RJMSs — are syst
    TODO list <todo.rst>
 
 .. _SimGrid: https://simgrid.frama.io/
+.. _Batsim initial white paper: https://hal.archives-ouvertes.fr/hal-01333471v1
+.. _Millian Poquet's PhD thesis: https://hal.archives-ouvertes.fr/tel-01757245v2
