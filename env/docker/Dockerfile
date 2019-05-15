@@ -23,4 +23,5 @@ RUN nix-channel --remove nixpkgs \
       --trusted-public-keys \
       cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM= \
  && cachix use batsim \
- && nix-collect-garbage -d
+ && nix-collect-garbage -d \
+ && ln -s $(realpath $(which bash)) /bin/bash
