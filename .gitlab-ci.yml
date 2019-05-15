@@ -1,4 +1,4 @@
-image: oarteam/batsim_ci:2018-11-07
+image: oarteam/batsim_ci:latest
 
 variables:
   GIT_SUBMODULE_STRATEGY: none
