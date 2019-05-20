@@ -2,6 +2,9 @@
     (fetchTarball "https://github.com/oar-team/kapack/archive/master.tar.gz")
   {}
 , doCheck ? false
+, simgrid ? kapack.simgrid_dev_working
+, batsched ? kapack.batsched_dev
+, batexpe ? kapack.batexpe
 }:
 
 let
@@ -11,7 +14,7 @@ let
 
   jobs = rec {
     # Batsim executable binary file.
-    batsim = kapack.batsim.overrideAttrs (attr: rec {
+    batsim = (kapack.batsim.override { simgrid = simgrid; }).overrideAttrs (attr: rec {
       src = pkgs.lib.sourceByRegex ./. [
         "^src"
         "^src/.*\.?pp"
@@ -40,7 +43,7 @@ let
         "^workloads/smpi/.*/.*\.txt"
       ];
       buildInputs = with pkgs.python37Packages; [
-        batsim kapack.batsched_dev kapack.batexpe pkgs.redis
+        batsim batsched batexpe pkgs.redis
         pytest pytest_html pandas];
       buildPhase = ''
         set +e
