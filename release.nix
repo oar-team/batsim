@@ -2,7 +2,7 @@
     (fetchTarball "https://github.com/oar-team/kapack/archive/master.tar.gz")
   {}
 , doCheck ? false
-, simgrid ? kapack.simgrid_dev_working
+, simgrid ? kapack.simgrid322_2
 , batsched ? kapack.batsched_dev
 , batexpe ? kapack.batexpe
 }:
@@ -20,12 +20,12 @@ let
         "^src/.*\.?pp"
         "^src/unittest"
         "^src/unittest/.*\.?pp"
-        "^CMakeLists\.txt"
-        "^cmake"
-        "^cmake/Modules"
-        "^cmake/Modules/.*\.cmake.*"
-        "^VERSION"
+        "^meson\.build"
       ];
+      # Debug build, without any Nix stripping magic.
+      mesonBuildType = "debug";
+      hardeningDisable = [ "all" ];
+      dontStrip = true;
     });
 
     # Batsim integration tests.
