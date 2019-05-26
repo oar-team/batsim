@@ -41,6 +41,11 @@ Added
   - A new command-line option was added: ``--forward-unknown-events`` that forwards unknown external events of the input files to the scheduler (ignored if there were no event inputs).
     The boolean value of this command is forwarded to the scheduler in the ``SIMULATION_BEGINS`` event.
 
+Deprecated
+~~~~~~~~~~
+
+- Building via CMake is deprecated. Next Batsim versions may only support Meson_.
+
 Miscellaneous
 ~~~~~~~~~~~~~
 
@@ -376,3 +381,4 @@ Changed
 .. _kapack: https://github.com/oar-team/kapack/
 .. _`docopt-cpp`: https://github.com/docopt/docopt.cpp
 .. _pugixml: https://pugixml.org/
+.. _Meson: https://mesonbuild.com/
