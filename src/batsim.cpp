@@ -42,8 +42,6 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/filesystem.hpp>
 
-#include <openssl/sha.h>
-
 #include "batsim.hpp"
 #include "context.hpp"
 #include "event_submitter.hpp"
@@ -128,34 +126,6 @@ VerbosityLevel verbosity_level_from_string(const std::string & str)
     {
         throw std::runtime_error("Invalid verbosity level string");
     }
-}
-
-string generate_sha1_string(std::string string_to_hash, int output_length)
-{
-    static_assert(sizeof(unsigned char) == sizeof(char), "sizeof(unsigned char) should equals to sizeof(char)");
-    xbt_assert(output_length > 0);
-    xbt_assert(output_length < SHA_DIGEST_LENGTH);
-
-    unsigned char sha1_buf[SHA_DIGEST_LENGTH];
-    SHA1((const unsigned char *)string_to_hash.c_str(), string_to_hash.size(), sha1_buf);
-
-    char * output_buf = (char *) calloc(SHA_DIGEST_LENGTH * 2 + 1, sizeof(char));
-    xbt_assert(output_buf != 0, "Couldn't allocate memory");
-
-    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i)
-    {
-        int nb_printed_char = snprintf(output_buf + 2*i, 3, "%02x", sha1_buf[i]);
-        (void) nb_printed_char; // Avoids a warning if assertions are ignored
-        xbt_assert(nb_printed_char == 2, "Fix me :(");
-    }
-
-    XBT_DEBUG("SHA-1 of string '%s' is '%s'\n", string_to_hash.c_str(), output_buf);
-
-    string result(output_buf, output_length);
-    xbt_assert((int)result.size() == output_length);
-
-    free(output_buf);
-    return result;
 }
 
 void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code,
@@ -317,8 +287,9 @@ Other options:
 
     // Workloads
     vector<string> workload_files = args["--workload"].asStringList();
-    for (const string & workload_file : workload_files)
+    for (size_t i = 0; i < workload_files.size(); i++)
     {
+        const string & workload_file = workload_files[i];
         if (!file_exists(workload_file))
         {
             XBT_ERROR("Workload file '%s' cannot be read.", workload_file.c_str());
@@ -329,7 +300,7 @@ Other options:
         {
             MainArguments::WorkloadDescription desc;
             desc.filename = absolute_filename(workload_file);
-            desc.name = generate_sha1_string(desc.filename);
+            desc.name = string("w") + to_string(i);
 
             XBT_INFO("Workload '%s' corresponds to workload file '%s'.",
                      desc.name.c_str(), desc.filename.c_str());
@@ -339,8 +310,9 @@ Other options:
 
     // Workflows (without start time)
     vector<string> workflow_files = args["--workflow"].asStringList();
-    for (const string & workflow_file : workflow_files)
+    for (size_t i = 0; i < workflow_files.size(); i++)
     {
+        const string & workflow_file = workflow_files[i];
         if (!file_exists(workflow_file))
         {
             XBT_ERROR("Workflow file '%s' cannot be read.", workflow_file.c_str());
@@ -351,7 +323,7 @@ Other options:
         {
             MainArguments::WorkflowDescription desc;
             desc.filename = absolute_filename(workflow_file);
-            desc.name = generate_sha1_string(desc.filename);
+            desc.name = string("wf") + to_string(i);
             desc.workload_name = desc.name;
             desc.start_time = 0;
 
@@ -389,7 +361,7 @@ Other options:
             {
                 MainArguments::WorkflowDescription desc;
                 desc.filename = absolute_filename(cut_workflow_file);
-                desc.name = generate_sha1_string(desc.filename);
+                desc.name = string("wfc") + to_string(i);
                 desc.workload_name = desc.name;
                 try
                 {
@@ -422,8 +394,9 @@ Other options:
 
     // EventLists
     vector<string> events_files = args["--events"].asStringList();
-    for (const string & events_file : events_files)
+    for (size_t i = 0; i < events_files.size(); i++)
     {
+        const string & events_file = events_files[i];
         if (!file_exists(events_file))
         {
             XBT_ERROR("Events file '%s' cannot be read.", events_file.c_str());
@@ -434,7 +407,7 @@ Other options:
         {
             MainArguments::EventListDescription desc;
             desc.filename = absolute_filename(events_file);
-            desc.name = generate_sha1_string(desc.filename);
+            desc.name = string("we") + to_string(i);
 
             XBT_INFO("Event list '%s' corresponds to events file '%s'.",
                      desc.name.c_str(), desc.filename.c_str());
