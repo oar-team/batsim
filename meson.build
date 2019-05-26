@@ -11,7 +11,6 @@ boost_dep = dependency('boost',
     modules : ['locale', 'filesystem', 'regex', 'system']
 )
 rapidjson_dep = dependency('RapidJSON')
-openssl_dep = dependency('openssl')
 redox_dep = dependency('redox')
 libzmq_dep = dependency('libzmq')
 docopt_dep = dependency('docopt')
@@ -22,7 +21,6 @@ batsim_deps = [
     simgrid_dep,
     boost_dep,
     rapidjson_dep,
-    openssl_dep,
     redox_dep,
     libzmq_dep,
     docopt_dep,
