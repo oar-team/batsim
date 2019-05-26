@@ -45,6 +45,7 @@ Miscellaneous
 ~~~~~~~~~~~~~
 
 - Removed a build dependency to OpenSSL, which was only used to generate workload identifiers.
+- Batsim integration tests are now written with pytest instead of CMake.
 
 ........................................................................................................................
 
