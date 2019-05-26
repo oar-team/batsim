@@ -27,16 +27,6 @@ enum class ProgramType
 };
 
 /**
- * @brief Generates a uuid string
- * @param[in] string_to_hash T
- * @param[in] output_length The maximum length of the output string
- * @pre output_length > 0 && output_length < 20
- * @post result.size() == output_length
- * @return The generated hash (truncated to output_length characters if needed)
- */
-std::string generate_sha1_string(std::string string_to_hash, int output_length = 6);
-
-/**
  * @brief Stores Batsim arguments, a.k.a. the main function arguments
  */
 struct MainArguments
