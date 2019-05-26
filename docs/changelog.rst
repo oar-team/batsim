@@ -23,6 +23,8 @@ Changed
 ~~~~~~~
 
 - Batsim now requires that no :ref:`proto_CALL_ME_LATER` are pending to send :ref:`proto_SIMULATION_ENDS`.
+- :ref:`input_workload` identifiers are now generated depending on the order of the command-line arguments.
+  Previously, they were hashes of the absolute filename of the workload, which was order independent.
 
 Added
 ~~~~~
@@ -38,6 +40,11 @@ Added
     that no more external events coming from Batsim can occur during the simulation.
   - A new command-line option was added: ``--forward-unknown-events`` that forwards unknown external events of the input files to the scheduler (ignored if there were no event inputs).
     The boolean value of this command is forwarded to the scheduler in the ``SIMULATION_BEGINS`` event.
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+- Removed a build dependency to OpenSSL, which was only used to generate workload identifiers.
 
 ........................................................................................................................
 
