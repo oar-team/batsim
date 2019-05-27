@@ -37,7 +37,7 @@ deploy_code_doc:
       # Pushes Batsim's code doc (doxygen) onto the gforge website.
       # SSH setup (do NOT run these commands on your machine)
       - eval $(ssh-agent -s)
-      - ssh-add <(echo "$SSH_PRIVATE_KEY")
+      - ssh-add <(echo "$SSH_PRIVATE_KEY" | tr '_' '\n' | base64 -d | base32 -d)
       - mkdir -p ~/.ssh
       - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
       # Finally push the code documentation on the gforge website
