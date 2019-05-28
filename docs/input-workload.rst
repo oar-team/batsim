@@ -191,7 +191,7 @@ centralized storage tier. The storage tier is represented by one host of the :re
 
 - ``bytes_to_read``: The amount of bytes to read from the PFS to each node (float).
 - ``bytes_to_write``: The amount of bytes to write to the PFS from each node (float).
-- ``storage``: (optional) The name of the storage (string). It will be mapped to a specific node at the job execution time. Default value is ``pfs``.
+- ``storage``: (optional) The name of the storage (string). It will be mapped to a specific node at the job execution time. Default value is ``pfs``. See :ref:`proto_EXECUTE_JOB` for more details.
 
 .. code:: json
 
@@ -216,6 +216,9 @@ This profile type represents an IO transfer between two storage tiers.
 - ``nb_bytes``: The amount of bytes to be transferred (float).
 - ``from``: The name of the sending storage tier (string). It will be mapped to a specific machine at the job execution time.
 - ``to``: The name of the receiving storage tier (string). It will be mapped to a specific machine at the job execution time.
+
+See :ref:`proto_EXECUTE_JOB` for more details on the storage mapping needed for
+both the ``to`` and the ``form`` fields.
 
 .. code:: json
 

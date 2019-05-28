@@ -722,10 +722,10 @@ a mapping (optional), an additional IO job (optional).
      "data": {
        "job_id": "w12!45",
        "alloc": "2-3",
-       "mapping": {"0": "0", "1": "0", "2": "1", "3": "1"}
-     },
-     "storage_mapping": {
-       "pfs": 2
+       "mapping": {"0": "0", "1": "0", "2": "1", "3": "1"},
+       "storage_mapping": {
+         "pfs": 2
+       },
      },
      "additional_io_job": {
        "alloc": "2-3 5-6",
