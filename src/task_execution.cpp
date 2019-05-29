@@ -151,8 +151,7 @@ void generate_parallel_homogeneous_total_amount(double *& computation_amount,
  *
  * @param[out] computation_amount the computation matrix to be simulated by the msg task
  * @param[out] communication_amount the communication matrix to be simulated by the msg task
- * @param[in,out] hosts_to_use the list of host to be used by the task
- * @param[in] storage_mapping mapping from label given in the profile and machine id
+ * @param[in,out] the scheduling allocation
  * @param[in] profile_data the profile data
  * @param[in] context the batsim context
  *
@@ -161,8 +160,7 @@ void generate_parallel_homogeneous_total_amount(double *& computation_amount,
  */
 void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
                                                 double *& communication_amount,
-                                                std::vector<simgrid::s4u::Host*> & hosts_to_use,
-                                                std::map<std::string, int> storage_mapping,
+                                                SchedulingAllocation & allocation,
                                                 void * profile_data,
                                                 BatsimContext * context)
 {
@@ -170,12 +168,12 @@ void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
             (MsgParallelHomogeneousPFSProfileData*)profile_data;
 
     // The PFS machine will also be used
-    unsigned int nb_res = hosts_to_use.size() + 1;
+    unsigned int nb_res = allocation->hosts.size() + 1;
     unsigned int pfs_id = nb_res - 1;
 
     // Add the pfs_machine
     int pfs_machine_id;
-    if (storage_mapping.empty())
+    if (allocation->storage_mapping.empty())
     {
         if (context->machines.storage_machines().size() == 1)
         {
@@ -184,17 +182,18 @@ void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
         }
         else
         {
-            xbt_assert(false, "No storage/host mapping given and there is no"
+            xbt_assert(false, "No storage/host mapping given and there is no "
                     "(or more than one) storage node available");
         }
     }
     else
     {
-        pfs_machine_id = storage_mapping[data->storage_label];
+        pfs_machine_id = allocation->storage_mapping[data->storage_label];
         xbt_assert(context->machines[pfs_machine_id]->permissions == Permissions::STORAGE,
                 "The given node (%d) is not a storage node", pfs_machine_id);
     }
-    hosts_to_use.push_back(context->machines[pfs_machine_id]->host);
+    allocation->hosts.push_back(context->machines[pfs_machine_id]->host);
+    allocation->machine_ids.insert(context->machines[pfs_machine_id]->host)
 
     // These amounts are deallocated by SG
     computation_amount = xbt_new(double, nb_res);
@@ -242,15 +241,13 @@ void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
  * name of the task.
  * @param[out] computation_amount the computation matrix to be simulated by the msg task
  * @param[out] communication_amount the communication matrix to be simulated by the msg task
- * @param[in,out] hosts_to_use the list of host to be used by the task
- * @param[in] storage_mapping mapping from label given in the profile and machine id
+ * @param[in,out] the scheduling allocation
  * @param[in] profile_data the profile data
  * @param[in] context the batsim context
  */
 void generate_data_staginig_task(double *&  computation_amount,
                                      double *& communication_amount,
-                                     std::vector<simgrid::s4u::Host*> & hosts_to_use,
-                                     std::map<std::string, int> storage_mapping,
+                                     SchedulingAllocation & allocation,
                                      void * profile_data,
                                      BatsimContext * context)
 {
@@ -264,15 +261,15 @@ void generate_data_staginig_task(double *&  computation_amount,
     unsigned int pfs_id = nb_res - 1;
 
     // reset the alloc to use only IO nodes
-    hosts_to_use.clear();
+    allocation->hosts.clear();
 
     // Add the pfs_machine
-    int from_machine_id = storage_mapping[data->from_storage_label];
+    int from_machine_id = allocation->storage_mapping[data->from_storage_label];
     xbt_assert(context->machines[from_machine_id]->permissions == Permissions::STORAGE, "The given Storage for 'from' (%d) is not a storage node", from_machine_id);
-    int to_machine_id = storage_mapping[data->to_storage_label];
+    int to_machine_id = allocation->storage_mapping[data->to_storage_label];
     xbt_assert(context->machines[to_machine_id]->permissions == Permissions::STORAGE, "The given Storage for 'from' (%d) is not a storage node", to_machine_id);
-    hosts_to_use.push_back(context->machines[from_machine_id]->host);
-    hosts_to_use.push_back(context->machines[to_machine_id]->host);
+    allocation->hosts.push_back(context->machines[from_machine_id]->host);
+    allocation->hosts.push_back(context->machines[to_machine_id]->host);
 
     // These amounts are deallocated by SG
     computation_amount = xbt_new(double, nb_res);
@@ -355,13 +352,12 @@ void debug_print_ptask(const double * computation_vector,
  */
 void generate_matices_from_profile(double *& computation_vector,
                                    double *& communication_matrix,
-                                   std::vector<simgrid::s4u::Host*> & hosts_to_use,
                                    Profile * profile,
-                                   const std::map<std::string, int> * storage_mapping,
+                                   SchedulingAllocation& allocation,
                                    BatsimContext * context)
 {
 
-    unsigned int nb_res = hosts_to_use.size();
+    unsigned int nb_res = allocation->hosts.size();
 
     XBT_DEBUG("Number of hosts to use: %d", nb_res);
 
@@ -388,16 +384,14 @@ void generate_matices_from_profile(double *& computation_vector,
     case ProfileType::PARALLEL_HOMOGENEOUS_PFS:
         generate_parallel_homogeneous_with_pfs(computation_vector,
                                                    communication_matrix,
-                                                   hosts_to_use,
-                                                   *storage_mapping,
+                                                   *allocation,
                                                    profile->data,
                                                    context);
         break;
     case ProfileType::DATA_STAGING:
         generate_data_staginig_task(computation_vector,
                                         communication_matrix,
-                                        hosts_to_use,
-                                        *storage_mapping,
+                                        *allocation,
                                         profile->data,
                                         context);
         break;
@@ -457,7 +451,7 @@ int execute_msg_task(BatTask * btask,
                                   communication_matrix,
                                   hosts_to_use,
                                   profile,
-                                  & allocation->storage_mapping,
+                                  & allocation,
                                   context);
 
     debug_print_ptask(computation_vector, communication_matrix,
