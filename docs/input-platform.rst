@@ -37,5 +37,5 @@ Batsim users (= schedulers) can only switch into computation or sleep power stat
 .. todo::
 
     - Finish to describe the Batsim energy model.
-    - Add intantiation examples.
+    - Add instantiation examples.
 

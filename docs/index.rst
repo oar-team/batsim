@@ -18,7 +18,7 @@ Batch schedulers — or Resource and Jobs Management Systems, RJMSs — are syst
 - Sound simulation models thanks to SimGrid_.
 - Develop algorithms (in any programming language) without SimGrid knowledge, or to plug existing algorithm implementations to Batsim. Done thanks to a :ref:`protocol` between Batsim and the schedulers
 - Several ways to model how jobs should be simulated. Allows multiple levels of realism regarding several phenomena. Highly customizable to your needs.
-- Keeping the implementation robust and maintenable is important to us.
+- Keeping the implementation robust and maintainable is important to us.
 
 The present documentation focuses on Batsim technical aspects.
 The most up-to-date scientific description of Batsim is done in `Millian Poquet's PhD thesis`_ (chapters 3 and 4).

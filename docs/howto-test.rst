@@ -28,7 +28,7 @@ This will do the following.
 #. Generate an HTML report.
 #. Put results in the `nix store` — accessible from a ``result`` symbolic link.
 
-Results and logs should be convenient to explore from the html report.
+Results and logs should be convenient to explore from the HTML report.
 In other words: ``firefox ./result/pytest_report.html``.
 
 Alternatively, you can enter a `nix-shell` where all the dependencies are available and call pytest_ manually from there.

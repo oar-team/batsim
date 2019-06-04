@@ -169,7 +169,7 @@ Added (command-line interface)
 - New ``--sg-log`` option, that allows to set SimGrid logging options.
 - New ``--dump-execution-context`` option,
   that dumps the command execution context on the standard output.
-  This allows external tools to understand the execution context of a batsim command without actually parsing it.
+  This allows external tools to understand the execution context of a Batsim command without actually parsing it.
 
 Known issues
 ~~~~~~~~~~~~
@@ -246,7 +246,7 @@ Fixed
 ~~~~~
 
 - Numeric sort should now work as expected (this is now tested).
-- Power stace tracing now works when the number of machines is big.
+- Power tracing now works when the number of machines is big.
 - Output buffers now work even if incoming texts are bigger than the buffer.
 - The ``QUERY_REQUEST``/``QUERY_REPLY`` messages were not respecting the protocol definition
   (probably never tested since the JSON protocol update).
@@ -346,7 +346,7 @@ Added
 - New PFS host. Associated with a new ``hpst-host`` command-line option.
 - New protocol event ``CHANGE_JOB_STATE``.
   It allows the scheduler to change the state of jobs in Batsim in-memory data structures.
-- The ``submission_finished`` notification can be cancelled with a ``continue_submission`` notification.
+- The ``submission_finished`` notification can be canceled with a ``continue_submission`` notification.
 - New data to the :ref:`proto_SIMULATION_BEGINS` protocol event.
   ``allow_time_sharing`` boolean is now forwarded.
   ``resources_data`` gives information on the resources.

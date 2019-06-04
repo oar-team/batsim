@@ -231,7 +231,7 @@ NOTIFY
 ~~~~~~
 
 This event allows a peer to notify something to its counterpart. There
-is no expected acknowledgement when sending such an event.
+is no expected acknowledgment when sending such an event.
 
 For now, Batsim can **notify** the scheduler of the following.
 
@@ -329,7 +329,7 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
            "nb_resources": 4,
            "nb_compute_resources": 4,
            "nb_storage_resources": 0,
-           "allow_time_sharng": false,
+           "allow_time_sharing": false,
            "config": {
              "redis": {
                "enabled": false,
@@ -449,7 +449,7 @@ This event means that one job has been submitted within Batsim. It is
 sent whenever a job coming from Batsim inputs (workloads and workflows)
 has been submitted. If dynamic jobs registration is enabled, this
 event is sent as a reply to a REGISTER_JOB_ event if
-and only if dynamic jobs registration acknowledgements are also enabled.
+and only if dynamic jobs registration acknowledgments are also enabled.
 More information can be found in `Dynamic registration of jobs`_.
 
 The ``job_id`` field is always sent and contains a unique job
@@ -782,7 +782,7 @@ before the kill), Batsim acknowledges it with one JOB_KILLED_ event.
 REGISTER_JOB
 ~~~~~~~~~~~~
 
-REgisters a job (from the scheduler) at the current simulation time.
+Registers a job (from the scheduler) at the current simulation time.
 
 Jobs registration from the scheduler must be enabled (see :ref:`cli`).
 Acknowledgment of registrations can be enabled (see :ref:`cli`).
@@ -886,7 +886,7 @@ set.
 **Note**: If you need to add **static** metadata to a job you can simply
 add one or more fields in the job profile.
 
-**Warning**: This not a way to delegate to batsim the storage of
+**Warning**: This not a way to delegate to Batsim the storage of
 metadata. That should be done through Redis (when you have to share
 information between different processes for example), or using the
 scheduler’s internal data structures.
@@ -957,7 +957,7 @@ simulation. For this purpose:
   If the scheduler knows that it will register a dynamic job in the future, it should ask Batsim to call it at this timestamp via a CALL_ME_LATER_ event.
 
 The protocol behavior of dynamic registrations is customizable (see :ref:`cli`).
-- Batsim might or might not send acknowledgements when jobs have been registered.
+- Batsim might or might not send acknowledgments when jobs have been registered.
 - Metainformation are sent via Redis if Redis is enabled, or directly via the protocol otherwise.
 
 A simple scheduling algorithm using dynamic jobs registration can be found in

@@ -3,10 +3,10 @@
 External Events
 ===============
 
-0verview and example
+Overview and example
 --------------------
 
-This is a mechanism to enable injection of exernal events during the simulation.
+This is a mechanism to enable injection of external events during the simulation.
 For example, one would be interested in studying the behavior and resilience of a scheduling policy when machine can become unavailable for a certain period of time,
 which is made possible using the events injection mechanism!
 
@@ -36,7 +36,7 @@ Each external event is notified to the scheduler via a :ref:`proto_NOTIFY` proto
 Machine_unavailable
 ~~~~~~~~~~~~~~~~~~~
 
-The machines specified by the `resources` field (representend as an :ref:`interval_set`) become unavailable. It is no longer possible to execute jobs on these machines, but jobs that were already running on these machines are not killed.
+The machines specified by the `resources` field (represented as an :ref:`interval_set`) become unavailable. It is no longer possible to execute jobs on these machines, but jobs that were already running on these machines are not killed.
 
 .. code:: json
 
@@ -45,7 +45,7 @@ The machines specified by the `resources` field (representend as an :ref:`interv
 Machine_available
 ~~~~~~~~~~~~~~~~~
 
-The machines specified by the `resources` field (representend as an :ref:`interval_set`) become available. It is now possible to execute jobs on these machines.
+The machines specified by the `resources` field (represented as an :ref:`interval_set`) become available. It is now possible to execute jobs on these machines.
 
 .. code:: json
 

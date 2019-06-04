@@ -10,9 +10,9 @@ They can be used to define what users desire to execute over time.
 Batsim separates workloads in two distinct sets that are **jobs** and **profiles**.
 
 - Jobs define user requests. Typically, this is the information the scheduling algorithm can use to make its decisions.
-- Profiles define applications inners. Typically, this is the information the platform simulator uses to simulate how the application should be executed.
+- Profiles define what is inside applications. Typically, this is the information the platform simulator uses to simulate how the application should be executed.
 
-Each job uses exacly one profile. Profiles can be shared by multiple jobs.
+Each job uses exactly one profile. Profiles can be shared by multiple jobs.
 
 Workloads are defined in JSON.
 Here is an example of a Batsim workload from Batsim's repository
@@ -72,7 +72,7 @@ Delay
 This is the simplest profile type.
 In fact there is no job execution but only a fixed number of seconds during which the machines will sleep.
 
-It does **not** take the platform into account at all. It cannot be used to see any network or cpu contention. It cannot be used directly to observe the energy used by the job — it would be similar to remaining idle.
+It does **not** take the platform into account at all. It cannot be used to see any network or CPU contention. It cannot be used directly to observe the energy used by the job — it would be similar to remaining idle.
 
 The following example defines a profile that always waits for 20.20 seconds.
 
@@ -113,7 +113,7 @@ Here is an example of a parallel task that can be used by any job requesting 4 m
     }
 
 
-The first allocated machine of such a profile will compute :math:`5 * 10^6` floating-point operations, while the other machines will not compute any floating-point operation. The picture below illustrates the communications done within the paralell task. All allocated machines will send :math:`5 * 10^6` bytes to the first allocated machine. The second allocated machine will send :math:`5 * 10^6` bytes to the first and second allocated machines...
+The first allocated machine of such a profile will compute :math:`5 * 10^6` floating-point operations, while the other machines will not compute any floating-point operation. The picture below illustrates the communications done within the parallel task. All allocated machines will send :math:`5 * 10^6` bytes to the first allocated machine. The second allocated machine will send :math:`5 * 10^6` bytes to the first and second allocated machines...
 
 .. image:: ./img/ptask/CommMatrix.svg
 
@@ -238,11 +238,11 @@ both the ``to`` and the ``form`` fields.
 
 SMPI trace replay
 ^^^^^^^^^^^^^^^^^
-Profiles of this type correspond to the replay of a SMPI time-independent trace. Such traces allow to see the fine-grained behaviour of MPI applications.
+Profiles of this type correspond to the replay of a SMPI time-independent trace. Such traces allow to see the fine-grained behavior of MPI applications.
 
 .. note::
 
-    This profile type may not be realistic with all applications, as the application is simulated *offine*: The application is first executed to get a trace, then the trace is replayed.
+    This profile type may not be realistic with all applications, as the application is simulated *offline*: The application is first executed to get a trace, then the trace is replayed.
 
     This may be wrong if the application logic depends on the execution context, for example if the application communication pattern depends on the observed latencies at runtime.
 
