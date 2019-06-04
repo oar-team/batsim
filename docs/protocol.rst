@@ -299,8 +299,8 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
 -  ``nb_resources``: The number of resources in the simulated platform.
 -  ``nb_compute_resources``: The number of compute resources in the simulated platform.
 -  ``nb_storage_resources``: The number of storage resources in the simulated platform.
--  ``allow_time_sharing_on_compute``: Whether time sharing is enabled on compute machines or not (see :ref:`cli`).
--  ``allow_time_sharing_on_storage``: Whether time sharing is enabled on storage machines or not (see :ref:`cli`).
+-  ``allow_compute_sharing``: Whether compute hosts can be used at the same time by several jobs or not (see :ref:`cli`).
+-  ``allow_storage_sharing``: Whether storage hosts can be used at the same time by several jobs or not (see :ref:`cli`).
 -  ``config``: The Batsim configuration.
 -  ``compute_resources``: Information about the compute resources.
 
@@ -329,7 +329,8 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
            "nb_resources": 4,
            "nb_compute_resources": 4,
            "nb_storage_resources": 0,
-           "allow_time_sharing": false,
+           "allow_compute_sharing": false,
+           "allow_storage_sharing": true,
            "config": {
              "redis": {
                "enabled": false,
