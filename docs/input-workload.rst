@@ -98,7 +98,12 @@ This profile type defines a set of computations and communications whose executi
 - ``cpu``: An array defining the amount of floating-point operations that should be computed on each allocated machine.
 - ``com``: An array defining the amount of bytes that should be transferred between allocated machines. This is in fact a matrix where host in row sends to host in column. When row equals column, the communication is done through the machine loopback interface (if defined in the :ref:`input_platform`).
 
+
 Here is an example of a parallel task that can be used by any job requesting 4 machines. The first allocated machine of such a profile will compute :math:`5 * 10^6` floating-point operations, while the other machines will not compute any floating-point operation. All allocated machines will send :math:`5 * 10^6` bytes to the first allocated machine. The second allocated machine will send :math:`5 * 10^6` bytes to the first and second allocated machines...
+
+The picture bellow illustrates the communications.
+
+.. image:: ./img/ptask/CommMatrix.svg
 
 .. code:: json
 
