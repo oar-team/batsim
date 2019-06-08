@@ -24,6 +24,7 @@ build_and_test:
     - nix-build ./release.nix -A integration_tests && cp -rL result ./integration_tests
     - if [[ "$(cat ./integration_tests/pytest_returncode)" -ne 0 ]] ; then echo "pytest returned non-zero, aborting" ; exit 1 ; fi
     # Send coverage results to codecov.io
+    - nix-env -i gcc
     - bash <(curl -s https://codecov.io/bash)
   artifacts:
     paths:
