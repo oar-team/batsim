@@ -21,26 +21,35 @@ Here is an example of a Batsim workload from Batsim's repository
 .. literalinclude:: ../workloads/test_various_profile_types.json
     :language: json
 
-.. todo::
+The following field must be defined in a workload file.
 
-    - Talk about ``nb_res``. Quick answer: look at the ``--mmax-workload`` option of :ref:`cli`.
-    - Tell that other fields can be used freely by users but are ignored by Batsim.
+- ``jobs`` (array of jobs): See :ref:`job_definition`.
+- ``profiles`` (array of profiles): See :ref:`profile_definition`.
+- ``nb_res`` (positive integer): Indicates how many resources this workload has been designed for. Can be used to determine how many resources should be used in the simulation thanks to the ``--mmax-workload`` :ref:`cli` argument.
+
+Multiple input workloads can be given to Batsim (see :ref:`cli`).
+While jobs and profiles are usually defined in workload files in a static manner, adding jobs and profiles dynamically (while the simulation runs) is possible.
+For more information about this, see :ref:`dynamic_job_registration`.
+
+--------------
+
+.. _job_definition:
 
 Job definition
 --------------
 Jobs must have the following fields.
 
 - ``id``: The job unique identifier (string).
-- ``subtime``: The time at which the job request is issued in the system (float, in seconds).
+- ``subtime``: The job submission time (float, in seconds) — i.e., the time at which the job request is issued in the system.
 - ``res``: The number of resources requested (positive integer).
 - ``profile``: The name of the profile associated with the job (string) — i.e., the definition of how the job execution should be simulated.
 
 Some optional fields are used by Batsim.
 
-- ``walltime``: The maximum execution time of the job (float, in seconds). Any job exceeding its walltime is killed by Batsim.
+- ``walltime``: By default, jobs have no execution time limit. Setting a value (float, in seconds) to the ``walltime`` field makes Batsim automatically stop a job that exceeds its walltime.
 
 **Users can define any other field as they desire.**
-Such information is kept and will be forwarded to the scheduler at the job submission time. The scheduler can then use the additional information.
+Such information is not directly used by Batsim but is forwarded to the scheduler at the job submission time. The scheduler can then use the additional information.
 Here is a **non-exhaustive** list of what this workload definition flexibility allows.
 
 - Defining dependencies between jobs. This can be done by adding a ``dependencies`` field in jobs, which is a list of other job names.
@@ -48,6 +57,10 @@ Here is a **non-exhaustive** list of what this workload definition flexibility a
 - Adding shared resources to the job that are not machines. This is for example the case for proprietary software licenses: The number of concurrent MATLAB executions on a platform may be limited.
 - Specifying which queue the job comes from. Please note that giving multiple workloads to Batsim is also possible (see :ref:`cli`).
 - Adding metainformation about how the job has been generated. This can be helpful if one wants to assess advanced workload generation techniques.
+
+--------------
+
+.. _profile_definition:
 
 Profile definition
 ------------------
@@ -256,6 +269,10 @@ Profiles of this type correspond to the replay of a SMPI time-independent trace.
 
     As a full example, refer to the trace in :file:`workloads/smpi/compute_only`
     and to the :file:`workloads/test_smpi_compute_only.json` workload file.
+
+.. warning::
+
+  As I write these lines, walltime is not implemented for ``smpi`` jobs.
 
 .. code:: json
 
