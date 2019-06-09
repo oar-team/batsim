@@ -24,7 +24,7 @@ Here is an example of a Batsim workload from Batsim's repository
 The following field must be defined in a workload file.
 
 - ``jobs`` (array of jobs): See :ref:`job_definition`.
-- ``profiles`` (array of profiles): See :ref:`profile_definition`.
+- ``profiles`` (object of profiles): See :ref:`profile_definition`.
 - ``nb_res`` (positive integer): Indicates how many resources this workload has been designed for. Can be used to determine how many resources should be used in the simulation thanks to the ``--mmax-workload`` :ref:`cli` argument.
 
 Multiple input workloads can be given to Batsim (see :ref:`cli`).
