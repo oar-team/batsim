@@ -29,6 +29,7 @@ build_and_test:
     - cp ./batsim/gcno/* ./integration_tests/gcda/* merged/
     - bash <(curl -s https://codecov.io/bash)
   artifacts:
+    when: always
     paths:
       - /builds/batsim/batsim/doxydoc_html
       - /builds/batsim/batsim/integration_tests
