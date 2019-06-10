@@ -166,7 +166,7 @@ void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
                                             void * profile_data,
                                             BatsimContext * context)
 {
-    auto data = (MsgParallelHomogeneousPFSProfileData*) profile_data;
+    MsgParallelHomogeneousPFSProfileData* data = (MsgParallelHomogeneousPFSProfileData*) profile_data;
     const char * error_prefix = "Cannot generate a homogeneous parallel task with pfs: ";
 
     // The PFS machine will also be used
@@ -258,7 +258,7 @@ void generate_data_staging_task(double *&  computation_amount,
                                  void * profile_data,
                                  BatsimContext * context)
 {
-    auto data = (MsgDataStagingProfileData*)profile_data;
+    MsgDataStagingProfileData * data = (MsgDataStagingProfileData*) profile_data;
     const char * error_prefix = "Cannot generate a data staging task: ";
 
     double cpu = 0;
