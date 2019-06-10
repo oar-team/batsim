@@ -248,7 +248,7 @@ void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
  * @param[in] profile_data the profile data
  * @param[in] context the batsim context
  */
-void generate_data_staginig_task(double *&  computation_amount,
+void generate_data_staging_task(double *&  computation_amount,
                                  double *& communication_amount,
                                  std::vector<simgrid::s4u::Host*> & hosts_to_use,
                                  std::map<std::string, int> storage_mapping,
@@ -363,7 +363,7 @@ void debug_print_ptask(const double * computation_vector,
  * @param[in] storage_mapping The storage mapping
  * @param[in] context The BatsimContext
  */
-void generate_matices_from_profile(double *& computation_vector,
+void generate_matrices_from_profile(double *& computation_vector,
                                    double *& communication_matrix,
                                    std::vector<simgrid::s4u::Host*> & hosts_to_use,
                                    Profile * profile,
@@ -404,7 +404,7 @@ void generate_matices_from_profile(double *& computation_vector,
                                                    context);
         break;
     case ProfileType::DATA_STAGING:
-        generate_data_staginig_task(computation_vector,
+        generate_data_staging_task(computation_vector,
                                         communication_matrix,
                                         hosts_to_use,
                                         *storage_mapping,
@@ -463,7 +463,7 @@ int execute_msg_task(BatTask * btask,
     XBT_DEBUG("Generating comm/compute matrix for task '%s' with allocation %s",
             task_name.c_str(), allocation->machine_ids.to_string_hyphen().c_str());
 
-    generate_matices_from_profile(computation_vector,
+    generate_matrices_from_profile(computation_vector,
                                   communication_matrix,
                                   hosts_to_use,
                                   profile,
@@ -486,7 +486,7 @@ int execute_msg_task(BatTask * btask,
         XBT_DEBUG("Generating comm/compute matrix for IO with allocation: %s",
                 allocation->io_allocation.to_string_hyphen().c_str());
         std::vector<simgrid::s4u::Host*> io_hosts = allocation->io_hosts;
-        generate_matices_from_profile(io_computation_vector,
+        generate_matrices_from_profile(io_computation_vector,
                                       io_communication_matrix,
                                       io_hosts,
                                       io_profile,
