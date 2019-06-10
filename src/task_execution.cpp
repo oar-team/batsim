@@ -189,7 +189,10 @@ void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
     }
     else
     {
+        xbt_assert(storage_mapping.find(data->storage_label) != storage_mapping.end(),
+            "%s: Unknown storage label='%s'", error_prefix, data->storage_label);
         pfs_machine_id = storage_mapping.at(data->storage_label);
+
         const Machine * pfs_machine = context->machines[pfs_machine_id];
         xbt_assert(pfs_machine->permissions == Permissions::STORAGE,
             "%sThe host(id=%d, name='%s') pointed to by label='%s' is not a storage host",
@@ -269,13 +272,19 @@ void generate_data_staging_task(double *&  computation_amount,
     hosts_to_use.clear();
 
     // Add the storage machines
-    int from_machine_id = storage_mapping[data->from_storage_label];
+    xbt_assert(storage_mapping.find(data->from_storage_label) != storage_mapping.end(),
+        "%s: Unknown storage label='%s'", error_prefix, data->from_storage_label);
+        pfs_machine_id = storage_mapping.at(data->from_storage_label);
+    int from_machine_id = storage_mapping.at(data->from_storage_label);
     const Machine * from_machine = context->machines[from_machine_id];
     xbt_assert(from_machine->permissions == Permissions::STORAGE,
         "%sThe host(id=%d, name='%s') pointed to by label='%s' is not a storage host",
         error_prefix, from_machine_id, from_machine->name.c_str(), data->from_storage_label.c_str());
 
-    int to_machine_id = storage_mapping[data->to_storage_label];
+    xbt_assert(storage_mapping.find(data->to_storage_label) != storage_mapping.end(),
+        "%s: Unknown storage label='%s'", error_prefix, data->to_storage_label);
+        pfs_machine_id = storage_mapping.at(data->to_storage_label);
+    int to_machine_id = storage_mapping.at(data->to_storage_label);
     const Machine * to_machine = context->machines[to_machine_id];
     xbt_assert(to_machine->permissions == Permissions::STORAGE,
         "%sThe host(id=%d, name='%s') pointed to by label='%s' is not a storage host",
