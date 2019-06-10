@@ -160,14 +160,14 @@ void generate_parallel_homogeneous_total_amount(double *& computation_amount,
  *          pfs node that is addded.
  */
 void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
-                                                double *& communication_amount,
-                                                std::vector<simgrid::s4u::Host*> & hosts_to_use,
-                                                std::map<std::string, int> storage_mapping,
-                                                void * profile_data,
-                                                BatsimContext * context)
+                                            double *& communication_amount,
+                                            std::vector<simgrid::s4u::Host*> & hosts_to_use,
+                                            std::map<std::string, int> storage_mapping,
+                                            void * profile_data,
+                                            BatsimContext * context)
 {
-    MsgParallelHomogeneousPFSProfileData* data =
-            (MsgParallelHomogeneousPFSProfileData*)profile_data;
+    auto data = (MsgParallelHomogeneousPFSProfileData*) profile_data;
+    const char * error_prefix = "Cannot generate a homogeneous parallel task with pfs: ";
 
     // The PFS machine will also be used
     unsigned int nb_res = hosts_to_use.size() + 1;
@@ -184,15 +184,16 @@ void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
         }
         else
         {
-            xbt_assert(false, "No storage/host mapping given and there is no"
-                    "(or more than one) storage node available");
+            xbt_assert(false, "%sNo storage/host mapping given and there is no (or more than one) storage node available", error_prefix);
         }
     }
     else
     {
-        pfs_machine_id = storage_mapping[data->storage_label];
-        xbt_assert(context->machines[pfs_machine_id]->permissions == Permissions::STORAGE,
-                "The given node (%d) is not a storage node", pfs_machine_id);
+        pfs_machine_id = storage_mapping.at(data->storage_label);
+        const Machine * pfs_machine = context->machines[pfs_machine_id];
+        xbt_assert(pfs_machine->permissions == Permissions::STORAGE,
+            "%sThe host(id=%d, name='%s') pointed to by label='%s' is not a storage host",
+            error_prefix, pfs_machine_id, pfs_machine->name.c_str(), data->storage_label.c_str());
     }
     hosts_to_use.push_back(context->machines[pfs_machine_id]->host);
 
@@ -248,13 +249,14 @@ void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
  * @param[in] context the batsim context
  */
 void generate_data_staginig_task(double *&  computation_amount,
-                                     double *& communication_amount,
-                                     std::vector<simgrid::s4u::Host*> & hosts_to_use,
-                                     std::map<std::string, int> storage_mapping,
-                                     void * profile_data,
-                                     BatsimContext * context)
+                                 double *& communication_amount,
+                                 std::vector<simgrid::s4u::Host*> & hosts_to_use,
+                                 std::map<std::string, int> storage_mapping,
+                                 void * profile_data,
+                                 BatsimContext * context)
 {
-    MsgDataStagingProfileData* data = (MsgDataStagingProfileData*)profile_data;
+    auto data = (MsgDataStagingProfileData*)profile_data;
+    const char * error_prefix = "Cannot generate a data staging task: ";
 
     double cpu = 0;
     double nb_bytes = data->nb_bytes;
@@ -266,11 +268,19 @@ void generate_data_staginig_task(double *&  computation_amount,
     // reset the alloc to use only IO nodes
     hosts_to_use.clear();
 
-    // Add the pfs_machine
+    // Add the storage machines
     int from_machine_id = storage_mapping[data->from_storage_label];
-    xbt_assert(context->machines[from_machine_id]->permissions == Permissions::STORAGE, "The given Storage for 'from' (%d) is not a storage node", from_machine_id);
+    const Machine * from_machine = context->machines[from_machine_id];
+    xbt_assert(from_machine->permissions == Permissions::STORAGE,
+        "%sThe host(id=%d, name='%s') pointed to by label='%s' is not a storage host",
+        error_prefix, from_machine_id, from_machine->name.c_str(), data->from_storage_label.c_str());
+
     int to_machine_id = storage_mapping[data->to_storage_label];
-    xbt_assert(context->machines[to_machine_id]->permissions == Permissions::STORAGE, "The given Storage for 'from' (%d) is not a storage node", to_machine_id);
+    const Machine * to_machine = context->machines[to_machine_id];
+    xbt_assert(to_machine->permissions == Permissions::STORAGE,
+        "%sThe host(id=%d, name='%s') pointed to by label='%s' is not a storage host",
+        error_prefix, to_machine_id, to_machine->name.c_str(), data->to_storage_label.c_str());
+
     hosts_to_use.push_back(context->machines[from_machine_id]->host);
     hosts_to_use.push_back(context->machines[to_machine_id]->host);
 
@@ -424,14 +434,14 @@ void check_ptask_execution_permission(const IntervalSet & alloc,
     {
         int machine_id = alloc[i];
         XBT_DEBUG("enforcing permission for machine id: %d", machine_id);
-        Permissions perm = context->machines[machine_id]->permissions;
+        const Machine * machine = context->machines[machine_id];
         // Check if is 0 +- epsilon
         if (std::abs(computation_matrix[i]) > 1e-10)
         {
             XBT_DEBUG("found computation: %.17g", computation_matrix[i]);
-            xbt_assert(perm == Permissions::COMPUTE_NODE,
-                "Some computation (%f) is assigned to a storage node (id: %d)",
-                computation_matrix[i], machine_id);
+            xbt_assert(machine->permissions == Permissions::COMPUTE_NODE,
+                "Some computation (%g) is assigned to storage node (id=%d, name='%s')",
+                computation_matrix[i], machine_id, machine->name.c_str());
         }
     }
 }
