@@ -162,7 +162,7 @@ void generate_parallel_homogeneous_total_amount(double *& computation_amount,
 void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
                                             double *& communication_amount,
                                             std::vector<simgrid::s4u::Host*> & hosts_to_use,
-                                            std::map<std::string, int> storage_mapping,
+                                            const std::map<std::string, int> * storage_mapping,
                                             void * profile_data,
                                             BatsimContext * context)
 {
@@ -175,7 +175,8 @@ void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
 
     // Add the pfs_machine
     int pfs_machine_id;
-    if (storage_mapping.empty())
+    xbt_assert(storage_mapping != nullptr, "%s: storage mapping is null but the code uses it!", error_prefix);
+    if (storage_mapping->empty())
     {
         if (context->machines.storage_machines().size() == 1)
         {
@@ -189,9 +190,9 @@ void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
     }
     else
     {
-        xbt_assert(storage_mapping.find(data->storage_label) != storage_mapping.end(),
+        xbt_assert(storage_mapping->find(data->storage_label) != storage_mapping->end(),
             "%s: Unknown storage label='%s'", error_prefix, data->storage_label.c_str());
-        pfs_machine_id = storage_mapping.at(data->storage_label);
+        pfs_machine_id = storage_mapping->at(data->storage_label);
 
         const Machine * pfs_machine = context->machines[pfs_machine_id];
         xbt_assert(pfs_machine->permissions == Permissions::STORAGE,
@@ -254,7 +255,7 @@ void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
 void generate_data_staging_task(double *&  computation_amount,
                                  double *& communication_amount,
                                  std::vector<simgrid::s4u::Host*> & hosts_to_use,
-                                 std::map<std::string, int> storage_mapping,
+                                 const std::map<std::string, int> * storage_mapping,
                                  void * profile_data,
                                  BatsimContext * context)
 {
@@ -272,17 +273,18 @@ void generate_data_staging_task(double *&  computation_amount,
     hosts_to_use.clear();
 
     // Add the storage machines
-    xbt_assert(storage_mapping.find(data->from_storage_label) != storage_mapping.end(),
+    xbt_assert(storage_mapping != nullptr, "%s: storage mapping is null but the code uses it!", error_prefix);
+    xbt_assert(storage_mapping->find(data->from_storage_label) != storage_mapping->end(),
         "%s: Unknown storage label='%s'", error_prefix, data->from_storage_label.c_str());
-    int from_machine_id = storage_mapping.at(data->from_storage_label);
+    int from_machine_id = storage_mapping->at(data->from_storage_label);
     const Machine * from_machine = context->machines[from_machine_id];
     xbt_assert(from_machine->permissions == Permissions::STORAGE,
         "%sThe host(id=%d, name='%s') pointed to by label='%s' is not a storage host",
         error_prefix, from_machine_id, from_machine->name.c_str(), data->from_storage_label.c_str());
 
-    xbt_assert(storage_mapping.find(data->to_storage_label) != storage_mapping.end(),
+    xbt_assert(storage_mapping->find(data->to_storage_label) != storage_mapping->end(),
         "%s: Unknown storage label='%s'", error_prefix, data->to_storage_label.c_str());
-    int to_machine_id = storage_mapping.at(data->to_storage_label);
+    int to_machine_id = storage_mapping->at(data->to_storage_label);
     const Machine * to_machine = context->machines[to_machine_id];
     xbt_assert(to_machine->permissions == Permissions::STORAGE,
         "%sThe host(id=%d, name='%s') pointed to by label='%s' is not a storage host",
@@ -406,7 +408,7 @@ void generate_matrices_from_profile(double *& computation_vector,
         generate_parallel_homogeneous_with_pfs(computation_vector,
                                                    communication_matrix,
                                                    hosts_to_use,
-                                                   *storage_mapping,
+                                                   storage_mapping,
                                                    profile->data,
                                                    context);
         break;
@@ -414,7 +416,7 @@ void generate_matrices_from_profile(double *& computation_vector,
         generate_data_staging_task(computation_vector,
                                         communication_matrix,
                                         hosts_to_use,
-                                        *storage_mapping,
+                                        storage_mapping,
                                         profile->data,
                                         context);
         break;
