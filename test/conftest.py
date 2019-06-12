@@ -7,7 +7,7 @@ from os.path import abspath, basename, dirname, realpath
 
 Workload = namedtuple('Workload', ['name', 'filename'])
 Platform = namedtuple('Platform', ['name', 'filename'])
-Algorithm = namedtuple('Platform', ['name', 'sched_implem', 'sched_algo_name'])
+Algorithm = namedtuple('Algorithm', ['name', 'sched_implem', 'sched_algo_name'])
 
 RedisMode = namedtuple('RedisMode', ['name', 'enabled'])
 
