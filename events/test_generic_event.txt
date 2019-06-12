@@ -1,0 +1,1 @@
+{"type": "some_generic_event", "timestamp": 123}

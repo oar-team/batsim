@@ -7,6 +7,7 @@ from os.path import abspath, basename, dirname, realpath
 
 Workload = namedtuple('Workload', ['name', 'filename'])
 Platform = namedtuple('Platform', ['name', 'filename'])
+ExternalEvents = namedtuple('ExternalEvents', ['name', 'filename'])
 Algorithm = namedtuple('Algorithm', ['name', 'sched_implem', 'sched_algo_name'])
 
 RedisMode = namedtuple('RedisMode', ['name', 'enabled'])
@@ -23,15 +24,27 @@ def generate_workloads(workload_dir, definition, accepted_names):
         filename=abspath(f'{workload_dir}/{filename}'))
         for name, filename in definition.items() if name in accepted_names]
 
+def generate_external_events(external_events_dir, definition, accepted_names):
+    return [ExternalEvents(
+        name=name,
+        filename=abspath(f'{external_events_dir}/{filename}'))
+        for name, filename in definition.items() if name in accepted_names]
+
 def generate_batsched_algorithms(definition, accepted_names):
     return [Algorithm(name=name, sched_implem='batsched', sched_algo_name=sched_algo_name)
         for name, sched_algo_name in definition.items() if name in accepted_names]
+
+def generate_pybatsim_algorithms(definition, accepted_names):
+    return [Algorithm(name=name, sched_implem='pybatsim', sched_algo_name=sched_algo_name)
+        for name, sched_algo_name in definition.items() if name in accepted_names]
+
 
 def pytest_generate_tests(metafunc):
     script_dir = dirname(realpath(__file__))
     batsim_dir = realpath(f'{script_dir}/..')
     platform_dir = realpath(f'{batsim_dir}/platforms')
     workload_dir = realpath(f'{batsim_dir}/workloads')
+    external_events_dir = realpath(f'{batsim_dir}/events')
 
     #############################
     # Define the various inputs #
@@ -90,10 +103,17 @@ def pytest_generate_tests(metafunc):
         "sequencer": "sequencer",
         "sleeper": "sleeper",
         "submitter": "submitter",
+        "py_filler_events": "fillerSchedWithEvents",
     }
     basic_algorithms = ["fcfs", "easyfast", "filler"]
     energy_algorithms = ["sleeper", "energywatcher"]
     metadata_algorithms = ['filler', 'submitter']
+
+    # External Events
+    external_events_def = {
+        "simple": "test_events_4hosts.txt",
+        "generic": "test_generic_event.txt",
+    }
 
     ##########################################
     # Generate fixtures from the definitions #
@@ -135,6 +155,14 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('long_workload', generate_workloads(workload_dir, workloads_def, ['long']))
     if 'delaysequences_workload' in metafunc.fixturenames:
         metafunc.parametrize('delaysequences_workload', generate_workloads(workload_dir, workloads_def, ['delaysequences']))
+    if 'mixed_workload' in metafunc.fixturenames:
+        metafunc.parametrize('mixed_workload', generate_workloads(workload_dir, workloads_def, ['mixed']))
+
+    # External Events
+    if 'simple_events' in metafunc.fixturenames:
+        metafunc.parametrize('simple_events', generate_external_events(external_events_dir, external_events_def, ['simple']))
+    if 'generic_events' in metafunc.fixturenames:
+        metafunc.parametrize('generic_events', generate_external_events(external_events_dir, external_events_def, ['generic']))
 
     # Algorithms
     if 'basic_algorithm' in metafunc.fixturenames:
@@ -157,6 +185,9 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('random_algorithm', generate_batsched_algorithms(algorithms_def, ['random']))
     if 'idle_sleeper_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('idle_sleeper_algorithm', generate_batsched_algorithms(algorithms_def, ['idlesleeper']))
+
+    if 'pybatsim_filler_events_algorithm' in metafunc.fixturenames:
+        metafunc.parametrize('pybatsim_filler_events_algorithm', generate_pybatsim_algorithms(algorithms_def, ['py_filler_events']))
 
     # Misc. fixtures.
     if 'redis_mode' in metafunc.fixturenames:
