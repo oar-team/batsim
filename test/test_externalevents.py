@@ -46,8 +46,10 @@ def genericevents(platform, workload, algorithm, events, option_forward_generic)
 
     instance.to_file(robin_filename)
     ret = run_robin(robin_filename)
-    if ret.returncode != 0: raise Exception(f'Bad robin return code ({ret.returncode})')
-
+    if option_forward_generic and ret.returncode != 0:
+        raise Exception(f'Bad robin return code ({ret.returncode})')
+    elif not option_forward_generic and ret.returncode != 2:
+        raise Exception(f'Batsim should complain')
 
 def test_external_events(small_platform, mixed_workload, pybatsim_filler_events_algorithm, simple_events):
     externalevents(small_platform, mixed_workload, pybatsim_filler_events_algorithm, simple_events)
@@ -56,6 +58,5 @@ def test_external_events(small_platform, mixed_workload, pybatsim_filler_events_
 def test_generic_events_ok(small_platform, mixed_workload, pybatsim_filler_events_algorithm, generic_events):
     genericevents(small_platform, mixed_workload, pybatsim_filler_events_algorithm, generic_events, True)
 
-@pytest.mark.xfail
 def test_generic_events_fail(small_platform, mixed_workload, pybatsim_filler_events_algorithm, generic_events):
     genericevents(small_platform, mixed_workload, pybatsim_filler_events_algorithm, generic_events, False)
