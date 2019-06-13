@@ -40,13 +40,13 @@ Job definition
 Jobs must have the following fields.
 
 - ``id``: The job unique identifier (string).
-- ``subtime``: The job submission time (float, in seconds) — i.e., the time at which the job request is issued in the system.
+- ``subtime``: The job submission time (float, in seconds) — i.e., the **absolute** time at which the job request is issued in the system.
 - ``res``: The number of resources requested (positive integer).
 - ``profile``: The name of the profile associated with the job (string) — i.e., the definition of how the job execution should be simulated.
 
 Some optional fields are used by Batsim.
 
-- ``walltime``: By default, jobs have no execution time limit. Setting a value (float, in seconds) to the ``walltime`` field makes Batsim automatically stop a job that exceeds its walltime.
+- ``walltime``: By default, jobs have no execution time limit. Setting a value (float, in seconds) to the ``walltime`` field makes Batsim automatically stop a job that exceeds its walltime. In constrast to ``subtime``, this value is **relative** to the start of the job.
 
 **Users can define any other field as they desire.**
 Such information is not directly used by Batsim but is forwarded to the scheduler at the job submission time. The scheduler can then use the additional information.
