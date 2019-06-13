@@ -126,7 +126,7 @@ Here is an example of a parallel task that can be used by any job requesting 4 m
     }
 
 
-The first allocated machine of such a profile will compute :math:`5 * 10^6` floating-point operations, while the other machines will not compute any floating-point operation. The picture below illustrates the communications done within the parallel task. All allocated machines will send :math:`5 * 10^6` bytes to the first allocated machine. The second allocated machine will send :math:`5 * 10^6` bytes to the first and second allocated machines...
+The first allocated machine of such a profile will compute :math:`5 x 10^6` floating-point operations, while the other machines will not compute any floating-point operation. The picture below illustrates the communications done within the parallel task. All allocated machines will send :math:`5 x 10^6` bytes to the first allocated machine. The second allocated machine will send :math:`5 x 10^6` bytes to the first and second allocated machines...
 
 .. image:: ./img/ptask/CommMatrix.svg
 
@@ -205,13 +205,13 @@ This profile type defines a list of other profiles that should be executed in se
 Homogeneous parallel tasks with IO to/from a Parallel File System
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Represents an IO transfer between all the nodes of a job's allocation and a
-centralized storage tier. The storage tier is represented by one host of the :ref:`input_platform`.
+centralized storage tier. The storage tier is represented by one host of the :ref:`input_platform` having the role ``storage``.
 
 **Parameters.**
 
 - ``bytes_to_read``: The amount of bytes to read from the PFS to each node (float).
 - ``bytes_to_write``: The amount of bytes to write to the PFS from each node (float).
-- ``storage``: (optional) The name of the storage (string). It will be mapped to a specific node at the job execution time. Default value is ``pfs``. See :ref:`proto_EXECUTE_JOB` for more details.
+- ``storage``: (optional) A label for the storage to use (string). It will be mapped to a specific node at the job execution time. Default value is ``pfs``. See :ref:`proto_EXECUTE_JOB` for more details about the ``storage_mapping``.
 
 .. code:: json
 
@@ -225,20 +225,16 @@ centralized storage tier. The storage tier is represented by one host of the :re
 Staging parallel tasks between two storage tiers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This profile type represents an IO transfer between two storage tiers.
-
-.. todo::
-
-    - What is a storage tier in this case? One host of the :ref:`input_platform`?
-    - Link with execution message that manages the label->id label.
+Storage tiers are hosts of the :ref:`input_platform` having the role ``storage``.
 
 **Parameters.**
 
 - ``nb_bytes``: The amount of bytes to be transferred (float).
-- ``from``: The name of the sending storage tier (string). It will be mapped to a specific machine at the job execution time.
-- ``to``: The name of the receiving storage tier (string). It will be mapped to a specific machine at the job execution time.
+- ``from``: A label for the sending storage tier (string). It will be mapped to a specific host at the job execution time.
+- ``to``: A label for the receiving storage tier (string). It will be mapped to a specific host at the job execution time.
 
-See :ref:`proto_EXECUTE_JOB` for more details on the storage mapping needed for
-both the ``to`` and the ``form`` fields.
+See :ref:`proto_EXECUTE_JOB` for more details on the ``storage_mapping`` needed for
+both the ``from`` and the ``to`` fields.
 
 .. code:: json
 

@@ -695,13 +695,16 @@ second machine (1, which stands for resource id 3).
 
 For certain job profiles that involve storage you may need to define a
 ``storage_mapping`` between the storage label defined in the job profile
-definition and the storage resource id on the platform. For example, the
+definition and the storage resource id of the platform. For example, the
 job profile of type ``parallel_homogeneous_pfs`` contains this field
 ``"storage": "pfs"``. In order to select what is the resource that
 corresponds to the ``"pfs"`` storage, you should provide a mapping for
 this label: ``"storage_mapping": { "pfs": 2 }``. If no mapping is
 provided, Batsim will guess the storage mapping only if one storage
 resource is provided on the platform.
+For the case of ``data_staging`` profile, the ``storage_mapping`` is
+mandatory and must specify the resource id of the storages associated
+to the ``to`` and ``from`` labels of the profile.
 
 Another optional field is ``additional_io_job`` that permits the
 scheduler to add a job, that represents the IO traffic, dynamically at
