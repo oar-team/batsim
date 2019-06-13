@@ -112,6 +112,53 @@ let
       doCheck = true;
     };
 
+    # Batsim sphinx documentation.
+    sphinx_doc = pkgs.stdenv.mkDerivation rec {
+      name = "batsim-sphinx-documentation";
+
+      src = pkgs.lib.sourceByRegex ./. [
+        "^doc"
+        "^doc/batsim_rjms_overview.png"
+        "^docs"
+        "^docs/conf.py"
+        "^docs/Makefile"
+        "^docs/.*\.bash"
+        "^docs/.*\.rst"
+        "^docs/img"
+        "^docs/img/logo"
+        "^docs/img/logo/logo.png"
+        "^docs/img/ptask"
+        "^docs/img/ptask/CommMatrix.svg"
+        "^docs/img/proto"
+        "^docs/img/proto/.*\.png"
+        "^docs/tuto-first-simulation"
+        "^docs/tuto-first-simulation/.*\.bash"
+        "^docs/tuto-first-simulation/.*\.rst"
+        "^docs/tuto-first-simulation/.*\.out"
+        "^docs/tuto-first-simulation/.*\.yaml"
+        "^docs/tuto-reproducible-experiment"
+        "^docs/tuto-reproducible-experiment/.*\.nix"
+        "^docs/tuto-reproducible-experiment/.*\.rst"
+        "^docs/tuto-reproducible-experiment/.*\.yaml"
+        "^docs/tuto-result-analysis"
+        "^docs/tuto-result-analysis/.*\.rst"
+        "^docs/tuto-result-analysis/.*\.R"
+        "^docs/tuto-sched-implem"
+        "^docs/tuto-sched-implem/.*\.rst"
+        "^events"
+        "^events/test_events_4hosts.txt"
+        "^workloads"
+        "^workloads/test_various_profile_types.json"
+      ];
+      buildInputs = with pythonPackages; [ sphinx sphinx_rtd_theme ];
+
+      buildPhase = "cd docs && make html";
+      installPhase = ''
+        mkdir -p $out
+        cp -r _build/html $out/
+      '';
+    };
+
     # Dependencies not in nixpkgs as I write these lines.
     pytest_metadata = buildPythonPackage {
       name = "pytest-metadata-1.8.0";
