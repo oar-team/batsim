@@ -33,6 +33,7 @@ Such host cannot perform any computation but can be used to execute jobs with IO
 
 It is possible to specify the role of a host in the platform description by adding a property to that host.
 For example:
+
 .. code:: xml
 
     <host id="storage_server" speed="0f">
