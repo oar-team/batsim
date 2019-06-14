@@ -50,6 +50,8 @@ let
         "^workloads/smpi"
         "^workloads/smpi/.*"
         "^workloads/smpi/.*/.*\.txt"
+        "^events"
+        "^events/.*\.txt"
       ];
       buildInputs = with pkgs.python37Packages; [
         batsim batsched batexpe pkgs.redis

@@ -1,4 +1,4 @@
-#!/usr/bin§env python3
+#!/usr/bin/env python3
 ''' External events tests.
 
 These tests run batsim with external events inputs.
@@ -27,7 +27,7 @@ def externalevents(platform, workload, algorithm, events):
 
 
 def genericevents(platform, workload, algorithm, events, option_forward_generic):
-    test_name = f'generic-events-{algorithm.name}-{platform.name}-{workload.name}-{events.name}'
+    test_name = f'generic-events-{algorithm.name}-{platform.name}-{workload.name}-{events.name}-forward-{option_forward_generic}'
     output_dir, robin_filename, _ = init_instance(test_name)
 
     if algorithm.sched_implem != 'pybatsim': raise Exception('This test only supports pybatsim for now')
