@@ -5,6 +5,7 @@
 , simgrid ? kapack.simgrid322_2
 , batsched ? kapack.batsched_dev
 , batexpe ? kapack.batexpe
+, pybatsim ? kapack.pybatsim_dev
 }:
 
 let
@@ -49,10 +50,12 @@ let
         "^workloads/smpi"
         "^workloads/smpi/.*"
         "^workloads/smpi/.*/.*\.txt"
+        "^events"
+        "^events/.*\.txt"
       ];
       buildInputs = with pkgs.python37Packages; [
         batsim batsched batexpe pkgs.redis
-        pytest pytest_html pandas] ++
+        pybatsim pytest pytest_html pandas] ++
       pkgs.lib.optional doCoverage [ gcovr ];
 
       preBuild = pkgs.lib.optionalString doCoverage ''
