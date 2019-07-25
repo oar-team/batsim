@@ -78,6 +78,7 @@ struct Machine
     std::unordered_map<MachineState, long double> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
 
     std::unordered_map<std::string, std::string> properties; //!< Properties defined in the platform file
+    std::unordered_map<std::string, std::string> zone_properties; //!< Properties of Zones defined in the platform file
 
     /**
      * @brief Returns whether the Machine has the given role
@@ -204,6 +205,13 @@ public:
     Machine * operator[](int machineID);
 
     /**
+     * @brief Access a Machine thanks to its name (Machine/Host name is unique Simgrid)
+     * @param[in] name The machine name
+     * @return The machine whose machine name is given. nullptr is returned if the machine is not found.
+     */
+    Machine * machine_by_name_or_null(const std::string & name) const;
+
+    /**
      * @brief Checks whether a machine exists
      * @param[in] machineID The machine unique number
      * @return True if and only if the machine exists
@@ -283,6 +291,15 @@ public:
      * @return A const reference to _nb_machines_in_each_state getter
      */
     const std::map<MachineState, int> & nb_machines_in_each_state() const;
+
+    /**
+     * @brief Add the properties of zones to each machine inside the zone
+     * @param[in] current_zone The considered NetZone of SimGrid
+     * @param[in] parent_properties The properties of the parent zones
+     */
+    void attach_zone_properties_to_machines(simgrid::s4u::NetZone * current_zone,
+                                            std::unordered_map<std::string, std::string> parent_properties);
+
 
 private:
     std::vector<Machine *> _machines;       //!< The vector of all machines

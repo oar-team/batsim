@@ -188,6 +188,15 @@ Value JsonProtocolWriter::machine_to_json_value(const Machine & machine)
     }
     machine_doc.AddMember("properties", properties, _alloc);
 
+    Value zone_properties(rapidjson::kObjectType);
+    for(auto const &entry : machine.zone_properties)
+    {
+        rapidjson::Value key(entry.first.c_str(), _alloc);
+        rapidjson::Value value(entry.second.c_str(), _alloc);
+        zone_properties.AddMember(key, value, _alloc);
+    }
+    machine_doc.AddMember("zone_properties", zone_properties, _alloc);
+
     return machine_doc;
 }
 
