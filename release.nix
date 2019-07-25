@@ -168,6 +168,7 @@ let
       doCheck = false;
       propagatedBuildInputs = [
         pythonPackages.pytest
+        pythonPackages.setuptools_scm
       ];
       src = builtins.fetchurl {
         url = "https://files.pythonhosted.org/packages/12/38/eed3a1e00c765e4da61e4e833de41c3458cef5d18e819d09f0f160682993/pytest-metadata-1.8.0.tar.gz";
