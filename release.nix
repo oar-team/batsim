@@ -37,6 +37,13 @@ let
       '';
     });
 
+    # Convenient development shell for qtcreator+cmake users.
+    qtcreator_shell = pkgs.mkShell rec {
+      name = "batsim-dev-shell-qtcreator-cmake";
+      buildInputs = batsim.buildInputs ++
+        [pkgs.cmake pkgs.qtcreator];
+    };
+
     # Batsim integration tests.
     integration_tests = pkgs.stdenv.mkDerivation rec {
       name = "batsim-integration-tests";
