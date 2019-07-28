@@ -17,3 +17,5 @@ dump.rdb
 .nixdeps
 *.ipynb_checkpoints
 result
+.tags*
+tags
