@@ -297,11 +297,46 @@ void Machines::create_machines(const BatsimContext *context,
         _machines.push_back(machine);
     }
 
+    // Retrieve zone properties and forward it to machines
+    simgrid::s4u::NetZone * root = simgrid::s4u::Engine::get_instance()->get_netzone_root();
+    std::unordered_map<std::string, std::string> parent_properties;
+    attach_zone_properties_to_machines(root, parent_properties);
+
     xbt_assert(_master_machine != nullptr,
                "Cannot find the \"master\" role in the platform file");
 
     _nb_machines_in_each_state[MachineState::IDLE] = (int)_compute_nodes.size();
 }
+
+
+void Machines::attach_zone_properties_to_machines(simgrid::s4u::NetZone * current_zone,
+                                                  std::unordered_map<std::string, std::string> parent_properties)
+{
+    // First add current properties to parent_properties
+    for (auto const& it: *current_zone->get_properties())
+    {
+        // If property was already defined by parent zones it is overwritten
+        parent_properties[it.first] = it.second;
+    }
+
+    // Second add zone properties to the hosts of this zone
+    for (simgrid::s4u::Host * host : current_zone->get_all_hosts())
+    {
+        Machine * m = machine_by_name_or_null(host->get_name());
+        if (m != nullptr) // Filter out the master_host
+        {
+            m->zone_properties = parent_properties;
+        }
+    }
+
+    // Then recursively call this function for child zones
+    //std::vector<simgrid::s4u::NetZone *> child_zones = ;
+    for (simgrid::s4u::NetZone * zone : current_zone->get_children())
+    {
+        attach_zone_properties_to_machines(zone, parent_properties);
+    }
+}
+
 
 const Machine * Machines::operator[](int machineID) const
 {
@@ -313,6 +348,17 @@ Machine * Machines::operator[](int machineID)
 {
     xbt_assert(exists(machineID), "Cannot get machine %d: it does not exist", machineID);
     return _machines[machineID];
+}
+
+Machine * Machines::machine_by_name_or_null(const std::string & name) const
+{
+
+    auto it = std::find_if(_machines.begin(), _machines.end(), [& name](Machine * machine) {
+        return machine->name == name;
+    });
+    if (it != _machines.end())
+        return *it;
+    return nullptr;
 }
 
 bool Machines::exists(int machineID) const

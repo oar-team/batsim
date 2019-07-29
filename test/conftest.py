@@ -55,6 +55,7 @@ def pytest_generate_tests(metafunc):
         "cluster512": "cluster512.xml",
         "energy128notopo": "energy_platform_homogeneous_no_net_128.xml",
         "energy128cluster": "cluster_energy_128.xml",
+        "properties_platform": "properties_example.xml",
     }
     energy_platforms = ["energy128notopo", "energy128cluster"]
 
@@ -103,6 +104,7 @@ def pytest_generate_tests(metafunc):
         "sequencer": "sequencer",
         "sleeper": "sleeper",
         "submitter": "submitter",
+        "py_filler": "fillerSched",
         "py_filler_events": "fillerSchedWithEvents",
     }
     basic_algorithms = ["fcfs", "easyfast", "filler"]
@@ -127,6 +129,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('small_platform', generate_platforms(platform_dir, platforms_def, ['small']))
     if 'cluster_platform' in metafunc.fixturenames:
         metafunc.parametrize('cluster_platform', generate_platforms(platform_dir, platforms_def, ['cluster512']))
+    if 'properties_platform' in metafunc.fixturenames:
+        metafunc.parametrize('properties_platform', generate_platforms(platform_dir, platforms_def, ['properties_platform']))
 
     # Workloads
     if 'workload' in metafunc.fixturenames:
@@ -186,6 +190,8 @@ def pytest_generate_tests(metafunc):
     if 'idle_sleeper_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('idle_sleeper_algorithm', generate_batsched_algorithms(algorithms_def, ['idlesleeper']))
 
+    if 'pybatsim_filler_algorithm' in metafunc.fixturenames:
+        metafunc.parametrize('pybatsim_filler_algorithm', generate_pybatsim_algorithms(algorithms_def, ['py_filler']))
     if 'pybatsim_filler_events_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('pybatsim_filler_events_algorithm', generate_pybatsim_algorithms(algorithms_def, ['py_filler_events']))
 
