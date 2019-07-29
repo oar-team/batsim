@@ -6,8 +6,8 @@
   <zone  id="AS0"  routing="Full">
     <prop id="Foo" value="bar"/>
     <zone id="AS3"  routing="Full">
-    	<!-- master_host for Batsim -->
-        <host id="master_host" speed="42f"/>
+      <!-- master_host for Batsim -->
+      <host id="master_host" speed="42f"/>
     </zone>
 
     <cluster id="acme" prefix="node-" suffix=".simgrid.org" radical="0-4" speed="1Gf"
@@ -24,11 +24,11 @@
         <prop id="Hdd" value="180"/>
         <prop id="mem" value="4"/>
       </host>
-      
+
       <host id="host2" speed="1Gf">
         <prop id="Hdd" value="120"/>
       </host>
-      
+
       <router id="AS4_router" />
 
       <link id="l1" bandwidth="125MBps" latency="100us"/>
@@ -36,12 +36,12 @@
         <link_ctn id="l1"/>
       </route>
     </zone>
-    
+
     <link id="master_link" bandwidth="100GBps" latency="1us" sharing_policy="FATPIPE"/>
     <link id="zone_link" bandwidth="250Mbps" latency="50us"/>
-    
+
     <zoneRoute src="AS4" dst="acme" gw_src="AS4_router" gw_dst="node-acme_router.simgrid.org">
-    	<link_ctn id="zone_link"/>
+      <link_ctn id="zone_link"/>
     </zoneRoute>
 
     <zoneRoute src="AS3" dst="AS4" gw_src="master_host" gw_dst="AS4_router">

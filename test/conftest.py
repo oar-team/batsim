@@ -130,7 +130,7 @@ def pytest_generate_tests(metafunc):
     if 'cluster_platform' in metafunc.fixturenames:
         metafunc.parametrize('cluster_platform', generate_platforms(platform_dir, platforms_def, ['cluster512']))
     if 'properties_platform' in metafunc.fixturenames:
-        metafunc.parametrize('properties_platform', generate_platforms(platform_dir, platforms_def, ['properties_platform']))        
+        metafunc.parametrize('properties_platform', generate_platforms(platform_dir, platforms_def, ['properties_platform']))
 
     # Workloads
     if 'workload' in metafunc.fixturenames:
