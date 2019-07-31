@@ -17,10 +17,10 @@ using namespace std;
 using namespace roles;
 
 /**
- * @brief Generate the communication and computaion matrix for the msg
- * parallel task profile. It also set the prefix name of the task.
- * @param[out] computation_amount the computation matrix to be simulated by the msg task
- * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @brief Generate the communication and computaion matrix for the
+ *        parallel task profile. Also set the prefix name of the task.
+ * @param[out] computation_amount the computation matrix to be simulated by the parallel task
+ * @param[out] communication_amount the communication matrix to be simulated by the parallel task
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  */
@@ -45,10 +45,10 @@ void generate_parallel_task(std::vector<double>& computation_amount,
 }
 
 /**
- * @brief Generates the communication and computaion matrix for the msg
- *        parallel homogeneous task profile. It also set the prefix name of the task.
- * @param[out] computation_amount the computation matrix to be simulated by the msg task
- * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @brief Generate the communication and computaion matrix for the
+ *        parallel homogeneous task profile. Also set the prefix name of the task.
+ * @param[out] computation_amount the computation matrix to be simulated by the parallel task
+ * @param[out] communication_amount the communication matrix to be simulated by the parallel task
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  */
@@ -95,11 +95,11 @@ void generate_parallel_homogeneous(std::vector<double>& computation_amount,
 }
 
 /**
- * @brief Generates the communication vector and computation matrix for the msg
+ * @brief Generate the communication vector and computation matrix for the
  *        parallel homogeneous total amount task profile.
  *
- * @param[out] computation_amount the computation matrix to be simulated by the msg task
- * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @param[out] computation_amount the computation matrix to be simulated by the parallel task
+ * @param[out] communication_amount the communication matrix to be simulated by the parallel task
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  *
@@ -150,11 +150,11 @@ void generate_parallel_homogeneous_total_amount(std::vector<double>& computation
 }
 
 /**
- * @brief Generate the communication and computaion matrix for the msg
+ * @brief Generate the communication and computaion matrix for the
  *        parallel homogeneous task profile with a Parallel File System.
  *
- * @param[out] computation_amount the computation matrix to be simulated by the msg task
- * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @param[out] computation_amount the computation matrix to be simulated by the parallel task
+ * @param[out] communication_amount the communication matrix to be simulated by the parallel task
  * @param[in,out] hosts_to_use the list of host to be used by the task
  * @param[in] storage_mapping mapping from label given in the profile and machine id
  * @param[in] profile_data the profile data
@@ -246,13 +246,13 @@ void generate_parallel_homogeneous_with_pfs(std::vector<double>& computation_amo
 }
 
 /**
- * @brief Generate the communication and computaion matrix for the msg
- * data staging task profile.
+ * @brief Generate the communication and computaion matrix for the
+ *        data staging task profile.
  * @details Note that the number of resource is also altered because only
  * the pfs and the hpst are involved in the transfer. It also set the prefix
  * name of the task.
- * @param[out] computation_amount the computation matrix to be simulated by the msg task
- * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @param[out] computation_amount the computation matrix to be simulated by the parallel task
+ * @param[out] communication_amount the communication matrix to be simulated by the parallel task
  * @param[in,out] hosts_to_use the list of host to be used by the task
  * @param[in] storage_mapping mapping from label given in the profile and machine id
  * @param[in] profile_data the profile data
@@ -372,8 +372,8 @@ void debug_print_ptask(const std::vector<double>& computation_vector,
 }
 /**
  * @brief
- * @param[out] computation_vector The computation vector to be simulated by the msg task
- * @param[out] communication_matrix The communication matrix to be simulated by the msg task
+ * @param[out] computation_vector The computation vector to be simulated by the parallel task
+ * @param[out] communication_matrix The communication matrix to be simulated by the parallel task
  * @param[in,out] hosts_to_use The list of host to be used by the task
  * @param[in] profile The profile to be converted to a compute/comm matrix
  * @param[in] storage_mapping The storage mapping
