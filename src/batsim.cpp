@@ -731,7 +731,6 @@ int main(int argc, char * argv[])
 
     if (run_unittests)
     {
-        MSG_init(&argc, argv);
         test_entry_point();
     }
     else if (main_args.dump_execution_context)
@@ -777,7 +776,7 @@ int main(int argc, char * argv[])
     }
 
     // Instantiate SimGrid
-    MSG_init(&argc, argv); // Required for SMPI as I write these lines
+
     simgrid::s4u::Engine engine(&argc, argv);
 
     // Setting SimGrid configuration options, if any
