@@ -18,7 +18,7 @@
 
 #include <zmq.h>
 
-#include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
 #include "context.hpp"
 #include "ipp.hpp"

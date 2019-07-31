@@ -33,7 +33,6 @@
 #include <functional>
 
 #include <simgrid/s4u.hpp>
-#include <simgrid/msg.h>
 #include <smpi/smpi.h>
 #include <simgrid/plugins/energy.h>
 

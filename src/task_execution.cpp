@@ -3,7 +3,7 @@
  * @brief Contains functions related to the execution of the parallel profile tasks
  */
 
-#include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 #include "jobs.hpp"
 #include "profiles.hpp"
 #include "ipp.hpp"

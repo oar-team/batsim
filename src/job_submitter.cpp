@@ -196,8 +196,8 @@ void workflow_submitter_process(BatsimContext * context,
     {
         XBT_INFO("Warning: already past workflow start time! (%lf)", workflow->start_time);
     }
-    simgrid::s4u::this_actor::sleep_for(MAX(0.0, workflow->start_time - simgrid::s4u::Engine::get_clock()));
-
+    double sleep_time = workflow->start_time - simgrid::s4u::Engine::get_clock();
+    simgrid::s4u::this_actor::sleep_for((0.0) > (sleep_time) ? (0.0) : (sleep_time));
 
     /* Submit all the ready tasks */
 

@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
 #include <intervalset.hpp>
 

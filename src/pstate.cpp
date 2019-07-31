@@ -5,7 +5,7 @@
 
 #include "pstate.hpp"
 
-#include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
 #include "ipp.hpp"
 #include "context.hpp"

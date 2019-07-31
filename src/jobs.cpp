@@ -15,7 +15,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 
-#include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
