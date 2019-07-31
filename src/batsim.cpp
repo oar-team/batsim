@@ -860,7 +860,7 @@ int main(int argc, char * argv[])
         start_initial_simulation_processes(main_args, &context, true);
     }
 
-    // Simulation main loop, handled by MSG
+    // Simulation main loop, handled by s4u
     engine.run();
 
     zmq_close(context.zmq_socket);

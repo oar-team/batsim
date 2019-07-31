@@ -46,7 +46,7 @@ int execute_task(BatTask * btask,
 
     if (profile->is_parallel_task())
     {
-        int return_code = execute_msg_task(btask, allocation, remaining_time,
+        int return_code = execute_parallel_task(btask, allocation, remaining_time,
                                            context);
         if (return_code != 0)
         {
@@ -503,7 +503,7 @@ void killer_process(BatsimContext * context,
                 profile->type == ProfileType::DELAY)
             {
                 xbt_assert(job_progress != nullptr,
-                           "MSG and delay profiles should contain jobs progress");
+                           "Parallel and delay profiles should contain jobs progress");
             }
 
             // Store job progress in the message
