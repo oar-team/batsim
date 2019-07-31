@@ -25,16 +25,17 @@ using namespace roles;
  * @param[in] profile_data the profile data
  */
 void generate_parallel_task(std::vector<double>& computation_amount,
-                                std::vector<double>& communication_amount,
-                                unsigned int nb_res,
-                                void * profile_data)
+                            std::vector<double>& communication_amount,
+                            unsigned int nb_res,
+                            void * profile_data)
 {
     ParallelProfileData* data = (ParallelProfileData*)profile_data;
     xbt_assert(nb_res == data->nb_res,
             "the number of resources given by the allocation (%d) is different "
             "from the number of resouces given by the profile data (%d)",
             nb_res, data->nb_res);
-    // These amounts are deallocated by SG (TODO is it still the case with vectors and S4U?)
+
+    // Prepare buffers
     computation_amount.resize(nb_res, 0);
     communication_amount.resize(nb_res*nb_res, 0);
 
@@ -52,16 +53,16 @@ void generate_parallel_task(std::vector<double>& computation_amount,
  * @param[in] profile_data the profile data
  */
 void generate_parallel_homogeneous(std::vector<double>& computation_amount,
-                                       std::vector<double>& communication_amount,
-                                       unsigned int nb_res,
-                                       void * profile_data)
+                                   std::vector<double>& communication_amount,
+                                   unsigned int nb_res,
+                                   void * profile_data)
 {
     ParallelHomogeneousProfileData* data = (ParallelHomogeneousProfileData*)profile_data;
 
     double cpu = data->cpu;
     double com = data->com;
 
-    // These amounts are deallocated by SG (TODO is it still the case with vectors and S4U?)
+    // Prepare buffers
     computation_amount.reserve(nb_res);
     if (com > 0)
     {
@@ -73,7 +74,6 @@ void generate_parallel_homogeneous(std::vector<double>& computation_amount,
     }
 
     // Let us fill the local computation and communication matrices
-    //int k = 0;
     for (unsigned int y = 0; y < nb_res; ++y)
     {
         computation_amount.push_back(cpu);
@@ -89,7 +89,6 @@ void generate_parallel_homogeneous(std::vector<double>& computation_amount,
                 {
                     communication_amount.push_back(com);
                 }
-                //k++;
             }
         }
     }
@@ -109,16 +108,16 @@ void generate_parallel_homogeneous(std::vector<double>& computation_amount,
  *          homogeneously across the hosts.
  */
 void generate_parallel_homogeneous_total_amount(std::vector<double>& computation_amount,
-                                                    std::vector<double>& communication_amount,
-                                                    unsigned int nb_res,
-                                                    void * profile_data)
+                                                std::vector<double>& communication_amount,
+                                                unsigned int nb_res,
+                                                void * profile_data)
 {
     ParallelHomogeneousTotalAmountProfileData* data = (ParallelHomogeneousTotalAmountProfileData*)profile_data;
 
     const double spread_cpu = data->cpu / nb_res;
     const double spread_com = data->com / nb_res;
 
-    // These amounts are deallocated by SG
+    // Prepare buffers
     computation_amount.reserve(nb_res);
     if (spread_com > 0)
     {
@@ -130,7 +129,6 @@ void generate_parallel_homogeneous_total_amount(std::vector<double>& computation
     }
 
     // Fill the local computation and communication matrices
-    //int k = 0;
     for (unsigned int y = 0; y < nb_res; ++y)
     {
         computation_amount.push_back(spread_cpu);
@@ -146,7 +144,6 @@ void generate_parallel_homogeneous_total_amount(std::vector<double>& computation
                 {
                     communication_amount.push_back(spread_com);
                 }
-                //k++;
             }
         }
     }
@@ -208,9 +205,10 @@ void generate_parallel_homogeneous_with_pfs(std::vector<double>& computation_amo
     }
     hosts_to_use.push_back(context->machines[pfs_machine_id]->host);
 
-    // These amounts are deallocated by SG
+    // Prepare buffers
     computation_amount.reserve(nb_res);
-    if (data->bytes_to_read > 0 || data->bytes_to_write > 0)
+    bool do_comm = data->bytes_to_read > 0 || data->bytes_to_write > 0;
+    if (do_comm)
     {
         communication_amount.reserve(nb_res*nb_res);
     }
@@ -220,11 +218,10 @@ void generate_parallel_homogeneous_with_pfs(std::vector<double>& computation_amo
     }
 
     // Let us fill the local computation and communication matrices
-    //int k = 0;
     for (unsigned int row = 0; row < nb_res; ++row)
     {
         computation_amount.push_back(0);
-        if (data->bytes_to_read > 0 || data->bytes_to_write > 0)
+        if (do_comm)
         {
             for (unsigned int col = 0; col < nb_res; ++col)
             {
@@ -243,7 +240,6 @@ void generate_parallel_homogeneous_with_pfs(std::vector<double>& computation_amo
                 {
                     communication_amount.push_back(data->bytes_to_read);
                 }
-                //k++;
             }
         }
     }
@@ -263,11 +259,11 @@ void generate_parallel_homogeneous_with_pfs(std::vector<double>& computation_amo
  * @param[in] context the batsim context
  */
 void generate_data_staging_task(std::vector<double>&  computation_amount,
-                                 std::vector<double>& communication_amount,
-                                 std::vector<simgrid::s4u::Host*> & hosts_to_use,
-                                 const std::map<std::string, int> * storage_mapping,
-                                 void * profile_data,
-                                 BatsimContext * context)
+                                std::vector<double>& communication_amount,
+                                std::vector<simgrid::s4u::Host*> & hosts_to_use,
+                                const std::map<std::string, int> * storage_mapping,
+                                void * profile_data,
+                                BatsimContext * context)
 {
     DataStagingProfileData * data = (DataStagingProfileData*) profile_data;
     const char * error_prefix = "Cannot generate a data staging task: ";
@@ -303,7 +299,7 @@ void generate_data_staging_task(std::vector<double>&  computation_amount,
     hosts_to_use.push_back(context->machines[from_machine_id]->host);
     hosts_to_use.push_back(context->machines[to_machine_id]->host);
 
-    // These amounts are deallocated by SG
+    // Prepare buffers
     computation_amount.reserve(nb_res);
     if (nb_bytes > 0)
     {
@@ -315,7 +311,6 @@ void generate_data_staging_task(std::vector<double>&  computation_amount,
     }
 
     // Let us fill the local computation and communication matrices
-    //int k = 0;
     for (unsigned int row = 0; row < nb_res; ++row)
     {
         computation_amount.push_back(cpu);
@@ -332,7 +327,6 @@ void generate_data_staging_task(std::vector<double>&  computation_amount,
                 {
                     communication_amount.push_back(nb_bytes);
                 }
-                //k++;
             }
         }
     }
@@ -386,11 +380,11 @@ void debug_print_ptask(const std::vector<double>& computation_vector,
  * @param[in] context The BatsimContext
  */
 void generate_matrices_from_profile(std::vector<double>& computation_vector,
-                                   std::vector<double>& communication_matrix,
-                                   std::vector<simgrid::s4u::Host*> & hosts_to_use,
-                                   Profile * profile,
-                                   const std::map<std::string, int> * storage_mapping,
-                                   BatsimContext * context)
+                                    std::vector<double>& communication_matrix,
+                                    std::vector<simgrid::s4u::Host*> & hosts_to_use,
+                                    Profile * profile,
+                                    const std::map<std::string, int> * storage_mapping,
+                                    BatsimContext * context)
 {
 
     unsigned int nb_res = hosts_to_use.size();
@@ -539,7 +533,7 @@ int execute_parallel_task(BatTask * btask,
         // Generate the new matrices
         unsigned int nb_res = new_hosts_to_use.size();
 
-        // These amounts are deallocated by SG
+        // Prepare buffers
         std::vector<double> new_computation_vector(nb_res, 0);
         std::vector<double> new_communication_matrix(nb_res*nb_res, 0);
 
@@ -683,7 +677,8 @@ int execute_parallel_task(BatTask * btask,
         *remaining_time = *remaining_time - (simgrid::s4u::Engine::get_clock() - time_before_execute);
     }
 
-    XBT_DEBUG("Task '%s' finished in %f", task_name.c_str(), (simgrid::s4u::Engine::get_clock()-time_start));
+    XBT_DEBUG("Task '%s' finished in %f", task_name.c_str(),
+        simgrid::s4u::Engine::get_clock() - time_start);
 
     return ret;
 }
