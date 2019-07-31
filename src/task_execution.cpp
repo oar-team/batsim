@@ -458,8 +458,7 @@ void check_ptask_execution_permission(const IntervalSet & alloc,
 int execute_msg_task(BatTask * btask,
                      const SchedulingAllocation* allocation,
                      double * remaining_time,
-                     BatsimContext * context,
-                     CleanExecuteTaskData * cleanup_data)
+                     BatsimContext * context)
 {
     Profile * profile = btask->profile;
     std::vector<simgrid::s4u::Host*> hosts_to_use = allocation->hosts;
@@ -640,8 +639,6 @@ int execute_msg_task(BatTask * btask,
                                                 hosts_to_use.data(), computation_vector,
                                                 communication_matrix, NULL);
 
-    // If the process gets killed, the following data may need to be freed
-    cleanup_data->task = ptask;
 
     // Keep track of the task to get information on kill
     btask->ptask = ptask;
@@ -677,9 +674,6 @@ int execute_msg_task(BatTask * btask,
 
     XBT_DEBUG("Task '%s' finished", MSG_task_get_name(ptask));
     MSG_task_destroy(ptask);
-
-    // The task has been executed, the data does need to be freed in the cleanup function anymore
-    cleanup_data->task = nullptr;
 
     return ret;
 }
