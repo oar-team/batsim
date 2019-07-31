@@ -139,7 +139,7 @@ public:
     Profile * io_profile = nullptr; //!< The task additional io profile. This profile, if defined will b merge to the task profile before execution
 
     // Manage parallel profiles
-    simgrid::s4u::ExecPtr ptask = nullptr; //!> The final task to execute (only set for BatTask leaves with parallel profiles)
+    simgrid::s4u::ExecPtr ptask = nullptr; //!< The final task to execute (only set for BatTask leaves with parallel profiles)
 
     // manage Delay profile
     double delay_task_start = -1; //!< Stores when the task started its execution, in order to compute its progress afterwards (only set for BatTask leaves with delay profiles)
