@@ -11,7 +11,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <simgrid/s4u.hpp>
+#include <xbt/asserts.h>
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>

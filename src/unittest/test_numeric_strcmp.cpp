@@ -1,6 +1,6 @@
 #include "test_numeric_strcmp.hpp"
 
-#include "simgrid/s4u.hpp"
+#include <xbt/asserts.h>
 
 #include "../machines.hpp"
 

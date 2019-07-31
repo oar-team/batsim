@@ -4,6 +4,7 @@
  */
 
 #include <simgrid/s4u.hpp>
+
 #include "jobs.hpp"
 #include "profiles.hpp"
 #include "ipp.hpp"
