@@ -28,7 +28,7 @@ void generate_parallel_task(std::vector<double>& computation_amount,
                                 unsigned int nb_res,
                                 void * profile_data)
 {
-    MsgParallelProfileData* data = (MsgParallelProfileData*)profile_data;
+    ParallelProfileData* data = (ParallelProfileData*)profile_data;
     xbt_assert(nb_res == data->nb_res,
             "the number of resources given by the allocation (%d) is different "
             "from the number of resouces given by the profile data (%d)",
@@ -55,7 +55,7 @@ void generate_parallel_homogeneous(std::vector<double>& computation_amount,
                                        unsigned int nb_res,
                                        void * profile_data)
 {
-    MsgParallelHomogeneousProfileData* data = (MsgParallelHomogeneousProfileData*)profile_data;
+    ParallelHomogeneousProfileData* data = (ParallelHomogeneousProfileData*)profile_data;
 
     double cpu = data->cpu;
     double com = data->com;
@@ -112,7 +112,7 @@ void generate_parallel_homogeneous_total_amount(std::vector<double>& computation
                                                     unsigned int nb_res,
                                                     void * profile_data)
 {
-    MsgParallelHomogeneousTotalAmountProfileData* data = (MsgParallelHomogeneousTotalAmountProfileData*)profile_data;
+    ParallelHomogeneousTotalAmountProfileData* data = (ParallelHomogeneousTotalAmountProfileData*)profile_data;
 
     const double spread_cpu = data->cpu / nb_res;
     const double spread_com = data->com / nb_res;
@@ -172,7 +172,7 @@ void generate_parallel_homogeneous_with_pfs(std::vector<double>& computation_amo
                                             void * profile_data,
                                             BatsimContext * context)
 {
-    MsgParallelHomogeneousPFSProfileData* data = (MsgParallelHomogeneousPFSProfileData*) profile_data;
+    ParallelHomogeneousPFSProfileData* data = (ParallelHomogeneousPFSProfileData*) profile_data;
     const char * error_prefix = "Cannot generate a homogeneous parallel task with pfs: ";
 
     // The PFS machine will also be used
@@ -268,7 +268,7 @@ void generate_data_staging_task(std::vector<double>&  computation_amount,
                                  void * profile_data,
                                  BatsimContext * context)
 {
-    MsgDataStagingProfileData * data = (MsgDataStagingProfileData*) profile_data;
+    DataStagingProfileData * data = (DataStagingProfileData*) profile_data;
     const char * error_prefix = "Cannot generate a data staging task: ";
 
     double cpu = 0;
@@ -647,9 +647,6 @@ int execute_parallel_task(BatTask * btask,
 
     // Create the parallel task
     XBT_DEBUG("Creating parallel task '%s' on %zu resources", task_name.c_str(), hosts_to_use.size());
-    //msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(), hosts_to_use.size(),
-    //                                            hosts_to_use.data(), computation_vector,
-    //                                            communication_matrix, NULL);
 
     simgrid::s4u::ExecPtr ptask = simgrid::s4u::this_actor::exec_init(hosts_to_use, computation_vector, communication_matrix);
     ptask->set_name(task_name.c_str());
