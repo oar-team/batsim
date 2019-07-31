@@ -18,8 +18,6 @@
 
 #include <zmq.h>
 
-#include <simgrid/msg.h>
-
 #include "context.hpp"
 #include "ipp.hpp"
 

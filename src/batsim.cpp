@@ -33,7 +33,6 @@
 #include <functional>
 
 #include <simgrid/s4u.hpp>
-#include <simgrid/msg.h>
 #include <smpi/smpi.h>
 #include <simgrid/plugins/energy.h>
 
@@ -731,7 +730,6 @@ int main(int argc, char * argv[])
 
     if (run_unittests)
     {
-        MSG_init(&argc, argv);
         test_entry_point();
     }
     else if (main_args.dump_execution_context)
@@ -777,7 +775,7 @@ int main(int argc, char * argv[])
     }
 
     // Instantiate SimGrid
-    MSG_init(&argc, argv); // Required for SMPI as I write these lines
+
     simgrid::s4u::Engine engine(&argc, argv);
 
     // Setting SimGrid configuration options, if any
@@ -860,7 +858,7 @@ int main(int argc, char * argv[])
         start_initial_simulation_processes(main_args, &context, true);
     }
 
-    // Simulation main loop, handled by MSG
+    // Simulation main loop, handled by s4u
     engine.run();
 
     zmq_close(context.zmq_socket);

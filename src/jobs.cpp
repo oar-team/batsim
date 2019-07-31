@@ -15,7 +15,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 
-#include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
@@ -122,9 +122,9 @@ void BatTask::compute_leaf_progress()
     {
         if (ptask != nullptr) // The parallel task has already started
         {
-            // WARNING: This is not returning the flops amount but the remainin quantity of work
+            // WARNING: 'get_remaining_ratio' is not returning the flops amount but the remaining quantity of work
             // from 1 (not started yet) to 0 (completely finished)
-            current_task_progress_ratio = 1 - MSG_task_get_remaining_work_ratio(ptask);
+            current_task_progress_ratio = 1 - ptask->get_remaining_ratio();
         }
         else
         {
@@ -137,7 +137,7 @@ void BatTask::compute_leaf_progress()
 
         double runtime = simgrid::s4u::Engine::get_clock() - delay_task_start;
 
-        // Manages empty delay job (why?!)
+        // Manages empty delay job (TODO why?!)
         if (delay_task_required == 0)
         {
             current_task_progress_ratio = 1;

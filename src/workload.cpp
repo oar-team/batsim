@@ -156,7 +156,7 @@ void Workload::check_single_job_validity(const Job * job)
     const Profile * profile = profiles->at(job->profile);
     if (profile->type == ProfileType::PARALLEL)
     {
-        MsgParallelProfileData * data = (MsgParallelProfileData *) profile->data;
+        ParallelProfileData * data = (ParallelProfileData *) profile->data;
         (void) data; // Avoids a warning if assertions are ignored
         xbt_assert(data->nb_res == job->requested_nb_res,
                    "Invalid job %s: the requested number of resources (%d) do NOT match"

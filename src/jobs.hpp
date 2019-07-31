@@ -11,7 +11,6 @@
 
 #include <rapidjson/document.h>
 
-#include <simgrid/msg.h>
 #include <simgrid/s4u.hpp>
 
 #include <intervalset.hpp>
@@ -139,8 +138,8 @@ public:
     Profile * profile; //!< The task profile. The corresponding profile tells how the job should be computed
     Profile * io_profile = nullptr; //!< The task additional io profile. This profile, if defined will b merge to the task profile before execution
 
-    // Manage MSG profiles
-    msg_task_t ptask = nullptr; //!< The final task to execute (only set for BatTask leaves with MSG profiles)
+    // Manage parallel profiles
+    simgrid::s4u::ExecPtr ptask = nullptr; //!< The final task to execute (only set for BatTask leaves with parallel profiles)
 
     // manage Delay profile
     double delay_task_start = -1; //!< Stores when the task started its execution, in order to compute its progress afterwards (only set for BatTask leaves with delay profiles)

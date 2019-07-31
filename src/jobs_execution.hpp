@@ -8,16 +8,6 @@
 #include "ipp.hpp"
 #include "context.hpp"
 
-/**
- * @brief Structure used to clean the data of a profile execution if the process executing it gets killed
- * @details This structure should be allocated (via new!) before running execute_task (but not when doing recursive calls). It is freed by execute_task_cleanup.
- */
-struct CleanExecuteTaskData
-{
-    double * computation_amount = nullptr; //!< The computation amount (may be null)
-    double * communication_amount = nullptr; //!< The communication amount (may be null)
-    msg_task_t task = nullptr; //!< The task
-};
 
 /**
  * @brief The process in charge of killing a job if it reaches its walltime
@@ -53,23 +43,13 @@ int do_delay_task(double sleeptime, double * remaining_time);
  * @param[in,out] btask the task to execute
  * @param[in] context usefull information about Batsim context
  * @param[in] allocation the host to execute the task to
- * @param[in,out] cleanup_data to give to simgrid cleanup hook
  * @param[in,out] remaining_time remaining time of the current task
  * @return the profile return code if successful, -1 if walltime reached
  */
 int execute_task(BatTask * btask,
                  BatsimContext *context,
                  const SchedulingAllocation * allocation,
-                 CleanExecuteTaskData * cleanup_data,
                  double * remaining_time);
-
-/**
- * @brief Is executed on execute_task termination, allows to clean memory on kill
- * @param[in] unknown An unknown argument (oops?)
- * @param[in] data The data to free
- * @return 0
- */
-int execute_task_cleanup(void * unknown, void * data);
 
 /**
  * @brief The process in charge of executing a job

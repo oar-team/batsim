@@ -36,7 +36,6 @@ void smpi_replay_process(Job* job, SmpiProfileData * profile_data, simgrid::s4u:
 int execute_task(BatTask * btask,
                  BatsimContext *context,
                  const SchedulingAllocation * allocation,
-                 CleanExecuteTaskData * cleanup_data,
                  double * remaining_time)
 {
     Job * job = btask->parent_job;
@@ -47,8 +46,8 @@ int execute_task(BatTask * btask,
 
     if (profile->is_parallel_task())
     {
-        int return_code = execute_msg_task(btask, allocation, remaining_time,
-                                           context, cleanup_data);
+        int return_code = execute_parallel_task(btask, allocation, remaining_time,
+                                           context);
         if (return_code != 0)
         {
             return return_code;
@@ -76,7 +75,7 @@ int execute_task(BatTask * btask,
                 XBT_DEBUG("Creating sequential tasks '%s'", task_name.c_str());
 
                 int ret_last_profile = execute_task(sub_btask, context,  allocation,
-                                                    cleanup_data, remaining_time);
+                                                    remaining_time);
 
                 // The whole sequence fails if a subtask fails
                 if (ret_last_profile != 0)
@@ -177,7 +176,7 @@ int execute_task(BatTask * btask,
             XBT_INFO("Creating receive task '%s'", task_name.c_str());
 
             int ret_last_profile = execute_task(sub_btask, context, allocation,
-                                    cleanup_data, remaining_time);
+                                    remaining_time);
 
             if (ret_last_profile != 0)
             {
@@ -267,41 +266,6 @@ int do_delay_task(double sleeptime, double * remaining_time)
         *remaining_time = 0;
         return -1;
     }
-}
-
-int execute_task_cleanup(void * unknown, void * data)
-{
-    (void) unknown;
-
-    CleanExecuteTaskData * cleanup_data = (CleanExecuteTaskData *) data;
-    xbt_assert(cleanup_data != nullptr);
-
-    XBT_DEBUG("before freeing computation amount %p", cleanup_data->computation_amount);
-    xbt_free(cleanup_data->computation_amount);
-    XBT_DEBUG("before freeing communication amount %p", cleanup_data->communication_amount);
-    xbt_free(cleanup_data->communication_amount);
-
-    /* TODO S4U
-    if (cleanup_data->exec_process_args != nullptr)
-    {
-        XBT_DEBUG("before deleting exec_process_args->allocation %p",
-                  cleanup_data->exec_process_args->allocation);
-        delete cleanup_data->exec_process_args->allocation;
-        XBT_DEBUG("before deleting exec_process_args %p", cleanup_data->exec_process_args);
-        delete cleanup_data->exec_process_args;
-    }
-    */
-
-    if (cleanup_data->task != nullptr)
-    {
-        XBT_WARN("Not cleaning the task data to avoid a SG deadlock :(");
-        //MSG_task_destroy(cleanup_data->task);
-    }
-
-    XBT_DEBUG("before deleting cleanup_data %p", cleanup_data);
-    delete cleanup_data;
-
-    return 0;
 }
 
 /**
@@ -418,14 +382,10 @@ void execute_job_process(BatsimContext * context,
     // Job computation
     context->machines.update_machines_on_job_run(job, allocation->machine_ids,
                                                  context);
-    // Add a cleanup hook on the process
-    CleanExecuteTaskData * cleanup_data = new CleanExecuteTaskData;
-    //cleanup_data->exec_process_args = args; TODO S4U
-    //MSG_process_on_exit(execute_task_cleanup, cleanup_data); TODO S4U
 
     // Execute the process
     job->return_code = execute_task(job->task, context, allocation,
-                                    cleanup_data, &remaining_time);
+                                    &remaining_time);
     if (job->return_code == 0)
     {
         XBT_INFO("Job %s finished in time (success)", job->id.to_string().c_str());
@@ -543,7 +503,7 @@ void killer_process(BatsimContext * context,
                 profile->type == ProfileType::DELAY)
             {
                 xbt_assert(job_progress != nullptr,
-                           "MSG and delay profiles should contain jobs progress");
+                           "Parallel and delay profiles should contain jobs progress");
             }
 
             // Store job progress in the message

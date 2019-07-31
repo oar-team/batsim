@@ -18,12 +18,12 @@ enum class ProfileType
 {
     UNSET
     ,DELAY                                     //!< a delay. Its data is of type DelayProfileData
-    ,PARALLEL                                  //!< composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
-    ,PARALLEL_HOMOGENEOUS                      //!< a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type MsgParallelHomogeneousProfileData
-    ,PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT         //!< a homogeneous parallel task that spreads the given amounts of computation and communication among all the nodes. Its data is of type MsgParallelHomogeneousTotalAmountProfileData
+    ,PARALLEL                                  //!< composed of a computation vector and a communication matrix. Its data is of type ParallelProfileData
+    ,PARALLEL_HOMOGENEOUS                      //!< a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type ParallelHomogeneousProfileData
+    ,PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT         //!< a homogeneous parallel task that spreads the given amounts of computation and communication among all the nodes. Its data is of type ParallelHomogeneousTotalAmountProfileData
     ,SMPI                                      //!< a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
     ,SEQUENCE                                  //!< non-atomic: it is composed of a sequence of other profiles
-    ,PARALLEL_HOMOGENEOUS_PFS                  //!< Read and writes data to a PFS storage nodes. data type MsgParallelHomogeneousPFSProfileData
+    ,PARALLEL_HOMOGENEOUS_PFS                  //!< Read and writes data to a PFS storage nodes. data type ParallelHomogeneousPFSProfileData
     ,DATA_STAGING                              //!< for moving data between the pfs hosts. Its data is of type DataStagingProfileData
     ,SCHEDULER_SEND                            //!< a profile simulating a message sent to the scheduler. Its data is of type SchedulerSendProfileData
     ,SCHEDULER_RECV                            //!< receives a message from the scheduler and can execute a profile based on a value comparison of the message. Its data is of type SchedulerRecvProfileData
@@ -85,15 +85,15 @@ struct Profile
 /**
  * @brief The data associated to PARALLEL profiles
  */
-struct MsgParallelProfileData
+struct ParallelProfileData
 {
-    MsgParallelProfileData() = default;
+    ParallelProfileData() = default;
 
     /**
-     * @brief Destroys a MsgParallelProfileData
+     * @brief Destroys a ParallelProfileData
      * @details This method cleans the cpu and comm arrays from the memory if they are not set to nullptr
      */
-    ~MsgParallelProfileData();
+    ~ParallelProfileData();
 
     unsigned int nb_res;    //!< The number of resources
     double * cpu = nullptr; //!< The computation vector
@@ -103,7 +103,7 @@ struct MsgParallelProfileData
 /**
  * @brief The data associated to PARALLEL_HOMOGENEOUS profiles
  */
-struct MsgParallelHomogeneousProfileData
+struct ParallelHomogeneousProfileData
 {
     double cpu; //!< The computation amount on each node
     double com; //!< The communication amount between each pair of nodes
@@ -112,7 +112,7 @@ struct MsgParallelHomogeneousProfileData
 /**
  * @brief The data associated to PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT profiles
  */
-struct MsgParallelHomogeneousTotalAmountProfileData
+struct ParallelHomogeneousTotalAmountProfileData
 {
     double cpu; //!< The computation amount to spread over the nodes
     double com; //!< The communication amount to spread over each pair of nodes
@@ -145,7 +145,7 @@ struct SequenceProfileData
 /**
  * @brief The data associated to PARALLEL_HOMOGENEOUS_PFS profiles
  */
-struct MsgParallelHomogeneousPFSProfileData
+struct ParallelHomogeneousPFSProfileData
 {
     double bytes_to_read = 0;             //!< The amount of bytes to reads from the PFS storage node for each nodes (default: 0)
     double bytes_to_write = 0;            //!< The amount of bytes to writes to the PFS storage for each nodes (default: 0)
@@ -155,7 +155,7 @@ struct MsgParallelHomogeneousPFSProfileData
 /**
  * @brief The data associated to DATA_STAGING profiles
  */
-struct MsgDataStagingProfileData
+struct DataStagingProfileData
 {
     double nb_bytes;                  //!< The number of bytes to transfer between the two storage nodes
     std::string from_storage_label ;  //!< The storage label where data comes from

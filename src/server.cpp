@@ -10,7 +10,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <simgrid/msg.h>
 #include <simgrid/s4u.hpp>
 
 #include "context.hpp"

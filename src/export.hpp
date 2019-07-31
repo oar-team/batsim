@@ -13,8 +13,6 @@
 #include <fstream>
 #include <map>
 
-#include <simgrid/msg.h>
-
 #include "machines.hpp"
 #include "jobs.hpp"
 

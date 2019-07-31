@@ -11,7 +11,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <simgrid/msg.h>
+#include <xbt/asserts.h>
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
@@ -111,7 +111,7 @@ int Profiles::nb_profiles() const
 }
 
 
-MsgParallelProfileData::~MsgParallelProfileData()
+ParallelProfileData::~ParallelProfileData()
 {
     if (cpu != nullptr)
     {
@@ -138,7 +138,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::PARALLEL)
     {
-        MsgParallelProfileData * d = (MsgParallelProfileData *) data;
+        ParallelProfileData * d = (ParallelProfileData *) data;
         if (d != nullptr)
         {
             delete d;
@@ -147,7 +147,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::PARALLEL_HOMOGENEOUS)
     {
-        MsgParallelHomogeneousProfileData * d = (MsgParallelHomogeneousProfileData *) data;
+        ParallelHomogeneousProfileData * d = (ParallelHomogeneousProfileData *) data;
         if (d != nullptr)
         {
             delete d;
@@ -156,7 +156,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
     {
-        MsgParallelHomogeneousTotalAmountProfileData * d = (MsgParallelHomogeneousTotalAmountProfileData *) data;
+        ParallelHomogeneousTotalAmountProfileData * d = (ParallelHomogeneousTotalAmountProfileData *) data;
         if (d != nullptr)
         {
             delete d;
@@ -183,7 +183,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::PARALLEL_HOMOGENEOUS_PFS)
     {
-        MsgParallelHomogeneousPFSProfileData * d = (MsgParallelHomogeneousPFSProfileData *) data;
+        ParallelHomogeneousPFSProfileData * d = (ParallelHomogeneousPFSProfileData *) data;
         if (d != nullptr)
         {
             delete d;
@@ -192,7 +192,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::DATA_STAGING)
     {
-        MsgDataStagingProfileData * d = (MsgDataStagingProfileData *) data;
+        DataStagingProfileData * d = (DataStagingProfileData *) data;
         if (d != nullptr)
         {
             delete d;
@@ -286,7 +286,7 @@ Profile *Profile::from_json(const std::string & profile_name,
         }
         */
         profile->type = ProfileType::PARALLEL;
-        MsgParallelProfileData * data = new MsgParallelProfileData;
+        ParallelProfileData * data = new ParallelProfileData;
 
         // basic checks
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
@@ -343,7 +343,7 @@ Profile *Profile::from_json(const std::string & profile_name,
         }
         */
         profile->type = ProfileType::PARALLEL_HOMOGENEOUS;
-        MsgParallelHomogeneousProfileData * data = new MsgParallelHomogeneousProfileData;
+        ParallelHomogeneousProfileData * data = new ParallelHomogeneousProfileData;
 
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
                    error_prefix.c_str(), profile_name.c_str());
@@ -373,7 +373,7 @@ Profile *Profile::from_json(const std::string & profile_name,
         }
         */
         profile->type = ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT;
-        MsgParallelHomogeneousTotalAmountProfileData * data = new MsgParallelHomogeneousTotalAmountProfileData;
+        ParallelHomogeneousTotalAmountProfileData * data = new ParallelHomogeneousTotalAmountProfileData;
 
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
                    error_prefix.c_str(), profile_name.c_str());
@@ -443,7 +443,7 @@ Profile *Profile::from_json(const std::string & profile_name,
         }
         */
         profile->type = ProfileType::PARALLEL_HOMOGENEOUS_PFS;
-        MsgParallelHomogeneousPFSProfileData * data = new MsgParallelHomogeneousPFSProfileData;
+        ParallelHomogeneousPFSProfileData * data = new ParallelHomogeneousPFSProfileData;
 
         xbt_assert(json_desc.HasMember("bytes_to_read") or json_desc.HasMember("bytes_to_write"), "%s: profile '%s' has no 'bytes_to_read' or 'bytes_to_write' field (0 if not set)",
                    error_prefix.c_str(), profile_name.c_str());
@@ -493,7 +493,7 @@ Profile *Profile::from_json(const std::string & profile_name,
         }
         */
         profile->type = ProfileType::DATA_STAGING;
-        MsgDataStagingProfileData * data = new MsgDataStagingProfileData;
+        DataStagingProfileData * data = new DataStagingProfileData;
 
         xbt_assert(json_desc.HasMember("nb_bytes"), "%s: profile '%s' has no 'nb_bytes' field",
                    error_prefix.c_str(), profile_name.c_str());
