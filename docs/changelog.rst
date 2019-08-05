@@ -19,6 +19,22 @@ Unreleased
 - `Commits since v3.1.0 <https://github.com/oar-team/batsim/compare/v3.1.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim_dev``
 
+
+Added
+~~~~~
+
+- Basic tests for the external events mechanism.
+- Retrieval of the zone properties in the XML platform description.
+
+  - Platform properties declared within SimGrid zones are now retrieved and attached to each Batsim resource.
+  - These properties are forwarded to the scheduler via the field ``zone_properties`` or each resource in the ``compute_resources`` and ``storage_resources`` arrays of the :ref:`proto_SIMULATION_BEGINS` event.
+
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+- Batsim no longer uses SimGrid's MSG interface. Everything is done with S4U now.
+
 ........................................................................................................................
 
 v3.1.0
