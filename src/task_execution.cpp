@@ -668,7 +668,7 @@ int execute_parallel_task(BatTask * btask,
             ptask->start();
             ptask->wait();
         }
-        catch (simgrid::TimeoutException e)
+        catch (simgrid::TimeoutError e)
         {
             // The ptask reached the walltime
             XBT_DEBUG("Task '%s' reached its walltime.", task_name.c_str());
