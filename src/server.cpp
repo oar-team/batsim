@@ -1078,7 +1078,7 @@ void server_on_execute_job(ServerData * data,
     }
 
     if (current_profile->type != ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT
-            and (current_profile->type == ProfileType::SEQUENCE and not all_profiles_ok))
+            and (current_profile->type != ProfileType::SEQUENCE or not all_profiles_ok))
     {
         if (allocation->mapping.size() != 0)
         {
