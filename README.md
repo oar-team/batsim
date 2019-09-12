@@ -43,10 +43,10 @@ found in the [SimGrid repository](https://github.com/simgrid/simgrid).
 External References
 -------------------
 * Chapters 2 and 3 of Millian Poquet's
-  [PhD manuscript](https://mpoquet.github.io/research/phd/manuscript.pdf)
+  [PhD manuscript](https://mpoquet.github.io/research/2017-phd-manuscript.pdf)
   explain in detail some of Batsim design choices and how Batsim works
   internally. The corresponding
-  [defense slides](https://mpoquet.github.io/research/phd/defense_slides.pdf)
+  [defense slides](https://mpoquet.github.io/research/2017-phd-slides.pdf)
   may also interest you.
 
 * Batsim scientific publication pre-print is available on HAL:
