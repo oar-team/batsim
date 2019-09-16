@@ -127,6 +127,7 @@ let
       name = "batsim-sphinx-documentation";
 
       src = pkgs.lib.sourceByRegex ./. [
+        "^.gitlab-ci.yml"
         "^doc"
         "^doc/batsim_rjms_overview.png"
         "^docs"
@@ -135,6 +136,8 @@ let
         "^docs/.*\.bash"
         "^docs/.*\.rst"
         "^docs/img"
+        "^docs/img/ci"
+        "^docs/img/ci/.*\.svg"
         "^docs/img/logo"
         "^docs/img/logo/logo.png"
         "^docs/img/ptask"
