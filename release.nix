@@ -47,7 +47,8 @@ let
 
     # Batsim integration tests.
     integration_tests = pkgs.stdenv.mkDerivation rec {
-      name = "batsim-integration-tests";
+      pname = "batsim-integration-tests";
+      version = toString builtins.currentTime;
       src = pkgs.lib.sourceByRegex ./. [
         "^test"
         "^test/.*\.py"
