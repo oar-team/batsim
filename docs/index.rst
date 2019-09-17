@@ -41,6 +41,7 @@ please cite it (`bibtex <https://hal.archives-ouvertes.fr/hal-01333471v1/bibtex>
    Installation <installation.rst>
    Command-line interface <cli.rst>
    Protocol <protocol.rst>
+   Time dilation <time-dilation.rst>
    Using Redis <redis.rst>
    Using the I/O model <IO.rst>
    Interval set <interval-set.rst>
