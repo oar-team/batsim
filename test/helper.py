@@ -6,15 +6,22 @@ import re
 import subprocess
 from collections import namedtuple
 
+glob_with_valgrind = False
+
+def set_with_valgrind(with_valgrind):
+    global glob_with_valgrind
+    glob_with_valgrind = with_valgrind
+
 class RobinInstance(object):
     def __init__(self, output_dir, batcmd, schedcmd, simulation_timeout, ready_timeout, success_timeout, failure_timeout):
+        global glob_with_valgrind
         self.output_dir = output_dir
         self.batcmd = batcmd
         self.schedcmd = schedcmd
-        self.simulation_timeout = simulation_timeout
+        self.simulation_timeout = simulation_timeout * (1,20)[glob_with_valgrind]
         self.ready_timeout = ready_timeout
-        self.success_timeout = success_timeout
-        self.failure_timeout = failure_timeout
+        self.success_timeout = success_timeout * (1,20)[glob_with_valgrind]
+        self.failure_timeout = failure_timeout * (1,20)[glob_with_valgrind]
 
     def to_yaml(self):
         # Manual dump to avoid dependencies
@@ -32,7 +39,11 @@ failure-timeout: {self.failure_timeout}
         write_file(filename, self.to_yaml())
 
 def gen_batsim_cmd(platform, workload, output_dir, more_flags):
-    return f"batsim -p '{platform}' -w '{workload}' -e '{output_dir}/batres' {more_flags}"
+    batcmd = f"batsim -p '{platform}' -w '{workload}' -e '{output_dir}/batres' {more_flags}"
+    if glob_with_valgrind:
+        return f"valgrind --leak-check=yes --xml=yes --xml-file='{output_dir}/memcheck.xml' {batcmd}"
+    else:
+        return batcmd
 
 def write_file(filename, content):
     file = open(filename, "w")

@@ -4,6 +4,7 @@ import pytest
 import subprocess
 from collections import namedtuple
 from os.path import abspath, basename, dirname, realpath
+import helper
 
 Workload = namedtuple('Workload', ['name', 'filename'])
 Platform = namedtuple('Platform', ['name', 'filename'])
@@ -38,6 +39,8 @@ def generate_pybatsim_algorithms(definition, accepted_names):
     return [Algorithm(name=name, sched_implem='pybatsim', sched_algo_name=sched_algo_name)
         for name, sched_algo_name in definition.items() if name in accepted_names]
 
+def pytest_addoption(parser):
+    parser.addoption("--with-valgrind", action="store_true", default=False, help="runs batsim under valgrind memcheck analysis")
 
 def pytest_generate_tests(metafunc):
     script_dir = dirname(realpath(__file__))
@@ -45,6 +48,7 @@ def pytest_generate_tests(metafunc):
     platform_dir = realpath(f'{batsim_dir}/platforms')
     workload_dir = realpath(f'{batsim_dir}/workloads')
     external_events_dir = realpath(f'{batsim_dir}/events')
+    helper.set_with_valgrind(metafunc.config.option.with_valgrind)
 
     #############################
     # Define the various inputs #

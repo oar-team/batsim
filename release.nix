@@ -2,6 +2,7 @@
     (fetchTarball "https://github.com/oar-team/kapack/archive/master.tar.gz")
   {}
 , doCoverage ? true
+, doValgrindAnalysis ? false
 , simgrid ? kapack.simgrid322_2
 , batsched ? kapack.batsched_dev
 , batexpe ? kapack.batexpe
@@ -63,7 +64,11 @@ let
       buildInputs = with pkgs.python37Packages; [
         batsim batsched batexpe pkgs.redis
         pybatsim pytest pytest_html pandas] ++
-      pkgs.lib.optional doCoverage [ gcovr ];
+      pkgs.lib.optional doCoverage [ gcovr ] ++
+      pkgs.lib.optional doValgrindAnalysis [ pkgs.valgrind ];
+
+      pytestArgs = "-ra test/ --html=./report/pytest_report.html" +
+        pkgs.lib.optionalString doValgrindAnalysis " --with-valgrind";
 
       preBuild = pkgs.lib.optionalString doCoverage ''
         mkdir -p gcda
@@ -73,7 +78,7 @@ let
       buildPhase = ''
         runHook preBuild
         set +e
-        pytest -ra test/ --html=./report/pytest_report.html
+        pytest ${pytestArgs}
         echo $? > ./pytest_returncode
         set -e
       '';
