@@ -639,6 +639,8 @@ It acknowledges that the actions coming from a previous SET_RESOURCE_STATE_ even
      "data": {"resources": "1 2 3-5", "state": "42"}
    }
 
+.. _proto_REQUESTED_CALL:
+
 REQUESTED_CALL
 ~~~~~~~~~~~~~~
 
@@ -751,6 +753,8 @@ CALL_ME_LATER
 ~~~~~~~~~~~~~
 
 Asks Batsim to call the scheduler later on, at a given timestamp.
+
+Batsim will send a :ref:`proto_REQUESTED_CALL` event when the desired timestamp is reached.
 
 **data**: When the scheduler desires to be called.
 
