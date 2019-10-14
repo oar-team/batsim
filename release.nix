@@ -3,7 +3,7 @@
   {}
 , doCoverage ? true
 , doValgrindAnalysis ? false
-, simgrid ? kapack.simgrid322_2
+, simgrid ? kapack.simgrid
 , batsched ? kapack.batsched_dev
 , batexpe ? kapack.batexpe
 , pybatsim ? kapack.pybatsim_dev
