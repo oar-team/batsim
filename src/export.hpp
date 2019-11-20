@@ -454,3 +454,82 @@ private:
     BatsimContext * _context = nullptr; //!< The Batsim context
     WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
 };
+
+/**
+ * @brief Traces the jobs execution over time to export to a CSV file. Also exports schedule metrics to a second CSV file
+ */
+class JobsTracer
+{
+public:
+    /**
+     * @brief Constructs a JobsTracer
+     */
+    JobsTracer() = default;
+
+    /**
+     * @brief JobsTracer cannot be copied.
+     * @param[in] other Another instance
+     */
+    JobsTracer(const JobsTracer & other) = delete;
+
+    /**
+     * @brief Destroys a JobsTracer
+     */
+    ~JobsTracer();
+
+    /**
+     * @brief Initializes the tracer
+     * @param[in] context The Batsim context
+     * @param[in] jobs_filename The name of the jobs output file
+     * @param[in] schedule_filename The name of the schedule output file
+     */
+    void initialize(BatsimContext * context,
+                    const std::string & jobs_filename,
+                    const std::string & schedule_filename);
+
+    /**
+     * @brief Finalizes the tracer. Writes schedule output file
+     */
+    void finalize();
+
+    /**
+     * @brief Writes a line in the jobs output file and updates schedule metrics.
+     * @param[in] job The Job involved
+     */
+    void write_job(const Job * job);
+
+    /**
+     * @brief Flushes the pending writings to the jobs output file
+     */
+    void flush();
+
+    /**
+     * @brief Closes the jobs output buffer
+     */
+    void close_buffer();
+
+
+private:
+    BatsimContext * _context = nullptr; //!< The Batsim context
+    WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the jobs output file
+    std::string _schedule_filename; //!< The filename of the schedule output file
+
+    // Jobs-related
+    std::vector<std::string> _job_keys; //!< The list of keys in the map
+    std::map<std::string, std::string> _job_map; //!< The map holding info of the Job to write
+    std::vector<std::string> _row_content; //!< The vector containing string to write
+
+    // Schedule-related
+    int _nb_jobs = 0;
+    int _nb_jobs_finished = 0;
+    int _nb_jobs_success = 0;
+    int _nb_jobs_killed = 0;
+    long double _makespan = 0;
+    long double _sum_waiting_time = 0;
+    long double _sum_turnaround_time = 0;
+    long double _sum_slowdown = 0;
+    long double _max_waiting_time = 0;
+    long double _max_turnaround_time = 0;
+    long double _max_slowdown = 0;
+    std::map<int, long double> _machines_utilization;
+};

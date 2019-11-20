@@ -259,6 +259,7 @@ void server_on_job_completed(ServerData * data,
                                                       job->return_code,
                                                       simgrid::s4u::Engine::get_clock());
 
+    data->context->jobs_tracer.write_job(job);
 }
 
 void server_on_job_submitted(ServerData * data,
@@ -642,6 +643,8 @@ void server_on_killing_done(ServerData * data,
                 job->allocation.to_string_hyphen(" "),
                 job->return_code,
                 simgrid::s4u::Engine::get_clock());
+
+            data->context->jobs_tracer.write_job(job);
         }
     }
 
@@ -825,6 +828,7 @@ void server_on_change_job_state(ServerData * data,
         case JobState::JOB_STATE_REJECTED:
             data->nb_completed_jobs++;
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
+            data->context->jobs_tracer.write_job(job);
             break;
         default:
             xbt_assert(false,
@@ -844,6 +848,7 @@ void server_on_change_job_state(ServerData * data,
             xbt_assert(data->nb_running_jobs >= 0);
             data->nb_completed_jobs++;
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
+            data->context->jobs_tracer.write_job(job);
             break;
         default:
             xbt_assert(false,
@@ -917,6 +922,7 @@ void server_on_reject_job(ServerData * data,
 
     job->state = JobState::JOB_STATE_REJECTED;
     data->nb_completed_jobs++;
+    data->context->jobs_tracer.write_job(job);
 
     XBT_INFO("Job '%s' has been rejected",
              job->id.to_string().c_str());
