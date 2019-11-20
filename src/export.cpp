@@ -726,7 +726,7 @@ void export_jobs_to_csv(const std::string &filename, const BatsimContext *contex
 
     // Write headers (columns) to the output file
     vector<string> row_content;
-    row_content.reserve(job_map.size());
+    row_content.reserve(key_list.size());
 
     for (string & mit : key_list)
     {
@@ -980,6 +980,9 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     f.close();
 }
 
+
+/* Part related to PStateChangeTracer */
+
 PStateChangeTracer::PStateChangeTracer()
 {
     xbt_assert(_temporary_buffer == nullptr);
@@ -1046,6 +1049,7 @@ void PStateChangeTracer::close_buffer()
 }
 
 
+/* Part related to EnergyConsumptionTracer */
 
 EnergyConsumptionTracer::~EnergyConsumptionTracer()
 {
@@ -1150,6 +1154,9 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     return energy;
 }
 
+
+
+/* Part related to MachineStateTracer */
 
 MachineStateTracer::~MachineStateTracer()
 {
