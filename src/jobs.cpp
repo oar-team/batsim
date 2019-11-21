@@ -250,6 +250,16 @@ void Jobs::add_job(Job *job)
     _jobs[job->id] = job;
 }
 
+void Jobs::delete_job(JobIdentifier job_id)
+{
+    xbt_assert(exists(job_id),
+               "Bad Jobs::delete_job call: The job with name='%s' does not exist.",
+               job_id.to_string().c_str());
+
+    delete(_jobs[job_id]);
+    _jobs.erase(job_id);
+}
+
 bool Jobs::exists(JobIdentifier job_id) const
 {
     auto it = _jobs.find(job_id);

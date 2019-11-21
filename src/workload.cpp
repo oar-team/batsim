@@ -238,6 +238,14 @@ const Job *Workloads::job_at(const JobIdentifier &job_id) const
     return at(job_id.workload_name)->jobs->at(job_id);
 }
 
+void Workloads::delete_jobs(const vector<JobIdentifier> & job_ids)
+{
+    for (const JobIdentifier & job_id : job_ids)
+    {
+        at(job_id.workload_name)->jobs->delete_job(job_id);
+    }
+}
+
 void Workloads::insert_workload(const std::string &workload_name, Workload *workload)
 {
     xbt_assert(!exists(workload_name));

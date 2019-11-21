@@ -84,6 +84,8 @@ void server_process(BatsimContext * context)
     event_counters.expected_nb_submitters = context->eventListsMap.size();
     data->submitter_counters[SubmitterType::EVENT_SUBMITTER] = event_counters;
 
+    data->jobs_to_be_deleted.clear();
+
     // Simulation loop
     while (!data->end_of_simulation_ack_received)
     {
@@ -111,6 +113,11 @@ void server_process(BatsimContext * context)
             if (!context->proto_writer->is_empty()) // There is something to send to the scheduler
             {
                 generate_and_send_message(data);
+                if (!data->jobs_to_be_deleted.empty())
+                {
+                    data->context->workloads.delete_jobs(data->jobs_to_be_deleted);
+                    data->jobs_to_be_deleted.clear();
+                }
             }
             else // There is no event to send to the scheduler
             {
@@ -260,6 +267,7 @@ void server_on_job_completed(ServerData * data,
                                                       simgrid::s4u::Engine::get_clock());
 
     data->context->jobs_tracer.write_job(job);
+    data->jobs_to_be_deleted.push_back(message->job_id);
 }
 
 void server_on_job_submitted(ServerData * data,
@@ -645,6 +653,7 @@ void server_on_killing_done(ServerData * data,
                 simgrid::s4u::Engine::get_clock());
 
             data->context->jobs_tracer.write_job(job);
+            data->jobs_to_be_deleted.push_back(job->id);
         }
     }
 
@@ -829,6 +838,7 @@ void server_on_change_job_state(ServerData * data,
             data->nb_completed_jobs++;
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
             data->context->jobs_tracer.write_job(job);
+            data->jobs_to_be_deleted.push_back(message->job_id);
             break;
         default:
             xbt_assert(false,
@@ -849,6 +859,7 @@ void server_on_change_job_state(ServerData * data,
             data->nb_completed_jobs++;
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
             data->context->jobs_tracer.write_job(job);
+            data->jobs_to_be_deleted.push_back(message->job_id);
             break;
         default:
             xbt_assert(false,
@@ -922,10 +933,12 @@ void server_on_reject_job(ServerData * data,
 
     job->state = JobState::JOB_STATE_REJECTED;
     data->nb_completed_jobs++;
-    data->context->jobs_tracer.write_job(job);
 
     XBT_INFO("Job '%s' has been rejected",
              job->id.to_string().c_str());
+
+    data->context->jobs_tracer.write_job(job);
+    data->jobs_to_be_deleted.push_back(message->job_id);
 }
 
 void server_on_kill_jobs(ServerData * data,

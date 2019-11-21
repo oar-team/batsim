@@ -322,6 +322,8 @@ public:
      */
     void add_job(Job * job);
 
+    void delete_job(JobIdentifier job_id);
+
     /**
      * @brief Allows to know whether a job exists
      * @param[in] job_id The unique job name

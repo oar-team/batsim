@@ -6,6 +6,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <map>
 
 class Jobs;
@@ -182,6 +183,8 @@ public:
      * @pre The requested job exists
      */
     const Job * job_at(const JobIdentifier & job_id) const;
+
+    void delete_jobs(const std::vector<JobIdentifier> & job_ids);
 
     /**
      * @brief Checks whether a job is registered in the associated workload
