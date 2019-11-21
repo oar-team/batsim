@@ -75,20 +75,6 @@ private:
     int buffer_pos = 0;         //!< The current position of the buffer (previous positions are already written)
 };
 
-/**
- * @brief Exports the job execution to a CSV file
- * @param[in] filename The name of the output file used to write the CSV data
- * @param[in] context The BatsimContext
- */
-void export_jobs_to_csv(const std::string &filename, const BatsimContext * context);
-
-/**
- * @brief Compute and exports some schedule criteria to a CSV file
- * @param[in] filename The name of the output file used to write the CSV data
- * @param[in] context The BatsimContext
- */
-void export_schedule_to_csv(const std::string &filename, const BatsimContext * context);
-
 
 /**
  * @brief Allows to handle a Pajé trace corresponding to a schedule
