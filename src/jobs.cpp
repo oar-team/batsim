@@ -97,6 +97,10 @@ bool operator<(const JobIdentifier &ji1, const JobIdentifier &ji2)
     return ji1.to_string() < ji2.to_string();
 }
 
+bool operator==(const JobIdentifier &ji1, const JobIdentifier &ji2)
+{
+    return ji1.to_string() == ji2.to_string();
+}
 
 
 BatTask::BatTask(Job * parent_job, Profile * profile) :
@@ -264,8 +268,8 @@ void Jobs::delete_job(JobIdentifier job_id)
 
 bool Jobs::exists(JobIdentifier job_id) const
 {
-    auto it = _jobs.find(job_id);
-    return it != _jobs.end();
+    auto it = std::find(std::begin(_jobs_met), std::end(_jobs_met), job_id);
+    return it != _jobs_met.end();
 }
 
 bool Jobs::contains_smpi_job() const

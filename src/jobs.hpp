@@ -78,6 +78,14 @@ public:
  */
 bool operator<(const JobIdentifier & ji1, const JobIdentifier & ji2);
 
+/**
+ * @brief Compares two JobIdentifier thanks to their string representations
+ * @param[in] ji1 The first JobIdentifier
+ * @param[in] ji2 The second JobIdentifier
+ * @return ji1.to_string() == ji2.to_string()
+ */
+bool operator==(const JobIdentifier & ji1, const JobIdentifier & ji2);
+
 
 /**
  * @brief Contains the different states a job can be in
