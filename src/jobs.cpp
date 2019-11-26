@@ -212,6 +212,7 @@ void Jobs::load_from_json(const rapidjson::Document &doc, const std::string &fil
         xbt_assert(!exists(j->id), "%s: duplication of job id '%s'",
                    error_prefix.c_str(), j->id.to_string().c_str());
         _jobs[j->id] = j;
+        _jobs_met.push_back(j->id);
     }
 }
 
@@ -248,6 +249,7 @@ void Jobs::add_job(Job *job)
                job->id.to_string().c_str());
 
     _jobs[job->id] = job;
+    _jobs_met.push_back(job->id);
 }
 
 void Jobs::delete_job(JobIdentifier job_id)

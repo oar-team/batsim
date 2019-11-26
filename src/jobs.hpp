@@ -362,6 +362,7 @@ public:
 
 private:
     std::map<JobIdentifier, Job*> _jobs; //!< The std::map which contains the jobs
+    std::vector<JobIdentifier> _jobs_met; //!< An std::vector containing the jobs id already met during the simulation
     Profiles * _profiles = nullptr; //!< The profiles associated with the jobs
     Workload * _workload = nullptr; //!< The Workload the jobs belong to
 };
