@@ -29,10 +29,12 @@ You usually need to source a file to access the Nix commands.
 
     source ~/nix-profiles/etc/profile.d/nix.sh
 
-.. warning::    
+.. warning::
 
-   On some distributions like Debian 10, kernel user namespaces is disabled, to enable it do:
-   
+   On some distributions like Debian 10, kernel user namespaces are disabled.
+   **They should be enabled to make sure Nix works properly.**
+   Enable them with the following command:
+
    .. code:: bash
 
       sudo echo 1 > /proc/sys/kernel/unprivileged_userns_clone
