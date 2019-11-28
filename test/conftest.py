@@ -74,6 +74,7 @@ def pytest_generate_tests(metafunc):
         "compute1": "test_one_computation_job.json",
         "computetot1": "test_one_computation_job_tot.json",
         "farfuture": "test_long_workload.json",
+        "genome": "GENOME.d.351024866.5.dax",
         "long": "test_batsim_paper_workload_seed1.json",
         "mixed": "test_various_profile_types.json",
         "samesubmittime": "test_same_submit_time.json",
@@ -92,6 +93,7 @@ def pytest_generate_tests(metafunc):
     dynsub_workloads = ["delay1", "mixed"]
     moldable_perf_degradation_workloads = ['compute1', 'computetot1']
     energymini_workloads = ['energymini0', 'energymini50', 'energymini100']
+    workflows = ['genome']
 
     # Algorithms
     algorithms_def = {
@@ -139,6 +141,8 @@ def pytest_generate_tests(metafunc):
     # Workloads
     if 'workload' in metafunc.fixturenames:
         metafunc.parametrize('workload', generate_workloads(workload_dir, workloads_def, [key for key in workload_def]))
+    if 'workflow' in metafunc.fixturenames:
+        metafunc.parametrize('workflow', generate_workloads(workload_dir, workloads_def, [key for key in workflows]))
     if 'one_job_workload' in metafunc.fixturenames:
         metafunc.parametrize('one_job_workload', generate_workloads(workload_dir, workloads_def, one_job_workloads))
     if 'small_workload' in metafunc.fixturenames:
