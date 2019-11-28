@@ -143,6 +143,7 @@ let
         "^docs/.*\.bash"
         "^docs/.*\.rst"
         "^docs/img"
+        "^docs/img/.*\.png"
         "^docs/img/ci"
         "^docs/img/ci/.*\.svg"
         "^docs/img/logo"
