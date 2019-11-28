@@ -613,6 +613,8 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
         Workload * workload = Workload::new_static_workload(desc.workload_name, desc.filename);
         workload->jobs = new Jobs;
         workload->profiles = new Profiles;
+        workload->jobs->set_workload(workload);
+        workload->jobs->set_profiles(workload->profiles);
         context->workloads.insert_workload(desc.workload_name, workload);
 
         Workflow * workflow = new Workflow(desc.name);
