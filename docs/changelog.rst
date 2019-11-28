@@ -29,6 +29,10 @@ Added
   - Platform properties declared within SimGrid zones are now retrieved and attached to each Batsim resource.
   - These properties are forwarded to the scheduler via the field ``zone_properties`` or each resource in the ``compute_resources`` and ``storage_resources`` arrays of the :ref:`proto_SIMULATION_BEGINS` event.
 
+Fixed
+~~~~~
+
+- Workflows crashed at the beginning and the end of the simulation. This should be fixed, and workflows are now tested under CI.
 
 Miscellaneous
 ~~~~~~~~~~~~~
