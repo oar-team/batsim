@@ -56,6 +56,7 @@ let
         "^platforms/.*\.xml"
         "^workloads"
         "^workloads/.*\.json"
+        "^workloads/.*\.dax"
         "^workloads/smpi"
         "^workloads/smpi/.*"
         "^workloads/smpi/.*/.*\.txt"
