@@ -114,8 +114,7 @@ file(GLOB batsim_SRC
     "src/pugixml-1.7/*.cpp"
     "src/docopt/*.cpp"
     "src/docopt/*.h"
-    "src/unittest/*.hpp"
-    "src/unittest/*.cpp")
+)
 
 # Executables
 add_executable(batsim ${batsim_SRC})
