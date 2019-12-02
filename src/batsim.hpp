@@ -118,10 +118,9 @@ struct MainArguments
  * @param[out] main_args Batsim usable arguments
  * @param[out] return_code Batsim's return code (used directly if false is returned)
  * @param[out] run_simulation Whether the simulation should be run afterwards
- * @param[out] run_unit_tests Whether the unit tests should be run afterwards
  */
 void parse_main_args(int argc, char * argv[], MainArguments & main_args,
-                     int & return_code, bool & run_simulation, bool & run_unit_tests);
+                     int & return_code, bool & run_simulation);
 
 /**
  * @brief Configures how the simulation should be logged
