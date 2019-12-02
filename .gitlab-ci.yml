@@ -14,14 +14,14 @@ build_and_test:
   stage: big_stage
   script:
     # Build Batsim
-    - nix-shell --pure ./release.nix -A batsim --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
-    - nix-build ./release.nix -A batsim && cp -rL result ./batsim
+    - nix-shell --pure ./release.nix -A batsim --arg doUnitTests true --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-build ./release.nix -A batsim --arg doUnitTests true && cp -rL result ./batsim
     # Build doxygen documentation
     - nix-shell --pure ./release.nix -A doxydoc --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
     - nix-build ./release.nix -A doxydoc && cp -rL result ./doxydoc_html
     # Run integration tests
-    - nix-shell --pure ./release.nix -A integration_tests --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
-    - nix-build ./release.nix -A integration_tests && cp -rL result ./integration_tests
+    - nix-shell --pure ./release.nix -A integration_tests --arg doUnitTests true --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-build ./release.nix -A integration_tests --arg doUnitTests true && cp -rL result ./integration_tests
     - if [[ "$(cat ./integration_tests/pytest_returncode)" -ne 0 ]] ; then echo "pytest returned non-zero, aborting" ; exit 1 ; fi
     # Send coverage results to codecov.io
     - nix-env -i gcc
