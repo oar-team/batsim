@@ -1,4 +1,4 @@
-#include "test_buffered_outputting.hpp"
+#include <gtest/gtest.h>
 
 #include <stdio.h>
 
@@ -6,7 +6,7 @@
 
 #include "../export.hpp"
 
-void test_buffered_writer()
+TEST(buffered_outputting, write_buffer)
 {
     const char * filename = "/tmp/test_wbuf";
     WriteBuffer * buf = new WriteBuffer(filename, 4);
@@ -34,10 +34,11 @@ void test_buffered_writer()
 
     // Remove temporary file
     int remove_ret = remove(filename);
-    xbt_assert(remove_ret == 0, "Could not remove file '%s'.", filename);
+    EXPECT_EQ(remove_ret, 0) << "Could not remove file " << filename;
 }
 
-void test_pstate_writer()
+
+TEST(buffered_outputting, pstate_writer)
 {
     const char * filename = "/tmp/test_pstate";
     PStateChangeTracer * tracer = new PStateChangeTracer;
@@ -68,5 +69,5 @@ void test_pstate_writer()
 
     // Remove temporary file
     int remove_ret = remove(filename);
-    xbt_assert(remove_ret == 0, "Could not remove file '%s'.", filename);
+    EXPECT_EQ(remove_ret, 0) << "Could not remove file " << filename;
 }
