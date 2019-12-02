@@ -97,6 +97,29 @@ void Profiles::add_profile(const std::string & profile_name,
     _profiles[profile_name] = profile;
 }
 
+void Profiles::try_remove_profile(const std::string & profile_name)
+{
+    if (!exists(profile_name))
+    {
+        return;
+    }
+
+    if (_profiles[profile_name].use_count() == 1)
+    {
+        // We need to remove this profile, and subprofiles if it's a sequence
+        std::vector<std::string> seq_profiles;
+        if (_profiles[profile_name]->type == ProfileType::SEQUENCE)
+        {
+            seq_profiles = ((SequenceProfileData*)_profiles[profile_name]->data)->sequence;
+        }
+        _profiles.erase(profile_name);
+        XBT_INFO("Profile %s deleted", profile_name.c_str());
+        for (std::string & prof_name : seq_profiles)
+        {
+            try_remove_profile(prof_name);
+        }
+    }
+}
 
 const std::map<std::string, std::shared_ptr<Profile>> Profiles::profiles() const
 {

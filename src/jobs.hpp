@@ -331,7 +331,13 @@ public:
      */
     void add_job(std::shared_ptr<Job> job);
 
-    void delete_job(JobIdentifier job_id);
+    /**
+     * @brief Deletes a job
+     * @param[in] job_id The identifier of the job to delete
+     * @param[in] garbage_collect_profiles Whether to garbage collect its profiles
+     */
+    void delete_job(const JobIdentifier & job_id,
+                    const bool & garbage_collect_profiles);
 
     /**
      * @brief Allows to know whether a job exists

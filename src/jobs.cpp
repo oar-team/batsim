@@ -257,13 +257,18 @@ void Jobs::add_job(std::shared_ptr<Job> job)
     _jobs_met.push_back(job->id);
 }
 
-void Jobs::delete_job(JobIdentifier job_id)
+void Jobs::delete_job(const JobIdentifier & job_id, const bool & garbage_collect_profiles)
 {
     xbt_assert(exists(job_id),
                "Bad Jobs::delete_job call: The job with name='%s' does not exist.",
                job_id.to_string().c_str());
 
+    std::string profile_name = _jobs[job_id]->profile->name;
     _jobs.erase(job_id);
+    if (garbage_collect_profiles)
+    {
+        _workload->profiles->try_remove_profile(profile_name);
+    }
 }
 
 bool Jobs::exists(JobIdentifier job_id) const

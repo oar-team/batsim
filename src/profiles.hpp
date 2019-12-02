@@ -262,6 +262,13 @@ public:
     void add_profile(const std::string & profile_name, std::shared_ptr<Profile> & profile);
 
     /**
+     * @brief Removes a profile from a Profiles instance if its use count is at 1
+     * @param[in] profile_name The name of the profile to remove
+     * @pre The profile exists in the Profiles instance
+     */
+    void try_remove_profile(const std::string & profile_name);
+
+    /**
      * @brief Returns a copy of the internal std::map used in the Profiles
      * @return A copy of the internal std::map used in the Profiles
      */

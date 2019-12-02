@@ -116,7 +116,8 @@ void server_process(BatsimContext * context)
                 generate_and_send_message(data);
                 if (!data->jobs_to_be_deleted.empty())
                 {
-                    data->context->workloads.delete_jobs(data->jobs_to_be_deleted);
+                    data->context->workloads.delete_jobs(data->jobs_to_be_deleted,
+                                                         context->garbage_collect_profiles);
                     data->jobs_to_be_deleted.clear();
                 }
             }

@@ -241,11 +241,12 @@ const std::shared_ptr<Job> Workloads::job_at(const JobIdentifier &job_id) const
     return at(job_id.workload_name)->jobs->at(job_id);
 }
 
-void Workloads::delete_jobs(const vector<JobIdentifier> & job_ids)
+void Workloads::delete_jobs(const vector<JobIdentifier> & job_ids,
+                            const bool & garbage_collect_profiles)
 {
     for (const JobIdentifier & job_id : job_ids)
     {
-        at(job_id.workload_name)->jobs->delete_job(job_id);
+        at(job_id.workload_name)->jobs->delete_job(job_id, garbage_collect_profiles);
     }
 }
 
