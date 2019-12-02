@@ -152,6 +152,7 @@ let
 
       src = pkgs.lib.sourceByRegex ./. [
         "^.gitlab-ci.yml"
+        "^release.nix"
         "^doc"
         "^doc/batsim_rjms_overview.png"
         "^docs"
