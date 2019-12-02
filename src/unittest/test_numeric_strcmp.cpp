@@ -1,6 +1,4 @@
-#include "test_numeric_strcmp.hpp"
-
-#include <xbt/asserts.h>
+#include <gtest/gtest.h>
 
 #include "../machines.hpp"
 
@@ -22,11 +20,9 @@ void test_wrapper_strcmp(const std::string & s1, const std::string & s2)
     int sign_my_cmp = test_wrapper_sign_or_null(ret_my_cmp);
     int sign_strcmp = test_wrapper_sign_or_null(ret_strcmp);
 
-    xbt_assert(sign_my_cmp == sign_strcmp,
-               "string_numeric_compator and strcmp diverge with s1='%s' and s2='%s' "
-               "(results are %d and %d)",
-               s1.c_str(), s2.c_str(),
-               ret_my_cmp, ret_strcmp);
+    EXPECT_EQ(sign_my_cmp, sign_strcmp) <<
+        "string_numeric_compator and strcmp diverge with s1='" << s1 <<
+        "' and s2='" << s2 << "'";
 }
 
 void test_wrapper_my_strcmp(const std::string & s1, const std::string & s2, int expected_sign)
@@ -38,16 +34,13 @@ void test_wrapper_my_strcmp(const std::string & s1, const std::string & s2, int 
     int ret_my_cmp = string_numeric_comparator(s1, s2);
     int sign_my_cmp = test_wrapper_sign_or_null(ret_my_cmp);
 
-    xbt_assert(sign_my_cmp == expected_sign,
-               "string_numeric_compator returned an unexpected value with s1='%s' and s2='%s' "
-               "(expected sign=%d, got value=%d)",
-               s1.c_str(), s2.c_str(),
-               expected_sign, ret_my_cmp);
+    EXPECT_EQ(sign_my_cmp, expected_sign) <<
+        "string_numeric_compator returned an unexpected value with s1='" << s1 <<
+        "' and s2='" << s2 << "'";
 }
 
-void test_numeric_strcmp()
+TEST(numeric_strcmp, lexicographical)
 {
-    // Classical lexicographical order
     test_wrapper_strcmp("a", "a");
     test_wrapper_strcmp("abcd", "abcd");
 
@@ -58,8 +51,10 @@ void test_numeric_strcmp()
     test_wrapper_strcmp("b", "a");
     test_wrapper_strcmp("bwah", "bouh");
     test_wrapper_strcmp("meh", "me");
+}
 
-    // Numeric sort
+TEST(numeric_strcmp, numeric)
+{
     test_wrapper_strcmp("1", "1");
     test_wrapper_strcmp("1", "2");
     test_wrapper_strcmp("2", "1");
@@ -67,7 +62,10 @@ void test_numeric_strcmp()
     test_wrapper_my_strcmp("1", "1", 0);
     test_wrapper_my_strcmp("1", "2", -1);
     test_wrapper_my_strcmp("2", "1", 1);
+}
 
+TEST(numeric_strcmp, combined)
+{
     test_wrapper_my_strcmp("machine9", "machine10", -1);
     test_wrapper_my_strcmp("machine10", "machine9", 1);
 

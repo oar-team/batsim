@@ -29,8 +29,7 @@ batsim_deps = [
 ]
 
 # Source files
-src = [
-    'src/batsim.cpp',
+src_without_main = [
     'src/batsim.hpp',
     'src/context.hpp',
     'src/events.cpp',
@@ -69,6 +68,7 @@ src = [
     'src/workload.cpp',
     'src/workload.hpp'
 ]
+src = src_without_main + ['src/batsim.cpp']
 include_dir = include_directories('src')
 
 batsim = executable('batsim', src,
@@ -77,3 +77,19 @@ batsim = executable('batsim', src,
     cpp_args: '-DBATSIM_VERSION=@0@'.format(meson.project_version()),
     install: true
 )
+
+# Unit tests.
+if get_option('do_unit_tests')
+    gtest_dep = dependency('gtest_main', version: '>=1.8.0', required: true)
+    test_incdir = include_directories('src/unittest', 'src')
+    test_src = [
+        'src/unittest/test_buffered_outputting.cpp',
+        'src/unittest/test_numeric_strcmp.cpp',
+    ]
+    unittest = executable('batunittest',
+        test_src + src_without_main,
+        dependencies: batsim_deps + [gtest_dep],
+        include_directories: [test_incdir]
+    )
+    test('unittest', unittest)
+endif

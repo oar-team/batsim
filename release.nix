@@ -23,6 +23,7 @@ let
         "^src/unittest"
         "^src/unittest/.*\.?pp"
         "^meson\.build"
+        "^meson_options\.txt"
       ];
       # Debug build, without any Nix stripping magic.
       mesonBuildType = "debug";
