@@ -141,9 +141,9 @@ void Workload::check_validity()
     }
 
     // TODO : check that there are no circular calls between composed profiles...
-    // TODO: compute the constraint of the profile number of resources, to check if it match the jobs that use it
+    // TODO: compute the constraint of the profile number of resources, to check if it matches the jobs that use it
 
-    // Let's check that the profile of each job exists
+    // Let's check the profile validity of each job
     for (auto mit : jobs->jobs())
     {
         check_single_job_validity(mit.second);
@@ -166,10 +166,10 @@ void Workload::check_single_job_validity(const std::shared_ptr<Job> job)
                    " the number of resources of the associated profile '%s' (%d)",
                    job->id.to_string().c_str(), job->requested_nb_res, job->profile->name.c_str(), data->nb_res);
     }
-    else if (profile->type == ProfileType::SEQUENCE)
+    /*else if (job->profile->type == ProfileType::SEQUENCE)
     {
         // TODO: check if the number of resources matches a resource-constrained composed profile
-    }
+    }*/
 }
 
 string Workload::to_string()

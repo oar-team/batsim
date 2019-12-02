@@ -1014,9 +1014,12 @@ void server_on_execute_job(ServerData * data,
                allocation->job_id.to_string().c_str());
 
     std::shared_ptr<Job> job = data->context->workloads.job_at(allocation->job_id);
+
     xbt_assert(data->context->workloads.job_profile_is_registered(allocation->job_id),
-               "Trying to execute job '%s', in which the profile is not registered in the workload!",
-               allocation->job_id.to_string().c_str());
+               "Trying to execute job '%s', in which the profile '%s' is not registered in the workload!",
+               allocation->job_id.to_string().c_str(),
+               job->profile->name.c_str());
+
 
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Cannot execute job '%s': its state (%s) is not JOB_STATE_SUBMITTED.",
