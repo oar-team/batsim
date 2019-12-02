@@ -68,12 +68,21 @@ src_without_main = [
     'src/workload.cpp',
     'src/workload.hpp'
 ]
-src = src_without_main + ['src/batsim.cpp']
 include_dir = include_directories('src')
 
-batsim = executable('batsim', src,
+batlib = static_library('batlib', src_without_main,
     include_directories: include_dir,
     dependencies: batsim_deps,
+    cpp_args: '-DBATSIM_VERSION=@0@'.format(meson.project_version()),
+    install: false)
+batlib_dep = declare_dependency(
+    link_with: batlib,
+    include_directories: include_dir
+)
+
+batsim = executable('batsim', ['src/batsim.cpp'],
+    include_directories: include_dir,
+    dependencies: batsim_deps + [batlib_dep],
     cpp_args: '-DBATSIM_VERSION=@0@'.format(meson.project_version()),
     install: true
 )
@@ -87,8 +96,8 @@ if get_option('do_unit_tests')
         'src/unittest/test_numeric_strcmp.cpp',
     ]
     unittest = executable('batunittest',
-        test_src + src_without_main,
-        dependencies: batsim_deps + [gtest_dep],
+        test_src,
+        dependencies: batsim_deps + [batlib_dep, gtest_dep],
         include_directories: [test_incdir]
     )
     test('unittest', unittest)
