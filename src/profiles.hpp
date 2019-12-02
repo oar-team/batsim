@@ -8,6 +8,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <memory>
 
 #include <rapidjson/document.h>
 
@@ -57,7 +58,7 @@ struct Profile
      * @return The new-allocated Profile
      * @pre The JSON description is valid
      */
-    static Profile * from_json(const std::string & profile_name,
+    static std::shared_ptr<Profile> from_json(const std::string & profile_name,
                                const rapidjson::Value & json_desc,
                                const std::string & error_prefix = "Invalid JSON profile",
                                bool is_from_a_file = true,
@@ -71,7 +72,7 @@ struct Profile
      * @return The new-allocated Profile
      * @pre The JSON description is valid
      */
-    static Profile * from_json(const std::string & profile_name,
+    static std::shared_ptr<Profile> from_json(const std::string & profile_name,
                                const std::string & json_str,
                                const std::string & error_prefix = "Invalid JSON profile");
 
@@ -140,6 +141,7 @@ struct SequenceProfileData
 {
     int repeat;  //!< The number of times the sequence must be repeated
     std::vector<std::string> sequence; //!< The sequence of profile names, executed in this order
+    std::vector<std::shared_ptr<Profile>> profile_sequence; //!< The sequence of profiles, executed in this order
 };
 
 /**
@@ -220,14 +222,14 @@ public:
      * @return The profile whose name is profile_name
      * @pre Such a profile exists
      */
-    Profile * operator[](const std::string & profile_name);
+    std::shared_ptr<Profile> operator[](const std::string & profile_name);
     /**
      * @brief Accesses one profile thanks to its name (const version)
      * @param[in] profile_name The name of the profile
      * @return The profile whose name is profile_name
      * @pre Such a profile exists
      */
-    const Profile * operator[](const std::string & profile_name) const;
+    const std::shared_ptr<Profile> operator[](const std::string & profile_name) const;
 
     /**
      * @brief Accesses one profile thanks to its name
@@ -235,14 +237,14 @@ public:
      * @return The profile whose name is profile_name
      * @pre Such a profile exists
      */
-    Profile * at(const std::string & profile_name);
+    std::shared_ptr<Profile> at(const std::string & profile_name);
     /**
      * @brief Accesses one profile thanks to its name (const version)
      * @param[in] profile_name The name of the profile
      * @return The profile whose name is profile_name
      * @pre Such a profile exists
      */
-    const Profile * at(const std::string & profile_name) const;
+    const std::shared_ptr<Profile> at(const std::string & profile_name) const;
 
     /**
      * @brief Checks whether a profile exists
@@ -257,13 +259,13 @@ public:
      * @param[in] profile The profile to add
      * @pre No profile with the same name exists in the Profiles instance
      */
-    void add_profile(const std::string & profile_name, Profile * profile);
+    void add_profile(const std::string & profile_name, std::shared_ptr<Profile> & profile);
 
     /**
      * @brief Returns a copy of the internal std::map used in the Profiles
      * @return A copy of the internal std::map used in the Profiles
      */
-    const std::map<std::string, Profile *> profiles() const;
+    const std::map<std::string, std::shared_ptr<Profile>> profiles() const;
 
     /**
      * @brief Returns the number of profiles of the Profiles instance
@@ -272,7 +274,7 @@ public:
     int nb_profiles() const;
 
 private:
-    std::map<std::string, Profile*> _profiles; //!< Stores all the profiles, indexed by their names
+    std::map<std::string, std::shared_ptr<Profile>> _profiles; //!< Stores all the profiles, indexed by their names
 };
 
 /**

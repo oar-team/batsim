@@ -465,11 +465,9 @@ void PajeTracer::finalize(const BatsimContext * context, double time)
     XBT_INFO("PajeTracer finalized");
 }
 
-void PajeTracer::add_job_launching(const Job * job,
-                                   const std::vector<int> & used_machine_ids,
+void PajeTracer::add_job_launching(const std::vector<int> & used_machine_ids,
                                    double time)
 {
-    (void) job;
     xbt_assert(state == INITIALIZED, "Bad addJobLaunching call: the PajeTracer object is not initialized or had been finalized");
 
     const int buf_size = 256;
@@ -496,7 +494,7 @@ void PajeTracer::add_job_launching(const Job * job,
     free(buf);
 }
 
-void PajeTracer::register_new_job(const Job *job)
+void PajeTracer::register_new_job(const std::shared_ptr<Job> job)
 {
     xbt_assert(_jobs.find(job) == _jobs.end(),
                "Cannot register new job %s: it already exists", job->id.to_string().c_str());
@@ -542,7 +540,7 @@ void PajeTracer::set_machine_idle(int machine_id, double time)
     free(buf);
 }
 
-void PajeTracer::set_machine_as_computing_job(int machine_id, const Job * job, double time)
+void PajeTracer::set_machine_as_computing_job(int machine_id, const std::shared_ptr<Job> job, double time)
 {
     auto mit = _jobs.find(job);
     if (mit == _jobs.end())
@@ -569,7 +567,7 @@ void PajeTracer::set_machine_as_computing_job(int machine_id, const Job * job, d
     free(buf);
 }
 
-void PajeTracer::add_job_kill(const Job *job, const IntervalSet & used_machine_ids,
+void PajeTracer::add_job_kill(const std::shared_ptr<Job> job, const IntervalSet & used_machine_ids,
                               double time, bool associate_kill_to_machines)
 {
     xbt_assert(state == INITIALIZED, "Bad addJobKill call: the PajeTracer object is not initialized or had been finalized");
@@ -1110,7 +1108,7 @@ void JobsTracer::finalize()
     f.close();
 }
 
-void JobsTracer::write_job(const Job *job)
+void JobsTracer::write_job(const std::shared_ptr<Job> job)
 {
     int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
     bool rejected = (job->state == JobState::JOB_STATE_REJECTED);
@@ -1174,7 +1172,7 @@ void JobsTracer::write_job(const Job *job)
     // Set all values to be written
     _job_map["job_id"] = job->id.job_name;
     _job_map["workload_name"] = job->workload->name;
-    _job_map["profile"] = job->profile;
+    _job_map["profile"] = (job->profile)->name;
     _job_map["submission_time"] = to_string((double)job->submission_time);
     _job_map["requested_number_of_resources"] = to_string(job->requested_nb_res);
     _job_map["requested_time"] = to_string((double)job->walltime);

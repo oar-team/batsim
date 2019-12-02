@@ -9,6 +9,7 @@
 #include <vector>
 #include <cstddef>
 #include <map>
+#include <memory>
 
 #include "pugixml.hpp"
 
@@ -128,14 +129,14 @@ public:
      * @brief Associates a Batsim Job to the task
      * @param[in] batsim_job The Batsim Job
      */
-    void set_batsim_job(Job * batsim_job);
+    void set_batsim_job(std::shared_ptr<Job> batsim_job);
 
 
 public:
     int num_procs; //!< The number of processors needed for the tas
     double execution_time; //!< The execution time of the task
     std::string id; //!< The task id
-    Job *batsim_job = nullptr; //!< The batsim job created for this task
+    std::shared_ptr<Job>batsim_job = nullptr; //!< The batsim job created for this task
     std::vector<Task *> parents; //!< The parent
     std::vector<Task *> children; //!< The children
     int nb_parent_completed = 0; //!< The number of preceding tasks completed

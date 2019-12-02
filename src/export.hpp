@@ -12,6 +12,7 @@
 #include <string>
 #include <fstream>
 #include <map>
+#include <memory>
 
 #include "machines.hpp"
 #include "jobs.hpp"
@@ -152,17 +153,16 @@ public:
     /**
      * @brief Adds a job launch in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param[in] job The job
      * @param[in] used_machine_ids The machines which compute the job
      * @param[in] time The simulation time at which the addition is done
      */
-    void add_job_launching(const Job * job, const std::vector<int> & used_machine_ids, double time);
+    void add_job_launching(const std::vector<int> & used_machine_ids, double time);
 
     /**
      * @brief Creates a job in the Pajé output file
      * @param[in] job The job
      */
-    void register_new_job(const Job * job);
+    void register_new_job(const std::shared_ptr<Job> job);
 
     /**
      * @brief Sets a machine in the idle state
@@ -177,7 +177,7 @@ public:
      * @param[in] job The job
      * @param[in] time The time at which the machine should be marked as computing the job
      */
-    void set_machine_as_computing_job(int machine_id, const Job * job, double time);
+    void set_machine_as_computing_job(int machine_id, const std::shared_ptr<Job> job, double time);
 
     /**
      * @brief Adds a job kill in the file trace.
@@ -187,7 +187,7 @@ public:
      * @param[in] time The simulation time at which the kill is done
      * @param[in] associate_kill_to_machines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
      */
-    void add_job_kill(const Job * job, const IntervalSet & used_machine_ids,
+    void add_job_kill(const std::shared_ptr<Job> job, const IntervalSet & used_machine_ids,
                       double time, bool associate_kill_to_machines = false);
 
 public:
@@ -242,7 +242,7 @@ private:
 
     WriteBuffer * _wbuf = nullptr;  //!< The buffer class used to handle the output file
 
-    std::map<const Job *, std::string> _jobs; //!< Maps jobs to their Pajé representation
+    std::map<const std::shared_ptr<Job>, std::string> _jobs; //!< Maps jobs to their Pajé representation
     std::vector<std::string> _colors; //!< Strings associated with colors, used for the jobs
 
     PajeTracerState state = UNINITIALIZED; //!< The state of the PajeTracer
@@ -482,7 +482,7 @@ public:
      * @brief Writes a line in the jobs output file and updates schedule metrics.
      * @param[in] job The Job involved
      */
-    void write_job(const Job * job);
+    void write_job(const std::shared_ptr<Job> job);
 
     /**
      * @brief Flushes the pending writings to the jobs output file

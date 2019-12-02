@@ -69,7 +69,7 @@ struct Machine
     simgrid::s4u::Host* host; //!< The SimGrid host corresponding to the machine
     roles::Permissions permissions = roles::Permissions::NONE; //!< Machine permissions
     MachineState state = MachineState::IDLE; //!< The current state of the Machine
-    std::set<const Job *> jobs_being_computed; //!< The set of jobs being computed on the Machine
+    std::set<std::shared_ptr<Job>> jobs_being_computed; //!< The set of jobs being computed on the Machine
 
     std::unordered_map<int, PStateType> pstates; //!< Maps power state number to their power state type
     std::unordered_map<int, SleepPState *> sleep_pstates; //!< Maps sleep power state numbers to their SleepPState
@@ -169,7 +169,7 @@ public:
      * @param[in] used_machines The machines on which the job is executed
      * @param[in,out] context The Batsim Context
      */
-    void update_machines_on_job_run(const Job * job,
+    void update_machines_on_job_run(const std::shared_ptr<Job> job,
                                     const IntervalSet & used_machines,
                                     BatsimContext * context);
 
@@ -180,7 +180,7 @@ public:
      * @param[in] used_machines The machines on which the job is executed
      * @param[in,out] context The BatsimContext
      */
-    void update_machines_on_job_end(const Job *job,
+    void update_machines_on_job_end(const std::shared_ptr<Job> job,
                                     const IntervalSet & used_machines,
                                     BatsimContext *context);
 
