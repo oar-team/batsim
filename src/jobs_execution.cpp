@@ -18,7 +18,7 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(jobs_execution, "jobs_execution"); //!< Logging
 
 using namespace std;
 
-void smpi_replay_process(Job* job, SmpiProfileData * profile_data, simgrid::s4u::BarrierPtr barrier, int rank)
+void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, simgrid::s4u::BarrierPtr barrier, int rank)
 {
     // Prepare data for smpi_replay_run
     char *str_instance_id = NULL;
@@ -38,8 +38,8 @@ int execute_task(BatTask * btask,
                  const SchedulingAllocation * allocation,
                  double * remaining_time)
 {
-    Job * job = btask->parent_job;
-    Profile * profile = btask->profile;
+    auto job = btask->parent_job;
+    auto profile = btask->profile;
 
     // Init task
     btask->parent_job = job;
@@ -71,7 +71,7 @@ int execute_task(BatTask * btask,
                                             profile_index_in_sequence;
                 BatTask * sub_btask = btask->sub_tasks[profile_index_in_sequence];
 
-                string task_name = "seq" + job->id.to_string() + "'" + job->profile + "'";
+                string task_name = "seq" + job->id.to_string() + "'" + job->profile->name + "'";
                 XBT_DEBUG("Creating sequential tasks '%s'", task_name.c_str());
 
                 int ret_last_profile = execute_task(sub_btask, context,  allocation,
@@ -172,7 +172,7 @@ int execute_task(BatTask * btask,
                     job->workload->profiles->at(profile_to_execute));
             btask->sub_tasks.push_back(sub_btask);
 
-            string task_name = "recv" + job->id.to_string() + "'" + job->profile + "'";
+            string task_name = "recv" + job->id.to_string() + "'" + job->profile->name + "'";
             XBT_INFO("Creating receive task '%s'", task_name.c_str());
 
             int ret_last_profile = execute_task(sub_btask, context, allocation,
@@ -239,7 +239,7 @@ int execute_task(BatTask * btask,
     }
     else
         xbt_die("Cannot execute job %s: the profile '%s' is of unknown type: %s",
-                job->id.to_string().c_str(), job->profile.c_str(), profile->json_description.c_str());
+                job->id.to_string().c_str(), job->profile->name.c_str(), profile->json_description.c_str());
 
     return 1;
 }
@@ -275,7 +275,7 @@ int do_delay_task(double sleeptime, double * remaining_time)
  * @param[in] io_profile The IO profile that may also be executed
  * @return The BatTask* associated with the sequential task
  */
-BatTask * initialize_sequential_tasks(Job * job, Profile * profile, Profile * io_profile)
+BatTask * initialize_sequential_tasks(JobPtr job, ProfilePtr profile, ProfilePtr io_profile)
 {
     BatTask * task = new BatTask(job, profile);
 
@@ -296,10 +296,10 @@ BatTask * initialize_sequential_tasks(Job * job, Profile * profile, Profile * io
         for (unsigned int i = 0; i < data->sequence.size(); i++)
         {
             // Get profile from name
-            Profile * sub_profile = profiles->at(data->sequence[i]);
+            auto sub_profile = profiles->at(data->sequence[i]);
 
             // Manage io profile
-            Profile * sub_io_profile = nullptr;
+            ProfilePtr sub_io_profile = nullptr;
             if (io_profile != nullptr)
             {
                 SequenceProfileData * io_data = (SequenceProfileData*)io_profile->data;
@@ -323,18 +323,17 @@ BatTask * initialize_sequential_tasks(Job * job, Profile * profile, Profile * io
 void execute_job_process(BatsimContext * context,
                          SchedulingAllocation * allocation,
                          bool notify_server_at_end,
-                         Profile * io_profile)
+                         ProfilePtr io_profile)
 {
     Workload * workload = context->workloads.at(allocation->job_id.workload_name);
-    Job * job = workload->jobs->at(allocation->job_id);
-    Profile * profile = workload->profiles->at(job->profile);
+    auto job = workload->jobs->at(allocation->job_id);
 
     job->starting_time = simgrid::s4u::Engine::get_clock();
     job->allocation = allocation->machine_ids;
     double remaining_time = (double)job->walltime;
 
     // Create the root task
-    job->task = initialize_sequential_tasks(job, profile, io_profile);
+    job->task = initialize_sequential_tasks(job, job->profile, io_profile);
     unsigned int nb_allocated_resources = allocation->machine_ids.size();
 
     if (allocation->mapping.size() == 0)
@@ -485,9 +484,7 @@ void killer_process(BatsimContext * context,
 
     for (const JobIdentifier & job_id : jobs_ids)
     {
-        Job * job = context->workloads.job_at(job_id);
-        Profile * profile = context->workloads.at(job_id.workload_name)->profiles->at(job->profile);
-        (void) profile;
+        auto job = context->workloads.job_at(job_id);
 
         xbt_assert(! (job->state == JobState::JOB_STATE_REJECTED ||
                       job->state == JobState::JOB_STATE_SUBMITTED ||
@@ -499,8 +496,8 @@ void killer_process(BatsimContext * context,
             BatTask * job_progress = job->compute_job_progress();
 
             // Consistency checks
-            if (profile->is_parallel_task() ||
-                profile->type == ProfileType::DELAY)
+            if (job->profile->is_parallel_task() ||
+                job->profile->type == ProfileType::DELAY)
             {
                 xbt_assert(job_progress != nullptr,
                            "Parallel and delay profiles should contain jobs progress");

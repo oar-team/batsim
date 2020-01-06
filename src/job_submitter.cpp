@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <boost/bind.hpp>
+#include <memory>
 
 #include <simgrid/s4u.hpp>
 
@@ -85,12 +86,12 @@ void static_job_submitter_process(BatsimContext * context,
 
     long double current_submission_date = simgrid::s4u::Engine::get_clock();
 
-    vector<const Job *> jobsVector;
+    vector<JobPtr> jobsVector;
 
     const auto & jobs = workload->jobs->jobs();
     for (const auto & mit : jobs)
     {
-        const Job * job = mit.second;
+        const auto job = mit.second;
         jobsVector.push_back(job);
     }
 
@@ -99,9 +100,9 @@ void static_job_submitter_process(BatsimContext * context,
     if (jobsVector.size() > 0)
     {
         vector<JobIdentifier> jobs_to_send;
-        const Job * first_submitted_job = *jobsVector.begin();
+        const JobPtr first_submitted_job = *jobsVector.begin();
 
-        for (const Job * job : jobsVector)
+        for (const auto job : jobsVector)
         {
             if (job->submission_time > current_submission_date)
             {
@@ -123,12 +124,12 @@ void static_job_submitter_process(BatsimContext * context,
             if (context->redis_enabled)
             {
                 string job_key = RedisStorage::job_key(job->id);
-                string profile_key = RedisStorage::profile_key(workload->name, job->profile);
+                string profile_key = RedisStorage::profile_key(workload->name, job->profile->name);
 
                 context->storage.set(job_key, job->json_description);
                 if (context->submission_forward_profiles)
                 {
-                    context->storage.set(profile_key, workload->profiles->at(job->profile)->json_description);
+                    context->storage.set(profile_key, job->profile->json_description);
                 }
             }
 
@@ -280,7 +281,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
 
 
     // Create a profile
-    Profile * profile = new Profile;
+    auto profile = make_shared<Profile>();
     profile->type = ProfileType::DELAY;
     DelayProfileData * data = new DelayProfileData;
     data->delay = task->execution_time;
@@ -290,6 +291,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
             "\"delay\": " + std::to_string(task->execution_time) +
             "}";
     string profile_name = workflow_name + "_" + task->id; // Create a profile name
+    profile->name = profile_name;
     context->workloads.at(workload_name)->profiles->add_profile(profile_name, profile);
 
     // Create JSON description of Job corresponding to Task
@@ -303,8 +305,8 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
             "}";
 
     // Puts the job into memory
-    Job * job = Job::from_json(job_json_description, context->workloads.at(workload_name),
-                               "Invalid workflow-injected JSON job");
+    auto job = Job::from_json(job_json_description, context->workloads.at(workload_name),
+                              "Invalid workflow-injected JSON job");
     context->workloads.at(workload_name)->jobs->add_job(job);
 
     // Put the metadata about the job into the data storage
@@ -385,7 +387,7 @@ void batexec_job_launcher_process(BatsimContext * context,
     auto & jobs = workload->jobs->jobs();
     for (auto & mit : jobs)
     {
-        Job * job = mit.second;
+        auto job = mit.second;
 
         int nb_res = job->requested_nb_res;
 

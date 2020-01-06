@@ -25,10 +25,7 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(profiles, "profiles"); //!< Logging
 
 Profiles::~Profiles()
 {
-    for (auto mit : _profiles)
-    {
-        delete mit.second;
-    }
+    _profiles.clear();
 }
 
 void Profiles::load_from_json(const Document &doc, const string & filename)
@@ -51,35 +48,33 @@ void Profiles::load_from_json(const Document &doc, const string & filename)
                    "string key", error_prefix.c_str());
         string profile_name = key.GetString();
 
-        Profile * profile = Profile::from_json(profile_name, value, error_prefix,
-                                               true, filename);
-
+        auto profile = Profile::from_json(profile_name, value, error_prefix, true, filename);
         xbt_assert(!exists(string(key.GetString())), "%s: duplication of profile name '%s'",
                    error_prefix.c_str(), key.GetString());
         _profiles[string(key.GetString())] = profile;
     }
 }
 
-Profile *Profiles::operator[](const std::string &profile_name)
+ProfilePtr Profiles::operator[](const std::string &profile_name)
 {
     auto mit = _profiles.find(profile_name);
     xbt_assert(mit != _profiles.end(), "Cannot get profile '%s': it does not exist", profile_name.c_str());
     return mit->second;
 }
 
-const Profile *Profiles::operator[](const std::string &profile_name) const
+const ProfilePtr Profiles::operator[](const std::string &profile_name) const
 {
     auto mit = _profiles.find(profile_name);
     xbt_assert(mit != _profiles.end(), "Cannot get profile '%s': it does not exist", profile_name.c_str());
     return mit->second;
 }
 
-Profile * Profiles::at(const std::string & profile_name)
+ProfilePtr Profiles::at(const std::string & profile_name)
 {
     return operator[](profile_name);
 }
 
-const Profile * Profiles::at(const std::string & profile_name) const
+const ProfilePtr Profiles::at(const std::string & profile_name) const
 {
     return operator[](profile_name);
 }
@@ -91,7 +86,7 @@ bool Profiles::exists(const std::string &profile_name) const
 }
 
 void Profiles::add_profile(const std::string & profile_name,
-                           Profile *profile)
+                           ProfilePtr & profile)
 {
     xbt_assert(!exists(profile_name),
                "Bad Profiles::add_profile call: A profile with name='%s' already exists.",
@@ -100,7 +95,31 @@ void Profiles::add_profile(const std::string & profile_name,
     _profiles[profile_name] = profile;
 }
 
-const std::map<std::string, Profile *> Profiles::profiles() const
+void Profiles::try_remove_profile(const std::string & profile_name)
+{
+    if (!exists(profile_name))
+    {
+        return;
+    }
+
+    if (_profiles[profile_name].use_count() == 1)
+    {
+        // We need to remove this profile, and subprofiles if it's a sequence
+        std::vector<std::string> seq_profiles;
+        if (_profiles[profile_name]->type == ProfileType::SEQUENCE)
+        {
+            seq_profiles = ((SequenceProfileData*)_profiles[profile_name]->data)->sequence;
+        }
+        _profiles.erase(profile_name);
+        XBT_INFO("Profile %s deleted", profile_name.c_str());
+        for (std::string & prof_name : seq_profiles)
+        {
+            try_remove_profile(prof_name);
+        }
+    }
+}
+
+const std::unordered_map<std::string, ProfilePtr> Profiles::profiles() const
 {
     return _profiles;
 }
@@ -224,7 +243,7 @@ Profile::~Profile()
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
-Profile *Profile::from_json(const std::string & profile_name,
+ProfilePtr Profile::from_json(const std::string & profile_name,
                             const rapidjson::Value & json_desc,
                             const std::string & error_prefix,
                             bool is_from_a_file,
@@ -232,7 +251,7 @@ Profile *Profile::from_json(const std::string & profile_name,
 {
     (void) error_prefix; // Avoids a warning if assertions are ignored
 
-    Profile * profile = new Profile;
+    auto profile = std::make_shared<Profile>();
     profile->name = profile_name;
 
     xbt_assert(json_desc.IsObject(), "%s: profile '%s' value must be an object",
@@ -653,7 +672,7 @@ Profile *Profile::from_json(const std::string & profile_name,
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
-Profile *Profile::from_json(const std::string & profile_name,
+ProfilePtr Profile::from_json(const std::string & profile_name,
                             const std::string & json_str,
                             const std::string & error_prefix)
 {

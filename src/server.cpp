@@ -7,6 +7,7 @@
 
 #include <string>
 #include <set>
+#include <memory>
 
 #include <boost/algorithm/string.hpp>
 
@@ -84,6 +85,8 @@ void server_process(BatsimContext * context)
     event_counters.expected_nb_submitters = context->eventListsMap.size();
     data->submitter_counters[SubmitterType::EVENT_SUBMITTER] = event_counters;
 
+    data->jobs_to_be_deleted.clear();
+
     // Simulation loop
     while (!data->end_of_simulation_ack_received)
     {
@@ -111,6 +114,12 @@ void server_process(BatsimContext * context)
             if (!context->proto_writer->is_empty()) // There is something to send to the scheduler
             {
                 generate_and_send_message(data);
+                if (!data->jobs_to_be_deleted.empty())
+                {
+                    data->context->workloads.delete_jobs(data->jobs_to_be_deleted,
+                                                         context->garbage_collect_profiles);
+                    data->jobs_to_be_deleted.clear();
+                }
             }
             else // There is no event to send to the scheduler
             {
@@ -248,7 +257,7 @@ void server_on_job_completed(ServerData * data,
     xbt_assert(data->nb_running_jobs >= 0);
     data->nb_completed_jobs++;
     xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
-    Job * job = data->context->workloads.job_at(message->job_id);
+    auto job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Job %s has COMPLETED. %d jobs completed so far",
              job->id.to_string().c_str(), data->nb_completed_jobs);
@@ -259,6 +268,8 @@ void server_on_job_completed(ServerData * data,
                                                       job->return_code,
                                                       simgrid::s4u::Engine::get_clock());
 
+    data->context->jobs_tracer.write_job(job);
+    data->jobs_to_be_deleted.push_back(message->job_id);
 }
 
 void server_on_job_submitted(ServerData * data,
@@ -292,7 +303,7 @@ void server_on_job_submitted(ServerData * data,
         XBT_DEBUG("Workloads: %s", data->context->workloads.to_string().c_str());
 
         xbt_assert(data->context->workloads.job_is_registered(job_id));
-        Job * job = data->context->workloads.job_at(job_id);
+        auto job = data->context->workloads.job_at(job_id);
         job->id = job_id;
 
         // Update control information
@@ -308,7 +319,7 @@ void server_on_job_submitted(ServerData * data,
             job_json_description = job->json_description;
             if (data->context->submission_forward_profiles)
             {
-                profile_json_description = job->workload->profiles->at(job->profile)->json_description;
+                profile_json_description = job->profile->json_description;
             }
         }
 
@@ -624,7 +635,7 @@ void server_on_killing_done(ServerData * data,
         // store job progress from BatTask tree in str
         jobs_progress_str[job_id.to_string()] = message->jobs_progress[job_id];
 
-        const Job * job = data->context->workloads.job_at(job_id);
+        const auto job = data->context->workloads.job_at(job_id);
         if ( job->state == JobState::JOB_STATE_COMPLETED_KILLED)
         {
             data->nb_running_jobs--;
@@ -642,6 +653,9 @@ void server_on_killing_done(ServerData * data,
                 job->allocation.to_string_hyphen(" "),
                 job->return_code,
                 simgrid::s4u::Engine::get_clock());
+
+            data->context->jobs_tracer.write_job(job);
+            data->jobs_to_be_deleted.push_back(job->id);
         }
     }
 
@@ -692,12 +706,14 @@ void server_on_register_job(ServerData * data,
 
     // Create the job.
     XBT_DEBUG("Parsing user-submitted job %s", message->job_id.to_string().c_str());
-    Job * job = Job::from_json(message->job_description, workload,
+    auto job = Job::from_json(message->job_description, workload,
                                "Invalid JSON job submitted by the scheduler");
     xbt_assert(job->id.job_name == message->job_id.job_name, "Internal error");
     xbt_assert(job->id.workload_name == message->job_id.workload_name, "Internal error");
 
-    if (!workload->profiles->exists(job->profile))
+    /* The check of existence of a profile is done in Job::from_json which should raise an Exception
+     * TODO catch this exception here and print the following message
+     * if (!workload->profiles->exists(job->profile))
     {
         xbt_die(
                    "Dynamically registered job '%s' has no profile: "
@@ -708,7 +724,7 @@ void server_on_register_job(ServerData * data,
                    "the REGISTER_JOB message.",
                    job->id.to_string().c_str(),
                    workload->name.c_str(), job->profile.c_str());
-    }
+    }*/
 
     workload->check_single_job_validity(job);
     workload->jobs->add_job(job);
@@ -724,7 +740,7 @@ void server_on_register_job(ServerData * data,
             job_json_description = job->json_description;
             if (data->context->submission_forward_profiles)
             {
-                profile_json_description = job->workload->profiles->at(job->profile)->json_description;
+                profile_json_description = job->profile->json_description;
             }
         }
 
@@ -763,9 +779,9 @@ void server_on_register_profile(ServerData * data,
         XBT_INFO("Adding dynamically registered profile %s to workload %s",
                 message->profile_name.c_str(),
                 message->workload_name.c_str());
-        Profile * profile = Profile::from_json(message->profile_name,
-                                               message->profile,
-                                               "Invalid JSON profile received from the scheduler");
+        auto profile = Profile::from_json(message->profile_name,
+                                          message->profile,
+                                          "Invalid JSON profile received from the scheduler");
         workload->profiles->add_profile(message->profile_name, profile);
     }
     else
@@ -789,7 +805,7 @@ void server_on_set_job_metadata(ServerData * data,
         xbt_die("The job '%s' does not exist, cannot set its metadata", message->job_id.to_string().c_str());
     }
 
-    Job * job = data->context->workloads.job_at(job_identifier);
+    auto job = data->context->workloads.job_at(job_identifier);
     job->metadata = message->metadata;
     XBT_DEBUG("Metadata of job '%s' has been set", message->job_id.to_string().c_str());
 }
@@ -804,7 +820,7 @@ void server_on_change_job_state(ServerData * data,
     {
         xbt_die("The job '%s' does not exist.", message->job_id.to_string().c_str());
     }
-    Job * job = data->context->workloads.job_at(message->job_id);
+    auto job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Change job state: Job %s to state %s",
              job->id.to_string().c_str(),
@@ -825,6 +841,8 @@ void server_on_change_job_state(ServerData * data,
         case JobState::JOB_STATE_REJECTED:
             data->nb_completed_jobs++;
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
+            data->context->jobs_tracer.write_job(job);
+            data->jobs_to_be_deleted.push_back(message->job_id);
             break;
         default:
             xbt_assert(false,
@@ -844,6 +862,8 @@ void server_on_change_job_state(ServerData * data,
             xbt_assert(data->nb_running_jobs >= 0);
             data->nb_completed_jobs++;
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
+            data->context->jobs_tracer.write_job(job);
+            data->jobs_to_be_deleted.push_back(message->job_id);
             break;
         default:
             xbt_assert(false,
@@ -872,7 +892,7 @@ void server_on_to_job_msg(ServerData * data,
         xbt_die("The job '%s' does not exist, cannot send a message to that job.",
                 message->job_id.to_string().c_str());
     }
-    Job * job = data->context->workloads.job_at(message->job_id);
+    auto job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Send message to job: Job '%s' message='%s'",
              job->id.to_string().c_str(),
@@ -887,7 +907,7 @@ void server_on_from_job_msg(ServerData * data,
     xbt_assert(task_data->data != nullptr);
     FromJobMessage * message = (FromJobMessage *) task_data->data;
 
-    Job * job = data->context->workloads.job_at(message->job_id);
+    auto job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Send message to scheduler: Job %s",
              job->id.to_string().c_str());
@@ -908,7 +928,7 @@ void server_on_reject_job(ServerData * data,
         xbt_die("Job '%s' does not exist.", message->job_id.to_string().c_str());
     }
 
-    Job * job = data->context->workloads.job_at(message->job_id);
+    auto job = data->context->workloads.job_at(message->job_id);
     (void) job; // Avoids a warning if assertions are ignored
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Invalid rejection received: job '%s' cannot be rejected at the present time. "
@@ -920,6 +940,9 @@ void server_on_reject_job(ServerData * data,
 
     XBT_INFO("Job '%s' has been rejected",
              job->id.to_string().c_str());
+
+    data->context->jobs_tracer.write_job(job);
+    data->jobs_to_be_deleted.push_back(message->job_id);
 }
 
 void server_on_kill_jobs(ServerData * data,
@@ -935,7 +958,7 @@ void server_on_kill_jobs(ServerData * data,
         xbt_assert(data->context->workloads.job_is_registered(job_id),
                    "Trying to kill job '%s' but it does not exist.", job_id.to_string().c_str());
 
-        Job * job = data->context->workloads.job_at(job_id);
+        auto job = data->context->workloads.job_at(job_id);
 
         // Let's discard jobs whose kill has already been requested
         if (!job->kill_requested)
@@ -990,11 +1013,14 @@ void server_on_execute_job(ServerData * data,
                "Trying to execute job '%s', which is not registered in the workload!",
                allocation->job_id.to_string().c_str());
 
-    xbt_assert(data->context->workloads.job_profile_is_registered(allocation->job_id),
-               "Trying to execute job '%s', in which the profile is not registered in the workload!",
-               allocation->job_id.to_string().c_str());
+    auto job = data->context->workloads.job_at(allocation->job_id);
 
-    Job * job = data->context->workloads.job_at(allocation->job_id);
+    xbt_assert(data->context->workloads.job_profile_is_registered(allocation->job_id),
+               "Trying to execute job '%s', in which the profile '%s' is not registered in the workload!",
+               allocation->job_id.to_string().c_str(),
+               job->profile->name.c_str());
+
+
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Cannot execute job '%s': its state (%s) is not JOB_STATE_SUBMITTED.",
                job->id.to_string().c_str(), job_state_to_string(job->state).c_str());
@@ -1057,14 +1083,13 @@ void server_on_execute_job(ServerData * data,
     // those profile, is able to manage the following scenario: The scheduler
     // allocated a different number of resources than the number of requested
     // resources.
-    Profile* current_profile = job->workload->profiles->at(job->profile);
 
     // Check for sequence profiles
     std::vector<std::string> profile_seq;
     bool all_profiles_ok = true;
-    if (current_profile->type == ProfileType::SEQUENCE)
+    if (job->profile->type == ProfileType::SEQUENCE)
     {
-        profile_seq = ((SequenceProfileData *) current_profile->data)->sequence;
+        profile_seq = ((SequenceProfileData *) job->profile->data)->sequence;
         auto first = profile_seq.begin();
         auto last = profile_seq.end();
         while (first != last and all_profiles_ok)
@@ -1077,8 +1102,8 @@ void server_on_execute_job(ServerData * data,
         }
     }
 
-    if (current_profile->type != ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT
-            and (current_profile->type != ProfileType::SEQUENCE or not all_profiles_ok))
+    if (job->profile->type != ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT
+            and (job->profile->type != ProfileType::SEQUENCE or not all_profiles_ok))
     {
         if (allocation->mapping.size() != 0)
         {

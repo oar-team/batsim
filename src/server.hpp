@@ -54,6 +54,7 @@ struct ServerData
     std::map<std::string, Submitter*> submitters;   //!< The submitters
     std::unordered_map<SubmitterType, SubmitterCounters> submitter_counters; //!< A map of counters for Job, Event and Workflow Submitters
     std::map<JobIdentifier, Submitter*> origin_of_jobs; //!< Stores whether a Submitter must be notified on job completion
+    std::vector<JobIdentifier> jobs_to_be_deleted; //!< Stores the job_ids to be deleted after sending a message
 };
 
 /**

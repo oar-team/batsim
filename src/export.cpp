@@ -73,6 +73,10 @@ void prepare_batsim_outputs(BatsimContext * context)
             context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), range, pstate);
         }
     }
+
+    context->jobs_tracer.initialize(context,
+                                    context->export_prefix + "_jobs.csv",
+                                    context->export_prefix + "_schedule.csv");
 }
 
 void finalize_batsim_outputs(BatsimContext * context)
@@ -102,11 +106,8 @@ void finalize_batsim_outputs(BatsimContext * context)
         context->pstate_tracer.close_buffer();
     }
 
-    // Schedule-oriented output information
-    export_schedule_to_csv(context->export_prefix + "_schedule.csv", context);
-
-    // Job-oriented output information
-    export_jobs_to_csv(context->export_prefix + "_jobs.csv", context);
+    // Finalize both jobs and schedule output files
+    context->jobs_tracer.finalize();
 }
 
 
@@ -464,11 +465,9 @@ void PajeTracer::finalize(const BatsimContext * context, double time)
     XBT_INFO("PajeTracer finalized");
 }
 
-void PajeTracer::add_job_launching(const Job * job,
-                                   const std::vector<int> & used_machine_ids,
+void PajeTracer::add_job_launching(const std::vector<int> & used_machine_ids,
                                    double time)
 {
-    (void) job;
     xbt_assert(state == INITIALIZED, "Bad addJobLaunching call: the PajeTracer object is not initialized or had been finalized");
 
     const int buf_size = 256;
@@ -495,7 +494,7 @@ void PajeTracer::add_job_launching(const Job * job,
     free(buf);
 }
 
-void PajeTracer::register_new_job(const Job *job)
+void PajeTracer::register_new_job(const JobPtr job)
 {
     xbt_assert(_jobs.find(job) == _jobs.end(),
                "Cannot register new job %s: it already exists", job->id.to_string().c_str());
@@ -541,7 +540,7 @@ void PajeTracer::set_machine_idle(int machine_id, double time)
     free(buf);
 }
 
-void PajeTracer::set_machine_as_computing_job(int machine_id, const Job * job, double time)
+void PajeTracer::set_machine_as_computing_job(int machine_id, const JobPtr job, double time)
 {
     auto mit = _jobs.find(job);
     if (mit == _jobs.end())
@@ -568,7 +567,7 @@ void PajeTracer::set_machine_as_computing_job(int machine_id, const Job * job, d
     free(buf);
 }
 
-void PajeTracer::add_job_kill(const Job *job, const IntervalSet & used_machine_ids,
+void PajeTracer::add_job_kill(const JobPtr job, const IntervalSet & used_machine_ids,
                               double time, bool associate_kill_to_machines)
 {
     xbt_assert(state == INITIALIZED, "Bad addJobKill call: the PajeTracer object is not initialized or had been finalized");
@@ -690,288 +689,7 @@ void PajeTracer::hsv_to_rgb(double h, double s, double v, double & r, double & g
     }
 }
 
-void export_jobs_to_csv(const std::string &filename, const BatsimContext *context)
-{
-    ofstream f(filename, ios_base::trunc);
-    xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
-
-    // List all features (columns)
-    map<string, string> job_map;
-    vector<string> key_list = {
-        "job_id",
-        "workload_name",
-        "profile",
-        "submission_time",
-        "requested_number_of_resources",
-        "requested_time",
-        "success",
-        "final_state",
-        "starting_time",
-        "execution_time",
-        "finish_time",
-        "waiting_time",
-        "turnaround_time",
-        "stretch",
-        "allocated_resources",
-        "consumed_energy",
-        "metadata"
-    };
-
-    // Write headers (columns) to the output file
-    vector<string> row_content;
-    row_content.reserve(job_map.size());
-
-    for (string & mit : key_list)
-    {
-        row_content.push_back(mit);
-    }
-
-    f << boost::algorithm::join(row_content, ",") << "\n";
-
-    for (const auto mit : context->workloads.workloads())
-    {
-        string workload_name = mit.first;
-        const Workload * workload = mit.second;
-
-        if(workload->jobs)
-        {
-            const auto & jobs = workload->jobs->jobs();
-            for (const auto & mit : jobs)
-            {
-                Job * job = mit.second;
-
-                int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
-                bool rejected = (job->state == JobState::JOB_STATE_REJECTED);
-
-                // Update all values
-                job_map["job_id"] = job->id.job_name;
-                job_map["workload_name"] = string(workload_name);
-                job_map["profile"] = job->profile;
-                job_map["submission_time"] = to_string((double)job->submission_time);
-                job_map["requested_number_of_resources"] = to_string(job->requested_nb_res);
-                job_map["requested_time"] = to_string((double)job->walltime);
-                job_map["success"] = to_string(success);
-                job_map["final_state"] = job_state_to_string(job->state);
-                job_map["starting_time"] = rejected ? "" : to_string((double)job->starting_time);
-                job_map["execution_time"] = rejected ? "" :to_string((double)job->runtime);
-                job_map["finish_time"] = rejected ? "" :to_string((double)(job->starting_time + job->runtime));
-                job_map["waiting_time"] = rejected ? "" :to_string((double)(job->starting_time - job->submission_time));
-                job_map["turnaround_time"] = rejected ? "" :to_string((double)(job->starting_time + job->runtime - job->submission_time));
-                job_map["stretch"] = rejected ? "" :to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
-                job_map["consumed_energy"] = rejected ? "" :to_string(job->consumed_energy);
-                job_map["allocated_resources"] = job->allocation.to_string_hyphen(" ");
-                job_map["metadata"] = '"' + job->metadata + '"';
-
-
-                // Write values to the output file
-                row_content.resize(0);
-                for (string & mit : key_list)
-                {
-                    row_content.push_back(job_map[mit]);
-                }
-
-                f << boost::algorithm::join(row_content, ",") << "\n";
-            }
-        }
-    }
-
-    f.close();
-}
-
-
-void export_schedule_to_csv(const std::string &filename, const BatsimContext *context)
-{
-    ofstream f(filename, ios_base::trunc);
-    xbt_assert(f.is_open(), "Cannot write file '%s'", filename.c_str());
-
-    int nb_jobs = 0;
-    int nb_jobs_finished = 0;
-    int nb_jobs_success = 0;
-    int nb_jobs_killed = 0;
-    long double makespan = 0;
-    long double sum_waiting_time = 0;
-    long double sum_turnaround_time = 0;
-    long double sum_slowdown = 0;
-    long double max_waiting_time = 0;
-    long double max_turnaround_time = 0;
-    long double max_slowdown = 0;
-
-    map<string, string> output_map;
-
-    map<int, long double> machines_utilisation;
-    for (int i=0; i<context->machines.nb_machines(); i++)
-    {
-        machines_utilisation[i] = 0;
-    }
-
-    long double seconds_used_by_scheduler = context->microseconds_used_by_scheduler / 1e6l;
-    output_map["scheduling_time"] = to_string((double) seconds_used_by_scheduler);
-
-    // Let's compute the simulation time
-    chrono::duration<long double> diff = context->simulation_end_time - context->simulation_start_time;
-    long double seconds_used_by_the_whole_simulation = diff.count();
-    output_map["simulation_time"] = to_string((double) seconds_used_by_the_whole_simulation);
-
-    // Let's compute jobs-oriented metrics
-    for (const auto mit : context->workloads.workloads())
-    {
-        const Workload * workload = mit.second;
-
-        if(workload->jobs != nullptr)
-        {
-            const auto & jobs = workload->jobs->jobs();
-            for (const auto & mit : jobs)
-            {
-                Job * job = mit.second;
-                nb_jobs++;
-
-                if (job->is_complete())
-                {
-                    nb_jobs_finished++;
-
-                    if (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY)
-                    {
-                        nb_jobs_success++;
-                    }
-                    else
-                    {
-                        nb_jobs_killed++;
-                    }
-
-
-                    long double starting_time = job->starting_time;
-                    long double waiting_time = starting_time - job->submission_time;
-                    long double completion_time = job->starting_time + job->runtime;
-                    long double turnaround_time = completion_time - job->submission_time;
-                    long double slowdown = turnaround_time / job->runtime;
-
-                    sum_waiting_time += waiting_time;
-                    sum_turnaround_time += turnaround_time;
-                    sum_slowdown += slowdown;
-
-                    if (completion_time > makespan)
-                    {
-                        makespan = completion_time;
-                    }
-
-                    if (waiting_time > max_waiting_time)
-                    {
-                        max_waiting_time = waiting_time;
-                    }
-
-                    if (turnaround_time > max_turnaround_time)
-                    {
-                        max_turnaround_time = turnaround_time;
-                    }
-
-                    if (slowdown > max_slowdown)
-                    {
-                        max_slowdown = slowdown;
-                    }
-
-                    IntervalSet & allocation = job->allocation;
-                    auto size = allocation.size();
-                    for (size_t i=0; i < size; i++)
-                    {
-                        int machine_idx = allocation[i];
-                        machines_utilisation[machine_idx] += job->runtime;
-                    }
-                }
-            }
-        }
-    }
-    double sum_time_running = 0;
-    double max_time_running = 0;
-
-    for (auto const & entry : machines_utilisation)
-    {
-        sum_time_running += (double) entry.second;
-        if ((double) entry.second > max_time_running)
-        {
-            max_time_running = (double) entry.second;
-        }
-    }
-    double mean_time_running = sum_time_running / machines_utilisation.size();
-
-    double success_rate = (double)nb_jobs_success/nb_jobs;
-
-    double mean_waiting_time = (double)sum_waiting_time/nb_jobs;
-    double mean_turnaround_time = (double)sum_turnaround_time/nb_jobs;
-    double mean_slowdown = (double)sum_slowdown/nb_jobs;
-
-    output_map["batsim_version"] = context->batsim_version;
-    output_map["nb_jobs"] = to_string(nb_jobs);
-    output_map["nb_jobs_finished"] = to_string(nb_jobs_finished);
-    output_map["nb_jobs_success"] = to_string(nb_jobs_success);
-    output_map["nb_jobs_killed"] = to_string(nb_jobs_killed);
-    output_map["nb_jobs_rejected"] = to_string(nb_jobs - nb_jobs_finished);
-    output_map["success_rate"] = to_string(success_rate);
-
-    output_map["makespan"] = to_string((double)makespan);
-    output_map["mean_waiting_time"] = to_string(mean_waiting_time);
-    output_map["mean_turnaround_time"] = to_string(mean_turnaround_time);
-    output_map["mean_slowdown"] = to_string(mean_slowdown);
-    output_map["max_waiting_time"] = to_string((double)max_waiting_time);
-    output_map["max_turnaround_time"] = to_string((double)max_turnaround_time);
-    output_map["max_slowdown"] = to_string((double)max_slowdown);
-
-    output_map["nb_computing_machines"] = to_string(context->machines.nb_machines());
-
-    XBT_INFO("jobs=%d, finished=%d, success=%d, killed=%d, success_rate=%lf",
-             nb_jobs, nb_jobs_finished, nb_jobs_success, nb_jobs_killed, success_rate);
-    XBT_INFO("makespan=%lf, scheduling_time=%lf, mean_waiting_time=%lf, mean_turnaround_time=%lf, "
-             "mean_slowdown=%lf, max_waiting_time=%lf, max_turnaround_time=%lf, max_slowdown=%lf",
-             (double)makespan, (double)seconds_used_by_scheduler,
-             (double)mean_waiting_time, (double)mean_turnaround_time, mean_slowdown,
-             (double)max_waiting_time, (double)max_turnaround_time, (double)max_slowdown);
-    XBT_INFO("mean_machines_running=%lf, max_machines_running=%lf",
-             (double)mean_time_running, (double)max_time_running);
-
-    long double total_consumed_energy = context->energy_last_job_completion - context->energy_first_job_submission;
-    output_map["consumed_joules"] = to_string((double) total_consumed_energy);
-
-    output_map["nb_machine_switches"] = to_string(context->nb_machine_switches);
-    output_map["nb_grouped_switches"] = to_string(context->nb_grouped_switches);
-
-    // Let's compute machine-related metrics
-    map<MachineState, long double> time_spent_in_each_state;
-    const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
-                                                 MachineState::COMPUTING,
-                                                 MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
-                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING,
-                                                 MachineState::UNAVAILABLE};
-    for (const MachineState & state : machine_states)
-    {
-        time_spent_in_each_state[state] = 0;
-    }
-
-    for (const Machine * machine : context->machines.machines())
-    {
-        for (const MachineState & state : machine_states)
-        {
-            time_spent_in_each_state[state] += machine->time_spent_in_each_state.at(state);
-        }
-    }
-
-    for (const MachineState & state : machine_states)
-    {
-        output_map["time_" + machine_state_to_string(state)] = to_string((double)time_spent_in_each_state[state]);
-    }
-
-
-    // Let's write the output map into the file
-    vector<string> keys, values;
-    for (const auto mit : output_map)
-    {
-        keys.push_back(mit.first);
-        values.push_back(mit.second);
-    }
-
-    f << boost::algorithm::join(keys, ",") << "\n";
-    f << boost::algorithm::join(values, ",") << "\n";
-
-    f.close();
-}
+/* Part related to PStateChangeTracer */
 
 PStateChangeTracer::PStateChangeTracer()
 {
@@ -1039,6 +757,7 @@ void PStateChangeTracer::close_buffer()
 }
 
 
+/* Part related to EnergyConsumptionTracer */
 
 EnergyConsumptionTracer::~EnergyConsumptionTracer()
 {
@@ -1144,6 +863,9 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
 }
 
 
+
+/* Part related to MachineStateTracer */
+
 MachineStateTracer::~MachineStateTracer()
 {
     if (_wbuf != nullptr)
@@ -1220,6 +942,269 @@ void MachineStateTracer::close_buffer()
 {
     xbt_assert(_wbuf != nullptr);
 
+    delete _wbuf;
+    _wbuf = nullptr;
+}
+
+/* Part related to JobsTracer */
+
+JobsTracer::~JobsTracer()
+{
+    if (_wbuf != nullptr)
+    {
+        delete _wbuf;
+        _wbuf = nullptr;
+    }
+}
+
+void JobsTracer::initialize(BatsimContext *context,
+                       const string & jobs_filename,
+                       const string & schedule_filename)
+{
+    xbt_assert(_wbuf == nullptr, "Double call of JobsTracer::initialize");
+    _wbuf = new WriteBuffer(jobs_filename);
+    _context = context;
+    _schedule_filename = schedule_filename;
+
+    // Prepare for jobs output file
+    _job_keys = {
+        "job_id",
+        "workload_name",
+        "profile",
+        "submission_time",
+        "requested_number_of_resources",
+        "requested_time",
+        "success",
+        "final_state",
+        "starting_time",
+        "execution_time",
+        "finish_time",
+        "waiting_time",
+        "turnaround_time",
+        "stretch",
+        "allocated_resources",
+        "consumed_energy",
+        "metadata"
+    };
+    string header = boost::algorithm::join(_job_keys, ",") + "\n";
+    _row_content.reserve(_job_keys.size());
+    _wbuf->append_text(header.c_str());
+    _wbuf->flush_buffer();
+
+    // Prepare for schedule output file
+    for (int i = 0; i < context->machines.nb_machines(); ++i)
+    {
+        _machines_utilization[i] = 0;
+    }
+}
+
+void JobsTracer::finalize()
+{
+    // Finalize jobs output file
+    flush();
+    close_buffer();
+
+    // Write the schedule output file
+    ofstream f(_schedule_filename, ios_base::trunc);
+    xbt_assert(f.is_open(), "Cannot write file '%s'", _schedule_filename.c_str());
+    map<string, string> output_map;
+
+    long double seconds_used_by_scheduler = _context->microseconds_used_by_scheduler / 1e6l;
+    output_map["scheduling_time"] = to_string((double) seconds_used_by_scheduler);
+
+    // Let's compute the simulation time
+    chrono::duration<long double> diff = _context->simulation_end_time - _context->simulation_start_time;
+    long double seconds_used_by_the_whole_simulation = diff.count();
+    output_map["simulation_time"] = to_string((double) seconds_used_by_the_whole_simulation);
+
+    double sum_time_running = 0;
+    double max_time_running = 0;
+    for (auto const & entry : _machines_utilization)
+    {
+        sum_time_running += (double) entry.second;
+        if ((double) entry.second > max_time_running)
+        {
+            max_time_running = (double) entry.second;
+        }
+    }
+    double mean_time_running = sum_time_running / _machines_utilization.size();
+
+    double success_rate = (double)_nb_jobs_success/_nb_jobs;
+
+    double mean_waiting_time = (double)_sum_waiting_time/_nb_jobs;
+    double mean_turnaround_time = (double)_sum_turnaround_time/_nb_jobs;
+    double mean_slowdown = (double)_sum_slowdown/_nb_jobs;
+
+    output_map["batsim_version"] = _context->batsim_version;
+    output_map["nb_jobs"] = to_string(_nb_jobs);
+    output_map["nb_jobs_finished"] = to_string(_nb_jobs_finished);
+    output_map["nb_jobs_success"] = to_string(_nb_jobs_success);
+    output_map["nb_jobs_killed"] = to_string(_nb_jobs_killed);
+    output_map["nb_jobs_rejected"] = to_string(_nb_jobs - _nb_jobs_finished);
+    output_map["success_rate"] = to_string(success_rate);
+
+    output_map["makespan"] = to_string((double)_makespan);
+    output_map["mean_waiting_time"] = to_string(mean_waiting_time);
+    output_map["mean_turnaround_time"] = to_string(mean_turnaround_time);
+    output_map["mean_slowdown"] = to_string(mean_slowdown);
+    output_map["max_waiting_time"] = to_string((double)_max_waiting_time);
+    output_map["max_turnaround_time"] = to_string((double)_max_turnaround_time);
+    output_map["max_slowdown"] = to_string((double)_max_slowdown);
+
+    output_map["nb_computing_machines"] = to_string(_context->machines.nb_machines());
+
+    XBT_INFO("jobs=%d, finished=%d, success=%d, killed=%d, success_rate=%lf",
+             _nb_jobs, _nb_jobs_finished, _nb_jobs_success, _nb_jobs_killed, success_rate);
+    XBT_INFO("makespan=%lf, scheduling_time=%lf, mean_waiting_time=%lf, mean_turnaround_time=%lf, "
+             "mean_slowdown=%lf, max_waiting_time=%lf, max_turnaround_time=%lf, max_slowdown=%lf",
+             (double)_makespan, (double)seconds_used_by_scheduler,
+             (double)mean_waiting_time, (double)mean_turnaround_time, mean_slowdown,
+             (double)_max_waiting_time, (double)_max_turnaround_time, (double)_max_slowdown);
+    XBT_INFO("mean_machines_running=%lf, max_machines_running=%lf",
+             (double)mean_time_running, (double)max_time_running);
+
+    long double total_consumed_energy = _context->energy_last_job_completion - _context->energy_first_job_submission;
+    output_map["consumed_joules"] = to_string((double) total_consumed_energy);
+
+    output_map["nb_machine_switches"] = to_string(_context->nb_machine_switches);
+    output_map["nb_grouped_switches"] = to_string(_context->nb_grouped_switches);
+
+    // Let's compute machine-related metrics
+    map<MachineState, long double> time_spent_in_each_state;
+    const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
+                                                 MachineState::COMPUTING,
+                                                 MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING,
+                                                 MachineState::UNAVAILABLE};
+    for (const MachineState & state : machine_states)
+    {
+        time_spent_in_each_state[state] = 0;
+    }
+
+    for (const Machine * machine : _context->machines.machines())
+    {
+        for (const MachineState & state : machine_states)
+        {
+            time_spent_in_each_state[state] += machine->time_spent_in_each_state.at(state);
+        }
+    }
+
+    for (const MachineState & state : machine_states)
+    {
+        output_map["time_" + machine_state_to_string(state)] = to_string((double)time_spent_in_each_state[state]);
+    }
+
+    // Let's write the output map into the file
+    vector<string> keys, values;
+    for (const auto mit : output_map)
+    {
+        keys.push_back(mit.first);
+        values.push_back(mit.second);
+    }
+
+    f << boost::algorithm::join(keys, ",") << "\n";
+    f << boost::algorithm::join(values, ",") << "\n";
+
+    f.close();
+}
+
+void JobsTracer::write_job(const JobPtr job)
+{
+    int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
+    bool rejected = (job->state == JobState::JOB_STATE_REJECTED);
+
+    // Update counters for the schedule metrics
+    _nb_jobs++;
+    if (job->is_complete())
+    {
+        _nb_jobs_finished++;
+
+        if (success)
+        {
+            _nb_jobs_success++;
+        }
+        else
+        {
+            _nb_jobs_killed++;
+        }
+
+        long double starting_time = job->starting_time;
+        long double waiting_time = starting_time - job->submission_time;
+        long double completion_time = job->starting_time + job->runtime;
+        long double turnaround_time = completion_time - job->submission_time;
+        long double slowdown = turnaround_time / job->runtime;
+
+        _sum_waiting_time += waiting_time;
+        _sum_turnaround_time += turnaround_time;
+        _sum_slowdown += slowdown;
+
+        if (completion_time > _makespan)
+        {
+            _makespan = completion_time;
+        }
+
+        if (waiting_time > _max_waiting_time)
+        {
+            _max_waiting_time = waiting_time;
+        }
+
+        if (turnaround_time > _max_turnaround_time)
+        {
+            _max_turnaround_time = turnaround_time;
+        }
+
+        if (slowdown > _max_slowdown)
+        {
+            _max_slowdown = slowdown;
+        }
+
+        const IntervalSet & allocation = job->allocation;
+        for (size_t i = 0; i < allocation.size(); ++i)
+        {
+            _machines_utilization[allocation[i]] += job->runtime;
+        }
+    }
+    else
+    {
+        xbt_die("Job %s did not complete", job->id.job_name.c_str());
+    }
+
+    // Set all values to be written
+    _job_map["job_id"] = job->id.job_name;
+    _job_map["workload_name"] = job->workload->name;
+    _job_map["profile"] = (job->profile)->name;
+    _job_map["submission_time"] = to_string((double)job->submission_time);
+    _job_map["requested_number_of_resources"] = to_string(job->requested_nb_res);
+    _job_map["requested_time"] = to_string((double)job->walltime);
+    _job_map["success"] = to_string(success);
+    _job_map["final_state"] = job_state_to_string(job->state);
+    _job_map["starting_time"] = rejected ? "" : to_string((double)job->starting_time);
+    _job_map["execution_time"] = rejected ? "" :to_string((double)job->runtime);
+    _job_map["finish_time"] = rejected ? "" :to_string((double)job->starting_time + job->runtime);
+    _job_map["waiting_time"] = rejected ? "" :to_string((double)(job->starting_time - job->submission_time));
+    _job_map["turnaround_time"] = rejected ? "" :to_string((double)(job->starting_time + job->runtime - job->submission_time));
+    _job_map["stretch"] = rejected ? "" :to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
+    _job_map["consumed_energy"] = rejected ? "" :to_string(job->consumed_energy);
+    _job_map["allocated_resources"] = job->allocation.to_string_hyphen(" ");
+    _job_map["metadata"] = '"' + job->metadata + '"';
+    // And then write them
+    for (string & mit : _job_keys)
+    {
+        _row_content.push_back(_job_map[mit]);
+    }
+    _wbuf->append_text((boost::algorithm::join(_row_content, ",") + "\n").c_str());
+    _row_content.clear();
+}
+
+void JobsTracer::flush()
+{
+    xbt_assert(_wbuf != nullptr);
+    _wbuf->flush_buffer();
+}
+
+void JobsTracer::close_buffer()
+{
+    xbt_assert(_wbuf != nullptr);
     delete _wbuf;
     _wbuf = nullptr;
 }

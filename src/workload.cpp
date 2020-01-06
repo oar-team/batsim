@@ -86,8 +86,8 @@ void Workload::load_from_json(const std::string &json_filename, int &nb_machines
     xbt_assert(nb_machines > 0, "Invalid JSON file '%s': the value of the 'nb_res' field is invalid (%d)",
                json_filename.c_str(), nb_machines);
 
-    jobs->load_from_json(doc, json_filename);
     profiles->load_from_json(doc, json_filename);
+    jobs->load_from_json(doc, json_filename);
 
     XBT_INFO("JSON workload parsed sucessfully. Read %d jobs and %d profiles.",
              jobs->nb_jobs(), profiles->nb_profiles());
@@ -100,14 +100,13 @@ void Workload::register_smpi_applications()
 {
     XBT_INFO("Registering SMPI applications of workload '%s'...", name.c_str());
 
-    for (auto mit : jobs->jobs())
+    for (auto & mit : jobs->jobs())
     {
-        Job * job = mit.second;
-        Profile * profile = (*profiles)[job->profile];
+        auto job = mit.second;
 
-        if (profile->type == ProfileType::SMPI)
+        if (job->profile->type == ProfileType::SMPI)
         {
-            SmpiProfileData * data = (SmpiProfileData *) profile->data;
+            SmpiProfileData * data = (SmpiProfileData *) job->profile->data;
 
             XBT_INFO("Registering app. instance='%s', nb_process=%d",
                      job->id.to_string().c_str(), (int) data->trace_filenames.size());
@@ -121,52 +120,56 @@ void Workload::register_smpi_applications()
 void Workload::check_validity()
 {
     // Let's check that every SEQUENCE-typed profile points to existing profiles
+    // And update the refcounting of these profiles
     for (auto mit : profiles->profiles())
     {
-        Profile * profile = mit.second;
+        auto profile = mit.second;
         if (profile->type == ProfileType::SEQUENCE)
         {
             SequenceProfileData * data = (SequenceProfileData *) profile->data;
+            data->profile_sequence.reserve(data->sequence.size());
             for (const auto & prof : data->sequence)
             {
                 (void) prof; // Avoids a warning if assertions are ignored
                 xbt_assert(profiles->exists(prof),
                            "Invalid composed profile '%s': the used profile '%s' does not exist",
                            mit.first.c_str(), prof.c_str());
+                // Adds one to the refcounting for the profile 'prof'
+                data->profile_sequence.push_back(profiles->at(prof));
             }
         }
     }
 
     // TODO : check that there are no circular calls between composed profiles...
-    // TODO: compute the constraint of the profile number of resources, to check if it match the jobs that use it
+    // TODO: compute the constraint of the profile number of resources, to check if it matches the jobs that use it
 
-    // Let's check that the profile of each job exists
-    for (auto mit : jobs->jobs())
+    // Let's check the profile validity of each job
+    for (const auto & mit : jobs->jobs())
     {
         check_single_job_validity(mit.second);
     }
 }
 
-void Workload::check_single_job_validity(const Job * job)
+void Workload::check_single_job_validity(const JobPtr job)
 {
-    xbt_assert(profiles->exists(job->profile),
+    //TODO This is already checked during creation of the job in Job::from_json
+    xbt_assert(profiles->exists(job->profile->name),
                "Invalid job %s: the associated profile '%s' does not exist",
-               job->id.to_string().c_str(), job->profile.c_str());
+               job->id.to_string().c_str(), job->profile->name.c_str());
 
-    const Profile * profile = profiles->at(job->profile);
-    if (profile->type == ProfileType::PARALLEL)
+    if (job->profile->type == ProfileType::PARALLEL)
     {
-        ParallelProfileData * data = (ParallelProfileData *) profile->data;
+        ParallelProfileData * data = (ParallelProfileData *) job->profile->data;
         (void) data; // Avoids a warning if assertions are ignored
         xbt_assert(data->nb_res == job->requested_nb_res,
                    "Invalid job %s: the requested number of resources (%d) do NOT match"
                    " the number of resources of the associated profile '%s' (%d)",
-                   job->id.to_string().c_str(), job->requested_nb_res, job->profile.c_str(), data->nb_res);
+                   job->id.to_string().c_str(), job->requested_nb_res, job->profile->name.c_str(), data->nb_res);
     }
-    else if (profile->type == ProfileType::SEQUENCE)
+    /*else if (job->profile->type == ProfileType::SEQUENCE)
     {
         // TODO: check if the number of resources matches a resource-constrained composed profile
-    }
+    }*/
 }
 
 string Workload::to_string()
@@ -228,14 +231,23 @@ int Workloads::nb_static_workloads() const
     return count;
 }
 
-Job *Workloads::job_at(const JobIdentifier &job_id)
+JobPtr Workloads::job_at(const JobIdentifier &job_id)
 {
     return at(job_id.workload_name)->jobs->at(job_id);
 }
 
-const Job *Workloads::job_at(const JobIdentifier &job_id) const
+const JobPtr Workloads::job_at(const JobIdentifier &job_id) const
 {
     return at(job_id.workload_name)->jobs->at(job_id);
+}
+
+void Workloads::delete_jobs(const vector<JobIdentifier> & job_ids,
+                            const bool & garbage_collect_profiles)
+{
+    for (const JobIdentifier & job_id : job_ids)
+    {
+        at(job_id.workload_name)->jobs->delete_job(job_id, garbage_collect_profiles);
+    }
 }
 
 void Workloads::insert_workload(const std::string &workload_name, Workload *workload)
@@ -283,8 +295,9 @@ bool Workloads::job_is_registered(const JobIdentifier &job_id)
 
 bool Workloads::job_profile_is_registered(const JobIdentifier &job_id)
 {
-    const Job * job = at(job_id.workload_name)->jobs->at(job_id);
-    return at(job_id.workload_name)->profiles->exists(job->profile);
+    //TODO this could be improved/simplified
+    auto job = at(job_id.workload_name)->jobs->at(job_id);
+    return at(job_id.workload_name)->profiles->exists(job->profile->name);
 }
 
 std::map<std::string, Workload *> &Workloads::workloads()

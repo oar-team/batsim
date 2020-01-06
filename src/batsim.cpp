@@ -212,6 +212,11 @@ Job-related options:
   --acknowledge-dynamic-jobs         Makes Batsim send a JOB_SUBMITTED back to the scheduler when
                                      Batsim receives a REGISTER_JOB.
                                      [default: false]
+  --enable-profile-reuse             Enable dynamic jobs to reuse profiles of other jobs.
+                                     Without this options, such profiles would be
+                                     garbage collected.
+                                     The option --enable-dynamic-jobs must be set for this option to work.
+                                     [default: false]
 
 Verbosity options:
   -v, --verbosity <verbosity_level>  Sets the Batsim verbosity level. Available
@@ -459,6 +464,13 @@ Other options:
     main_args.forward_profiles_on_submission = args["--forward-profiles-on-submission"].asBool();
     main_args.dynamic_registration_enabled = args["--enable-dynamic-jobs"].asBool();
     main_args.ack_dynamic_registration = args["--acknowledge-dynamic-jobs"].asBool();
+    main_args.profile_reuse_enabled = args["--enable-profile-reuse"].asBool();
+
+    if (main_args.profile_reuse_enabled && !main_args.dynamic_registration_enabled)
+    {
+        XBT_ERROR("Profile reuse is enabled but dynamic registration is not, have you missed something?");
+        error = true;
+    }
 
     // Platform size limit options
     // ***************************
@@ -890,6 +902,10 @@ void set_configuration(BatsimContext *context,
     context->submission_forward_profiles = main_args.forward_profiles_on_submission;
     context->registration_sched_enabled = main_args.dynamic_registration_enabled;
     context->registration_sched_ack = main_args.ack_dynamic_registration;
+    if (main_args.dynamic_registration_enabled && main_args.profile_reuse_enabled)
+    {
+        context->garbage_collect_profiles = false; // It is true by default
+    }
 
     context->platform_filename = main_args.platform_filename;
     context->export_prefix = main_args.export_prefix;
@@ -918,6 +934,7 @@ void set_configuration(BatsimContext *context,
     context->config_json.AddMember("profiles-forwarded-on-submission", Value().SetBool(main_args.forward_profiles_on_submission), alloc);
     context->config_json.AddMember("dynamic-jobs-enabled", Value().SetBool(main_args.dynamic_registration_enabled), alloc);
     context->config_json.AddMember("dynamic-jobs-acknowledged", Value().SetBool(main_args.ack_dynamic_registration), alloc);
+    context->config_json.AddMember("profile-reuse-enabled", Value().SetBool(!context->garbage_collect_profiles), alloc);
 
     // others
     context->config_json.AddMember("forward-unknown-events", Value().SetBool(main_args.forward_unknown_events), alloc);

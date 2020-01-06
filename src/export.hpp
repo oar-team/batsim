@@ -12,7 +12,9 @@
 #include <string>
 #include <fstream>
 #include <map>
+#include <memory>
 
+#include "pointers.hpp"
 #include "machines.hpp"
 #include "jobs.hpp"
 
@@ -74,20 +76,6 @@ private:
     char * buffer = nullptr;    //!< The buffer
     int buffer_pos = 0;         //!< The current position of the buffer (previous positions are already written)
 };
-
-/**
- * @brief Exports the job execution to a CSV file
- * @param[in] filename The name of the output file used to write the CSV data
- * @param[in] context The BatsimContext
- */
-void export_jobs_to_csv(const std::string &filename, const BatsimContext * context);
-
-/**
- * @brief Compute and exports some schedule criteria to a CSV file
- * @param[in] filename The name of the output file used to write the CSV data
- * @param[in] context The BatsimContext
- */
-void export_schedule_to_csv(const std::string &filename, const BatsimContext * context);
 
 
 /**
@@ -166,17 +154,16 @@ public:
     /**
      * @brief Adds a job launch in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param[in] job The job
      * @param[in] used_machine_ids The machines which compute the job
      * @param[in] time The simulation time at which the addition is done
      */
-    void add_job_launching(const Job * job, const std::vector<int> & used_machine_ids, double time);
+    void add_job_launching(const std::vector<int> & used_machine_ids, double time);
 
     /**
      * @brief Creates a job in the Pajé output file
      * @param[in] job The job
      */
-    void register_new_job(const Job * job);
+    void register_new_job(const JobPtr job);
 
     /**
      * @brief Sets a machine in the idle state
@@ -191,7 +178,7 @@ public:
      * @param[in] job The job
      * @param[in] time The time at which the machine should be marked as computing the job
      */
-    void set_machine_as_computing_job(int machine_id, const Job * job, double time);
+    void set_machine_as_computing_job(int machine_id, const JobPtr job, double time);
 
     /**
      * @brief Adds a job kill in the file trace.
@@ -201,7 +188,7 @@ public:
      * @param[in] time The simulation time at which the kill is done
      * @param[in] associate_kill_to_machines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
      */
-    void add_job_kill(const Job * job, const IntervalSet & used_machine_ids,
+    void add_job_kill(const JobPtr job, const IntervalSet & used_machine_ids,
                       double time, bool associate_kill_to_machines = false);
 
 public:
@@ -256,7 +243,7 @@ private:
 
     WriteBuffer * _wbuf = nullptr;  //!< The buffer class used to handle the output file
 
-    std::map<const Job *, std::string> _jobs; //!< Maps jobs to their Pajé representation
+    std::map<const JobPtr, std::string> _jobs; //!< Maps jobs to their Pajé representation
     std::vector<std::string> _colors; //!< Strings associated with colors, used for the jobs
 
     PajeTracerState state = UNINITIALIZED; //!< The state of the PajeTracer
@@ -453,4 +440,83 @@ public:
 private:
     BatsimContext * _context = nullptr; //!< The Batsim context
     WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
+};
+
+/**
+ * @brief Traces the jobs execution over time to export to a CSV file. Also exports schedule metrics to a second CSV file
+ */
+class JobsTracer
+{
+public:
+    /**
+     * @brief Constructs a JobsTracer
+     */
+    JobsTracer() = default;
+
+    /**
+     * @brief JobsTracer cannot be copied.
+     * @param[in] other Another instance
+     */
+    JobsTracer(const JobsTracer & other) = delete;
+
+    /**
+     * @brief Destroys a JobsTracer
+     */
+    ~JobsTracer();
+
+    /**
+     * @brief Initializes the tracer
+     * @param[in] context The Batsim context
+     * @param[in] jobs_filename The name of the jobs output file
+     * @param[in] schedule_filename The name of the schedule output file
+     */
+    void initialize(BatsimContext * context,
+                    const std::string & jobs_filename,
+                    const std::string & schedule_filename);
+
+    /**
+     * @brief Finalizes the tracer. Writes schedule output file
+     */
+    void finalize();
+
+    /**
+     * @brief Writes a line in the jobs output file and updates schedule metrics.
+     * @param[in] job The Job involved
+     */
+    void write_job(const JobPtr job);
+
+    /**
+     * @brief Flushes the pending writings to the jobs output file
+     */
+    void flush();
+
+    /**
+     * @brief Closes the jobs output buffer
+     */
+    void close_buffer();
+
+
+private:
+    BatsimContext * _context = nullptr; //!< The Batsim context
+    WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the jobs output file
+    std::string _schedule_filename; //!< The filename of the schedule output file
+
+    // Jobs-related
+    std::vector<std::string> _job_keys; //!< The list of keys in the map
+    std::map<std::string, std::string> _job_map; //!< The map holding info of the Job to write
+    std::vector<std::string> _row_content; //!< The vector containing string to write
+
+    // Schedule-related
+    int _nb_jobs = 0; //!< The number of jobs.
+    int _nb_jobs_finished = 0; //!< The number of finished jobs.
+    int _nb_jobs_success = 0; //!< The number of successful jobs.
+    int _nb_jobs_killed = 0; //!< The number of killed jobs.
+    long double _makespan = 0; //!< The makespan.
+    long double _sum_waiting_time = 0; //!< The sum of the waiting time of jobs.
+    long double _sum_turnaround_time = 0; //!< The sum of the turnaround time of jobs.
+    long double _sum_slowdown = 0; //!< The sum of the slowdown (AKA stretch) of jobs.
+    long double _max_waiting_time = 0; //!< The maximum waiting time observed.
+    long double _max_turnaround_time = 0; //!< The maximum turnaround time observed.
+    long double _max_slowdown = 0; //!< The maximum slowdown observed.
+    std::map<int, long double> _machines_utilization; //!< Counts the utilization time of each machine.
 };

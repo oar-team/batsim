@@ -97,9 +97,18 @@ bool operator<(const JobIdentifier &ji1, const JobIdentifier &ji2)
     return ji1.to_string() < ji2.to_string();
 }
 
+bool operator==(const JobIdentifier &ji1, const JobIdentifier &ji2)
+{
+    return ji1.to_string() == ji2.to_string();
+}
+
+std::size_t JobIdentifierHasher::operator()(const JobIdentifier & id) const
+{
+    return std::hash<std::string>()(id.to_string());
+}
 
 
-BatTask::BatTask(Job * parent_job, Profile * profile) :
+BatTask::BatTask(JobPtr parent_job, ProfilePtr profile) :
     parent_job(parent_job),
     profile(profile)
 {
@@ -178,10 +187,7 @@ BatTask* Job::compute_job_progress()
 
 Jobs::~Jobs()
 {
-    for (auto mit : _jobs)
-    {
-        delete mit.second;
-    }
+    _jobs.clear();
 }
 
 void Jobs::set_profiles(Profiles *profiles)
@@ -207,15 +213,16 @@ void Jobs::load_from_json(const rapidjson::Document &doc, const std::string &fil
     {
         const Value & job_json_description = jobs[i];
 
-        Job * j = Job::from_json(job_json_description, _workload, error_prefix);
+        auto j = Job::from_json(job_json_description, _workload, error_prefix);
 
         xbt_assert(!exists(j->id), "%s: duplication of job id '%s'",
                    error_prefix.c_str(), j->id.to_string().c_str());
         _jobs[j->id] = j;
+        _jobs_met.insert({j->id, true});
     }
 }
 
-Job *Jobs::operator[](JobIdentifier job_id)
+JobPtr Jobs::operator[](JobIdentifier job_id)
 {
     auto it = _jobs.find(job_id);
     xbt_assert(it != _jobs.end(), "Cannot get job '%s': it does not exist",
@@ -223,7 +230,7 @@ Job *Jobs::operator[](JobIdentifier job_id)
     return it->second;
 }
 
-const Job *Jobs::operator[](JobIdentifier job_id) const
+const JobPtr Jobs::operator[](JobIdentifier job_id) const
 {
     auto it = _jobs.find(job_id);
     xbt_assert(it != _jobs.end(), "Cannot get job '%s': it does not exist",
@@ -231,29 +238,44 @@ const Job *Jobs::operator[](JobIdentifier job_id) const
     return it->second;
 }
 
-Job *Jobs::at(JobIdentifier job_id)
+JobPtr Jobs::at(JobIdentifier job_id)
 {
     return operator[](job_id);
 }
 
-const Job *Jobs::at(JobIdentifier job_id) const
+const JobPtr Jobs::at(JobIdentifier job_id) const
 {
     return operator[](job_id);
 }
 
-void Jobs::add_job(Job *job)
+void Jobs::add_job(JobPtr job)
 {
     xbt_assert(!exists(job->id),
                "Bad Jobs::add_job call: A job with name='%s' already exists.",
                job->id.to_string().c_str());
 
     _jobs[job->id] = job;
+    _jobs_met.insert({job->id, true});
 }
 
-bool Jobs::exists(JobIdentifier job_id) const
+void Jobs::delete_job(const JobIdentifier & job_id, const bool & garbage_collect_profiles)
 {
-    auto it = _jobs.find(job_id);
-    return it != _jobs.end();
+    xbt_assert(exists(job_id),
+               "Bad Jobs::delete_job call: The job with name='%s' does not exist.",
+               job_id.to_string().c_str());
+
+    std::string profile_name = _jobs[job_id]->profile->name;
+    _jobs.erase(job_id);
+    if (garbage_collect_profiles)
+    {
+        _workload->profiles->try_remove_profile(profile_name);
+    }
+}
+
+bool Jobs::exists(const JobIdentifier & job_id) const
+{
+    auto it = _jobs_met.find(job_id);
+    return it != _jobs_met.end();
 }
 
 bool Jobs::contains_smpi_job() const
@@ -261,8 +283,8 @@ bool Jobs::contains_smpi_job() const
     xbt_assert(_profiles != nullptr, "Invalid Jobs::containsSMPIJob call: setProfiles had not been called yet");
     for (auto & mit : _jobs)
     {
-        Job * job = mit.second;
-        if ((*_profiles)[job->profile]->type == ProfileType::SMPI)
+        auto job = mit.second;
+        if ((*_profiles)[job->profile->name]->type == ProfileType::SMPI)
         {
             return true;
         }
@@ -289,12 +311,12 @@ void Jobs::displayDebug() const
     XBT_DEBUG("%s", s.c_str());
 }
 
-const std::map<JobIdentifier, Job* > &Jobs::jobs() const
+const std::unordered_map<JobIdentifier, JobPtr, JobIdentifierHasher> &Jobs::jobs() const
 {
     return _jobs;
 }
 
-std::map<JobIdentifier, Job *> &Jobs::jobs()
+std::unordered_map<JobIdentifier, JobPtr, JobIdentifierHasher> &Jobs::jobs()
 {
     return _jobs;
 }
@@ -304,11 +326,11 @@ int Jobs::nb_jobs() const
     return _jobs.size();
 }
 
-bool job_comparator_subtime_number(const Job *a, const Job *b)
+bool job_comparator_subtime_number(const JobPtr a, const JobPtr b)
 {
     if (a->submission_time == b->submission_time)
     {
-        return *a < *b;
+        return a->id.to_string() < b->id.to_string();
     }
     return a->submission_time < b->submission_time;
 }
@@ -316,7 +338,7 @@ bool job_comparator_subtime_number(const Job *a, const Job *b)
 Job::~Job()
 {
     xbt_assert(execution_actors.size() == 0,
-               "Internal error: job %s has %d execution processes on destruction (should be 0).",
+               "Internal error: job %s on destruction still has %d execution processes (should be 0).",
                this->id.to_string().c_str(), (int)execution_actors.size());
 
     if (task != nullptr)
@@ -340,12 +362,12 @@ bool Job::is_complete() const
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
-Job * Job::from_json(const rapidjson::Value & json_desc,
+JobPtr Job::from_json(const rapidjson::Value & json_desc,
                      Workload * workload,
                      const std::string & error_prefix)
 {
     // Create and initialize with default values
-    Job * j = new Job;
+    auto j = std::make_shared<Job>();
     j->workload = workload;
     j->starting_time = -1;
     j->runtime = -1;
@@ -412,7 +434,14 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
                error_prefix.c_str(), j->id.to_string().c_str());
     xbt_assert(json_desc["profile"].IsString(), "%s: job %s has a non-string 'profile' field",
                error_prefix.c_str(), j->id.to_string().c_str());
-    j->profile = json_desc["profile"].GetString();
+
+    // TODO raise exception when the profile does not exist.
+    std::string profile_name = json_desc["profile"].GetString();
+    xbt_assert(workload->profiles->exists(profile_name), "%s: the profile %s for job %s does not exist",
+               error_prefix.c_str(), profile_name.c_str(), j->id.to_string().c_str());
+    j->profile = workload->profiles->at(profile_name);
+
+    XBT_INFO("Profile name %s and '%s'", profile_name.c_str(), j->profile->name.c_str());
 
     // Let's get the JSON string which originally described the job
     // (to conserve potential fields unused by Batsim)
@@ -494,7 +523,7 @@ Job * Job::from_json(const rapidjson::Value & json_desc,
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
-Job * Job::from_json(const std::string & json_str,
+JobPtr Job::from_json(const std::string & json_str,
                      Workload * workload,
                      const std::string & error_prefix)
 {

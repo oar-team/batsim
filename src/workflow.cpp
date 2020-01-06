@@ -207,7 +207,7 @@ Task::~Task()
 
 
 
-void Task::set_batsim_job(Job * batsim_job)
+void Task::set_batsim_job(JobPtr batsim_job)
 {
     this->batsim_job = batsim_job;
 }

@@ -382,7 +382,7 @@ void debug_print_ptask(const std::vector<double>& computation_vector,
 void generate_matrices_from_profile(std::vector<double>& computation_vector,
                                     std::vector<double>& communication_matrix,
                                     std::vector<simgrid::s4u::Host*> & hosts_to_use,
-                                    Profile * profile,
+                                    ProfilePtr profile,
                                     const std::map<std::string, int> * storage_mapping,
                                     BatsimContext * context)
 {
@@ -467,7 +467,7 @@ int execute_parallel_task(BatTask * btask,
                      double * remaining_time,
                      BatsimContext * context)
 {
-    Profile * profile = btask->profile;
+    auto profile = btask->profile;
     std::vector<simgrid::s4u::Host*> hosts_to_use = allocation->hosts;
 
     std::vector<double> computation_vector;
@@ -494,7 +494,7 @@ int execute_parallel_task(BatTask * btask,
     // Manage additional io job
     if (btask->io_profile != nullptr)
     {
-        Profile * io_profile = btask->io_profile;
+        auto io_profile = btask->io_profile;
         std::vector<double> io_computation_vector;
         std::vector<double> io_communication_matrix;
 
