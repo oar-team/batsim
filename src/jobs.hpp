@@ -89,8 +89,14 @@ bool operator<(const JobIdentifier & ji1, const JobIdentifier & ji2);
  */
 bool operator==(const JobIdentifier & ji1, const JobIdentifier & ji2);
 
+//! Functor to hash a JobIdentifier
 struct JobIdentifierHasher
 {
+    /**
+     * @brief Hashes a JobIdentifier.
+     * @param[in] id The JobIdentifier to hash.
+     * @return Whatever is returned by std::hash to match C++ conventions.
+     */
     std::size_t operator()(const JobIdentifier & id) const;
 };
 
