@@ -35,7 +35,6 @@
 #include <simgrid/s4u.hpp>
 #include <smpi/smpi.h>
 #include <simgrid/plugins/energy.h>
-#include <simgrid/version.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
