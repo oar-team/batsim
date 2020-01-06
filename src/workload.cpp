@@ -100,7 +100,7 @@ void Workload::register_smpi_applications()
 {
     XBT_INFO("Registering SMPI applications of workload '%s'...", name.c_str());
 
-    for (auto mit : jobs->jobs())
+    for (auto & mit : jobs->jobs())
     {
         auto job = mit.second;
 
@@ -144,7 +144,7 @@ void Workload::check_validity()
     // TODO: compute the constraint of the profile number of resources, to check if it matches the jobs that use it
 
     // Let's check the profile validity of each job
-    for (auto mit : jobs->jobs())
+    for (const auto & mit : jobs->jobs())
     {
         check_single_job_validity(mit.second);
     }

@@ -6,7 +6,7 @@
 #pragma once
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <memory>
 
@@ -274,7 +274,7 @@ public:
      * @brief Returns a copy of the internal std::map used in the Profiles
      * @return A copy of the internal std::map used in the Profiles
      */
-    const std::map<std::string, ProfilePtr> profiles() const;
+    const std::unordered_map<std::string, ProfilePtr> profiles() const;
 
     /**
      * @brief Returns the number of profiles of the Profiles instance
@@ -283,7 +283,7 @@ public:
     int nb_profiles() const;
 
 private:
-    std::map<std::string, ProfilePtr> _profiles; //!< Stores all the profiles, indexed by their names
+    std::unordered_map<std::string, ProfilePtr> _profiles; //!< Stores all the profiles, indexed by their names
 };
 
 /**

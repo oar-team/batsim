@@ -119,7 +119,7 @@ void Profiles::try_remove_profile(const std::string & profile_name)
     }
 }
 
-const std::map<std::string, ProfilePtr> Profiles::profiles() const
+const std::unordered_map<std::string, ProfilePtr> Profiles::profiles() const
 {
     return _profiles;
 }

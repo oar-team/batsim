@@ -102,6 +102,11 @@ bool operator==(const JobIdentifier &ji1, const JobIdentifier &ji2)
     return ji1.to_string() == ji2.to_string();
 }
 
+std::size_t JobIdentifierHasher::operator()(const JobIdentifier & id) const
+{
+    return std::hash<std::string>()(id.to_string());
+}
+
 
 BatTask::BatTask(JobPtr parent_job, ProfilePtr profile) :
     parent_job(parent_job),
@@ -213,7 +218,7 @@ void Jobs::load_from_json(const rapidjson::Document &doc, const std::string &fil
         xbt_assert(!exists(j->id), "%s: duplication of job id '%s'",
                    error_prefix.c_str(), j->id.to_string().c_str());
         _jobs[j->id] = j;
-        _jobs_met.push_back(j->id);
+        _jobs_met.insert({j->id, true});
     }
 }
 
@@ -250,7 +255,7 @@ void Jobs::add_job(JobPtr job)
                job->id.to_string().c_str());
 
     _jobs[job->id] = job;
-    _jobs_met.push_back(job->id);
+    _jobs_met.insert({job->id, true});
 }
 
 void Jobs::delete_job(const JobIdentifier & job_id, const bool & garbage_collect_profiles)
@@ -267,9 +272,9 @@ void Jobs::delete_job(const JobIdentifier & job_id, const bool & garbage_collect
     }
 }
 
-bool Jobs::exists(JobIdentifier job_id) const
+bool Jobs::exists(const JobIdentifier & job_id) const
 {
-    auto it = std::find(std::begin(_jobs_met), std::end(_jobs_met), job_id);
+    auto it = _jobs_met.find(job_id);
     return it != _jobs_met.end();
 }
 
@@ -306,12 +311,12 @@ void Jobs::displayDebug() const
     XBT_DEBUG("%s", s.c_str());
 }
 
-const std::map<JobIdentifier, JobPtr> &Jobs::jobs() const
+const std::unordered_map<JobIdentifier, JobPtr, JobIdentifierHasher> &Jobs::jobs() const
 {
     return _jobs;
 }
 
-std::map<JobIdentifier, JobPtr> &Jobs::jobs()
+std::unordered_map<JobIdentifier, JobPtr, JobIdentifierHasher> &Jobs::jobs()
 {
     return _jobs;
 }

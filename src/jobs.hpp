@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <deque>
 #include <memory>
@@ -89,6 +89,10 @@ bool operator<(const JobIdentifier & ji1, const JobIdentifier & ji2);
  */
 bool operator==(const JobIdentifier & ji1, const JobIdentifier & ji2);
 
+struct JobIdentifierHasher
+{
+    std::size_t operator()(const JobIdentifier & id) const;
+};
 
 /**
  * @brief Contains the different states a job can be in
@@ -346,7 +350,7 @@ public:
      * @param[in] job_id The unique job name
      * @return True if and only if a job with the given job name exists
      */
-    bool exists(JobIdentifier job_id) const;
+    bool exists(const JobIdentifier & job_id) const;
 
     /**
      * @brief Allows to know whether the Jobs contains any SMPI job
@@ -360,16 +364,16 @@ public:
     void displayDebug() const;
 
     /**
-     * @brief Returns a copy of the std::map which contains the jobs
-     * @return A copy of the std::map which contains the jobs
+     * @brief Returns a copy of the map that contains the jobs
+     * @return A copy of the map that contains the jobs
      */
-    const std::map<JobIdentifier, JobPtr> & jobs() const;
+    const std::unordered_map<JobIdentifier, JobPtr, JobIdentifierHasher> & jobs() const;
 
     /**
-     * @brief Returns a reference to the std::map which contains the jobs
-     * @return A reference to the std::map which contains the jobs
+     * @brief Returns a reference to the map that contains the jobs
+     * @return A reference to the map that contains the jobs
      */
-    std::map<JobIdentifier, JobPtr> & jobs();
+    std::unordered_map<JobIdentifier, JobPtr, JobIdentifierHasher> & jobs();
 
     /**
      * @brief Returns the number of jobs of the Jobs instance
@@ -378,8 +382,8 @@ public:
     int nb_jobs() const;
 
 private:
-    std::map<JobIdentifier, JobPtr> _jobs; //!< The std::map which contains the jobs
-    std::vector<JobIdentifier> _jobs_met; //!< An std::vector containing the jobs id already met during the simulation
+    std::unordered_map<JobIdentifier, JobPtr, JobIdentifierHasher> _jobs; //!< The map that contains the jobs
+    std::unordered_map<JobIdentifier, bool, JobIdentifierHasher> _jobs_met; //!< Stores the jobs id already met during the simulation
     Profiles * _profiles = nullptr; //!< The profiles associated with the jobs
     Workload * _workload = nullptr; //!< The Workload the jobs belong to
 };
