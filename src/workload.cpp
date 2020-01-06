@@ -123,7 +123,7 @@ void Workload::check_validity()
     // And update the refcounting of these profiles
     for (auto mit : profiles->profiles())
     {
-        shared_ptr<Profile> profile = mit.second;
+        auto profile = mit.second;
         if (profile->type == ProfileType::SEQUENCE)
         {
             SequenceProfileData * data = (SequenceProfileData *) profile->data;

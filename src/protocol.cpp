@@ -1066,9 +1066,8 @@ void JsonProtocolReader::handle_execute_job(int event_number,
 
                 string additional_io_job_profile_description = string(buffer.GetString(), buffer.GetSize());
                 // create the io_profile
-                shared_ptr<Profile> new_io_profile = Profile::from_json(profile_name,
-                        additional_io_job_profile_description,
-                        "Invalid JSON profile received from the scheduler for the 'additional_io_job'");
+                auto new_io_profile = Profile::from_json(profile_name, additional_io_job_profile_description,
+                    "Invalid JSON profile received from the scheduler for the 'additional_io_job'");
                 // Add it to the wokload
                 workload->profiles->add_profile(profile_name, new_io_profile);
             }
@@ -1078,12 +1077,12 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         xbt_assert(workload->profiles->exists(profile_name),
                     "The given profile name '%s' does not exists",
                    profile_name.c_str());
-        shared_ptr<Profile> io_profile = workload->profiles->at(profile_name);
+        auto io_profile = workload->profiles->at(profile_name);
 
         // manage sequence profile special case
         if (io_profile->type == ProfileType::SEQUENCE)
         {
-            shared_ptr<Profile> job_profile = workload->jobs->at(job_id)->profile;
+            auto job_profile = workload->jobs->at(job_id)->profile;
             xbt_assert(job_profile->type == ProfileType::SEQUENCE,
                     "the job io profile is a '%s' profile but the the original job is '%s': they must have compatible profile in order to be merged",
                     profile_type_to_string(io_profile->type).c_str(),

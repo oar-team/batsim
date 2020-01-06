@@ -281,7 +281,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
 
 
     // Create a profile
-    shared_ptr<Profile> profile = make_shared<Profile>();
+    auto profile = make_shared<Profile>();
     profile->type = ProfileType::DELAY;
     DelayProfileData * data = new DelayProfileData;
     data->delay = task->execution_time;

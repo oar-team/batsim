@@ -779,9 +779,9 @@ void server_on_register_profile(ServerData * data,
         XBT_INFO("Adding dynamically registered profile %s to workload %s",
                 message->profile_name.c_str(),
                 message->workload_name.c_str());
-        shared_ptr<Profile> profile = Profile::from_json(message->profile_name,
-                                               message->profile,
-                                               "Invalid JSON profile received from the scheduler");
+        auto profile = Profile::from_json(message->profile_name,
+                                          message->profile,
+                                          "Invalid JSON profile received from the scheduler");
         workload->profiles->add_profile(message->profile_name, profile);
     }
     else

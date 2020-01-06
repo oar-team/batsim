@@ -39,7 +39,7 @@ int execute_task(BatTask * btask,
                  double * remaining_time)
 {
     auto job = btask->parent_job;
-    shared_ptr<Profile> profile = btask->profile;
+    auto profile = btask->profile;
 
     // Init task
     btask->parent_job = job;
@@ -275,7 +275,7 @@ int do_delay_task(double sleeptime, double * remaining_time)
  * @param[in] io_profile The IO profile that may also be executed
  * @return The BatTask* associated with the sequential task
  */
-BatTask * initialize_sequential_tasks(JobPtr job, shared_ptr<Profile> profile, shared_ptr<Profile> io_profile)
+BatTask * initialize_sequential_tasks(JobPtr job, ProfilePtr profile, ProfilePtr io_profile)
 {
     BatTask * task = new BatTask(job, profile);
 
@@ -296,10 +296,10 @@ BatTask * initialize_sequential_tasks(JobPtr job, shared_ptr<Profile> profile, s
         for (unsigned int i = 0; i < data->sequence.size(); i++)
         {
             // Get profile from name
-            shared_ptr<Profile> sub_profile = profiles->at(data->sequence[i]);
+            auto sub_profile = profiles->at(data->sequence[i]);
 
             // Manage io profile
-            shared_ptr<Profile> sub_io_profile(nullptr);
+            ProfilePtr sub_io_profile = nullptr;
             if (io_profile != nullptr)
             {
                 SequenceProfileData * io_data = (SequenceProfileData*)io_profile->data;
@@ -323,7 +323,7 @@ BatTask * initialize_sequential_tasks(JobPtr job, shared_ptr<Profile> profile, s
 void execute_job_process(BatsimContext * context,
                          SchedulingAllocation * allocation,
                          bool notify_server_at_end,
-                         shared_ptr<Profile> io_profile)
+                         ProfilePtr io_profile)
 {
     Workload * workload = context->workloads.at(allocation->job_id.workload_name);
     auto job = workload->jobs->at(allocation->job_id);

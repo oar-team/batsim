@@ -103,7 +103,7 @@ bool operator==(const JobIdentifier &ji1, const JobIdentifier &ji2)
 }
 
 
-BatTask::BatTask(JobPtr parent_job, shared_ptr<Profile> profile) :
+BatTask::BatTask(JobPtr parent_job, ProfilePtr profile) :
     parent_job(parent_job),
     profile(profile)
 {
