@@ -257,7 +257,7 @@ void server_on_job_completed(ServerData * data,
     xbt_assert(data->nb_running_jobs >= 0);
     data->nb_completed_jobs++;
     xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
-    JobPtr job = data->context->workloads.job_at(message->job_id);
+    auto job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Job %s has COMPLETED. %d jobs completed so far",
              job->id.to_string().c_str(), data->nb_completed_jobs);
@@ -303,7 +303,7 @@ void server_on_job_submitted(ServerData * data,
         XBT_DEBUG("Workloads: %s", data->context->workloads.to_string().c_str());
 
         xbt_assert(data->context->workloads.job_is_registered(job_id));
-        JobPtr job = data->context->workloads.job_at(job_id);
+        auto job = data->context->workloads.job_at(job_id);
         job->id = job_id;
 
         // Update control information
@@ -635,7 +635,7 @@ void server_on_killing_done(ServerData * data,
         // store job progress from BatTask tree in str
         jobs_progress_str[job_id.to_string()] = message->jobs_progress[job_id];
 
-        const JobPtr job = data->context->workloads.job_at(job_id);
+        const auto job = data->context->workloads.job_at(job_id);
         if ( job->state == JobState::JOB_STATE_COMPLETED_KILLED)
         {
             data->nb_running_jobs--;
@@ -706,7 +706,7 @@ void server_on_register_job(ServerData * data,
 
     // Create the job.
     XBT_DEBUG("Parsing user-submitted job %s", message->job_id.to_string().c_str());
-    JobPtr job = Job::from_json(message->job_description, workload,
+    auto job = Job::from_json(message->job_description, workload,
                                "Invalid JSON job submitted by the scheduler");
     xbt_assert(job->id.job_name == message->job_id.job_name, "Internal error");
     xbt_assert(job->id.workload_name == message->job_id.workload_name, "Internal error");
@@ -805,7 +805,7 @@ void server_on_set_job_metadata(ServerData * data,
         xbt_die("The job '%s' does not exist, cannot set its metadata", message->job_id.to_string().c_str());
     }
 
-    JobPtr job = data->context->workloads.job_at(job_identifier);
+    auto job = data->context->workloads.job_at(job_identifier);
     job->metadata = message->metadata;
     XBT_DEBUG("Metadata of job '%s' has been set", message->job_id.to_string().c_str());
 }
@@ -820,7 +820,7 @@ void server_on_change_job_state(ServerData * data,
     {
         xbt_die("The job '%s' does not exist.", message->job_id.to_string().c_str());
     }
-    JobPtr job = data->context->workloads.job_at(message->job_id);
+    auto job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Change job state: Job %s to state %s",
              job->id.to_string().c_str(),
@@ -892,7 +892,7 @@ void server_on_to_job_msg(ServerData * data,
         xbt_die("The job '%s' does not exist, cannot send a message to that job.",
                 message->job_id.to_string().c_str());
     }
-    JobPtr job = data->context->workloads.job_at(message->job_id);
+    auto job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Send message to job: Job '%s' message='%s'",
              job->id.to_string().c_str(),
@@ -907,7 +907,7 @@ void server_on_from_job_msg(ServerData * data,
     xbt_assert(task_data->data != nullptr);
     FromJobMessage * message = (FromJobMessage *) task_data->data;
 
-    JobPtr job = data->context->workloads.job_at(message->job_id);
+    auto job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Send message to scheduler: Job %s",
              job->id.to_string().c_str());
@@ -928,7 +928,7 @@ void server_on_reject_job(ServerData * data,
         xbt_die("Job '%s' does not exist.", message->job_id.to_string().c_str());
     }
 
-    JobPtr job = data->context->workloads.job_at(message->job_id);
+    auto job = data->context->workloads.job_at(message->job_id);
     (void) job; // Avoids a warning if assertions are ignored
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Invalid rejection received: job '%s' cannot be rejected at the present time. "
@@ -958,7 +958,7 @@ void server_on_kill_jobs(ServerData * data,
         xbt_assert(data->context->workloads.job_is_registered(job_id),
                    "Trying to kill job '%s' but it does not exist.", job_id.to_string().c_str());
 
-        JobPtr job = data->context->workloads.job_at(job_id);
+        auto job = data->context->workloads.job_at(job_id);
 
         // Let's discard jobs whose kill has already been requested
         if (!job->kill_requested)
@@ -1013,7 +1013,7 @@ void server_on_execute_job(ServerData * data,
                "Trying to execute job '%s', which is not registered in the workload!",
                allocation->job_id.to_string().c_str());
 
-    JobPtr job = data->context->workloads.job_at(allocation->job_id);
+    auto job = data->context->workloads.job_at(allocation->job_id);
 
     xbt_assert(data->context->workloads.job_profile_is_registered(allocation->job_id),
                "Trying to execute job '%s', in which the profile '%s' is not registered in the workload!",

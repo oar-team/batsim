@@ -91,7 +91,7 @@ void static_job_submitter_process(BatsimContext * context,
     const auto & jobs = workload->jobs->jobs();
     for (const auto & mit : jobs)
     {
-        const JobPtr job = mit.second;
+        const auto job = mit.second;
         jobsVector.push_back(job);
     }
 
@@ -102,7 +102,7 @@ void static_job_submitter_process(BatsimContext * context,
         vector<JobIdentifier> jobs_to_send;
         const JobPtr first_submitted_job = *jobsVector.begin();
 
-        for (const JobPtr job : jobsVector)
+        for (const auto job : jobsVector)
         {
             if (job->submission_time > current_submission_date)
             {
@@ -305,8 +305,8 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
             "}";
 
     // Puts the job into memory
-    JobPtr job = Job::from_json(job_json_description, context->workloads.at(workload_name),
-                               "Invalid workflow-injected JSON job");
+    auto job = Job::from_json(job_json_description, context->workloads.at(workload_name),
+                              "Invalid workflow-injected JSON job");
     context->workloads.at(workload_name)->jobs->add_job(job);
 
     // Put the metadata about the job into the data storage
@@ -387,7 +387,7 @@ void batexec_job_launcher_process(BatsimContext * context,
     auto & jobs = workload->jobs->jobs();
     for (auto & mit : jobs)
     {
-        JobPtr job = mit.second;
+        auto job = mit.second;
 
         int nb_res = job->requested_nb_res;
 

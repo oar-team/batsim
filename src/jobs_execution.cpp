@@ -38,7 +38,7 @@ int execute_task(BatTask * btask,
                  const SchedulingAllocation * allocation,
                  double * remaining_time)
 {
-    JobPtr job = btask->parent_job;
+    auto job = btask->parent_job;
     shared_ptr<Profile> profile = btask->profile;
 
     // Init task
@@ -326,7 +326,7 @@ void execute_job_process(BatsimContext * context,
                          shared_ptr<Profile> io_profile)
 {
     Workload * workload = context->workloads.at(allocation->job_id.workload_name);
-    JobPtr job = workload->jobs->at(allocation->job_id);
+    auto job = workload->jobs->at(allocation->job_id);
 
     job->starting_time = simgrid::s4u::Engine::get_clock();
     job->allocation = allocation->machine_ids;
@@ -484,7 +484,7 @@ void killer_process(BatsimContext * context,
 
     for (const JobIdentifier & job_id : jobs_ids)
     {
-        JobPtr job = context->workloads.job_at(job_id);
+        auto job = context->workloads.job_at(job_id);
 
         xbt_assert(! (job->state == JobState::JOB_STATE_REJECTED ||
                       job->state == JobState::JOB_STATE_SUBMITTED ||

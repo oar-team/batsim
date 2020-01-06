@@ -516,7 +516,7 @@ void Machines::update_machines_on_job_end(const JobPtr job,
         Machine * machine = _machines[machine_id];
 
         xbt_assert(!machine->jobs_being_computed.empty());
-        const JobPtr previous_top_job = *machine->jobs_being_computed.begin();
+        const auto previous_top_job = *machine->jobs_being_computed.begin();
 
         // Let's erase jobID in the jobs_being_computed data structure
         int ret = machine->jobs_being_computed.erase(job);

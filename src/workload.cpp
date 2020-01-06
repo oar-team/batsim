@@ -102,7 +102,7 @@ void Workload::register_smpi_applications()
 
     for (auto mit : jobs->jobs())
     {
-        JobPtr job = mit.second;
+        auto job = mit.second;
 
         if (job->profile->type == ProfileType::SMPI)
         {
@@ -296,7 +296,7 @@ bool Workloads::job_is_registered(const JobIdentifier &job_id)
 bool Workloads::job_profile_is_registered(const JobIdentifier &job_id)
 {
     //TODO this could be improved/simplified
-    const JobPtr job = at(job_id.workload_name)->jobs->at(job_id);
+    auto job = at(job_id.workload_name)->jobs->at(job_id);
     return at(job_id.workload_name)->profiles->exists(job->profile->name);
 }
 

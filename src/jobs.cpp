@@ -208,7 +208,7 @@ void Jobs::load_from_json(const rapidjson::Document &doc, const std::string &fil
     {
         const Value & job_json_description = jobs[i];
 
-        JobPtr j = Job::from_json(job_json_description, _workload, error_prefix);
+        auto j = Job::from_json(job_json_description, _workload, error_prefix);
 
         xbt_assert(!exists(j->id), "%s: duplication of job id '%s'",
                    error_prefix.c_str(), j->id.to_string().c_str());
@@ -278,7 +278,7 @@ bool Jobs::contains_smpi_job() const
     xbt_assert(_profiles != nullptr, "Invalid Jobs::containsSMPIJob call: setProfiles had not been called yet");
     for (auto & mit : _jobs)
     {
-        JobPtr job = mit.second;
+        auto job = mit.second;
         if ((*_profiles)[job->profile->name]->type == ProfileType::SMPI)
         {
             return true;
@@ -362,7 +362,7 @@ JobPtr Job::from_json(const rapidjson::Value & json_desc,
                      const std::string & error_prefix)
 {
     // Create and initialize with default values
-    JobPtr j = std::make_shared<Job>();
+    auto j = std::make_shared<Job>();
     j->workload = workload;
     j->starting_time = -1;
     j->runtime = -1;
