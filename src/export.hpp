@@ -507,16 +507,16 @@ private:
     std::vector<std::string> _row_content; //!< The vector containing string to write
 
     // Schedule-related
-    int _nb_jobs = 0;
-    int _nb_jobs_finished = 0;
-    int _nb_jobs_success = 0;
-    int _nb_jobs_killed = 0;
-    long double _makespan = 0;
-    long double _sum_waiting_time = 0;
-    long double _sum_turnaround_time = 0;
-    long double _sum_slowdown = 0;
-    long double _max_waiting_time = 0;
-    long double _max_turnaround_time = 0;
-    long double _max_slowdown = 0;
-    std::map<int, long double> _machines_utilization;
+    int _nb_jobs = 0; //!< The number of jobs.
+    int _nb_jobs_finished = 0; //!< The number of finished jobs.
+    int _nb_jobs_success = 0; //!< The number of successful jobs.
+    int _nb_jobs_killed = 0; //!< The number of killed jobs.
+    long double _makespan = 0; //!< The makespan.
+    long double _sum_waiting_time = 0; //!< The sum of the waiting time of jobs.
+    long double _sum_turnaround_time = 0; //!< The sum of the turnaround time of jobs.
+    long double _sum_slowdown = 0; //!< The sum of the slowdown (AKA stretch) of jobs.
+    long double _max_waiting_time = 0; //!< The maximum waiting time observed.
+    long double _max_turnaround_time = 0; //!< The maximum turnaround time observed.
+    long double _max_slowdown = 0; //!< The maximum slowdown observed.
+    std::map<int, long double> _machines_utilization; //!< Counts the utilization time of each machine.
 };
