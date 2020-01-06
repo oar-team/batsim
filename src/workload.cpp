@@ -102,7 +102,7 @@ void Workload::register_smpi_applications()
 
     for (auto mit : jobs->jobs())
     {
-        std::shared_ptr<Job> job = mit.second;
+        JobPtr job = mit.second;
 
         if (job->profile->type == ProfileType::SMPI)
         {
@@ -150,7 +150,7 @@ void Workload::check_validity()
     }
 }
 
-void Workload::check_single_job_validity(const std::shared_ptr<Job> job)
+void Workload::check_single_job_validity(const JobPtr job)
 {
     //TODO This is already checked during creation of the job in Job::from_json
     xbt_assert(profiles->exists(job->profile->name),
@@ -231,12 +231,12 @@ int Workloads::nb_static_workloads() const
     return count;
 }
 
-std::shared_ptr<Job> Workloads::job_at(const JobIdentifier &job_id)
+JobPtr Workloads::job_at(const JobIdentifier &job_id)
 {
     return at(job_id.workload_name)->jobs->at(job_id);
 }
 
-const std::shared_ptr<Job> Workloads::job_at(const JobIdentifier &job_id) const
+const JobPtr Workloads::job_at(const JobIdentifier &job_id) const
 {
     return at(job_id.workload_name)->jobs->at(job_id);
 }
@@ -296,7 +296,7 @@ bool Workloads::job_is_registered(const JobIdentifier &job_id)
 bool Workloads::job_profile_is_registered(const JobIdentifier &job_id)
 {
     //TODO this could be improved/simplified
-    const std::shared_ptr<Job> job = at(job_id.workload_name)->jobs->at(job_id);
+    const JobPtr job = at(job_id.workload_name)->jobs->at(job_id);
     return at(job_id.workload_name)->profiles->exists(job->profile->name);
 }
 

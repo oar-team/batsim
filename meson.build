@@ -51,6 +51,7 @@ src_without_main = [
     'src/network.cpp',
     'src/network.hpp',
     'src/permissions.hpp',
+    'src/pointers.hpp',
     'src/profiles.cpp',
     'src/profiles.hpp',
     'src/protocol.cpp',

@@ -16,6 +16,8 @@
 
 #include <intervalset.hpp>
 
+#include "pointers.hpp"
+
 class Profiles;
 struct Profile;
 class Workload;
@@ -115,7 +117,7 @@ struct BatTask
      * @param[in] parent_job The job that owns the task
      * @param[in] profile The profile that corresponds to the task
      */
-    BatTask(std::shared_ptr<Job> parent_job, std::shared_ptr<Profile> profile);
+    BatTask(JobPtr parent_job, ProfilePtr profile);
 
     /**
      * @brief Battask cannot be copied.
@@ -143,9 +145,9 @@ private:
     void compute_leaf_progress();
 
 public:
-    std::shared_ptr<Job> parent_job; //!< The parent job that owns this task
-    std::shared_ptr<Profile> profile; //!< The task profile. The corresponding profile tells how the job should be computed
-    std::shared_ptr<Profile> io_profile = nullptr; //!< The task additional io profile. This profile, if defined will b merge to the task profile before execution
+    JobPtr parent_job; //!< The parent job that owns this task
+    ProfilePtr profile; //!< The task profile. The corresponding profile tells how the job should be computed
+    ProfilePtr io_profile = nullptr; //!< The task additional io profile. This profile, if defined will b merge to the task profile before execution
 
     // Manage parallel profiles
     simgrid::s4u::ExecPtr ptask = nullptr; //!< The final task to execute (only set for BatTask leaves with parallel profiles)
@@ -194,7 +196,7 @@ struct Job
     long double consumed_energy; //!< The sum, for all machine on which the job has been allocated, of the consumed energy (in Joules) during the job execution time (consumed_energy_after_job_completion - consumed_energy_before_job_start)
 
     // User inputs
-    std::shared_ptr<Profile> profile; //!< A pointer to the job profile. The profile tells how the job should be computed
+    ProfilePtr profile; //!< A pointer to the job profile. The profile tells how the job should be computed
     long double submission_time; //!< The job submission time: The time at which the becomes available
     long double walltime = -1; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed. Set at -1 to disable this behavior
     unsigned int requested_nb_res; //!< The number of resources the job is requested to be executed on
@@ -215,7 +217,7 @@ public:
      * @return The newly allocated Job
      * @pre The JSON description of the job is valid
      */
-    static std::shared_ptr<Job> from_json(const rapidjson::Value & json_desc,
+    static JobPtr from_json(const rapidjson::Value & json_desc,
                            Workload * workload,
                            const std::string & error_prefix = "Invalid JSON job");
 
@@ -227,7 +229,7 @@ public:
      * @return The newly allocated Job
      * @pre The JSON description of the job is valid
      */
-    static std::shared_ptr<Job> from_json(const std::string & json_str,
+    static JobPtr from_json(const std::string & json_str,
                            Workload * workload,
                            const std::string & error_prefix = "Invalid JSON job");
     /**
@@ -251,7 +253,7 @@ bool operator<(const Job & j1, const Job & j2);
  * @param[in] b The second job
  * @return True if and only if the first job's submission time is lower than the second job's submission time
  */
-bool job_comparator_subtime_number(const std::shared_ptr<Job> a, const std::shared_ptr<Job> b);
+bool job_comparator_subtime_number(const JobPtr a, const JobPtr b);
 
 /**
  * @brief Stores all the jobs of a workload
@@ -300,21 +302,21 @@ public:
      * @param[in] job_id The job id
      * @return A pointer to the job associated to the given job id
      */
-    std::shared_ptr<Job> operator[](JobIdentifier job_id);
+    JobPtr operator[](JobIdentifier job_id);
 
     /**
      * @brief Accesses one job thanks to its unique name (const version)
      * @param[in] job_id The job id
      * @return A (const) pointer to the job associated to the given job id
      */
-    const std::shared_ptr<Job> operator[](JobIdentifier job_id) const;
+    const JobPtr operator[](JobIdentifier job_id) const;
 
     /**
      * @brief Accesses one job thanks to its unique id
      * @param[in] job_id The job unique id
      * @return A pointer to the job associated to the given job id
      */
-    std::shared_ptr<Job> at(JobIdentifier job_id);
+    JobPtr at(JobIdentifier job_id);
 
     /**
      * @brief Accesses one job thanks to its unique id (const version)
@@ -322,14 +324,14 @@ public:
      * @return A (const) pointer to the job associated to the given job
      * name
      */
-    const std::shared_ptr<Job> at(JobIdentifier job_id) const;
+    const JobPtr at(JobIdentifier job_id) const;
 
     /**
      * @brief Adds a job into a Jobs instance
      * @param[in] job The job to add
      * @pre No job with the same name exist in the Jobs instance
      */
-    void add_job(std::shared_ptr<Job> job);
+    void add_job(JobPtr job);
 
     /**
      * @brief Deletes a job
@@ -361,13 +363,13 @@ public:
      * @brief Returns a copy of the std::map which contains the jobs
      * @return A copy of the std::map which contains the jobs
      */
-    const std::map<JobIdentifier, std::shared_ptr<Job>> & jobs() const;
+    const std::map<JobIdentifier, JobPtr> & jobs() const;
 
     /**
      * @brief Returns a reference to the std::map which contains the jobs
      * @return A reference to the std::map which contains the jobs
      */
-    std::map<JobIdentifier, std::shared_ptr<Job>> & jobs();
+    std::map<JobIdentifier, JobPtr> & jobs();
 
     /**
      * @brief Returns the number of jobs of the Jobs instance
@@ -376,7 +378,7 @@ public:
     int nb_jobs() const;
 
 private:
-    std::map<JobIdentifier, std::shared_ptr<Job>> _jobs; //!< The std::map which contains the jobs
+    std::map<JobIdentifier, JobPtr> _jobs; //!< The std::map which contains the jobs
     std::vector<JobIdentifier> _jobs_met; //!< An std::vector containing the jobs id already met during the simulation
     Profiles * _profiles = nullptr; //!< The profiles associated with the jobs
     Workload * _workload = nullptr; //!< The Workload the jobs belong to

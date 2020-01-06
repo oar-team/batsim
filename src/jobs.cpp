@@ -103,7 +103,7 @@ bool operator==(const JobIdentifier &ji1, const JobIdentifier &ji2)
 }
 
 
-BatTask::BatTask(std::shared_ptr<Job> parent_job, shared_ptr<Profile> profile) :
+BatTask::BatTask(JobPtr parent_job, shared_ptr<Profile> profile) :
     parent_job(parent_job),
     profile(profile)
 {
@@ -208,7 +208,7 @@ void Jobs::load_from_json(const rapidjson::Document &doc, const std::string &fil
     {
         const Value & job_json_description = jobs[i];
 
-        std::shared_ptr<Job> j = Job::from_json(job_json_description, _workload, error_prefix);
+        JobPtr j = Job::from_json(job_json_description, _workload, error_prefix);
 
         xbt_assert(!exists(j->id), "%s: duplication of job id '%s'",
                    error_prefix.c_str(), j->id.to_string().c_str());
@@ -217,7 +217,7 @@ void Jobs::load_from_json(const rapidjson::Document &doc, const std::string &fil
     }
 }
 
-std::shared_ptr<Job> Jobs::operator[](JobIdentifier job_id)
+JobPtr Jobs::operator[](JobIdentifier job_id)
 {
     auto it = _jobs.find(job_id);
     xbt_assert(it != _jobs.end(), "Cannot get job '%s': it does not exist",
@@ -225,7 +225,7 @@ std::shared_ptr<Job> Jobs::operator[](JobIdentifier job_id)
     return it->second;
 }
 
-const std::shared_ptr<Job> Jobs::operator[](JobIdentifier job_id) const
+const JobPtr Jobs::operator[](JobIdentifier job_id) const
 {
     auto it = _jobs.find(job_id);
     xbt_assert(it != _jobs.end(), "Cannot get job '%s': it does not exist",
@@ -233,17 +233,17 @@ const std::shared_ptr<Job> Jobs::operator[](JobIdentifier job_id) const
     return it->second;
 }
 
-std::shared_ptr<Job> Jobs::at(JobIdentifier job_id)
+JobPtr Jobs::at(JobIdentifier job_id)
 {
     return operator[](job_id);
 }
 
-const std::shared_ptr<Job> Jobs::at(JobIdentifier job_id) const
+const JobPtr Jobs::at(JobIdentifier job_id) const
 {
     return operator[](job_id);
 }
 
-void Jobs::add_job(std::shared_ptr<Job> job)
+void Jobs::add_job(JobPtr job)
 {
     xbt_assert(!exists(job->id),
                "Bad Jobs::add_job call: A job with name='%s' already exists.",
@@ -278,7 +278,7 @@ bool Jobs::contains_smpi_job() const
     xbt_assert(_profiles != nullptr, "Invalid Jobs::containsSMPIJob call: setProfiles had not been called yet");
     for (auto & mit : _jobs)
     {
-        std::shared_ptr<Job> job = mit.second;
+        JobPtr job = mit.second;
         if ((*_profiles)[job->profile->name]->type == ProfileType::SMPI)
         {
             return true;
@@ -306,12 +306,12 @@ void Jobs::displayDebug() const
     XBT_DEBUG("%s", s.c_str());
 }
 
-const std::map<JobIdentifier, std::shared_ptr<Job>> &Jobs::jobs() const
+const std::map<JobIdentifier, JobPtr> &Jobs::jobs() const
 {
     return _jobs;
 }
 
-std::map<JobIdentifier, std::shared_ptr<Job>> &Jobs::jobs()
+std::map<JobIdentifier, JobPtr> &Jobs::jobs()
 {
     return _jobs;
 }
@@ -321,7 +321,7 @@ int Jobs::nb_jobs() const
     return _jobs.size();
 }
 
-bool job_comparator_subtime_number(const std::shared_ptr<Job> a, const std::shared_ptr<Job> b)
+bool job_comparator_subtime_number(const JobPtr a, const JobPtr b)
 {
     if (a->submission_time == b->submission_time)
     {
@@ -357,12 +357,12 @@ bool Job::is_complete() const
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
-std::shared_ptr<Job> Job::from_json(const rapidjson::Value & json_desc,
+JobPtr Job::from_json(const rapidjson::Value & json_desc,
                      Workload * workload,
                      const std::string & error_prefix)
 {
     // Create and initialize with default values
-    std::shared_ptr<Job> j = std::make_shared<Job>();
+    JobPtr j = std::make_shared<Job>();
     j->workload = workload;
     j->starting_time = -1;
     j->runtime = -1;
@@ -518,7 +518,7 @@ std::shared_ptr<Job> Job::from_json(const rapidjson::Value & json_desc,
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
-std::shared_ptr<Job> Job::from_json(const std::string & json_str,
+JobPtr Job::from_json(const std::string & json_str,
                      Workload * workload,
                      const std::string & error_prefix)
 {

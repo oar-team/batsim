@@ -18,7 +18,7 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(jobs_execution, "jobs_execution"); //!< Logging
 
 using namespace std;
 
-void smpi_replay_process(std::shared_ptr<Job> job, SmpiProfileData * profile_data, simgrid::s4u::BarrierPtr barrier, int rank)
+void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, simgrid::s4u::BarrierPtr barrier, int rank)
 {
     // Prepare data for smpi_replay_run
     char *str_instance_id = NULL;
@@ -38,7 +38,7 @@ int execute_task(BatTask * btask,
                  const SchedulingAllocation * allocation,
                  double * remaining_time)
 {
-    std::shared_ptr<Job> job = btask->parent_job;
+    JobPtr job = btask->parent_job;
     shared_ptr<Profile> profile = btask->profile;
 
     // Init task
@@ -275,7 +275,7 @@ int do_delay_task(double sleeptime, double * remaining_time)
  * @param[in] io_profile The IO profile that may also be executed
  * @return The BatTask* associated with the sequential task
  */
-BatTask * initialize_sequential_tasks(std::shared_ptr<Job> job, shared_ptr<Profile> profile, shared_ptr<Profile> io_profile)
+BatTask * initialize_sequential_tasks(JobPtr job, shared_ptr<Profile> profile, shared_ptr<Profile> io_profile)
 {
     BatTask * task = new BatTask(job, profile);
 
@@ -326,7 +326,7 @@ void execute_job_process(BatsimContext * context,
                          shared_ptr<Profile> io_profile)
 {
     Workload * workload = context->workloads.at(allocation->job_id.workload_name);
-    std::shared_ptr<Job> job = workload->jobs->at(allocation->job_id);
+    JobPtr job = workload->jobs->at(allocation->job_id);
 
     job->starting_time = simgrid::s4u::Engine::get_clock();
     job->allocation = allocation->machine_ids;
@@ -484,7 +484,7 @@ void killer_process(BatsimContext * context,
 
     for (const JobIdentifier & job_id : jobs_ids)
     {
-        std::shared_ptr<Job> job = context->workloads.job_at(job_id);
+        JobPtr job = context->workloads.job_at(job_id);
 
         xbt_assert(! (job->state == JobState::JOB_STATE_REJECTED ||
                       job->state == JobState::JOB_STATE_SUBMITTED ||

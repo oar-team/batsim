@@ -494,7 +494,7 @@ void PajeTracer::add_job_launching(const std::vector<int> & used_machine_ids,
     free(buf);
 }
 
-void PajeTracer::register_new_job(const std::shared_ptr<Job> job)
+void PajeTracer::register_new_job(const JobPtr job)
 {
     xbt_assert(_jobs.find(job) == _jobs.end(),
                "Cannot register new job %s: it already exists", job->id.to_string().c_str());
@@ -540,7 +540,7 @@ void PajeTracer::set_machine_idle(int machine_id, double time)
     free(buf);
 }
 
-void PajeTracer::set_machine_as_computing_job(int machine_id, const std::shared_ptr<Job> job, double time)
+void PajeTracer::set_machine_as_computing_job(int machine_id, const JobPtr job, double time)
 {
     auto mit = _jobs.find(job);
     if (mit == _jobs.end())
@@ -567,7 +567,7 @@ void PajeTracer::set_machine_as_computing_job(int machine_id, const std::shared_
     free(buf);
 }
 
-void PajeTracer::add_job_kill(const std::shared_ptr<Job> job, const IntervalSet & used_machine_ids,
+void PajeTracer::add_job_kill(const JobPtr job, const IntervalSet & used_machine_ids,
                               double time, bool associate_kill_to_machines)
 {
     xbt_assert(state == INITIALIZED, "Bad addJobKill call: the PajeTracer object is not initialized or had been finalized");
@@ -1108,7 +1108,7 @@ void JobsTracer::finalize()
     f.close();
 }
 
-void JobsTracer::write_job(const std::shared_ptr<Job> job)
+void JobsTracer::write_job(const JobPtr job)
 {
     int success = (job->state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY);
     bool rejected = (job->state == JobState::JOB_STATE_REJECTED);

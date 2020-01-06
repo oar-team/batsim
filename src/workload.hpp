@@ -10,6 +10,8 @@
 #include <map>
 #include <memory>
 
+#include "pointers.hpp"
+
 class Jobs;
 struct Job;
 class Profiles;
@@ -79,7 +81,7 @@ public:
      * @brief Checks whether a single job is valid
      * @param[in] job The job to examine
      */
-    void check_single_job_validity(const std::shared_ptr<Job> job);
+    void check_single_job_validity(const JobPtr job);
 
     /**
      * @brief Returns the workload name
@@ -175,7 +177,7 @@ public:
      * @return The job which has been asked
      * @pre The requested job exists
      */
-    std::shared_ptr<Job> job_at(const JobIdentifier & job_id);
+    JobPtr job_at(const JobIdentifier & job_id);
 
     /**
      * @brief Allows to get a job from the Workloads (const version)
@@ -183,7 +185,7 @@ public:
      * @return The (const) job which has been asked
      * @pre The requested job exists
      */
-    const std::shared_ptr<Job> job_at(const JobIdentifier & job_id) const;
+    const JobPtr job_at(const JobIdentifier & job_id) const;
 
     /**
      * @brief Deletes jobs from the associated workloads

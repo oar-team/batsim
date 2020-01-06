@@ -28,7 +28,7 @@ void killer_process(BatsimContext *context,
  * @param[in,out] barrier The barrier associated with this job
  * @param[in] rank The rank whose replay is to be simulated
  */
-void smpi_replay_process(std::shared_ptr<Job> job, SmpiProfileData * profile_data, simgrid::s4u::BarrierPtr barrier, int rank);
+void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, simgrid::s4u::BarrierPtr barrier, int rank);
 
 /**
  * @brief Simulates a delay profile (sleeps until finished or walltime)
@@ -58,7 +58,7 @@ int execute_task(BatTask * btask,
  * @param notify_server_at_end Whether a message to the server must be sent after job completion
  * @param io_profile The optional IO profile
  */
-void execute_job_process(BatsimContext *context, SchedulingAllocation *allocation, bool notify_server_at_end, std::shared_ptr<Profile> io_profile);
+void execute_job_process(BatsimContext *context, SchedulingAllocation *allocation, bool notify_server_at_end, ProfilePtr io_profile);
 
 /**
  * @brief The process in charge of waiting for a given amount of time (related to the NOPMeLater message)

@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 
+#include "pointers.hpp"
 #include "machines.hpp"
 #include "jobs.hpp"
 
@@ -162,7 +163,7 @@ public:
      * @brief Creates a job in the Pajé output file
      * @param[in] job The job
      */
-    void register_new_job(const std::shared_ptr<Job> job);
+    void register_new_job(const JobPtr job);
 
     /**
      * @brief Sets a machine in the idle state
@@ -177,7 +178,7 @@ public:
      * @param[in] job The job
      * @param[in] time The time at which the machine should be marked as computing the job
      */
-    void set_machine_as_computing_job(int machine_id, const std::shared_ptr<Job> job, double time);
+    void set_machine_as_computing_job(int machine_id, const JobPtr job, double time);
 
     /**
      * @brief Adds a job kill in the file trace.
@@ -187,7 +188,7 @@ public:
      * @param[in] time The simulation time at which the kill is done
      * @param[in] associate_kill_to_machines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
      */
-    void add_job_kill(const std::shared_ptr<Job> job, const IntervalSet & used_machine_ids,
+    void add_job_kill(const JobPtr job, const IntervalSet & used_machine_ids,
                       double time, bool associate_kill_to_machines = false);
 
 public:
@@ -242,7 +243,7 @@ private:
 
     WriteBuffer * _wbuf = nullptr;  //!< The buffer class used to handle the output file
 
-    std::map<const std::shared_ptr<Job>, std::string> _jobs; //!< Maps jobs to their Pajé representation
+    std::map<const JobPtr, std::string> _jobs; //!< Maps jobs to their Pajé representation
     std::vector<std::string> _colors; //!< Strings associated with colors, used for the jobs
 
     PajeTracerState state = UNINITIALIZED; //!< The state of the PajeTracer
@@ -482,7 +483,7 @@ public:
      * @brief Writes a line in the jobs output file and updates schedule metrics.
      * @param[in] job The Job involved
      */
-    void write_job(const std::shared_ptr<Job> job);
+    void write_job(const JobPtr job);
 
     /**
      * @brief Flushes the pending writings to the jobs output file

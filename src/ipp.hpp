@@ -15,6 +15,7 @@
 
 #include <intervalset.hpp>
 
+#include "pointers.hpp"
 #include "jobs.hpp"
 #include "events.hpp"
 
@@ -185,7 +186,7 @@ struct SchedulingAllocation
 struct ExecuteJobMessage
 {
     SchedulingAllocation * allocation; //!< The allocation itself
-    std::shared_ptr<Profile> io_profile = nullptr; //!< The optional io profile
+    ProfilePtr io_profile = nullptr; //!< The optional io profile
 };
 
 /**

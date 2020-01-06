@@ -86,12 +86,12 @@ void static_job_submitter_process(BatsimContext * context,
 
     long double current_submission_date = simgrid::s4u::Engine::get_clock();
 
-    vector<std::shared_ptr<Job>> jobsVector;
+    vector<JobPtr> jobsVector;
 
     const auto & jobs = workload->jobs->jobs();
     for (const auto & mit : jobs)
     {
-        const std::shared_ptr<Job> job = mit.second;
+        const JobPtr job = mit.second;
         jobsVector.push_back(job);
     }
 
@@ -100,9 +100,9 @@ void static_job_submitter_process(BatsimContext * context,
     if (jobsVector.size() > 0)
     {
         vector<JobIdentifier> jobs_to_send;
-        const std::shared_ptr<Job> first_submitted_job = *jobsVector.begin();
+        const JobPtr first_submitted_job = *jobsVector.begin();
 
-        for (const std::shared_ptr<Job> job : jobsVector)
+        for (const JobPtr job : jobsVector)
         {
             if (job->submission_time > current_submission_date)
             {
@@ -305,7 +305,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
             "}";
 
     // Puts the job into memory
-    std::shared_ptr<Job> job = Job::from_json(job_json_description, context->workloads.at(workload_name),
+    JobPtr job = Job::from_json(job_json_description, context->workloads.at(workload_name),
                                "Invalid workflow-injected JSON job");
     context->workloads.at(workload_name)->jobs->add_job(job);
 
@@ -387,7 +387,7 @@ void batexec_job_launcher_process(BatsimContext * context,
     auto & jobs = workload->jobs->jobs();
     for (auto & mit : jobs)
     {
-        std::shared_ptr<Job> job = mit.second;
+        JobPtr job = mit.second;
 
         int nb_res = job->requested_nb_res;
 
