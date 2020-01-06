@@ -185,7 +185,7 @@ struct SchedulingAllocation
 struct ExecuteJobMessage
 {
     SchedulingAllocation * allocation; //!< The allocation itself
-    std::shared_ptr<Profile> io_profile = nullptr; //!< Tho optional io profile
+    std::shared_ptr<Profile> io_profile = nullptr; //!< The optional io profile
 };
 
 /**

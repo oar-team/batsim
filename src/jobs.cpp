@@ -182,10 +182,6 @@ BatTask* Job::compute_job_progress()
 
 Jobs::~Jobs()
 {
-    /*for (auto mit : _jobs)
-    {
-        delete mit.second;
-    }*/
     _jobs.clear();
 }
 
