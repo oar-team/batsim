@@ -48,9 +48,7 @@ void Profiles::load_from_json(const Document &doc, const string & filename)
                    "string key", error_prefix.c_str());
         string profile_name = key.GetString();
 
-        ProfilePtr profile = Profile::from_json(profile_name, value, error_prefix,
-                                               true, filename);
-
+        auto profile = Profile::from_json(profile_name, value, error_prefix, true, filename);
         xbt_assert(!exists(string(key.GetString())), "%s: duplication of profile name '%s'",
                    error_prefix.c_str(), key.GetString());
         _profiles[string(key.GetString())] = profile;
@@ -253,7 +251,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 {
     (void) error_prefix; // Avoids a warning if assertions are ignored
 
-    ProfilePtr profile = std::make_shared<Profile>();
+    auto profile = std::make_shared<Profile>();
     profile->name = profile_name;
 
     xbt_assert(json_desc.IsObject(), "%s: profile '%s' value must be an object",
