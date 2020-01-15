@@ -14,8 +14,11 @@ we strongly encourage readers to follow a `tutorial about Nix and reproducible e
 This tutorial introduces main Nix_ concepts and focuses on those useful for reproducible experiments,
 lowering the entry cost in the Nix_ ecosystem.
 
-First attempt
--------------
+Defining a reproducible environment
+-----------------------------------
+
+A first attempt
+'''''''''''''''
 
 A direct attempt to define such an environment is to use the packages defined in Kapack_.
 This is what the following Nix_ file describes.
@@ -31,8 +34,8 @@ The shell can be exited as usual (Ctrl+D, ``exit``…).
 While this shell perfectly works to use the latest release of the desired packages,
 it does not describe the desired versions well enough to be reproductible: If you use the same environment in the future, the versions may have changed.
 
-Pin the package repository
---------------------------
+Pinning the package repository
+''''''''''''''''''''''''''''''
 
 A first step to improve our setup is to use a specific *pinned* version of Kapack_ (the repository that contains package definitions) instead of its ``master`` branch.
 
@@ -48,8 +51,8 @@ The :download:`env-pin-pkgs-repo.nix <./env-pin-pkgs-repo.nix>` file is exactly 
 
    For example, ``batsim_dev`` represents Batsim built from Batsim's master branch's latest commit – without any kind of commit pinning.
 
-Pin the packages
-----------------
+Pinning the packages
+''''''''''''''''''''
 
 In many cases you might want to use a specific version of a package rather than its latest release.
 Nix_ makes it easy by *overridding* a package definition, as in the following file.
@@ -75,8 +78,8 @@ This is especially useful for using your own variant of a scheduling algorithm, 
         wanted: sha256:00xyyr3fi8l6hb839bv3f7yb86yjv7xi1cgh1xnhipym4asvb4aq
         got:    sha256:0jacrinzzx6nxm99789xjbip0cn3zfsg874zaazbmicbpllxzh62
 
-Real life full example
-----------------------
+Setting up a full experiment
+----------------------------
 
 .. todo::
 
