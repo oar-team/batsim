@@ -178,7 +178,6 @@ let
         "^docs/tuto-reproducible-experiment"
         "^docs/tuto-reproducible-experiment/.*\.nix"
         "^docs/tuto-reproducible-experiment/.*\.rst"
-        "^docs/tuto-reproducible-experiment/.*\.yaml"
         "^docs/tuto-result-analysis"
         "^docs/tuto-result-analysis/.*\.rst"
         "^docs/tuto-result-analysis/.*\.R"

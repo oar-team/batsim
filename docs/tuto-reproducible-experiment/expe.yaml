@@ -1,8 +1,0 @@
-batcmd: batsim -p /tmp/batsim/platforms/cluster512.xml -w /tmp/batsim/workload_profiles/batsim_paper_workload_example.json
-  -m 'master_host0' -e /out
-failure-timeout: 5
-output-dir: ""
-ready-timeout: 10
-schedcmd: batsched -v easy_bf
-simulation-timeout: 604800
-success-timeout: 3600
