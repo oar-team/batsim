@@ -1040,7 +1040,7 @@ void JobsTracer::finalize()
     output_map["nb_jobs_finished"] = to_string(_nb_jobs_finished);
     output_map["nb_jobs_success"] = to_string(_nb_jobs_success);
     output_map["nb_jobs_killed"] = to_string(_nb_jobs_killed);
-    output_map["nb_jobs_rejected"] = to_string(_nb_jobs - _nb_jobs_finished);
+    output_map["nb_jobs_rejected"] = to_string(_nb_jobs_rejected);
     output_map["success_rate"] = to_string(success_rate);
 
     output_map["makespan"] = to_string((double)_makespan);
@@ -1117,51 +1117,58 @@ void JobsTracer::write_job(const JobPtr job)
     _nb_jobs++;
     if (job->is_complete())
     {
-        _nb_jobs_finished++;
-
-        if (success)
+        if (rejected)
         {
-            _nb_jobs_success++;
+            _nb_jobs_rejected++;
         }
         else
         {
-            _nb_jobs_killed++;
-        }
+            _nb_jobs_finished++;
 
-        long double starting_time = job->starting_time;
-        long double waiting_time = starting_time - job->submission_time;
-        long double completion_time = job->starting_time + job->runtime;
-        long double turnaround_time = completion_time - job->submission_time;
-        long double slowdown = turnaround_time / job->runtime;
+            if (success)
+            {
+                _nb_jobs_success++;
+            }
+            else
+            {
+                _nb_jobs_killed++;
+            }
 
-        _sum_waiting_time += waiting_time;
-        _sum_turnaround_time += turnaround_time;
-        _sum_slowdown += slowdown;
+            long double starting_time = job->starting_time;
+            long double waiting_time = starting_time - job->submission_time;
+            long double completion_time = job->starting_time + job->runtime;
+            long double turnaround_time = completion_time - job->submission_time;
+            long double slowdown = turnaround_time / job->runtime;
 
-        if (completion_time > _makespan)
-        {
-            _makespan = completion_time;
-        }
+            _sum_waiting_time += waiting_time;
+            _sum_turnaround_time += turnaround_time;
+            _sum_slowdown += slowdown;
 
-        if (waiting_time > _max_waiting_time)
-        {
-            _max_waiting_time = waiting_time;
-        }
+            if (completion_time > _makespan)
+            {
+                _makespan = completion_time;
+            }
 
-        if (turnaround_time > _max_turnaround_time)
-        {
-            _max_turnaround_time = turnaround_time;
-        }
+            if (waiting_time > _max_waiting_time)
+            {
+                _max_waiting_time = waiting_time;
+            }
 
-        if (slowdown > _max_slowdown)
-        {
-            _max_slowdown = slowdown;
-        }
+            if (turnaround_time > _max_turnaround_time)
+            {
+                _max_turnaround_time = turnaround_time;
+            }
 
-        const IntervalSet & allocation = job->allocation;
-        for (size_t i = 0; i < allocation.size(); ++i)
-        {
-            _machines_utilization[allocation[i]] += job->runtime;
+            if (slowdown > _max_slowdown)
+            {
+                _max_slowdown = slowdown;
+            }
+
+            const IntervalSet & allocation = job->allocation;
+            for (size_t i = 0; i < allocation.size(); ++i)
+            {
+                _machines_utilization[allocation[i]] += job->runtime;
+            }
         }
     }
     else

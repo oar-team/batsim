@@ -358,6 +358,7 @@ bool Job::is_complete() const
     return (state == JobState::JOB_STATE_COMPLETED_SUCCESSFULLY) ||
            (state == JobState::JOB_STATE_COMPLETED_KILLED) ||
            (state == JobState::JOB_STATE_COMPLETED_FAILED) ||
+           (state == JobState::JOB_STATE_REJECTED) ||
            (state == JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED);
 }
 
