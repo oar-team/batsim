@@ -664,9 +664,8 @@ int execute_parallel_task(BatTask * btask,
         XBT_DEBUG("Executing task '%s' with walltime of %g", task_name.c_str(), *remaining_time);
         try
         {
-            ptask->set_timeout(*remaining_time);
             ptask->start();
-            ptask->wait();
+            ptask->wait_for(*remaining_time);
         }
         catch (const simgrid::TimeoutException &)
         {
