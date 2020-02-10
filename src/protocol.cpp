@@ -150,12 +150,15 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
         Value profile_dict(rapidjson::kObjectType);
         for (const auto & profile : workload.second->profiles->profiles())
         {
-            Document profile_description_doc;
-            const string & profile_json_description = profile.second->json_description;
-            profile_description_doc.Parse(profile_json_description.c_str());
-            profile_dict.AddMember(
-                    Value().SetString(profile.first.c_str(), _alloc),
-                    Value().CopyFrom(profile_description_doc, _alloc), _alloc);
+            if (profile.second.get() != nullptr) // unused profiles may have been removed from memory at workload loading time.
+            {
+                Document profile_description_doc;
+                const string & profile_json_description = profile.second->json_description;
+                profile_description_doc.Parse(profile_json_description.c_str());
+                profile_dict.AddMember(
+                        Value().SetString(profile.first.c_str(), _alloc),
+                        Value().CopyFrom(profile_description_doc, _alloc), _alloc);
+            }
         }
         profiles_dict.AddMember(
                 Value().SetString(workload.first.c_str(), _alloc),

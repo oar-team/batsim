@@ -102,15 +102,34 @@ void Profiles::remove_profile(const std::string & profile_name)
     auto mit = _profiles.find(profile_name);
     xbt_assert(mit != _profiles.end(), "Bad Profiles::remove_profile call: Profile with name='%s' never existed in this workload.", profile_name.c_str());
 
+    // If the profile has aleady been removed, do nothing.
+    if (mit->second.get() == nullptr)
+    {
+        return;
+    }
+
+    // If the profile is composed, also remove links to subprofiles.
+    if (mit->second->type == ProfileType::SEQUENCE)
+    {
+        const auto & profile_data = (SequenceProfileData*) mit->second->data;
+        for (const auto & subprofile : profile_data->profile_sequence)
+        {
+            remove_profile(subprofile->name);
+        }
+    }
+
     // Discard link to the profile (implicit memory clean-up)
     mit->second = nullptr;
 }
 
-void Profiles::remove_all_profiles()
+void Profiles::remove_unreferenced_profiles()
 {
     for (auto & mit : _profiles)
     {
-        mit.second = nullptr;
+        if (mit.second.use_count() < 2)
+        {
+            mit.second = nullptr;
+        }
     }
 }
 
@@ -141,6 +160,7 @@ ParallelProfileData::~ParallelProfileData()
 
 Profile::~Profile()
 {
+    XBT_INFO("Profile '%s' is being deleted.", name.c_str());
     if (type == ProfileType::DELAY)
     {
         DelayProfileData * d = (DelayProfileData *) data;

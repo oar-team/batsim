@@ -271,9 +271,9 @@ public:
     void remove_profile(const std::string & profile_name);
 
     /**
-     * @brief Remove all profiles from a Profiles instance (but remembers the profiles existed at some point)
+     * @brief Remove all unreferenced profiles from a Profiles instance (but remembers the profiles existed at some point)
      */
-    void remove_all_profiles();
+    void remove_unreferenced_profiles();
 
     /**
      * @brief Returns a copy of the internal std::map used in the Profiles

@@ -95,8 +95,8 @@ void Workload::load_from_json(const std::string &json_filename, int &nb_machines
     check_validity();
     XBT_INFO("Workload seems to be valid.");
 
-    XBT_INFO("Discarding links to initial profiles (for a smooth refcounting-based memory clean-up)...");
-    profiles->remove_all_profiles();
+    XBT_INFO("Removing unreferenced profiles from memory...");
+    profiles->remove_unreferenced_profiles();
 }
 
 void Workload::register_smpi_applications()

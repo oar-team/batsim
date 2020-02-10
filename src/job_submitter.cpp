@@ -86,23 +86,27 @@ void static_job_submitter_process(BatsimContext * context,
 
     long double current_submission_date = simgrid::s4u::Engine::get_clock();
 
-    vector<JobPtr> jobsVector;
-
+    // sort jobs by arrival date in a temporary vector
+    vector<JobPtr> jobs_to_submit_vector;
     const auto & jobs = workload->jobs->jobs();
     for (const auto & mit : jobs)
     {
         const auto job = mit.second;
-        jobsVector.push_back(job);
+        jobs_to_submit_vector.push_back(job);
     }
+    sort(jobs_to_submit_vector.begin(), jobs_to_submit_vector.end(), job_comparator_subtime_number);
 
-    sort(jobsVector.begin(), jobsVector.end(), job_comparator_subtime_number);
+    // put jobs to submit into a list whose elements are dropped online (for smooth refcounting-based memory clean-up)
+    list<JobPtr> jobs_to_submit;
+    std::copy(jobs_to_submit_vector.begin(), jobs_to_submit_vector.end(), std::back_inserter(jobs_to_submit));
+    jobs_to_submit_vector.clear();
 
-    if (jobsVector.size() > 0)
+    if (jobs_to_submit_vector.size() > 0)
     {
         vector<JobIdentifier> jobs_to_send;
-        const JobPtr first_submitted_job = *jobsVector.begin();
+        bool is_first_job = true;
 
-        for (const auto job : jobsVector)
+        for (auto job = jobs_to_submit.front(); !jobs_to_submit_vector.empty() ; jobs_to_submit.pop_front())
         {
             if (job->submission_time > current_submission_date)
             {
@@ -133,9 +137,13 @@ void static_job_submitter_process(BatsimContext * context,
                 }
             }
 
-            if (job == first_submitted_job)
+            if (is_first_job)
             {
-                context->energy_first_job_submission = context->machines.total_consumed_energy(context);
+                is_first_job = false;
+                if (context->energy_first_job_submission < 0)
+                {
+                    context->energy_first_job_submission = context->machines.total_consumed_energy(context);
+                }
             }
         }
 
