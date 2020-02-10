@@ -59,6 +59,7 @@ ProfilePtr Profiles::operator[](const std::string &profile_name)
 {
     auto mit = _profiles.find(profile_name);
     xbt_assert(mit != _profiles.end(), "Cannot get profile '%s': it does not exist", profile_name.c_str());
+    xbt_assert(mit->second.get() != nullptr, "Cannot get profile '%s': it existed some time ago but is no longer accessible", profile_name.c_str());
     return mit->second;
 }
 
@@ -66,6 +67,7 @@ const ProfilePtr Profiles::operator[](const std::string &profile_name) const
 {
     auto mit = _profiles.find(profile_name);
     xbt_assert(mit != _profiles.end(), "Cannot get profile '%s': it does not exist", profile_name.c_str());
+    xbt_assert(mit->second.get() != nullptr, "Cannot get profile '%s': it existed some time ago but is no longer accessible", profile_name.c_str());
     return mit->second;
 }
 
@@ -95,27 +97,20 @@ void Profiles::add_profile(const std::string & profile_name,
     _profiles[profile_name] = profile;
 }
 
-void Profiles::try_remove_profile(const std::string & profile_name)
+void Profiles::remove_profile(const std::string & profile_name)
 {
-    if (!exists(profile_name))
-    {
-        return;
-    }
+    auto mit = _profiles.find(profile_name);
+    xbt_assert(mit != _profiles.end(), "Bad Profiles::remove_profile call: Profile with name='%s' never existed in this workload.", profile_name.c_str());
 
-    if (_profiles[profile_name].use_count() == 1)
+    // Discard link to the profile (implicit memory clean-up)
+    mit->second = nullptr;
+}
+
+void Profiles::remove_all_profiles()
+{
+    for (auto & mit : _profiles)
     {
-        // We need to remove this profile, and subprofiles if it's a sequence
-        std::vector<std::string> seq_profiles;
-        if (_profiles[profile_name]->type == ProfileType::SEQUENCE)
-        {
-            seq_profiles = ((SequenceProfileData*)_profiles[profile_name]->data)->sequence;
-        }
-        _profiles.erase(profile_name);
-        XBT_INFO("Profile %s deleted", profile_name.c_str());
-        for (std::string & prof_name : seq_profiles)
-        {
-            try_remove_profile(prof_name);
-        }
+        mit.second = nullptr;
     }
 }
 

@@ -268,7 +268,7 @@ void Jobs::delete_job(const JobIdentifier & job_id, const bool & garbage_collect
     _jobs.erase(job_id);
     if (garbage_collect_profiles)
     {
-        _workload->profiles->try_remove_profile(profile_name);
+        _workload->profiles->remove_profile(profile_name);
     }
 }
 
