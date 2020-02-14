@@ -381,6 +381,10 @@ void server_on_event_machine_available(ServerData * data,
             {
                 machine->update_machine_state(MachineState::IDLE);
             }
+            else
+            {
+                machine->update_machine_state(MachineState::COMPUTING);
+            }
         }
         // Notify the decision process that some machines have become available
         data->context->proto_writer->append_notify_resource_event("event_machine_available",
