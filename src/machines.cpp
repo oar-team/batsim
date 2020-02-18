@@ -494,7 +494,7 @@ void Machines::update_machines_on_job_run(const JobPtr job,
             if (_tracer != nullptr)
             {
                 _tracer->set_machine_as_computing_job(machine->id,
-                                                      *machine->jobs_being_computed.begin(),
+                                                      (*machine->jobs_being_computed.begin())->id,
                                                       simgrid::s4u::Engine::get_clock());
             }
         }
@@ -539,7 +539,7 @@ void Machines::update_machines_on_job_end(const JobPtr job,
             if (_tracer != nullptr)
             {
                 _tracer->set_machine_as_computing_job(machine->id,
-                                                      *machine->jobs_being_computed.begin(),
+                                                      (*machine->jobs_being_computed.begin())->id,
                                                       simgrid::s4u::Engine::get_clock());
             }
         }

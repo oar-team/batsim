@@ -399,7 +399,7 @@ void execute_job_process(BatsimContext * context,
         job->state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
         if (context->trace_schedule)
         {
-            context->paje_tracer.add_job_kill(job, allocation->machine_ids,
+            context->paje_tracer.add_job_kill(job->id, allocation->machine_ids,
                                               simgrid::s4u::Engine::get_clock(), true);
         }
     }
