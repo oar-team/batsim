@@ -101,13 +101,14 @@ void static_job_submitter_process(BatsimContext * context,
     std::copy(jobs_to_submit_vector.begin(), jobs_to_submit_vector.end(), std::back_inserter(jobs_to_submit));
     jobs_to_submit_vector.clear();
 
-    if (jobs_to_submit_vector.size() > 0)
+    if (jobs_to_submit.size() > 0)
     {
         vector<JobIdentifier> jobs_to_send;
         bool is_first_job = true;
 
-        for (auto job = jobs_to_submit.front(); !jobs_to_submit_vector.empty() ; jobs_to_submit.pop_front())
+        for ( ; !jobs_to_submit.empty() ; jobs_to_submit.pop_front())
         {
+            auto job = jobs_to_submit.front();
             if (job->submission_time > current_submission_date)
             {
                 // Next job submission time is after current time, send the message to the server for previous submitted jobs
