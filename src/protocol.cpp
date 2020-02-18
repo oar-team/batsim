@@ -358,7 +358,7 @@ Value generate_task_tree(BatTask* task_tree, rapidjson::Document::AllocatorType 
             task.AddMember("current_task_index", Value().SetInt(-1), _alloc);
             XBT_WARN("Cannot generate the execution task tree of job %s, "
                      "as its execution has not started.",
-                     task_tree->parent_job->id.to_string().c_str());
+                     static_cast<JobPtr>(task_tree->parent_job)->id.to_string().c_str());
         }
     }
     return task;

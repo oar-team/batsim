@@ -38,7 +38,7 @@ int execute_task(BatTask * btask,
                  const SchedulingAllocation * allocation,
                  double * remaining_time)
 {
-    auto job = btask->parent_job;
+    auto job = static_cast<JobPtr>(btask->parent_job);
     auto profile = btask->profile;
 
     // Init task

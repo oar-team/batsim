@@ -155,7 +155,7 @@ private:
     void compute_leaf_progress();
 
 public:
-    JobPtr parent_job; //!< The parent job that owns this task
+    JobPtrWeak parent_job; //!< The parent job that owns this task
     ProfilePtr profile; //!< The task profile. The corresponding profile tells how the job should be computed
     ProfilePtr io_profile = nullptr; //!< The task additional io profile. This profile, if defined will b merge to the task profile before execution
 
