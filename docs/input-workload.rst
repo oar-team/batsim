@@ -68,6 +68,10 @@ Profiles must have the following fields.
 
 - ``type``: The type of profile (string). If the profile is executed by Batsim, Batsim must know the profile type. See `Profile types overview`_ for an overview of the profile types whose execution is directly supported by Batsim.
 
+Some optional fields are used by Batsim.
+
+- ``ret``: The profile execution return code (integer) in case of success (execution finished *normally*, i.e., without reaching the job's walltime and without being killed by the scheduler). Default value is 0, meaning success. Overriding this value can be useful if the job is supposed to fail even when it finishes *normally*, for example to model that the user gave an invalid application execution script. Non-zero return codes will translate into non-success in the :ref:`output_jobs` output file.
+
 Other fields may be used by Batsim depending of the profile type.
 
 **Users can define any other field as they desire.**
