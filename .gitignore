@@ -8,6 +8,8 @@
 doc/doxygen_warnings.log
 doc/doxygen_doc
 build
+build-cmake
+build-meson
 test/out
 CMakeLists.txt.user*
 dump.rdb
