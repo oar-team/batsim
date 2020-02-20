@@ -81,9 +81,57 @@ This is especially useful for using your own variant of a scheduling algorithm, 
 Setting up a full experiment
 ----------------------------
 
-.. todo::
+.. note::
 
-    Write real life full example.
+   A rendering of this experiment notebook is hosted `there <https://mpoquet.github.io/blog/2020-02-batsim-memory-usage-notebook/index.html>`_.
+
+This experiment example shows how Nix can be help in designing an experiment with a reproducible software environment.
+Its goal is to evaluate whether the introduction of smart pointers reduced Batsim's memory usage over time or not.
+
+Environments
+''''''''''''
+
+.. literalinclude:: ./env-check-memuse-improvement.nix
+  :caption: :download:`env-check-memuse-improvement.nix <./env-check-memuse-improvement.nix>`
+  :language: nix
+
+The :download:`env-check-memuse-improvement.nix <././env-check-memuse-improvement.nix>` file describes various environments — comments describe the role of each environment.
+Several simulation environments are used here as we want to evaluate several versions of the same software (batsim), as using two versions of the same package in the same environment would create a collision.
+
+Scripts
+'''''''
+
+Similarly to what would (should) be done in a real experiment, some scripts are used here so that some steps are kept independent from each other and from the main engine used to run the experiment.
+Here, a `rmarkdown notebook`_ is used as the main engine to execute the simulation, and to analyze and present the results.
+
+The scripts used here have the following content.
+
+.. literalinclude:: ./generate-workload.R
+  :caption: :download:`generate-workload.R <./generate-workload.R>`
+  :language: R
+
+.. literalinclude:: ./prepare-instances.bash
+  :caption: :download:`prepare-instances.bash <./prepare-instances.bash>`
+  :language: bash
+
+.. literalinclude:: ./run-notebook.R
+  :caption: :download:`run-notebook.R <./run-notebook.R>`
+  :language: R
+
+Notebook
+''''''''
+
+Finally, here is the notebook source:
+
+.. literalinclude:: ./notebook.Rmd
+  :caption: :download:`notebook.Rmd <./notebook.Rmd>`
+  :language: md
+
+The notebook can be run with the following command.
+
+.. code-block:: bash
+
+   nix-shell env-check-memuse-improvement.nix -A notebook_env --command ./run-notebook.R
 
 .. _Nix: https://nixos.org/nix/
 .. _tutorial about Nix and reproducible experiments: https://nix-tutorial.gitlabpages.inria.fr/nix-tutorial/
@@ -92,3 +140,4 @@ Setting up a full experiment
 .. _batsched: https://framagit.org/batsim/batsched/
 .. _pybatsim: https://gitlab.inria.fr/batsim/pybatsim
 .. _fork: https://en.wikipedia.org/wiki/Fork_(software_development)
+.. _rmarkdown notebook: https://rmarkdown.rstudio.com/

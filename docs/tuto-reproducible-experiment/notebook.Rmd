@@ -1,0 +1,116 @@
+Batsim: Impact of smart pointers on Batsim's memory usage
+=========================================================
+
+This notebook is an example of a repeatable experiment from [one of Batsim's documentation tutorial](https://batsim.readthedocs.io/en/latest/tuto-reproducible-experiment/tuto.html).
+
+Simulation instances preparation
+--------------------------------
+
+Here, we want to run two simulations with the same inputs but with a different Batsim version.
+This can be done by executing the `prepare-instances.bash` script in its dedicated environment:
+
+```{bash}
+nix-shell env-check-memuse-improvement.nix -A input_preparation_env --command './prepare-instances.bash'
+```
+
+This creates the following files:
+```{bash}
+tree ./expe
+```
+
+Getting simulation inputs
+-------------------------
+
+Here we will simulate the old [KTH SP2 workload](https://www.cse.huji.ac.il/labs/parallel/workload/l_kth_sp2/index.html) from the parallel workloads archive.
+The `generate-workload.R` script downloads the raw logs, extracts a month in the middle of the trace then generate a batsim workload from it. It is called in the input preparation environment:
+
+```{bash, results="hide"}
+nix-shell env-check-memuse-improvement.nix -A input_preparation_env --command '(cd ./expe && ../generate-workload.R)'
+```
+
+We will use a platform with enough resources from the Batsim repository.
+Platform caracteristics do not matter much here, as we use delay profiles that are not sensitive to the jobs execution context.
+
+```{bash}
+nix-shell env-check-memuse-improvement.nix -A input_preparation_env --command 'curl -k -o ./expe/cluster.xml https://framagit.org/batsim/batsim/raw/346e0de311c10270d9846d8ea418096afff32305/platforms/cluster512.xml'
+```
+
+Running simulations
+-------------------
+
+This is done by executing robin on the instance files in their dedicated environments.
+Please note that separating these two environments is mandatory, as a different Batsim version is defined in each environment.
+
+```{bash}
+nix-shell env-check-memuse-improvement.nix -A simulation_env --command 'robin ./expe/new.yaml'
+nix-shell env-check-memuse-improvement.nix -A simulation_old_env --command 'robin ./expe/old.yaml'
+```
+
+Analyzing results
+-----------------
+
+First, we can visually check that the simulation results are similar.
+
+```{r, message=FALSE, fig.width=10, fig.height=6}
+library(tidyverse)
+library(viridis)
+theme_set(theme_bw())
+
+# batsim-generated summaries
+old_schedule = read_csv('./expe/old/out_schedule.csv') %>% mutate(instance='old')
+new_schedule = read_csv('./expe/new/out_schedule.csv') %>% mutate(instance='new')
+schedules = bind_rows(old_schedule, new_schedule)
+schedules %>% tbl_df %>% rmarkdown::paged_table()
+
+# jobs data
+old_jobs = read_csv('./expe/old/out_jobs.csv') %>% mutate(instance='old')
+new_jobs = read_csv('./expe/new/out_jobs.csv') %>% mutate(instance='new')
+jobs = bind_rows(old_jobs, new_jobs) %>% mutate(color_id=job_id%%5)
+
+jobs_plottable = jobs %>%
+    mutate(starting_time = starting_time / (60*60*24),
+           finish_time = finish_time / (60*60*24)) %>%
+    separate_rows(allocated_resources, sep=" ") %>%
+    separate(allocated_resources, into = c("psetmin", "psetmax"), fill="right") %>%
+    mutate(psetmax = as.integer(psetmax), psetmin = as.integer(psetmin)) %>%
+    mutate(psetmax = ifelse(is.na(psetmax), psetmin, psetmax))
+
+jobs_plottable %>%
+    ggplot(aes(xmin=starting_time,
+               ymin=psetmin,
+               ymax=psetmax + 0.9,
+               xmax=finish_time,
+               fill=color_id)) +
+    geom_rect(alpha=0.9, color="black", size=0.1, show.legend = FALSE) +
+    scale_fill_viridis() +
+    facet_wrap(~instance, ncol=1) +
+    labs(x='Simulation time (day)', y="Resources") +
+    ggsave('./gantts.pdf', width=15, height=9)
+```
+
+Aggregated metrics are the same and the Gantt charts look similar.
+
+Let us now give a look at Batsim's memory footprint over time for both runs.
+```{bash}
+massif-to-csv ./expe/old/massif.out{,.csv}
+massif-to-csv ./expe/new/massif.out{,.csv}
+```
+
+```{r, message=FALSE, fig.width=10, fig.height=6}
+old_massif = read_csv('./expe/old/massif.out.csv') %>% mutate(instance='old')
+new_massif = read_csv('./expe/new/massif.out.csv') %>% mutate(instance='new')
+massif = bind_rows(old_massif, new_massif) %>% mutate(
+    total=(stack+heap+heap_extra) / 1e6,
+    time=time/1e3)
+
+massif %>%
+    ggplot(aes(x=time, y=total)) +
+    geom_step() +
+    facet_wrap(~instance, ncol=1) +
+    labs(x='Real time (s)', y="Batsim process's memory consumption (Mo)") +
+    ggsave('./memuse_over_time.png', width=15, height=9)
+```
+
+Well okay, memory usage pattern did not change much but the overall performance improved a lot.
+
+![](https://i.kym-cdn.com/photos/images/newsfeed/000/114/139/tumblr_lgedv2Vtt21qf4x93o1_40020110725-22047-38imqt.jpg)
