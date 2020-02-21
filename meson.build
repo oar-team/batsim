@@ -5,6 +5,17 @@ project('batsim', 'cpp',
     meson_version: '>=0.40.0'
 )
 
+batversion = meson.project_version()
+# Override version name from git information if possible
+git = find_program('git', required: false)
+if git.found()
+    git_describe_cmd = run_command(git, 'describe', '--dirty')
+    if git_describe_cmd.returncode() == 0
+        batversion = git_describe_cmd.stdout().strip()
+    endif
+endif
+message('batsim version set to: ' + batversion)
+
 # Dependencies
 simgrid_dep = dependency('simgrid')
 boost_dep = dependency('boost',
@@ -74,7 +85,7 @@ include_dir = include_directories('src')
 batlib = static_library('batlib', src_without_main,
     include_directories: include_dir,
     dependencies: batsim_deps,
-    cpp_args: '-DBATSIM_VERSION=@0@'.format(meson.project_version()),
+    cpp_args: '-DBATSIM_VERSION=@0@'.format(batversion),
     install: false)
 batlib_dep = declare_dependency(
     link_with: batlib,
@@ -84,7 +95,7 @@ batlib_dep = declare_dependency(
 batsim = executable('batsim', ['src/batsim.cpp'],
     include_directories: include_dir,
     dependencies: batsim_deps + [batlib_dep],
-    cpp_args: '-DBATSIM_VERSION=@0@'.format(meson.project_version()),
+    cpp_args: '-DBATSIM_VERSION=@0@'.format(batversion),
     install: true
 )
 
