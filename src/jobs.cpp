@@ -30,14 +30,11 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(jobs, "jobs"); //!< Logging
 
 JobIdentifier::JobIdentifier(const std::string & workload_name,
                              const std::string & job_name) :
-    workload_name(workload_name),
-    job_name(job_name)
+    _workload_name(workload_name),
+    _job_name(job_name)
 {
-    XBT_DEBUG("Parsed workload_name: '%s'", this->workload_name.c_str());
-    XBT_DEBUG("Parsed job_name: '%s'", this->job_name.c_str());
-    XBT_DEBUG("Parsed job_identifier: '%s'", this->to_string().c_str());
-
     check_lexically_valid();
+    _representation = representation();
 }
 
 JobIdentifier::JobIdentifier(const std::string & job_id_str)
@@ -52,18 +49,21 @@ JobIdentifier::JobIdentifier(const std::string & job_id_str)
                "parts, the second one being any string without '!'. Example: 'some_text!42'.",
                job_id_str.c_str());
 
-    this->workload_name = job_identifier_parts[0];
-    XBT_DEBUG("Parsed workload_name: '%s'", this->workload_name.c_str());
-    this->job_name = job_identifier_parts[1];
-    XBT_DEBUG("Parsed job_name: '%s'", this->job_name.c_str());
-    XBT_DEBUG("Parsed job_identifier: '%s'", this->to_string().c_str());
+    this->_workload_name = job_identifier_parts[0];
+    this->_job_name = job_identifier_parts[1];
 
     check_lexically_valid();
+    _representation = representation();
 }
 
 std::string JobIdentifier::to_string() const
 {
-    return workload_name + '!' + job_name;
+    return _representation;
+}
+
+const char *JobIdentifier::to_cstring() const
+{
+    return _representation.c_str();
 }
 
 bool JobIdentifier::is_lexically_valid(std::string & reason) const
@@ -71,16 +71,16 @@ bool JobIdentifier::is_lexically_valid(std::string & reason) const
     bool ret = true;
     reason.clear();
 
-    if(workload_name.find('!') != std::string::npos)
+    if(_workload_name.find('!') != std::string::npos)
     {
         ret = false;
-        reason += "Invalid workload_name '" + workload_name + "': contains a '!'.";
+        reason += "Invalid workload_name '" + _workload_name + "': contains a '!'.";
     }
 
-    if(job_name.find('!') != std::string::npos)
+    if(_job_name.find('!') != std::string::npos)
     {
         ret = false;
-        reason += "Invalid job_name '" + job_name + "': contains a '!'.";
+        reason += "Invalid job_name '" + _job_name + "': contains a '!'.";
     }
 
     return ret;
@@ -90,6 +90,21 @@ void JobIdentifier::check_lexically_valid() const
 {
     string reason;
     xbt_assert(is_lexically_valid(reason), "%s", reason.c_str());
+}
+
+string JobIdentifier::workload_name() const
+{
+    return _workload_name;
+}
+
+string JobIdentifier::job_name() const
+{
+    return _job_name;
+}
+
+string JobIdentifier::representation() const
+{
+    return _workload_name + '!' + _job_name;
 }
 
 bool operator<(const JobIdentifier &ji1, const JobIdentifier &ji2)
@@ -226,7 +241,7 @@ JobPtr Jobs::operator[](JobIdentifier job_id)
 {
     auto it = _jobs.find(job_id);
     xbt_assert(it != _jobs.end(), "Cannot get job '%s': it does not exist",
-               job_id.to_string().c_str());
+               job_id.to_cstring());
     return it->second;
 }
 
@@ -234,7 +249,7 @@ const JobPtr Jobs::operator[](JobIdentifier job_id) const
 {
     auto it = _jobs.find(job_id);
     xbt_assert(it != _jobs.end(), "Cannot get job '%s': it does not exist",
-               job_id.to_string().c_str());
+               job_id.to_cstring());
     return it->second;
 }
 
@@ -252,7 +267,7 @@ void Jobs::add_job(JobPtr job)
 {
     xbt_assert(!exists(job->id),
                "Bad Jobs::add_job call: A job with name='%s' already exists.",
-               job->id.to_string().c_str());
+               job->id.to_cstring());
 
     _jobs[job->id] = job;
     _jobs_met.insert({job->id, true});
@@ -262,7 +277,7 @@ void Jobs::delete_job(const JobIdentifier & job_id, const bool & garbage_collect
 {
     xbt_assert(exists(job_id),
                "Bad Jobs::delete_job call: The job with name='%s' does not exist.",
-               job_id.to_string().c_str());
+               job_id.to_cstring());
 
     std::string profile_name = _jobs[job_id]->profile->name;
     _jobs.erase(job_id);

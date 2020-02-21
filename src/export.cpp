@@ -497,7 +497,7 @@ void PajeTracer::add_job_launching(const std::vector<int> & used_machine_ids,
 void PajeTracer::register_new_job(const JobIdentifier & job_id)
 {
     xbt_assert(_jobs.find(job_id) == _jobs.end(),
-               "Cannot register new job %s: it already exists", job_id.to_string().c_str());
+               "Cannot register new job %s: it already exists", job_id.to_cstring());
 
     const int buf_size = 256;
     int nb_printed;
@@ -508,8 +508,8 @@ void PajeTracer::register_new_job(const JobIdentifier & job_id)
     // Let's create a state value corresponding to this job
     nb_printed = snprintf(buf, buf_size,
                           "%d %s%s %s \"%s\" %s\n",
-                          DEFINE_ENTITY_VALUE, jobPrefix, job_id.to_string().c_str(),
-                          machineState, job_id.to_string().c_str(),
+                          DEFINE_ENTITY_VALUE, jobPrefix, job_id.to_cstring(),
+                          machineState, job_id.to_cstring(),
                           _colors[nb_total_jobs++ % (int)_colors.size()].c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
@@ -581,7 +581,7 @@ void PajeTracer::add_job_kill(const JobIdentifier & job_id, const IntervalSet & 
     // Let's add a kill event associated with the scheduler
     nb_printed = snprintf(buf, buf_size,
                           "%d %lf %s %s \"%s\"\n",
-                          NEW_EVENT, time, killEventKiller, killer, job_id.to_string().c_str());
+                          NEW_EVENT, time, killEventKiller, killer, job_id.to_cstring());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -596,7 +596,7 @@ void PajeTracer::add_job_kill(const JobIdentifier & job_id, const IntervalSet & 
             nb_printed = snprintf(buf, buf_size,
                                   "%d %lf %s %s%d \"%s\"\n",
                                   NEW_EVENT, time, killEventMachine, machinePrefix, machine_id,
-                                  job_id.to_string().c_str());
+                                  job_id.to_cstring());
             xbt_assert(nb_printed < buf_size - 1,
                        "Writing error: buffer has been completely filled, some information might "
                        "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -1173,11 +1173,11 @@ void JobsTracer::write_job(const JobPtr job)
     }
     else
     {
-        xbt_die("Job %s did not complete", job->id.job_name.c_str());
+        xbt_die("Job %s did not complete", job->id.job_name().c_str());
     }
 
     // Set all values to be written
-    _job_map["job_id"] = job->id.job_name;
+    _job_map["job_id"] = job->id.job_name();
     _job_map["workload_name"] = job->workload->name;
     _job_map["profile"] = (job->profile)->name;
     _job_map["submission_time"] = to_string((double)job->submission_time);

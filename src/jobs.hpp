@@ -26,8 +26,9 @@ struct Job;
 /**
  * @brief A simple structure used to identify one job
  */
-struct JobIdentifier
+class JobIdentifier
 {
+public:
     /**
      * @brief Creates an empty JobIdentifier
      */
@@ -55,6 +56,12 @@ struct JobIdentifier
     std::string to_string() const;
 
     /**
+     * @brief Returns a null-terminated C string of the JobIdentifier representation.
+     * @return A null-terminated C string of the JobIdentifier representation.
+     */
+    const char * to_cstring() const;
+
+    /**
      * @brief Returns whether the fields are lexically valid.
      * @details None of the fields should contain a '!'.
      * @param[out] reason Empty if valid.
@@ -68,9 +75,29 @@ struct JobIdentifier
      */
     void check_lexically_valid() const;
 
-public:
-    std::string workload_name; //!< The name of the workload the job belongs to
-    std::string job_name; //!< The job unique name inside its workload
+    /**
+     * @brief Returns the workload name.
+     * @return The workload name.
+     */
+    std::string workload_name() const;
+
+    /**
+     * @brief Returns the job name within the workload.
+     * @return The job name within the workload.
+     */
+    std::string job_name() const;
+
+private:
+    /**
+     * @brief Computes the string representation of the JobIdentifier.
+     * @return The string representation of the JobIdentifier.
+     */
+    std::string representation() const;
+
+private:
+    std::string _workload_name; //!< The name of the workload the job belongs to
+    std::string _job_name; //!< The job unique name inside its workload
+    std::string _representation; //!< Stores a string representation of the JobIdentifier
 };
 
 /**

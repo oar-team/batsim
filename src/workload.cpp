@@ -112,8 +112,8 @@ void Workload::register_smpi_applications()
             SmpiProfileData * data = (SmpiProfileData *) job->profile->data;
 
             XBT_INFO("Registering app. instance='%s', nb_process=%d",
-                     job->id.to_string().c_str(), (int) data->trace_filenames.size());
-            SMPI_app_instance_register(job->id.to_string().c_str(), nullptr, data->trace_filenames.size());
+                     job->id.to_cstring(), (int) data->trace_filenames.size());
+            SMPI_app_instance_register(job->id.to_cstring(), nullptr, data->trace_filenames.size());
         }
     }
 
@@ -158,7 +158,7 @@ void Workload::check_single_job_validity(const JobPtr job)
     //TODO This is already checked during creation of the job in Job::from_json
     xbt_assert(profiles->exists(job->profile->name),
                "Invalid job %s: the associated profile '%s' does not exist",
-               job->id.to_string().c_str(), job->profile->name.c_str());
+               job->id.to_cstring(), job->profile->name.c_str());
 
     if (job->profile->type == ProfileType::PARALLEL)
     {
@@ -167,7 +167,7 @@ void Workload::check_single_job_validity(const JobPtr job)
         xbt_assert(data->nb_res == job->requested_nb_res,
                    "Invalid job %s: the requested number of resources (%d) do NOT match"
                    " the number of resources of the associated profile '%s' (%d)",
-                   job->id.to_string().c_str(), job->requested_nb_res, job->profile->name.c_str(), data->nb_res);
+                   job->id.to_cstring(), job->requested_nb_res, job->profile->name.c_str(), data->nb_res);
     }
     /*else if (job->profile->type == ProfileType::SEQUENCE)
     {
@@ -236,12 +236,12 @@ int Workloads::nb_static_workloads() const
 
 JobPtr Workloads::job_at(const JobIdentifier &job_id)
 {
-    return at(job_id.workload_name)->jobs->at(job_id);
+    return at(job_id.workload_name())->jobs->at(job_id);
 }
 
 const JobPtr Workloads::job_at(const JobIdentifier &job_id) const
 {
-    return at(job_id.workload_name)->jobs->at(job_id);
+    return at(job_id.workload_name())->jobs->at(job_id);
 }
 
 void Workloads::delete_jobs(const vector<JobIdentifier> & job_ids,
@@ -249,7 +249,7 @@ void Workloads::delete_jobs(const vector<JobIdentifier> & job_ids,
 {
     for (const JobIdentifier & job_id : job_ids)
     {
-        at(job_id.workload_name)->jobs->delete_job(job_id, garbage_collect_profiles);
+        at(job_id.workload_name())->jobs->delete_job(job_id, garbage_collect_profiles);
     }
 }
 
@@ -292,15 +292,15 @@ void Workloads::register_smpi_applications()
 
 bool Workloads::job_is_registered(const JobIdentifier &job_id)
 {
-    at(job_id.workload_name)->jobs->displayDebug();
-    return at(job_id.workload_name)->jobs->exists(job_id);
+    at(job_id.workload_name())->jobs->displayDebug();
+    return at(job_id.workload_name())->jobs->exists(job_id);
 }
 
 bool Workloads::job_profile_is_registered(const JobIdentifier &job_id)
 {
     //TODO this could be improved/simplified
-    auto job = at(job_id.workload_name)->jobs->at(job_id);
-    return at(job_id.workload_name)->profiles->exists(job->profile->name);
+    auto job = at(job_id.workload_name())->jobs->at(job_id);
+    return at(job_id.workload_name())->profiles->exists(job->profile->name);
 }
 
 std::map<std::string, Workload *> &Workloads::workloads()
