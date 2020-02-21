@@ -236,12 +236,12 @@ int Workloads::nb_static_workloads() const
 
 JobPtr Workloads::job_at(const JobIdentifier &job_id)
 {
-    return at(job_id.workload_name)->jobs->at(job_id);
+    return at(job_id.workload_name())->jobs->at(job_id);
 }
 
 const JobPtr Workloads::job_at(const JobIdentifier &job_id) const
 {
-    return at(job_id.workload_name)->jobs->at(job_id);
+    return at(job_id.workload_name())->jobs->at(job_id);
 }
 
 void Workloads::delete_jobs(const vector<JobIdentifier> & job_ids,
@@ -249,7 +249,7 @@ void Workloads::delete_jobs(const vector<JobIdentifier> & job_ids,
 {
     for (const JobIdentifier & job_id : job_ids)
     {
-        at(job_id.workload_name)->jobs->delete_job(job_id, garbage_collect_profiles);
+        at(job_id.workload_name())->jobs->delete_job(job_id, garbage_collect_profiles);
     }
 }
 
@@ -292,15 +292,15 @@ void Workloads::register_smpi_applications()
 
 bool Workloads::job_is_registered(const JobIdentifier &job_id)
 {
-    at(job_id.workload_name)->jobs->displayDebug();
-    return at(job_id.workload_name)->jobs->exists(job_id);
+    at(job_id.workload_name())->jobs->displayDebug();
+    return at(job_id.workload_name())->jobs->exists(job_id);
 }
 
 bool Workloads::job_profile_is_registered(const JobIdentifier &job_id)
 {
     //TODO this could be improved/simplified
-    auto job = at(job_id.workload_name)->jobs->at(job_id);
-    return at(job_id.workload_name)->profiles->exists(job->profile->name);
+    auto job = at(job_id.workload_name())->jobs->at(job_id);
+    return at(job_id.workload_name())->profiles->exists(job->profile->name);
 }
 
 std::map<std::string, Workload *> &Workloads::workloads()

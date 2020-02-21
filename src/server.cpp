@@ -700,20 +700,20 @@ void server_on_register_job(ServerData * data,
     // Let's update global states
     ++data->nb_submitted_jobs;
 
-    xbt_assert(data->context->workloads.exists(message->job_id.workload_name),
+    xbt_assert(data->context->workloads.exists(message->job_id.workload_name()),
                "Internal error: Workload '%s' should exist.",
-               message->job_id.workload_name.c_str());
+               message->job_id.workload_name().c_str());
     xbt_assert(!data->context->workloads.job_is_registered(message->job_id),
                "Cannot register new job '%s', it already exists in the workload.", message->job_id.to_string().c_str());
 
-    Workload * workload = data->context->workloads.at(message->job_id.workload_name);
+    Workload * workload = data->context->workloads.at(message->job_id.workload_name());
 
     // Create the job.
     XBT_DEBUG("Parsing user-submitted job %s", message->job_id.to_string().c_str());
     auto job = Job::from_json(message->job_description, workload,
                                "Invalid JSON job submitted by the scheduler");
-    xbt_assert(job->id.job_name == message->job_id.job_name, "Internal error");
-    xbt_assert(job->id.workload_name == message->job_id.workload_name, "Internal error");
+    xbt_assert(job->id.job_name() == message->job_id.job_name(), "Internal error");
+    xbt_assert(job->id.workload_name() == message->job_id.workload_name(), "Internal error");
 
     /* The check of existence of a profile is done in Job::from_json which should raise an Exception
      * TODO catch this exception here and print the following message

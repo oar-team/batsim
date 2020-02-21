@@ -321,7 +321,7 @@ void execute_job_process(BatsimContext * context,
                          bool notify_server_at_end,
                          ProfilePtr io_profile)
 {
-    Workload * workload = context->workloads.at(allocation->job_id.workload_name);
+    Workload * workload = context->workloads.at(allocation->job_id.workload_name());
     auto job = workload->jobs->at(allocation->job_id);
 
     job->starting_time = simgrid::s4u::Engine::get_clock();

@@ -30,11 +30,11 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(jobs, "jobs"); //!< Logging
 
 JobIdentifier::JobIdentifier(const std::string & workload_name,
                              const std::string & job_name) :
-    workload_name(workload_name),
-    job_name(job_name)
+    _workload_name(workload_name),
+    _job_name(job_name)
 {
-    XBT_DEBUG("Parsed workload_name: '%s'", this->workload_name.c_str());
-    XBT_DEBUG("Parsed job_name: '%s'", this->job_name.c_str());
+    XBT_DEBUG("Parsed workload_name: '%s'", this->_workload_name.c_str());
+    XBT_DEBUG("Parsed job_name: '%s'", this->_job_name.c_str());
     XBT_DEBUG("Parsed job_identifier: '%s'", this->to_string().c_str());
 
     check_lexically_valid();
@@ -52,10 +52,10 @@ JobIdentifier::JobIdentifier(const std::string & job_id_str)
                "parts, the second one being any string without '!'. Example: 'some_text!42'.",
                job_id_str.c_str());
 
-    this->workload_name = job_identifier_parts[0];
-    XBT_DEBUG("Parsed workload_name: '%s'", this->workload_name.c_str());
-    this->job_name = job_identifier_parts[1];
-    XBT_DEBUG("Parsed job_name: '%s'", this->job_name.c_str());
+    this->_workload_name = job_identifier_parts[0];
+    XBT_DEBUG("Parsed workload_name: '%s'", this->_workload_name.c_str());
+    this->_job_name = job_identifier_parts[1];
+    XBT_DEBUG("Parsed job_name: '%s'", this->_job_name.c_str());
     XBT_DEBUG("Parsed job_identifier: '%s'", this->to_string().c_str());
 
     check_lexically_valid();
@@ -63,7 +63,7 @@ JobIdentifier::JobIdentifier(const std::string & job_id_str)
 
 std::string JobIdentifier::to_string() const
 {
-    return workload_name + '!' + job_name;
+    return _workload_name + '!' + _job_name;
 }
 
 bool JobIdentifier::is_lexically_valid(std::string & reason) const
@@ -71,16 +71,16 @@ bool JobIdentifier::is_lexically_valid(std::string & reason) const
     bool ret = true;
     reason.clear();
 
-    if(workload_name.find('!') != std::string::npos)
+    if(_workload_name.find('!') != std::string::npos)
     {
         ret = false;
-        reason += "Invalid workload_name '" + workload_name + "': contains a '!'.";
+        reason += "Invalid workload_name '" + _workload_name + "': contains a '!'.";
     }
 
-    if(job_name.find('!') != std::string::npos)
+    if(_job_name.find('!') != std::string::npos)
     {
         ret = false;
-        reason += "Invalid job_name '" + job_name + "': contains a '!'.";
+        reason += "Invalid job_name '" + _job_name + "': contains a '!'.";
     }
 
     return ret;
@@ -90,6 +90,16 @@ void JobIdentifier::check_lexically_valid() const
 {
     string reason;
     xbt_assert(is_lexically_valid(reason), "%s", reason.c_str());
+}
+
+string JobIdentifier::workload_name() const
+{
+    return _workload_name;
+}
+
+string JobIdentifier::job_name() const
+{
+    return _job_name;
 }
 
 bool operator<(const JobIdentifier &ji1, const JobIdentifier &ji2)

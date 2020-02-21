@@ -26,8 +26,9 @@ struct Job;
 /**
  * @brief A simple structure used to identify one job
  */
-struct JobIdentifier
+class JobIdentifier
 {
+public:
     /**
      * @brief Creates an empty JobIdentifier
      */
@@ -68,9 +69,21 @@ struct JobIdentifier
      */
     void check_lexically_valid() const;
 
-public:
-    std::string workload_name; //!< The name of the workload the job belongs to
-    std::string job_name; //!< The job unique name inside its workload
+    /**
+     * @brief Returns the workload name.
+     * @return The workload name.
+     */
+    std::string workload_name() const;
+
+    /**
+     * @brief Returns the job name within the workload.
+     * @return The job name within the workload.
+     */
+    std::string job_name() const;
+
+private:
+    std::string _workload_name; //!< The name of the workload the job belongs to
+    std::string _job_name; //!< The job unique name inside its workload
 };
 
 /**

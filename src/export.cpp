@@ -1173,11 +1173,11 @@ void JobsTracer::write_job(const JobPtr job)
     }
     else
     {
-        xbt_die("Job %s did not complete", job->id.job_name.c_str());
+        xbt_die("Job %s did not complete", job->id.job_name().c_str());
     }
 
     // Set all values to be written
-    _job_map["job_id"] = job->id.job_name;
+    _job_map["job_id"] = job->id.job_name();
     _job_map["workload_name"] = job->workload->name;
     _job_map["profile"] = (job->profile)->name;
     _job_map["submission_time"] = to_string((double)job->submission_time);

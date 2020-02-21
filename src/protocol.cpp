@@ -1049,7 +1049,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         xbt_assert(io_job_value["profile_name"].IsString(), "Invalid JSON message: Invalid 'profile_name' of event %d (EXECUTE_JOB): should be a string", event_number);
         string profile_name = io_job_value["profile_name"].GetString();
 
-        Workload * workload = context->workloads.at(job_id.workload_name);
+        Workload * workload = context->workloads.at(job_id.workload_name());
         if (io_job_value.HasMember("profile"))
         {
             if (workload->profiles->exists(profile_name))
