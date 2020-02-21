@@ -161,9 +161,9 @@ public:
 
     /**
      * @brief Creates a job in the Pajé output file
-     * @param[in] job The job
+     * @param[in] job_id The job identifier
      */
-    void register_new_job(const JobPtr job);
+    void register_new_job(const JobIdentifier & job_id);
 
     /**
      * @brief Sets a machine in the idle state
@@ -175,20 +175,20 @@ public:
     /**
      * @brief Sets a machine in the computing state
      * @param[in] machine_id The unique machine number
-     * @param[in] job The job
+     * @param[in] job_id The job identifier
      * @param[in] time The time at which the machine should be marked as computing the job
      */
-    void set_machine_as_computing_job(int machine_id, const JobPtr job, double time);
+    void set_machine_as_computing_job(int machine_id, const JobIdentifier & job_id, double time);
 
     /**
      * @brief Adds a job kill in the file trace.
      * @details Please note that this method can only be called when the PajeTracer object has been initialized and had not been finalized yet.
-     * @param[in] job The job
+     * @param[in] job_id The job identifier
      * @param[in] used_machine_ids The machines which compute the job
      * @param[in] time The simulation time at which the kill is done
      * @param[in] associate_kill_to_machines By default (false), one event is added in the killer container. If set to true, one event is added for every machine on which the kill occurs.
      */
-    void add_job_kill(const JobPtr job, const IntervalSet & used_machine_ids,
+    void add_job_kill(const JobIdentifier & job_id, const IntervalSet & used_machine_ids,
                       double time, bool associate_kill_to_machines = false);
 
 public:
@@ -243,7 +243,7 @@ private:
 
     WriteBuffer * _wbuf = nullptr;  //!< The buffer class used to handle the output file
 
-    std::map<const JobPtr, std::string> _jobs; //!< Maps jobs to their Pajé representation
+    std::map<JobIdentifier, std::string> _jobs; //!< Maps jobs to their Pajé representation
     std::vector<std::string> _colors; //!< Strings associated with colors, used for the jobs
 
     PajeTracerState state = UNINITIALIZED; //!< The state of the PajeTracer

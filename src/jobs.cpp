@@ -268,7 +268,7 @@ void Jobs::delete_job(const JobIdentifier & job_id, const bool & garbage_collect
     _jobs.erase(job_id);
     if (garbage_collect_profiles)
     {
-        _workload->profiles->try_remove_profile(profile_name);
+        _workload->profiles->remove_profile(profile_name);
     }
 }
 
@@ -284,7 +284,7 @@ bool Jobs::contains_smpi_job() const
     for (auto & mit : _jobs)
     {
         auto job = mit.second;
-        if ((*_profiles)[job->profile->name]->type == ProfileType::SMPI)
+        if (job->profile->type == ProfileType::SMPI)
         {
             return true;
         }
@@ -337,6 +337,7 @@ bool job_comparator_subtime_number(const JobPtr a, const JobPtr b)
 
 Job::~Job()
 {
+    XBT_INFO("Job '%s' is being deleted", id.to_string().c_str());
     xbt_assert(execution_actors.size() == 0,
                "Internal error: job %s on destruction still has %d execution processes (should be 0).",
                this->id.to_string().c_str(), (int)execution_actors.size());

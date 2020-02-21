@@ -473,7 +473,7 @@ int execute_parallel_task(BatTask * btask,
     std::vector<double> computation_vector;
     std::vector<double> communication_matrix;
 
-    string task_name = profile_type_to_string(profile->type) + '_' + btask->parent_job->id.to_string() +
+    string task_name = profile_type_to_string(profile->type) + '_' + static_cast<JobPtr>(btask->parent_job)->id.to_string() +
                        "_" + btask->profile->name;
     XBT_DEBUG("Generating comm/compute matrix for task '%s' with allocation %s",
             task_name.c_str(), allocation->machine_ids.to_string_hyphen().c_str());

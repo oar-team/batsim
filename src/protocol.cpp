@@ -150,12 +150,15 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
         Value profile_dict(rapidjson::kObjectType);
         for (const auto & profile : workload.second->profiles->profiles())
         {
-            Document profile_description_doc;
-            const string & profile_json_description = profile.second->json_description;
-            profile_description_doc.Parse(profile_json_description.c_str());
-            profile_dict.AddMember(
-                    Value().SetString(profile.first.c_str(), _alloc),
-                    Value().CopyFrom(profile_description_doc, _alloc), _alloc);
+            if (profile.second.get() != nullptr) // unused profiles may have been removed from memory at workload loading time.
+            {
+                Document profile_description_doc;
+                const string & profile_json_description = profile.second->json_description;
+                profile_description_doc.Parse(profile_json_description.c_str());
+                profile_dict.AddMember(
+                        Value().SetString(profile.first.c_str(), _alloc),
+                        Value().CopyFrom(profile_description_doc, _alloc), _alloc);
+            }
         }
         profiles_dict.AddMember(
                 Value().SetString(workload.first.c_str(), _alloc),
@@ -355,7 +358,7 @@ Value generate_task_tree(BatTask* task_tree, rapidjson::Document::AllocatorType 
             task.AddMember("current_task_index", Value().SetInt(-1), _alloc);
             XBT_WARN("Cannot generate the execution task tree of job %s, "
                      "as its execution has not started.",
-                     task_tree->parent_job->id.to_string().c_str());
+                     static_cast<JobPtr>(task_tree->parent_job)->id.to_string().c_str());
         }
     }
     return task;

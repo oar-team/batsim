@@ -38,7 +38,7 @@ int execute_task(BatTask * btask,
                  const SchedulingAllocation * allocation,
                  double * remaining_time)
 {
-    auto job = btask->parent_job;
+    auto job = static_cast<JobPtr>(btask->parent_job);
     auto profile = btask->profile;
 
     // Init task
@@ -288,7 +288,6 @@ BatTask * initialize_sequential_tasks(JobPtr job, ProfilePtr profile, ProfilePtr
 
     // it's a sequence profile
     SequenceProfileData * data = (SequenceProfileData *) profile->data;
-    Profiles * profiles = job->workload->profiles;
 
     // Sequences can be repeated several times
     for (int repeated = 0; repeated < data->repeat; repeated++)
@@ -296,17 +295,14 @@ BatTask * initialize_sequential_tasks(JobPtr job, ProfilePtr profile, ProfilePtr
         for (unsigned int i = 0; i < data->sequence.size(); i++)
         {
             // Get profile from name
-            auto sub_profile = profiles->at(data->sequence[i]);
+            auto sub_profile = data->profile_sequence[i];
 
             // Manage io profile
             ProfilePtr sub_io_profile = nullptr;
             if (io_profile != nullptr)
             {
                 SequenceProfileData * io_data = (SequenceProfileData*)io_profile->data;
-                xbt_assert(profiles->exists(io_data->sequence[i]),
-                        "The given profile name '%s' does not exists",
-                        io_data->sequence[i].c_str());
-                sub_io_profile = profiles->at(io_data->sequence[i]);
+                sub_io_profile = io_data->profile_sequence[i];
             }
 
             // recusrsive call
@@ -403,7 +399,7 @@ void execute_job_process(BatsimContext * context,
         job->state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
         if (context->trace_schedule)
         {
-            context->paje_tracer.add_job_kill(job, allocation->machine_ids,
+            context->paje_tracer.add_job_kill(job->id, allocation->machine_ids,
                                               simgrid::s4u::Engine::get_clock(), true);
         }
     }

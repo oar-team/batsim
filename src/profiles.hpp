@@ -264,11 +264,16 @@ public:
     void add_profile(const std::string & profile_name, ProfilePtr & profile);
 
     /**
-     * @brief Removes a profile from a Profiles instance if its use count is at 1
+     * @brief Removes a profile from a Profiles instance (but remembers the profile existed at some point)
      * @param[in] profile_name The name of the profile to remove
      * @pre The profile exists in the Profiles instance
      */
-    void try_remove_profile(const std::string & profile_name);
+    void remove_profile(const std::string & profile_name);
+
+    /**
+     * @brief Remove all unreferenced profiles from a Profiles instance (but remembers the profiles existed at some point)
+     */
+    void remove_unreferenced_profiles();
 
     /**
      * @brief Returns a copy of the internal std::map used in the Profiles
@@ -283,7 +288,7 @@ public:
     int nb_profiles() const;
 
 private:
-    std::unordered_map<std::string, ProfilePtr> _profiles; //!< Stores all the profiles, indexed by their names
+    std::unordered_map<std::string, ProfilePtr> _profiles; //!< Stores all the profiles, indexed by their names. Value can be nullptr, meaning that the profile is no longer in memory but existed in the past.
 };
 
 /**
