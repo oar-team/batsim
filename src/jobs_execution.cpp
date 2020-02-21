@@ -22,13 +22,13 @@ void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, simgrid::s4
 {
     // Prepare data for smpi_replay_run
     char *str_instance_id = NULL;
-    int ret = asprintf(&str_instance_id, "%s", job->id.to_string().c_str());
+    int ret = asprintf(&str_instance_id, "%s", job->id.to_cstring());
     (void) ret; // Avoids a warning if assertions are ignored
     xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
-    XBT_INFO("Replaying rank %d of job %s (SMPI)", rank, job->id.to_string().c_str());
+    XBT_INFO("Replaying rank %d of job %s (SMPI)", rank, job->id.to_cstring());
     smpi_replay_run(str_instance_id, rank, 0, profile_data->trace_filenames[rank].c_str());
-    XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_string().c_str());
+    XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_cstring());
 
     barrier->wait();
 }
@@ -222,7 +222,7 @@ int execute_task(BatTask * btask,
         xbt_assert(nb_ranks == (int) job->smpi_ranks_to_hosts_mapping.size(),
                    "Invalid job %s: SMPI ranks_to_host mapping has an invalid size, as it should "
                    "use %d MPI ranks but the ranking states that there are %d ranks.",
-                   job->id.to_string().c_str(), nb_ranks, (int) job->smpi_ranks_to_hosts_mapping.size());
+                   job->id.to_cstring(), nb_ranks, (int) job->smpi_ranks_to_hosts_mapping.size());
 
         for (int rank = 0; rank < nb_ranks; ++rank)
         {
@@ -239,7 +239,7 @@ int execute_task(BatTask * btask,
     }
     else
         xbt_die("Cannot execute job %s: the profile '%s' is of unknown type: %s",
-                job->id.to_string().c_str(), job->profile->name.c_str(), profile->json_description.c_str());
+                job->id.to_cstring(), job->profile->name.c_str(), profile->json_description.c_str());
 
     return 1;
 }
@@ -383,19 +383,19 @@ void execute_job_process(BatsimContext * context,
                                     &remaining_time);
     if (job->return_code == 0)
     {
-        XBT_INFO("Job %s finished in time (success)", job->id.to_string().c_str());
+        XBT_INFO("Job %s finished in time (success)", job->id.to_cstring());
         job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
     }
     else if (job->return_code > 0)
     {
         XBT_INFO("Job %s finished in time (failed: return_code=%d)",
-                 job->id.to_string().c_str(), job->return_code);
+                 job->id.to_cstring(), job->return_code);
         job->state = JobState::JOB_STATE_COMPLETED_FAILED;
     }
     else
     {
         XBT_INFO("Job %s had been killed (walltime %g reached)",
-                 job->id.to_string().c_str(), (double) job->walltime);
+                 job->id.to_cstring(), (double) job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
         if (context->trace_schedule)
         {
@@ -408,7 +408,7 @@ void execute_job_process(BatsimContext * context,
     job->runtime = simgrid::s4u::Engine::get_clock() - job->starting_time;
     if (job->runtime == 0)
     {
-        XBT_WARN("Job '%s' computed in null time. Putting epsilon instead.", job->id.to_string().c_str());
+        XBT_WARN("Job '%s' computed in null time. Putting epsilon instead.", job->id.to_cstring());
         job->runtime = 1e-5l;
     }
 
@@ -485,7 +485,7 @@ void killer_process(BatsimContext * context,
         xbt_assert(! (job->state == JobState::JOB_STATE_REJECTED ||
                       job->state == JobState::JOB_STATE_SUBMITTED ||
                       job->state == JobState::JOB_STATE_NOT_SUBMITTED),
-                   "Bad kill: job %s has not been started", job->id.to_string().c_str());
+                   "Bad kill: job %s has not been started", job->id.to_cstring());
 
         if (job->state == JobState::JOB_STATE_RUNNING)
         {
@@ -518,11 +518,11 @@ void killer_process(BatsimContext * context,
             job->runtime = (long double)simgrid::s4u::Engine::get_clock() - job->starting_time;
 
             xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%g)!",
-                       job->id.to_string().c_str(), (double)job->runtime);
+                       job->id.to_cstring(), (double)job->runtime);
             if (job->runtime == 0)
             {
                 XBT_WARN("Killed job '%s' has a null runtime. Putting epsilon instead.",
-                         job->id.to_string().c_str());
+                         job->id.to_cstring());
                 job->runtime = 1e-5l;
             }
 

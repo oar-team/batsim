@@ -260,7 +260,7 @@ void server_on_job_completed(ServerData * data,
     auto job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Job %s has COMPLETED. %d jobs completed so far",
-             job->id.to_string().c_str(), data->nb_completed_jobs);
+             job->id.to_cstring(), data->nb_completed_jobs);
 
     data->context->proto_writer->append_job_completed(message->job_id.to_string(),
                                                       job_state_to_string(job->state),
@@ -298,7 +298,7 @@ void server_on_job_submitted(ServerData * data,
         }
 
         // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
-        XBT_DEBUG("Job received: %s", job_id.to_string().c_str());
+        XBT_DEBUG("Job received: %s", job_id.to_cstring());
 
         XBT_DEBUG("Workloads: %s", data->context->workloads.to_string().c_str());
 
@@ -310,7 +310,7 @@ void server_on_job_submitted(ServerData * data,
         job->state = JobState::JOB_STATE_SUBMITTED;
         ++data->nb_submitted_jobs;
         XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far",
-                 job_id.to_string().c_str(), data->nb_submitted_jobs);
+                 job_id.to_cstring(), data->nb_submitted_jobs);
 
         string job_json_description, profile_json_description;
 
@@ -704,12 +704,12 @@ void server_on_register_job(ServerData * data,
                "Internal error: Workload '%s' should exist.",
                message->job_id.workload_name().c_str());
     xbt_assert(!data->context->workloads.job_is_registered(message->job_id),
-               "Cannot register new job '%s', it already exists in the workload.", message->job_id.to_string().c_str());
+               "Cannot register new job '%s', it already exists in the workload.", message->job_id.to_cstring());
 
     Workload * workload = data->context->workloads.at(message->job_id.workload_name());
 
     // Create the job.
-    XBT_DEBUG("Parsing user-submitted job %s", message->job_id.to_string().c_str());
+    XBT_DEBUG("Parsing user-submitted job %s", message->job_id.to_cstring());
     auto job = Job::from_json(message->job_description, workload,
                                "Invalid JSON job submitted by the scheduler");
     xbt_assert(job->id.job_name() == message->job_id.job_name(), "Internal error");
@@ -726,7 +726,7 @@ void server_on_register_job(ServerData * data,
                    "If the profile is also dynamic, it can be registered with the REGISTER_PROFILE "
                    "message but you must ensure that the profile is sent (non-strictly) before "
                    "the REGISTER_JOB message.",
-                   job->id.to_string().c_str(),
+                   job->id.to_cstring(),
                    workload->name.c_str(), job->profile.c_str());
     }*/
 
@@ -805,12 +805,12 @@ void server_on_set_job_metadata(ServerData * data,
     JobIdentifier job_identifier = JobIdentifier(message->job_id);
     if (!(data->context->workloads.job_is_registered(job_identifier)))
     {
-        xbt_die("The job '%s' does not exist, cannot set its metadata", message->job_id.to_string().c_str());
+        xbt_die("The job '%s' does not exist, cannot set its metadata", message->job_id.to_cstring());
     }
 
     auto job = data->context->workloads.job_at(job_identifier);
     job->metadata = message->metadata;
-    XBT_DEBUG("Metadata of job '%s' has been set", message->job_id.to_string().c_str());
+    XBT_DEBUG("Metadata of job '%s' has been set", message->job_id.to_cstring());
 }
 
 void server_on_change_job_state(ServerData * data,
@@ -821,12 +821,12 @@ void server_on_change_job_state(ServerData * data,
 
     if (!(data->context->workloads.job_is_registered(message->job_id)))
     {
-        xbt_die("The job '%s' does not exist.", message->job_id.to_string().c_str());
+        xbt_die("The job '%s' does not exist.", message->job_id.to_cstring());
     }
     auto job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Change job state: Job %s to state %s",
-             job->id.to_string().c_str(),
+             job->id.to_cstring(),
              message->job_state.c_str());
 
     JobState new_state = job_state_from_string(message->job_state);
@@ -892,13 +892,12 @@ void server_on_to_job_msg(ServerData * data,
 
     if (!(data->context->workloads.job_is_registered(message->job_id)))
     {
-        xbt_die("The job '%s' does not exist, cannot send a message to that job.",
-                message->job_id.to_string().c_str());
+        xbt_die("The job '%s' does not exist, cannot send a message to that job.", message->job_id.to_cstring());
     }
     auto job = data->context->workloads.job_at(message->job_id);
 
     XBT_INFO("Send message to job: Job '%s' message='%s'",
-             job->id.to_string().c_str(),
+             job->id.to_cstring(),
              message->message.c_str());
 
     job->incoming_message_buffer.push_back(message->message);
@@ -912,8 +911,7 @@ void server_on_from_job_msg(ServerData * data,
 
     auto job = data->context->workloads.job_at(message->job_id);
 
-    XBT_INFO("Send message to scheduler: Job %s",
-             job->id.to_string().c_str());
+    XBT_INFO("Send message to scheduler: Job %s", job->id.to_cstring());
 
     data->context->proto_writer->append_from_job_message(message->job_id.to_string(),
                                                          message->message,
@@ -928,7 +926,7 @@ void server_on_reject_job(ServerData * data,
 
     if (!(data->context->workloads.job_is_registered(message->job_id)))
     {
-        xbt_die("Job '%s' does not exist.", message->job_id.to_string().c_str());
+        xbt_die("Job '%s' does not exist.", message->job_id.to_cstring());
     }
 
     auto job = data->context->workloads.job_at(message->job_id);
@@ -936,13 +934,12 @@ void server_on_reject_job(ServerData * data,
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Invalid rejection received: job '%s' cannot be rejected at the present time. "
                "To be rejected, a job must be submitted and not allocated yet.",
-               job->id.to_string().c_str());
+               job->id.to_cstring());
 
     job->state = JobState::JOB_STATE_REJECTED;
     data->nb_completed_jobs++;
 
-    XBT_INFO("Job '%s' has been rejected",
-             job->id.to_string().c_str());
+    XBT_INFO("Job '%s' has been rejected", job->id.to_cstring());
 
     data->context->jobs_tracer.write_job(job);
     data->jobs_to_be_deleted.push_back(message->job_id);
@@ -959,7 +956,7 @@ void server_on_kill_jobs(ServerData * data,
     for (const JobIdentifier & job_id : message->jobs_ids)
     {
         xbt_assert(data->context->workloads.job_is_registered(job_id),
-                   "Trying to kill job '%s' but it does not exist.", job_id.to_string().c_str());
+                   "Trying to kill job '%s' but it does not exist.", job_id.to_cstring());
 
         auto job = data->context->workloads.job_at(job_id);
 
@@ -969,7 +966,7 @@ void server_on_kill_jobs(ServerData * data,
             // Let's check the job state
             xbt_assert(job->state == JobState::JOB_STATE_RUNNING || job->is_complete(),
                        "Invalid KILL_JOB: job_id '%s' refers to a job not being executed nor completed.",
-                       job_id.to_string().c_str());
+                       job_id.to_cstring());
 
             // Let's mark that the job kill has been requested
             job->kill_requested = true;
@@ -1014,19 +1011,19 @@ void server_on_execute_job(ServerData * data,
 
     xbt_assert(data->context->workloads.job_is_registered(allocation->job_id),
                "Trying to execute job '%s', which is not registered in the workload!",
-               allocation->job_id.to_string().c_str());
+               allocation->job_id.to_cstring());
 
     auto job = data->context->workloads.job_at(allocation->job_id);
 
     xbt_assert(data->context->workloads.job_profile_is_registered(allocation->job_id),
                "Trying to execute job '%s', in which the profile '%s' is not registered in the workload!",
-               allocation->job_id.to_string().c_str(),
+               allocation->job_id.to_cstring(),
                job->profile->name.c_str());
 
 
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Cannot execute job '%s': its state (%s) is not JOB_STATE_SUBMITTED.",
-               job->id.to_string().c_str(), job_state_to_string(job->state).c_str());
+               job->id.to_cstring(), job_state_to_string(job->state).c_str());
 
     job->state = JobState::JOB_STATE_RUNNING;
 
@@ -1045,7 +1042,7 @@ void server_on_execute_job(ServerData * data,
                 xbt_assert(machine->jobs_being_computed.empty(),
                            "Job '%s': Invalid allocation: machine %d ('%s') is currently computing jobs (these ones:"
                            " {%s}) whereas time-sharing on compute machines is disabled (try --help to display the available options).",
-                           job->id.to_string().c_str(), machine->id, machine->name.c_str(),
+                           job->id.to_cstring(), machine->id, machine->name.c_str(),
                            machine->jobs_being_computed_as_string().c_str());
             }
             if (machine->has_role(roles::Permissions::STORAGE) && !data->context->allow_storage_sharing)
@@ -1054,7 +1051,7 @@ void server_on_execute_job(ServerData * data,
                 xbt_assert(machine->jobs_being_computed.empty(),
                            "Job '%s': Invalid allocation: machine %d ('%s') is currently computing jobs (these ones:"
                            " {%s}) whereas time-sharing on storage machines is disabled (try --help to display the available options).",
-                           job->id.to_string().c_str(), machine->id, machine->name.c_str(),
+                           job->id.to_cstring(), machine->id, machine->name.c_str(),
                            machine->jobs_being_computed_as_string().c_str());
             }
         }
@@ -1105,7 +1102,7 @@ void server_on_execute_job(ServerData * data,
             xbt_assert((unsigned int)allocation->mapping.size() == job->requested_nb_res,
                        "Job '%s' allocation is invalid. The decision process set a custom mapping for this job, "
                        "but the custom mapping size (%d) does not match the job requested number of machines (%d).",
-                       job->id.to_string().c_str(), (int)allocation->mapping.size(), job->requested_nb_res);
+                       job->id.to_cstring(), (int)allocation->mapping.size(), job->requested_nb_res);
         }
         else
         {
@@ -1114,7 +1111,7 @@ void server_on_execute_job(ServerData * data,
                        "Using a different number of machines than the one requested is prevented by default. "
                        "If you meant to use multiple executors per machine, please specify a custom execution mapping "
                        "specifying which allocated machine each executor should use.",
-                       job->id.to_string().c_str(), job->requested_nb_res, (int)allocation->machine_ids.size(),
+                       job->id.to_cstring(), job->requested_nb_res, (int)allocation->machine_ids.size(),
                        allocation->machine_ids.to_string_hyphen().c_str());
         }
     }

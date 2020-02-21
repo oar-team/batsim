@@ -61,6 +61,11 @@ std::string JobIdentifier::to_string() const
     return _representation;
 }
 
+const char *JobIdentifier::to_cstring() const
+{
+    return _representation.c_str();
+}
+
 bool JobIdentifier::is_lexically_valid(std::string & reason) const
 {
     bool ret = true;
@@ -236,7 +241,7 @@ JobPtr Jobs::operator[](JobIdentifier job_id)
 {
     auto it = _jobs.find(job_id);
     xbt_assert(it != _jobs.end(), "Cannot get job '%s': it does not exist",
-               job_id.to_string().c_str());
+               job_id.to_cstring());
     return it->second;
 }
 
@@ -244,7 +249,7 @@ const JobPtr Jobs::operator[](JobIdentifier job_id) const
 {
     auto it = _jobs.find(job_id);
     xbt_assert(it != _jobs.end(), "Cannot get job '%s': it does not exist",
-               job_id.to_string().c_str());
+               job_id.to_cstring());
     return it->second;
 }
 
@@ -262,7 +267,7 @@ void Jobs::add_job(JobPtr job)
 {
     xbt_assert(!exists(job->id),
                "Bad Jobs::add_job call: A job with name='%s' already exists.",
-               job->id.to_string().c_str());
+               job->id.to_cstring());
 
     _jobs[job->id] = job;
     _jobs_met.insert({job->id, true});
@@ -272,7 +277,7 @@ void Jobs::delete_job(const JobIdentifier & job_id, const bool & garbage_collect
 {
     xbt_assert(exists(job_id),
                "Bad Jobs::delete_job call: The job with name='%s' does not exist.",
-               job_id.to_string().c_str());
+               job_id.to_cstring());
 
     std::string profile_name = _jobs[job_id]->profile->name;
     _jobs.erase(job_id);

@@ -56,6 +56,12 @@ public:
     std::string to_string() const;
 
     /**
+     * @brief Returns a null-terminated C string of the JobIdentifier representation.
+     * @return A null-terminated C string of the JobIdentifier representation.
+     */
+    const char * to_cstring() const;
+
+    /**
      * @brief Returns whether the fields are lexically valid.
      * @details None of the fields should contain a '!'.
      * @param[out] reason Empty if valid.
