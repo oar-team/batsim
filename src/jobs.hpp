@@ -82,8 +82,16 @@ public:
     std::string job_name() const;
 
 private:
+    /**
+     * @brief Computes the string representation of the JobIdentifier.
+     * @return The string representation of the JobIdentifier.
+     */
+    std::string representation() const;
+
+private:
     std::string _workload_name; //!< The name of the workload the job belongs to
     std::string _job_name; //!< The job unique name inside its workload
+    std::string _representation; //!< Stores a string representation of the JobIdentifier
 };
 
 /**

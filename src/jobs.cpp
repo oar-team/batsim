@@ -33,11 +33,8 @@ JobIdentifier::JobIdentifier(const std::string & workload_name,
     _workload_name(workload_name),
     _job_name(job_name)
 {
-    XBT_DEBUG("Parsed workload_name: '%s'", this->_workload_name.c_str());
-    XBT_DEBUG("Parsed job_name: '%s'", this->_job_name.c_str());
-    XBT_DEBUG("Parsed job_identifier: '%s'", this->to_string().c_str());
-
     check_lexically_valid();
+    _representation = representation();
 }
 
 JobIdentifier::JobIdentifier(const std::string & job_id_str)
@@ -53,17 +50,15 @@ JobIdentifier::JobIdentifier(const std::string & job_id_str)
                job_id_str.c_str());
 
     this->_workload_name = job_identifier_parts[0];
-    XBT_DEBUG("Parsed workload_name: '%s'", this->_workload_name.c_str());
     this->_job_name = job_identifier_parts[1];
-    XBT_DEBUG("Parsed job_name: '%s'", this->_job_name.c_str());
-    XBT_DEBUG("Parsed job_identifier: '%s'", this->to_string().c_str());
 
     check_lexically_valid();
+    _representation = representation();
 }
 
 std::string JobIdentifier::to_string() const
 {
-    return _workload_name + '!' + _job_name;
+    return _representation;
 }
 
 bool JobIdentifier::is_lexically_valid(std::string & reason) const
@@ -100,6 +95,11 @@ string JobIdentifier::workload_name() const
 string JobIdentifier::job_name() const
 {
     return _job_name;
+}
+
+string JobIdentifier::representation() const
+{
+    return _workload_name + '!' + _job_name;
 }
 
 bool operator<(const JobIdentifier &ji1, const JobIdentifier &ji2)
