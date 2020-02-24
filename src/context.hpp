@@ -42,7 +42,7 @@ struct BatsimContext
     Machines machines;                              //!< The machines
     Workloads workloads;                            //!< The workloads
     Workflows workflows;                            //!< The workflows
-    EventListMap eventListsMap;                     //!< The map of EventLists
+    std::map<std::string, EventList*> event_lists;  //!< The map of EventLists
     PajeTracer paje_tracer;                         //!< The PajeTracer
     PStateChangeTracer pstate_tracer;               //!< The PStateChangeTracer
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
@@ -82,5 +82,7 @@ struct BatsimContext
     std::string export_prefix;                      //!< The output export prefix
     int workflow_nb_concurrent_jobs_limit;          //!< Limits the number of concurrent jobs for workflows
 
-    std::string batsim_version;                     //!< The Batsim version (got from the BATSIM_VERSION variable that is usually set by CMake)
+    std::string batsim_version;                     //!< The Batsim version (got from the BATSIM_VERSION variable that is usually set by the build system)
+
+    ~BatsimContext();
 };

@@ -35,6 +35,25 @@ std::string event_type_to_string(const EventType & type)
     return event_type;
 }
 
+Event::~Event()
+{
+    if (data != nullptr)
+    {
+        switch(type)
+        {
+        case EventType::EVENT_MACHINE_AVAILABLE:
+        case EventType::EVENT_MACHINE_UNAVAILABLE: // consecutive cases without break/etc. is intended here
+            delete static_cast<MachineAvailabilityEventData *>(data);
+            break;
+        case EventType::EVENT_GENERIC:
+            delete static_cast<GenericEventData *>(data);
+            break;
+        }
+
+        data = nullptr;
+    }
+}
+
 EventType event_type_from_string(const std::string & type_str, const bool unknown_as_generic)
 {
     EventType type;
@@ -135,15 +154,18 @@ bool event_comparator_timestamp_number(const Event * a, const Event * b)
 
 
 // Events-related functions
-EventList * EventList::new_event_list(const std::string & name,
-                                   const bool is_static)
+EventList::EventList(const string &name, const bool is_static) :
+    _name(name),
+    _is_static(is_static)
 {
+}
 
-    EventList * ev = new EventList;
-    ev->_name = name;
-    ev->_is_static = is_static;
-
-    return ev;
+EventList::~EventList()
+{
+    for(auto & event: _events)
+    {
+        delete event;
+    }
 }
 
 void EventList::load_from_json(const std::string & json_filename, bool unknown_as_generic)
