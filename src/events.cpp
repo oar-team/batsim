@@ -154,15 +154,18 @@ bool event_comparator_timestamp_number(const Event * a, const Event * b)
 
 
 // Events-related functions
-EventList * EventList::new_event_list(const std::string & name,
-                                   const bool is_static)
+EventList::EventList(const string &name, const bool is_static) :
+    _name(name),
+    _is_static(is_static)
 {
+}
 
-    EventList * ev = new EventList;
-    ev->_name = name;
-    ev->_is_static = is_static;
-
-    return ev;
+EventList::~EventList()
+{
+    for(auto & event: _events)
+    {
+        delete event;
+    }
 }
 
 void EventList::load_from_json(const std::string & json_filename, bool unknown_as_generic)

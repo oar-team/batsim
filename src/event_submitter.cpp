@@ -32,11 +32,10 @@ static void send_events_to_server(const vector<const Event *> & events_to_send,
 void static_event_submitter_process(BatsimContext * context,
                                     std::string eventList_name)
 {
-    xbt_assert(context->eventListsMap.count(eventList_name) == 1,
+    xbt_assert(context->event_lists.count(eventList_name) == 1,
                "Error: a static_event_submitter_process is in charge of the event list '%s' "
                "which does not exist.", eventList_name.c_str());
 
-    EventList * events = context->eventListsMap[eventList_name];
     string submitter_name = eventList_name + "_submitter";
     /*
         ███████████████████████████████─
@@ -53,7 +52,7 @@ void static_event_submitter_process(BatsimContext * context,
 
     long double current_occurring_date = simgrid::s4u::Engine::get_clock();
 
-    const vector<Event *> & eventVector = events->events();
+    const vector<Event *> & eventVector = context->event_lists[eventList_name]->events();
 
     if(eventVector.size() > 0)
     {

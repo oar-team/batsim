@@ -103,26 +103,18 @@ bool event_comparator_timestamp_number(const Event * a, const Event * b);
  */
 class EventList
 {
-private:
-    /**
-     * @brief EventList cannot be constructed directly. Please refer to static methods.
-     */
-    explicit EventList() = default;
-
 public:
-    /**
-      * @brief Destroys an EventList
-      */
-    ~EventList();
-
     /**
      * @brief Creates an empty EventList
      * @param[in] name The name of the EventList
      * @param[in] is_static Whether this EventList is static or not
-     * @return The created EventList
      */
-    static EventList * new_event_list(const std::string & name,
-                                      const bool is_static = true);
+    explicit EventList(const std::string & name = "unset", const bool is_static = true);
+
+    /**
+      * @brief Destroys an EventList
+      */
+    ~EventList();
 
     /**
      * @brief Loads static Events from a JSON filename
@@ -159,7 +151,5 @@ private:
     std::vector<Event*> _events;    //!< The list of events (should be sorted in non-decreasing timestamp)
     std::string _name;              //!< The name of the event list
     std::string _file = "";         //!< The filename of the event list, if any
-    bool _is_static = true;         //!< Whether the EventList is dynamic
+    bool _is_static;                //!< Whether the EventList is dynamic
 };
-
-typedef std::map<std::string, EventList*> EventListMap; //!< Associates EventLists with their names

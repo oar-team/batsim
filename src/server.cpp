@@ -82,7 +82,7 @@ void server_process(BatsimContext * context)
     data->submitter_counters[SubmitterType::JOB_SUBMITTER] = job_counters;
 
     ServerData::SubmitterCounters event_counters;
-    event_counters.expected_nb_submitters = context->eventListsMap.size();
+    event_counters.expected_nb_submitters = context->event_lists.size();
     data->submitter_counters[SubmitterType::EVENT_SUBMITTER] = event_counters;
 
     data->jobs_to_be_deleted.clear();
