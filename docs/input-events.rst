@@ -36,7 +36,8 @@ Each external event is notified to the scheduler via a :ref:`proto_NOTIFY` proto
 Machine_unavailable
 ~~~~~~~~~~~~~~~~~~~
 
-The machines specified by the `resources` field (represented as an :ref:`interval_set`) become unavailable. It is no longer possible to execute jobs on these machines, but jobs that were already running on these machines are not killed.
+The machines specified by the `resources` field (represented as an :ref:`interval_set`) become unavailable.
+It is no longer possible to execute jobs on these machines, but **jobs that were already running on these machines are not killed**.
 
 .. code:: json
 
@@ -45,7 +46,8 @@ The machines specified by the `resources` field (represented as an :ref:`interva
 Machine_available
 ~~~~~~~~~~~~~~~~~
 
-The machines specified by the `resources` field (represented as an :ref:`interval_set`) become available. It is now possible to execute jobs on these machines.
+The machines specified by the `resources` field (represented as an :ref:`interval_set`) become available.
+It is now possible to execute jobs on these machines **if no job is running on them** (unless resource sharing is enabled).
 
 .. code:: json
 
