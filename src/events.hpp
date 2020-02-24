@@ -62,8 +62,8 @@ struct Event
     ~Event();
 
     EventType type;             //!< The type of the Event
-    long double timestamp;      //!< The occurring time of the Event
-    void * data;                //!< The Event data
+    long double timestamp = -1; //!< The occurring time of the Event
+    void * data = nullptr;      //!< The Event data
 
 public:
     /**

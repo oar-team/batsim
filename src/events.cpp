@@ -35,6 +35,25 @@ std::string event_type_to_string(const EventType & type)
     return event_type;
 }
 
+Event::~Event()
+{
+    if (data != nullptr)
+    {
+        switch(type)
+        {
+        case EventType::EVENT_MACHINE_AVAILABLE:
+        case EventType::EVENT_MACHINE_UNAVAILABLE: // consecutive cases without break/etc. is intended here
+            delete static_cast<MachineAvailabilityEventData *>(data);
+            break;
+        case EventType::EVENT_GENERIC:
+            delete static_cast<GenericEventData *>(data);
+            break;
+        }
+
+        data = nullptr;
+    }
+}
+
 EventType event_type_from_string(const std::string & type_str, const bool unknown_as_generic)
 {
     EventType type;
