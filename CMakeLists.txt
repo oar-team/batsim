@@ -43,65 +43,25 @@ endif()
 ################
 # Dependencies #
 ################
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-    "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+find_package(PkgConfig REQUIRED)
 
-## SimGrid dependency
-find_package(SimGrid REQUIRED)
-include_directories(BEFORE SYSTEM ${SimGrid_INCLUDE_DIR})
+pkg_check_modules(simgrid REQUIRED IMPORTED_TARGET simgrid)
+pkg_check_modules(rapidjson REQUIRED IMPORTED_TARGET RapidJSON)
+pkg_check_modules(redox REQUIRED IMPORTED_TARGET redox)
+pkg_check_modules(libzmq REQUIRED IMPORTED_TARGET libzmq)
+pkg_check_modules(docopt REQUIRED IMPORTED_TARGET docopt)
+pkg_check_modules(pugixml REQUIRED IMPORTED_TARGET pugixml)
+pkg_check_modules(intervalset REQUIRED IMPORTED_TARGET intervalset)
 
-## Boost dependency
+# (boost does not provide pkgconfig files)
 find_package(Boost 1.58 REQUIRED COMPONENTS system filesystem regex locale)
 include_directories(${Boost_INCLUDE_DIR})
-
-## Rapidjson dependency
-find_package(rapidjson REQUIRED)
-include_directories(${RAPIDJSON_INCLUDE_DIRS})
-
-## Redox dependency
-find_package(redox REQUIRED)
-include_directories(${REDOX_INCLUDE_DIR})
-
-## Redox sub dependencies
-find_package(hiredis REQUIRED)
-include_directories(${HIREDIS_INCLUDE_DIRS})
-
-find_package(libev REQUIRED)
-include_directories(${LIBEV_INCLUDE_DIRS})
-
-## ZeroMQ dependency
-find_package(ZMQ REQUIRED)
-include_directories(${ZMQ_INCLUDE_DIRS})
-
-## Docopt dependency
-find_package(docopt REQUIRED)
-include_directories(${DOCOPT_INCLUDE_DIRS})
-
-## Pugixml dependency
-find_package(pugixml REQUIRED)
-include_directories(${PUGIXML_INCLUDE_DIR})
-
-## Intervalset dependency
-find_package(intervalset REQUIRED)
-include_directories(${INTERVALSET_INCLUDE_DIR})
 
 ##################
 # Batsim version #
 ##################
-file(READ "VERSION" from_file_version)
-set(default_batsim_version "${from_file_version}")
-include(GetGitRevisionDescription)
-git_describe(batsim_version)
-message(STATUS "Batsim version from git: ${batsim_version}")
-
-if(NOT((${batsim_version} STREQUAL "GIT-NOTFOUND") OR
-       (${batsim_version} STREQUAL "HEAD-HASH-NOTFOUND")))
-    add_definitions(-DBATSIM_VERSION=${batsim_version})
-else()
-    message(WARNING "Cannot retrieve Batsim version from git. "
-                    "Using default version ${default_batsim_version}")
-    add_definitions(-DBATSIM_VERSION=${default_batsim_version})
-endif()
+message(WARNING "CMake support is deprecated, please use Meson instead.")
+add_definitions(-DBATSIM_VERSION="batsim-build-from-cmake.this-is-deprecated.use-meson-instead")
 
 ################
 # Source files #
@@ -110,10 +70,6 @@ endif()
 file(GLOB batsim_SRC
     "src/*.hpp"
     "src/*.cpp"
-    "src/pugixml-1.7/*.hpp"
-    "src/pugixml-1.7/*.cpp"
-    "src/docopt/*.cpp"
-    "src/docopt/*.h"
 )
 
 # Executables
@@ -121,25 +77,33 @@ add_executable(batsim ${batsim_SRC})
 
 # Libraries to link
 target_link_libraries(batsim
-    ${SimGrid_LIBRARY}
+    ${simgrid_LIBRARIES}
+    ${redox_LIBRARIES}
+    ${libzmq_LIBRARIES}
+    ${docopt_LIBRARIES}
+    ${pugixml_LIBRARIES}
+    ${intervalset_LIBRARIES}
     ${Boost_FILESYSTEM_LIBRARY_DEBUG}
     ${Boost_LOCALE_LIBRARY_DEBUG}
     ${Boost_REGEX_LIBRARY_DEBUG}
     ${Boost_SYSTEM_LIBRARY_DEBUG}
-    ${REDOX_LIBRARY}
-    ${LIBEV_LIBRARY}
-    ${HIREDIS_LIBRARY}
-    ${ZMQ_LIBRARIES}
-    ${DOCOPT_LIBRARIES}
-    ${PUGIXML_LIBRARY}
-    ${INTERVALSET_LIBRARY}
+)
+
+include_directories(
+    ${simgrid_INCLUDE_DIRS}
+    ${rapidjson_INCLUDE_DIRS}
+    ${redox_INCLUDE_DIRS}
+    ${libzmq_INCLUDE_DIRS}
+    ${docopt_INCLUDE_DIRS}
+    ${pugixml_INCLUDE_DIRS}
+    ${intervalset_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIR}
 )
 
 ################
 # Installation #
 ################
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim
-    DESTINATION bin)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/batsim DESTINATION bin)
 
 # Enable or disable optimizations depending on user's will
 message("enable_compile_optimizations is ${enable_compile_optimizations}")
