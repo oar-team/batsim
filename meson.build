@@ -61,6 +61,7 @@ src_without_main = [
     'src/machines.hpp',
     'src/network.cpp',
     'src/network.hpp',
+    'src/permissions.cpp',
     'src/permissions.hpp',
     'src/pointers.hpp',
     'src/profiles.cpp',
