@@ -53,6 +53,22 @@ let
       '';
     });
 
+    # Another Batsim. This one is built from cmake.
+    batsim_cmake = batsim.overrideAttrs (attr: rec {
+      buildInputs = attr.buildInputs ++ [pkgs.cmake];
+      src = pkgs.lib.sourceByRegex ./. [
+        "^src"
+        "^src/.*\.?pp"
+        "^CMakeLists.txt"
+      ];
+      configurePhase = ''
+        mkdir build && cd build
+        cmake .. -G Ninja -DCMAKE_INSTALL_PREFIX=$out
+      '';
+      buildPhase = "ninja";
+      installPhase = "ninja install";
+    });
+
     # Convenient development shell for qtcreator+cmake users.
     qtcreator_shell = pkgs.mkShell rec {
       name = "batsim-dev-shell-qtcreator-cmake";
