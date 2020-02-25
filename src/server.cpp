@@ -1040,18 +1040,22 @@ void server_on_execute_job(ServerData * data,
             {
                 (void) machine; // Avoids a warning if assertions are ignored
                 xbt_assert(machine->jobs_being_computed.empty(),
-                           "Job '%s': Invalid allocation: machine %d ('%s') is currently computing jobs (these ones:"
-                           " {%s}) whereas time-sharing on compute machines is disabled (try --help to display the available options).",
-                           job->id.to_cstring(), machine->id, machine->name.c_str(),
+                           "Job '%s': Invalid allocation ('%s'): machine %d (hostname='%s') is currently computing jobs (these ones:"
+                           " {%s}) whereas time-sharing on compute machines is disabled (rerun with --help to display the available options).",
+                           job->id.to_cstring(),
+                           allocation->machine_ids.to_string_hyphen().c_str(),
+                           machine->id, machine->name.c_str(),
                            machine->jobs_being_computed_as_string().c_str());
             }
             if (machine->has_role(roles::Permissions::STORAGE) && !data->context->allow_storage_sharing)
             {
                 (void) machine; // Avoids a warning if assertions are ignored
                 xbt_assert(machine->jobs_being_computed.empty(),
-                           "Job '%s': Invalid allocation: machine %d ('%s') is currently computing jobs (these ones:"
-                           " {%s}) whereas time-sharing on storage machines is disabled (try --help to display the available options).",
-                           job->id.to_cstring(), machine->id, machine->name.c_str(),
+                           "Job '%s': Invalid allocation ('%s'): machine %d (hostname='%s') is currently computing jobs (these ones:"
+                           " {%s}) whereas time-sharing on storage machines is disabled (rerun with --help to display the available options).",
+                           job->id.to_cstring(),
+                           allocation->machine_ids.to_string_hyphen().c_str(),
+                           machine->id, machine->name.c_str(),
                            machine->jobs_being_computed_as_string().c_str());
             }
         }
@@ -1064,8 +1068,12 @@ void server_on_execute_job(ServerData * data,
         Machine * machine = data->context->machines[machine_id];
 
         xbt_assert(machine->state == MachineState::COMPUTING || machine->state == MachineState::IDLE,
-                   "Invalid job allocation: machine %d ('%s') cannot compute jobs now (the machine is"
-                   " neither computing nor being idle)", machine->id, machine->name.c_str());
+                   "Job '%s': Invalid job allocation ('%s'): machine %d (hostname='%s') cannot compute jobs now "
+                   "(the machine is not computing nor idle, its state is '%s')",
+                   job->id.to_cstring(),
+                   allocation->machine_ids.to_string_hyphen().c_str(),
+                   machine->id, machine->name.c_str(),
+                   machine_state_to_string(machine->state).c_str());
 
         if (data->context->energy_used)
         {
@@ -1074,7 +1082,9 @@ void server_on_execute_job(ServerData * data,
         (void) ps; // Avoids a warning if assertions are ignored
         xbt_assert(machine->has_pstate(ps));
         xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
-                   "Invalid job allocation: machine %d ('%s') is not in a computation pstate (ps=%d)",
+                   "Job '%s': Invalid job allocation ('%s'): machine %d (hostname='%s') is not in a computation pstate (ps=%d)",
+                   job->id.to_cstring(),
+                   allocation->machine_ids.to_string_hyphen().c_str(),
                    machine->id, machine->name.c_str(), ps);
         }
     }
@@ -1100,19 +1110,22 @@ void server_on_execute_job(ServerData * data,
         if (allocation->mapping.size() != 0)
         {
             xbt_assert((unsigned int)allocation->mapping.size() == job->requested_nb_res,
-                       "Job '%s' allocation is invalid. The decision process set a custom mapping for this job, "
+                       "Job '%s' allocation ('%s') is invalid. The decision process set a custom mapping for this job, "
                        "but the custom mapping size (%d) does not match the job requested number of machines (%d).",
-                       job->id.to_cstring(), (int)allocation->mapping.size(), job->requested_nb_res);
+                       job->id.to_cstring(),
+                       allocation->machine_ids.to_string_hyphen().c_str(),
+                       (int)allocation->mapping.size(), job->requested_nb_res);
         }
         else
         {
             xbt_assert((unsigned int)allocation->machine_ids.size() == job->requested_nb_res,
-                       "Job '%s' allocation is invalid. The job requires %d machines but only %d were given (%s). "
+                       "Job '%s' allocation ('%s') is invalid. The job requires %d machines but only %d were given. "
                        "Using a different number of machines than the one requested is prevented by default. "
                        "If you meant to use multiple executors per machine, please specify a custom execution mapping "
                        "specifying which allocated machine each executor should use.",
-                       job->id.to_cstring(), job->requested_nb_res, (int)allocation->machine_ids.size(),
-                       allocation->machine_ids.to_string_hyphen().c_str());
+                       job->id.to_cstring(),
+                       allocation->machine_ids.to_string_hyphen().c_str(),
+                       job->requested_nb_res, (int)allocation->machine_ids.size());
         }
     }
 
