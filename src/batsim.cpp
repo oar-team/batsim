@@ -25,7 +25,6 @@
 
 #include <sys/types.h>
 #include <stdio.h>
-#include <argp.h>
 #include <unistd.h>
 
 #include <string>
