@@ -19,9 +19,7 @@ message('batsim version set to: ' + batversion)
 # Dependencies
 add_project_link_arguments(['-lstdc++fs'], language : 'cpp')
 simgrid_dep = dependency('simgrid')
-boost_dep = dependency('boost',
-    modules : ['regex', 'system']
-)
+boost_dep = dependency('boost')
 rapidjson_dep = dependency('RapidJSON')
 redox_dep = dependency('redox')
 libzmq_dep = dependency('libzmq')

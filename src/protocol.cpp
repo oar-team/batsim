@@ -1,7 +1,8 @@
 #include "protocol.hpp"
 
+#include <regex>
+
 #include <boost/algorithm/string/join.hpp>
-#include <boost/regex.hpp>
 
 #include <xbt.h>
 
@@ -1232,8 +1233,8 @@ void JsonProtocolReader::handle_set_job_metadata(int event_number,
     string metadata = metadata_value.GetString();
 
     // Check metadata validity regarding CSV output
-    boost::regex r("[^\"]*");
-    xbt_assert(boost::regex_match(metadata, r), "Invalid JSON message: the 'metadata' value in the 'data' value of event %d (SET_JOB_METADATA) should not contain double quotes (got ###%s###)", event_number, metadata.c_str());
+    std::regex r("[^\"]*");
+    xbt_assert(std::regex_match(metadata, r), "Invalid JSON message: the 'metadata' value in the 'data' value of event %d (SET_JOB_METADATA) should not contain double quotes (got ###%s###)", event_number, metadata.c_str());
 
     SetJobMetadataMessage * message = new SetJobMetadataMessage;
     message->job_id = JobIdentifier(job_id);

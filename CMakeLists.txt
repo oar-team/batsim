@@ -50,7 +50,7 @@ pkg_check_modules(pugixml REQUIRED IMPORTED_TARGET pugixml)
 pkg_check_modules(intervalset REQUIRED IMPORTED_TARGET intervalset)
 
 # (boost does not provide pkgconfig files)
-find_package(Boost 1.58 REQUIRED COMPONENTS system regex locale)
+find_package(Boost 1.58)
 include_directories(${Boost_INCLUDE_DIR})
 
 ##################
@@ -79,8 +79,7 @@ target_link_libraries(batsim
     ${docopt_LIBRARIES}
     ${pugixml_LIBRARIES}
     ${intervalset_LIBRARIES}
-    ${Boost_REGEX_LIBRARY_DEBUG}
-    ${Boost_SYSTEM_LIBRARY_DEBUG}
+    "'stdc++fs'"
 )
 
 include_directories(
