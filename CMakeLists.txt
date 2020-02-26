@@ -84,7 +84,6 @@ target_link_libraries(batsim
     ${pugixml_LIBRARIES}
     ${intervalset_LIBRARIES}
     ${Boost_FILESYSTEM_LIBRARY_DEBUG}
-    ${Boost_LOCALE_LIBRARY_DEBUG}
     ${Boost_REGEX_LIBRARY_DEBUG}
     ${Boost_SYSTEM_LIBRARY_DEBUG}
 )

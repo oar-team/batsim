@@ -19,7 +19,7 @@ message('batsim version set to: ' + batversion)
 # Dependencies
 simgrid_dep = dependency('simgrid')
 boost_dep = dependency('boost',
-    modules : ['locale', 'filesystem', 'regex', 'system']
+    modules : ['filesystem', 'regex', 'system']
 )
 rapidjson_dep = dependency('RapidJSON')
 redox_dep = dependency('redox')
