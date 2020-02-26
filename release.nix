@@ -1,6 +1,7 @@
 { kapack ? import
     (fetchTarball "https://github.com/oar-team/kapack/archive/master.tar.gz")
-  {}
+  { pkgs = import (
+    fetchTarball "https://github.com/NixOS/nixpkgs/archive/19.09.tar.gz") {}; }
 , doUnitTests ? false
 , doCoverage ? true
 , doValgrindAnalysis ? false
