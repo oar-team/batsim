@@ -7,8 +7,8 @@
 
 #include <fstream>
 #include <iostream>
+#include <filesystem>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <xbt/asserts.h>
@@ -19,7 +19,7 @@
 
 using namespace std;
 using namespace rapidjson;
-using namespace boost;
+namespace fs = std::filesystem;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(profiles, "profiles"); //!< Logging
 
@@ -641,16 +641,16 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
                    "a file workload, which is not implemented at the moment.");
         (void) is_from_a_file; // Avoids a warning if assertions are ignored
 
-        filesystem::path base_dir(json_filename);
+        fs::path base_dir = json_filename;
         base_dir = base_dir.parent_path();
         XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
-        xbt_assert(filesystem::exists(base_dir) && filesystem::is_directory(base_dir));
+        xbt_assert(fs::exists(base_dir) && fs::is_directory(base_dir));
 
         //XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
         //XBT_INFO("trace = '%s'", trace.c_str());
-        filesystem::path trace_path(base_dir.string() + "/" + trace_filename);
+        fs::path trace_path = base_dir.string() + "/" + trace_filename;
         //XBT_INFO("trace_path = '%s'", trace_path.string().c_str());
-        xbt_assert(filesystem::exists(trace_path) && filesystem::is_regular_file(trace_path),
+        xbt_assert(fs::exists(trace_path) && fs::is_regular_file(trace_path),
                    "Invalid JSON: profile '%s' has an invalid 'trace' field ('%s'), which leads to a non-existent file ('%s')",
                    profile_name.c_str(), trace_filename.c_str(), trace_path.string().c_str());
 
@@ -660,8 +660,8 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         string line;
         while (std::getline(trace_file, line))
         {
-            trim_right(line);
-            filesystem::path rank_trace_path(trace_path.parent_path().string() + "/" + line);
+            boost::trim_right(line);
+            fs::path rank_trace_path = trace_path.parent_path().string() + "/" + line;
             data->trace_filenames.push_back(rank_trace_path.string());
         }
 

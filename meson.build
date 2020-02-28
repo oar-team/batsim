@@ -1,7 +1,7 @@
 project('batsim', 'cpp',
     version: '3.1.0',
     license: 'LGPL-3.0',
-    default_options: ['cpp_std=c++11'],
+    default_options: ['cpp_std=c++17'],
     meson_version: '>=0.40.0'
 )
 
@@ -17,10 +17,9 @@ endif
 message('batsim version set to: ' + batversion)
 
 # Dependencies
+add_project_link_arguments(['-lstdc++fs'], language : 'cpp')
 simgrid_dep = dependency('simgrid')
-boost_dep = dependency('boost',
-    modules : ['locale', 'filesystem', 'regex', 'system']
-)
+boost_dep = dependency('boost')
 rapidjson_dep = dependency('RapidJSON')
 redox_dep = dependency('redox')
 libzmq_dep = dependency('libzmq')

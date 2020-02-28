@@ -10,7 +10,7 @@
 #include <fstream>
 #include <streambuf>
 #include <algorithm>
-#include <boost/regex.hpp>
+#include <regex>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -470,11 +470,11 @@ JobPtr Job::from_json(const rapidjson::Value & json_desc,
     // in the json raw description
     string json_description_tmp(buffer.GetString(), buffer.GetSize());
     /// @cond DOXYGEN_FAILS_PARSING_THIS_REGEX
-    boost::regex r(R"("id"\s*:\s*(?:"*[^(,|})]*"*)\s*)");
+    std::regex r(R"("id"\s*:\s*(?:"*[^(,|})]*"*)\s*)");
     /// @endcond
     string replacement_str = "\"id\":\"" + j->id.to_string() + "\"";
     // XBT_INFO("Before regexp: %s", json_description_tmp.c_str());
-    j->json_description = boost::regex_replace(json_description_tmp, r, replacement_str);
+    j->json_description = std::regex_replace(json_description_tmp, r, replacement_str);
 
     // Let's check that the new description is a valid JSON string
     rapidjson::Document check_doc;

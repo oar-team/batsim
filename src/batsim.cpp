@@ -24,8 +24,8 @@
 
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <stdio.h>
-#include <argp.h>
 #include <unistd.h>
 
 #include <string>
@@ -40,7 +40,6 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
-#include <boost/filesystem.hpp>
 
 #include "batsim.hpp"
 #include "context.hpp"
@@ -72,7 +71,8 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "batsim"); //!< Logging
  */
 bool file_exists(const std::string & filename)
 {
-    return boost::filesystem::exists(filename);
+    struct stat buffer;
+    return (stat(filename.c_str(), &buffer) == 0);
 }
 
 /**

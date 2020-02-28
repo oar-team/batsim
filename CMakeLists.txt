@@ -3,25 +3,21 @@ cmake_minimum_required(VERSION 3.1)
 
 project("Batsim")
 
-# Check that the used compiler handles c++11 correctly
+# Check that the used compiler handles c++17 correctly
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8.1")
-        message(FATAL_ERROR "Insufficient gcc version: 4.8.1 is needed to support C++11")
-    elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5")
-        message(WARNING "Old gcc version found: Using version 5 or greater is recommended")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "8")
+        message(FATAL_ERROR "Insufficient gcc version: 8 is needed to support C++17")
     endif()
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "3.3")
-        message(FATAL_ERROR "Insufficient clang version: 3.3 is needed to support C++11")
-    elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "3.4")
-        message(WARNING "Old clang version found: Using version 3.4 or greater is recommended")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5")
+        message(FATAL_ERROR "Insufficient clang version: 5 is needed to support C++17")
     endif()
 else()
-    message(WARNING "Unknown compiler. Make sure it fully supports C++11.")
+    message(WARNING "Unknown compiler. Make sure it fully supports C++17.")
 endif()
 
-# Enable C++11
-set(CMAKE_CXX_STANDARD 11)
+# Enable C++17
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Options
@@ -54,7 +50,7 @@ pkg_check_modules(pugixml REQUIRED IMPORTED_TARGET pugixml)
 pkg_check_modules(intervalset REQUIRED IMPORTED_TARGET intervalset)
 
 # (boost does not provide pkgconfig files)
-find_package(Boost 1.58 REQUIRED COMPONENTS system filesystem regex locale)
+find_package(Boost 1.58)
 include_directories(${Boost_INCLUDE_DIR})
 
 ##################
@@ -83,10 +79,7 @@ target_link_libraries(batsim
     ${docopt_LIBRARIES}
     ${pugixml_LIBRARIES}
     ${intervalset_LIBRARIES}
-    ${Boost_FILESYSTEM_LIBRARY_DEBUG}
-    ${Boost_LOCALE_LIBRARY_DEBUG}
-    ${Boost_REGEX_LIBRARY_DEBUG}
-    ${Boost_SYSTEM_LIBRARY_DEBUG}
+    "'stdc++fs'"
 )
 
 include_directories(

@@ -1,13 +1,14 @@
 { kapack ? import
-    (fetchTarball "https://github.com/oar-team/kapack/archive/master.tar.gz")
+    (fetchTarball "https://github.com/oar-team/nur-kapack/archive/master.tar.gz")
   {}
-, doUnitTests ? false
+, doUnitTests ? true
 , doCoverage ? true
 , doValgrindAnalysis ? false
-, simgrid ? kapack.simgrid
-, batsched ? kapack.batsched_dev
+, debug ? true
+, simgrid ? kapack.simgrid-light.override { inherit debug; }
+, batsched ? kapack.batsched-master
 , batexpe ? kapack.batexpe
-, pybatsim ? kapack.pybatsim_dev
+, pybatsim ? kapack.pybatsim-master
 }:
 
 let
@@ -17,9 +18,9 @@ let
 
   jobs = rec {
     # Batsim executable binary file.
-    batsim = (kapack.batsim.override { simgrid = simgrid; }).overrideAttrs (attr: rec {
+    batsim = (kapack.batsim.override { inherit debug simgrid; }).overrideAttrs (attr: rec {
       buildInputs = attr.buildInputs
-        ++ pkgs.lib.optional doUnitTests [kapack.gtest];
+        ++ pkgs.lib.optional doUnitTests [pkgs.gtest.dev];
       src = pkgs.lib.sourceByRegex ./. [
         "^src"
         "^src/.*\.?pp"
@@ -28,13 +29,9 @@ let
         "^meson\.build"
         "^meson_options\.txt"
       ];
-      # Debug build, without any Nix stripping magic.
-      mesonBuildType = "debug";
       mesonFlags = []
         ++ pkgs.lib.optional doUnitTests [ "-Ddo_unit_tests=true" ]
         ++ pkgs.lib.optional doCoverage [ "-Db_coverage=true" ];
-      hardeningDisable = [ "all" ];
-      dontStrip = true;
 
       # Unit tests
       doCheck = doUnitTests;
