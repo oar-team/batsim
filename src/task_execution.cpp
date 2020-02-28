@@ -681,4 +681,3 @@ int execute_parallel_task(BatTask * btask,
 
     return ret;
 }
-
