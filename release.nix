@@ -17,6 +17,7 @@ let
   buildPythonPackage = pythonPackages.buildPythonPackage;
 
   jobs = rec {
+    inherit pkgs;
     # Batsim executable binary file.
     batsim = (kapack.batsim.override { inherit debug simgrid; }).overrideAttrs (attr: rec {
       buildInputs = attr.buildInputs
