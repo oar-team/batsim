@@ -25,7 +25,7 @@ build_and_test:
     - nix-build ./release.nix -A integration_tests ${NIX_ARGS} && cp -rL result ./integration_tests
     - if [[ "$(cat ./integration_tests/pytest_returncode)" -ne 0 ]] ; then echo "pytest returned non-zero, aborting" ; exit 1 ; fi
     # Send coverage results to codecov.io
-    - nix-env -f ./release.nix -i pkgs.gcc
+    - nix-env -f ./release.nix -iA pkgs.gcc
     - mkdir merged
     - cp ./batsim/gcno/* ./integration_tests/gcda/* merged/
     - bash <(curl -s https://codecov.io/bash)
