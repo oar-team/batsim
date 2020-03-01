@@ -28,11 +28,16 @@ build_and_test:
     - mkdir merged
     - cp ./batsim/gcno/* ./integration_tests/gcda/* merged/
     - nix-shell ./release.nix -A batsim ${NIX_ARGS} --command "bash <(curl -s https://codecov.io/bash)"
+    # Build docker image
+    - nix-shell --pure ./release.nix -A kapack.batsim-master --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-build ./release.nix -A kapack.batsim-master | cachix push batsim
+    - nix-build -A batsim-docker-master && cp -rL result ./batsim-docker-latest.tar.gz
   artifacts:
     when: always
     paths:
       - /builds/batsim/batsim/doxydoc_html
       - /builds/batsim/batsim/integration_tests
+      - /builds/batsim/batsim/batsim-docker-latest.tar.gz
 
 ###############################################################################
 # Deploy
@@ -57,10 +62,8 @@ deploy_code_doc:
 
 deploy_docker:
   stage: deploy
+  image: docker:dind
   script:
-    - nix-build -A batsim-docker-master -o ./batsim-docker-latest.tar.gz
-    - du -sh $(realpath ./batsim-docker-latest.tar.gz)
-    - nix-env -f ./release.nix -iA pkgs.docker
     - docker load -i ./batsim-docker-latest.tar.gz
     - docker push oarteam/batsim:latest
 

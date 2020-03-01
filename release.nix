@@ -18,6 +18,7 @@ let
 
   jobs = rec {
     inherit pkgs;
+    inherit kapack;
     # Batsim executable binary file.
     batsim = (kapack.batsim.override { inherit debug simgrid; }).overrideAttrs (attr: rec {
       buildInputs = attr.buildInputs
