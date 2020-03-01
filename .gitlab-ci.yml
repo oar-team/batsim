@@ -66,6 +66,8 @@ deploy_docker:
   script:
     - docker load -i ./batsim-docker-latest.tar.gz
     - docker push oarteam/batsim:latest
+  dependencies:
+    - build_and_test
 
 ###############################################################################
 # Tutorials
