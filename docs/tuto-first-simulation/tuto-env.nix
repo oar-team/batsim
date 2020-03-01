@@ -6,8 +6,8 @@ in
 kapack.pkgs.mkShell rec {
   name = "tuto-env";
   buildInputs = [
-    kapack.batsim-master # simulator
-    kapack.batsched-master # scheduler
-    kapack.batexpe-master # experiment management tools
+    kapack.batsim # simulator
+    kapack.batsched # scheduler
+    kapack.batexpe # experiment management tools
   ];
 }
