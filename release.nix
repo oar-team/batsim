@@ -242,6 +242,8 @@ let
         sha256 = "17jyn4czkihrs225nkpj0h113hc03y0cl07myb70jkaykpfmrim7";
       };
     };
+
+    batsim-docker-master = kapack.batsim-docker-master;
   };
 in
   jobs
