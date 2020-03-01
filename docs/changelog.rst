@@ -17,7 +17,7 @@ Unreleased
 ----------
 
 - `Commits since v3.1.0 <https://github.com/oar-team/batsim/compare/v3.1.0...HEAD>`_
-- ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim_dev``
+- ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
 
 
 Added

@@ -47,9 +47,9 @@ The :download:`env-pin-pkgs-repo.nix <./env-pin-pkgs-repo.nix>` file is exactly 
 
 .. warning::
 
-   This is not true if you use the ``_dev`` variant of a package!
+   This is not true if you use the ``-master`` variant of a package!
 
-   For example, ``batsim_dev`` represents Batsim built from Batsim's master branch's latest commit – without any kind of commit pinning.
+   For example, ``batsim-master`` represents Batsim built from Batsim's master branch's latest commit – without any kind of commit pinning.
 
 Pinning the packages
 ''''''''''''''''''''

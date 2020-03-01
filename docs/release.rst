@@ -40,9 +40,9 @@ Main release (not for pre-releases)
 #. Push the `releases` branch on all remotes (``git push REMOTE releases``).
 #. Create a new Batsim package in kapack_.
 
-   - The package name should follow Nix standard nomenclature (``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-X.Y.Z``).
-   - The default ``batsim`` should point to the new package (``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim``).
-   - **The previous Batsim package should remain accessible** (``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-A.B.C``).
+   - The package name should follow Nix standard nomenclature (``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -i batsim-X.Y.Z``).
+   - The default ``batsim`` should point to the new package (``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim``).
+   - **The previous Batsim package should remain accessible** (``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -i batsim-A.B.C``).
 
 .. _Semantic Versioning: http://semver.org/spec/v2.0.0.html
-.. _kapack: https://github.com/oar-team/kapack/
+.. _kapack: https://github.com/oar-team/nur-kapack/

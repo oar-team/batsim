@@ -61,24 +61,24 @@ This can be done with ``nix-env --install``.
 .. code:: bash
 
     # Install the Batsim simulator.
-    nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim
+    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim
 
     # Other packages from the Batsim ecosystem can also be installed this way.
     # For example schedulers.
-    nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsched
-    nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA pybatsim
+    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsched
+    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA pybatsim
 
     # Or interactive visualization tools.
-    nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA evalys
+    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA evalys
 
     # Or experiment management tools...
-    nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batexpe
+    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batexpe
 
 .. note::
 
-    Most package have at least two versions in kapack_, named ``PACKAGE`` and ``PACKAGE_dev``. ``PACKAGE`` stands for the latest release of the package, while the ``_dev`` version is the latest unstable commit from the main git branch.
+    Most package have at least two versions in kapack_, named ``PACKAGE`` and ``PACKAGE-master``. ``PACKAGE`` stands for the latest release of the package, while the ``-master`` version is the latest unstable commit from the main git branch.
 
-    You can therefore get an upstream Batsim and batsched with the following command. ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim_dev batsched_dev``
+    You can therefore get an upstream Batsim and batsched with the following command. ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master batsched-master``
 
 
 Build it yourself
@@ -114,7 +114,7 @@ Dependencies
     The following list may be outdated. Please tell us if this is the case.
 
     An up-to-date list should be available in kapack_.
-    The important files there should be the `Batsim package definition`_ and how it is called in `kapack's main file`_ — i.e., with which parameters and which version of each dependency.
+    The important files there should be the `Batsim packages definition`_ and how it is called in `kapack's main file`_ — i.e., with which parameters and which version of each dependency.
 
 - Decent clang/gcc and CMake.
 - Decent boost.
@@ -125,10 +125,10 @@ Dependencies
 - Pugixml.
 - Docopt.
 
-.. _kapack: https://github.com/oar-team/kapack/
+.. _kapack: https://github.com/oar-team/nur-kapack/
 .. _Nix: https://nixos.org/nix/
 .. _Nix installation documentation: https://nixos.org/nix/
 .. _CMake: https://cmake.org/
 .. _ccmake: https://cmake.org/cmake/help/v3.0/manual/ccmake.1.html
-.. _Batsim package definition: https://github.com/oar-team/kapack/blob/master/batsim/default.nix
-.. _kapack's main file: https://github.com/oar-team/kapack/blob/master/default.nix
+.. _Batsim packages definition: https://github.com/oar-team/nur-kapack/tree/master/pkgs/batsim
+.. _kapack's main file: https://github.com/oar-team/nur-kapack/blob/master/default.nix

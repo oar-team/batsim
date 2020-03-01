@@ -12,7 +12,7 @@ but please read :ref:`Installation` first — as it may save you a lot of compil
 
 .. code:: bash
 
-    nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim batsched batexpe
+    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim batsched batexpe
 
 Checking software environment
 -----------------------------
@@ -105,6 +105,6 @@ Please refer to ``robin --help`` for more information about these features.
 
 .. _Nix: https://nixos.org/nix/
 .. _Nix installation documentation: https://nixos.org/nix/
-.. _kapack: https://github.com/oar-team/kapack/
+.. _kapack: https://github.com/oar-team/nur-kapack/
 .. _robin: https://framagit.org/batsim/batexpe/
 .. _batsched: https://framagit.org/batsim/batsched
