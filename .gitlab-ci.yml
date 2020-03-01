@@ -59,7 +59,10 @@ deploy_docker:
   stage: deploy
   script:
     - nix-build -A batsim-docker-master -o ./batsim-docker-latest.tar.gz
-    - du -sh ./batsim-docker-latest.tar.gz
+    - du -sh $(realpath ./batsim-docker-latest.tar.gz)
+    - nix-env -f ./release.nix -iA pkgs.docker
+    - docker load -i ./batsim-docker-latest.tar.gz
+    - docker push oarteam/batsim:latest
 
 ###############################################################################
 # Tutorials
