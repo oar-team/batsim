@@ -80,15 +80,46 @@ This can be done with ``nix-env --install``.
 
     You can therefore get an upstream Batsim and batsched with the following command. ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master batsched-master``
 
+Using Batsim from a well-defined Nix environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is the recommended way to use Batsim.
+
+.. todo::
+
+    Really write this section. For now, read :ref:`tuto_reproducible_experiment`.
+
+Using Batsim from a Docker container
+------------------------------------
+
+.. todo::
+
+    Write how to use a Batsim docker container.
+    For now, read `Batsim's docker hub <https://hub.docker.com/r/oarteam/batsim>`_ or :ref:`contact_us`.
 
 Build it yourself
 -----------------
-Batsim uses the CMake_ build system.
-It can therefore be built and installed just like other projects using CMake.
+Batsim can be built with the Meson_ build system.
+You can also use CMake_ if you prefer but please note that our cmake support is deprecated.
 
-.. note::
+.. warning::
 
-    You first need to install all Batsim Dependencies_ for the following lines to work.
+    You first need to install all Batsim dependencies for the following lines to work:
+
+    - Decent clang/gcc (real C++17 support).
+    - Decent boost.
+    - Recent SimGrid.
+    - ZeroMQ.
+    - `Redox <https://github.com/mpoquet/redox/tree/install-pkg-config-file>`_ and its dependencies (hiredis, libev).
+    - RapidJSON.
+    - Pugixml.
+    - `Docopt <https://github.com/mpoquet/docopt.cpp/tree/pkgconfig-support>`_.
+
+    **Make sure you install versions of these packages with pkg-config support!**
+    The two build systems we use rely on `pkg-config`_ to find dependencies.
+
+    **The dependency list above may be outdated!**
+    Please refer to `Batsim packages definition`_ in kapack_ for up-to-date information --- in case of doubt, :ref:`contact_us`.
 
 .. code:: bash
 
@@ -104,31 +135,11 @@ It can therefore be built and installed just like other projects using CMake.
     # Install Batsim. Specify -DCMAKE_INSTALL_PREFIX=/desired/prefix to cmake if desired.
     make install
 
-Some options are available via CMake. You can list and edit such options thanks to ccmake_.
-
-Dependencies
-~~~~~~~~~~~~
-
-.. warning::
-
-    The following list may be outdated. Please tell us if this is the case.
-
-    An up-to-date list should be available in kapack_.
-    The important files there should be the `Batsim packages definition`_ and how it is called in `kapack's main file`_ — i.e., with which parameters and which version of each dependency.
-
-- Decent clang/gcc and CMake.
-- Decent boost.
-- Recent SimGrid.
-- ZeroMQ.
-- Redox and its dependencies (hiredis, libev).
-- RapidJSON.
-- Pugixml.
-- Docopt.
-
 .. _kapack: https://github.com/oar-team/nur-kapack/
 .. _Nix: https://nixos.org/nix/
 .. _Nix installation documentation: https://nixos.org/nix/
 .. _CMake: https://cmake.org/
-.. _ccmake: https://cmake.org/cmake/help/v3.0/manual/ccmake.1.html
+.. _Meson: https://mesonbuild.com/
+.. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
 .. _Batsim packages definition: https://github.com/oar-team/nur-kapack/tree/master/pkgs/batsim
 .. _kapack's main file: https://github.com/oar-team/nur-kapack/blob/master/default.nix
