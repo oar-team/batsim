@@ -95,7 +95,6 @@ let
       buildInputs = with pkgs.python37Packages; [
         batsim batsched batexpe pkgs.redis
         pybatsim pytest pytest_html pandas] ++
-      pkgs.lib.optional doCoverage [ gcovr ] ++
       pkgs.lib.optional doValgrindAnalysis [ pkgs.valgrind ];
 
       pytestArgs = "-ra test/ --html=./report/pytest_report.html" +
@@ -241,18 +240,6 @@ let
       src = builtins.fetchurl {
         url = "https://files.pythonhosted.org/packages/08/3e/63d998f26c7846d3dac6da152d1b93db3670538c5e2fe18b88690c1f52a7/pytest-html-1.20.0.tar.gz";
         sha256 = "17jyn4czkihrs225nkpj0h113hc03y0cl07myb70jkaykpfmrim7";
-      };
-    };
-
-    gcovr = buildPythonPackage {
-      name = "gcovr-4.1";
-      doCheck = false;
-      propagatedBuildInputs = [
-        pythonPackages.jinja2
-      ];
-      src = builtins.fetchurl {
-        url = "https://files.pythonhosted.org/packages/ed/f2/140298e4696c41fb17e8399166ea73cfe3fb9938faaf814b7e72f8b2e157/gcovr-4.1.tar.gz";
-        sha256 = "08hy6vqvq7q7xk0jb9pd5dvjnyxd9x9k0hzcfyqhv9yry8vw756a";
       };
     };
   };
