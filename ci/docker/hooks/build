@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
-echo "Hello world"
+wget "https://framagit.org/batsim/batsim/-/jobs/684525/artifacts/file/batsim-docker-latest.tar.gz"
+docker load -i ./batsim-docker-latest.tar.gz
