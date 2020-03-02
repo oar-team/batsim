@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -x
-compgen -c
-curl --insecure -o ./batsim-docker-latest.tar.gz "https://framagit.org/batsim/batsim/-/jobs/684525/artifacts/file/batsim-docker-latest.tar.gz"
+compgen -c | sort -u
+curl --insecure -o ./batsim-docker-latest.tar.gz "https://framagit.org/batsim/batsim/-/jobs/684525/artifacts/raw/batsim-docker-latest.tar.gz"
+file ./batsim-docker-latest.tar.gz
 docker load -i ./batsim-docker-latest.tar.gz
