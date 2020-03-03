@@ -1,11 +1,11 @@
 Batsim
 ======
 
-|chat| |external-issues| |internal-issues| |license|
+|chat| |doc| |external-issues| |internal-issues| |license|
 
 |last-release| |distance-from-previous-release| |pipeline-status| |coverage|
 
-|doc| |changelog| |protocol|
+|docker-status| |docker-size|
 
 Batsim is an infrastructure simulator that enables the study of resource management techniques.
 
@@ -77,3 +77,14 @@ Please refer to `Batsim's documentation`_ for more.
     :alt: protocol
     :scale: 100%
     :target: https://batsim.readthedocs.io/en/latest/protocol.html
+
+
+.. |docker-status| image:: https://img.shields.io/docker/cloud/build/oarteam/batsim.svg
+    :alt: Docker build status
+    :scale: 100%
+    :target: https://hub.docker.com/r/oarteam/batsim/tags?page=1&ordering=last_updated
+
+.. |docker-size| image:: https://img.shields.io/docker/image-size/oarteam/batsim/latest.svg?label=docker%20image%20size
+    :alt: Docker Image Size
+    :scale: 100%
+    :target: https://hub.docker.com/r/oarteam/batsim/tags?page=1&ordering=last_updated
