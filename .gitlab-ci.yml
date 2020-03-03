@@ -60,6 +60,17 @@ deploy_code_doc:
   only:
     - master
 
+deploy_docker:
+  stage: deploy
+  script:
+    # Trigger a build on dockerhub's autobuilds with a webhook.
+    # The autobuild script will retrieve the latest container tarball artifact.
+    - curl -X POST "${DOCKERHUB_WEBHOOK_URL}"
+  dependencies:
+    - build_and_test
+  only:
+    - master
+
 ###############################################################################
 # Tutorials
 ###############################################################################
