@@ -92,10 +92,26 @@ This is the recommended way to use Batsim.
 Using Batsim from a Docker container
 ------------------------------------
 
+Batsim and all its runtime dependencies are packaged in the `oarteam/batsim <https://hub.docker.com/r/oarteam/batsim>`_ Docker container, which allows to run batsim without any installation on a Linux host — assuming that Docker is installed.
+
+.. code:: bash
+
+    docker run \
+        -u $(id -u):$(id -g) \
+        -v $PWD:/data \
+        oarteam/batsim:latest \
+        --help
+
+Here is a quick explanation on the various parameters.
+
+- ``-u $(id -u):$(id -g)`` enables the generation of output files with your own user permission.
+- ``-v $PWD:/data`` shares your local directory so batsim can find input files and write output files.
+- ``oarteam/batsim:latest`` is the image to run. ``latest`` is built from master branch's last commit.
+- ``--help`` are batsim command-line arguments (see :ref:`cli`).
+
 .. todo::
 
-    Write how to use a Batsim docker container.
-    For now, read `Batsim's docker hub <https://hub.docker.com/r/oarteam/batsim>`_ or :ref:`contact_us`.
+    Write an example on how to run a simple simulation from Docker (and test that it works).
 
 Build it yourself
 -----------------
