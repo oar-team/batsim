@@ -58,7 +58,7 @@ Please refer to `Batsim's documentation`_ for more.
     :target: https://framagit.org/batsim/batsim/pipelines
 
 .. |coverage| image:: https://img.shields.io/codecov/c/github/oar-team/batsim.svg
-    :alt: pipeline status
+    :alt: coverage status
     :scale: 100%
     :target: https://codecov.io/gh/oar-team/batsim
 
