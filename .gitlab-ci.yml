@@ -91,6 +91,6 @@ tuto_first_simulation:
     - schedules
   script:
     - cd docs/tuto-first-simulation
-    - nix-shell --pure ./tuto-env-dev.nix --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
-    - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-dev.nix --command './run_simulation_manually.bash'
-    - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-dev.nix --command './run_simulation_robin.bash'
+    - nix-shell --pure ./tuto-env-master.nix --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-master.nix --command './run_simulation_manually.bash'
+    - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-master.nix --command './run_simulation_robin.bash'

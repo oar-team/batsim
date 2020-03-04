@@ -4,7 +4,7 @@ let
 in
 
 kapack.pkgs.mkShell rec {
-  name = "tuto-env-dev";
+  name = "tuto-env-master";
   buildInputs = [
     kapack.batsim-master # simulator
     kapack.batsched-master # scheduler
