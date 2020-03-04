@@ -3,6 +3,7 @@
   {}
 , doUnitTests ? true
 , doCoverage ? true
+, werror ? false
 , doValgrindAnalysis ? false
 , debug ? true
 , simgrid ? kapack.simgrid-light.override { inherit debug; }
@@ -31,7 +32,8 @@ let
         "^meson\.build"
         "^meson_options\.txt"
       ];
-      mesonFlags = []
+      mesonFlags = [ "--warnlevel=3" ]
+        ++ pkgs.lib.optional werror [ "--werror" ]
         ++ pkgs.lib.optional doUnitTests [ "-Ddo_unit_tests=true" ]
         ++ pkgs.lib.optional doCoverage [ "-Db_coverage=true" ];
 
