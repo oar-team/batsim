@@ -34,6 +34,7 @@ build_and_test:
     - nix-build -A kapack.batsim-docker-master && cp -rL result ./batsim-docker-latest.tar.gz
   artifacts:
     when: always
+    expire_in: 8 hours
     paths:
       - /builds/batsim/batsim/doxydoc_html
       - /builds/batsim/batsim/integration_tests
