@@ -189,6 +189,7 @@ let
         "^docs/tuto-first-simulation/.*\.rst"
         "^docs/tuto-first-simulation/.*\.out"
         "^docs/tuto-first-simulation/.*\.yaml"
+        "^docs/tuto-first-simulation/.*\.nix"
         "^docs/tuto-reproducible-experiment"
         "^docs/tuto-reproducible-experiment/.*\.nix"
         "^docs/tuto-reproducible-experiment/.*\.rst"
