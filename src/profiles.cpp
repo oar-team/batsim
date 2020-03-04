@@ -253,7 +253,7 @@ Profile::~Profile()
     }
     else
     {
-        XBT_ERROR("Deletion of an unknown profile type (%d)", type);
+        XBT_ERROR("Deletion of an unknown profile type (%d)", static_cast<int>(type));
     }
 }
 

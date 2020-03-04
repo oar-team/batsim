@@ -19,7 +19,7 @@ roles::Permissions roles::permissions_from_role(const std::string   & str)
     {
         return map_str_to_role.at(str);
     }
-    catch (std::out_of_range)
+    catch (std::out_of_range &)
     {
         std::string keys_str;
         for (auto const& element : map_str_to_role) {
