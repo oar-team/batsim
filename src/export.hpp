@@ -45,7 +45,7 @@ public:
      * @param[in] buffer_size The size of the buffer (in bytes).
      */
     explicit WriteBuffer(const std::string & filename,
-                         int buffer_size = 64*1024);
+                         size_t buffer_size = 64*1024);
 
     /**
      * @brief WriteBuffers cannot be copied.
@@ -72,9 +72,9 @@ public:
 
 private:
     std::ofstream f;            //!< The file stream on which the buffer is outputted
-    const int buffer_size;      //!< The buffer maximum size
+    const size_t buffer_size;   //!< The buffer maximum size
     char * buffer = nullptr;    //!< The buffer
-    int buffer_pos = 0;         //!< The current position of the buffer (previous positions are already written)
+    size_t buffer_pos = 0;         //!< The current position of the buffer (previous positions are already written)
 };
 
 
@@ -247,7 +247,7 @@ private:
     std::vector<std::string> _colors; //!< Strings associated with colors, used for the jobs
 
     PajeTracerState state = UNINITIALIZED; //!< The state of the PajeTracer
-    int nb_total_jobs = 0;      //!< The total number of jobs added to Paje
+    unsigned int nb_total_jobs = 0; //!< The total number of jobs added to Paje
 };
 
 

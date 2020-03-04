@@ -141,7 +141,7 @@ struct SmpiProfileData
  */
 struct SequenceProfileData
 {
-    int repeat;  //!< The number of times the sequence must be repeated
+    unsigned int repeat;  //!< The number of times the sequence must be repeated
     std::vector<std::string> sequence; //!< The sequence of profile names, executed in this order
     std::vector<ProfilePtr> profile_sequence; //!< The sequence of profiles, executed in this order
 };

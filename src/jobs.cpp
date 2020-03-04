@@ -338,7 +338,7 @@ std::unordered_map<JobIdentifier, JobPtr, JobIdentifierHasher> &Jobs::jobs()
 
 int Jobs::nb_jobs() const
 {
-    return _jobs.size();
+    return static_cast<int>(_jobs.size());
 }
 
 bool job_comparator_subtime_number(const JobPtr a, const JobPtr b)
@@ -354,8 +354,8 @@ Job::~Job()
 {
     XBT_INFO("Job '%s' is being deleted", id.to_string().c_str());
     xbt_assert(execution_actors.size() == 0,
-               "Internal error: job %s on destruction still has %d execution processes (should be 0).",
-               this->id.to_string().c_str(), (int)execution_actors.size());
+               "Internal error: job %s on destruction still has %zu execution processes (should be 0).",
+               this->id.to_string().c_str(), execution_actors.size());
 
     if (task != nullptr)
     {
@@ -421,7 +421,7 @@ JobPtr Job::from_json(const rapidjson::Value & json_desc,
                error_prefix.c_str(), j->id.to_string().c_str());
     xbt_assert(json_desc["subtime"].IsNumber(), "%s: job '%s' has a non-number 'subtime' field",
                error_prefix.c_str(), j->id.to_string().c_str());
-    j->submission_time = json_desc["subtime"].GetDouble();
+    j->submission_time = static_cast<long double>(json_desc["subtime"].GetDouble());
 
     // Get walltime (optional)
     if (!json_desc.HasMember("walltime"))
@@ -432,19 +432,21 @@ JobPtr Job::from_json(const rapidjson::Value & json_desc,
     {
         xbt_assert(json_desc["walltime"].IsNumber(), "%s: job %s has a non-number 'walltime' field",
                    error_prefix.c_str(), j->id.to_string().c_str());
-        j->walltime = json_desc["walltime"].GetDouble();
+        j->walltime = static_cast<long double>(json_desc["walltime"].GetDouble());
     }
     xbt_assert(j->walltime == -1 || j->walltime > 0,
-               "%s: job '%s' has an invalid walltime (%g). It should either be -1 (no walltime) "
+               "%s: job '%s' has an invalid walltime (%Lg). It should either be -1 (no walltime) "
                "or a strictly positive number.",
-               error_prefix.c_str(), j->id.to_string().c_str(), (double)j->walltime);
+               error_prefix.c_str(), j->id.to_string().c_str(), j->walltime);
 
     // Get number of requested resources
     xbt_assert(json_desc.HasMember("res"), "%s: job %s has no 'res' field",
                error_prefix.c_str(), j->id.to_string().c_str());
     xbt_assert(json_desc["res"].IsInt(), "%s: job %s has a non-number 'res' field",
                error_prefix.c_str(), j->id.to_string().c_str());
-    j->requested_nb_res = json_desc["res"].GetInt();
+    xbt_assert(json_desc["res"].GetInt() >= 0, "%s: job %s has a negative 'res' field (%d)",
+               error_prefix.c_str(), j->id.to_string().c_str(), json_desc["res"].GetInt());
+    j->requested_nb_res = static_cast<unsigned int>(json_desc["res"].GetInt());
 
     // Get the job profile
     xbt_assert(json_desc.HasMember("profile"), "%s: job %s has no 'profile' field",
@@ -525,7 +527,7 @@ JobPtr Job::from_json(const rapidjson::Value & json_desc,
                        "%d does not point to an integral number",
                        error_prefix.c_str(), j->id.to_string().c_str(), i);
             int host_number = mapping_array[i].GetInt();
-            xbt_assert(host_number >= 0 && (unsigned int)host_number < j->requested_nb_res,
+            xbt_assert(host_number >= 0 && static_cast<unsigned int>(host_number) < j->requested_nb_res,
                        "%s: job '%s' has a bad 'smpi_ranks_to_hosts_mapping' field: rank "
                        "%d has an invalid value %d : should be in [0,%d[",
                        error_prefix.c_str(), j->id.to_string().c_str(),

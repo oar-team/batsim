@@ -111,10 +111,10 @@ void finalize_batsim_outputs(BatsimContext * context)
 }
 
 
-WriteBuffer::WriteBuffer(const std::string & filename, int buffer_size)
+WriteBuffer::WriteBuffer(const std::string & filename, size_t buffer_size)
     : buffer_size(buffer_size)
 {
-    xbt_assert(buffer_size > 0, "Invalid buffer size (%d)", buffer_size);
+    xbt_assert(buffer_size > 0, "Invalid buffer size (%zu)", buffer_size);
     buffer = new char[buffer_size];
 
     f.open(filename, ios_base::trunc);
@@ -139,7 +139,7 @@ WriteBuffer::~WriteBuffer()
 
 void WriteBuffer::append_text(const char * text)
 {
-    const int text_length = strlen(text);
+    const size_t text_length = strlen(text);
 
     // Is the buffer big enough?
     if (buffer_pos + text_length < buffer_size)
@@ -163,14 +163,14 @@ void WriteBuffer::append_text(const char * text)
         else
         {
             // Directly write the text into the file
-            f.write(text, text_length);
+            f.write(text, static_cast<std::streamsize>(text_length));
         }
     }
 }
 
 void WriteBuffer::flush_buffer()
 {
-    f.write(buffer, buffer_pos);
+    f.write(buffer, static_cast<std::streamsize>(buffer_pos));
     buffer_pos = 0;
 }
 
@@ -218,8 +218,8 @@ void PajeTracer::initialize(const BatsimContext *context, double time)
     const int buf_size = 8 * 1024;
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Coudln't allocate memory");
+    char * buf = static_cast<char*>(malloc(sizeof(char) * buf_size));
+    xbt_assert(buf != NULL, "Coudln't allocate memory");
 
     // Let's write the Pajé schedule header
     // Let's write the Pajé schedule header
@@ -425,8 +425,8 @@ void PajeTracer::finalize(const BatsimContext * context, double time)
     const int buf_size = 256;
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Couldn't allocate memory");
+    char * buf = static_cast<char*>(malloc(sizeof(char) * buf_size));
+    xbt_assert(buf != NULL, "Couldn't allocate memory");
 
     nb_printed = snprintf(buf, buf_size,
                           "\n"
@@ -473,8 +473,8 @@ void PajeTracer::add_job_launching(const std::vector<int> & used_machine_ids,
     const int buf_size = 256;
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Couldn't allocate memory");
+    char * buf = static_cast<char*>(malloc(sizeof(char) * buf_size));
+    xbt_assert(buf != NULL, "Couldn't allocate memory");
 
     if (_log_launchings)
     {
@@ -502,15 +502,15 @@ void PajeTracer::register_new_job(const JobIdentifier & job_id)
     const int buf_size = 256;
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Couldn't allocate memory");
+    char * buf = static_cast<char*>(malloc(sizeof(char) * buf_size));
+    xbt_assert(buf != NULL, "Couldn't allocate memory");
 
     // Let's create a state value corresponding to this job
     nb_printed = snprintf(buf, buf_size,
                           "%d %s%s %s \"%s\" %s\n",
                           DEFINE_ENTITY_VALUE, jobPrefix, job_id.to_cstring(),
                           machineState, job_id.to_cstring(),
-                          _colors[nb_total_jobs++ % (int)_colors.size()].c_str());
+                          _colors[nb_total_jobs++ % _colors.size()].c_str());
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
@@ -526,8 +526,8 @@ void PajeTracer::set_machine_idle(int machine_id, double time)
     const int buf_size = 256;
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Couldn't allocate memory");
+    char * buf = static_cast<char*>(malloc(sizeof(char) * buf_size));
+    xbt_assert(buf != NULL, "Couldn't allocate memory");
 
     nb_printed = snprintf(buf, buf_size,
                           "%d %lf %s %s%d %s\n",
@@ -552,8 +552,8 @@ void PajeTracer::set_machine_as_computing_job(int machine_id, const JobIdentifie
     const int buf_size = 256;
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Couldn't allocate memory");
+    char * buf = static_cast<char*>(malloc(sizeof(char) * buf_size));
+    xbt_assert(buf != NULL, "Couldn't allocate memory");
 
     nb_printed = snprintf(buf, buf_size,
                           "%d %lf %s %s%d %s\n",
@@ -575,8 +575,8 @@ void PajeTracer::add_job_kill(const JobIdentifier & job_id, const IntervalSet & 
     const int buf_size = 256;
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Couldn't allocate memory");
+    char * buf = static_cast<char*>(malloc(sizeof(char) * buf_size));
+    xbt_assert(buf != NULL, "Couldn't allocate memory");
 
     // Let's add a kill event associated with the scheduler
     nb_printed = snprintf(buf, buf_size,
@@ -614,8 +614,8 @@ void PajeTracer::generate_colors(int color_count)
     const int buf_size = 256;
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Couldn't allocate memory");
+    char * buf = static_cast<char*>(malloc(sizeof(char) * buf_size));
+    xbt_assert(buf != NULL, "Couldn't allocate memory");
 
     double hueFraction = 360.0 / color_count;
     for (int i = 0; i < color_count; ++i)
@@ -648,11 +648,11 @@ void PajeTracer::hsv_to_rgb(double h, double s, double v, double & r, double & g
     }
 
     h /= 60;            // sector 0 to 5
-    int i = floor(h);
-    float f = h-i;      // factorial part of h
-    float p = v*(1-s);
-    float q = v*(1-s*f);
-    float t = v*(1-s*(1-f));
+    int i = static_cast<int>(floor(h));
+    double f = h-i;      // factorial part of h
+    double p = v*(1-s);
+    double q = v*(1-s*f);
+    double t = v*(1-s*(1-f));
 
     switch(i)
     {
@@ -694,7 +694,8 @@ void PajeTracer::hsv_to_rgb(double h, double s, double v, double & r, double & g
 PStateChangeTracer::PStateChangeTracer()
 {
     xbt_assert(_temporary_buffer == nullptr);
-    _temporary_buffer = (char*) malloc(512 * sizeof(char));
+    _temporary_buffer = static_cast<char*>(malloc(512 * sizeof(char)));
+    xbt_assert(_temporary_buffer != NULL, "Couldn't allocate memory");
 }
 
 void PStateChangeTracer::setFilename(const string &filename)
@@ -725,17 +726,17 @@ void PStateChangeTracer::add_pstate_change(double time, const IntervalSet & mach
     xbt_assert(_wbuf != nullptr);
 
     const string machines_as_string = machines.to_string_hyphen(" ", "-");
-    const int minimum_buf_size = 256 + machines_as_string.size();
+    const size_t minimum_buf_size = 256 + machines_as_string.size();
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
 
     // Increases the buffer size if needed
-    _temporary_buffer = (char*) realloc(_temporary_buffer, minimum_buf_size);
-    xbt_assert(_temporary_buffer != 0, "Couldn't allocate memory!");
+    _temporary_buffer = static_cast<char*>(realloc(_temporary_buffer, minimum_buf_size));
+    xbt_assert(_temporary_buffer != NULL, "Couldn't allocate memory!");
 
     nb_printed = snprintf(_temporary_buffer, minimum_buf_size, "%g,%s,%d\n",
                           time, machines_as_string.c_str(), pstate_after);
-    xbt_assert(nb_printed < minimum_buf_size - 1,
+    xbt_assert(nb_printed < static_cast<int>(minimum_buf_size) - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
     _wbuf->append_text(_temporary_buffer);
@@ -823,7 +824,7 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     long double energy = _context->machines.total_consumed_energy(_context);
     long double wattmin = _context->machines.total_wattmin(_context);
 
-    long double time_diff = (long double)date - _last_entry_date;
+    long double time_diff = static_cast<long double>(date) - _last_entry_date;
     long double energy_diff = energy - _last_entry_energy;
     long double epower = -1;
 
@@ -835,13 +836,13 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     const int buf_size = 256;
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Couldn't allocate memory");
+    char * buf = static_cast<char*>(malloc(sizeof(char) * buf_size));
+    xbt_assert(buf != NULL, "Couldn't allocate memory");
 
     if (epower != -1)
     {
         nb_printed = snprintf(buf, buf_size, "%g,%Lg,%c,%Lg,%g\n",
-                              date, energy, event_type, wattmin, (double)epower);
+                              date, energy, event_type, wattmin, static_cast<double>(epower));
     }
     else
     {
@@ -856,7 +857,7 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
 
     free(buf);
 
-    _last_entry_date = date;
+    _last_entry_date = static_cast<long double>(date);
     _last_entry_energy = energy;
 
     return energy;
@@ -912,8 +913,8 @@ void MachineStateTracer::write_machine_states(double date)
     const int buf_size = 256;
     int nb_printed;
     (void) nb_printed; // Avoids a warning if assertions are ignored
-    char * buf = (char*) malloc(sizeof(char) * buf_size);
-    xbt_assert(buf != 0, "Couldn't allocate memory");
+    char * buf = static_cast<char*>(malloc(sizeof(char) * buf_size));
+    xbt_assert(buf != NULL, "Couldn't allocate memory");
 
     nb_printed = snprintf(buf, buf_size, "%g,%d,%d,%d,%d,%d\n",
                           date,
@@ -1010,30 +1011,30 @@ void JobsTracer::finalize()
     map<string, string> output_map;
 
     long double seconds_used_by_scheduler = _context->microseconds_used_by_scheduler / 1e6l;
-    output_map["scheduling_time"] = to_string((double) seconds_used_by_scheduler);
+    output_map["scheduling_time"] = to_string(static_cast<double>(seconds_used_by_scheduler));
 
     // Let's compute the simulation time
     chrono::duration<long double> diff = _context->simulation_end_time - _context->simulation_start_time;
     long double seconds_used_by_the_whole_simulation = diff.count();
-    output_map["simulation_time"] = to_string((double) seconds_used_by_the_whole_simulation);
+    output_map["simulation_time"] = to_string(static_cast<double>(seconds_used_by_the_whole_simulation));
 
     double sum_time_running = 0;
     double max_time_running = 0;
     for (auto const & entry : _machines_utilization)
     {
-        sum_time_running += (double) entry.second;
-        if ((double) entry.second > max_time_running)
+        sum_time_running += static_cast<double>(entry.second);
+        if (static_cast<double>(entry.second) > max_time_running)
         {
-            max_time_running = (double) entry.second;
+            max_time_running = static_cast<double>(entry.second);
         }
     }
     double mean_time_running = sum_time_running / _machines_utilization.size();
 
-    double success_rate = (double)_nb_jobs_success/_nb_jobs;
+    double success_rate = static_cast<double>(_nb_jobs_success)/_nb_jobs;
 
-    double mean_waiting_time = (double)_sum_waiting_time/_nb_jobs;
-    double mean_turnaround_time = (double)_sum_turnaround_time/_nb_jobs;
-    double mean_slowdown = (double)_sum_slowdown/_nb_jobs;
+    double mean_waiting_time = static_cast<double>(_sum_waiting_time)/_nb_jobs;
+    double mean_turnaround_time = static_cast<double>(_sum_turnaround_time)/_nb_jobs;
+    double mean_slowdown = static_cast<double>(_sum_slowdown)/_nb_jobs;
 
     output_map["batsim_version"] = _context->batsim_version;
     output_map["nb_jobs"] = to_string(_nb_jobs);
@@ -1043,13 +1044,13 @@ void JobsTracer::finalize()
     output_map["nb_jobs_rejected"] = to_string(_nb_jobs_rejected);
     output_map["success_rate"] = to_string(success_rate);
 
-    output_map["makespan"] = to_string((double)_makespan);
+    output_map["makespan"] = to_string(static_cast<double>(_makespan));
     output_map["mean_waiting_time"] = to_string(mean_waiting_time);
     output_map["mean_turnaround_time"] = to_string(mean_turnaround_time);
     output_map["mean_slowdown"] = to_string(mean_slowdown);
-    output_map["max_waiting_time"] = to_string((double)_max_waiting_time);
-    output_map["max_turnaround_time"] = to_string((double)_max_turnaround_time);
-    output_map["max_slowdown"] = to_string((double)_max_slowdown);
+    output_map["max_waiting_time"] = to_string(static_cast<double>(_max_waiting_time));
+    output_map["max_turnaround_time"] = to_string(static_cast<double>(_max_turnaround_time));
+    output_map["max_slowdown"] = to_string(static_cast<double>(_max_slowdown));
 
     output_map["nb_computing_machines"] = to_string(_context->machines.nb_machines());
 
@@ -1057,14 +1058,14 @@ void JobsTracer::finalize()
              _nb_jobs, _nb_jobs_finished, _nb_jobs_success, _nb_jobs_killed, success_rate);
     XBT_INFO("makespan=%lf, scheduling_time=%lf, mean_waiting_time=%lf, mean_turnaround_time=%lf, "
              "mean_slowdown=%lf, max_waiting_time=%lf, max_turnaround_time=%lf, max_slowdown=%lf",
-             (double)_makespan, (double)seconds_used_by_scheduler,
-             (double)mean_waiting_time, (double)mean_turnaround_time, mean_slowdown,
-             (double)_max_waiting_time, (double)_max_turnaround_time, (double)_max_slowdown);
+             static_cast<double>(_makespan), static_cast<double>(seconds_used_by_scheduler),
+             static_cast<double>(mean_waiting_time), static_cast<double>(mean_turnaround_time), mean_slowdown,
+             static_cast<double>(_max_waiting_time), static_cast<double>(_max_turnaround_time), static_cast<double>(_max_slowdown));
     XBT_INFO("mean_machines_running=%lf, max_machines_running=%lf",
-             (double)mean_time_running, (double)max_time_running);
+             static_cast<double>(mean_time_running), static_cast<double>(max_time_running));
 
     long double total_consumed_energy = _context->energy_last_job_completion - _context->energy_first_job_submission;
-    output_map["consumed_joules"] = to_string((double) total_consumed_energy);
+    output_map["consumed_joules"] = to_string(static_cast<double>(total_consumed_energy));
 
     output_map["nb_machine_switches"] = to_string(_context->nb_machine_switches);
     output_map["nb_grouped_switches"] = to_string(_context->nb_grouped_switches);
@@ -1091,12 +1092,12 @@ void JobsTracer::finalize()
 
     for (const MachineState & state : machine_states)
     {
-        output_map["time_" + machine_state_to_string(state)] = to_string((double)time_spent_in_each_state[state]);
+        output_map["time_" + machine_state_to_string(state)] = to_string(static_cast<double>(time_spent_in_each_state[state]));
     }
 
     // Let's write the output map into the file
     vector<string> keys, values;
-    for (const auto mit : output_map)
+    for (const auto & mit : output_map)
     {
         keys.push_back(mit.first);
         values.push_back(mit.second);
@@ -1167,7 +1168,7 @@ void JobsTracer::write_job(const JobPtr job)
             const IntervalSet & allocation = job->allocation;
             for (size_t i = 0; i < allocation.size(); ++i)
             {
-                _machines_utilization[allocation[i]] += job->runtime;
+                _machines_utilization[allocation[static_cast<int>(i)]] += job->runtime;
             }
         }
     }
@@ -1180,18 +1181,18 @@ void JobsTracer::write_job(const JobPtr job)
     _job_map["job_id"] = job->id.job_name();
     _job_map["workload_name"] = job->workload->name;
     _job_map["profile"] = (job->profile)->name;
-    _job_map["submission_time"] = to_string((double)job->submission_time);
+    _job_map["submission_time"] = to_string(static_cast<double>(job->submission_time));
     _job_map["requested_number_of_resources"] = to_string(job->requested_nb_res);
-    _job_map["requested_time"] = to_string((double)job->walltime);
+    _job_map["requested_time"] = to_string(static_cast<double>(job->walltime));
     _job_map["success"] = to_string(success);
     _job_map["final_state"] = job_state_to_string(job->state);
-    _job_map["starting_time"] = rejected ? "" : to_string((double)job->starting_time);
-    _job_map["execution_time"] = rejected ? "" :to_string((double)job->runtime);
-    _job_map["finish_time"] = rejected ? "" :to_string((double)job->starting_time + job->runtime);
-    _job_map["waiting_time"] = rejected ? "" :to_string((double)(job->starting_time - job->submission_time));
-    _job_map["turnaround_time"] = rejected ? "" :to_string((double)(job->starting_time + job->runtime - job->submission_time));
-    _job_map["stretch"] = rejected ? "" :to_string((double)((job->starting_time + job->runtime - job->submission_time) / job->runtime));
-    _job_map["consumed_energy"] = rejected ? "" :to_string(job->consumed_energy);
+    _job_map["starting_time"] = rejected ? "" : to_string(static_cast<double>(job->starting_time));
+    _job_map["execution_time"] = rejected ? "" : to_string(static_cast<double>(job->runtime));
+    _job_map["finish_time"] = rejected ? "" : to_string(static_cast<double>(job->starting_time + job->runtime));
+    _job_map["waiting_time"] = rejected ? "" : to_string(static_cast<double>(job->starting_time - job->submission_time));
+    _job_map["turnaround_time"] = rejected ? "" : to_string(static_cast<double>(job->starting_time + job->runtime - job->submission_time));
+    _job_map["stretch"] = rejected ? "" : to_string(static_cast<double>((job->starting_time + job->runtime - job->submission_time) / job->runtime));
+    _job_map["consumed_energy"] = rejected ? "" : to_string(job->consumed_energy);
     _job_map["allocated_resources"] = job->allocation.to_string_hyphen(" ");
     _job_map["metadata"] = '"' + job->metadata + '"';
     // And then write them

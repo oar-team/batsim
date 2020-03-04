@@ -444,7 +444,7 @@ Other options:
     main_args.redis_hostname = args["--redis-hostname"].asString();
     try
     {
-        main_args.redis_port = args["--redis-port"].asLong();
+        main_args.redis_port = static_cast<int>(args["--redis-port"].asLong());
     }
     catch(const std::exception &)
     {
