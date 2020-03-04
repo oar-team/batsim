@@ -32,9 +32,9 @@ struct ServerData
      */
     struct SubmitterCounters
     {
-        int expected_nb_submitters = -1;    //!< The expected number of submitters
-        int nb_submitters = 0;              //!< The number of submitters
-        int nb_submitters_finished = 0;     //!< The number of finished submitters
+        unsigned int expected_nb_submitters = static_cast<unsigned int>(-1); //!< The expected number of submitters
+        unsigned int nb_submitters = 0; //!< The number of submitters
+        unsigned int nb_submitters_finished = 0; //!< The number of finished submitters
     };
 
     BatsimContext * context = nullptr; //!< The BatsimContext

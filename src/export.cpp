@@ -993,7 +993,7 @@ void JobsTracer::initialize(BatsimContext *context,
     _wbuf->flush_buffer();
 
     // Prepare for schedule output file
-    for (int i = 0; i < context->machines.nb_machines(); ++i)
+    for (int i = 0; i < static_cast<int>(context->machines.nb_machines()); ++i)
     {
         _machines_utilization[i] = 0;
     }

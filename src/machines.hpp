@@ -266,19 +266,19 @@ public:
      * @brief Returns the total number of machines
      * @return The total number of machines
      */
-    int nb_machines() const;
+    unsigned int nb_machines() const;
 
     /**
      * @brief Returns the number of computing machines
      * @return The nubmer of computing machines
      */
-    int nb_compute_machines() const;
+    unsigned int nb_compute_machines() const;
 
     /**
      * @brief Returns the number of storage machines
      * @return The number of storage machines
      */
-    int nb_storage_machines() const;
+    unsigned int nb_storage_machines() const;
 
     /**
      * @brief Updates the number of machines in each state after a MachineState transition

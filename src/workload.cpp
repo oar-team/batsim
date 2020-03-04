@@ -66,7 +66,7 @@ void Workload::load_from_json(const std::string &json_filename, int &nb_machines
     string content;
 
     ifile.seekg(0, ios::end);
-    content.reserve(ifile.tellg());
+    content.reserve(static_cast<unsigned long>(ifile.tellg()));
     ifile.seekg(0, ios::beg);
 
     content.assign((std::istreambuf_iterator<char>(ifile)),
@@ -109,11 +109,11 @@ void Workload::register_smpi_applications()
 
         if (job->profile->type == ProfileType::SMPI)
         {
-            SmpiProfileData * data = (SmpiProfileData *) job->profile->data;
+            auto * data = static_cast<SmpiProfileData *>(job->profile->data);
 
-            XBT_INFO("Registering app. instance='%s', nb_process=%d",
-                     job->id.to_cstring(), (int) data->trace_filenames.size());
-            SMPI_app_instance_register(job->id.to_cstring(), nullptr, data->trace_filenames.size());
+            XBT_INFO("Registering app. instance='%s', nb_process=%lu",
+                     job->id.to_cstring(), data->trace_filenames.size());
+            SMPI_app_instance_register(job->id.to_cstring(), nullptr, static_cast<int>(data->trace_filenames.size()));
         }
     }
 
@@ -129,7 +129,7 @@ void Workload::check_validity()
         auto profile = mit.second;
         if (profile->type == ProfileType::SEQUENCE)
         {
-            SequenceProfileData * data = (SequenceProfileData *) profile->data;
+            auto * data = static_cast<SequenceProfileData *>(profile->data);
             data->profile_sequence.reserve(data->sequence.size());
             for (const auto & prof : data->sequence)
             {
@@ -162,7 +162,7 @@ void Workload::check_single_job_validity(const JobPtr job)
 
     if (job->profile->type == ProfileType::PARALLEL)
     {
-        ParallelProfileData * data = (ParallelProfileData *) job->profile->data;
+        auto * data = static_cast<ParallelProfileData *>(job->profile->data);
         (void) data; // Avoids a warning if assertions are ignored
         xbt_assert(data->nb_res == job->requested_nb_res,
                    "Invalid job %s: the requested number of resources (%d) do NOT match"
@@ -215,20 +215,20 @@ const Workload *Workloads::at(const std::string &workload_name) const
     return _workloads.at(workload_name);
 }
 
-int Workloads::nb_workloads() const
+unsigned int Workloads::nb_workloads() const
 {
-    return _workloads.size();
+    return static_cast<unsigned int>(_workloads.size());
 }
 
-int Workloads::nb_static_workloads() const
+unsigned int Workloads::nb_static_workloads() const
 {
-    int count = 0;
+    unsigned int count = 0;
 
     for (auto mit : _workloads)
     {
         Workload * workload = mit.second;
 
-        count += int(workload->is_static());
+        count += static_cast<unsigned int>(workload->is_static());
     }
 
     return count;

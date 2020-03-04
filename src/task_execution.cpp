@@ -29,7 +29,7 @@ void generate_parallel_task(std::vector<double>& computation_amount,
                             unsigned int nb_res,
                             void * profile_data)
 {
-    ParallelProfileData* data = (ParallelProfileData*)profile_data;
+    auto * data = static_cast<ParallelProfileData*>(profile_data);
     xbt_assert(nb_res == data->nb_res,
             "the number of resources given by the allocation (%d) is different "
             "from the number of resouces given by the profile data (%d)",
@@ -57,7 +57,7 @@ void generate_parallel_homogeneous(std::vector<double>& computation_amount,
                                    unsigned int nb_res,
                                    void * profile_data)
 {
-    ParallelHomogeneousProfileData* data = (ParallelHomogeneousProfileData*)profile_data;
+    auto * data = static_cast<ParallelHomogeneousProfileData*>(profile_data);
 
     double cpu = data->cpu;
     double com = data->com;
@@ -112,7 +112,7 @@ void generate_parallel_homogeneous_total_amount(std::vector<double>& computation
                                                 unsigned int nb_res,
                                                 void * profile_data)
 {
-    ParallelHomogeneousTotalAmountProfileData* data = (ParallelHomogeneousTotalAmountProfileData*)profile_data;
+    auto * data = static_cast<ParallelHomogeneousTotalAmountProfileData*>(profile_data);
 
     const double spread_cpu = data->cpu / nb_res;
     const double spread_com = data->com / nb_res;
@@ -170,11 +170,11 @@ void generate_parallel_homogeneous_with_pfs(std::vector<double>& computation_amo
                                             void * profile_data,
                                             BatsimContext * context)
 {
-    ParallelHomogeneousPFSProfileData* data = (ParallelHomogeneousPFSProfileData*) profile_data;
+    auto * data = static_cast<ParallelHomogeneousPFSProfileData*>(profile_data);
     const char * error_prefix = "Cannot generate a homogeneous parallel task with pfs: ";
 
     // The PFS machine will also be used
-    unsigned int nb_res = hosts_to_use.size() + 1;
+    unsigned int nb_res = static_cast<unsigned int>(hosts_to_use.size()) + 1;
     unsigned int pfs_id = nb_res - 1;
 
     // Add the pfs_machine
@@ -265,7 +265,7 @@ void generate_data_staging_task(std::vector<double>&  computation_amount,
                                 void * profile_data,
                                 BatsimContext * context)
 {
-    DataStagingProfileData * data = (DataStagingProfileData*) profile_data;
+    auto * data = static_cast<DataStagingProfileData*>(profile_data);
     const char * error_prefix = "Cannot generate a data staging task: ";
 
     double cpu = 0;
@@ -387,7 +387,7 @@ void generate_matrices_from_profile(std::vector<double>& computation_vector,
                                     BatsimContext * context)
 {
 
-    unsigned int nb_res = hosts_to_use.size();
+    unsigned int nb_res = static_cast<unsigned int>(hosts_to_use.size());
 
     XBT_DEBUG("Number of hosts to use: %d", nb_res);
 
@@ -485,9 +485,6 @@ int execute_parallel_task(BatTask * btask,
                                   & allocation->storage_mapping,
                                   context);
 
-    debug_print_ptask(computation_vector, communication_matrix,
-            hosts_to_use.size(), allocation->machine_ids, allocation->mapping);
-
     check_ptask_execution_permission(allocation->machine_ids, computation_vector, context);
 
     //FIXME: This will not work for the PFS profiles
@@ -507,8 +504,6 @@ int execute_parallel_task(BatTask * btask,
                                       io_profile,
                                       nullptr,
                                       context);
-        debug_print_ptask(io_computation_vector, io_communication_matrix,
-                io_hosts.size(), allocation->io_allocation);
 
         // merge the two profiles
         // First get part of the allocation that do change or not in the job
@@ -531,7 +526,7 @@ int execute_parallel_task(BatTask * btask,
         }
 
         // Generate the new matrices
-        unsigned int nb_res = new_hosts_to_use.size();
+        unsigned int nb_res = static_cast<unsigned int>(new_hosts_to_use.size());
 
         // Prepare buffers
         std::vector<double> new_computation_vector(nb_res, 0);
@@ -634,7 +629,6 @@ int execute_parallel_task(BatTask * btask,
         hosts_to_use = new_hosts_to_use;
         // TODO Free old job and io structures
         XBT_DEBUG("Merged Job+IO matrices");
-        debug_print_ptask(computation_vector, communication_matrix, hosts_to_use.size(), new_alloc);
 
         check_ptask_execution_permission(new_alloc, computation_vector, context);
     }

@@ -626,7 +626,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     }
 
     // Let's compute how the number of machines to use should be limited
-    max_nb_machines_to_use = 0;
+    max_nb_machines_to_use = -1;
     if ((main_args.limit_machines_count_by_workload) && (main_args.limit_machines_count > 0))
     {
         max_nb_machines_to_use = std::min(main_args.limit_machines_count, max_nb_machines_in_workloads);
@@ -640,7 +640,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
         max_nb_machines_to_use = main_args.limit_machines_count;
     }
 
-    if (max_nb_machines_to_use != 0)
+    if (max_nb_machines_to_use != -1)
     {
         XBT_INFO("The maximum number of machines to use is %d.", max_nb_machines_to_use);
     }

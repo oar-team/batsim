@@ -162,14 +162,14 @@ public:
      * @brief Returns the number of workloads
      * @return The number of workloads
      */
-    int nb_workloads() const;
+    unsigned int nb_workloads() const;
 
     /**
      * @brief Returns the number of static workloads
      * @details Static workloads are those corresponding to Batsim input files (input workloads or workflows)
      * @return The number of static workloads
      */
-    int nb_static_workloads() const;
+    unsigned int nb_static_workloads() const;
 
     /**
      * @brief Allows to get a job from the Workloads

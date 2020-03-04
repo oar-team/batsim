@@ -47,7 +47,7 @@ void Workflow::load_from_xml(const std::string &xml_filename)
         int num_procs = 1;
         if (job.attribute("num_procs"))
         {
-            num_procs = (int)strtol(job.attribute("num_procs").value(),NULL,10);
+            num_procs = static_cast<int>(strtol(job.attribute("num_procs").value(),NULL,10));
         }
         if (num_procs <= 0)
         {

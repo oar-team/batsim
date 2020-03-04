@@ -111,7 +111,7 @@ void Profiles::remove_profile(const std::string & profile_name)
     // If the profile is composed, also remove links to subprofiles.
     if (mit->second->type == ProfileType::SEQUENCE)
     {
-        const auto & profile_data = (SequenceProfileData*) mit->second->data;
+        auto * profile_data = static_cast<SequenceProfileData*>(mit->second->data);
         for (const auto & subprofile : profile_data->profile_sequence)
         {
             remove_profile(subprofile->name);
@@ -140,7 +140,7 @@ const std::unordered_map<std::string, ProfilePtr> Profiles::profiles() const
 
 int Profiles::nb_profiles() const
 {
-    return _profiles.size();
+    return static_cast<int>(_profiles.size());
 }
 
 
@@ -163,7 +163,7 @@ Profile::~Profile()
     XBT_INFO("Profile '%s' is being deleted.", name.c_str());
     if (type == ProfileType::DELAY)
     {
-        DelayProfileData * d = (DelayProfileData *) data;
+        auto * d = static_cast<DelayProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -172,7 +172,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::PARALLEL)
     {
-        ParallelProfileData * d = (ParallelProfileData *) data;
+        auto * d = static_cast<ParallelProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -181,7 +181,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::PARALLEL_HOMOGENEOUS)
     {
-        ParallelHomogeneousProfileData * d = (ParallelHomogeneousProfileData *) data;
+        auto * d = static_cast<ParallelHomogeneousProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -190,7 +190,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
     {
-        ParallelHomogeneousTotalAmountProfileData * d = (ParallelHomogeneousTotalAmountProfileData *) data;
+        auto * d = static_cast<ParallelHomogeneousTotalAmountProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -199,7 +199,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::SMPI)
     {
-        SmpiProfileData * d = (SmpiProfileData *) data;
+        auto * d = static_cast<SmpiProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -208,7 +208,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::SEQUENCE)
     {
-        SequenceProfileData * d = (SequenceProfileData *) data;
+        auto * d = static_cast<SequenceProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -217,7 +217,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::PARALLEL_HOMOGENEOUS_PFS)
     {
-        ParallelHomogeneousPFSProfileData * d = (ParallelHomogeneousPFSProfileData *) data;
+        auto * d = static_cast<ParallelHomogeneousPFSProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -226,7 +226,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::DATA_STAGING)
     {
-        DataStagingProfileData * d = (DataStagingProfileData *) data;
+        auto * d = static_cast<DataStagingProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -235,7 +235,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::SCHEDULER_SEND)
     {
-        SchedulerSendProfileData * d = (SchedulerSendProfileData *) data;
+        auto * d = static_cast<SchedulerSendProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -244,7 +244,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::SCHEDULER_RECV)
     {
-        SchedulerRecvProfileData * d = (SchedulerRecvProfileData *) data;
+        auto * d = static_cast<SchedulerRecvProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -439,12 +439,14 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         profile->type = ProfileType::SEQUENCE;
         SequenceProfileData * data = new SequenceProfileData;
 
-        int repeat = 1;
+        unsigned int repeat = 1;
         if (json_desc.HasMember("repeat"))
         {
             xbt_assert(json_desc["repeat"].IsInt(), "%s: profile '%s' has a non-integral 'repeat' field",
                    error_prefix.c_str(), profile_name.c_str());
-            repeat = json_desc["repeat"].GetInt();
+            xbt_assert(json_desc["repeat"].GetInt() >= 0, "%s: profile '%s' has a negative 'repeat' field (%d)",
+                   error_prefix.c_str(), profile_name.c_str(), json_desc["repeat"].GetInt());
+            repeat = static_cast<unsigned int>(json_desc["repeat"].GetInt());
         }
         data->repeat = repeat;
 
