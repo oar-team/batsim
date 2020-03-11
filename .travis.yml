@@ -3,4 +3,4 @@ language: nix
 sudo: false
 
 script:
- - echo 'Hello world!'
+ - echo 'Hello world from travis!'
