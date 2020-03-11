@@ -79,10 +79,10 @@ Please refer to `Batsim's documentation`_ for more.
     :target: https://batsim.readthedocs.io/en/latest/protocol.html
 
 
-.. |docker-status| image:: https://img.shields.io/docker/cloud/build/oarteam/batsim.svg
+.. |docker-status| image:: https://travis-ci.org/oar-team/batsim.svg?branch=master
     :alt: Docker build status
     :scale: 100%
-    :target: https://hub.docker.com/r/oarteam/batsim/tags?page=1&ordering=last_updated
+    :target: https://travis-ci.org/github/oar-team/batsim
 
 .. |docker-size| image:: https://img.shields.io/docker/image-size/oarteam/batsim/latest.svg?label=docker%20image%20size
     :alt: Docker Image Size

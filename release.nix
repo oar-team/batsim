@@ -167,7 +167,8 @@ let
       name = "batsim-sphinx-documentation";
 
       src = pkgs.lib.sourceByRegex ./. [
-        "^.gitlab-ci.yml"
+        "^\.gitlab-ci\.yml"
+        "^\.travis\.yml"
         "^release.nix"
         "^doc"
         "^doc/batsim_rjms_overview.png"
@@ -207,9 +208,9 @@ let
         "^env/docker"
         "^env/docker/Dockerfile"
         "^events"
-        "^events/test_events_4hosts.txt"
+        "^events/test_events_4hosts\.txt"
         "^workloads"
-        "^workloads/test_various_profile_types.json"
+        "^workloads/test_various_profile_types\.json"
       ];
       buildInputs = with pythonPackages; [ sphinx sphinx_rtd_theme ];
 
