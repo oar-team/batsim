@@ -4,3 +4,8 @@ sudo: false
 
 script:
  - echo 'Hello world from travis!'
+ - nix-env -iA cachix -f https://cachix.org/api/v1/install
+ - cachix use batsim
+ - nix-env -iA batsim-master -f 'https://github.com/oar-team/nur-kapack/archive/master.tar.gz'
+ - batsim --version
+ - docker --version
