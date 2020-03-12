@@ -923,7 +923,9 @@ void JsonProtocolReader::handle_execute_job(int event_number,
 
     // Let's retrieve the job identifier
     JobIdentifier job_id = JobIdentifier(job_id_str);
-    message->allocation->job_id = job_id;
+
+    // Retrieve the job behind the identifier
+    message->allocation->job = context->workloads.job_at(job_id);
 
     // *********************
     // Allocation management
@@ -1396,8 +1398,8 @@ void JsonProtocolReader::handle_register_job(int event_number,
     xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (REGISTER_JOB) should have a 'job_id' key", event_number);
     const Value & job_id_value = data_object["job_id"];
     xbt_assert(job_id_value.IsString(), "Invalid JSON message: in event %d (REGISTER_JOB): ['data']['job_id'] should be a string", event_number);
-    string job_id = job_id_value.GetString();
-    message->job_id = JobIdentifier(job_id);
+    string job_id_str = job_id_value.GetString();
+    JobIdentifier job_id(job_id_str);
 
     // Read the job description, either directly or from Redis
     if (data_object.HasMember("job"))
@@ -1417,9 +1419,43 @@ void JsonProtocolReader::handle_register_job(int event_number,
     {
         xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (REGISTER_JOB): ['data']['job'] is unset but redis seems disabled...", event_number);
 
-        string job_key = RedisStorage::job_key(message->job_id);
+        string job_key = RedisStorage::job_key(job_id);
         message->job_description = context->storage.get(job_key);
     }
+
+    // Load job into memory. TODO: this should be between the protocol parsing and the injection in the events, not here.
+    xbt_assert(context->workloads.exists(job_id.workload_name()),
+               "Internal error: Workload '%s' should exist.",
+               job_id.workload_name().c_str());
+    xbt_assert(!context->workloads.job_is_registered(job_id),
+               "Cannot register new job '%s', it already exists in the workload.", job_id.to_cstring());
+
+    Workload * workload = context->workloads.at(job_id.workload_name());
+
+    // Create the job.
+    XBT_DEBUG("Parsing user-submitted job %s", job_id.to_cstring());
+    message->job = Job::from_json(message->job_description, workload, "Invalid JSON job submitted by the scheduler");
+    xbt_assert(message->job->id.job_name() == job_id.job_name(), "Internal error");
+    xbt_assert(message->job->id.workload_name() == job_id.workload_name(), "Internal error");
+
+    /* The check of existence of a profile is done in Job::from_json which should raise an Exception
+     * TODO catch this exception here and print the following message
+     * if (!workload->profiles->exists(job->profile))
+    {
+        xbt_die(
+                   "Dynamically registered job '%s' has no profile: "
+                   "Workload '%s' has no profile named '%s'. "
+                   "When registering a dynamic job, its profile should already exist. "
+                   "If the profile is also dynamic, it can be registered with the REGISTER_PROFILE "
+                   "message but you must ensure that the profile is sent (non-strictly) before "
+                   "the REGISTER_JOB message.",
+                   job->id.to_cstring(),
+                   workload->name.c_str(), job->profile.c_str());
+    }*/
+
+    workload->check_single_job_validity(message->job);
+    workload->jobs->add_job(message->job);
+    message->job->state = JobState::JOB_STATE_SUBMITTED;
 
     send_message_at_time(timestamp, "server", IPMessageType::JOB_REGISTERED_BY_DP, static_cast<void*>(message));
 }
@@ -1475,6 +1511,37 @@ void JsonProtocolReader::handle_register_profile(int event_number,
     profile_object.Accept(writer);
 
     message->profile = string(buffer.GetString(), buffer.GetSize());
+
+    // Load profile into memory. TODO: this should be between the protocol parsing and the injection in the events, not here.
+
+    // Retrieve the workload, or create if it does not exist yet
+    Workload * workload = nullptr;
+    if (context->workloads.exists(message->workload_name))
+    {
+        workload = context->workloads.at(message->workload_name);
+    }
+    else
+    {
+        workload = Workload::new_dynamic_workload(message->workload_name);
+        context->workloads.insert_workload(workload->name, workload);
+    }
+
+    if (!workload->profiles->exists(message->profile_name))
+    {
+        XBT_INFO("Adding dynamically registered profile %s to workload %s",
+                message->profile_name.c_str(),
+                message->workload_name.c_str());
+        auto profile = Profile::from_json(message->profile_name,
+                                          message->profile,
+                                          "Invalid JSON profile received from the scheduler");
+        workload->profiles->add_profile(message->profile_name, profile);
+    }
+    else
+    {
+        xbt_die("Invalid new profile registration: profile '%s' already existed in workload '%s'",
+            message->profile_name.c_str(),
+            message->workload_name.c_str());
+    }
 
     send_message_at_time(timestamp, "server", IPMessageType::PROFILE_REGISTERED_BY_DP, static_cast<void*>(message));
 }

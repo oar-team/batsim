@@ -689,43 +689,10 @@ void server_on_register_job(ServerData * data,
 {
     xbt_assert(task_data->data != nullptr);
     auto * message = static_cast<JobRegisteredByDPMessage *>(task_data->data);
+    auto job = message->job;
 
     // Let's update global states
     ++data->nb_submitted_jobs;
-
-    xbt_assert(data->context->workloads.exists(message->job_id.workload_name()),
-               "Internal error: Workload '%s' should exist.",
-               message->job_id.workload_name().c_str());
-    xbt_assert(!data->context->workloads.job_is_registered(message->job_id),
-               "Cannot register new job '%s', it already exists in the workload.", message->job_id.to_cstring());
-
-    Workload * workload = data->context->workloads.at(message->job_id.workload_name());
-
-    // Create the job.
-    XBT_DEBUG("Parsing user-submitted job %s", message->job_id.to_cstring());
-    auto job = Job::from_json(message->job_description, workload,
-                               "Invalid JSON job submitted by the scheduler");
-    xbt_assert(job->id.job_name() == message->job_id.job_name(), "Internal error");
-    xbt_assert(job->id.workload_name() == message->job_id.workload_name(), "Internal error");
-
-    /* The check of existence of a profile is done in Job::from_json which should raise an Exception
-     * TODO catch this exception here and print the following message
-     * if (!workload->profiles->exists(job->profile))
-    {
-        xbt_die(
-                   "Dynamically registered job '%s' has no profile: "
-                   "Workload '%s' has no profile named '%s'. "
-                   "When registering a dynamic job, its profile should already exist. "
-                   "If the profile is also dynamic, it can be registered with the REGISTER_PROFILE "
-                   "message but you must ensure that the profile is sent (non-strictly) before "
-                   "the REGISTER_JOB message.",
-                   job->id.to_cstring(),
-                   workload->name.c_str(), job->profile.c_str());
-    }*/
-
-    workload->check_single_job_validity(job);
-    workload->jobs->add_job(job);
-    job->state = JobState::JOB_STATE_SUBMITTED;
 
     if (data->context->registration_sched_ack)
     {
@@ -753,40 +720,9 @@ void server_on_register_profile(ServerData * data,
 {
     xbt_assert(task_data->data != nullptr);
     auto * message = static_cast<ProfileRegisteredByDPMessage *>(task_data->data);
+    (void) data;
     (void) message;
-
-    // Retrieve the workload, or create if it does not exist yet
-    Workload * workload = nullptr;
-    if (data->context->workloads.exists(message->workload_name))
-    {
-        workload = data->context->workloads.at(message->workload_name);
-    }
-    else
-    {
-        workload = Workload::new_dynamic_workload(message->workload_name);
-        data->context->workloads.insert_workload(workload->name, workload);
-    }
-
-    XBT_DEBUG("New dynamically registered profile %s to workload %s",
-                message->profile_name.c_str(),
-                message->workload_name.c_str());
-
-    if (!workload->profiles->exists(message->profile_name))
-    {
-        XBT_INFO("Adding dynamically registered profile %s to workload %s",
-                message->profile_name.c_str(),
-                message->workload_name.c_str());
-        auto profile = Profile::from_json(message->profile_name,
-                                          message->profile,
-                                          "Invalid JSON profile received from the scheduler");
-        workload->profiles->add_profile(message->profile_name, profile);
-    }
-    else
-    {
-        xbt_die("Invalid new profile registration: profile '%s' already existed in workload '%s'",
-            message->profile_name.c_str(),
-            message->workload_name.c_str());
-    }
+    // TODO: remove me?
 }
 
 void server_on_set_job_metadata(ServerData * data,
@@ -1001,18 +937,7 @@ void server_on_execute_job(ServerData * data,
     xbt_assert(task_data->data != nullptr);
     auto * message = static_cast<ExecuteJobMessage *>(task_data->data);
     auto * allocation = message->allocation;
-
-    xbt_assert(data->context->workloads.job_is_registered(allocation->job_id),
-               "Trying to execute job '%s', which is not registered in the workload!",
-               allocation->job_id.to_cstring());
-
-    auto job = data->context->workloads.job_at(allocation->job_id);
-
-    xbt_assert(data->context->workloads.job_profile_is_registered(allocation->job_id),
-               "Trying to execute job '%s', in which the profile '%s' is not registered in the workload!",
-               allocation->job_id.to_cstring(),
-               job->profile->name.c_str());
-
+    auto job = allocation->job;
 
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Cannot execute job '%s': its state (%s) is not JOB_STATE_SUBMITTED.",

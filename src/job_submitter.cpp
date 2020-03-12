@@ -401,7 +401,7 @@ void batexec_job_launcher_process(BatsimContext * context,
 
         SchedulingAllocation * alloc = new SchedulingAllocation;
 
-        alloc->job_id = job->id;
+        alloc->job = job;
         alloc->hosts.clear();
         alloc->hosts.reserve(nb_res);
         alloc->machine_ids.clear();

@@ -118,7 +118,7 @@ struct JobSubmittedMessage
  */
 struct JobRegisteredByDPMessage
 {
-    JobIdentifier job_id; //!< The JobIdentifier of the new job
+    JobPtr job; //!< The JobIdentifier of the new job
     std::string job_description; //!< The job description string (empty if redis is enabled)
 };
 
@@ -171,7 +171,7 @@ struct JobRejectedMessage
  */
 struct SchedulingAllocation
 {
-    JobIdentifier job_id; //!< The JobIdentifier
+    JobPtr job; //!< The Job to execute
     IntervalSet machine_ids; //!< User defined allocation in range of machines ids
     std::vector<int> mapping; //!< The mapping from executors (~=ranks) to resource ids. Can be empty, in which case it will NOT be used (a round robin will be used instead). If not empty, must be of the same size of the job, and each value must be in [0,nb_allocated_res[.
     std::map<std::string, int> storage_mapping; //!< mapping from label given in the profile and machine id
