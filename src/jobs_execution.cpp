@@ -424,7 +424,7 @@ void execute_job_process(BatsimContext * context,
     {
         // Let us tell the server that the job completed
         JobCompletedMessage * message = new JobCompletedMessage;
-        message->job_id = allocation->job->id;
+        message->job = allocation->job;
 
         send_message("server", IPMessageType::JOB_COMPLETED, static_cast<void*>(message));
     }

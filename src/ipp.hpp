@@ -146,7 +146,7 @@ struct SetJobMetadataMessage
  */
 struct JobCompletedMessage
 {
-    JobIdentifier job_id; //!< The JobIdentifier
+    JobPtr job; //!< The Job that has completed
 };
 
 /**

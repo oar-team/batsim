@@ -241,35 +241,35 @@ void server_on_job_completed(ServerData * data,
     xbt_assert(task_data->data != nullptr);
     auto * message = static_cast<JobCompletedMessage *>(task_data->data);
 
-    if (data->origin_of_jobs.count(message->job_id) == 1)
+    if (data->origin_of_jobs.count(message->job->id) == 1)
     {
         // Let's call the submitter which submitted the job back
         SubmitterJobCompletionCallbackMessage * msg = new SubmitterJobCompletionCallbackMessage;
-        msg->job_id = message->job_id;
+        msg->job_id = message->job->id;
 
-        ServerData::Submitter * submitter = data->origin_of_jobs.at(message->job_id);
+        ServerData::Submitter * submitter = data->origin_of_jobs.at(message->job->id);
         dsend_message(submitter->mailbox, IPMessageType::SUBMITTER_CALLBACK, static_cast<void*>(msg));
 
-        data->origin_of_jobs.erase(message->job_id);
+        data->origin_of_jobs.erase(message->job->id);
     }
 
     data->nb_running_jobs--;
     xbt_assert(data->nb_running_jobs >= 0);
     data->nb_completed_jobs++;
     xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
-    auto job = data->context->workloads.job_at(message->job_id);
+    auto job = message->job;
 
     XBT_INFO("Job %s has COMPLETED. %d jobs completed so far",
              job->id.to_cstring(), data->nb_completed_jobs);
 
-    data->context->proto_writer->append_job_completed(message->job_id.to_string(),
+    data->context->proto_writer->append_job_completed(message->job->id.to_string(),
                                                       job_state_to_string(job->state),
                                                       job->allocation.to_string_hyphen(" "),
                                                       job->return_code,
                                                       simgrid::s4u::Engine::get_clock());
 
     data->context->jobs_tracer.write_job(job);
-    data->jobs_to_be_deleted.push_back(message->job_id);
+    data->jobs_to_be_deleted.push_back(message->job->id);
 }
 
 void server_on_job_submitted(ServerData * data,
