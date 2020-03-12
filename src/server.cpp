@@ -289,28 +289,23 @@ void server_on_job_submitted(ServerData * data,
     xbt_assert(data->submitters.count(message->submitter_name) == 1);
 
     ServerData::Submitter * submitter = data->submitters.at(message->submitter_name);
-    for (JobIdentifier & job_id : message->job_ids)
+    for (JobPtr & job : message->jobs)
     {
         if (submitter->should_be_called_back)
         {
-            xbt_assert(data->origin_of_jobs.count(job_id) == 0);
-            data->origin_of_jobs[job_id] = submitter;
+            xbt_assert(data->origin_of_jobs.count(job->id) == 0);
+            data->origin_of_jobs[job->id] = submitter;
         }
 
         // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
-        XBT_DEBUG("Job received: %s", job_id.to_cstring());
+        XBT_DEBUG("Job received: %s", job->id.to_cstring());
 
         XBT_DEBUG("Workloads: %s", data->context->workloads.to_string().c_str());
-
-        xbt_assert(data->context->workloads.job_is_registered(job_id));
-        auto job = data->context->workloads.job_at(job_id);
-        job->id = job_id;
 
         // Update control information
         job->state = JobState::JOB_STATE_SUBMITTED;
         ++data->nb_submitted_jobs;
-        XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far",
-                 job_id.to_cstring(), data->nb_submitted_jobs);
+        XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far", job->id.to_cstring(), data->nb_submitted_jobs);
 
         string job_json_description, profile_json_description;
 

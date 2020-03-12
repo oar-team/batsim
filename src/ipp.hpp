@@ -110,7 +110,7 @@ struct SubmitterJobCompletionCallbackMessage
 struct JobSubmittedMessage
 {
     std::string submitter_name; //!< The name of the submitter which submitted the jobs.
-    std::vector<JobIdentifier> job_ids; //!< The list of JobIdentifiers
+    std::vector<JobPtr> jobs; //!< The list of submitted Jobs
 };
 
 /**
