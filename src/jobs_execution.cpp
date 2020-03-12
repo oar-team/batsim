@@ -320,8 +320,7 @@ void execute_job_process(BatsimContext * context,
                          bool notify_server_at_end,
                          ProfilePtr io_profile)
 {
-    Workload * workload = context->workloads.at(allocation->job_id.workload_name());
-    auto job = workload->jobs->at(allocation->job_id);
+    auto job = allocation->job;
 
     job->starting_time = static_cast<long double>(simgrid::s4u::Engine::get_clock());
     job->allocation = allocation->machine_ids;
@@ -425,7 +424,7 @@ void execute_job_process(BatsimContext * context,
     {
         // Let us tell the server that the job completed
         JobCompletedMessage * message = new JobCompletedMessage;
-        message->job_id = allocation->job_id;
+        message->job = allocation->job;
 
         send_message("server", IPMessageType::JOB_COMPLETED, static_cast<void*>(message));
     }

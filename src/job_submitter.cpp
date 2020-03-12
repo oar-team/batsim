@@ -35,13 +35,13 @@ Task* bottom_level_f (Task *child, Task *parent)
 
 using namespace std;
 
-static void submit_jobs_to_server(const vector<JobIdentifier> & jobs_to_submit, const std::string & submitter_name)
+static void submit_jobs_to_server(const vector<JobPtr> & jobs_to_submit, const std::string & submitter_name)
 {
     if (!jobs_to_submit.empty())
     {
         JobSubmittedMessage * msg = new JobSubmittedMessage;
         msg->submitter_name = submitter_name;
-        msg->job_ids = jobs_to_submit;
+        msg->jobs = jobs_to_submit;
         send_message("server", IPMessageType::JOB_SUBMITTED, static_cast<void*>(msg));
     }
 }
@@ -103,7 +103,7 @@ void static_job_submitter_process(BatsimContext * context,
 
     if (jobs_to_submit.size() > 0)
     {
-        vector<JobIdentifier> jobs_to_send;
+        vector<JobPtr> jobs_to_send;
         bool is_first_job = true;
 
         for ( ; !jobs_to_submit.empty() ; jobs_to_submit.pop_front())
@@ -123,7 +123,7 @@ void static_job_submitter_process(BatsimContext * context,
             //job->completion_notification_mailbox = "SOME_MAILBOX";
 
             // Populate the vector of job identifiers to submit
-            jobs_to_send.push_back(job->id);
+            jobs_to_send.push_back(job);
 
             // Let's put the metadata about the job into the data storage
             if (context->redis_enabled)
@@ -335,7 +335,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     // Submit the job
     JobSubmittedMessage * msg = new JobSubmittedMessage;
     msg->submitter_name = submitter_name;
-    msg->job_ids = std::vector<JobIdentifier>({job_id});
+    msg->jobs = std::vector<JobPtr>({job});
     send_message("server", IPMessageType::JOB_SUBMITTED, static_cast<void*>(msg));
 
     // HOWTO Test Wait Query
@@ -401,7 +401,7 @@ void batexec_job_launcher_process(BatsimContext * context,
 
         SchedulingAllocation * alloc = new SchedulingAllocation;
 
-        alloc->job_id = job->id;
+        alloc->job = job;
         alloc->hosts.clear();
         alloc->hosts.reserve(nb_res);
         alloc->machine_ids.clear();
