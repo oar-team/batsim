@@ -460,8 +460,6 @@ JobPtr Job::from_json(const rapidjson::Value & json_desc,
                error_prefix.c_str(), profile_name.c_str(), j->id.to_string().c_str());
     j->profile = workload->profiles->at(profile_name);
 
-    XBT_INFO("Profile name %s and '%s'", profile_name.c_str(), j->profile->name.c_str());
-
     // Let's get the JSON string which originally described the job
     // (to conserve potential fields unused by Batsim)
     rapidjson::StringBuffer buffer;
