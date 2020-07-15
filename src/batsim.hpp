@@ -101,8 +101,8 @@ struct MainArguments
     bool terminate_with_last_workflow = false;              //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
     // Other
-    std::vector<std::string> simgrid_config;                  //!< The list of configuration options to pass to SimGrid.
-    std::vector<std::string> simgrid_logging;                 //!< The list of simulation logging options to pass to SimGrid.
+    std::vector<std::string> simgrid_config;                //!< The list of configuration options to pass to SimGrid.
+    std::vector<std::string> simgrid_logging;               //!< The list of simulation logging options to pass to SimGrid.
     std::string sched_config;                               //!< The scheduler configuration.
     std::string sched_config_file;                          //!< The scheduler configuration file.
     bool dump_execution_context = false;                    //!< Instead of running the simulation, print the execution context as JSON on the standard output.
