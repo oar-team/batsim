@@ -103,6 +103,8 @@ struct MainArguments
     // Other
     std::vector<std::string> simgrid_config;                  //!< The list of configuration options to pass to SimGrid.
     std::vector<std::string> simgrid_logging;                 //!< The list of simulation logging options to pass to SimGrid.
+    std::string sched_config;                               //!< The scheduler configuration.
+    std::string sched_config_file;                          //!< The scheduler configuration file.
     bool dump_execution_context = false;                    //!< Instead of running the simulation, print the execution context as JSON on the standard output.
     bool allow_compute_sharing = false;                     //!< Allows/forbids sharing on compute machines. Two jobs can run concurrently on the same machine if and only if sharing is allowed.
     bool allow_storage_sharing = false;                     //!< Allows/forbids sharing on storage machines. Two jobs can run concurrently on the same machine if and only if sharing is allowed.
