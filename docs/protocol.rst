@@ -292,7 +292,9 @@ SIMULATION_BEGINS
 Sent at the beginning of the simulation.
 If Redis is enabled, the scheduler can read metainformation from the Redis server as soon as SIMULATION_BEGINS_ has been received.
 
-Batsim configuration is sent through the ``config`` object (in ``data``). Custom information can be added into this configuration (see :ref:`cli`), which gives a generic way to forward metainformation from Batsim to any scheduler at runtime.
+Batsim configuration is sent through the ``config`` object (in ``data``).
+This object contains some of Batsim's options as chosen by user at runtime (see :ref:`cli`).
+In particular, if a scheduler configuration is set via Batsim's :ref:`cli`, it is forwarded to the scheduler in the ``sched-config`` string inside the ``config`` object.
 
 **data**: An object with the following fields.
 
@@ -319,108 +321,140 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
 
 .. code:: json
 
-   {
-     "now": 0,
-     "events": [
-       {
-         "timestamp": 0,
-         "type": "SIMULATION_BEGINS",
-         "data": {
-           "nb_resources": 4,
-           "nb_compute_resources": 4,
-           "nb_storage_resources": 0,
-           "allow_compute_sharing": false,
-           "allow_storage_sharing": true,
-           "config": {
-             "redis": {
-               "enabled": false,
-               "hostname": "127.0.0.1",
-               "port": 6379,
-               "prefix": "default"
-             },
-             "job_submission": {
-               "forward_profiles": false,
-               "from_scheduler": {
-                 "enabled": false,
-                 "acknowledge": true
-               }
-             }
-           },
-           "compute_resources": [
-             {
-               "id": 0,
-               "name": "Bourassa",
-               "state": "idle",
-               "properties": {}
-             },
-             {
-               "id": 1,
-               "name": "Fafard",
-               "state": "idle",
-               "properties": {}
-             },
-             {
-               "id": 2,
-               "name": "Ginette",
-               "state": "idle",
-               "properties": {}
-             },
-             {
-               "id": 3,
-               "name": "Jupiter",
-               "state": "idle",
-               "properties": {}
-             }
-           ],
-           "storage_resources": [],
-           "workloads": {
-             "26dceb": "/home/mmercier/Projects/batsim/workloads/test_various_profile_types.json"
-           },
-           "profiles": {
-             "26dceb":{
-               "simple": {
-                 "type": "parallel",
-                 "cpu": [5e6,  0,  0,  0],
-                 "com": [5e6,  0,  0,  0,
-                         5e6,5e6,  0,  0,
-                         5e6,5e6,  0,  0,
-                         5e6,5e6,5e6,  0]
-               },
-               "homogeneous": {
-                 "type": "parallel_homogeneous",
-                 "cpu": 10e6,
-                 "com": 1e6
-               },
-               "homogeneous_no_cpu": {
-                 "type": "parallel_homogeneous",
-                 "cpu": 0,
-                 "com": 1e6
-               },
-               "homogeneous_no_com": {
-                 "type": "parallel_homogeneous",
-                 "cpu": 2e5,
-                 "com": 0
-               },
-               "sequence": {
-                 "type": "composed",
-                 "repeat" : 4,
-                 "seq": ["simple","homogeneous","simple"]
-               },
-               "delay": {
-                 "type": "delay",
-                 "delay": 20.20
-               },
-               "homogeneous_total": {
-                 "type": "parallel_homogeneous_total",
-                 "cpu": 10e6,
-                 "com": 1e6
-               }
-             }
-           }
-         }
-       }
-     ]
-   }
+  {
+    "now": 0,
+    "events": [
+      {
+        "timestamp": 0,
+        "type": "SIMULATION_BEGINS",
+        "data": {
+          "nb_resources": 4,
+          "nb_compute_resources": 4,
+          "nb_storage_resources": 0,
+          "allow_compute_sharing": false,
+          "allow_storage_sharing": true,
+          "config": {
+            "redis-enabled": false,
+            "redis-hostname": "127.0.0.1",
+            "redis-port": 6379,
+            "redis-prefix": "default",
+            "profiles-forwarded-on-submission": false,
+            "dynamic-jobs-enabled": false,
+            "dynamic-jobs-acknowledged": false,
+            "profile-reuse-enabled": false,
+            "sched-config": "Scheduler-specific configuration. In this instance, just a meaningless example string.",
+            "forward-unknown-events": false
+          },
+          "compute_resources": [
+            {
+              "id": 0,
+              "name": "Bourassa",
+              "state": "idle",
+              "properties": {
+                "role": ""
+              },
+              "zone_properties": {}
+            },
+            {
+              "id": 1,
+              "name": "Fafard",
+              "state": "idle",
+              "properties": {
+                "role": ""
+              },
+              "zone_properties": {}
+            },
+            {
+              "id": 2,
+              "name": "Ginette",
+              "state": "idle",
+              "properties": {
+                "role": ""
+              },
+              "zone_properties": {}
+            },
+            {
+              "id": 3,
+              "name": "Jupiter",
+              "state": "idle",
+              "properties": {
+                "role": ""
+              },
+              "zone_properties": {}
+            }
+          ],
+          "storage_resources": [],
+          "workloads": {
+            "w0": "/home/carni/proj/batsim/workloads/test_various_profile_types.json"
+          },
+          "profiles": {
+            "w0": {
+              "homogeneous_total": {
+                "type": "parallel_homogeneous_total",
+                "cpu": 10000000,
+                "com": 1000000
+              },
+              "homogeneous": {
+                "type": "parallel_homogeneous",
+                "cpu": 10000000,
+                "com": 1000000
+              },
+              "simple": {
+                "type": "parallel",
+                "cpu": [
+                  5000000,
+                  0,
+                  0,
+                  0
+                ],
+                "com": [
+                  5000000,
+                  0,
+                  0,
+                  0,
+                  5000000,
+                  5000000,
+                  0,
+                  0,
+                  5000000,
+                  5000000,
+                  0,
+                  0,
+                  5000000,
+                  5000000,
+                  5000000,
+                  0
+                ]
+              },
+              "homogeneous_no_com": {
+                "type": "parallel_homogeneous",
+                "cpu": 200000,
+                "com": 0
+              },
+              "homogeneous_no_cpu": {
+                "type": "parallel_homogeneous",
+                "cpu": 0,
+                "com": 1000000
+              },
+              "sequence": {
+                "type": "composed",
+                "repeat": 4,
+                "seq": [
+                  "simple",
+                  "homogeneous",
+                  "simple"
+                ]
+              },
+              "delay": {
+                "type": "delay",
+                "delay": 20.2
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
 
 .. _proto_SIMULATION_ENDS:
 
