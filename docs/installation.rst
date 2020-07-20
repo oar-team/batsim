@@ -30,18 +30,24 @@ If you already have a working Nix installation, you can skip `Installing Nix`_ a
 
 Installing Nix
 ~~~~~~~~~~~~~~
+
+.. note::
+
+    This is unlikely but the procedure to install Nix_ may be outdated.
+    Please refer to `Nix installation documentation`_ for up-to-date installation material.
+
 Installing Nix is pretty straightforward.
 
 .. code:: bash
 
-    curl https://nixos.org/nix/install | sh
+    curl -L https://nixos.org/nix/install | sh
 
 Follow the instructions displayed at the end of the script.
 You usually need to source a file to access the Nix commands.
 
 .. code:: bash
 
-    source ~/nix-profiles/etc/profile.d/nix.sh
+    source ~/.nix-profiles/etc/profile.d/nix.sh
 
 .. warning::
 
@@ -52,11 +58,6 @@ You usually need to source a file to access the Nix commands.
    .. code:: bash
 
       sudo echo 1 > /proc/sys/kernel/unprivileged_userns_clone
-
-.. note::
-
-    This is unlikely but the procedure to install Nix_ may be outdated.
-    Please refer to `Nix installation documentation`_ for up-to-date installation material.
 
 Using Batsim from a well-defined Nix environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
