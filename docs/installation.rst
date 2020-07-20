@@ -42,12 +42,8 @@ Installing Nix is pretty straightforward.
 
     curl -L https://nixos.org/nix/install | sh
 
-Follow the instructions displayed at the end of the script.
-You usually need to source a file to access the Nix commands.
-
-.. code:: bash
-
-    source ~/.nix-profiles/etc/profile.d/nix.sh
+**Follow the instructions displayed at the end of the script.**
+You usually need to ``source`` a file to access the Nix commands.
 
 .. warning::
 
