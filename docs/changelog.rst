@@ -19,10 +19,24 @@ Unreleased
 - `Commits since v3.1.0 <https://github.com/oar-team/batsim/compare/v3.1.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
 
+Changed (**breaks some schedulers**)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Profiles and jobs are now cleaned from memory over time (instead of at the end of the whole simulation).
+  This is done with a reference counting mechanism: When a job or profile is no longer needed **according to what batsim knows**, it is removed from memory.
+  This can break schedulers that rely on dynamic profile/job submission, especially when several :ref:`proto_REGISTER_JOB` using the same profile are decided at different simulation times — as the profile can be garbage collected when its first execution finishes.
+  The new ``--enable-profile-reuse`` :ref:`cli` option should keep previous behavior.
+
+Removed (**breaks CLI**)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+- As unit tests are now done with gtest_, the ``--unittest`` :ref:`cli` option has been removed.
 
 Added
 ~~~~~
 
+- Scheduler configuration can be given to Batsim (via ``--sched-cfg`` or ``--sched-cfg-file`` :ref:`cli` options).
+  This configuration string is forwarded to the scheduler in the :ref:`proto_SIMULATION_BEGINS` event.
 - Basic tests for the external events mechanism.
 - Retrieval of the zone properties in the XML platform description.
 
@@ -37,7 +51,12 @@ Fixed
 Miscellaneous
 ~~~~~~~~~~~~~
 
+- Various performance improvements.
+- The jobs output file is now written over time (was only written on disk at the end of the simulation).
 - Batsim no longer uses SimGrid's MSG interface. Everything is done with S4U now.
+- Smart pointers are used in most parts of the code (for reference counting memory deallocations).
+- Old markdown documentation has been removed.
+- Removal of CMake Find functions, pkgconfig is used instead.
 
 ........................................................................................................................
 
@@ -412,3 +431,4 @@ Changed
 .. _`docopt-cpp`: https://github.com/docopt/docopt.cpp
 .. _pugixml: https://pugixml.org/
 .. _Meson: https://mesonbuild.com/
+.. _gtest: https://github.com/google/googletest
