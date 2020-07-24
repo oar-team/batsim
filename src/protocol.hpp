@@ -176,6 +176,25 @@ public:
      */
     virtual void append_notify(const std::string & notify_type,
                                double date) = 0;
+
+    /**
+     * @brief Appends a NOTIFY event related to resource events.
+     * @param notify_type The type of the resource event
+     * @param resources The list of resources involved by the event
+     * @param date The event date. Must be greater than or equal to the previous event date.
+     */
+    virtual void append_notify_resource_event(const std::string & notify_type,
+                                              const IntervalSet & resources,
+                                              double date) = 0;
+
+    /**
+     * @brief Appends a NOTIFY event related to a generic external event.
+     * @param[in] json_desc The JSON description of the generic event
+     * @param[in] date The event date. Must be greater than or equal to the previous event date.
+     */
+    virtual void append_notify_generic_event(const std::string & json_desc,
+                                             double date) = 0;
+
     /**
      * @brief Appends a REQUESTED_CALL message.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
@@ -331,6 +350,24 @@ public:
      */
     void append_notify(const std::string & notify_type,
                        double date);
+
+    /**
+     * @brief Appends a NOTIFY event related to resource events.
+     * @param notify_type The type of the resource event
+     * @param resources The list of resources involved by the event
+     * @param date The event date. Must be greater than or equal to the previous event date.
+     */
+    void append_notify_resource_event(const std::string & notify_type,
+                                      const IntervalSet & resources,
+                                      double date);
+
+    /**
+     * @brief Appends a NOTIFY event related to a generic external event.
+     * @param[in] json_desc The JSON description of the generic event
+     * @param[in] date The event date. Must be greater than or equal to the previous event date.
+     */
+    void append_notify_generic_event(const std::string & json_desc,
+                                     double date);
 
     /**
      * @brief Appends a REQUESTED_CALL message.

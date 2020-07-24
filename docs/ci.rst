@@ -3,6 +3,8 @@
 Continuous Integration
 ======================
 
+The CI script is the ``.gitlab-ci.yml`` file located at Batsim's repository root directory.
+
 .. todo::
     Document Batsim continuous integration.
 

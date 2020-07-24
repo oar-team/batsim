@@ -30,7 +30,7 @@ void prepare_batsim_outputs(BatsimContext * context)
     {
         context->paje_tracer.set_filename(context->export_prefix + "_schedule.trace");
         context->machines.set_tracer(&context->paje_tracer);
-        context->paje_tracer.initialize(context, MSG_get_clock());
+        context->paje_tracer.initialize(context, simgrid::s4u::Engine::get_clock());
     }
 
     if (context->trace_machine_states)
@@ -52,7 +52,7 @@ void prepare_batsim_outputs(BatsimContext * context)
         for (const Machine * machine : context->machines.machines())
         {
             int machine_id = machine->id;
-            int pstate = MSG_host_get_pstate(machine->host);
+            int pstate = machine->host->get_pstate();
 
             if (pstate_to_machine_set.count(pstate) == 0)
             {
@@ -70,7 +70,7 @@ void prepare_batsim_outputs(BatsimContext * context)
         {
             int pstate = mit.first;
             IntervalSet & range = mit.second;
-            context->pstate_tracer.add_pstate_change(MSG_get_clock(), range, pstate);
+            context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), range, pstate);
         }
     }
 }
@@ -83,7 +83,7 @@ void finalize_batsim_outputs(BatsimContext * context)
     // Schedule (Pajé)
     if (context->trace_schedule)
     {
-        context->paje_tracer.finalize(context, MSG_get_clock());
+        context->paje_tracer.finalize(context, simgrid::s4u::Engine::get_clock());
     }
 
     if (context->trace_machine_states)
@@ -938,7 +938,8 @@ void export_schedule_to_csv(const std::string &filename, const BatsimContext *co
     const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
                                                  MachineState::COMPUTING,
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
-                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING,
+                                                 MachineState::UNAVAILABLE};
     for (const MachineState & state : machine_states)
     {
         time_spent_in_each_state[state] = 0;

@@ -285,9 +285,20 @@ void JsonProtocolWriter::append_job_completed(const string & job_id,
       "data": {
         "job_id": "w0!1",
         "job_state": "COMPLETED_KILLED",
-        "job_alloc": "0-1 5"
+        "alloc": "0-1 5"
+        "return_code": -1
       }
-    } */
+    }
+    or {
+      "timestamp": 15.0,
+      "type": "JOB_COMPLETED",
+      "data": {
+        "job_id": "w0!2",
+        "job_state": "COMPLETED_SUCCESSFULLY",
+        "alloc": "0-3"
+        "return_code": 0
+      }
+    }*/
 
     xbt_assert(date >= _last_date, "Date inconsistency");
     _last_date = date;
@@ -549,6 +560,11 @@ void JsonProtocolWriter::append_notify(const std::string & notify_type,
        "timestamp": 23.57,
        "type": "NOTIFY",
        "data": { "type": "no_more_static_job_to_submit" }
+    }
+    or {
+       "timestamp": 23.57,
+       "type": "NOTIFY",
+       "data": { "type": "no_more_external_event_to_occur" }
     } */
 
     xbt_assert(date >= _last_date, "Date inconsistency");
@@ -565,6 +581,65 @@ void JsonProtocolWriter::append_notify(const std::string & notify_type,
 
     _events.PushBack(event, _alloc);
 }
+
+void JsonProtocolWriter::append_notify_resource_event(const std::string & notify_type,
+                                          const IntervalSet & resources,
+                                          double date)
+{
+    /* {
+        "timestamp": 140.0,
+        "type": "NOTIFY",
+        "data": { "type": "event_resource_available", "resources": "0 5-8" }
+    }
+    or {
+        "timestamp": 200.0,
+        "type": "NOTIFY",
+        "data": { "type": "event_resource_unavailable", "resources": "0 5 7" }
+    } */
+
+    xbt_assert(date >= _last_date, "Date inconsistency");
+    _last_date = date;
+    _is_empty = false;
+
+    Value data(rapidjson::kObjectType);
+    data.AddMember("type", Value().SetString(notify_type.c_str(), _alloc),_alloc);
+    data.AddMember("resources", Value().SetString(resources.to_string_hyphen(" ", "-").c_str(), _alloc),_alloc);
+
+    Value event(rapidjson::kObjectType);
+    event.AddMember("timestamp", Value().SetDouble(date), _alloc);
+    event.AddMember("type", Value().SetString("NOTIFY"), _alloc);
+    event.AddMember("data", data, _alloc);
+
+    _events.PushBack(event, _alloc);
+}
+
+void JsonProtocolWriter::append_notify_generic_event(const std::string & json_desc_str,
+                                                     double date)
+{
+    /* {
+        "timestamp" : 12.3,
+        "type": "NOTIFY",
+        "data": // A JSON object representing an external event
+      } */
+
+    xbt_assert(date >= _last_date, "Date inconsistency");
+    _last_date = date;
+    _is_empty = false;
+
+    Value event(rapidjson::kObjectType);
+
+    event.AddMember("timestamp", Value().SetDouble(date), _alloc);
+    event.AddMember("type", Value().SetString("NOTIFY"), _alloc);
+
+    Document event_doc;
+    event_doc.Parse(json_desc_str.c_str());
+    xbt_assert(!event_doc.HasParseError());
+    event.AddMember("data", Value().CopyFrom(event_doc, _alloc), _alloc);
+
+
+    _events.PushBack(event, _alloc);
+}
+
 
 void JsonProtocolWriter::clear()
 {
@@ -1061,7 +1136,7 @@ void JsonProtocolReader::handle_call_me_later(int event_number,
     xbt_assert(timestamp_value.IsNumber(), "Invalid JSON message: the 'timestamp' value in the 'data' value of event %d (CALL_ME_LATER) should be a number.", event_number);
     message->target_time = timestamp_value.GetDouble();
 
-    if (message->target_time < MSG_get_clock())
+    if (message->target_time < simgrid::s4u::Engine::get_clock())
     {
         XBT_WARN("Event %d (CALL_ME_LATER) asks to be called at time %g but it is already reached", event_number, message->target_time);
     }
@@ -1431,10 +1506,10 @@ void JsonProtocolReader::send_message_at_time(double when,
                                       bool detached) const
 {
     // Let's wait until "when" time is reached
-    double current_time = MSG_get_clock();
+    double current_time = simgrid::s4u::Engine::get_clock();
     if (when > current_time)
     {
-        MSG_process_sleep(when - current_time);
+        simgrid::s4u::this_actor::sleep_for(when - current_time);
     }
 
     // Let's actually send the message

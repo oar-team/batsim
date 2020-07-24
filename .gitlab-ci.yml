@@ -1,69 +1,36 @@
-image: oarteam/batsim_ci:2018-11-07
+image: oarteam/batsim_ci:latest
 
 variables:
   GIT_SUBMODULE_STRATEGY: none
 
 stages:
-  - nix_build_and_update_dependencies_cache
-  - manual_build
-  - test
+  - big_stage
   - deploy
 
 ###############################################################################
-# Nix Builds + Dependencies cache stage
+# Build and test
 ###############################################################################
-nix_build_gcc:
-  stage: nix_build_and_update_dependencies_cache
+build_and_test:
+  stage: big_stage
   script:
-    - ./ci/nix-build-gcc-and-update-dependencies-cache.bash
-
-nix_build_clang:
-  stage: nix_build_and_update_dependencies_cache
-  script:
-    - ./ci/nix-build-clang-and-update-dependencies-cache.bash
-
-###############################################################################
-# Manual Build stage
-###############################################################################
-manual_build:
-  stage: manual_build
-  script:
-    - ./ci/manual-build.bash
+    # Build Batsim
+    - nix-shell --pure ./release.nix -A batsim --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-build ./release.nix -A batsim
+    # Build doxygen documentation
+    - nix-shell --pure ./release.nix -A doxydoc --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-build ./release.nix -A doxydoc && cp -rL result ./doxydoc_html
+    # Run integration tests
+    - nix-shell --pure ./release.nix -A integration_tests --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-build ./release.nix -A integration_tests && cp -rL result ./integration_tests
+    - if [[ "$(cat ./integration_tests/pytest_returncode)" -ne 0 ]] ; then echo "pytest returned non-zero, aborting" ; exit 1 ; fi
   artifacts:
     paths:
-      - /builds/batsim/batsim/build
+      - /builds/batsim/batsim/doxydoc_html
+      - /builds/batsim/batsim/integration_tests
 
 ###############################################################################
-# Test stage
+# Deploy
 ###############################################################################
-test_test:
-  stage: test
-  script:
-    - ./ci/run-tests.bash
-  dependencies:
-    - manual_build
-  artifacts:
-    paths:
-      - /builds/batsim/batsim/doc/doxygen_doc/html
-
-test_unittest:
-  stage: test
-  script:
-    - ./ci/run-unittests.bash
-  dependencies:
-    - manual_build
-
-###############################################################################
-# Deploy stage
-###############################################################################
-update_batsim_dev_cache:
-  stage: deploy
-  script:
-    - ./ci/update-batsim_dev-cache.bash
-  dependencies:
-    - test_test
-    - test_unittest
-
 deploy_code_doc:
   stage: deploy
   script:
@@ -74,28 +41,32 @@ deploy_code_doc:
       - mkdir -p ~/.ssh
       - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
       # Finally push the code documentation on the gforge website
-      - cd /builds/batsim/batsim/doc
-      - rsync -rlgoDz --delete doxygen_doc/html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs/batsim/doxygen
+      - cd /builds/batsim/batsim/
+      - rsync -rlgoDz --delete doxydoc_html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs/batsim/doxygen
   dependencies:
-    - test_test
+    - build_and_test
   only:
     - master
 
 ###############################################################################
 # Tutorials
 ###############################################################################
-# tuto_first_simulation-stable:
-#   only:
-#     - schedules
-#   script:
-#     - cd docs/tuto-first-simulation
-#     - nix-shell ./tuto-env.nix --command './run_simulation_manually.bash'
-#     - nix-shell ./tuto-env.nix --command './run_simulation_robin.bash'
-
-tuto_first_simulation:
+tuto_first_simulation-stable:
+  stage: big_stage
   only:
     - schedules
   script:
     - cd docs/tuto-first-simulation
+    - nix-shell --pure ./tuto-env.nix --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-shell ./tuto-env.nix --command './run_simulation_manually.bash'
+    - nix-shell ./tuto-env.nix --command './run_simulation_robin.bash'
+
+tuto_first_simulation:
+  stage: big_stage
+  only:
+    - schedules
+  script:
+    - cd docs/tuto-first-simulation
+    - nix-shell --pure ./tuto-env-dev.nix --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
     - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-dev.nix --command './run_simulation_manually.bash'
     - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-dev.nix --command './run_simulation_robin.bash'

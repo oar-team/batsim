@@ -27,16 +27,6 @@ enum class ProgramType
 };
 
 /**
- * @brief Generates a uuid string
- * @param[in] string_to_hash T
- * @param[in] output_length The maximum length of the output string
- * @pre output_length > 0 && output_length < 20
- * @post result.size() == output_length
- * @return The generated hash (truncated to output_length characters if needed)
- */
-std::string generate_sha1_string(std::string string_to_hash, int output_length = 6);
-
-/**
  * @brief Stores Batsim arguments, a.k.a. the main function arguments
  */
 struct MainArguments
@@ -61,10 +51,20 @@ struct MainArguments
         double start_time;          //!< The moment in time at which the workflow should be started
     };
 
+   /**
+    * @brief Stores the command-line description of an eventList
+    */
+   struct EventListDescription
+   {
+       std::string filename;        //!< The filename of the eventList
+       std::string name;            //!< The name of the eventList
+   };
+
     // Input
     std::string platform_filename;                          //!< The SimGrid platform filename
     std::list<WorkloadDescription> workload_descriptions;   //!< The workloads descriptions
     std::list<WorkflowDescription> workflow_descriptions;   //!< The workflows descriptions
+    std::list<EventListDescription> eventList_descriptions; //!< The descriptions of the eventLists
 
     // Common
     std::string master_host_name;                           //!< The name of the SimGrid host which runs scheduler processes and not user tasks
@@ -105,6 +105,7 @@ struct MainArguments
     bool dump_execution_context = false;                    //!< Instead of running the simulation, print the execution context as JSON on the standard output.
     bool allow_compute_sharing = false;                     //!< Allows/forbids sharing on compute machines. Two jobs can run concurrently on the same machine if and only if sharing is allowed.
     bool allow_storage_sharing = false;                     //!< Allows/forbids sharing on storage machines. Two jobs can run concurrently on the same machine if and only if sharing is allowed.
+    bool forward_unknown_events = false;                    //!< Whether the unknown external events should be forwarded to the scheduler.
     ProgramType program_type = ProgramType::BATSIM;         //!< The program type (Batsim or Batexec at the moment)
     std::string pfs_host_name;                              //!< The name of the SimGrid host which serves as parallel file system (a.k.a. large-capacity storage tier)
     std::string hpst_host_name;                             //!< The name of the SimGrid host which serves as the high-performance storage tier
@@ -136,6 +137,13 @@ void configure_batsim_logging_output(const MainArguments & main_args);
  *             This number is computed from Batsim arguments but depends on Workloads content. -1 means no limitation.
  */
 void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext * context, int & max_nb_machines_to_use);
+
+/**
+ * @brief Loads the eventLists defined in Batsim arguments
+ * @param[in] main_args Batsim arguments
+ * @param[in,out] context The BatsimContext
+ */
+void load_eventLists(const MainArguments & main_args, BatsimContext * context);
 
 /**
  * @brief Starts the SimGrid processes that should be executed at the beginning of the simulation

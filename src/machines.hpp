@@ -33,8 +33,19 @@ enum class MachineState
     ,COMPUTING                              //!< The machine is currently computing a job
     ,TRANSITING_FROM_SLEEPING_TO_COMPUTING  //!< The machine is in transition from a sleeping state to a computing state
     ,TRANSITING_FROM_COMPUTING_TO_SLEEPING  //!< The machine is in transition from a computing state to a sleeping state
+    ,UNAVAILABLE                            //!< The machine is unavailable
 };
 
+/// @cond DOXYGEN_SHOULD_SKIP_THIS
+// Required by old C++ to use MachineState as a key type in a hashmap
+namespace std
+{
+    template <> struct hash<MachineState>
+    {
+        size_t operator() (const MachineState &t) const { return size_t(t); }
+    };
+}
+/// @endcond
 
 /**
  * @brief Represents a machine

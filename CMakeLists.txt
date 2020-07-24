@@ -58,10 +58,6 @@ include_directories(${Boost_INCLUDE_DIR})
 find_package(rapidjson REQUIRED)
 include_directories(${RAPIDJSON_INCLUDE_DIRS})
 
-## OpenSSL dependency
-find_package(OpenSSL REQUIRED)
-include_directories(${OPENSSL_INCLUDE_DIR})
-
 ## Redox dependency
 find_package(redox REQUIRED)
 include_directories(${REDOX_INCLUDE_DIR})
@@ -131,7 +127,6 @@ target_link_libraries(batsim
     ${Boost_LOCALE_LIBRARY_DEBUG}
     ${Boost_REGEX_LIBRARY_DEBUG}
     ${Boost_SYSTEM_LIBRARY_DEBUG}
-    ${OPENSSL_LIBRARIES}
     ${REDOX_LIBRARY}
     ${LIBEV_LIBRARY}
     ${HIREDIS_LIBRARY}
@@ -179,19 +174,4 @@ endif()
 # Ignore assertions if needed (might improve performance but can be dangerous)
 if (ignore_assertions)
     target_compile_definitions(batsim PRIVATE NDEBUG)
-endif()
-
-###########
-# Testing #
-###########
-# Batexpe test dependency
-include("${CMAKE_SOURCE_DIR}/cmake/Modules/batexpe.cmake")
-
-if (${robin_COMMAND} STREQUAL "robin_COMMAND-NOTFOUND")
-    message(WARNING "Could not find robin command. Tests are not set up.")
-elseif(${robintest_COMMAND} STREQUAL "robintest_COMMAND-NOTFOUND")
-    message(WARNING "Could not find robintest command. Tests are not set up.")
-else()
-    enable_testing()
-    add_subdirectory(test)
 endif()

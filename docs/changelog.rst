@@ -11,17 +11,56 @@ Starting with version `v1.0.0`_, Batsim adheres to `Semantic Versioning`_ and it
 - The format of the Batsim input files.
 - The communication protocol with the decision-making component.
 
-.. todo::
-
-    Define a recommended SimGrid version for each batsim version.
-
 ........................................................................................................................
 
 Unreleased
 ----------
 
-- `Commits since v3.0.0 <https://github.com/oar-team/batsim/compare/v3.0.0...HEAD>`_
+- `Commits since v3.1.0 <https://github.com/oar-team/batsim/compare/v3.1.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim_dev``
+
+........................................................................................................................
+
+v3.1.0
+------
+
+- `Commits since v3.0.0 <https://github.com/oar-team/batsim/compare/v3.0.0...v3.1.0>`_
+- Release date: 2019-05-26
+- ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-3.1.0``
+- Recommended SimGrid release: 3.22.2 (see `SimGrid's framagit releases (<https://framagit.org/simgrid/simgrid/releases>`_
+
+Changed
+~~~~~~~
+
+- Batsim now requires that no :ref:`proto_CALL_ME_LATER` are pending to send :ref:`proto_SIMULATION_ENDS`.
+- :ref:`input_workload` identifiers are now generated depending on the order of the command-line arguments.
+  Previously, they were hashes of the absolute filename of the workload, which was order independent.
+
+Added
+~~~~~
+
+- A new :ref:`input_EVENTS` mechanism has been added.
+
+  - For the moment the following external events are supported.
+
+    - ``machine_unavailable``: Some machines are no longer available.
+    - ``machine_available``: Some machines are available again.
+    - :ref:`events_GENERIC_EVENTS`: User-defined external events that can be forwarded to the scheduler with the option ``--forward-unknown-events``.
+  - A new :ref:`proto_NOTIFY` protocol event ``no_more_external_event_to_occur`` has been added to tell the scheduler
+    that no more external events coming from Batsim can occur during the simulation.
+  - A new command-line option was added: ``--forward-unknown-events`` that forwards unknown external events of the input files to the scheduler (ignored if there were no event inputs).
+    The boolean value of this command is forwarded to the scheduler in the ``SIMULATION_BEGINS`` event.
+
+Deprecated
+~~~~~~~~~~
+
+- Building via CMake is deprecated. Next Batsim versions may only support Meson_.
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+- Removed a build dependency to OpenSSL, which was only used to generate workload identifiers.
+- Batsim integration tests are now written with pytest instead of CMake.
 
 ........................................................................................................................
 
@@ -31,6 +70,8 @@ v3.0.0
 - `Commits since v2.0.0 <https://github.com/oar-team/batsim/compare/v2.0.0...v3.0.0>`_
 - Release date: 2019-01-15
 - ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-3.0.0``
+- Recommended SimGrid commit:
+  `97b4fd8e4 <https://framagit.org/simgrid/simgrid/commit/97b4fd8e435a44171d471a245142e6fd0eb992b2>`_
 
 Changed (**breaks protocol**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -76,7 +117,7 @@ Changed (**breaks workload format**)
 Changed (**breaks platform format**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Batsim now uses SimGrid version **TO BE DEFINED** and therefore the
+- Batsim now uses SimGrid version 3.21 and therefore the
   SimGrid platform version 4.1, which broke things on how to define platforms.
   Please refer to SimGrid documentation for more information on this.
 
@@ -164,6 +205,8 @@ v2.0.0
 - `Commits since v1.4.0 <https://github.com/oar-team/batsim/compare/v1.4.0...v2.0.0>`_
 - Release date: 2018-02-20
 - ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-2.0.0``
+- Recommended SimGrid commit:
+  `587483ebe <https://framagit.org/batsim/simgrid/commit/587483ebe7882eae38ca9aba161fa168834c21e4>`_
 
 Changed (**breaks protocol**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -218,6 +261,8 @@ v1.4.0
 - `Commits since v1.3.0 <https://github.com/oar-team/batsim/compare/v1.3.0...v1.4.0>`_
 - Release date: 2017-10-07
 - ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-1.4.0``
+- Recommended SimGrid commit:
+  `587483ebe <https://framagit.org/batsim/simgrid/commit/587483ebe7882eae38ca9aba161fa168834c21e4>`_
 
 Added
 ~~~~~
@@ -346,3 +391,4 @@ Changed
 .. _kapack: https://github.com/oar-team/kapack/
 .. _`docopt-cpp`: https://github.com/docopt/docopt.cpp
 .. _pugixml: https://pugixml.org/
+.. _Meson: https://mesonbuild.com/

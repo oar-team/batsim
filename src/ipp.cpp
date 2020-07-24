@@ -5,8 +5,6 @@
 
 #include "ipp.hpp"
 
-#include <simgrid/msg.h>
-
 using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(ipp, "ipp"); //!< Logging
@@ -149,6 +147,10 @@ std::string ip_message_type_to_string(IPMessageType type)
             break;
         case IPMessageType::FROM_JOB_MSG:
             s = "FROM_JOB_MSG";
+            break;
+        case IPMessageType::EVENT_OCCURRED:
+            s = "EVENT_OCCURRED";
+            break;
     }
 
     return s;
@@ -293,7 +295,29 @@ IPMessage::~IPMessage()
             FromJobMessage * msg = (FromJobMessage *) data;
             delete msg;
         } break;
+        case IPMessageType::EVENT_OCCURRED:
+        {
+            EventOccurredMessage * msg = (EventOccurredMessage *) data;
+            delete msg;
+        } break;
     }
 
     data = nullptr;
+}
+
+std::string submitter_type_to_string(SubmitterType type)
+{
+    string s;
+    // Do not remove the switch. If one adds a new SubmitterType but forgets to handle it in
+    // the switch, a compilation warning should help avoiding this bug.
+    switch(type)
+    {
+        case SubmitterType::EVENT_SUBMITTER:
+            s = "Event";
+            break;
+        case SubmitterType::JOB_SUBMITTER:
+            s = "Job";
+            break;
+    }
+    return s;
 }

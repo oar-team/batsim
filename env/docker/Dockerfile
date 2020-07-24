@@ -1,5 +1,9 @@
-FROM oarteam/nix:2018-09-21
-RUN nix-env -f '<nixpkgs>' -iA \
+FROM nixos/nix:2.2.1
+RUN nix-channel --remove nixpkgs \
+ && nix-channel --add https://nixos.org/channels/nixos-19.03 nixpkgs \
+ && nix-channel --update \
+ && nix-env -f '<nixpkgs>' -iA \
+      bash \
       curl \
       findutils \
       gitMinimal \
@@ -19,4 +23,5 @@ RUN nix-env -f '<nixpkgs>' -iA \
       --trusted-public-keys \
       cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM= \
  && cachix use batsim \
- && nix-collect-garbage -d
+ && nix-collect-garbage -d \
+ && ln -s $(realpath $(which bash)) /bin/bash

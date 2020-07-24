@@ -29,7 +29,8 @@ Machines::Machines()
     const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
                                                  MachineState::COMPUTING,
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
-                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING,
+                                                 MachineState::UNAVAILABLE};
     for (const MachineState & state : machine_states)
     {
         _nb_machines_in_each_state[state] = 0;
@@ -448,14 +449,14 @@ void Machines::update_machines_on_job_run(const Job * job,
             {
                 _tracer->set_machine_as_computing_job(machine->id,
                                                       *machine->jobs_being_computed.begin(),
-                                                      MSG_get_clock());
+                                                      simgrid::s4u::Engine::get_clock());
             }
         }
     }
 
     if (context->trace_machine_states)
     {
-        context->machine_state_tracer.write_machine_states(MSG_get_clock());
+        context->machine_state_tracer.write_machine_states(simgrid::s4u::Engine::get_clock());
     }
 }
 
@@ -478,10 +479,13 @@ void Machines::update_machines_on_job_end(const Job * job,
 
         if (machine->jobs_being_computed.empty())
         {
-            machine->update_machine_state(MachineState::IDLE);
-            if (_tracer != nullptr)
+            if (machine->state != MachineState::UNAVAILABLE)
             {
-                _tracer->set_machine_idle(machine->id, MSG_get_clock());
+                machine->update_machine_state(MachineState::IDLE);
+                if (_tracer != nullptr)
+                {
+                    _tracer->set_machine_idle(machine->id, simgrid::s4u::Engine::get_clock());
+                }
             }
         }
         else if (*machine->jobs_being_computed.begin() != previous_top_job)
@@ -490,14 +494,14 @@ void Machines::update_machines_on_job_end(const Job * job,
             {
                 _tracer->set_machine_as_computing_job(machine->id,
                                                       *machine->jobs_being_computed.begin(),
-                                                      MSG_get_clock());
+                                                      simgrid::s4u::Engine::get_clock());
             }
         }
     }
 
     if (context->trace_machine_states)
     {
-        context->machine_state_tracer.write_machine_states(MSG_get_clock());
+        context->machine_state_tracer.write_machine_states(simgrid::s4u::Engine::get_clock());
     }
 }
 
@@ -527,6 +531,9 @@ string machine_state_to_string(MachineState state)
     case MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING:
         s = "switching_off";
         break;
+    case MachineState::UNAVAILABLE:
+        s = "unavailable";
+        break;
     }
 
     return s;
@@ -539,7 +546,8 @@ Machine::Machine(Machines *machines) :
     const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
                                                  MachineState::COMPUTING,
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
-                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING};
+                                                 MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING,
+                                                 MachineState::UNAVAILABLE};
     for (const MachineState & state : machine_states)
     {
         time_spent_in_each_state[state] = 0;
@@ -636,7 +644,7 @@ string Machine::jobs_being_computed_as_string() const
 
 void Machine::update_machine_state(MachineState new_state)
 {
-    long double current_date = MSG_get_clock();
+    long double current_date = simgrid::s4u::Engine::get_clock();
 
     long double delta_time = current_date - last_state_change_date;
     xbt_assert(delta_time >= 0);
@@ -746,7 +754,7 @@ void create_machines(const MainArguments & main_args,
                      int max_nb_machines_to_use)
 {
     XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
-    MSG_create_environment(main_args.platform_filename.c_str());
+    simgrid::s4u::Engine::get_instance()->load_platform(main_args.platform_filename);
 
     XBT_INFO("Looking for master host '%s'", main_args.master_host_name.c_str());
 

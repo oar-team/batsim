@@ -114,7 +114,6 @@ Dependencies
 - RapidJSON.
 - Pugixml.
 - Docopt.
-- OpenSSL.
 
 .. _kapack: https://github.com/oar-team/kapack/
 .. _Nix: https://nixos.org/nix/

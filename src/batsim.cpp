@@ -42,10 +42,10 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/filesystem.hpp>
 
-#include <openssl/sha.h>
-
 #include "batsim.hpp"
 #include "context.hpp"
+#include "event_submitter.hpp"
+#include "events.hpp"
 #include "export.hpp"
 #include "ipp.hpp"
 #include "job_submitter.hpp"
@@ -128,34 +128,6 @@ VerbosityLevel verbosity_level_from_string(const std::string & str)
     }
 }
 
-string generate_sha1_string(std::string string_to_hash, int output_length)
-{
-    static_assert(sizeof(unsigned char) == sizeof(char), "sizeof(unsigned char) should equals to sizeof(char)");
-    xbt_assert(output_length > 0);
-    xbt_assert(output_length < SHA_DIGEST_LENGTH);
-
-    unsigned char sha1_buf[SHA_DIGEST_LENGTH];
-    SHA1((const unsigned char *)string_to_hash.c_str(), string_to_hash.size(), sha1_buf);
-
-    char * output_buf = (char *) calloc(SHA_DIGEST_LENGTH * 2 + 1, sizeof(char));
-    xbt_assert(output_buf != 0, "Couldn't allocate memory");
-
-    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i)
-    {
-        int nb_printed_char = snprintf(output_buf + 2*i, 3, "%02x", sha1_buf[i]);
-        (void) nb_printed_char; // Avoids a warning if assertions are ignored
-        xbt_assert(nb_printed_char == 2, "Fix me :(");
-    }
-
-    XBT_DEBUG("SHA-1 of string '%s' is '%s'\n", string_to_hash.c_str(), output_buf);
-
-    string result(output_buf, output_length);
-    xbt_assert((int)result.size() == output_length);
-
-    free(output_buf);
-    return result;
-}
-
 void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code,
                      bool & run_simulation, bool & run_unit_tests)
 {
@@ -178,6 +150,7 @@ Usage:
                             [--sg-cfg <opt_name:opt_value>...]
                             [--sg-log <log_option>...]
                             [-r <hosts_roles_map>...]
+                            [--events <events_file>...]
                             [options]
   batsim --help
   batsim --version
@@ -188,16 +161,17 @@ Input options:
   -p, --platform <platform_file>     The SimGrid platform to simulate.
   -w, --workload <workload_file>     The workload JSON files to simulate.
   -W, --workflow <workflow_file>     The workflow XML files to simulate.
-  --WS, --workflow-start (<cut_workflow_file> <start_time>)...  The workflow XML
+  --WS, --workflow-start (<cut_workflow_file> <start_time>)  The workflow XML
                                      files to simulate, with the time at which
                                      they should be started.
+  --events <events_file>             The files containing external events to simulate.
 
 Most common options:
   -m, --master-host <name>           The name of the host in <platform_file>
                                      which will be used as the RJMS management
                                      host (thus NOT used to compute jobs)
                                      [default: master_host].
-  -r, --add-role-to-hosts <hosts_role_map>... Add a `role` property to the specify host(s).
+  -r, --add-role-to-hosts <hosts_role_map>  Add a `role` property to the specify host(s).
                                      The <hosts-roles-map> is formated as <hosts>:<role>
                                      The <hosts> should be formated as follow:
                                      hostname1,hostname2,..
@@ -242,7 +216,7 @@ Job-related options:
                                      [default: false]
   --acknowledge-dynamic-jobs         Makes Batsim send a JOB_SUBMITTED back to the scheduler when
                                      Batsim receives a REGISTER_JOB.
-                                     [default: true]
+                                     [default: false]
 
 Verbosity options:
   -v, --verbosity <verbosity_level>  Sets the Batsim verbosity level. Available
@@ -267,10 +241,13 @@ Other options:
   --no-sched                         If set, the jobs in the workloads are
                                      computed one by one, one after the other,
                                      without scheduler nor Redis.
-  --sg-cfg <opt_name:opt_value>...   Forwards a given option_name:option_value to SimGrid.
+  --sg-cfg <opt_name:opt_value>      Forwards a given option_name:option_value to SimGrid.
                                      Refer to SimGrid configuring documentation for more information.
-  --sg-log <log_option>...           Forwards a given logging option to SimGrid.
+  --sg-log <log_option>              Forwards a given logging option to SimGrid.
                                      Refer to SimGrid simulation logging documentation for more information.
+  --forward-unknown-events           Enables the forwarding to the scheduler of external events that
+                                     are unknown to Batsim. Ignored if there were no event inputs with --events.
+                                     [default: false]
   -h, --help                         Shows this help.
 )";
 
@@ -310,8 +287,9 @@ Other options:
 
     // Workloads
     vector<string> workload_files = args["--workload"].asStringList();
-    for (const string & workload_file : workload_files)
+    for (size_t i = 0; i < workload_files.size(); i++)
     {
+        const string & workload_file = workload_files[i];
         if (!file_exists(workload_file))
         {
             XBT_ERROR("Workload file '%s' cannot be read.", workload_file.c_str());
@@ -322,7 +300,7 @@ Other options:
         {
             MainArguments::WorkloadDescription desc;
             desc.filename = absolute_filename(workload_file);
-            desc.name = generate_sha1_string(desc.filename);
+            desc.name = string("w") + to_string(i);
 
             XBT_INFO("Workload '%s' corresponds to workload file '%s'.",
                      desc.name.c_str(), desc.filename.c_str());
@@ -332,8 +310,9 @@ Other options:
 
     // Workflows (without start time)
     vector<string> workflow_files = args["--workflow"].asStringList();
-    for (const string & workflow_file : workflow_files)
+    for (size_t i = 0; i < workflow_files.size(); i++)
     {
+        const string & workflow_file = workflow_files[i];
         if (!file_exists(workflow_file))
         {
             XBT_ERROR("Workflow file '%s' cannot be read.", workflow_file.c_str());
@@ -344,7 +323,7 @@ Other options:
         {
             MainArguments::WorkflowDescription desc;
             desc.filename = absolute_filename(workflow_file);
-            desc.name = generate_sha1_string(desc.filename);
+            desc.name = string("wf") + to_string(i);
             desc.workload_name = desc.name;
             desc.start_time = 0;
 
@@ -382,7 +361,7 @@ Other options:
             {
                 MainArguments::WorkflowDescription desc;
                 desc.filename = absolute_filename(cut_workflow_file);
-                desc.name = generate_sha1_string(desc.filename);
+                desc.name = string("wfc") + to_string(i);
                 desc.workload_name = desc.name;
                 try
                 {
@@ -410,6 +389,29 @@ Other options:
                     return_code |= 0x40;
                 }
             }
+        }
+    }
+
+    // EventLists
+    vector<string> events_files = args["--events"].asStringList();
+    for (size_t i = 0; i < events_files.size(); i++)
+    {
+        const string & events_file = events_files[i];
+        if (!file_exists(events_file))
+        {
+            XBT_ERROR("Events file '%s' cannot be read.", events_file.c_str());
+            error = true;
+            return_code |= 0x02;
+        }
+        else
+        {
+            MainArguments::EventListDescription desc;
+            desc.filename = absolute_filename(events_file);
+            desc.name = string("we") + to_string(i);
+
+            XBT_INFO("Event list '%s' corresponds to events file '%s'.",
+                     desc.name.c_str(), desc.filename.c_str());
+            main_args.eventList_descriptions.push_back(desc);
         }
     }
 
@@ -527,6 +529,10 @@ Other options:
     main_args.dump_execution_context = args["--dump-execution-context"].asBool();
     main_args.allow_compute_sharing = args["--enable-compute-sharing"].asBool();
     main_args.allow_storage_sharing = !(args["--disable-storage-sharing"].asBool());
+    if (!main_args.eventList_descriptions.empty())
+    {
+        main_args.forward_unknown_events = args["--forward-unknown-events"].asBool();
+    }
     if (args["--no-sched"].asBool())
     {
         main_args.program_type = ProgramType::BATEXEC;
@@ -546,6 +552,7 @@ void configure_batsim_logging_output(const MainArguments & main_args)
 {
     vector<string> log_categories_to_set = {"workload", "job_submitter", "redis", "jobs", "machines", "pstate",
                                             "workflow", "jobs_execution", "server", "export", "profiles", "machine_range",
+                                            "events", "event_submitter",
                                             "network", "ipp", "task_execution"};
     string log_threshold_to_set = "critical";
 
@@ -636,6 +643,16 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     }
 }
 
+void load_eventLists(const MainArguments & main_args, BatsimContext * context)
+{
+    for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
+    {
+        EventList * events = EventList::new_event_list(desc.name);
+        events->load_from_json(desc.filename, main_args.forward_unknown_events);
+        context->eventListsMap[desc.name] = events;
+    }
+}
+
 void start_initial_simulation_processes(const MainArguments & main_args,
                                         BatsimContext * context,
                                         bool is_batexec)
@@ -669,6 +686,20 @@ void start_initial_simulation_processes(const MainArguments & main_args,
         simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     workflow_submitter_process,
+                                    context, desc.name);
+        XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
+    }
+
+    // Let's run a static_event_submitter process for each list of event
+    for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
+    {
+        string submitter_instance_name = "event_submitter_" + desc.name;
+
+        XBT_DEBUG("Creating an event_submitter process...");
+        auto actor_function = static_event_submitter_process;
+        simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+                                    master_machine->host,
+                                    actor_function,
                                     context, desc.name);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
@@ -771,6 +802,9 @@ int main(int argc, char * argv[])
     // Let's load the workloads and workflows
     int max_nb_machines_to_use = -1;
     load_workloads_and_workflows(main_args, &context, max_nb_machines_to_use);
+
+    // Let's load the eventLists
+    load_eventLists(main_args, &context);
 
     // initialyse Ptask L07 model
     engine.set_config("host/model:ptask_L07");
@@ -900,4 +934,7 @@ void set_configuration(BatsimContext *context,
     context->config_json.AddMember("profiles-forwarded-on-submission", Value().SetBool(main_args.forward_profiles_on_submission), alloc);
     context->config_json.AddMember("dynamic-jobs-enabled", Value().SetBool(main_args.dynamic_registration_enabled), alloc);
     context->config_json.AddMember("dynamic-jobs-acknowledged", Value().SetBool(main_args.ack_dynamic_registration), alloc);
+
+    // others
+    context->config_json.AddMember("forward-unknown-events", Value().SetBool(main_args.forward_unknown_events), alloc);
 }
