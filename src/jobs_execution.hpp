@@ -44,7 +44,7 @@ int do_delay_task(double sleeptime, double * remaining_time);
  * @param[in] context usefull information about Batsim context
  * @param[in] allocation the host to execute the task to
  * @param[in,out] remaining_time remaining time of the current task
- * @return the profile return code if successful, -1 if walltime reached
+ * @return the profile return code if successful, -1 if walltime reached, -2 if parallel task has been cancelled
  */
 int execute_task(BatTask * btask,
                  BatsimContext *context,
