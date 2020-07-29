@@ -583,7 +583,7 @@ void configure_batsim_logging_output(const MainArguments & main_args)
 {
     vector<string> log_categories_to_set = {"workload", "job_submitter", "redis", "jobs", "machines", "pstate",
                                             "workflow", "jobs_execution", "server", "export", "profiles", "machine_range",
-                                            "events", "event_submitter",
+                                            "events", "event_submitter", "protocol",
                                             "network", "ipp", "task_execution"};
     string log_threshold_to_set = "critical";
 
