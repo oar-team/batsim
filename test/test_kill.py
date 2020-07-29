@@ -76,6 +76,11 @@ def test_kill_after_delay_sequences(small_platform, delaysequences_workload, kil
 def test_kill_after_delay0(small_platform, small_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill):
     kill_after_delay(small_platform, small_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill)
 
+@pytest.mark.parametrize("nb_kills_per_job", [KillCountMode(f'{n}kills', n) for n in [1]])
+@pytest.mark.parametrize("delay_before_kill", [KillDelayMode(f'after{n}', n) for n in [1]])
+def test_kill_after_delay_smpi(small_platform, smpi_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill):
+    kill_after_delay(small_platform, smpi_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill)
+
 #####################################################
 # Kill the running job when a new one is submitted. #
 #####################################################

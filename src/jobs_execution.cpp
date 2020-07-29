@@ -228,8 +228,7 @@ int execute_task(BatTask * btask,
             std::string actor_name = job->id.to_string() + "_" + std::to_string(rank);
             simgrid::s4u::Host* host_to_use = allocation->hosts[static_cast<size_t>(job->smpi_ranks_to_hosts_mapping[rank])];
             simgrid::s4u::ActorPtr actor = simgrid::s4u::Actor::create(actor_name, host_to_use, smpi_replay_process, job, data, barrier, rank);
-            //job->execution_processes.insert(process); TODO S4U
-            (void) actor;
+            job->execution_actors.insert(actor);
         }
 
         barrier->wait();
