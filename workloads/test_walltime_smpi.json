@@ -22,7 +22,7 @@
         {"id":"19", "subtime":0, "walltime": 1.9, "res": 2, "profile": "smpi_compute_only"},
         {"id":"20", "subtime":0, "walltime": 2.0, "res": 2, "profile": "smpi_compute_only"},
         {"id":"21", "subtime":0, "walltime": -1, "res": 2, "profile": "smpi_compute_only"},
-        {"id":"22", "subtime":10, "res": 1, "profile": "smpi_compute_only"}
+        {"id":"22", "subtime":10, "res": 2, "profile": "smpi_compute_only"}
     ],
 
     "profiles": {

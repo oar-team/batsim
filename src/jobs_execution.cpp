@@ -18,7 +18,7 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(jobs_execution, "jobs_execution"); //!< Logging
 
 using namespace std;
 
-void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, simgrid::s4u::BarrierPtr barrier, int rank)
+void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, const std::string & termination_mbox_name, int rank)
 {
     // Prepare data for smpi_replay_run
     char * str_instance_id = nullptr;
@@ -30,7 +30,11 @@ void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, simgrid::s4
     smpi_replay_run(str_instance_id, rank, 0, profile_data->trace_filenames[static_cast<size_t>(rank)].c_str());
     XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_cstring());
 
-    barrier->wait();
+    // Tell parent process that replay has finished for this rank.
+    auto mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
+    auto rank_copy = new unsigned int;
+    *rank_copy = static_cast<unsigned int>(rank);
+    mbox->put(static_cast<void*>(rank_copy), 4);
 }
 
 int execute_task(BatTask * btask,
@@ -216,7 +220,10 @@ int execute_task(BatTask * btask,
             }
         }
 
-        simgrid::s4u::BarrierPtr barrier = simgrid::s4u::Barrier::create(nb_ranks + 1);
+        // Use a mailbox so that child actors tell us when they have finished.
+        std::map<unsigned int, simgrid::s4u::ActorPtr> child_actors;
+        const std::string termination_mbox_name = simgrid::s4u::this_actor::get_name() + "_smpi_termination";
+        auto termination_mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
 
         xbt_assert(nb_ranks == job->smpi_ranks_to_hosts_mapping.size(),
                    "Invalid job %s: SMPI ranks_to_host mapping has an invalid size, as it should "
@@ -227,11 +234,56 @@ int execute_task(BatTask * btask,
         {
             std::string actor_name = job->id.to_string() + "_" + std::to_string(rank);
             simgrid::s4u::Host* host_to_use = allocation->hosts[static_cast<size_t>(job->smpi_ranks_to_hosts_mapping[rank])];
-            simgrid::s4u::ActorPtr actor = simgrid::s4u::Actor::create(actor_name, host_to_use, smpi_replay_process, job, data, barrier, rank);
+            simgrid::s4u::ActorPtr actor = simgrid::s4u::Actor::create(actor_name, host_to_use, smpi_replay_process, job, data, termination_mbox_name, rank);
+            child_actors[rank] = actor;
             job->execution_actors.insert(actor);
         }
 
-        barrier->wait();
+        const bool has_walltime = (*remaining_time >= 0);
+
+        // Wait until all child actors have finished.
+        while (!child_actors.empty())
+        {
+            try
+            {
+                const double time_before_get = simgrid::s4u::Engine::get_clock();
+
+                unsigned int * finished_rank = nullptr;
+                if (has_walltime)
+                {
+                    finished_rank = static_cast<unsigned int*>(termination_mbox->get(*remaining_time));
+                }
+                else
+                {
+                    finished_rank = static_cast<unsigned int*>(termination_mbox->get());
+                }
+
+                xbt_assert(child_actors.count(*finished_rank) == 1, "Internal error: unexpected rank received (%u)", *finished_rank);
+                job->execution_actors.erase(child_actors[*finished_rank]);
+                child_actors.erase(*finished_rank);
+                delete finished_rank;
+
+                if (has_walltime)
+                {
+                    *remaining_time = *remaining_time - (simgrid::s4u::Engine::get_clock() - time_before_get);
+                }
+            }
+            catch (const simgrid::TimeoutException&)
+            {
+                XBT_DEBUG("Timeout reached while executing SMPI profile '%s' (job's walltime reached).", job->profile->name.c_str());
+
+                // Kill all remaining child actors.
+                for (auto mit : child_actors)
+                {
+                    auto child_actor = mit.second;
+                    job->execution_actors.erase(child_actor);
+                    child_actor->kill();
+                }
+                child_actors.clear();
+
+                return -1;
+            }
+        }
 
         return profile->return_code;
     }

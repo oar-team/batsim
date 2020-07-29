@@ -25,10 +25,10 @@ void killer_process(BatsimContext *context,
  * @brief The process in charge of executing a rank of a SMPI profile
  * @param[in] job The job associated with this profile execution
  * @param[in] profile_data The data associated with the executed profile
- * @param[in,out] barrier The barrier associated with this job
+ * @param[in] termination_mbox_name The name of the mailbox onto which this function writes to signal its termination.
  * @param[in] rank The rank whose replay is to be simulated
  */
-void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, simgrid::s4u::BarrierPtr barrier, int rank);
+void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, const std::string & termination_mbox_name, int rank);
 
 /**
  * @brief Simulates a delay profile (sleeps until finished or walltime)

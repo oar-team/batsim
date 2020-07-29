@@ -61,6 +61,5 @@ def test_walltime1(cluster_platform, small_workload, fcfs_algorithm):
 def test_walltime2(cluster_platform, walltime_workload, fcfs_algorithm):
     walltime(cluster_platform, walltime_workload, fcfs_algorithm)
 
-@pytest.mark.xfail
 def test_walltime3(cluster_platform, walltime_smpi_workload, fcfs_algorithm):
     walltime(cluster_platform, walltime_smpi_workload, fcfs_algorithm)
