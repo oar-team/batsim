@@ -68,7 +68,7 @@ int execute_task(BatTask * btask,
             {
                 // Traces how the execution is going so that progress can be retrieved if needed
                 btask->current_task_index = sequence_iteration * static_cast<unsigned int>(data->sequence.size()) + profile_index_in_sequence;
-                BatTask * sub_btask = btask->sub_tasks[profile_index_in_sequence];
+                BatTask * sub_btask = btask->sub_tasks[btask->current_task_index];
 
                 string task_name = "seq" + job->id.to_string() + "'" + job->profile->name + "'";
                 XBT_DEBUG("Creating sequential tasks '%s'", task_name.c_str());
@@ -390,7 +390,7 @@ void execute_job_process(BatsimContext * context,
                  job->id.to_cstring(), job->return_code);
         job->state = JobState::JOB_STATE_COMPLETED_FAILED;
     }
-    else
+    else if (job->return_code == -1)
     {
         XBT_INFO("Job %s had been killed (walltime %Lg reached)", job->id.to_cstring(), job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
@@ -399,6 +399,20 @@ void execute_job_process(BatsimContext * context,
             context->paje_tracer.add_job_kill(job->id, allocation->machine_ids,
                                               simgrid::s4u::Engine::get_clock(), true);
         }
+    }
+    else if (job->return_code == -2)
+    {
+        XBT_INFO("Job '%s' has been killed by the scheduler", job->id.to_cstring());
+        job->state = JobState::JOB_STATE_COMPLETED_KILLED;
+        if (context->trace_schedule)
+        {
+            context->paje_tracer.add_job_kill(job->id, allocation->machine_ids,
+                                              simgrid::s4u::Engine::get_clock(), true);
+        }
+    }
+    else
+    {
+        xbt_die("Job '%s' completed with unknown return code: %d", job->id.to_cstring(), job->return_code);
     }
 
     context->machines.update_machines_on_job_end(job, allocation->machine_ids, context);
@@ -420,8 +434,10 @@ void execute_job_process(BatsimContext * context,
         context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
     }
 
-    if (notify_server_at_end)
+    if (notify_server_at_end and job->state != JobState::JOB_STATE_COMPLETED_KILLED)
     {
+        // The completion of a killed job is already managed in server_on_killing_done
+
         // Let us tell the server that the job completed
         JobCompletedMessage * message = new JobCompletedMessage;
         message->job = allocation->job;
@@ -465,6 +481,25 @@ void waiter_process(double target_time, const ServerData * server_data)
 }
 
 
+bool cancel_ptask(BatTask * btask)
+{
+    bool cancelled = false;
+    if (btask->ptask != nullptr)
+    {
+        XBT_DEBUG("Cancelling ptask for job '%s' with profile '%s'", static_cast<JobPtr>(btask->parent_job)->id.to_cstring(), btask->profile->name.c_str());
+        btask->ptask->cancel();
+        cancelled = true;
+    }
+
+    // If this is a sequence profile, recursively ask to cancel sub ptasks
+    if (!btask->sub_tasks.empty())
+    {
+        cancelled = cancelled or cancel_ptask(btask->sub_tasks[btask->current_task_index]);
+    }
+
+    return cancelled;
+}
+
 
 void killer_process(BatsimContext * context,
                     std::vector<JobIdentifier> jobs_ids,
@@ -499,41 +534,51 @@ void killer_process(BatsimContext * context,
             // Store job progress in the message
             message->jobs_progress[job_id] = job_progress;
 
-            // Let's kill all the involved processes
-            xbt_assert(job->execution_actors.size() > 0);
-            for (simgrid::s4u::ActorPtr actor : job->execution_actors)
+            // Try to cancel parallel task Executors, if any
+            bool cancelled_ptask = cancel_ptask(job->task);
+
+            if (!cancelled_ptask)
             {
-                XBT_INFO("Killing process '%s'", actor->get_cname());
-                actor->kill();
+                // There was no ptask running, directly kill the actor
+
+                // Let's kill all the involved processes
+                xbt_assert(job->execution_actors.size() > 0);
+                for (simgrid::s4u::ActorPtr actor : job->execution_actors)
+                {
+                    XBT_INFO("Killing process '%s'", actor->get_cname());
+                    actor->kill();
+                }
+                job->execution_actors.clear();
+
+                // Let's update the job information
+                job->state = killed_job_state;
+
+                context->machines.update_machines_on_job_end(job, job->allocation, context);
+                job->runtime = static_cast<long double>(simgrid::s4u::Engine::get_clock()) - job->starting_time;
+
+                xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%Lg)!", job->id.to_cstring(), job->runtime);
+                if (job->runtime == 0)
+                {
+                    XBT_WARN("Killed job '%s' has a null runtime. Putting epsilon instead.",
+                             job->id.to_cstring());
+                    job->runtime = 1e-5l;
+                }
+
+                // If energy is enabled, let us compute the energy used by the machines after running the job
+                if (context->energy_used)
+                {
+                    long double consumed_energy_before = job->consumed_energy;
+                    job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
+
+                    // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
+                    job->consumed_energy = job->consumed_energy - consumed_energy_before;
+
+                    // Let's trace the consumed energy
+                    context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
+                }
             }
-            job->execution_actors.clear();
-
-            // Let's update the job information
-            job->state = killed_job_state;
-
-            context->machines.update_machines_on_job_end(job, job->allocation, context);
-            job->runtime = static_cast<long double>(simgrid::s4u::Engine::get_clock()) - job->starting_time;
-
-            xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%Lg)!", job->id.to_cstring(), job->runtime);
-            if (job->runtime == 0)
-            {
-                XBT_WARN("Killed job '%s' has a null runtime. Putting epsilon instead.",
-                         job->id.to_cstring());
-                job->runtime = 1e-5l;
-            }
-
-            // If energy is enabled, let us compute the energy used by the machines after running the job
-            if (context->energy_used)
-            {
-                long double consumed_energy_before = job->consumed_energy;
-                job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
-
-                // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
-                job->consumed_energy = job->consumed_energy - consumed_energy_before;
-
-                // Let's trace the consumed energy
-                context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
-            }
+            // Else the running ptask was asked to cancel by itself.
+            // The job process will regularly terminate with the status JOB_STATE_COMPLETED_KILLED
         }
     }
 
