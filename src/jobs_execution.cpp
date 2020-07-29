@@ -70,10 +70,10 @@ int execute_task(BatTask * btask,
                 btask->current_task_index = sequence_iteration * static_cast<unsigned int>(data->sequence.size()) + profile_index_in_sequence;
                 BatTask * sub_btask = btask->sub_tasks[btask->current_task_index];
 
-                string task_name = "seq" + job->id.to_string() + "'" + job->profile->name + "'";
-                XBT_DEBUG("Creating sequential tasks '%s'", task_name.c_str());
+                string task_name = "seq" + job->id.to_string() + "'" + sub_btask->profile->name + "'";
+                XBT_DEBUG("Creating sequential task '%s'", task_name.c_str());
 
-                int ret_last_profile = execute_task(sub_btask, context,  allocation,
+                int ret_last_profile = execute_task(sub_btask, context, allocation,
                                                     remaining_time);
 
                 // The whole sequence fails if a subtask fails
@@ -381,18 +381,18 @@ void execute_job_process(BatsimContext * context,
                                     &remaining_time);
     if (job->return_code == 0)
     {
-        XBT_INFO("Job %s finished in time (success)", job->id.to_cstring());
+        XBT_INFO("Job '%s' finished in time (success)", job->id.to_cstring());
         job->state = JobState::JOB_STATE_COMPLETED_SUCCESSFULLY;
     }
     else if (job->return_code > 0)
     {
-        XBT_INFO("Job %s finished in time (failed: return_code=%d)",
+        XBT_INFO("Job '%s' finished in time (failed: return_code=%d)",
                  job->id.to_cstring(), job->return_code);
         job->state = JobState::JOB_STATE_COMPLETED_FAILED;
     }
     else if (job->return_code == -1)
     {
-        XBT_INFO("Job %s had been killed (walltime %Lg reached)", job->id.to_cstring(), job->walltime);
+        XBT_INFO("Job '%s' had been killed (walltime %Lg reached)", job->id.to_cstring(), job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
         if (context->trace_schedule)
         {
