@@ -649,8 +649,16 @@ int execute_parallel_task(BatTask * btask,
     if (*remaining_time < 0)
     {
         XBT_DEBUG("Executing task '%s' without walltime", task_name.c_str());
-        ptask->start();
-        ptask->wait();
+        try
+        {
+            ptask->start();
+            ptask->wait();
+        }
+        catch (const simgrid::CancelException &)
+        {
+            XBT_DEBUG("Task '%s' has been cancelled (a kill was asked).", task_name.c_str());
+            ret = -2;
+        }
     }
     else
     {
@@ -666,6 +674,11 @@ int execute_parallel_task(BatTask * btask,
             // The ptask reached the walltime
             XBT_DEBUG("Task '%s' reached its walltime.", task_name.c_str());
             ret = -1;
+        }
+        catch (const simgrid::CancelException &)
+        {
+            XBT_DEBUG("Task '%s' has been cancelled (a kill was asked).", task_name.c_str());
+            ret = -2;
         }
         *remaining_time = *remaining_time - (simgrid::s4u::Engine::get_clock() - time_before_execute);
     }

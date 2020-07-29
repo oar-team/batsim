@@ -66,3 +66,11 @@ void execute_job_process(BatsimContext *context, SchedulingAllocation *allocatio
  * @param[in] server_data The ServerData. Used to check whether the simulation is finished or not
  */
 void waiter_process(double target_time, const ServerData *server_data);
+
+
+/**
+ * @brief Cancels the ptask and subptask Executor associated with this BatTask, if any
+ * @param[in] btask The BatTask whose ptask should be cancelled
+ * @return whether a ptask was cancelled
+ */
+bool cancel_ptask(BatTask * btask);
