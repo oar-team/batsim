@@ -64,22 +64,16 @@ def kill_after_delay(platform, workload, algorithm, redis_mode, nb_kills_per_job
 @pytest.mark.parametrize("nb_kills_per_job", [KillCountMode(f'{n}kills', n) for n in [1,2]])
 @pytest.mark.parametrize("delay_before_kill", [KillDelayMode(f'after{n}', n) for n in [5,10,15]])
 def test_kill_after_delay(small_platform, small_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill):
-    if small_workload.name == 'delaysequences':
-        pytest.skip("something seems wrong with sequences")
     kill_after_delay(small_platform, small_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill)
 
 @pytest.mark.parametrize("nb_kills_per_job", [KillCountMode(f'{n}kills', n) for n in [1,2]])
 @pytest.mark.parametrize("delay_before_kill", [KillDelayMode(f'after{n}', n) for n in [5,10,15]])
-@pytest.mark.xfail(reason="https://gitlab.inria.fr/batsim/batsim/issues/108")
 def test_kill_after_delay_sequences(small_platform, delaysequences_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill):
     kill_after_delay(small_platform, delaysequences_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill)
 
 @pytest.mark.parametrize("nb_kills_per_job", [KillCountMode(f'{n}kills', n) for n in [1,2]])
 @pytest.mark.parametrize("delay_before_kill", [KillDelayMode(f'after{n}', n) for n in [0]])
-@pytest.mark.xfail(reason="https://gitlab.inria.fr/batsim/batsim/issues/37")
 def test_kill_after_delay0(small_platform, small_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill):
-    if small_workload.name == 'delaysequences':
-        pytest.xfail("something seems wrong with sequences")
     kill_after_delay(small_platform, small_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill)
 
 #####################################################
