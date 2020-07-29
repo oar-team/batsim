@@ -47,6 +47,8 @@ Fixed
 ~~~~~
 
 - Workflows crashed at the beginning and the end of the simulation. This should be fixed, and workflows are now tested under CI.
+- Killing jobs should no longer issue memory issues (invalid reads and writes), which caused segmentation fault in corner cases — cf. `issue 37 (inria) <https://gitlab.inria.fr/batsim/batsim/issues/37/>`_.
+- Killing sequences of delays should no longer crash with "Internal error" — cf. `issue 108 (inria) <https://gitlab.inria.fr/batsim/batsim/issues/108/>`_.
 
 Miscellaneous
 ~~~~~~~~~~~~~
