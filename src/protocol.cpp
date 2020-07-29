@@ -1,7 +1,8 @@
 #include "protocol.hpp"
 
+#include <regex>
+
 #include <boost/algorithm/string/join.hpp>
-#include <boost/regex.hpp>
 
 #include <xbt.h>
 
@@ -114,9 +115,9 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
     config.CopyFrom(configuration, _alloc);
 
     Value data(rapidjson::kObjectType);
-    data.AddMember("nb_resources", Value().SetInt(machines.nb_machines()), _alloc);
-    data.AddMember("nb_compute_resources", Value().SetInt(machines.nb_compute_machines()), _alloc);
-    data.AddMember("nb_storage_resources", Value().SetInt(machines.nb_storage_machines()), _alloc);
+    data.AddMember("nb_resources", Value().SetInt(static_cast<int>(machines.nb_machines())), _alloc);
+    data.AddMember("nb_compute_resources", Value().SetInt(static_cast<int>(machines.nb_compute_machines())), _alloc);
+    data.AddMember("nb_storage_resources", Value().SetInt(static_cast<int>(machines.nb_storage_machines())), _alloc);
     // FIXME this should be in the configuration and not there
     data.AddMember("allow_compute_sharing", Value().SetBool(allow_compute_sharing), _alloc);
     data.AddMember("allow_storage_sharing", Value().SetBool(allow_storage_sharing), _alloc);
@@ -150,12 +151,15 @@ void JsonProtocolWriter::append_simulation_begins(Machines & machines,
         Value profile_dict(rapidjson::kObjectType);
         for (const auto & profile : workload.second->profiles->profiles())
         {
-            Document profile_description_doc;
-            const string & profile_json_description = profile.second->json_description;
-            profile_description_doc.Parse(profile_json_description.c_str());
-            profile_dict.AddMember(
-                    Value().SetString(profile.first.c_str(), _alloc),
-                    Value().CopyFrom(profile_description_doc, _alloc), _alloc);
+            if (profile.second.get() != nullptr) // unused profiles may have been removed from memory at workload loading time.
+            {
+                Document profile_description_doc;
+                const string & profile_json_description = profile.second->json_description;
+                profile_description_doc.Parse(profile_json_description.c_str());
+                profile_dict.AddMember(
+                        Value().SetString(profile.first.c_str(), _alloc),
+                        Value().CopyFrom(profile_description_doc, _alloc), _alloc);
+            }
         }
         profiles_dict.AddMember(
                 Value().SetString(workload.first.c_str(), _alloc),
@@ -187,6 +191,15 @@ Value JsonProtocolWriter::machine_to_json_value(const Machine & machine)
         properties.AddMember(key, value, _alloc);
     }
     machine_doc.AddMember("properties", properties, _alloc);
+
+    Value zone_properties(rapidjson::kObjectType);
+    for(auto const &entry : machine.zone_properties)
+    {
+        rapidjson::Value key(entry.first.c_str(), _alloc);
+        rapidjson::Value value(entry.second.c_str(), _alloc);
+        zone_properties.AddMember(key, value, _alloc);
+    }
+    machine_doc.AddMember("zone_properties", zone_properties, _alloc);
 
     return machine_doc;
 }
@@ -334,9 +347,9 @@ Value generate_task_tree(BatTask* task_tree, rapidjson::Document::AllocatorType 
     {
         task.AddMember("profile_name", Value().SetString(task_tree->profile->name.c_str(), _alloc), _alloc);
 
-        if (task_tree->current_task_index != (unsigned int)-1) // Started parallel task
+        if (task_tree->current_task_index != static_cast<unsigned int>(-1)) // Started parallel task
         {
-            task.AddMember("current_task_index", Value().SetInt(task_tree->current_task_index), _alloc);
+            task.AddMember("current_task_index", Value().SetInt(static_cast<int>(task_tree->current_task_index)), _alloc);
 
             BatTask * btask = task_tree->sub_tasks[task_tree->current_task_index];
             task.AddMember("current_task", generate_task_tree(btask, _alloc), _alloc);
@@ -346,7 +359,7 @@ Value generate_task_tree(BatTask* task_tree, rapidjson::Document::AllocatorType 
             task.AddMember("current_task_index", Value().SetInt(-1), _alloc);
             XBT_WARN("Cannot generate the execution task tree of job %s, "
                      "as its execution has not started.",
-                     task_tree->parent_job->id.to_string().c_str());
+                     static_cast<JobPtr>(task_tree->parent_job)->id.to_string().c_str());
         }
     }
     return task;
@@ -407,7 +420,7 @@ void JsonProtocolWriter::append_job_killed(const vector<string> & job_ids,
     event.AddMember("type", Value().SetString("JOB_KILLED"), _alloc);
 
     Value jobs(rapidjson::kArrayType);
-    jobs.Reserve(job_ids.size(), _alloc);
+    jobs.Reserve(static_cast<unsigned int>(job_ids.size()), _alloc);
 
     Value progress(rapidjson::kObjectType);
 
@@ -712,7 +725,7 @@ void JsonProtocolReader::parse_and_apply_message(const string &message)
     for (unsigned int i = 0; i < events_array.Size(); ++i)
     {
         const auto & event_object = events_array[i];
-        parse_and_apply_event(event_object, i, now);
+        parse_and_apply_event(event_object, static_cast<int>(i), now);
     }
 
     send_message_at_time(now, "server", IPMessageType::SCHED_READY);
@@ -757,7 +770,7 @@ void JsonProtocolReader::handle_query(int event_number, double timestamp, const 
     } */
 
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (QUERY) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (QUERY) must be of size 1 (size=%d)", event_number, (int)data_object.MemberCount());
+    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (QUERY) must be of size 1 (size=%d)", event_number, data_object.MemberCount());
     xbt_assert(data_object.HasMember("requests"), "Invalid JSON message: the 'data' value of event %d (QUERY) must have a 'requests' member", event_number);
 
     const Value & requests = data_object["requests"];
@@ -805,7 +818,7 @@ void JsonProtocolReader::handle_answer(int event_number,
     } */
 
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (ANSWER) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() > 0, "Invalid JSON message: the 'data' object of event %d (ANSWER) must be non-empty (size=%d)", event_number, (int)data_object.MemberCount());
+    xbt_assert(data_object.MemberCount() > 0, "Invalid JSON message: the 'data' object of event %d (ANSWER) must be non-empty (size=%d)", event_number, data_object.MemberCount());
 
     for (auto it = data_object.MemberBegin(); it != data_object.MemberEnd(); ++it)
     {
@@ -850,7 +863,7 @@ void JsonProtocolReader::handle_reject_job(int event_number,
     } */
 
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (REJECT_JOB) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (REJECT_JOB) should be of size 1 (size=%d)", event_number, (int)data_object.MemberCount());
+    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (REJECT_JOB) should be of size 1 (size=%d)", event_number, data_object.MemberCount());
 
     xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (REJECT_JOB) should contain a 'job_id' key.", event_number);
     const Value & job_id_value = data_object["job_id"];
@@ -860,7 +873,7 @@ void JsonProtocolReader::handle_reject_job(int event_number,
     JobRejectedMessage * message = new JobRejectedMessage;
     message->job_id = JobIdentifier(job_id);
 
-    send_message_at_time(timestamp, "server", IPMessageType::SCHED_REJECT_JOB, (void*) message);
+    send_message_at_time(timestamp, "server", IPMessageType::SCHED_REJECT_JOB, static_cast<void*>(message));
 }
 
 void JsonProtocolReader::handle_execute_job(int event_number,
@@ -897,7 +910,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     message->allocation = new SchedulingAllocation;
 
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() == 2 || data_object.MemberCount() == 3, "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should be of size in {2,3} (size=%d)", event_number, (int)data_object.MemberCount());
+    xbt_assert(data_object.MemberCount() == 2 || data_object.MemberCount() == 3, "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should be of size in {2,3} (size=%d)", event_number, data_object.MemberCount());
 
     // ******************
     // Get Job identifier
@@ -910,7 +923,9 @@ void JsonProtocolReader::handle_execute_job(int event_number,
 
     // Let's retrieve the job identifier
     JobIdentifier job_id = JobIdentifier(job_id_str);
-    message->allocation->job_id = job_id;
+
+    // Retrieve the job behind the identifier
+    message->allocation->job = context->workloads.job_at(job_id);
 
     // *********************
     // Allocation management
@@ -924,7 +939,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     try { message->allocation->machine_ids = IntervalSet::from_string_hyphen(alloc, " ", "-"); }
     catch(const std::exception & e) { throw std::runtime_error(std::string("Invalid JSON message: ") + e.what());}
 
-    int nb_allocated_resources = message->allocation->machine_ids.size();
+    int nb_allocated_resources = static_cast<int>(message->allocation->machine_ids.size());
     (void) nb_allocated_resources; // Avoids a warning if assertions are ignored
     xbt_assert(nb_allocated_resources > 0, "Invalid JSON message: in event %d (EXECUTE_JOB): the number of allocated resources should be strictly positive (got %d).", event_number, nb_allocated_resources);
 
@@ -1037,8 +1052,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         xbt_assert(io_job_value["profile_name"].IsString(), "Invalid JSON message: Invalid 'profile_name' of event %d (EXECUTE_JOB): should be a string", event_number);
         string profile_name = io_job_value["profile_name"].GetString();
 
-        Workload * workload = context->workloads.at(job_id.workload_name);
-        Job * job = workload->jobs->at(job_id);
+        Workload * workload = context->workloads.at(job_id.workload_name());
         if (io_job_value.HasMember("profile"))
         {
             if (workload->profiles->exists(profile_name))
@@ -1058,9 +1072,8 @@ void JsonProtocolReader::handle_execute_job(int event_number,
 
                 string additional_io_job_profile_description = string(buffer.GetString(), buffer.GetSize());
                 // create the io_profile
-                Profile * new_io_profile = Profile::from_json(profile_name,
-                        additional_io_job_profile_description,
-                        "Invalid JSON profile received from the scheduler for the 'additional_io_job'");
+                auto new_io_profile = Profile::from_json(profile_name, additional_io_job_profile_description,
+                    "Invalid JSON profile received from the scheduler for the 'additional_io_job'");
                 // Add it to the wokload
                 workload->profiles->add_profile(profile_name, new_io_profile);
             }
@@ -1070,20 +1083,20 @@ void JsonProtocolReader::handle_execute_job(int event_number,
         xbt_assert(workload->profiles->exists(profile_name),
                     "The given profile name '%s' does not exists",
                    profile_name.c_str());
-        Profile * io_profile = workload->profiles->at(profile_name);
+        auto io_profile = workload->profiles->at(profile_name);
 
         // manage sequence profile special case
         if (io_profile->type == ProfileType::SEQUENCE)
         {
-            Profile * job_profile = workload->profiles->at(job->profile);
+            auto job_profile = workload->jobs->at(job_id)->profile;
             xbt_assert(job_profile->type == ProfileType::SEQUENCE,
                     "the job io profile is a '%s' profile but the the original job is '%s': they must have compatible profile in order to be merged",
                     profile_type_to_string(io_profile->type).c_str(),
                     profile_type_to_string(job_profile->type).c_str());
 
             // check if it has the same size
-            SequenceProfileData * job_data = (SequenceProfileData*)job_profile->data;
-            SequenceProfileData * io_data = (SequenceProfileData*)io_profile->data;
+            auto * job_data = static_cast<SequenceProfileData*>(job_profile->data);
+            auto * io_data = static_cast<SequenceProfileData*>(io_profile->data);
             xbt_assert(job_data->sequence.size() == io_data->sequence.size(),
                     " IO profile sequence size (%zu) and job profile sequence size (%zu) should be the same",
                     io_data->sequence.size(),
@@ -1113,7 +1126,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
     }
 
     // Everything has been parsed correctly, let's inject the message into the simulation.
-    send_message_at_time(timestamp, "server", IPMessageType::SCHED_EXECUTE_JOB, (void*) message);
+    send_message_at_time(timestamp, "server", IPMessageType::SCHED_EXECUTE_JOB, static_cast<void*>(message));
 }
 
 void JsonProtocolReader::handle_call_me_later(int event_number,
@@ -1126,10 +1139,10 @@ void JsonProtocolReader::handle_call_me_later(int event_number,
       "data": {"timestamp": 25.5}
     } */
 
-    CallMeLaterMessage * message = new CallMeLaterMessage;
+    auto * message = new CallMeLaterMessage;
 
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (CALL_ME_LATER) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (CALL_ME_LATER) should be of size 1 (size=%d)", event_number, (int)data_object.MemberCount());
+    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (CALL_ME_LATER) should be of size 1 (size=%d)", event_number, data_object.MemberCount());
 
     xbt_assert(data_object.HasMember("timestamp"), "Invalid JSON message: the 'data' value of event %d (CALL_ME_LATER) should contain a 'timestamp' key.", event_number);
     const Value & timestamp_value = data_object["timestamp"];
@@ -1141,7 +1154,7 @@ void JsonProtocolReader::handle_call_me_later(int event_number,
         XBT_WARN("Event %d (CALL_ME_LATER) asks to be called at time %g but it is already reached", event_number, message->target_time);
     }
 
-    send_message_at_time(timestamp, "server", IPMessageType::SCHED_CALL_ME_LATER, (void*) message);
+    send_message_at_time(timestamp, "server", IPMessageType::SCHED_CALL_ME_LATER, static_cast<void*>(message));
 }
 
 void JsonProtocolReader::handle_set_resource_state(int event_number,
@@ -1154,14 +1167,14 @@ void JsonProtocolReader::handle_set_resource_state(int event_number,
       "type": "SET_RESOURCE_STATE",
       "data": {"resources": "1 2 3-5", "state": "42"}
     } */
-    PStateModificationMessage * message = new PStateModificationMessage;
+    auto * message = new PStateModificationMessage;
 
     // ********************
     // Resources management
     // ********************
     // Let's read it from the JSON message
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (SET_RESOURCE_STATE) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() == 2, "Invalid JSON message: the 'data' value of event %d (SET_RESOURCE_STATE) should be of size 2 (size=%d)", event_number, (int)data_object.MemberCount());
+    xbt_assert(data_object.MemberCount() == 2, "Invalid JSON message: the 'data' value of event %d (SET_RESOURCE_STATE) should be of size 2 (size=%d)", event_number, data_object.MemberCount());
 
     xbt_assert(data_object.HasMember("resources"), "Invalid JSON message: the 'data' value of event %d (SET_RESOURCE_STATE) should contain a 'resources' key.", event_number);
     const Value & resources_value = data_object["resources"];
@@ -1171,7 +1184,7 @@ void JsonProtocolReader::handle_set_resource_state(int event_number,
     try { message->machine_ids = IntervalSet::from_string_hyphen(resources, " ", "-"); }
     catch(const std::exception & e) { throw std::runtime_error(std::string("Invalid JSON message: ") + e.what());}
 
-    int nb_allocated_resources = message->machine_ids.size();
+    int nb_allocated_resources = static_cast<int>(message->machine_ids.size());
     (void) nb_allocated_resources; // Avoids a warning if assertions are ignored
     xbt_assert(nb_allocated_resources > 0, "Invalid JSON message: in event %d (SET_RESOURCE_STATE): the number of allocated resources should be strictly positive (got %d).", event_number, nb_allocated_resources);
 
@@ -1190,7 +1203,7 @@ void JsonProtocolReader::handle_set_resource_state(int event_number,
         throw;
     }
 
-    send_message_at_time(timestamp, "server", IPMessageType::PSTATE_MODIFICATION, (void*) message);
+    send_message_at_time(timestamp, "server", IPMessageType::PSTATE_MODIFICATION, static_cast<void*>(message));
 }
 
 void JsonProtocolReader::handle_set_job_metadata(int event_number,
@@ -1209,7 +1222,7 @@ void JsonProtocolReader::handle_set_job_metadata(int event_number,
     } */
 
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (SET_JOB_METADATA) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() == 2, "Invalid JSON message: the 'data' value of event %d (SET_JOB_METADATA) should be of size 2 (size=%d)", event_number, (int)data_object.MemberCount());
+    xbt_assert(data_object.MemberCount() == 2, "Invalid JSON message: the 'data' value of event %d (SET_JOB_METADATA) should be of size 2 (size=%d)", event_number, data_object.MemberCount());
 
     xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (SET_JOB_METADATA) should have a 'job_id' key", event_number);
     const Value & job_id_value = data_object["job_id"];
@@ -1222,14 +1235,14 @@ void JsonProtocolReader::handle_set_job_metadata(int event_number,
     string metadata = metadata_value.GetString();
 
     // Check metadata validity regarding CSV output
-    boost::regex r("[^\"]*");
-    xbt_assert(boost::regex_match(metadata, r), "Invalid JSON message: the 'metadata' value in the 'data' value of event %d (SET_JOB_METADATA) should not contain double quotes (got ###%s###)", event_number, metadata.c_str());
+    std::regex r("[^\"]*");
+    xbt_assert(std::regex_match(metadata, r), "Invalid JSON message: the 'metadata' value in the 'data' value of event %d (SET_JOB_METADATA) should not contain double quotes (got ###%s###)", event_number, metadata.c_str());
 
-    SetJobMetadataMessage * message = new SetJobMetadataMessage;
+    auto * message = new SetJobMetadataMessage;
     message->job_id = JobIdentifier(job_id);
     message->metadata = metadata;
 
-    send_message_at_time(timestamp, "server", IPMessageType::SCHED_SET_JOB_METADATA, (void *) message);
+    send_message_at_time(timestamp, "server", IPMessageType::SCHED_SET_JOB_METADATA, static_cast<void*>(message));
 }
 
 void JsonProtocolReader::handle_change_job_state(int event_number,
@@ -1273,11 +1286,11 @@ void JsonProtocolReader::handle_change_job_state(int event_number,
                    boost::algorithm::join(allowed_states, ", ").c_str());
     }
 
-    ChangeJobStateMessage * message = new ChangeJobStateMessage;
+    auto * message = new ChangeJobStateMessage;
     message->job_id = JobIdentifier(job_id);
     message->job_state = job_state;
 
-    send_message_at_time(timestamp, "server", IPMessageType::SCHED_CHANGE_JOB_STATE, (void *) message);
+    send_message_at_time(timestamp, "server", IPMessageType::SCHED_CHANGE_JOB_STATE, static_cast<void*>(message));
 }
 
 void JsonProtocolReader::handle_notify(int event_number,
@@ -1340,11 +1353,11 @@ void JsonProtocolReader::handle_to_job_msg(int event_number,
     xbt_assert(msg_value.IsString(), "Invalid JSON msg: in event %d (TO_JOB_MSG): ['data']['msg'] should be a string", event_number);
     string msg = msg_value.GetString();
 
-    ToJobMessage * message = new ToJobMessage;
+    auto * message = new ToJobMessage;
     message->job_id = JobIdentifier(job_id);
     message->message = msg;
 
-    send_message_at_time(timestamp, "server", IPMessageType::TO_JOB_MSG, (void *) message);
+    send_message_at_time(timestamp, "server", IPMessageType::TO_JOB_MSG, static_cast<void*>(message));
 }
 
 void JsonProtocolReader::handle_register_job(int event_number,
@@ -1373,7 +1386,7 @@ void JsonProtocolReader::handle_register_job(int event_number,
       }
     } */
 
-    JobRegisteredByDPMessage * message = new JobRegisteredByDPMessage;
+    auto * message = new JobRegisteredByDPMessage;
 
     xbt_assert(context->registration_sched_enabled, "Invalid JSON message: dynamic job registration received but the option seems disabled... "
                                                   "It can be activated with the '--enable-dynamic-jobs' command line option.");
@@ -1385,8 +1398,8 @@ void JsonProtocolReader::handle_register_job(int event_number,
     xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (REGISTER_JOB) should have a 'job_id' key", event_number);
     const Value & job_id_value = data_object["job_id"];
     xbt_assert(job_id_value.IsString(), "Invalid JSON message: in event %d (REGISTER_JOB): ['data']['job_id'] should be a string", event_number);
-    string job_id = job_id_value.GetString();
-    message->job_id = JobIdentifier(job_id);
+    string job_id_str = job_id_value.GetString();
+    JobIdentifier job_id(job_id_str);
 
     // Read the job description, either directly or from Redis
     if (data_object.HasMember("job"))
@@ -1406,11 +1419,45 @@ void JsonProtocolReader::handle_register_job(int event_number,
     {
         xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (REGISTER_JOB): ['data']['job'] is unset but redis seems disabled...", event_number);
 
-        string job_key = RedisStorage::job_key(message->job_id);
+        string job_key = RedisStorage::job_key(job_id);
         message->job_description = context->storage.get(job_key);
     }
 
-    send_message_at_time(timestamp, "server", IPMessageType::JOB_REGISTERED_BY_DP, (void *) message);
+    // Load job into memory. TODO: this should be between the protocol parsing and the injection in the events, not here.
+    xbt_assert(context->workloads.exists(job_id.workload_name()),
+               "Internal error: Workload '%s' should exist.",
+               job_id.workload_name().c_str());
+    xbt_assert(!context->workloads.job_is_registered(job_id),
+               "Cannot register new job '%s', it already exists in the workload.", job_id.to_cstring());
+
+    Workload * workload = context->workloads.at(job_id.workload_name());
+
+    // Create the job.
+    XBT_DEBUG("Parsing user-submitted job %s", job_id.to_cstring());
+    message->job = Job::from_json(message->job_description, workload, "Invalid JSON job submitted by the scheduler");
+    xbt_assert(message->job->id.job_name() == job_id.job_name(), "Internal error");
+    xbt_assert(message->job->id.workload_name() == job_id.workload_name(), "Internal error");
+
+    /* The check of existence of a profile is done in Job::from_json which should raise an Exception
+     * TODO catch this exception here and print the following message
+     * if (!workload->profiles->exists(job->profile))
+    {
+        xbt_die(
+                   "Dynamically registered job '%s' has no profile: "
+                   "Workload '%s' has no profile named '%s'. "
+                   "When registering a dynamic job, its profile should already exist. "
+                   "If the profile is also dynamic, it can be registered with the REGISTER_PROFILE "
+                   "message but you must ensure that the profile is sent (non-strictly) before "
+                   "the REGISTER_JOB message.",
+                   job->id.to_cstring(),
+                   workload->name.c_str(), job->profile.c_str());
+    }*/
+
+    workload->check_single_job_validity(message->job);
+    workload->jobs->add_job(message->job);
+    message->job->state = JobState::JOB_STATE_SUBMITTED;
+
+    send_message_at_time(timestamp, "server", IPMessageType::JOB_REGISTERED_BY_DP, static_cast<void*>(message));
 }
 
 void JsonProtocolReader::handle_register_profile(int event_number,
@@ -1432,7 +1479,7 @@ void JsonProtocolReader::handle_register_profile(int event_number,
     } */
 
     // Read message
-    ProfileRegisteredByDPMessage * message = new ProfileRegisteredByDPMessage;
+    auto * message = new ProfileRegisteredByDPMessage;
 
     xbt_assert(context->registration_sched_enabled, "Invalid JSON message: dynamic profile registration received but the option seems disabled... "
                                                   "It can be activated with the '--enable-dynamic-jobs' command line option.");
@@ -1465,7 +1512,38 @@ void JsonProtocolReader::handle_register_profile(int event_number,
 
     message->profile = string(buffer.GetString(), buffer.GetSize());
 
-    send_message_at_time(timestamp, "server", IPMessageType::PROFILE_REGISTERED_BY_DP, (void *) message);
+    // Load profile into memory. TODO: this should be between the protocol parsing and the injection in the events, not here.
+
+    // Retrieve the workload, or create if it does not exist yet
+    Workload * workload = nullptr;
+    if (context->workloads.exists(message->workload_name))
+    {
+        workload = context->workloads.at(message->workload_name);
+    }
+    else
+    {
+        workload = Workload::new_dynamic_workload(message->workload_name);
+        context->workloads.insert_workload(workload->name, workload);
+    }
+
+    if (!workload->profiles->exists(message->profile_name))
+    {
+        XBT_INFO("Adding dynamically registered profile %s to workload %s",
+                message->profile_name.c_str(),
+                message->workload_name.c_str());
+        auto profile = Profile::from_json(message->profile_name,
+                                          message->profile,
+                                          "Invalid JSON profile received from the scheduler");
+        workload->profiles->add_profile(message->profile_name, profile);
+    }
+    else
+    {
+        xbt_die("Invalid new profile registration: profile '%s' already existed in workload '%s'",
+            message->profile_name.c_str(),
+            message->workload_name.c_str());
+    }
+
+    send_message_at_time(timestamp, "server", IPMessageType::PROFILE_REGISTERED_BY_DP, static_cast<void*>(message));
 }
 
 void JsonProtocolReader::handle_kill_job(int event_number,
@@ -1479,10 +1557,10 @@ void JsonProtocolReader::handle_kill_job(int event_number,
       "data": {"job_ids": ["w0!1", "w0!2"]}
     } */
 
-    KillJobMessage * message = new KillJobMessage;
+    auto * message = new KillJobMessage;
 
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (KILL_JOB) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (KILL_JOB) should be of size 1 (size=%d)", event_number, (int)data_object.MemberCount());
+    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (KILL_JOB) should be of size 1 (size=%d)", event_number, data_object.MemberCount());
 
     xbt_assert(data_object.HasMember("job_ids"), "Invalid JSON message: the 'data' value of event %d (KILL_JOB) should contain a 'job_ids' key.", event_number);
     const Value & job_ids_array = data_object["job_ids"];
@@ -1496,7 +1574,7 @@ void JsonProtocolReader::handle_kill_job(int event_number,
         message->jobs_ids[i] = JobIdentifier(job_id_value.GetString());
     }
 
-    send_message_at_time(timestamp, "server", IPMessageType::SCHED_KILL_JOB, (void *) message);
+    send_message_at_time(timestamp, "server", IPMessageType::SCHED_KILL_JOB, static_cast<void*>(message));
 }
 
 void JsonProtocolReader::send_message_at_time(double when,

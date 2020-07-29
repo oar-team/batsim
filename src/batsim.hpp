@@ -82,6 +82,7 @@ struct MainArguments
     bool forward_profiles_on_submission = false;            //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
     bool dynamic_registration_enabled = false;              //!< Stores whether the scheduler will be able to register jobs and profiles during the simulation
     bool ack_dynamic_registration = false;                  //!< Stores whether Batsim will acknowledge dynamic job registrations (emit JOB_SUBMITTED events)
+    bool profile_reuse_enabled = false;                     //!< Stores whether Batsim will garbage collect the Profiles or they can be re-used by dynamic jobs.
 
     // Output
     std::string export_prefix;                              //!< The filename prefix used to export simulation information
@@ -100,8 +101,10 @@ struct MainArguments
     bool terminate_with_last_workflow = false;              //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
     // Other
-    std::vector<std::string> simgrid_config;                  //!< The list of configuration options to pass to SimGrid.
-    std::vector<std::string> simgrid_logging;                 //!< The list of simulation logging options to pass to SimGrid.
+    std::vector<std::string> simgrid_config;                //!< The list of configuration options to pass to SimGrid.
+    std::vector<std::string> simgrid_logging;               //!< The list of simulation logging options to pass to SimGrid.
+    std::string sched_config;                               //!< The scheduler configuration.
+    std::string sched_config_file;                          //!< The scheduler configuration file.
     bool dump_execution_context = false;                    //!< Instead of running the simulation, print the execution context as JSON on the standard output.
     bool allow_compute_sharing = false;                     //!< Allows/forbids sharing on compute machines. Two jobs can run concurrently on the same machine if and only if sharing is allowed.
     bool allow_storage_sharing = false;                     //!< Allows/forbids sharing on storage machines. Two jobs can run concurrently on the same machine if and only if sharing is allowed.
@@ -118,10 +121,9 @@ struct MainArguments
  * @param[out] main_args Batsim usable arguments
  * @param[out] return_code Batsim's return code (used directly if false is returned)
  * @param[out] run_simulation Whether the simulation should be run afterwards
- * @param[out] run_unit_tests Whether the unit tests should be run afterwards
  */
 void parse_main_args(int argc, char * argv[], MainArguments & main_args,
-                     int & return_code, bool & run_simulation, bool & run_unit_tests);
+                     int & return_code, bool & run_simulation);
 
 /**
  * @brief Configures how the simulation should be logged

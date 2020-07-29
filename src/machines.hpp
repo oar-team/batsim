@@ -10,10 +10,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
 #include <intervalset.hpp>
 
+#include "pointers.hpp"
 #include "pstate.hpp"
 #include "permissions.hpp"
 
@@ -69,7 +70,7 @@ struct Machine
     simgrid::s4u::Host* host; //!< The SimGrid host corresponding to the machine
     roles::Permissions permissions = roles::Permissions::NONE; //!< Machine permissions
     MachineState state = MachineState::IDLE; //!< The current state of the Machine
-    std::set<const Job *> jobs_being_computed; //!< The set of jobs being computed on the Machine
+    std::set<JobPtr> jobs_being_computed; //!< The set of jobs being computed on the Machine
 
     std::unordered_map<int, PStateType> pstates; //!< Maps power state number to their power state type
     std::unordered_map<int, SleepPState *> sleep_pstates; //!< Maps sleep power state numbers to their SleepPState
@@ -78,6 +79,7 @@ struct Machine
     std::unordered_map<MachineState, long double> time_spent_in_each_state; //!< The cumulated time of the machine in each MachineState
 
     std::unordered_map<std::string, std::string> properties; //!< Properties defined in the platform file
+    std::unordered_map<std::string, std::string> zone_properties; //!< Properties of Zones defined in the platform file
 
     /**
      * @brief Returns whether the Machine has the given role
@@ -168,7 +170,7 @@ public:
      * @param[in] used_machines The machines on which the job is executed
      * @param[in,out] context The Batsim Context
      */
-    void update_machines_on_job_run(const Job * job,
+    void update_machines_on_job_run(const JobPtr job,
                                     const IntervalSet & used_machines,
                                     BatsimContext * context);
 
@@ -179,7 +181,7 @@ public:
      * @param[in] used_machines The machines on which the job is executed
      * @param[in,out] context The BatsimContext
      */
-    void update_machines_on_job_end(const Job *job,
+    void update_machines_on_job_end(const JobPtr job,
                                     const IntervalSet & used_machines,
                                     BatsimContext *context);
 
@@ -202,6 +204,13 @@ public:
      * @return The machine whose machine number is given
      */
     Machine * operator[](int machineID);
+
+    /**
+     * @brief Access a Machine thanks to its name (Machine/Host name is unique Simgrid)
+     * @param[in] name The machine name
+     * @return The machine whose machine name is given. nullptr is returned if the machine is not found.
+     */
+    Machine * machine_by_name_or_null(const std::string & name) const;
 
     /**
      * @brief Checks whether a machine exists
@@ -257,19 +266,19 @@ public:
      * @brief Returns the total number of machines
      * @return The total number of machines
      */
-    int nb_machines() const;
+    unsigned int nb_machines() const;
 
     /**
      * @brief Returns the number of computing machines
      * @return The nubmer of computing machines
      */
-    int nb_compute_machines() const;
+    unsigned int nb_compute_machines() const;
 
     /**
      * @brief Returns the number of storage machines
      * @return The number of storage machines
      */
-    int nb_storage_machines() const;
+    unsigned int nb_storage_machines() const;
 
     /**
      * @brief Updates the number of machines in each state after a MachineState transition
@@ -283,6 +292,15 @@ public:
      * @return A const reference to _nb_machines_in_each_state getter
      */
     const std::map<MachineState, int> & nb_machines_in_each_state() const;
+
+    /**
+     * @brief Add the properties of zones to each machine inside the zone
+     * @param[in] current_zone The considered NetZone of SimGrid
+     * @param[in] parent_properties The properties of the parent zones
+     */
+    void attach_zone_properties_to_machines(simgrid::s4u::NetZone * current_zone,
+                                            std::unordered_map<std::string, std::string> parent_properties);
+
 
 private:
     std::vector<Machine *> _machines;       //!< The vector of all machines

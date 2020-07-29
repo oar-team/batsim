@@ -6,7 +6,11 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <map>
+#include <memory>
+
+#include "pointers.hpp"
 
 class Jobs;
 struct Job;
@@ -77,7 +81,7 @@ public:
      * @brief Checks whether a single job is valid
      * @param[in] job The job to examine
      */
-    void check_single_job_validity(const Job * job);
+    void check_single_job_validity(const JobPtr job);
 
     /**
      * @brief Returns the workload name
@@ -158,14 +162,14 @@ public:
      * @brief Returns the number of workloads
      * @return The number of workloads
      */
-    int nb_workloads() const;
+    unsigned int nb_workloads() const;
 
     /**
      * @brief Returns the number of static workloads
      * @details Static workloads are those corresponding to Batsim input files (input workloads or workflows)
      * @return The number of static workloads
      */
-    int nb_static_workloads() const;
+    unsigned int nb_static_workloads() const;
 
     /**
      * @brief Allows to get a job from the Workloads
@@ -173,7 +177,7 @@ public:
      * @return The job which has been asked
      * @pre The requested job exists
      */
-    Job * job_at(const JobIdentifier & job_id);
+    JobPtr job_at(const JobIdentifier & job_id);
 
     /**
      * @brief Allows to get a job from the Workloads (const version)
@@ -181,7 +185,15 @@ public:
      * @return The (const) job which has been asked
      * @pre The requested job exists
      */
-    const Job * job_at(const JobIdentifier & job_id) const;
+    const JobPtr job_at(const JobIdentifier & job_id) const;
+
+    /**
+     * @brief Deletes jobs from the associated workloads
+     * @param[in] job_ids The vector of identifiers of the jobs to remove
+     * @param[in] garbage_collect_profiles Whether to remove profiles that are not used anymore
+     */
+    void delete_jobs(const std::vector<JobIdentifier> & job_ids,
+                     const bool & garbage_collect_profiles);
 
     /**
      * @brief Checks whether a job is registered in the associated workload

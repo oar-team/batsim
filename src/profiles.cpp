@@ -7,11 +7,11 @@
 
 #include <fstream>
 #include <iostream>
+#include <filesystem>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <simgrid/msg.h>
+#include <xbt/asserts.h>
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
@@ -19,16 +19,13 @@
 
 using namespace std;
 using namespace rapidjson;
-using namespace boost;
+namespace fs = std::filesystem;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(profiles, "profiles"); //!< Logging
 
 Profiles::~Profiles()
 {
-    for (auto mit : _profiles)
-    {
-        delete mit.second;
-    }
+    _profiles.clear();
 }
 
 void Profiles::load_from_json(const Document &doc, const string & filename)
@@ -51,35 +48,35 @@ void Profiles::load_from_json(const Document &doc, const string & filename)
                    "string key", error_prefix.c_str());
         string profile_name = key.GetString();
 
-        Profile * profile = Profile::from_json(profile_name, value, error_prefix,
-                                               true, filename);
-
+        auto profile = Profile::from_json(profile_name, value, error_prefix, true, filename);
         xbt_assert(!exists(string(key.GetString())), "%s: duplication of profile name '%s'",
                    error_prefix.c_str(), key.GetString());
         _profiles[string(key.GetString())] = profile;
     }
 }
 
-Profile *Profiles::operator[](const std::string &profile_name)
+ProfilePtr Profiles::operator[](const std::string &profile_name)
 {
     auto mit = _profiles.find(profile_name);
     xbt_assert(mit != _profiles.end(), "Cannot get profile '%s': it does not exist", profile_name.c_str());
+    xbt_assert(mit->second.get() != nullptr, "Cannot get profile '%s': it existed some time ago but is no longer accessible", profile_name.c_str());
     return mit->second;
 }
 
-const Profile *Profiles::operator[](const std::string &profile_name) const
+const ProfilePtr Profiles::operator[](const std::string &profile_name) const
 {
     auto mit = _profiles.find(profile_name);
     xbt_assert(mit != _profiles.end(), "Cannot get profile '%s': it does not exist", profile_name.c_str());
+    xbt_assert(mit->second.get() != nullptr, "Cannot get profile '%s': it existed some time ago but is no longer accessible", profile_name.c_str());
     return mit->second;
 }
 
-Profile * Profiles::at(const std::string & profile_name)
+ProfilePtr Profiles::at(const std::string & profile_name)
 {
     return operator[](profile_name);
 }
 
-const Profile * Profiles::at(const std::string & profile_name) const
+const ProfilePtr Profiles::at(const std::string & profile_name) const
 {
     return operator[](profile_name);
 }
@@ -91,7 +88,7 @@ bool Profiles::exists(const std::string &profile_name) const
 }
 
 void Profiles::add_profile(const std::string & profile_name,
-                           Profile *profile)
+                           ProfilePtr & profile)
 {
     xbt_assert(!exists(profile_name),
                "Bad Profiles::add_profile call: A profile with name='%s' already exists.",
@@ -100,18 +97,54 @@ void Profiles::add_profile(const std::string & profile_name,
     _profiles[profile_name] = profile;
 }
 
-const std::map<std::string, Profile *> Profiles::profiles() const
+void Profiles::remove_profile(const std::string & profile_name)
+{
+    auto mit = _profiles.find(profile_name);
+    xbt_assert(mit != _profiles.end(), "Bad Profiles::remove_profile call: Profile with name='%s' never existed in this workload.", profile_name.c_str());
+
+    // If the profile has aleady been removed, do nothing.
+    if (mit->second.get() == nullptr)
+    {
+        return;
+    }
+
+    // If the profile is composed, also remove links to subprofiles.
+    if (mit->second->type == ProfileType::SEQUENCE)
+    {
+        auto * profile_data = static_cast<SequenceProfileData*>(mit->second->data);
+        for (const auto & subprofile : profile_data->profile_sequence)
+        {
+            remove_profile(subprofile->name);
+        }
+    }
+
+    // Discard link to the profile (implicit memory clean-up)
+    mit->second = nullptr;
+}
+
+void Profiles::remove_unreferenced_profiles()
+{
+    for (auto & mit : _profiles)
+    {
+        if (mit.second.use_count() < 2)
+        {
+            mit.second = nullptr;
+        }
+    }
+}
+
+const std::unordered_map<std::string, ProfilePtr> Profiles::profiles() const
 {
     return _profiles;
 }
 
 int Profiles::nb_profiles() const
 {
-    return _profiles.size();
+    return static_cast<int>(_profiles.size());
 }
 
 
-MsgParallelProfileData::~MsgParallelProfileData()
+ParallelProfileData::~ParallelProfileData()
 {
     if (cpu != nullptr)
     {
@@ -127,9 +160,10 @@ MsgParallelProfileData::~MsgParallelProfileData()
 
 Profile::~Profile()
 {
+    XBT_INFO("Profile '%s' is being deleted.", name.c_str());
     if (type == ProfileType::DELAY)
     {
-        DelayProfileData * d = (DelayProfileData *) data;
+        auto * d = static_cast<DelayProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -138,7 +172,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::PARALLEL)
     {
-        MsgParallelProfileData * d = (MsgParallelProfileData *) data;
+        auto * d = static_cast<ParallelProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -147,7 +181,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::PARALLEL_HOMOGENEOUS)
     {
-        MsgParallelHomogeneousProfileData * d = (MsgParallelHomogeneousProfileData *) data;
+        auto * d = static_cast<ParallelHomogeneousProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -156,7 +190,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
     {
-        MsgParallelHomogeneousTotalAmountProfileData * d = (MsgParallelHomogeneousTotalAmountProfileData *) data;
+        auto * d = static_cast<ParallelHomogeneousTotalAmountProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -165,7 +199,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::SMPI)
     {
-        SmpiProfileData * d = (SmpiProfileData *) data;
+        auto * d = static_cast<SmpiProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -174,7 +208,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::SEQUENCE)
     {
-        SequenceProfileData * d = (SequenceProfileData *) data;
+        auto * d = static_cast<SequenceProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -183,7 +217,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::PARALLEL_HOMOGENEOUS_PFS)
     {
-        MsgParallelHomogeneousPFSProfileData * d = (MsgParallelHomogeneousPFSProfileData *) data;
+        auto * d = static_cast<ParallelHomogeneousPFSProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -192,7 +226,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::DATA_STAGING)
     {
-        MsgDataStagingProfileData * d = (MsgDataStagingProfileData *) data;
+        auto * d = static_cast<DataStagingProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -201,7 +235,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::SCHEDULER_SEND)
     {
-        SchedulerSendProfileData * d = (SchedulerSendProfileData *) data;
+        auto * d = static_cast<SchedulerSendProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -210,7 +244,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::SCHEDULER_RECV)
     {
-        SchedulerRecvProfileData * d = (SchedulerRecvProfileData *) data;
+        auto * d = static_cast<SchedulerRecvProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -219,12 +253,12 @@ Profile::~Profile()
     }
     else
     {
-        XBT_ERROR("Deletion of an unknown profile type (%d)", type);
+        XBT_ERROR("Deletion of an unknown profile type (%d)", static_cast<int>(type));
     }
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
-Profile *Profile::from_json(const std::string & profile_name,
+ProfilePtr Profile::from_json(const std::string & profile_name,
                             const rapidjson::Value & json_desc,
                             const std::string & error_prefix,
                             bool is_from_a_file,
@@ -232,7 +266,7 @@ Profile *Profile::from_json(const std::string & profile_name,
 {
     (void) error_prefix; // Avoids a warning if assertions are ignored
 
-    Profile * profile = new Profile;
+    auto profile = std::make_shared<Profile>();
     profile->name = profile_name;
 
     xbt_assert(json_desc.IsObject(), "%s: profile '%s' value must be an object",
@@ -286,7 +320,7 @@ Profile *Profile::from_json(const std::string & profile_name,
         }
         */
         profile->type = ProfileType::PARALLEL;
-        MsgParallelProfileData * data = new MsgParallelProfileData;
+        ParallelProfileData * data = new ParallelProfileData;
 
         // basic checks
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
@@ -343,7 +377,7 @@ Profile *Profile::from_json(const std::string & profile_name,
         }
         */
         profile->type = ProfileType::PARALLEL_HOMOGENEOUS;
-        MsgParallelHomogeneousProfileData * data = new MsgParallelHomogeneousProfileData;
+        ParallelHomogeneousProfileData * data = new ParallelHomogeneousProfileData;
 
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
                    error_prefix.c_str(), profile_name.c_str());
@@ -373,7 +407,7 @@ Profile *Profile::from_json(const std::string & profile_name,
         }
         */
         profile->type = ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT;
-        MsgParallelHomogeneousTotalAmountProfileData * data = new MsgParallelHomogeneousTotalAmountProfileData;
+        ParallelHomogeneousTotalAmountProfileData * data = new ParallelHomogeneousTotalAmountProfileData;
 
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
                    error_prefix.c_str(), profile_name.c_str());
@@ -405,12 +439,14 @@ Profile *Profile::from_json(const std::string & profile_name,
         profile->type = ProfileType::SEQUENCE;
         SequenceProfileData * data = new SequenceProfileData;
 
-        int repeat = 1;
+        unsigned int repeat = 1;
         if (json_desc.HasMember("repeat"))
         {
             xbt_assert(json_desc["repeat"].IsInt(), "%s: profile '%s' has a non-integral 'repeat' field",
                    error_prefix.c_str(), profile_name.c_str());
-            repeat = json_desc["repeat"].GetInt();
+            xbt_assert(json_desc["repeat"].GetInt() >= 0, "%s: profile '%s' has a negative 'repeat' field (%d)",
+                   error_prefix.c_str(), profile_name.c_str(), json_desc["repeat"].GetInt());
+            repeat = static_cast<unsigned int>(json_desc["repeat"].GetInt());
         }
         data->repeat = repeat;
 
@@ -443,7 +479,7 @@ Profile *Profile::from_json(const std::string & profile_name,
         }
         */
         profile->type = ProfileType::PARALLEL_HOMOGENEOUS_PFS;
-        MsgParallelHomogeneousPFSProfileData * data = new MsgParallelHomogeneousPFSProfileData;
+        ParallelHomogeneousPFSProfileData * data = new ParallelHomogeneousPFSProfileData;
 
         xbt_assert(json_desc.HasMember("bytes_to_read") or json_desc.HasMember("bytes_to_write"), "%s: profile '%s' has no 'bytes_to_read' or 'bytes_to_write' field (0 if not set)",
                    error_prefix.c_str(), profile_name.c_str());
@@ -493,7 +529,7 @@ Profile *Profile::from_json(const std::string & profile_name,
         }
         */
         profile->type = ProfileType::DATA_STAGING;
-        MsgDataStagingProfileData * data = new MsgDataStagingProfileData;
+        DataStagingProfileData * data = new DataStagingProfileData;
 
         xbt_assert(json_desc.HasMember("nb_bytes"), "%s: profile '%s' has no 'nb_bytes' field",
                    error_prefix.c_str(), profile_name.c_str());
@@ -607,16 +643,16 @@ Profile *Profile::from_json(const std::string & profile_name,
                    "a file workload, which is not implemented at the moment.");
         (void) is_from_a_file; // Avoids a warning if assertions are ignored
 
-        filesystem::path base_dir(json_filename);
+        fs::path base_dir = json_filename;
         base_dir = base_dir.parent_path();
         XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
-        xbt_assert(filesystem::exists(base_dir) && filesystem::is_directory(base_dir));
+        xbt_assert(fs::exists(base_dir) && fs::is_directory(base_dir));
 
         //XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
         //XBT_INFO("trace = '%s'", trace.c_str());
-        filesystem::path trace_path(base_dir.string() + "/" + trace_filename);
+        fs::path trace_path = base_dir.string() + "/" + trace_filename;
         //XBT_INFO("trace_path = '%s'", trace_path.string().c_str());
-        xbt_assert(filesystem::exists(trace_path) && filesystem::is_regular_file(trace_path),
+        xbt_assert(fs::exists(trace_path) && fs::is_regular_file(trace_path),
                    "Invalid JSON: profile '%s' has an invalid 'trace' field ('%s'), which leads to a non-existent file ('%s')",
                    profile_name.c_str(), trace_filename.c_str(), trace_path.string().c_str());
 
@@ -626,8 +662,8 @@ Profile *Profile::from_json(const std::string & profile_name,
         string line;
         while (std::getline(trace_file, line))
         {
-            trim_right(line);
-            filesystem::path rank_trace_path(trace_path.parent_path().string() + "/" + line);
+            boost::trim_right(line);
+            fs::path rank_trace_path = trace_path.parent_path().string() + "/" + line;
             data->trace_filenames.push_back(rank_trace_path.string());
         }
 
@@ -653,7 +689,7 @@ Profile *Profile::from_json(const std::string & profile_name,
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
-Profile *Profile::from_json(const std::string & profile_name,
+ProfilePtr Profile::from_json(const std::string & profile_name,
                             const std::string & json_str,
                             const std::string & error_prefix)
 {

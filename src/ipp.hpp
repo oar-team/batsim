@@ -15,6 +15,7 @@
 
 #include <intervalset.hpp>
 
+#include "pointers.hpp"
 #include "jobs.hpp"
 #include "events.hpp"
 
@@ -109,7 +110,7 @@ struct SubmitterJobCompletionCallbackMessage
 struct JobSubmittedMessage
 {
     std::string submitter_name; //!< The name of the submitter which submitted the jobs.
-    std::vector<JobIdentifier> job_ids; //!< The list of JobIdentifiers
+    std::vector<JobPtr> jobs; //!< The list of submitted Jobs
 };
 
 /**
@@ -117,7 +118,7 @@ struct JobSubmittedMessage
  */
 struct JobRegisteredByDPMessage
 {
-    JobIdentifier job_id; //!< The JobIdentifier of the new job
+    JobPtr job; //!< The freshly registered job
     std::string job_description; //!< The job description string (empty if redis is enabled)
 };
 
@@ -136,7 +137,7 @@ struct ProfileRegisteredByDPMessage
  */
 struct SetJobMetadataMessage
 {
-    JobIdentifier job_id; //!< The JobIdentifier of the new job
+    JobIdentifier job_id; //!< The JobIdentifier of the job whose metedata should be changed
     std::string metadata; //!< The job metadata string (empty if redis is enabled)
 };
 
@@ -145,7 +146,7 @@ struct SetJobMetadataMessage
  */
 struct JobCompletedMessage
 {
-    JobIdentifier job_id; //!< The JobIdentifier
+    JobPtr job; //!< The Job that has completed
 };
 
 /**
@@ -170,7 +171,7 @@ struct JobRejectedMessage
  */
 struct SchedulingAllocation
 {
-    JobIdentifier job_id; //!< The JobIdentifier
+    JobPtr job; //!< The Job to execute
     IntervalSet machine_ids; //!< User defined allocation in range of machines ids
     std::vector<int> mapping; //!< The mapping from executors (~=ranks) to resource ids. Can be empty, in which case it will NOT be used (a round robin will be used instead). If not empty, must be of the same size of the job, and each value must be in [0,nb_allocated_res[.
     std::map<std::string, int> storage_mapping; //!< mapping from label given in the profile and machine id
@@ -185,7 +186,7 @@ struct SchedulingAllocation
 struct ExecuteJobMessage
 {
     SchedulingAllocation * allocation; //!< The allocation itself
-    Profile * io_profile = nullptr; //!< Tho optional io profile
+    ProfilePtr io_profile = nullptr; //!< The optional io profile
 };
 
 /**

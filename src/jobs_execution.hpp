@@ -8,16 +8,6 @@
 #include "ipp.hpp"
 #include "context.hpp"
 
-/**
- * @brief Structure used to clean the data of a profile execution if the process executing it gets killed
- * @details This structure should be allocated (via new!) before running execute_task (but not when doing recursive calls). It is freed by execute_task_cleanup.
- */
-struct CleanExecuteTaskData
-{
-    double * computation_amount = nullptr; //!< The computation amount (may be null)
-    double * communication_amount = nullptr; //!< The communication amount (may be null)
-    msg_task_t task = nullptr; //!< The task
-};
 
 /**
  * @brief The process in charge of killing a job if it reaches its walltime
@@ -35,10 +25,10 @@ void killer_process(BatsimContext *context,
  * @brief The process in charge of executing a rank of a SMPI profile
  * @param[in] job The job associated with this profile execution
  * @param[in] profile_data The data associated with the executed profile
- * @param[in,out] barrier The barrier associated with this job
+ * @param[in] termination_mbox_name The name of the mailbox onto which this function writes to signal its termination.
  * @param[in] rank The rank whose replay is to be simulated
  */
-void smpi_replay_process(Job* job, SmpiProfileData * profile_data, simgrid::s4u::BarrierPtr barrier, int rank);
+void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, const std::string & termination_mbox_name, int rank);
 
 /**
  * @brief Simulates a delay profile (sleeps until finished or walltime)
@@ -53,23 +43,13 @@ int do_delay_task(double sleeptime, double * remaining_time);
  * @param[in,out] btask the task to execute
  * @param[in] context usefull information about Batsim context
  * @param[in] allocation the host to execute the task to
- * @param[in,out] cleanup_data to give to simgrid cleanup hook
  * @param[in,out] remaining_time remaining time of the current task
- * @return the profile return code if successful, -1 if walltime reached
+ * @return the profile return code if successful, -1 if walltime reached, -2 if parallel task has been cancelled
  */
 int execute_task(BatTask * btask,
                  BatsimContext *context,
                  const SchedulingAllocation * allocation,
-                 CleanExecuteTaskData * cleanup_data,
                  double * remaining_time);
-
-/**
- * @brief Is executed on execute_task termination, allows to clean memory on kill
- * @param[in] unknown An unknown argument (oops?)
- * @param[in] data The data to free
- * @return 0
- */
-int execute_task_cleanup(void * unknown, void * data);
 
 /**
  * @brief The process in charge of executing a job
@@ -78,7 +58,7 @@ int execute_task_cleanup(void * unknown, void * data);
  * @param notify_server_at_end Whether a message to the server must be sent after job completion
  * @param io_profile The optional IO profile
  */
-void execute_job_process(BatsimContext *context, SchedulingAllocation *allocation, bool notify_server_at_end, Profile *io_profile);
+void execute_job_process(BatsimContext *context, SchedulingAllocation *allocation, bool notify_server_at_end, ProfilePtr io_profile);
 
 /**
  * @brief The process in charge of waiting for a given amount of time (related to the NOPMeLater message)
@@ -86,3 +66,11 @@ void execute_job_process(BatsimContext *context, SchedulingAllocation *allocatio
  * @param[in] server_data The ServerData. Used to check whether the simulation is finished or not
  */
 void waiter_process(double target_time, const ServerData *server_data);
+
+
+/**
+ * @brief Cancels the ptask and subptask Executor associated with this BatTask, if any
+ * @param[in] btask The BatTask whose ptask should be cancelled
+ * @return whether a ptask was cancelled
+ */
+bool cancel_ptask(BatTask * btask);

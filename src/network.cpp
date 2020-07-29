@@ -14,11 +14,8 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
-#include <boost/locale.hpp>
 
 #include <zmq.h>
-
-#include <simgrid/msg.h>
 
 #include "context.hpp"
 #include "ipp.hpp"
@@ -50,12 +47,12 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
         if (zmq_msg_recv(&msg, context->zmq_socket, 0) == -1)
             throw std::runtime_error(std::string("Cannot read message on socket (errno=") + strerror(errno) + ")");
 
-        string raw_message_received((char *)zmq_msg_data(&msg), zmq_msg_size(&msg));
+        string raw_message_received(static_cast<char*>(zmq_msg_data(&msg)), zmq_msg_size(&msg));
         message_received = raw_message_received;
         XBT_INFO("Received '%s'", message_received.c_str());
 
         auto end = chrono::steady_clock::now();
-        long double elapsed_microseconds = (long double) chrono::duration <long double, micro> (end - start).count();
+        long double elapsed_microseconds = static_cast<long double>(chrono::duration <long double, micro> (end - start).count());
         context->microseconds_used_by_scheduler += elapsed_microseconds;
 
         context->proto_reader->parse_and_apply_message(message_received);

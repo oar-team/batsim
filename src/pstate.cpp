@@ -5,7 +5,7 @@
 
 #include "pstate.hpp"
 
-#include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
 
 #include "ipp.hpp"
 #include "context.hpp"
@@ -46,7 +46,7 @@ void switch_on_machine_process(BatsimContext *context, int machine_id, int new_p
     SwitchMessage * msg = new SwitchMessage;
     msg->machine_id = machine_id;
     msg->new_pstate = new_pstate;
-    send_message("server", IPMessageType::SWITCHED_ON, (void *) msg);
+    send_message("server", IPMessageType::SWITCHED_ON, static_cast<void*>(msg));
 }
 
 void switch_off_machine_process(BatsimContext * context, int machine_id, int new_pstate)
@@ -80,7 +80,7 @@ void switch_off_machine_process(BatsimContext * context, int machine_id, int new
     SwitchMessage * msg = new SwitchMessage;
     msg->machine_id = machine_id;
     msg->new_pstate = new_pstate;
-    send_message("server", IPMessageType::SWITCHED_OFF, (void *) msg);
+    send_message("server", IPMessageType::SWITCHED_OFF, static_cast<void*>(msg));
 }
 
 void CurrentSwitches::add_switch(const IntervalSet &machines, int target_pstate)

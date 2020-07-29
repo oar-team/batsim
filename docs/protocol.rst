@@ -231,7 +231,7 @@ NOTIFY
 ~~~~~~
 
 This event allows a peer to notify something to its counterpart. There
-is no expected acknowledgement when sending such an event.
+is no expected acknowledgment when sending such an event.
 
 For now, Batsim can **notify** the scheduler of the following.
 
@@ -292,15 +292,17 @@ SIMULATION_BEGINS
 Sent at the beginning of the simulation.
 If Redis is enabled, the scheduler can read metainformation from the Redis server as soon as SIMULATION_BEGINS_ has been received.
 
-Batsim configuration is sent through the ``config`` object (in ``data``). Custom information can be added into this configuration (see :ref:`cli`), which gives a generic way to forward metainformation from Batsim to any scheduler at runtime.
+Batsim configuration is sent through the ``config`` object (in ``data``).
+This object contains some of Batsim's options as chosen by user at runtime (see :ref:`cli`).
+In particular, if a scheduler configuration is set via Batsim's :ref:`cli`, it is forwarded to the scheduler in the ``sched-config`` string inside the ``config`` object.
 
 **data**: An object with the following fields.
 
 -  ``nb_resources``: The number of resources in the simulated platform.
 -  ``nb_compute_resources``: The number of compute resources in the simulated platform.
 -  ``nb_storage_resources``: The number of storage resources in the simulated platform.
--  ``allow_time_sharing_on_compute``: Whether time sharing is enabled on compute machines or not (see :ref:`cli`).
--  ``allow_time_sharing_on_storage``: Whether time sharing is enabled on storage machines or not (see :ref:`cli`).
+-  ``allow_compute_sharing``: Whether compute hosts can be used at the same time by several jobs or not (see :ref:`cli`).
+-  ``allow_storage_sharing``: Whether storage hosts can be used at the same time by several jobs or not (see :ref:`cli`).
 -  ``config``: The Batsim configuration.
 -  ``compute_resources``: Information about the compute resources.
 
@@ -319,107 +321,140 @@ Batsim configuration is sent through the ``config`` object (in ``data``). Custom
 
 .. code:: json
 
-   {
-     "now": 0,
-     "events": [
-       {
-         "timestamp": 0,
-         "type": "SIMULATION_BEGINS",
-         "data": {
-           "nb_resources": 4,
-           "nb_compute_resources": 4,
-           "nb_storage_resources": 0,
-           "allow_time_sharng": false,
-           "config": {
-             "redis": {
-               "enabled": false,
-               "hostname": "127.0.0.1",
-               "port": 6379,
-               "prefix": "default"
-             },
-             "job_submission": {
-               "forward_profiles": false,
-               "from_scheduler": {
-                 "enabled": false,
-                 "acknowledge": true
-               }
-             }
-           },
-           "compute_resources": [
-             {
-               "id": 0,
-               "name": "Bourassa",
-               "state": "idle",
-               "properties": {}
-             },
-             {
-               "id": 1,
-               "name": "Fafard",
-               "state": "idle",
-               "properties": {}
-             },
-             {
-               "id": 2,
-               "name": "Ginette",
-               "state": "idle",
-               "properties": {}
-             },
-             {
-               "id": 3,
-               "name": "Jupiter",
-               "state": "idle",
-               "properties": {}
-             }
-           ],
-           "storage_resources": [],
-           "workloads": {
-             "26dceb": "/home/mmercier/Projects/batsim/workloads/test_various_profile_types.json"
-           },
-           "profiles": {
-             "26dceb":{
-               "simple": {
-                 "type": "parallel",
-                 "cpu": [5e6,  0,  0,  0],
-                 "com": [5e6,  0,  0,  0,
-                         5e6,5e6,  0,  0,
-                         5e6,5e6,  0,  0,
-                         5e6,5e6,5e6,  0]
-               },
-               "homogeneous": {
-                 "type": "parallel_homogeneous",
-                 "cpu": 10e6,
-                 "com": 1e6
-               },
-               "homogeneous_no_cpu": {
-                 "type": "parallel_homogeneous",
-                 "cpu": 0,
-                 "com": 1e6
-               },
-               "homogeneous_no_com": {
-                 "type": "parallel_homogeneous",
-                 "cpu": 2e5,
-                 "com": 0
-               },
-               "sequence": {
-                 "type": "composed",
-                 "repeat" : 4,
-                 "seq": ["simple","homogeneous","simple"]
-               },
-               "delay": {
-                 "type": "delay",
-                 "delay": 20.20
-               },
-               "homogeneous_total": {
-                 "type": "parallel_homogeneous_total",
-                 "cpu": 10e6,
-                 "com": 1e6
-               }
-             }
-           }
-         }
-       }
-     ]
-   }
+  {
+    "now": 0,
+    "events": [
+      {
+        "timestamp": 0,
+        "type": "SIMULATION_BEGINS",
+        "data": {
+          "nb_resources": 4,
+          "nb_compute_resources": 4,
+          "nb_storage_resources": 0,
+          "allow_compute_sharing": false,
+          "allow_storage_sharing": true,
+          "config": {
+            "redis-enabled": false,
+            "redis-hostname": "127.0.0.1",
+            "redis-port": 6379,
+            "redis-prefix": "default",
+            "profiles-forwarded-on-submission": false,
+            "dynamic-jobs-enabled": false,
+            "dynamic-jobs-acknowledged": false,
+            "profile-reuse-enabled": false,
+            "sched-config": "Scheduler-specific configuration. In this instance, just a meaningless example string.",
+            "forward-unknown-events": false
+          },
+          "compute_resources": [
+            {
+              "id": 0,
+              "name": "Bourassa",
+              "state": "idle",
+              "properties": {
+                "role": ""
+              },
+              "zone_properties": {}
+            },
+            {
+              "id": 1,
+              "name": "Fafard",
+              "state": "idle",
+              "properties": {
+                "role": ""
+              },
+              "zone_properties": {}
+            },
+            {
+              "id": 2,
+              "name": "Ginette",
+              "state": "idle",
+              "properties": {
+                "role": ""
+              },
+              "zone_properties": {}
+            },
+            {
+              "id": 3,
+              "name": "Jupiter",
+              "state": "idle",
+              "properties": {
+                "role": ""
+              },
+              "zone_properties": {}
+            }
+          ],
+          "storage_resources": [],
+          "workloads": {
+            "w0": "/home/carni/proj/batsim/workloads/test_various_profile_types.json"
+          },
+          "profiles": {
+            "w0": {
+              "homogeneous_total": {
+                "type": "parallel_homogeneous_total",
+                "cpu": 10000000,
+                "com": 1000000
+              },
+              "homogeneous": {
+                "type": "parallel_homogeneous",
+                "cpu": 10000000,
+                "com": 1000000
+              },
+              "simple": {
+                "type": "parallel",
+                "cpu": [
+                  5000000,
+                  0,
+                  0,
+                  0
+                ],
+                "com": [
+                  5000000,
+                  0,
+                  0,
+                  0,
+                  5000000,
+                  5000000,
+                  0,
+                  0,
+                  5000000,
+                  5000000,
+                  0,
+                  0,
+                  5000000,
+                  5000000,
+                  5000000,
+                  0
+                ]
+              },
+              "homogeneous_no_com": {
+                "type": "parallel_homogeneous",
+                "cpu": 200000,
+                "com": 0
+              },
+              "homogeneous_no_cpu": {
+                "type": "parallel_homogeneous",
+                "cpu": 0,
+                "com": 1000000
+              },
+              "sequence": {
+                "type": "composed",
+                "repeat": 4,
+                "seq": [
+                  "simple",
+                  "homogeneous",
+                  "simple"
+                ]
+              },
+              "delay": {
+                "type": "delay",
+                "delay": 20.2
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
 
 .. _proto_SIMULATION_ENDS:
 
@@ -449,7 +484,7 @@ This event means that one job has been submitted within Batsim. It is
 sent whenever a job coming from Batsim inputs (workloads and workflows)
 has been submitted. If dynamic jobs registration is enabled, this
 event is sent as a reply to a REGISTER_JOB_ event if
-and only if dynamic jobs registration acknowledgements are also enabled.
+and only if dynamic jobs registration acknowledgments are also enabled.
 More information can be found in `Dynamic registration of jobs`_.
 
 The ``job_id`` field is always sent and contains a unique job
@@ -638,6 +673,8 @@ It acknowledges that the actions coming from a previous SET_RESOURCE_STATE_ even
      "data": {"resources": "1 2 3-5", "state": "42"}
    }
 
+.. _proto_REQUESTED_CALL:
+
 REQUESTED_CALL
 ~~~~~~~~~~~~~~
 
@@ -694,13 +731,16 @@ second machine (1, which stands for resource id 3).
 
 For certain job profiles that involve storage you may need to define a
 ``storage_mapping`` between the storage label defined in the job profile
-definition and the storage resource id on the platform. For example, the
+definition and the storage resource id of the platform. For example, the
 job profile of type ``parallel_homogeneous_pfs`` contains this field
 ``"storage": "pfs"``. In order to select what is the resource that
 corresponds to the ``"pfs"`` storage, you should provide a mapping for
 this label: ``"storage_mapping": { "pfs": 2 }``. If no mapping is
 provided, Batsim will guess the storage mapping only if one storage
 resource is provided on the platform.
+For the case of ``data_staging`` profile, the ``storage_mapping`` is
+mandatory and must specify the resource id of the storages associated
+to the ``to`` and ``from`` labels of the profile.
 
 Another optional field is ``additional_io_job`` that permits the
 scheduler to add a job, that represents the IO traffic, dynamically at
@@ -722,10 +762,10 @@ a mapping (optional), an additional IO job (optional).
      "data": {
        "job_id": "w12!45",
        "alloc": "2-3",
-       "mapping": {"0": "0", "1": "0", "2": "1", "3": "1"}
-     },
-     "storage_mapping": {
-       "pfs": 2
+       "mapping": {"0": "0", "1": "0", "2": "1", "3": "1"},
+       "storage_mapping": {
+         "pfs": 2
+       },
      },
      "additional_io_job": {
        "alloc": "2-3 5-6",
@@ -747,6 +787,8 @@ CALL_ME_LATER
 ~~~~~~~~~~~~~
 
 Asks Batsim to call the scheduler later on, at a given timestamp.
+
+Batsim will send a :ref:`proto_REQUESTED_CALL` event when the desired timestamp is reached.
 
 **data**: When the scheduler desires to be called.
 
@@ -782,7 +824,7 @@ before the kill), Batsim acknowledges it with one JOB_KILLED_ event.
 REGISTER_JOB
 ~~~~~~~~~~~~
 
-REgisters a job (from the scheduler) at the current simulation time.
+Registers a job (from the scheduler) at the current simulation time.
 
 Jobs registration from the scheduler must be enabled (see :ref:`cli`).
 Acknowledgment of registrations can be enabled (see :ref:`cli`).
@@ -886,7 +928,7 @@ set.
 **Note**: If you need to add **static** metadata to a job you can simply
 add one or more fields in the job profile.
 
-**Warning**: This not a way to delegate to batsim the storage of
+**Warning**: This not a way to delegate to Batsim the storage of
 metadata. That should be done through Redis (when you have to share
 information between different processes for example), or using the
 scheduler’s internal data structures.
@@ -957,7 +999,7 @@ simulation. For this purpose:
   If the scheduler knows that it will register a dynamic job in the future, it should ask Batsim to call it at this timestamp via a CALL_ME_LATER_ event.
 
 The protocol behavior of dynamic registrations is customizable (see :ref:`cli`).
-- Batsim might or might not send acknowledgements when jobs have been registered.
+- Batsim might or might not send acknowledgments when jobs have been registered.
 - Metainformation are sent via Redis if Redis is enabled, or directly via the protocol otherwise.
 
 A simple scheduling algorithm using dynamic jobs registration can be found in

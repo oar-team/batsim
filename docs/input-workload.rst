@@ -10,9 +10,9 @@ They can be used to define what users desire to execute over time.
 Batsim separates workloads in two distinct sets that are **jobs** and **profiles**.
 
 - Jobs define user requests. Typically, this is the information the scheduling algorithm can use to make its decisions.
-- Profiles define applications inners. Typically, this is the information the platform simulator uses to simulate how the application should be executed.
+- Profiles define what is inside applications. Typically, this is the information the platform simulator uses to simulate how the application should be executed.
 
-Each job uses exacly one profile. Profiles can be shared by multiple jobs.
+Each job uses exactly one profile. Profiles can be shared by multiple jobs.
 
 Workloads are defined in JSON.
 Here is an example of a Batsim workload from Batsim's repository
@@ -21,26 +21,35 @@ Here is an example of a Batsim workload from Batsim's repository
 .. literalinclude:: ../workloads/test_various_profile_types.json
     :language: json
 
-.. todo::
+The following field must be defined in a workload file.
 
-    - Talk about ``nb_res``. Quick answer: look at the ``--mmax-workload`` option of :ref:`cli`.
-    - Tell that other fields can be used freely by users but are ignored by Batsim.
+- ``jobs`` (array of jobs): See :ref:`job_definition`.
+- ``profiles`` (object of profiles): See :ref:`profile_definition`.
+- ``nb_res`` (positive integer): Indicates how many resources this workload has been designed for. Can be used to determine how many resources should be used in the simulation thanks to the ``--mmax-workload`` :ref:`cli` argument.
+
+Multiple input workloads can be given to Batsim (see :ref:`cli`).
+While jobs and profiles are usually defined in workload files in a static manner, adding jobs and profiles dynamically (while the simulation runs) is possible.
+For more information about this, see :ref:`dynamic_job_registration`.
+
+--------------
+
+.. _job_definition:
 
 Job definition
 --------------
 Jobs must have the following fields.
 
 - ``id``: The job unique identifier (string).
-- ``subtime``: The time at which the job request is issued in the system (float, in seconds).
+- ``subtime``: The job submission time (float, in seconds) — i.e., the **absolute** time at which the job request is issued in the system.
 - ``res``: The number of resources requested (positive integer).
 - ``profile``: The name of the profile associated with the job (string) — i.e., the definition of how the job execution should be simulated.
 
 Some optional fields are used by Batsim.
 
-- ``walltime``: The maximum execution time of the job (float, in seconds). Any job exceeding its walltime is killed by Batsim.
+- ``walltime``: By default, jobs have no execution time limit. Setting a value (float, in seconds) to the ``walltime`` field makes Batsim automatically stop a job that exceeds its walltime. In constrast to ``subtime``, this value is **relative** to the start of the job.
 
 **Users can define any other field as they desire.**
-Such information is kept and will be forwarded to the scheduler at the job submission time. The scheduler can then use the additional information.
+Such information is not directly used by Batsim but is forwarded to the scheduler at the job submission time. The scheduler can then use the additional information.
 Here is a **non-exhaustive** list of what this workload definition flexibility allows.
 
 - Defining dependencies between jobs. This can be done by adding a ``dependencies`` field in jobs, which is a list of other job names.
@@ -49,11 +58,19 @@ Here is a **non-exhaustive** list of what this workload definition flexibility a
 - Specifying which queue the job comes from. Please note that giving multiple workloads to Batsim is also possible (see :ref:`cli`).
 - Adding metainformation about how the job has been generated. This can be helpful if one wants to assess advanced workload generation techniques.
 
+--------------
+
+.. _profile_definition:
+
 Profile definition
 ------------------
 Profiles must have the following fields.
 
 - ``type``: The type of profile (string). If the profile is executed by Batsim, Batsim must know the profile type. See `Profile types overview`_ for an overview of the profile types whose execution is directly supported by Batsim.
+
+Some optional fields are used by Batsim.
+
+- ``ret``: The profile execution return code (integer) in case of success (execution finished *normally*, i.e., without reaching the job's walltime and without being killed by the scheduler). Default value is 0, meaning success. Overriding this value can be useful if the job is supposed to fail even when it finishes *normally*, for example to model that the user gave an invalid application execution script. Non-zero return codes will translate into non-success in the :ref:`output_jobs` output file.
 
 Other fields may be used by Batsim depending of the profile type.
 
@@ -72,7 +89,7 @@ Delay
 This is the simplest profile type.
 In fact there is no job execution but only a fixed number of seconds during which the machines will sleep.
 
-It does **not** take the platform into account at all. It cannot be used to see any network or cpu contention. It cannot be used directly to observe the energy used by the job — it would be similar to remaining idle.
+It does **not** take the platform into account at all. It cannot be used to see any network or CPU contention. It cannot be used directly to observe the energy used by the job — it would be similar to remaining idle.
 
 The following example defines a profile that always waits for 20.20 seconds.
 
@@ -98,7 +115,8 @@ This profile type defines a set of computations and communications whose executi
 - ``cpu``: An array defining the amount of floating-point operations that should be computed on each allocated machine.
 - ``com``: An array defining the amount of bytes that should be transferred between allocated machines. This is in fact a matrix where host in row sends to host in column. When row equals column, the communication is done through the machine loopback interface (if defined in the :ref:`input_platform`).
 
-Here is an example of a parallel task that can be used by any job requesting 4 machines. The first allocated machine of such a profile will compute :math:`5 * 10^6` floating-point operations, while the other machines will not compute any floating-point operation. All allocated machines will send :math:`5 * 10^6` bytes to the first allocated machine. The second allocated machine will send :math:`5 * 10^6` bytes to the first and second allocated machines...
+
+Here is an example of a parallel task that can be used by any job requesting 4 machines.
 
 .. code:: json
 
@@ -110,6 +128,12 @@ Here is an example of a parallel task that can be used by any job requesting 4 m
               5e6,5e6,  0,  0,
               5e6,5e6,5e6,  0]
     }
+
+
+The first allocated machine of such a profile will compute :math:`5 x 10^6` floating-point operations, while the other machines will not compute any floating-point operation. The picture below illustrates the communications done within the parallel task. All allocated machines will send :math:`5 x 10^6` bytes to the first allocated machine. The second allocated machine will send :math:`5 x 10^6` bytes to the first and second allocated machines...
+
+.. image:: ./img/ptask/CommMatrix.svg
+
 
 The execution of such profiles is context-dependent.
 The computing speed of the machines and the network properties (essentially the bandwidth) is directly taken into account by SimGrid to compute the job execution time.
@@ -185,13 +209,13 @@ This profile type defines a list of other profiles that should be executed in se
 Homogeneous parallel tasks with IO to/from a Parallel File System
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Represents an IO transfer between all the nodes of a job's allocation and a
-centralized storage tier. The storage tier is represented by one host of the :ref:`input_platform`.
+centralized storage tier. The storage tier is represented by one host of the :ref:`input_platform` having the role ``storage``.
 
 **Parameters.**
 
 - ``bytes_to_read``: The amount of bytes to read from the PFS to each node (float).
 - ``bytes_to_write``: The amount of bytes to write to the PFS from each node (float).
-- ``storage``: (optional) The name of the storage (string). It will be mapped to a specific node at the job execution time. Default value is ``pfs``.
+- ``storage``: (optional) A label for the storage to use (string). It will be mapped to a specific node at the job execution time. Default value is ``pfs``. See :ref:`proto_EXECUTE_JOB` for more details about the ``storage_mapping``.
 
 .. code:: json
 
@@ -205,17 +229,16 @@ centralized storage tier. The storage tier is represented by one host of the :re
 Staging parallel tasks between two storage tiers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This profile type represents an IO transfer between two storage tiers.
-
-.. todo::
-
-    - What is a storage tier in this case? One host of the :ref:`input_platform`?
-    - Link with execution message that manages the label->id label.
+Storage tiers are hosts of the :ref:`input_platform` having the role ``storage``.
 
 **Parameters.**
 
 - ``nb_bytes``: The amount of bytes to be transferred (float).
-- ``from``: The name of the sending storage tier (string). It will be mapped to a specific machine at the job execution time.
-- ``to``: The name of the receiving storage tier (string). It will be mapped to a specific machine at the job execution time.
+- ``from``: A label for the sending storage tier (string). It will be mapped to a specific host at the job execution time.
+- ``to``: A label for the receiving storage tier (string). It will be mapped to a specific host at the job execution time.
+
+See :ref:`proto_EXECUTE_JOB` for more details on the ``storage_mapping`` needed for
+both the ``from`` and the ``to`` fields.
 
 .. code:: json
 
@@ -228,11 +251,11 @@ This profile type represents an IO transfer between two storage tiers.
 
 SMPI trace replay
 ^^^^^^^^^^^^^^^^^
-Profiles of this type correspond to the replay of a SMPI time-independent trace. Such traces allow to see the fine-grained behaviour of MPI applications.
+Profiles of this type correspond to the replay of a SMPI time-independent trace. Such traces allow to see the fine-grained behavior of MPI applications.
 
 .. note::
 
-    This profile type may not be realistic with all applications, as the application is simulated *offine*: The application is first executed to get a trace, then the trace is replayed.
+    This profile type may not be realistic with all applications, as the application is simulated *offline*: The application is first executed to get a trace, then the trace is replayed.
 
     This may be wrong if the application logic depends on the execution context, for example if the application communication pattern depends on the observed latencies at runtime.
 
@@ -246,6 +269,10 @@ Profiles of this type correspond to the replay of a SMPI time-independent trace.
 
     As a full example, refer to the trace in :file:`workloads/smpi/compute_only`
     and to the :file:`workloads/test_smpi_compute_only.json` workload file.
+
+.. warning::
+
+  As I write these lines, walltime is not implemented for ``smpi`` jobs.
 
 .. code:: json
 

@@ -1,9 +1,10 @@
 /**
  * @file task_execution.cpp
- * @brief Contains functions related to the execution of the MSG profile tasks
+ * @brief Contains functions related to the execution of the parallel profile tasks
  */
 
-#include <simgrid/msg.h>
+#include <simgrid/s4u.hpp>
+
 #include "jobs.hpp"
 #include "profiles.hpp"
 #include "ipp.hpp"
@@ -16,87 +17,89 @@ using namespace std;
 using namespace roles;
 
 /**
- * @brief Generate the communication and computaion matrix for the msg
- * parallel task profile. It also set the prefix name of the task.
- * @param[out] computation_amount the computation matrix to be simulated by the msg task
- * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @brief Generate the communication and computaion matrix for the
+ *        parallel task profile. Also set the prefix name of the task.
+ * @param[out] computation_amount the computation matrix to be simulated by the parallel task
+ * @param[out] communication_amount the communication matrix to be simulated by the parallel task
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  */
-void generate_parallel_task(double *& computation_amount,
-                                double *& communication_amount,
-                                unsigned int nb_res,
-                                void * profile_data)
+void generate_parallel_task(std::vector<double>& computation_amount,
+                            std::vector<double>& communication_amount,
+                            unsigned int nb_res,
+                            void * profile_data)
 {
-    MsgParallelProfileData* data = (MsgParallelProfileData*)profile_data;
+    auto * data = static_cast<ParallelProfileData*>(profile_data);
     xbt_assert(nb_res == data->nb_res,
             "the number of resources given by the allocation (%d) is different "
             "from the number of resouces given by the profile data (%d)",
             nb_res, data->nb_res);
-    // These amounts are deallocated by SG
-    computation_amount = xbt_new(double, nb_res);
-    communication_amount = xbt_new(double, nb_res* nb_res);
+
+    // Prepare buffers
+    computation_amount.resize(nb_res, 0);
+    communication_amount.resize(nb_res*nb_res, 0);
 
     // Retrieve the matrices from the profile
-    memcpy(computation_amount, data->cpu, sizeof(double) * nb_res);
-    memcpy(communication_amount, data->com, sizeof(double) * nb_res * nb_res);
+    memcpy(computation_amount.data(), data->cpu, sizeof(double) * nb_res);
+    memcpy(communication_amount.data(), data->com, sizeof(double) * nb_res * nb_res);
 }
 
 /**
- * @brief Generates the communication and computaion matrix for the msg
- *        parallel homogeneous task profile. It also set the prefix name of the task.
- * @param[out] computation_amount the computation matrix to be simulated by the msg task
- * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @brief Generate the communication and computaion matrix for the
+ *        parallel homogeneous task profile. Also set the prefix name of the task.
+ * @param[out] computation_amount the computation matrix to be simulated by the parallel task
+ * @param[out] communication_amount the communication matrix to be simulated by the parallel task
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  */
-void generate_parallel_homogeneous(double *& computation_amount,
-                                       double *& communication_amount,
-                                       unsigned int nb_res,
-                                       void * profile_data)
+void generate_parallel_homogeneous(std::vector<double>& computation_amount,
+                                   std::vector<double>& communication_amount,
+                                   unsigned int nb_res,
+                                   void * profile_data)
 {
-    MsgParallelHomogeneousProfileData* data = (MsgParallelHomogeneousProfileData*)profile_data;
+    auto * data = static_cast<ParallelHomogeneousProfileData*>(profile_data);
 
     double cpu = data->cpu;
     double com = data->com;
 
-    // These amounts are deallocated by SG
-    computation_amount = xbt_new(double, nb_res);
-    communication_amount = nullptr;
+    // Prepare buffers
+    computation_amount.reserve(nb_res);
     if (com > 0)
     {
-        communication_amount = xbt_new(double, nb_res* nb_res);
+        communication_amount.reserve(nb_res*nb_res);
+    }
+    else
+    {
+        communication_amount.clear();
     }
 
     // Let us fill the local computation and communication matrices
-    int k = 0;
     for (unsigned int y = 0; y < nb_res; ++y)
     {
-        computation_amount[y] = cpu;
-        if (communication_amount != nullptr)
+        computation_amount.push_back(cpu);
+        if (com > 0)
         {
             for (unsigned int x = 0; x < nb_res; ++x)
             {
                 if (x == y)
                 {
-                    communication_amount[k] = 0;
+                    communication_amount.push_back(0);
                 }
                 else
                 {
-                    communication_amount[k] = com;
+                    communication_amount.push_back(com);
                 }
-                k++;
             }
         }
     }
 }
 
 /**
- * @brief Generates the communication vector and computation matrix for the msg
+ * @brief Generate the communication vector and computation matrix for the
  *        parallel homogeneous total amount task profile.
  *
- * @param[out] computation_amount the computation matrix to be simulated by the msg task
- * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @param[out] computation_amount the computation matrix to be simulated by the parallel task
+ * @param[out] communication_amount the communication matrix to be simulated by the parallel task
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  *
@@ -104,53 +107,54 @@ void generate_parallel_homogeneous(double *& computation_amount,
  *          to be done per host, the user gives the total amounts that should be spread
  *          homogeneously across the hosts.
  */
-void generate_parallel_homogeneous_total_amount(double *& computation_amount,
-                                                    double *& communication_amount,
-                                                    unsigned int nb_res,
-                                                    void * profile_data)
+void generate_parallel_homogeneous_total_amount(std::vector<double>& computation_amount,
+                                                std::vector<double>& communication_amount,
+                                                unsigned int nb_res,
+                                                void * profile_data)
 {
-    MsgParallelHomogeneousTotalAmountProfileData* data = (MsgParallelHomogeneousTotalAmountProfileData*)profile_data;
+    auto * data = static_cast<ParallelHomogeneousTotalAmountProfileData*>(profile_data);
 
     const double spread_cpu = data->cpu / nb_res;
     const double spread_com = data->com / nb_res;
 
-    // These amounts are deallocated by SG
-    computation_amount = xbt_new(double, nb_res);
-    communication_amount = nullptr;
+    // Prepare buffers
+    computation_amount.reserve(nb_res);
     if (spread_com > 0)
     {
-        communication_amount = xbt_new(double, nb_res * nb_res);
+        communication_amount.reserve(nb_res*nb_res);
+    }
+    else
+    {
+        communication_amount.clear();
     }
 
     // Fill the local computation and communication matrices
-    int k = 0;
     for (unsigned int y = 0; y < nb_res; ++y)
     {
-        computation_amount[y] = spread_cpu;
-        if (communication_amount != nullptr)
+        computation_amount.push_back(spread_cpu);
+        if (spread_com > 0)
         {
             for (unsigned int x = 0; x < nb_res; ++x)
             {
                 if (x == y)
                 {
-                    communication_amount[k] = 0;
+                    communication_amount.push_back(0);
                 }
                 else
                 {
-                    communication_amount[k] = spread_com;
+                    communication_amount.push_back(spread_com);
                 }
-                k++;
             }
         }
     }
 }
 
 /**
- * @brief Generate the communication and computaion matrix for the msg
+ * @brief Generate the communication and computaion matrix for the
  *        parallel homogeneous task profile with a Parallel File System.
  *
- * @param[out] computation_amount the computation matrix to be simulated by the msg task
- * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @param[out] computation_amount the computation matrix to be simulated by the parallel task
+ * @param[out] communication_amount the communication matrix to be simulated by the parallel task
  * @param[in,out] hosts_to_use the list of host to be used by the task
  * @param[in] storage_mapping mapping from label given in the profile and machine id
  * @param[in] profile_data the profile data
@@ -159,23 +163,24 @@ void generate_parallel_homogeneous_total_amount(double *& computation_amount,
  * @details Note that the number of resource is also altered because of the
  *          pfs node that is addded.
  */
-void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
-                                                double *& communication_amount,
-                                                std::vector<simgrid::s4u::Host*> & hosts_to_use,
-                                                std::map<std::string, int> storage_mapping,
-                                                void * profile_data,
-                                                BatsimContext * context)
+void generate_parallel_homogeneous_with_pfs(std::vector<double>& computation_amount,
+                                            std::vector<double>& communication_amount,
+                                            std::vector<simgrid::s4u::Host*> & hosts_to_use,
+                                            const std::map<std::string, int> * storage_mapping,
+                                            void * profile_data,
+                                            BatsimContext * context)
 {
-    MsgParallelHomogeneousPFSProfileData* data =
-            (MsgParallelHomogeneousPFSProfileData*)profile_data;
+    auto * data = static_cast<ParallelHomogeneousPFSProfileData*>(profile_data);
+    const char * error_prefix = "Cannot generate a homogeneous parallel task with pfs: ";
 
     // The PFS machine will also be used
-    unsigned int nb_res = hosts_to_use.size() + 1;
+    unsigned int nb_res = static_cast<unsigned int>(hosts_to_use.size()) + 1;
     unsigned int pfs_id = nb_res - 1;
 
     // Add the pfs_machine
     int pfs_machine_id;
-    if (storage_mapping.empty())
+    xbt_assert(storage_mapping != nullptr, "%s: storage mapping is null but the code uses it!", error_prefix);
+    if (storage_mapping->empty())
     {
         if (context->machines.storage_machines().size() == 1)
         {
@@ -184,77 +189,84 @@ void generate_parallel_homogeneous_with_pfs(double *& computation_amount,
         }
         else
         {
-            xbt_assert(false, "No storage/host mapping given and there is no"
-                    "(or more than one) storage node available");
+            xbt_assert(false, "%sNo storage/host mapping given and there is no (or more than one) storage node available", error_prefix);
         }
     }
     else
     {
-        pfs_machine_id = storage_mapping[data->storage_label];
-        xbt_assert(context->machines[pfs_machine_id]->permissions == Permissions::STORAGE,
-                "The given node (%d) is not a storage node", pfs_machine_id);
+        xbt_assert(storage_mapping->find(data->storage_label) != storage_mapping->end(),
+            "%s: Unknown storage label='%s'", error_prefix, data->storage_label.c_str());
+        pfs_machine_id = storage_mapping->at(data->storage_label);
+
+        const Machine * pfs_machine = context->machines[pfs_machine_id];
+        xbt_assert(pfs_machine->permissions == Permissions::STORAGE,
+            "%sThe host(id=%d, name='%s') pointed to by label='%s' is not a storage host",
+            error_prefix, pfs_machine_id, pfs_machine->name.c_str(), data->storage_label.c_str());
     }
     hosts_to_use.push_back(context->machines[pfs_machine_id]->host);
 
-    // These amounts are deallocated by SG
-    computation_amount = xbt_new(double, nb_res);
-    communication_amount = nullptr;
-    if (data->bytes_to_read > 0 || data->bytes_to_write > 0)
+    // Prepare buffers
+    computation_amount.reserve(nb_res);
+    bool do_comm = data->bytes_to_read > 0 || data->bytes_to_write > 0;
+    if (do_comm)
     {
-        communication_amount = xbt_new(double, nb_res* nb_res);
+        communication_amount.reserve(nb_res*nb_res);
+    }
+    else
+    {
+        communication_amount.clear();
     }
 
     // Let us fill the local computation and communication matrices
-    int k = 0;
     for (unsigned int row = 0; row < nb_res; ++row)
     {
-        computation_amount[row] = 0;
-        if (communication_amount != nullptr)
+        computation_amount.push_back(0);
+        if (do_comm)
         {
             for (unsigned int col = 0; col < nb_res; ++col)
             {
                 // No intra node comm and no inter node comm if it's not the pfs
                 if (col == row or (col != pfs_id and row != pfs_id))
                 {
-                    communication_amount[k] = 0;
+                    communication_amount.push_back(0);
                 }
                 // Writes
                 else if (col == pfs_id)
                 {
-                    communication_amount[k] = data->bytes_to_write;
+                    communication_amount.push_back(data->bytes_to_write);
                 }
                 // Reads
                 else if (row == pfs_id)
                 {
-                    communication_amount[k] = data->bytes_to_read;
+                    communication_amount.push_back(data->bytes_to_read);
                 }
-                k++;
             }
         }
     }
 }
 
 /**
- * @brief Generate the communication and computaion matrix for the msg
- * data staging task profile.
+ * @brief Generate the communication and computaion matrix for the
+ *        data staging task profile.
  * @details Note that the number of resource is also altered because only
  * the pfs and the hpst are involved in the transfer. It also set the prefix
  * name of the task.
- * @param[out] computation_amount the computation matrix to be simulated by the msg task
- * @param[out] communication_amount the communication matrix to be simulated by the msg task
+ * @param[out] computation_amount the computation matrix to be simulated by the parallel task
+ * @param[out] communication_amount the communication matrix to be simulated by the parallel task
  * @param[in,out] hosts_to_use the list of host to be used by the task
  * @param[in] storage_mapping mapping from label given in the profile and machine id
  * @param[in] profile_data the profile data
  * @param[in] context the batsim context
  */
-void generate_data_staginig_task(double *&  computation_amount,
-                                     double *& communication_amount,
-                                     std::vector<simgrid::s4u::Host*> & hosts_to_use,
-                                     std::map<std::string, int> storage_mapping,
-                                     void * profile_data,
-                                     BatsimContext * context)
+void generate_data_staging_task(std::vector<double>&  computation_amount,
+                                std::vector<double>& communication_amount,
+                                std::vector<simgrid::s4u::Host*> & hosts_to_use,
+                                const std::map<std::string, int> * storage_mapping,
+                                void * profile_data,
+                                BatsimContext * context)
 {
-    MsgDataStagingProfileData* data = (MsgDataStagingProfileData*)profile_data;
+    auto * data = static_cast<DataStagingProfileData*>(profile_data);
+    const char * error_prefix = "Cannot generate a data staging task: ";
 
     double cpu = 0;
     double nb_bytes = data->nb_bytes;
@@ -266,41 +278,55 @@ void generate_data_staginig_task(double *&  computation_amount,
     // reset the alloc to use only IO nodes
     hosts_to_use.clear();
 
-    // Add the pfs_machine
-    int from_machine_id = storage_mapping[data->from_storage_label];
-    xbt_assert(context->machines[from_machine_id]->permissions == Permissions::STORAGE, "The given Storage for 'from' (%d) is not a storage node", from_machine_id);
-    int to_machine_id = storage_mapping[data->to_storage_label];
-    xbt_assert(context->machines[to_machine_id]->permissions == Permissions::STORAGE, "The given Storage for 'from' (%d) is not a storage node", to_machine_id);
+    // Add the storage machines
+    xbt_assert(storage_mapping != nullptr, "%s: storage mapping is null but the code uses it!", error_prefix);
+    xbt_assert(storage_mapping->find(data->from_storage_label) != storage_mapping->end(),
+        "%s: Unknown storage label='%s'", error_prefix, data->from_storage_label.c_str());
+    int from_machine_id = storage_mapping->at(data->from_storage_label);
+    const Machine * from_machine = context->machines[from_machine_id];
+    xbt_assert(from_machine->permissions == Permissions::STORAGE,
+        "%sThe host(id=%d, name='%s') pointed to by label='%s' is not a storage host",
+        error_prefix, from_machine_id, from_machine->name.c_str(), data->from_storage_label.c_str());
+
+    xbt_assert(storage_mapping->find(data->to_storage_label) != storage_mapping->end(),
+        "%s: Unknown storage label='%s'", error_prefix, data->to_storage_label.c_str());
+    int to_machine_id = storage_mapping->at(data->to_storage_label);
+    const Machine * to_machine = context->machines[to_machine_id];
+    xbt_assert(to_machine->permissions == Permissions::STORAGE,
+        "%sThe host(id=%d, name='%s') pointed to by label='%s' is not a storage host",
+        error_prefix, to_machine_id, to_machine->name.c_str(), data->to_storage_label.c_str());
+
     hosts_to_use.push_back(context->machines[from_machine_id]->host);
     hosts_to_use.push_back(context->machines[to_machine_id]->host);
 
-    // These amounts are deallocated by SG
-    computation_amount = xbt_new(double, nb_res);
-    communication_amount = nullptr;
+    // Prepare buffers
+    computation_amount.reserve(nb_res);
     if (nb_bytes > 0)
     {
-        communication_amount = xbt_new(double, nb_res* nb_res);
+        communication_amount.reserve(nb_res*nb_res);
+    }
+    else
+    {
+        communication_amount.clear();
     }
 
     // Let us fill the local computation and communication matrices
-    int k = 0;
     for (unsigned int row = 0; row < nb_res; ++row)
     {
-        computation_amount[row] = cpu;
-        if (communication_amount != nullptr)
+        computation_amount.push_back(cpu);
+        if (nb_bytes > 0)
         {
             for (unsigned int col = 0; col < nb_res; ++col)
             {
                 // Communications are done towards the last resource
                 if (col == row or col != pfs_id)
                 {
-                    communication_amount[k] = 0;
+                    communication_amount.push_back(0);
                 }
                 else
                 {
-                    communication_amount[k] = nb_bytes;
+                    communication_amount.push_back(nb_bytes);
                 }
-                k++;
             }
         }
     }
@@ -314,8 +340,8 @@ void generate_data_staginig_task(double *&  computation_amount,
  * @param[in] alloc The resource ids allocated for the parallel task
  * @param[in] mapping The mapping between executor id and resource id, if any
  */
-void debug_print_ptask(const double * computation_vector,
-                       const double * communication_matrix,
+void debug_print_ptask(const std::vector<double>& computation_vector,
+                       const std::vector<double>& communication_matrix,
                        unsigned int nb_res,
                        const IntervalSet alloc,
                        const vector<int> mapping = vector<int>())
@@ -325,12 +351,12 @@ void debug_print_ptask(const double * computation_vector,
     int k = 0;
     for (unsigned int i=0; i < nb_res; i++)
     {
-        if (computation_vector != nullptr)
+        if (!computation_vector.empty())
         {
             int alloc_i = mapping.empty() ? alloc[i] : alloc[mapping[i]];
             comp += to_string(alloc_i) + ": " + to_string(computation_vector[i]) + ", ";
         }
-        if (communication_matrix != nullptr)
+        if (!communication_matrix.empty())
         {
             for (unsigned int j = 0; j < nb_res; j++)
             {
@@ -346,22 +372,22 @@ void debug_print_ptask(const double * computation_vector,
 }
 /**
  * @brief
- * @param[out] computation_vector The computation vector to be simulated by the msg task
- * @param[out] communication_matrix The communication matrix to be simulated by the msg task
+ * @param[out] computation_vector The computation vector to be simulated by the parallel task
+ * @param[out] communication_matrix The communication matrix to be simulated by the parallel task
  * @param[in,out] hosts_to_use The list of host to be used by the task
  * @param[in] profile The profile to be converted to a compute/comm matrix
  * @param[in] storage_mapping The storage mapping
  * @param[in] context The BatsimContext
  */
-void generate_matices_from_profile(double *& computation_vector,
-                                   double *& communication_matrix,
-                                   std::vector<simgrid::s4u::Host*> & hosts_to_use,
-                                   Profile * profile,
-                                   const std::map<std::string, int> * storage_mapping,
-                                   BatsimContext * context)
+void generate_matrices_from_profile(std::vector<double>& computation_vector,
+                                    std::vector<double>& communication_matrix,
+                                    std::vector<simgrid::s4u::Host*> & hosts_to_use,
+                                    ProfilePtr profile,
+                                    const std::map<std::string, int> * storage_mapping,
+                                    BatsimContext * context)
 {
 
-    unsigned int nb_res = hosts_to_use.size();
+    unsigned int nb_res = static_cast<unsigned int>(hosts_to_use.size());
 
     XBT_DEBUG("Number of hosts to use: %d", nb_res);
 
@@ -389,15 +415,15 @@ void generate_matices_from_profile(double *& computation_vector,
         generate_parallel_homogeneous_with_pfs(computation_vector,
                                                    communication_matrix,
                                                    hosts_to_use,
-                                                   *storage_mapping,
+                                                   storage_mapping,
                                                    profile->data,
                                                    context);
         break;
     case ProfileType::DATA_STAGING:
-        generate_data_staginig_task(computation_vector,
+        generate_data_staging_task(computation_vector,
                                         communication_matrix,
                                         hosts_to_use,
-                                        *storage_mapping,
+                                        storage_mapping,
                                         profile->data,
                                         context);
         break;
@@ -413,55 +439,51 @@ void generate_matices_from_profile(double *& computation_vector,
  * @param[in] context The BatsimContext
  */
 void check_ptask_execution_permission(const IntervalSet & alloc,
-                                      const double * computation_matrix,
+                                      const std::vector<double>& computation_matrix,
                                       BatsimContext * context)
 {
     // TODO: simplify the roles because it is very simple in the end
-    // Enforce role permission
+    // TODO: Enforce role permission
 
     // TODO: handle mapping (ptasks can be executed with non-unique hosts)
     for (unsigned int i = 0; i < alloc.size(); i++)
     {
         int machine_id = alloc[i];
         XBT_DEBUG("enforcing permission for machine id: %d", machine_id);
-        Permissions perm = context->machines[machine_id]->permissions;
+        const Machine * machine = context->machines[machine_id];
         // Check if is 0 +- epsilon
         if (std::abs(computation_matrix[i]) > 1e-10)
         {
             XBT_DEBUG("found computation: %.17g", computation_matrix[i]);
-            xbt_assert(perm == Permissions::COMPUTE_NODE,
-                "Some computation (%f) is assigned to a storage node (id: %d)",
-                computation_matrix[i], machine_id);
+            xbt_assert(machine->permissions == Permissions::COMPUTE_NODE,
+                "Some computation (%g) is assigned to storage node (id=%d, name='%s')",
+                computation_matrix[i], machine_id, machine->name.c_str());
         }
     }
 }
 
-int execute_msg_task(BatTask * btask,
+int execute_parallel_task(BatTask * btask,
                      const SchedulingAllocation* allocation,
                      double * remaining_time,
-                     BatsimContext * context,
-                     CleanExecuteTaskData * cleanup_data)
+                     BatsimContext * context)
 {
-    Profile * profile = btask->profile;
+    auto profile = btask->profile;
     std::vector<simgrid::s4u::Host*> hosts_to_use = allocation->hosts;
 
-    double* computation_vector = nullptr;
-    double* communication_matrix = nullptr;
+    std::vector<double> computation_vector;
+    std::vector<double> communication_matrix;
 
-    string task_name = profile_type_to_string(profile->type) + '_' + btask->parent_job->id.to_string() +
+    string task_name = profile_type_to_string(profile->type) + '_' + static_cast<JobPtr>(btask->parent_job)->id.to_string() +
                        "_" + btask->profile->name;
     XBT_DEBUG("Generating comm/compute matrix for task '%s' with allocation %s",
             task_name.c_str(), allocation->machine_ids.to_string_hyphen().c_str());
 
-    generate_matices_from_profile(computation_vector,
+    generate_matrices_from_profile(computation_vector,
                                   communication_matrix,
                                   hosts_to_use,
                                   profile,
                                   & allocation->storage_mapping,
                                   context);
-
-    debug_print_ptask(computation_vector, communication_matrix,
-            hosts_to_use.size(), allocation->machine_ids, allocation->mapping);
 
     check_ptask_execution_permission(allocation->machine_ids, computation_vector, context);
 
@@ -469,21 +491,19 @@ int execute_msg_task(BatTask * btask,
     // Manage additional io job
     if (btask->io_profile != nullptr)
     {
-        Profile * io_profile = btask->io_profile;
-        double* io_computation_vector = nullptr;
-        double* io_communication_matrix = nullptr;
+        auto io_profile = btask->io_profile;
+        std::vector<double> io_computation_vector;
+        std::vector<double> io_communication_matrix;
 
         XBT_DEBUG("Generating comm/compute matrix for IO with allocation: %s",
                 allocation->io_allocation.to_string_hyphen().c_str());
         std::vector<simgrid::s4u::Host*> io_hosts = allocation->io_hosts;
-        generate_matices_from_profile(io_computation_vector,
+        generate_matrices_from_profile(io_computation_vector,
                                       io_communication_matrix,
                                       io_hosts,
                                       io_profile,
                                       nullptr,
                                       context);
-        debug_print_ptask(io_computation_vector, io_communication_matrix,
-                io_hosts.size(), allocation->io_allocation);
 
         // merge the two profiles
         // First get part of the allocation that do change or not in the job
@@ -506,11 +526,11 @@ int execute_msg_task(BatTask * btask,
         }
 
         // Generate the new matrices
-        unsigned int nb_res = new_hosts_to_use.size();
+        unsigned int nb_res = static_cast<unsigned int>(new_hosts_to_use.size());
 
-        // These amounts are deallocated by SG
-        double * new_computation_vector = xbt_new(double, nb_res);
-        double * new_communication_matrix = xbt_new(double, nb_res* nb_res);
+        // Prepare buffers
+        std::vector<double> new_computation_vector(nb_res, 0);
+        std::vector<double> new_communication_matrix(nb_res*nb_res, 0);
 
         // Fill the computation and communication matrices
         int k = 0;
@@ -552,7 +572,7 @@ int execute_msg_task(BatTask * btask,
                 if (to_merge_alloc.contains(new_alloc[row]))
                 {
                     if (col_only_in_job){
-                        if (communication_matrix != nullptr)
+                        if (!communication_matrix.empty())
                         {
                             new_communication_matrix[k] = communication_matrix[row_job_host_index++];
                         }
@@ -565,7 +585,7 @@ int execute_msg_task(BatTask * btask,
                         new_communication_matrix[k] = io_communication_matrix[row_io_host_index++];
                     }
                     else {
-                        if (communication_matrix != nullptr)
+                        if (!communication_matrix.empty())
                         {
                             new_communication_matrix[k] = communication_matrix[row_job_host_index++] + io_communication_matrix[row_io_host_index++];
                         }
@@ -577,7 +597,7 @@ int execute_msg_task(BatTask * btask,
                 }
                 else if (immut_job_alloc.contains(new_alloc[row]))
                 {
-                    if (col_only_in_io or communication_matrix == nullptr){
+                    if (col_only_in_io or communication_matrix.empty()){
                         new_communication_matrix[k] = 0;
                     }
                     else
@@ -609,59 +629,62 @@ int execute_msg_task(BatTask * btask,
         hosts_to_use = new_hosts_to_use;
         // TODO Free old job and io structures
         XBT_DEBUG("Merged Job+IO matrices");
-        debug_print_ptask(computation_vector, communication_matrix, hosts_to_use.size(), new_alloc);
 
         check_ptask_execution_permission(new_alloc, computation_vector, context);
     }
 
 
-    // Create the MSG task
-    XBT_DEBUG("Creating MSG task '%s' on %zu resources", task_name.c_str(), hosts_to_use.size());
-    msg_task_t ptask = MSG_parallel_task_create(task_name.c_str(), hosts_to_use.size(),
-                                                hosts_to_use.data(), computation_vector,
-                                                communication_matrix, NULL);
+    // Create the parallel task
+    XBT_DEBUG("Creating parallel task '%s' on %zu resources", task_name.c_str(), hosts_to_use.size());
 
-    // If the process gets killed, the following data may need to be freed
-    cleanup_data->task = ptask;
+    simgrid::s4u::ExecPtr ptask = simgrid::s4u::this_actor::exec_init(hosts_to_use, computation_vector, communication_matrix);
+    ptask->set_name(task_name.c_str());
 
     // Keep track of the task to get information on kill
     btask->ptask = ptask;
 
-    // Execute the MSG task (blocking)
-    msg_error_t err;
+    // Execute the parallel task
+    int ret = profile->return_code;
+    double time_start = simgrid::s4u::Engine::get_clock();
     if (*remaining_time < 0)
     {
-        XBT_DEBUG("Executing task '%s' without walltime", MSG_task_get_name(ptask));
-        err = MSG_parallel_task_execute(ptask);
+        XBT_DEBUG("Executing task '%s' without walltime", task_name.c_str());
+        try
+        {
+            ptask->start();
+            ptask->wait();
+        }
+        catch (const simgrid::CancelException &)
+        {
+            XBT_DEBUG("Task '%s' has been cancelled (a kill was asked).", task_name.c_str());
+            ret = -2;
+        }
     }
     else
     {
         double time_before_execute = simgrid::s4u::Engine::get_clock();
-        XBT_DEBUG("Executing task '%s' with walltime of %g", MSG_task_get_name(ptask), *remaining_time);
-        err = MSG_parallel_task_execute_with_timeout(ptask, *remaining_time);
+        XBT_DEBUG("Executing task '%s' with walltime of %g", task_name.c_str(), *remaining_time);
+        try
+        {
+            ptask->start();
+            ptask->wait_for(*remaining_time);
+        }
+        catch (const simgrid::TimeoutException &)
+        {
+            // The ptask reached the walltime
+            XBT_DEBUG("Task '%s' reached its walltime.", task_name.c_str());
+            ret = -1;
+        }
+        catch (const simgrid::CancelException &)
+        {
+            XBT_DEBUG("Task '%s' has been cancelled (a kill was asked).", task_name.c_str());
+            ret = -2;
+        }
         *remaining_time = *remaining_time - (simgrid::s4u::Engine::get_clock() - time_before_execute);
     }
 
-    int ret;
-    if (err == MSG_OK)
-    {
-        ret = profile->return_code;
-    }
-    else if (err == MSG_TIMEOUT)
-    {
-        ret = -1;
-    }
-    else
-    {
-        xbt_die("A task execution had been stopped by an unhandled way (err = %d)", err);
-    }
-
-    XBT_DEBUG("Task '%s' finished", MSG_task_get_name(ptask));
-    MSG_task_destroy(ptask);
-
-    // The task has been executed, the data does need to be freed in the cleanup function anymore
-    cleanup_data->task = nullptr;
+    XBT_DEBUG("Task '%s' finished in %f", task_name.c_str(),
+        simgrid::s4u::Engine::get_clock() - time_start);
 
     return ret;
 }
-

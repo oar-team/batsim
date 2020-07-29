@@ -4,10 +4,10 @@ File System model
 Storage
 ~~~~~~~
 
-The model chosen for the storage is to use a simple Simgrid host, linked
+The model chosen for the storage is to use a simple SimGrid host, linked
 to a compute node for local disk, or anywhere in the topology for
 centralized storage. The storage access latency and read/write bandwidth
-is modeled by two Simgrid links that attached the storage node to the
+is modeled by two SimGrid links that attached the storage node to the
 rest of the platform. This model allows to simulate any kind of file
 system topology, from classical DFS, by adding a storage to every node
 of the platform, to centralized storage with a single large storage
@@ -63,7 +63,7 @@ usual, but includes also an additional I/O job. This I/O job has its own
 allocation and the associated communication matrix that represent the
 transfer between the compute nodes of the jobs and the storages.
 Finally, Batsim will merge this I/O job profile with the normal job
-profile before to delegate the actual simulation to Simgrid.
+profile before to delegate the actual simulation to SimGrid.
 
 Full example
 ~~~~~~~~~~~~
@@ -81,11 +81,11 @@ Here is an example that illustrate this mechanism. Let’s assume that the
 resources. The profile of the job called is defined by a Json object,
 ``job1_profile``.
 
-#. The scheduler receive the submission job from batsim with this
+#. The scheduler receive the submission job from Batsim with this
    forwarded profile, where the quantity of I/O is just an information
-   given to the scheduler (not read by batsim):
+   given to the scheduler (not read by Batsim):
 
-   .. code:: js
+   .. code:: json
 
       "job1_profile": {
           "type": "parallel_homogeneous_total",
@@ -100,7 +100,7 @@ resources. The profile of the job called is defined by a Json object,
    that each node will read half of the data from only one centralized
    storage (located at the resource id 10), but the nodes of the
    application will write on local their local disks (id 2 and 3). A new
-   profile of type ``parallel`` is generated an submitted to batsim with
+   profile of type ``parallel`` is generated an submitted to Batsim with
    the name ``io_for_this_alloc_on_job1``. The kind job profile is
    composed of a computation matrix that may reflect I/O related
    computation (here set to 0), and a communication matrix that
@@ -108,10 +108,10 @@ resources. The profile of the job called is defined by a Json object,
    the transfer is from row to column, and that the indices of the
    matrix are mapped to the IO allocation, e.g. for the allocation of
    :math:`(0,1,2,3,10)` a value of :math:`4e8` on the 1st column and at
-   the 5th row means that 400MB will be transfered from the resource 10
+   the 5th row means that 400MB will be transferred from the resource 10
    to the resource 0.
 
-   .. code:: js
+   .. code:: json
 
       "io_for_this_alloc_on_job1": {
           "type": "parallel",
@@ -123,10 +123,10 @@ resources. The profile of the job called is defined by a Json object,
           4e8,4e8,0  ,0  ,0]
       }
 
-#. The scheduler ask batsim to execute the job with the given job
+#. The scheduler ask Batsim to execute the job with the given job
    allocation, and the additional I/O job.
 
-   .. code:: js
+   .. code:: json
 
       {
           "job_id":"08a582!1",
@@ -138,9 +138,9 @@ resources. The profile of the job called is defined by a Json object,
       }
 
 #. Batsim merges the 2 profiles, and generates a new job with IO matrix
-   that is then sent to Simgrid in order to be simulated:
+   that is then sent to SimGrid in order to be simulated:
 
-   .. code:: js
+   .. code:: json
 
       {
           "alloc": "0-3,10",
@@ -181,7 +181,7 @@ grain behavior of different kind of storage like HDD, SSD, of NVM. Also,
 The storage model not include disk size limitation enforcement, and even
 if this can be done the decision process, the contention behavior that
 it implies is not modeled. To overcome the storage model limitation, it
-would be possible to add a more realistic model into Simgrid, but it may
+would be possible to add a more realistic model into SimGrid, but it may
 induce large changes in the underneath contention model.
 
 The fact that the file system model is hold by the decision process
@@ -197,5 +197,5 @@ from the storage itself or from a second level like burst buffers. Also,
 any cluster file system have metadata servers are also not taken into
 account in our model. To allows to model fine grain behavior like the
 metadata server, or the cache effects, it requires to add new features
-inside Batsim, built on top of Simgrid directly, and thus putting the
+inside Batsim, built on top of SimGrid directly, and thus putting the
 file system model inside Batsim.

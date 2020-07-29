@@ -50,7 +50,10 @@ void Machines::create_machines(const BatsimContext *context,
                                const std::map<string, string> & role_map,
                                int limit_machine_count)
 {
-    xbt_assert(_machines.size() == 0, "Bad call to Machines::createMachines(): machines already created");
+    xbt_assert(_machines.size() == 0, "Bad call to Machines::create_machines(): machines already created");
+    xbt_assert(limit_machine_count == -1 || limit_machine_count > 0,
+               "Bad call to Machines::create_machines(): limit_machine_count (%d) not -1 nor strictly positive",
+               limit_machine_count);
 
     std::vector<simgrid::s4u::Host *> hosts = simgrid::s4u::Engine::get_instance()->get_all_hosts();
 
@@ -116,11 +119,11 @@ void Machines::create_machines(const BatsimContext *context,
                         boost::trim(pstates[1]);
                         boost::trim(pstates[2]);
 
-                        sleep_ps = boost::lexical_cast<unsigned int>(pstates[0]);
-                        off_ps = boost::lexical_cast<unsigned int>(pstates[1]);
-                        on_ps = boost::lexical_cast<unsigned int>(pstates[2]);
+                        sleep_ps = static_cast<int>(boost::lexical_cast<unsigned int>(pstates[0]));
+                        off_ps = static_cast<int>(boost::lexical_cast<unsigned int>(pstates[1]));
+                        on_ps = static_cast<int>(boost::lexical_cast<unsigned int>(pstates[2]));
                     }
-                    catch(boost::bad_lexical_cast& e)
+                    catch(boost::bad_lexical_cast &)
                     {
                         conversion_succeeded = false;
                     }
@@ -262,10 +265,9 @@ void Machines::create_machines(const BatsimContext *context,
     sort_machines_by_ascending_name(_compute_nodes);
 
     // Let's limit the number of machines
-    if (limit_machine_count != 0)
+    if (limit_machine_count > 0)
     {
-        int nb_machines_without_limitation = (int)_compute_nodes.size();
-        xbt_assert(limit_machine_count > 0);
+        int nb_machines_without_limitation = static_cast<int>(_compute_nodes.size());
         xbt_assert(limit_machine_count <= nb_machines_without_limitation,
                    "Impossible to compute on M=%d machines: "
                    "only %d machines are described in the PLATFORM_FILE.",
@@ -274,14 +276,14 @@ void Machines::create_machines(const BatsimContext *context,
 
         for (int machine_id = limit_machine_count; machine_id < nb_machines_without_limitation; ++machine_id)
         {
-            delete _compute_nodes[machine_id];
+            delete _compute_nodes[static_cast<size_t>(machine_id)];
         }
 
-        _compute_nodes.resize(limit_machine_count);
+        _compute_nodes.resize(static_cast<size_t>(limit_machine_count));
     }
 
     // Now add machines to global list and add ids
-    unsigned int id = 0;
+    int id = 0;
     for (auto& machine : _compute_nodes)
     {
         machine->id = id;
@@ -297,27 +299,73 @@ void Machines::create_machines(const BatsimContext *context,
         _machines.push_back(machine);
     }
 
+    // Retrieve zone properties and forward it to machines
+    simgrid::s4u::NetZone * root = simgrid::s4u::Engine::get_instance()->get_netzone_root();
+    std::unordered_map<std::string, std::string> parent_properties;
+    attach_zone_properties_to_machines(root, parent_properties);
+
     xbt_assert(_master_machine != nullptr,
                "Cannot find the \"master\" role in the platform file");
 
-    _nb_machines_in_each_state[MachineState::IDLE] = (int)_compute_nodes.size();
+    _nb_machines_in_each_state[MachineState::IDLE] = static_cast<int>(_compute_nodes.size());
 }
+
+
+void Machines::attach_zone_properties_to_machines(simgrid::s4u::NetZone * current_zone,
+                                                  std::unordered_map<std::string, std::string> parent_properties)
+{
+    // First add current properties to parent_properties
+    for (auto const& it: *current_zone->get_properties())
+    {
+        // If property was already defined by parent zones it is overwritten
+        parent_properties[it.first] = it.second;
+    }
+
+    // Second add zone properties to the hosts of this zone
+    for (simgrid::s4u::Host * host : current_zone->get_all_hosts())
+    {
+        Machine * m = machine_by_name_or_null(host->get_name());
+        if (m != nullptr) // Filter out the master_host
+        {
+            m->zone_properties = parent_properties;
+        }
+    }
+
+    // Then recursively call this function for child zones
+    //std::vector<simgrid::s4u::NetZone *> child_zones = ;
+    for (simgrid::s4u::NetZone * zone : current_zone->get_children())
+    {
+        attach_zone_properties_to_machines(zone, parent_properties);
+    }
+}
+
 
 const Machine * Machines::operator[](int machineID) const
 {
     xbt_assert(exists(machineID), "Cannot get machine %d: it does not exist", machineID);
-    return _machines[machineID];
+    return _machines[static_cast<size_t>(machineID)];
 }
 
 Machine * Machines::operator[](int machineID)
 {
     xbt_assert(exists(machineID), "Cannot get machine %d: it does not exist", machineID);
-    return _machines[machineID];
+    return _machines[static_cast<size_t>(machineID)];
+}
+
+Machine * Machines::machine_by_name_or_null(const std::string & name) const
+{
+
+    auto it = std::find_if(_machines.begin(), _machines.end(), [& name](Machine * machine) {
+        return machine->name == name;
+    });
+    if (it != _machines.end())
+        return *it;
+    return nullptr;
 }
 
 bool Machines::exists(int machineID) const
 {
-    return machineID >= 0 && machineID < (int)_machines.size();
+    return machineID >= 0 && machineID < static_cast<int>(_machines.size());
 }
 
 void Machines::display_debug() const
@@ -369,7 +417,7 @@ long double Machines::total_consumed_energy(const BatsimContext *context) const
     {
         for (const Machine * m : _machines)
         {
-            total_consumed_energy += sg_host_get_consumed_energy(m->host);
+            total_consumed_energy += static_cast<long double>(sg_host_get_consumed_energy(m->host));
         }
     }
     else
@@ -388,7 +436,7 @@ long double Machines::total_wattmin(const BatsimContext *context) const
     {
         for (const Machine * m : _machines)
         {
-            total_wattmin += sg_host_get_wattmin_at(m->host, sg_host_get_pstate(m->host));
+            total_wattmin += static_cast<long double>(sg_host_get_wattmin_at(m->host, sg_host_get_pstate(m->host)));
         }
     }
     else
@@ -399,19 +447,19 @@ long double Machines::total_wattmin(const BatsimContext *context) const
     return total_wattmin;
 }
 
-int Machines::nb_machines() const
+unsigned int Machines::nb_machines() const
 {
-    return _machines.size();
+    return static_cast<unsigned int>(_machines.size());
 }
 
-int Machines::nb_compute_machines() const
+unsigned int Machines::nb_compute_machines() const
 {
-    return _compute_nodes.size();
+    return static_cast<unsigned int>(_compute_nodes.size());
 }
 
-int Machines::nb_storage_machines() const
+unsigned int Machines::nb_storage_machines() const
 {
-    return _storage_nodes.size();
+    return static_cast<unsigned int>(_storage_nodes.size());
 }
 
 void Machines::update_nb_machines_in_each_state(MachineState old_state, MachineState new_state)
@@ -425,17 +473,17 @@ const std::map<MachineState, int> &Machines::nb_machines_in_each_state() const
     return _nb_machines_in_each_state;
 }
 
-void Machines::update_machines_on_job_run(const Job * job,
+void Machines::update_machines_on_job_run(const JobPtr job,
                                           const IntervalSet & used_machines,
                                           BatsimContext * context)
 {
     for (auto it = used_machines.elements_begin(); it != used_machines.elements_end(); ++it)
     {
         int machine_id = *it;
-        Machine * machine = _machines[machine_id];
+        Machine * machine = _machines[static_cast<size_t>(machine_id)];
         machine->update_machine_state(MachineState::COMPUTING);
 
-        const Job * previous_top_job = nullptr;
+        JobPtr previous_top_job = nullptr;
         if (!machine->jobs_being_computed.empty())
         {
             previous_top_job = *machine->jobs_being_computed.begin();
@@ -448,7 +496,7 @@ void Machines::update_machines_on_job_run(const Job * job,
             if (_tracer != nullptr)
             {
                 _tracer->set_machine_as_computing_job(machine->id,
-                                                      *machine->jobs_being_computed.begin(),
+                                                      (*machine->jobs_being_computed.begin())->id,
                                                       simgrid::s4u::Engine::get_clock());
             }
         }
@@ -460,20 +508,20 @@ void Machines::update_machines_on_job_run(const Job * job,
     }
 }
 
-void Machines::update_machines_on_job_end(const Job * job,
+void Machines::update_machines_on_job_end(const JobPtr job,
                                           const IntervalSet & used_machines,
                                           BatsimContext * context)
 {
     for (auto it = used_machines.elements_begin(); it != used_machines.elements_end(); ++it)
     {
         int machine_id = *it;
-        Machine * machine = _machines[machine_id];
+        Machine * machine = _machines[static_cast<size_t>(machine_id)];
 
         xbt_assert(!machine->jobs_being_computed.empty());
-        const Job * previous_top_job = *machine->jobs_being_computed.begin();
+        const auto previous_top_job = *machine->jobs_being_computed.begin();
 
         // Let's erase jobID in the jobs_being_computed data structure
-        int ret = machine->jobs_being_computed.erase(job);
+        size_t ret = machine->jobs_being_computed.erase(job);
         (void) ret; // Avoids a warning if assertions are ignored
         xbt_assert(ret == 1);
 
@@ -493,7 +541,7 @@ void Machines::update_machines_on_job_end(const Job * job,
             if (_tracer != nullptr)
             {
                 _tracer->set_machine_as_computing_job(machine->id,
-                                                      *machine->jobs_being_computed.begin(),
+                                                      (*machine->jobs_being_computed.begin())->id,
                                                       simgrid::s4u::Engine::get_clock());
             }
         }
@@ -644,7 +692,7 @@ string Machine::jobs_being_computed_as_string() const
 
 void Machine::update_machine_state(MachineState new_state)
 {
-    long double current_date = simgrid::s4u::Engine::get_clock();
+    long double current_date = static_cast<long double>(simgrid::s4u::Engine::get_clock());
 
     long double delta_time = current_date - last_state_change_date;
     xbt_assert(delta_time >= 0);
@@ -690,7 +738,7 @@ int string_numeric_comparator(const std::string & s1, const std::string & s2)
 
             if (int1 != int2)
             {
-                return int1 - int2;
+                return static_cast<int>(int1 - int2);
             }
 
             // The string traversal is pursued where strtol stopped
@@ -745,7 +793,7 @@ void sort_machines_by_ascending_name(std::vector<Machine *> machines_vect)
 
     for (unsigned int i = 0; i < machines_vect.size(); ++i)
     {
-        machines_vect[i]->id = i;
+        machines_vect[i]->id = static_cast<int>(i);
     }
 }
 
@@ -779,7 +827,7 @@ long double consumed_energy_on_machines(BatsimContext * context,
     {
         int machine_id = *it;
         Machine * machine = context->machines[machine_id];
-        consumed_energy += sg_host_get_consumed_energy(machine->host);
+        consumed_energy += static_cast<long double>(sg_host_get_consumed_energy(machine->host));
     }
 
     return consumed_energy;

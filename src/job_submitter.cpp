@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <boost/bind.hpp>
+#include <memory>
 
 #include <simgrid/s4u.hpp>
 
@@ -34,14 +35,14 @@ Task* bottom_level_f (Task *child, Task *parent)
 
 using namespace std;
 
-static void submit_jobs_to_server(const vector<JobIdentifier> & jobs_to_submit, const std::string & submitter_name)
+static void submit_jobs_to_server(const vector<JobPtr> & jobs_to_submit, const std::string & submitter_name)
 {
     if (!jobs_to_submit.empty())
     {
         JobSubmittedMessage * msg = new JobSubmittedMessage;
         msg->submitter_name = submitter_name;
-        msg->job_ids = jobs_to_submit;
-        send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
+        msg->jobs = jobs_to_submit;
+        send_message("server", IPMessageType::JOB_SUBMITTED, static_cast<void*>(msg));
     }
 }
 
@@ -81,28 +82,33 @@ void static_job_submitter_process(BatsimContext * context,
     hello_msg->enable_callback_on_job_completion = false;
     hello_msg->submitter_type = SubmitterType::JOB_SUBMITTER;
 
-    send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
+    send_message("server", IPMessageType::SUBMITTER_HELLO, static_cast<void*>(hello_msg));
 
-    long double current_submission_date = simgrid::s4u::Engine::get_clock();
+    long double current_submission_date = static_cast<long double>(simgrid::s4u::Engine::get_clock());
 
-    vector<const Job *> jobsVector;
-
+    // sort jobs by arrival date in a temporary vector
+    vector<JobPtr> jobs_to_submit_vector;
     const auto & jobs = workload->jobs->jobs();
     for (const auto & mit : jobs)
     {
-        const Job * job = mit.second;
-        jobsVector.push_back(job);
+        const auto job = mit.second;
+        jobs_to_submit_vector.push_back(job);
     }
+    sort(jobs_to_submit_vector.begin(), jobs_to_submit_vector.end(), job_comparator_subtime_number);
 
-    sort(jobsVector.begin(), jobsVector.end(), job_comparator_subtime_number);
+    // put jobs to submit into a list whose elements are dropped online (for smooth refcounting-based memory clean-up)
+    list<JobPtr> jobs_to_submit;
+    std::copy(jobs_to_submit_vector.begin(), jobs_to_submit_vector.end(), std::back_inserter(jobs_to_submit));
+    jobs_to_submit_vector.clear();
 
-    if (jobsVector.size() > 0)
+    if (jobs_to_submit.size() > 0)
     {
-        vector<JobIdentifier> jobs_to_send;
-        const Job * first_submitted_job = *jobsVector.begin();
+        vector<JobPtr> jobs_to_send;
+        bool is_first_job = true;
 
-        for (const Job * job : jobsVector)
+        for ( ; !jobs_to_submit.empty() ; jobs_to_submit.pop_front())
         {
+            auto job = jobs_to_submit.front();
             if (job->submission_time > current_submission_date)
             {
                 // Next job submission time is after current time, send the message to the server for previous submitted jobs
@@ -110,31 +116,35 @@ void static_job_submitter_process(BatsimContext * context,
                 jobs_to_send.clear();
 
                 // Now let's sleep until it's time to submit the current job
-                simgrid::s4u::this_actor::sleep_for((double)(job->submission_time) - (double)(current_submission_date));
-                current_submission_date = simgrid::s4u::Engine::get_clock();
+                simgrid::s4u::this_actor::sleep_for(static_cast<double>(job->submission_time - current_submission_date));
+                current_submission_date = static_cast<long double>(simgrid::s4u::Engine::get_clock());
             }
             // Setting the mailbox
             //job->completion_notification_mailbox = "SOME_MAILBOX";
 
             // Populate the vector of job identifiers to submit
-            jobs_to_send.push_back(job->id);
+            jobs_to_send.push_back(job);
 
             // Let's put the metadata about the job into the data storage
             if (context->redis_enabled)
             {
                 string job_key = RedisStorage::job_key(job->id);
-                string profile_key = RedisStorage::profile_key(workload->name, job->profile);
+                string profile_key = RedisStorage::profile_key(workload->name, job->profile->name);
 
                 context->storage.set(job_key, job->json_description);
                 if (context->submission_forward_profiles)
                 {
-                    context->storage.set(profile_key, workload->profiles->at(job->profile)->json_description);
+                    context->storage.set(profile_key, job->profile->json_description);
                 }
             }
 
-            if (job == first_submitted_job)
+            if (is_first_job)
             {
-                context->energy_first_job_submission = context->machines.total_consumed_energy(context);
+                is_first_job = false;
+                if (context->energy_first_job_submission < 0)
+                {
+                    context->energy_first_job_submission = context->machines.total_consumed_energy(context);
+                }
             }
         }
 
@@ -146,7 +156,7 @@ void static_job_submitter_process(BatsimContext * context,
     bye_msg->is_workflow_submitter = false;
     bye_msg->submitter_name = submitter_name;
     bye_msg->submitter_type = SubmitterType::JOB_SUBMITTER;
-    send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
+    send_message("server", IPMessageType::SUBMITTER_BYE, static_cast<void*>(bye_msg));
 }
 
 
@@ -155,7 +165,7 @@ static string wait_for_job_completion(string submitter_name);
 static std::tuple<int,double,double> wait_for_query_answer(string submitter_name);
 
 /* Ugly Global */
-std::map<std::string, int> task_id_counters;
+static std::map<std::string, int> task_id_counters;
 
 void workflow_submitter_process(BatsimContext * context,
                                 std::string workflow_name)
@@ -183,7 +193,7 @@ void workflow_submitter_process(BatsimContext * context,
     hello_msg->submitter_name = submitter_name;
     hello_msg->enable_callback_on_job_completion = true;
     hello_msg->submitter_type = SubmitterType::JOB_SUBMITTER;
-    send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
+    send_message("server", IPMessageType::SUBMITTER_HELLO, static_cast<void*>(hello_msg));
 
     /* Create submitted_tasks map */
     std::map<std::string, Task *> submitted_tasks;
@@ -196,8 +206,8 @@ void workflow_submitter_process(BatsimContext * context,
     {
         XBT_INFO("Warning: already past workflow start time! (%lf)", workflow->start_time);
     }
-    simgrid::s4u::this_actor::sleep_for(MAX(0.0, workflow->start_time - simgrid::s4u::Engine::get_clock()));
-
+    double sleep_time = workflow->start_time - simgrid::s4u::Engine::get_clock();
+    simgrid::s4u::this_actor::sleep_for((0.0) > (sleep_time) ? (0.0) : (sleep_time));
 
     /* Submit all the ready tasks */
 
@@ -241,7 +251,7 @@ void workflow_submitter_process(BatsimContext * context,
             /* look for ready kids */
             for (std::vector<Task *>::iterator kiddo=my_kids.begin(); kiddo!=my_kids.end(); ++kiddo)
             {
-                if((*kiddo)->nb_parent_completed==(int)(*kiddo)->parents.size())
+                if((*kiddo)->nb_parent_completed==static_cast<int>((*kiddo)->parents.size()))
                 {
                     ready_tasks.push_back(*kiddo);
                 }
@@ -254,17 +264,13 @@ void workflow_submitter_process(BatsimContext * context,
 
     double makespan = simgrid::s4u::Engine::get_clock() - workflow->start_time;
     XBT_INFO("WORKFLOW_MAKESPAN %s %lf  (depth = %d)\n", workflow->filename.c_str(), makespan, workflow->get_maximum_depth());
-    // This is a TERRIBLE exit, but the goal is to stop the simulation (don't keep simulated the workload beyond
-    // the worflow completion). This is much more brutal than the -k option. To be removed/commented-out later, but right
-    // now it saves a lot of time, and was obviously easy to implement.
-    exit(0);
 
     /* Goodbye */
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
     bye_msg->is_workflow_submitter = true;
     bye_msg->submitter_type = SubmitterType::JOB_SUBMITTER;
     bye_msg->submitter_name = submitter_name;
-    send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
+    send_message("server", IPMessageType::SUBMITTER_BYE, static_cast<void*>(bye_msg));
 }
 
 /**
@@ -284,7 +290,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
 
 
     // Create a profile
-    Profile * profile = new Profile;
+    auto profile = make_shared<Profile>();
     profile->type = ProfileType::DELAY;
     DelayProfileData * data = new DelayProfileData;
     data->delay = task->execution_time;
@@ -294,6 +300,7 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
             "\"delay\": " + std::to_string(task->execution_time) +
             "}";
     string profile_name = workflow_name + "_" + task->id; // Create a profile name
+    profile->name = profile_name;
     context->workloads.at(workload_name)->profiles->add_profile(profile_name, profile);
 
     // Create JSON description of Job corresponding to Task
@@ -307,8 +314,8 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
             "}";
 
     // Puts the job into memory
-    Job * job = Job::from_json(job_json_description, context->workloads.at(workload_name),
-                               "Invalid workflow-injected JSON job");
+    auto job = Job::from_json(job_json_description, context->workloads.at(workload_name),
+                              "Invalid workflow-injected JSON job");
     context->workloads.at(workload_name)->jobs->add_job(job);
 
     // Put the metadata about the job into the data storage
@@ -328,8 +335,8 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     // Submit the job
     JobSubmittedMessage * msg = new JobSubmittedMessage;
     msg->submitter_name = submitter_name;
-    msg->job_ids = std::vector<JobIdentifier>({job_id});
-    send_message("server", IPMessageType::JOB_SUBMITTED, (void*)msg);
+    msg->jobs = std::vector<JobPtr>({job});
+    send_message("server", IPMessageType::JOB_SUBMITTED, static_cast<void*>(msg));
 
     // HOWTO Test Wait Query
     // WaitQueryMessage * message = new WaitQueryMessage;
@@ -357,8 +364,7 @@ static string wait_for_job_completion(string submitter_name)
 {
     IPMessage * notification = receive_message(submitter_name);
 
-    SubmitterJobCompletionCallbackMessage * notification_data =
-        (SubmitterJobCompletionCallbackMessage *) notification->data;
+    auto * notification_data = static_cast<SubmitterJobCompletionCallbackMessage *>(notification->data);
 
     // TODO: memory cleanup
     return notification_data->job_id.to_string();
@@ -372,7 +378,7 @@ static string wait_for_job_completion(string submitter_name)
 static std::tuple<int,double,double> wait_for_query_answer(string submitter_name)
 {
     IPMessage * message = receive_message(submitter_name);
-    SchedWaitAnswerMessage * res = (SchedWaitAnswerMessage *) message->data;
+    auto * res = static_cast<SchedWaitAnswerMessage *>(message->data);
 
     XBT_INFO("Returning : %d  %f  %f", res->nb_resources, res->processing_time, res->expected_time);
 
@@ -389,18 +395,18 @@ void batexec_job_launcher_process(BatsimContext * context,
     auto & jobs = workload->jobs->jobs();
     for (auto & mit : jobs)
     {
-        Job * job = mit.second;
+        auto job = mit.second;
 
-        int nb_res = job->requested_nb_res;
+        unsigned int nb_res = job->requested_nb_res;
 
         SchedulingAllocation * alloc = new SchedulingAllocation;
 
-        alloc->job_id = job->id;
+        alloc->job = job;
         alloc->hosts.clear();
         alloc->hosts.reserve(nb_res);
         alloc->machine_ids.clear();
 
-        for (int i = 0; i < nb_res; ++i)
+        for (int i = 0; i < static_cast<int>(nb_res); ++i)
         {
             alloc->machine_ids.insert(i);
             alloc->hosts.push_back(context->machines[i]->host);

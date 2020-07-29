@@ -14,16 +14,23 @@ build_and_test:
   stage: big_stage
   script:
     # Build Batsim
-    - nix-shell --pure ./release.nix -A batsim --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
-    - nix-build ./release.nix -A batsim
+    - export NIX_ARGS="--arg doUnitTests true --arg doCoverage true --arg debug true --arg werror true"
+    - nix-shell --pure ./release.nix -A batsim ${NIX_ARGS} --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-build ./release.nix -A batsim ${NIX_ARGS} && cp -rL result ./batsim
     # Build doxygen documentation
     - nix-shell --pure ./release.nix -A doxydoc --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
     - nix-build ./release.nix -A doxydoc && cp -rL result ./doxydoc_html
     # Run integration tests
-    - nix-shell --pure ./release.nix -A integration_tests --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
-    - nix-build ./release.nix -A integration_tests && cp -rL result ./integration_tests
+    - nix-shell --pure ./release.nix -A integration_tests ${NIX_ARGS} --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-build ./release.nix -A integration_tests ${NIX_ARGS} && cp -rL result ./integration_tests
     - if [[ "$(cat ./integration_tests/pytest_returncode)" -ne 0 ]] ; then echo "pytest returned non-zero, aborting" ; exit 1 ; fi
+    # Send coverage results to codecov.io
+    - mkdir merged
+    - cp ./batsim/gcno/* ./integration_tests/gcda/* merged/
+    - nix-shell ./release.nix -A batsim ${NIX_ARGS} --command "bash <(curl -s https://codecov.io/bash)"
   artifacts:
+    when: always
+    expire_in: 8 hours
     paths:
       - /builds/batsim/batsim/doxydoc_html
       - /builds/batsim/batsim/integration_tests
@@ -36,8 +43,9 @@ deploy_code_doc:
   script:
       # Pushes Batsim's code doc (doxygen) onto the gforge website.
       # SSH setup (do NOT run these commands on your machine)
+      - echo "$EXAMPLE_ENV_VAR"
       - eval $(ssh-agent -s)
-      - ssh-add <(echo "$SSH_PRIVATE_KEY")
+      - echo "$SSH_PRIVATE_KEY" | tr -d ' ' | base64 --decode | ssh-add -
       - mkdir -p ~/.ssh
       - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
       # Finally push the code documentation on the gforge website
@@ -67,6 +75,6 @@ tuto_first_simulation:
     - schedules
   script:
     - cd docs/tuto-first-simulation
-    - nix-shell --pure ./tuto-env-dev.nix --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
-    - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-dev.nix --command './run_simulation_manually.bash'
-    - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-dev.nix --command './run_simulation_robin.bash'
+    - nix-shell --pure ./tuto-env-master.nix --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-master.nix --command './run_simulation_manually.bash'
+    - DO_NOT_CHECK_VERSION=1 nix-shell ./tuto-env-master.nix --command './run_simulation_robin.bash'

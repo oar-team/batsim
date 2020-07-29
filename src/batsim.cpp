@@ -24,23 +24,23 @@
 
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <stdio.h>
-#include <argp.h>
 #include <unistd.h>
 
 #include <string>
 #include <fstream>
 #include <functional>
+#include <streambuf>
 
 #include <simgrid/s4u.hpp>
-#include <simgrid/msg.h>
 #include <smpi/smpi.h>
 #include <simgrid/plugins/energy.h>
+#include <simgrid/version.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
-#include <boost/filesystem.hpp>
 
 #include "batsim.hpp"
 #include "context.hpp"
@@ -59,8 +59,6 @@
 #include "workload.hpp"
 #include "workflow.hpp"
 
-#include "unittest/test_main.hpp"
-
 #include "docopt/docopt.h"
 
 using namespace std;
@@ -74,7 +72,8 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "batsim"); //!< Logging
  */
 bool file_exists(const std::string & filename)
 {
-    return boost::filesystem::exists(filename);
+    struct stat buffer;
+    return (stat(filename.c_str(), &buffer) == 0);
 }
 
 /**
@@ -97,6 +96,22 @@ std::string absolute_filename(const std::string & filename)
     xbt_assert(getcwd_ret == cwd_buf, "getcwd failed");
 
     return string(getcwd_ret) + '/' + filename;
+}
+
+/**
+ * @brief Reads a whole file and return its content as a string.
+ * @param[in] filename The file to read.
+ * @return The file content, as a string.
+ */
+static std::string read_whole_file_as_string(const std::string & filename)
+{
+    std::ifstream f(filename);
+    if (!f.is_open())
+    {
+        throw std::runtime_error("cannot read scheduler configuration file '" + filename + "'");
+    }
+
+    return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 }
 
 /**
@@ -129,7 +144,7 @@ VerbosityLevel verbosity_level_from_string(const std::string & str)
 }
 
 void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code,
-                     bool & run_simulation, bool & run_unit_tests)
+                     bool & run_simulation)
 {
 
     // TODO: change hosts format in roles to support intervals
@@ -138,7 +153,6 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
     // Where `intervals` is a comma separated list of simple integer
     // or closed interval separated with a '-'.
     // Example: -r host[1-5,8]:role1,role2 -r toto,tata:myrole
- 
 
     static const char usage[] =
 R"(A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.
@@ -151,11 +165,11 @@ Usage:
                             [--sg-log <log_option>...]
                             [-r <hosts_roles_map>...]
                             [--events <events_file>...]
+                            [--sched-cfg <cfg_str> | --sched-cfg-file <cfg_file>]
                             [options]
   batsim --help
   batsim --version
   batsim --simgrid-version
-  batsim --unittest
 
 Input options:
   -p, --platform <platform_file>     The SimGrid platform to simulate.
@@ -217,6 +231,11 @@ Job-related options:
   --acknowledge-dynamic-jobs         Makes Batsim send a JOB_SUBMITTED back to the scheduler when
                                      Batsim receives a REGISTER_JOB.
                                      [default: false]
+  --enable-profile-reuse             Enable dynamic jobs to reuse profiles of other jobs.
+                                     Without this options, such profiles would be
+                                     garbage collected.
+                                     The option --enable-dynamic-jobs must be set for this option to work.
+                                     [default: false]
 
 Verbosity options:
   -v, --verbosity <verbosity_level>  Sets the Batsim verbosity level. Available
@@ -241,6 +260,9 @@ Other options:
   --no-sched                         If set, the jobs in the workloads are
                                      computed one by one, one after the other,
                                      without scheduler nor Redis.
+  --sched-cfg <cfg_str>              Sets the scheduler configuration string.
+                                     This is forwarded to the scheduler in the first protocol message.
+  --sched-cfg-file <cfg_file>        Same as --sched-cfg, but value is read from a file instead.
   --sg-cfg <opt_name:opt_value>      Forwards a given option_name:option_value to SimGrid.
                                      Refer to SimGrid configuring documentation for more information.
   --sg-log <log_option>              Forwards a given logging option to SimGrid.
@@ -252,7 +274,6 @@ Other options:
 )";
 
     run_simulation = false;
-    run_unit_tests = false;
     return_code = 1;
     map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc },
                                                      true, STR(BATSIM_VERSION));
@@ -266,12 +287,6 @@ Other options:
         sg_version_get(&sg_major, &sg_minor, &sg_patch);
 
         printf("%d.%d.%d\n", sg_major, sg_minor, sg_patch);
-        return;
-    }
-
-    if (args["--unittest"].asBool())
-    {
-        run_unit_tests = true;
         return;
     }
 
@@ -450,7 +465,7 @@ Other options:
     main_args.redis_hostname = args["--redis-hostname"].asString();
     try
     {
-        main_args.redis_port = args["--redis-port"].asLong();
+        main_args.redis_port = static_cast<int>(args["--redis-port"].asLong());
     }
     catch(const std::exception &)
     {
@@ -471,6 +486,13 @@ Other options:
     main_args.forward_profiles_on_submission = args["--forward-profiles-on-submission"].asBool();
     main_args.dynamic_registration_enabled = args["--enable-dynamic-jobs"].asBool();
     main_args.ack_dynamic_registration = args["--acknowledge-dynamic-jobs"].asBool();
+    main_args.profile_reuse_enabled = args["--enable-profile-reuse"].asBool();
+
+    if (main_args.profile_reuse_enabled && !main_args.dynamic_registration_enabled)
+    {
+        XBT_ERROR("Profile reuse is enabled but dynamic registration is not, have you missed something?");
+        error = true;
+    }
 
     // Platform size limit options
     // ***************************
@@ -542,6 +564,15 @@ Other options:
         main_args.program_type = ProgramType::BATSIM;
     }
 
+    if (args["--sched-cfg"].isString())
+    {
+        main_args.sched_config = args["--sched-cfg"].asString();
+    }
+    if (args["--sched-cfg-file"].isString())
+    {
+        main_args.sched_config_file = args["--sched-cfg-file"].asString();
+    }
+
     main_args.simgrid_config = args["--sg-cfg"].asStringList();
     main_args.simgrid_logging = args["--sg-log"].asStringList();
 
@@ -552,7 +583,7 @@ void configure_batsim_logging_output(const MainArguments & main_args)
 {
     vector<string> log_categories_to_set = {"workload", "job_submitter", "redis", "jobs", "machines", "pstate",
                                             "workflow", "jobs_execution", "server", "export", "profiles", "machine_range",
-                                            "events", "event_submitter",
+                                            "events", "event_submitter", "protocol",
                                             "network", "ipp", "task_execution"};
     string log_threshold_to_set = "critical";
 
@@ -614,6 +645,8 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
         Workload * workload = Workload::new_static_workload(desc.workload_name, desc.filename);
         workload->jobs = new Jobs;
         workload->profiles = new Profiles;
+        workload->jobs->set_workload(workload);
+        workload->jobs->set_profiles(workload->profiles);
         context->workloads.insert_workload(desc.workload_name, workload);
 
         Workflow * workflow = new Workflow(desc.name);
@@ -623,7 +656,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     }
 
     // Let's compute how the number of machines to use should be limited
-    max_nb_machines_to_use = 0;
+    max_nb_machines_to_use = -1;
     if ((main_args.limit_machines_count_by_workload) && (main_args.limit_machines_count > 0))
     {
         max_nb_machines_to_use = std::min(main_args.limit_machines_count, max_nb_machines_in_workloads);
@@ -637,7 +670,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
         max_nb_machines_to_use = main_args.limit_machines_count;
     }
 
-    if (max_nb_machines_to_use != 0)
+    if (max_nb_machines_to_use != -1)
     {
         XBT_INFO("The maximum number of machines to use is %d.", max_nb_machines_to_use);
     }
@@ -647,9 +680,9 @@ void load_eventLists(const MainArguments & main_args, BatsimContext * context)
 {
     for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
     {
-        EventList * events = EventList::new_event_list(desc.name);
+        auto events = new EventList(desc.name, true);
         events->load_from_json(desc.filename, main_args.forward_unknown_events);
-        context->eventListsMap[desc.name] = events;
+        context->event_lists[desc.name] = events;
     }
 }
 
@@ -725,16 +758,10 @@ int main(int argc, char * argv[])
     MainArguments main_args;
     int return_code = 1;
     bool run_simulation = false;
-    bool run_unittests = false;
 
-    parse_main_args(argc, argv, main_args, return_code, run_simulation, run_unittests);
+    parse_main_args(argc, argv, main_args, return_code, run_simulation);
 
-    if (run_unittests)
-    {
-        MSG_init(&argc, argv);
-        test_entry_point();
-    }
-    else if (main_args.dump_execution_context)
+    if (main_args.dump_execution_context)
     {
         using namespace rapidjson;
         Document object;
@@ -777,7 +804,7 @@ int main(int argc, char * argv[])
     }
 
     // Instantiate SimGrid
-    MSG_init(&argc, argv); // Required for SMPI as I write these lines
+
     simgrid::s4u::Engine engine(&argc, argv);
 
     // Setting SimGrid configuration options, if any
@@ -860,7 +887,7 @@ int main(int argc, char * argv[])
         start_initial_simulation_processes(main_args, &context, true);
     }
 
-    // Simulation main loop, handled by MSG
+    // Simulation main loop, handled by s4u
     engine.run();
 
     zmq_close(context.zmq_socket);
@@ -906,6 +933,10 @@ void set_configuration(BatsimContext *context,
     context->submission_forward_profiles = main_args.forward_profiles_on_submission;
     context->registration_sched_enabled = main_args.dynamic_registration_enabled;
     context->registration_sched_ack = main_args.ack_dynamic_registration;
+    if (main_args.dynamic_registration_enabled && main_args.profile_reuse_enabled)
+    {
+        context->garbage_collect_profiles = false; // It is true by default
+    }
 
     context->platform_filename = main_args.platform_filename;
     context->export_prefix = main_args.export_prefix;
@@ -934,7 +965,18 @@ void set_configuration(BatsimContext *context,
     context->config_json.AddMember("profiles-forwarded-on-submission", Value().SetBool(main_args.forward_profiles_on_submission), alloc);
     context->config_json.AddMember("dynamic-jobs-enabled", Value().SetBool(main_args.dynamic_registration_enabled), alloc);
     context->config_json.AddMember("dynamic-jobs-acknowledged", Value().SetBool(main_args.ack_dynamic_registration), alloc);
+    context->config_json.AddMember("profile-reuse-enabled", Value().SetBool(!context->garbage_collect_profiles), alloc);
 
     // others
+    std::string sched_config;
+    if (!main_args.sched_config.empty())
+    {
+        sched_config = main_args.sched_config;
+    }
+    else if (!main_args.sched_config_file.empty())
+    {
+        sched_config = read_whole_file_as_string(main_args.sched_config_file);
+    }
+    context->config_json.AddMember("sched-config", Value().SetString(sched_config.c_str(), alloc), alloc);
     context->config_json.AddMember("forward-unknown-events", Value().SetBool(main_args.forward_unknown_events), alloc);
 }

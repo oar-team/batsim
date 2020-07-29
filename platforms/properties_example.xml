@@ -1,0 +1,54 @@
+
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "https://simgrid.org/simgrid.dtd">
+<platform version="4.1">
+  <!-- This file is greatly inspired by the SimGrid example file props.xml -->
+  <zone  id="AS0"  routing="Full">
+    <prop id="Foo" value="bar"/>
+    <zone id="AS3"  routing="Full">
+      <!-- master_host for Batsim -->
+      <host id="master_host" speed="42f"/>
+    </zone>
+
+    <cluster id="acme" prefix="node-" suffix=".simgrid.org" radical="0-4" speed="1Gf"
+             bw="125MBps" lat="50us" bb_bw="2.25GBps"  bb_lat="500us">
+      <!-- this prop will be attached to each node constituting the cluster -->
+      <prop id="zone_name" value="acme cluster"/>
+    </cluster>
+
+    <zone  id="AS4"  routing="Full">
+      <!-- This prop will be attached to the 'zone_properties' of each host -->
+      <prop id="bla" value="bli"/>
+
+      <host id="host1" speed="1Gf">
+        <prop id="Hdd" value="180"/>
+        <prop id="mem" value="4"/>
+      </host>
+
+      <host id="host2" speed="1Gf">
+        <prop id="Hdd" value="120"/>
+      </host>
+
+      <router id="AS4_router" />
+
+      <link id="l1" bandwidth="125MBps" latency="100us"/>
+      <route src="host1" dst="host2">
+        <link_ctn id="l1"/>
+      </route>
+    </zone>
+
+    <link id="master_link" bandwidth="100GBps" latency="1us" sharing_policy="FATPIPE"/>
+    <link id="zone_link" bandwidth="250Mbps" latency="50us"/>
+
+    <zoneRoute src="AS4" dst="acme" gw_src="AS4_router" gw_dst="node-acme_router.simgrid.org">
+      <link_ctn id="zone_link"/>
+    </zoneRoute>
+
+    <zoneRoute src="AS3" dst="AS4" gw_src="master_host" gw_dst="AS4_router">
+      <link_ctn id="master_link"/>
+    </zoneRoute>
+    <zoneRoute src="AS3" dst="acme" gw_src="master_host" gw_dst="node-acme_router.simgrid.org">
+      <link_ctn id="master_link"/>
+    </zoneRoute>
+  </zone>
+</platform>

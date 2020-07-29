@@ -176,53 +176,53 @@ IPMessage::~IPMessage()
     {
         case IPMessageType::JOB_SUBMITTED:
         {
-            JobSubmittedMessage * msg = (JobSubmittedMessage *) data;
+            auto * msg = static_cast<JobSubmittedMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::JOB_REGISTERED_BY_DP:
         {
-            JobRegisteredByDPMessage * msg = (JobRegisteredByDPMessage *) data;
+            auto * msg = static_cast<JobRegisteredByDPMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::PROFILE_REGISTERED_BY_DP:
         {
-            ProfileRegisteredByDPMessage * msg = (ProfileRegisteredByDPMessage *) data;
+            auto * msg = static_cast<ProfileRegisteredByDPMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::JOB_COMPLETED:
         {
-            JobCompletedMessage * msg = (JobCompletedMessage *) data;
+            auto * msg = static_cast<JobCompletedMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::PSTATE_MODIFICATION:
         {
-            PStateModificationMessage * msg = (PStateModificationMessage *) data;
+            auto * msg = static_cast<PStateModificationMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_EXECUTE_JOB:
         {
-            ExecuteJobMessage * msg = (ExecuteJobMessage *) data;
+            auto * msg = static_cast<ExecuteJobMessage *>(data);
             // The Allocations themselves are not memory-deallocated there but at the end of the job execution.
             delete msg;
         } break;
         case IPMessageType::SCHED_CHANGE_JOB_STATE:
         {
-            ChangeJobStateMessage * msg = (ChangeJobStateMessage *) data;
+            auto * msg = static_cast<ChangeJobStateMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_REJECT_JOB:
         {
-            JobRejectedMessage * msg = (JobRejectedMessage *) data;
+            auto * msg = static_cast<JobRejectedMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_KILL_JOB:
         {
-            KillJobMessage * msg = (KillJobMessage *) data;
+            auto * msg = static_cast<KillJobMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_CALL_ME_LATER:
         {
-            CallMeLaterMessage * msg = (CallMeLaterMessage*) data;
+            auto * msg = static_cast<CallMeLaterMessage*>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
@@ -230,17 +230,17 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SCHED_SET_JOB_METADATA:
         {
-            SetJobMetadataMessage * msg = (SetJobMetadataMessage *) data;
+            auto * msg = static_cast<SetJobMetadataMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::WAIT_QUERY:
         {
-            WaitQueryMessage * msg = (WaitQueryMessage *) data;
+            auto * msg = static_cast<WaitQueryMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_WAIT_ANSWER:
         {
-            SchedWaitAnswerMessage * msg = (SchedWaitAnswerMessage *) data;
+            auto * msg = static_cast<SchedWaitAnswerMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_READY:
@@ -248,27 +248,27 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SUBMITTER_HELLO:
         {
-            SubmitterHelloMessage * msg = (SubmitterHelloMessage *) data;
+            auto * msg = static_cast<SubmitterHelloMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SUBMITTER_CALLBACK:
         {
-            SubmitterJobCompletionCallbackMessage * msg = (SubmitterJobCompletionCallbackMessage *) data;
+            auto * msg = static_cast<SubmitterJobCompletionCallbackMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SUBMITTER_BYE:
         {
-            SubmitterByeMessage * msg = (SubmitterByeMessage *) data;
+            auto * msg = static_cast<SubmitterByeMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SWITCHED_ON:
         {
-            SwitchMessage * msg = (SwitchMessage *) data;
+            auto * msg = static_cast<SwitchMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SWITCHED_OFF:
         {
-            SwitchMessage * msg = (SwitchMessage *) data;
+            auto * msg = static_cast<SwitchMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::WAITING_DONE:
@@ -276,7 +276,7 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::KILLING_DONE:
         {
-            KillingDoneMessage * msg = (KillingDoneMessage *) data;
+            auto * msg = static_cast<KillingDoneMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::END_DYNAMIC_REGISTER:
@@ -287,17 +287,17 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::TO_JOB_MSG:
         {
-            ToJobMessage * msg = (ToJobMessage *) data;
+            auto * msg = static_cast<ToJobMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::FROM_JOB_MSG:
         {
-            FromJobMessage * msg = (FromJobMessage *) data;
+            auto * msg = static_cast<FromJobMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::EVENT_OCCURRED:
         {
-            EventOccurredMessage * msg = (EventOccurredMessage *) data;
+            auto * msg = static_cast<EventOccurredMessage *>(data);
             delete msg;
         } break;
     }

@@ -17,15 +17,15 @@ DynamicSubmissionAcknowledgementMode = namedtuple('DynamicSubmissionAcknowledgem
 DynamicJobCount = namedtuple('DynamicJobCount', ['name', 'job_count'])
 # Submission parameters for the scheduler.
 SchedulerSubmissionMode = namedtuple('SchedulerSubmissionMode',
-    ['name', 'increase_jobs_duration', 'send_profile_if_already_sent', 'send_profiles_in_separate_event'])
+    ['name', 'increase_jobs_duration', 'send_profile_if_already_sent', 'send_profiles_in_separate_event', 'reuse_profiles'])
 
 @pytest.mark.parametrize("dyn_sub_ack_mode",
     [DynamicSubmissionAcknowledgementMode('ack', True),
      DynamicSubmissionAcknowledgementMode('noack', False)])
 @pytest.mark.parametrize("nb_dynamic_jobs", [DynamicJobCount(f'{n}jobs', n) for n in [0,1,10]])
 @pytest.mark.parametrize("sched_submission_mode", [
-    SchedulerSubmissionMode('diff-profiles-separatep', True, True, True),
-    SchedulerSubmissionMode('same-profiles-noresend-separatep', False, False, True)])
+    SchedulerSubmissionMode('diff-profiles-separatep', True, True, True, False),
+    SchedulerSubmissionMode('same-profiles-noresend-separatep', False, False, True, True)])
 
 def test_dynsubmit(small_platform, dynsub_workload, submitter_algorithm,
     redis_mode, dyn_sub_ack_mode, nb_dynamic_jobs, sched_submission_mode):
@@ -42,12 +42,14 @@ def dynsubmit(platform, workload, algorithm,
     batparams = "--enable-dynamic-jobs"
     if redis_mode.enabled == True: batparams = batparams + " --enable-redis"
     if dyn_sub_ack_mode.enabled == True: batparams = batparams + " --acknowledge-dynamic-jobs"
+    if sched_submission_mode.reuse_profiles == True: batparams = batparams + " --enable-profile-reuse"
 
     schedconf_content = {
         "nb_jobs_to_submit": nb_dynamic_jobs.job_count,
         "increase_jobs_duration": sched_submission_mode.increase_jobs_duration,
         "send_profile_if_already_sent": sched_submission_mode.send_profile_if_already_sent,
         "send_profiles_in_separate_event": sched_submission_mode.send_profiles_in_separate_event,
+        "reuse_profiles": sched_submission_mode.reuse_profiles,
     }
     write_file(schedconf_filename, json.dumps(schedconf_content))
 

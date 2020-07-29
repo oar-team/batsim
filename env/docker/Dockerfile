@@ -4,6 +4,7 @@ RUN nix-channel --remove nixpkgs \
  && nix-channel --update \
  && nix-env -f '<nixpkgs>' -iA \
       bash \
+      coreutils \
       curl \
       findutils \
       gitMinimal \
@@ -12,12 +13,12 @@ RUN nix-channel --remove nixpkgs \
       gnused \
       gnutar \
       gzip \
+      netcat-gnu \
+      openssh \
+      psmisc \
+      rsync \
       which \
       xz \
-      openssh \
-      rsync \
-      netcat-gnu \
-      psmisc \
  && nix-env -if https://github.com/cachix/cachix/tarball/master \
       --substituters https://cachix.cachix.org \
       --trusted-public-keys \

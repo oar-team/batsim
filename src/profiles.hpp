@@ -6,10 +6,13 @@
 #pragma once
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <vector>
+#include <memory>
 
 #include <rapidjson/document.h>
+
+#include "pointers.hpp"
 
 /**
  * @brief Enumerates the different types of profiles
@@ -18,12 +21,12 @@ enum class ProfileType
 {
     UNSET
     ,DELAY                                     //!< a delay. Its data is of type DelayProfileData
-    ,PARALLEL                                  //!< composed of a computation vector and a communication matrix. Its data is of type MsgParallelProfileData
-    ,PARALLEL_HOMOGENEOUS                      //!< a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type MsgParallelHomogeneousProfileData
-    ,PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT         //!< a homogeneous parallel task that spreads the given amounts of computation and communication among all the nodes. Its data is of type MsgParallelHomogeneousTotalAmountProfileData
+    ,PARALLEL                                  //!< composed of a computation vector and a communication matrix. Its data is of type ParallelProfileData
+    ,PARALLEL_HOMOGENEOUS                      //!< a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type ParallelHomogeneousProfileData
+    ,PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT         //!< a homogeneous parallel task that spreads the given amounts of computation and communication among all the nodes. Its data is of type ParallelHomogeneousTotalAmountProfileData
     ,SMPI                                      //!< a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
     ,SEQUENCE                                  //!< non-atomic: it is composed of a sequence of other profiles
-    ,PARALLEL_HOMOGENEOUS_PFS                  //!< Read and writes data to a PFS storage nodes. data type MsgParallelHomogeneousPFSProfileData
+    ,PARALLEL_HOMOGENEOUS_PFS                  //!< Read and writes data to a PFS storage nodes. data type ParallelHomogeneousPFSProfileData
     ,DATA_STAGING                              //!< for moving data between the pfs hosts. Its data is of type DataStagingProfileData
     ,SCHEDULER_SEND                            //!< a profile simulating a message sent to the scheduler. Its data is of type SchedulerSendProfileData
     ,SCHEDULER_RECV                            //!< receives a message from the scheduler and can execute a profile based on a value comparison of the message. Its data is of type SchedulerRecvProfileData
@@ -57,7 +60,7 @@ struct Profile
      * @return The new-allocated Profile
      * @pre The JSON description is valid
      */
-    static Profile * from_json(const std::string & profile_name,
+    static ProfilePtr from_json(const std::string & profile_name,
                                const rapidjson::Value & json_desc,
                                const std::string & error_prefix = "Invalid JSON profile",
                                bool is_from_a_file = true,
@@ -71,7 +74,7 @@ struct Profile
      * @return The new-allocated Profile
      * @pre The JSON description is valid
      */
-    static Profile * from_json(const std::string & profile_name,
+    static ProfilePtr from_json(const std::string & profile_name,
                                const std::string & json_str,
                                const std::string & error_prefix = "Invalid JSON profile");
 
@@ -85,15 +88,15 @@ struct Profile
 /**
  * @brief The data associated to PARALLEL profiles
  */
-struct MsgParallelProfileData
+struct ParallelProfileData
 {
-    MsgParallelProfileData() = default;
+    ParallelProfileData() = default;
 
     /**
-     * @brief Destroys a MsgParallelProfileData
+     * @brief Destroys a ParallelProfileData
      * @details This method cleans the cpu and comm arrays from the memory if they are not set to nullptr
      */
-    ~MsgParallelProfileData();
+    ~ParallelProfileData();
 
     unsigned int nb_res;    //!< The number of resources
     double * cpu = nullptr; //!< The computation vector
@@ -103,7 +106,7 @@ struct MsgParallelProfileData
 /**
  * @brief The data associated to PARALLEL_HOMOGENEOUS profiles
  */
-struct MsgParallelHomogeneousProfileData
+struct ParallelHomogeneousProfileData
 {
     double cpu; //!< The computation amount on each node
     double com; //!< The communication amount between each pair of nodes
@@ -112,7 +115,7 @@ struct MsgParallelHomogeneousProfileData
 /**
  * @brief The data associated to PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT profiles
  */
-struct MsgParallelHomogeneousTotalAmountProfileData
+struct ParallelHomogeneousTotalAmountProfileData
 {
     double cpu; //!< The computation amount to spread over the nodes
     double com; //!< The communication amount to spread over each pair of nodes
@@ -138,14 +141,15 @@ struct SmpiProfileData
  */
 struct SequenceProfileData
 {
-    int repeat;  //!< The number of times the sequence must be repeated
+    unsigned int repeat;  //!< The number of times the sequence must be repeated
     std::vector<std::string> sequence; //!< The sequence of profile names, executed in this order
+    std::vector<ProfilePtr> profile_sequence; //!< The sequence of profiles, executed in this order
 };
 
 /**
  * @brief The data associated to PARALLEL_HOMOGENEOUS_PFS profiles
  */
-struct MsgParallelHomogeneousPFSProfileData
+struct ParallelHomogeneousPFSProfileData
 {
     double bytes_to_read = 0;             //!< The amount of bytes to reads from the PFS storage node for each nodes (default: 0)
     double bytes_to_write = 0;            //!< The amount of bytes to writes to the PFS storage for each nodes (default: 0)
@@ -155,7 +159,7 @@ struct MsgParallelHomogeneousPFSProfileData
 /**
  * @brief The data associated to DATA_STAGING profiles
  */
-struct MsgDataStagingProfileData
+struct DataStagingProfileData
 {
     double nb_bytes;                  //!< The number of bytes to transfer between the two storage nodes
     std::string from_storage_label ;  //!< The storage label where data comes from
@@ -220,14 +224,14 @@ public:
      * @return The profile whose name is profile_name
      * @pre Such a profile exists
      */
-    Profile * operator[](const std::string & profile_name);
+    ProfilePtr operator[](const std::string & profile_name);
     /**
      * @brief Accesses one profile thanks to its name (const version)
      * @param[in] profile_name The name of the profile
      * @return The profile whose name is profile_name
      * @pre Such a profile exists
      */
-    const Profile * operator[](const std::string & profile_name) const;
+    const ProfilePtr operator[](const std::string & profile_name) const;
 
     /**
      * @brief Accesses one profile thanks to its name
@@ -235,14 +239,14 @@ public:
      * @return The profile whose name is profile_name
      * @pre Such a profile exists
      */
-    Profile * at(const std::string & profile_name);
+    ProfilePtr at(const std::string & profile_name);
     /**
      * @brief Accesses one profile thanks to its name (const version)
      * @param[in] profile_name The name of the profile
      * @return The profile whose name is profile_name
      * @pre Such a profile exists
      */
-    const Profile * at(const std::string & profile_name) const;
+    const ProfilePtr at(const std::string & profile_name) const;
 
     /**
      * @brief Checks whether a profile exists
@@ -257,13 +261,25 @@ public:
      * @param[in] profile The profile to add
      * @pre No profile with the same name exists in the Profiles instance
      */
-    void add_profile(const std::string & profile_name, Profile * profile);
+    void add_profile(const std::string & profile_name, ProfilePtr & profile);
+
+    /**
+     * @brief Removes a profile from a Profiles instance (but remembers the profile existed at some point)
+     * @param[in] profile_name The name of the profile to remove
+     * @pre The profile exists in the Profiles instance
+     */
+    void remove_profile(const std::string & profile_name);
+
+    /**
+     * @brief Remove all unreferenced profiles from a Profiles instance (but remembers the profiles existed at some point)
+     */
+    void remove_unreferenced_profiles();
 
     /**
      * @brief Returns a copy of the internal std::map used in the Profiles
      * @return A copy of the internal std::map used in the Profiles
      */
-    const std::map<std::string, Profile *> profiles() const;
+    const std::unordered_map<std::string, ProfilePtr> profiles() const;
 
     /**
      * @brief Returns the number of profiles of the Profiles instance
@@ -272,7 +288,7 @@ public:
     int nb_profiles() const;
 
 private:
-    std::map<std::string, Profile*> _profiles; //!< Stores all the profiles, indexed by their names
+    std::unordered_map<std::string, ProfilePtr> _profiles; //!< Stores all the profiles, indexed by their names. Value can be nullptr, meaning that the profile is no longer in memory but existed in the past.
 };
 
 /**

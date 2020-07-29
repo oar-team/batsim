@@ -16,8 +16,59 @@ Starting with version `v1.0.0`_, Batsim adheres to `Semantic Versioning`_ and it
 Unreleased
 ----------
 
-- `Commits since v3.1.0 <https://github.com/oar-team/batsim/compare/v3.1.0...HEAD>`_
-- ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -iA batsim_dev``
+- `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...HEAD>`_
+- ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
+
+........................................................................................................................
+
+v4.0.0
+------
+
+- `Commits since v3.1.0 <https://github.com/oar-team/batsim/compare/v3.1.0...v4.0.0>`_
+- ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -i batsim-4.0.0``
+- Recommended SimGrid release: 3.25.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/releases>`_)
+
+Changed (**breaks some schedulers**)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Profiles and jobs are now cleaned from memory over time (instead of at the end of the whole simulation).
+  This is done with a reference counting mechanism: When a job or profile is no longer needed **according to what batsim knows**, it is removed from memory.
+  This can break schedulers that rely on dynamic profile/job submission, especially when several :ref:`proto_REGISTER_JOB` using the same profile are decided at different simulation times — as the profile can be garbage collected when its first execution finishes.
+  The new ``--enable-profile-reuse`` :ref:`cli` option should keep previous behavior.
+
+Removed (**breaks CLI**)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+- As unit tests are now done with gtest_, the ``--unittest`` :ref:`cli` option has been removed.
+
+Added
+~~~~~
+
+- Scheduler configuration can be given to Batsim (via ``--sched-cfg`` or ``--sched-cfg-file`` :ref:`cli` options).
+  This configuration string is forwarded to the scheduler in the :ref:`proto_SIMULATION_BEGINS` event.
+- Basic tests for the external events mechanism.
+- Retrieval of the zone properties in the XML platform description.
+
+  - Platform properties declared within SimGrid zones are now retrieved and attached to each Batsim resource.
+  - These properties are forwarded to the scheduler via the field ``zone_properties`` or each resource in the ``compute_resources`` and ``storage_resources`` arrays of the :ref:`proto_SIMULATION_BEGINS` event.
+
+Fixed
+~~~~~
+
+- Workflows crashed at the beginning and the end of the simulation. This should be fixed, and workflows are now tested under CI.
+- Killing jobs should no longer issue memory issues (invalid reads and writes), which caused segmentation fault in corner cases — cf. `issue 37 (inria) <https://gitlab.inria.fr/batsim/batsim/issues/37/>`_.
+- Killing sequences of delays should no longer crash with "Internal error" — cf. `issue 108 (inria) <https://gitlab.inria.fr/batsim/batsim/issues/108/>`_.
+- SMPI profiles should now be automatically killed when their walltime is reached — cf. `issue 95 (inria) <https://gitlab.inria.fr/batsim/batsim/issues/95/>`_.
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+- Various performance improvements.
+- The jobs output file is now written over time (was only written on disk at the end of the simulation).
+- Batsim no longer uses SimGrid's MSG interface. Everything is done with S4U now.
+- Smart pointers are used in most parts of the code (for reference counting memory deallocations).
+- Old markdown documentation has been removed.
+- Removal of CMake Find functions, pkgconfig is used instead.
 
 ........................................................................................................................
 
@@ -27,7 +78,7 @@ v3.1.0
 - `Commits since v3.0.0 <https://github.com/oar-team/batsim/compare/v3.0.0...v3.1.0>`_
 - Release date: 2019-05-26
 - ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-3.1.0``
-- Recommended SimGrid release: 3.22.2 (see `SimGrid's framagit releases (<https://framagit.org/simgrid/simgrid/releases>`_
+- Recommended SimGrid release: 3.24.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/releases>`_)
 
 Changed
 ~~~~~~~
@@ -169,7 +220,7 @@ Added (command-line interface)
 - New ``--sg-log`` option, that allows to set SimGrid logging options.
 - New ``--dump-execution-context`` option,
   that dumps the command execution context on the standard output.
-  This allows external tools to understand the execution context of a batsim command without actually parsing it.
+  This allows external tools to understand the execution context of a Batsim command without actually parsing it.
 
 Known issues
 ~~~~~~~~~~~~
@@ -246,7 +297,7 @@ Fixed
 ~~~~~
 
 - Numeric sort should now work as expected (this is now tested).
-- Power stace tracing now works when the number of machines is big.
+- Power tracing now works when the number of machines is big.
 - Output buffers now work even if incoming texts are bigger than the buffer.
 - The ``QUERY_REQUEST``/``QUERY_REPLY`` messages were not respecting the protocol definition
   (probably never tested since the JSON protocol update).
@@ -346,7 +397,7 @@ Added
 - New PFS host. Associated with a new ``hpst-host`` command-line option.
 - New protocol event ``CHANGE_JOB_STATE``.
   It allows the scheduler to change the state of jobs in Batsim in-memory data structures.
-- The ``submission_finished`` notification can be cancelled with a ``continue_submission`` notification.
+- The ``submission_finished`` notification can be canceled with a ``continue_submission`` notification.
 - New data to the :ref:`proto_SIMULATION_BEGINS` protocol event.
   ``allow_time_sharing`` boolean is now forwarded.
   ``resources_data`` gives information on the resources.
@@ -392,3 +443,4 @@ Changed
 .. _`docopt-cpp`: https://github.com/docopt/docopt.cpp
 .. _pugixml: https://pugixml.org/
 .. _Meson: https://mesonbuild.com/
+.. _gtest: https://github.com/google/googletest

@@ -25,18 +25,17 @@ static void send_events_to_server(const vector<const Event *> & events_to_send,
         EventOccurredMessage * msg = new EventOccurredMessage;
         msg->submitter_name = submitter_name;
         msg->occurred_events = events_to_send;
-        send_message("server", IPMessageType::EVENT_OCCURRED, (void*)msg);
+        send_message("server", IPMessageType::EVENT_OCCURRED, static_cast<void*>(msg));
     }
 }
 
 void static_event_submitter_process(BatsimContext * context,
                                     std::string eventList_name)
 {
-    xbt_assert(context->eventListsMap.count(eventList_name) == 1,
+    xbt_assert(context->event_lists.count(eventList_name) == 1,
                "Error: a static_event_submitter_process is in charge of the event list '%s' "
                "which does not exist.", eventList_name.c_str());
 
-    EventList * events = context->eventListsMap[eventList_name];
     string submitter_name = eventList_name + "_submitter";
     /*
         ███████████████████████████████─
@@ -49,11 +48,11 @@ void static_event_submitter_process(BatsimContext * context,
     hello_msg->enable_callback_on_job_completion = false;
     hello_msg->submitter_type = SubmitterType::EVENT_SUBMITTER;
 
-    send_message("server", IPMessageType::SUBMITTER_HELLO, (void*) hello_msg);
+    send_message("server", IPMessageType::SUBMITTER_HELLO, static_cast<void*>(hello_msg));
 
-    long double current_occurring_date = simgrid::s4u::Engine::get_clock();
+    long double current_occurring_date = static_cast<long double>(simgrid::s4u::Engine::get_clock());
 
-    const vector<Event *> & eventVector = events->events();
+    const vector<Event *> & eventVector = context->event_lists[eventList_name]->events();
 
     if(eventVector.size() > 0)
     {
@@ -68,8 +67,8 @@ void static_event_submitter_process(BatsimContext * context,
                 events_to_send.clear();
 
                 // Now let's sleep until it's time for the next event to occur
-                simgrid::s4u::this_actor::sleep_for((double)e->timestamp - (double) current_occurring_date);
-                current_occurring_date = simgrid::s4u::Engine::get_clock();
+                simgrid::s4u::this_actor::sleep_for(static_cast<double>(e->timestamp - current_occurring_date));
+                current_occurring_date = static_cast<long double>(simgrid::s4u::Engine::get_clock());
             }
 
             // Populate the vector of events to send to the server
@@ -84,5 +83,5 @@ void static_event_submitter_process(BatsimContext * context,
     bye_msg->is_workflow_submitter = false;
     bye_msg->submitter_type = SubmitterType::EVENT_SUBMITTER;
     bye_msg->submitter_name = submitter_name;
-    send_message("server", IPMessageType::SUBMITTER_BYE, (void *) bye_msg);
+    send_message("server", IPMessageType::SUBMITTER_BYE, static_cast<void*>(bye_msg));
 }
