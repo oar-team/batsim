@@ -3,6 +3,11 @@
   {}
 , doUnitTests ? true
 , doCoverage ? true
+, coverageCobertura ? false
+, coverageCoveralls ? false
+, coverageGcovTxt ? false
+, coverageHtml ? false
+, coverageSonarqube ? false
 , werror ? false
 , doValgrindAnalysis ? false
 , debug ? true
@@ -132,6 +137,48 @@ let
         mv ./report/* ./pytest_returncode $out/
       '' + pkgs.lib.optionalString doCoverage ''
         mv ./gcda $out/
+      '';
+    };
+
+    # Generate coverage reports, from gcov traces in batsim and batsim_integration_tests.
+    coverage-report = pkgs.stdenv.mkDerivation rec {
+      pname = "batsim-coverage-report";
+      version = integration_tests.version;
+
+      buildInputs = batsim.buildInputs ++ [ kapack.gcovr ]
+        ++ [ batsim integration_tests ];
+      src = batsim.src;
+
+      buildPhase = ''
+        mkdir cov-merged
+        cd cov-merged
+        cp ${batsim}/gcno/* ${integration_tests}/gcda/* ./
+        gcov -p *.gcno
+        mkdir report
+      '' + pkgs.lib.optionalString coverageHtml ''
+        mkdir -p report/html
+      '' + pkgs.lib.optionalString coverageGcovTxt ''
+        mkdir -p report/gcov-txt
+        cp \^\#src\#*.gcov report/gcov-txt/
+      '' + ''
+        gcovr -g -k -r .. --filter '\.\./src/' \
+          --txt report/file-summary.txt \
+          --csv report/file-summary.csv \
+          --json-summary report/file-summary.json \
+        '' + pkgs.lib.optionalString coverageCobertura ''
+          --xml report/cobertura.xml \
+        '' + pkgs.lib.optionalString coverageCoveralls ''
+          --coveralls report/coveralls.json \
+        '' + pkgs.lib.optionalString coverageHtml ''
+          --html-details report/html/index.html \
+        '' + pkgs.lib.optionalString coverageSonarqube ''
+          --sonarqube report/sonarqube.xml \
+        '' + ''
+          --print-summary
+      '';
+      installPhase = ''
+        mkdir -p $out
+        cp -r report/* $out/
       '';
     };
 
