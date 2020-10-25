@@ -11,6 +11,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <simgrid/host.h>
 #include <simgrid/plugins/energy.h>
 
 #include "batsim.hpp"
