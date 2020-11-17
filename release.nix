@@ -15,6 +15,9 @@
 , batsched ? kapack.batsched-master
 , batexpe ? kapack.batexpe
 , pybatsim ? kapack.pybatsim-master
+# set this to avoid running tests over and over
+# (e.g., to debug coverage reports or to run tests and coverage report separately)
+, testVersion ? toString builtins.currentTime
 }:
 
 let
@@ -85,7 +88,7 @@ let
     # Batsim integration tests.
     integration_tests = pkgs.stdenv.mkDerivation rec {
       pname = "batsim-integration-tests";
-      version = toString builtins.currentTime;
+      version = testVersion;
       src = pkgs.lib.sourceByRegex ./. [
         "^test"
         "^test/.*\.py"
