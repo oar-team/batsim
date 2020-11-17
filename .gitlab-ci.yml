@@ -14,7 +14,7 @@ build_and_test:
   stage: big_stage
   script:
     # Build Batsim
-    - export NIX_ARGS="--arg doUnitTests true --arg doCoverage true --arg debug true --arg werror true --arg coverageCoveralls true"
+    - export NIX_ARGS="--arg doUnitTests true --arg doCoverage true --arg debug true --arg werror true --arg coverageCoveralls true --argstr testVersion $(date +%s)"
     - nix-shell --pure ./release.nix -A batsim ${NIX_ARGS} --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
     - nix-build ./release.nix -A batsim ${NIX_ARGS}
     # Build doxygen documentation
