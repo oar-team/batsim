@@ -238,7 +238,7 @@ void Machines::create_machines(const BatsimContext *context,
             else
             {
                 // Only one state to check in this case.
-                xbt_assert(sg_host_speed(machine->host) > 0,
+                xbt_assert(sg_host_get_speed(machine->host) > 0,
                            "Invalid platform file '%s': host '%s' is a compute node but has an invalid (non-positive) computing speed.",
                            context->platform_filename.c_str(), machine->name.c_str());
             }
