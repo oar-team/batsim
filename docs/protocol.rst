@@ -237,6 +237,7 @@ For now, Batsim can **notify** the scheduler of the following.
 
 - ``no_more_static_job_to_submit``: Batsim tells the scheduler that it has no more jobs to submit from the static submitters. This means that all jobs in the workloads have already been submitted to the scheduler and the scheduler cannot expect more jobs to arrive (except the potential ones through dynamic submission).
 - ``no_more_external_event_to_occur``: Only appliable if a list of events are given as input to Batsim via the ``--events`` command-line option. Batsim tells the scheduler that there is no more external event to occur from the event submitters. That means that all external events have occurred and the scheduler cannot expect a new event to occur.
+- ``event_machine_unavailable`` or ``event_machine_available`` if external events are used (cf. :ref:`input_EVENTS`).
 
 For now, the scheduler can **notify** Batsim of the following.
 
@@ -799,6 +800,8 @@ Batsim will send a :ref:`proto_REQUESTED_CALL` event when the desired timestamp 
      "type": "CALL_ME_LATER",
      "data": {"timestamp": 25.5}
    }
+
+.. _proto_KILL_JOB:
 
 KILL_JOB
 ~~~~~~~~
