@@ -125,16 +125,16 @@ You can also use CMake_ if you prefer but please note that our cmake support is 
 
 .. warning::
 
-    You first need to install all Batsim dependencies for the following lines to work:
+    You first need to install all Batsim dependencies for the following lines to work.
 
     - Decent clang/gcc (real C++17 support).
     - Decent boost.
     - Recent SimGrid.
     - ZeroMQ.
-    - `Redox <https://github.com/mpoquet/redox/tree/install-pkg-config-file>`_ and its dependencies (hiredis, libev).
+    - Redox (`our fork <https://github.com/mpoquet/redox/tree/install-pkg-config-file>`_ has pkg-config support) and its dependencies (hiredis, libev).
     - RapidJSON.
     - Pugixml.
-    - `Docopt <https://github.com/mpoquet/docopt.cpp/tree/pkgconfig-support>`_.
+    - Docopt.cpp.
 
     **Make sure you install versions of these packages with pkg-config support!**
     The two build systems we use rely on `pkg-config`_ to find dependencies.
