@@ -1,0 +1,39 @@
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+<platform version="4.1">
+
+<zone id="AS0" routing="Full">
+    <cluster id="my_cluster_1" prefix="a" suffix="" radical="0-511"
+        speed="1Gf" bw="125MBps" lat="50us" bb_bw="2.25GBps"
+        bb_lat="500us" />
+
+    <cluster id="my_cluster_2" prefix="master_host" suffix="" radical="0-0"
+        speed="1Gf" bw="125MBps" lat="50us" bb_bw="2.25GBps"
+        bb_lat="500us">
+        <prop id="role" value="master" />
+    </cluster>
+
+    <cluster id="my_cluster_3" prefix="pfs" suffix="" radical="0-0"
+        speed="1Gf" bw="120Mbps" lat="50us" bb_bw="2.25GBps"
+        bb_lat="500us">
+        <prop id="role" value="storage" />
+    </cluster>
+
+    <link id="backbone" bandwidth="1.25GBps" latency="500us" />
+
+    <zoneRoute src="my_cluster_1" dst="my_cluster_2" gw_src="amy_cluster_1_router"
+        gw_dst="master_hostmy_cluster_2_router">
+        <link_ctn id="backbone" />
+    </zoneRoute>
+
+    <zoneRoute src="my_cluster_1" dst="my_cluster_3" gw_src="amy_cluster_1_router"
+        gw_dst="pfsmy_cluster_3_router">
+        <link_ctn id="backbone" />
+    </zoneRoute>
+
+    <zoneRoute src="my_cluster_2" dst="my_cluster_3" gw_src="master_hostmy_cluster_2_router"
+        gw_dst="pfsmy_cluster_3_router">
+        <link_ctn id="backbone" />
+    </zoneRoute>
+</zone>
+</platform>
