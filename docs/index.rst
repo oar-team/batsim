@@ -32,6 +32,7 @@ please cite it (`bibtex <https://hal.archives-ouvertes.fr/hal-01333471v1/bibtex>
    Running your first simulation <tuto-first-simulation/tuto.rst>
    Analyzing Batsim results <tuto-result-analysis/tuto.rst>
    Implementing your scheduling algorithm <tuto-sched-implem/tuto.rst>
+   Modelling an application <tuto-app-model/stencil.rst>
    Doing a reproducible experiment <tuto-reproducible-experiment/tuto.rst>
 
 .. toctree::
