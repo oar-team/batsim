@@ -40,13 +40,13 @@ Temporally speaking, the big steps of the applications are the following.
   1. Each process updates the values of the sub-matrix it is responsible for.
      Let us say this computation takes :math:`10` floating-point operations for each value, which amounts for around :math:`10^7` floating-point operations for the whole sub-matrix.
   2. Each process shares the border of its sub-matrix to its direct neighbors.
-     Here, as we only have 4 processes, each process communicates with 2 other processes as shown on the figure above. The data transfered from one process to its neighbor is a row or column of the sub-matrix — *i.e.*, :math:`2048 \times 4 = 8192` bytes.
+     Here, as we only have 4 processes, each process communicates with 2 other processes as shown on the figure above. The data transferred from one process to its neighbor is a row or column of the sub-matrix — *i.e.*, :math:`2048 \times 4 = 8192` bytes.
 
 4. Every 100 iterations, a checkpoint of the current data is done.
    This is a common fault tolerance practice, so that if a machine fails the computation can be restarted from *quite recent* data, not the initial one.
    This checkpoint consists in writing the whole matrix on a parallel file system.
-   The total amount of data transfered is therefore :math:`4096 \times 4096 \times 4 = 67108864` bytes, in other words :math:`2048 \times 2048 \times 4 = 16777216` bytes per process.
-5. Once all 1000 iterations are done the application stops (that last checkpoints is the final application output).
+   The total amount of data transferred is therefore :math:`4096 \times 4096 \times 4 = 67108864` bytes, in other words :math:`2048 \times 2048 \times 4 = 16777216` bytes per process.
+5. Once all 1000 iterations are done the application stops (the last checkpoints is the final application output).
 
 Job modelling
 -------------
@@ -69,5 +69,109 @@ Here is a job description of such an application.
 
 Profile modelling
 -----------------
+
+Let us model the various subparts of the application.
+
+Data transfers with the parallel file system
+############################################
+
+First, the initial load of the matrix can be modelled with a :ref:`profile_parallel_homogeneous_pfs` profile like this, which will read ``67108864`` bytes from a storage host called ``pfs`` and homogeneously split the data towards all the hosts involved in the job (here, ``4`` hosts).
+
+.. code-block:: json
+
+    {
+      "type": "parallel_homogeneous_pfs",
+      "bytes_to_read": 67108864,
+      "bytes_to_write": 0,
+      "storage": "pfs"
+    }
+
+The checkpoints of the data produced by the application are very similar, the operation is just a ``write`` instead of a ``read``.
+
+.. code-block:: json
+
+    {
+      "type": "parallel_homogeneous_pfs",
+      "bytes_to_read": 0,
+      "bytes_to_write": 67108864,
+      "storage": "pfs"
+    }
+
+
+Iteration
+#########
+
+The communication part of each iteration can be modelled with a :ref:`profile_parallel` profile,
+which corresponds to the data transferred between each pair of hosts in the job (here, ``4`` hosts). The data here corresponds to the transfer of 1 row/column between neighboring processes, as seen on the application details figure.
+
+.. code-block:: json
+
+    {
+      "type": "parallel",
+      "cpu": [   0,    0,    0,    0],
+      "com": [   0, 8192, 8192,    0,
+              8192,    0,    0, 8192,
+              8192,    0,    0, 8192,
+                 0, 8192, 8192,    0]
+    }
+
+The computation part of each iteration can also be modelled with a :ref:`profile_parallel` profile such as the following.
+
+.. code-block:: json
+
+    {
+      "type": "parallel",
+      "cpu": [ 1e7,  1e7,  1e7,  1e7],
+      "com": [   0,    0,    0,    0,
+                 0,    0,    0,    0,
+                 0,    0,    0,    0,
+                 0,    0,    0,    0]
+    }
+
+Putting all pieces together
+###########################
+
+Finally, we can see how to put the previous sub-profiles together to define the ``imaginary_stencil`` profile.
+There are many ways to do so. **In a real-life scenario on a real application, you should evaluate the prediction precision of the different choices** to decide which model fits your application (probably with a simulation overhead trade-off in mind). Here is a set of profiles that define ``imaginary_stencil``, bundling a sequence of 100 iterations together in the same :ref:`profile_parallel`.
+
+.. code-block:: json
+
+    {
+      "initial_load": {
+        "type": "parallel_homogeneous_pfs",
+        "bytes_to_read": 67108864,
+        "bytes_to_write": 0,
+        "storage": "pfs"
+      },
+      "100_iterations": {
+        "type": "parallel",
+        "cpu": [   1e9,    1e9,    1e9,    1e9],
+        "com": [     0, 819200, 819200,      0,
+                819200,      0,      0, 819200,
+                819200,      0,      0, 819200,
+                     0, 819200, 819200,      0]
+      },
+      "checkpoint": {
+        "type": "parallel_homogeneous_pfs",
+        "bytes_to_read": 0,
+        "bytes_to_write": 67108864,
+        "storage": "pfs"
+      },
+      "iterations_and_checkpoints": {
+        "type": "composed",
+        "repeat": 10,
+        "seq": ["100_iterations", "checkpoint"]
+      },
+      "imaginary_stencil": {
+        "type": "composed",
+        "repeat": 1,
+        "seq": ["initial_load", "iterations_and_checkpoints"]
+      }
+    }
+
+- The ``initial_load`` and ``checkpoint`` profiles are exactly the same as in the `Data transfers with the parallel file system`_ section.
+- The ``100_iterations`` :ref:`profile_parallel` profile is the merge of 100 consecutive iterations into a single :ref:`profile_parallel`.
+- The ``iterations_and_checkpoints`` :ref:`profile_sequence` represents most of the application, as it repeats ``10`` times the execution of (``100_iterations`` followed by a ``checkpoint``).
+- Finally, the ``imaginary_stencil`` profile represents the whole application, which is ``initial_load`` followed by ``iterations_and_checkpoints``.
 
 .. _Iterative Stencil Loops: https://en.wikipedia.org/wiki/Iterative_Stencil_Loops
