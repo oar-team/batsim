@@ -134,6 +134,10 @@ Putting all pieces together
 Finally, we can see how to put the previous sub-profiles together to define the ``imaginary_stencil`` profile.
 There are many ways to do so. **In a real-life scenario on a real application, you should evaluate the prediction precision of the different choices** to decide which model fits your application (probably with a simulation overhead trade-off in mind). Here is a set of profiles that define ``imaginary_stencil``, bundling a sequence of 100 iterations together in the same :ref:`profile_parallel`.
 
+.. image:: stencil-profiles.svg
+  :width: 300
+  :alt: Stencil profiles
+
 .. code-block:: json
 
     {
