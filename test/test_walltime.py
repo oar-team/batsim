@@ -9,12 +9,12 @@ from helper import *
 
 def check_ok_bool(row):
     # Walltime is set and the job execution time is greater than its walltime
-    if row['execution_time'] > row['requested_time'] and row['requested_time'] != -1:
+    if row['requested_time'] != -1 and row['execution_time'] > row['requested_time']:
         return False
 
     # Success -> (finished before walltime OR no walltime set)
     if row['success']:
-        return (row['execution_time'] < row['requested_time']) or (row['requested_time'] == -1)
+        return (row['execution_time'] <= row['requested_time']) or (row['requested_time'] == -1)
     # Failure -> walltime reached
     return row['execution_time'] >= row['requested_time']
 
