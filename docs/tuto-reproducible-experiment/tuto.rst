@@ -14,6 +14,13 @@ we strongly encourage readers to follow a `tutorial about Nix and reproducible e
 This tutorial introduces main Nix_ concepts and focuses on those useful for reproducible experiments,
 lowering the entry cost in the Nix_ ecosystem.
 
+.. warning::
+  This tutorial uses old versions of Batsim/schedulers/Kapack_.
+  It should still work (otherwise please :ref:`contact_us` to report the issue) and the presented steps to improve the experiment repeatibility remain relevant.
+
+  However, if you are looking for a starting environment for your experiment, please note that repositories and versions are outdated.
+  In particular, Kapack_ efforts have moved to the `NUR-Kapack`_ repository, so you need to use the `NUR-Kapack`_ repository instead of Kapack_ for up-to-date Batsim/schedulers/SimGrid/etc. package definitions.
+
 Defining a reproducible environment
 -----------------------------------
 
@@ -136,6 +143,7 @@ The notebook can be run with the following command.
 .. _Nix: https://nixos.org/nix/
 .. _tutorial about Nix and reproducible experiments: https://nix-tutorial.gitlabpages.inria.fr/nix-tutorial/
 .. _Kapack: https://github.com/oar-team/kapack
+.. _NUR-Kapack: https://github.com/oar-team/nur-kapack
 .. _Kapack's commit 773d390: https://github.com/oar-team/kapack/commit/773d3909d78f1043ffb589a725773699210d71d5
 .. _batsched: https://framagit.org/batsim/batsched/
 .. _pybatsim: https://gitlab.inria.fr/batsim/pybatsim
