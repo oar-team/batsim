@@ -18,7 +18,7 @@ build_and_test:
     - nix-shell --pure -A batsim ${NIX_ARGS} --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
     - nix-build -A batsim ${NIX_ARGS}
     # Build doxygen documentation
-    - nix-shell --puf -A doxydoc --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-shell --pure -A doxydoc --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
     - nix-build -A doxydoc && cp -rL result ./doxydoc_html
     # Run integration tests
     - nix-shell --pure -A integration_tests ${NIX_ARGS} --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
