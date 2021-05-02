@@ -95,7 +95,7 @@ Assuming that ``qtcreator`` is already installed in your local environment, you 
 
 - Enter a shell that can build Batsim with CMake: ``nix-shell -A batsim_cmake``
 - From inside the shell, generate a CMake build directory if it does not already exist: ``(mkdir build-cmake && cd build-cmake && cmake .. && make -j $(nproc))``
-- From inside the shell, run qtcreator to import an existing CMake project: ``qtcreator ./CMakeLists.txt &``. When qtcreator prompts you about how to import the project, tell it to only use the existing build build environment/directory and **not** to create a new one.
+- From inside the shell, run qtcreator to import an existing CMake project: ``qtcreator ./CMakeLists.txt &``. When qtcreator prompts you about how to import the project, tell it to only use the existing build environment/directory and **not** to create a new one.
 - You should now be able to compile Batsim from qtcreator.
 
 .. _run_tests_from_iteratively_built_batsim:
@@ -143,7 +143,7 @@ You can manually run a simulation instance by calling ``robin instance.yaml`` (a
 You can run several tests until you find the one that fails.
 Now, assuming you found the failing test you want to work on, you can give a look at the test directory structure — ``tree`` should output something like this:
 
-.. code-block::
+.. code-block:: text
 
     .
     ├── batres_jobs.csv
@@ -168,14 +168,14 @@ You can now run the simulation instance without robin, by calling ``batsim`` and
 - In the shell configured to run your iteratively built Batsim, you can run ``./cmd/batsim.bash``.
 - In the shell for the scheduler, you can run ``./cmd/sched.bash``.
 
-Now you just have to hack ``./cmd/batsim.bash`` so that it runs ``batsim`` with your favorite debugger, and execute both scripts in their own shells again. As I personally use ``gdb`` with the cgdb_ terminal interface, so I just prefix the Batsim commadn with ``cgdb --args`` to run it inside my debugger.
+Now you just have to hack ``./cmd/batsim.bash`` so that it runs ``batsim`` with your favorite debugger, and execute both scripts in their own shells again. As I personally use ``gdb`` with the cgdb_ terminal interface, so I just prefix the Batsim command with ``cgdb --args`` to run it inside my debugger.
 
 .. note::
 
   Your debugger may not display some source files.
   This should not happen for Batsim source code, but it may happen for dependencies such as SimGrid, in which case you can observe something like this:
 
-  .. code-block::
+  .. code-block:: text
 
       (gdb)
       #8  0x00007ffff7a1270c in simgrid::kernel::context::Context::operator() (this=0x7f9d00) at ../src/kernel/context/Context.hpp:65
