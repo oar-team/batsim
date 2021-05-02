@@ -5,6 +5,8 @@ Installation
 This page presents how to install Batsim and some of its tools.
 We recommend `Using Nix`_, but you may prefer `Using Batsim from a Docker container`_ or `Building it yourself`_.
 
+.. _using_nix_introduction:
+
 Using Nix
 ---------
 Batsim and its ecosystem are packaged in the kapack_ repository.
@@ -55,6 +57,8 @@ You usually need to ``source`` a file to access the Nix commands.
 
       sudo echo 1 > /proc/sys/kernel/unprivileged_userns_clone
 
+.. _using_batsim_from_well_defined_nix_env:
+
 Using Batsim from a well-defined Nix environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -74,6 +78,8 @@ If you want latest commit of the same tools instead, you can define your environ
   :caption: :download:`tuto-env-master.nix <./tuto-first-simulation/tuto-env-master.nix>`
   :language: nix
 
+You can enter such environments thanks to ``nix-shell`` —
+for example ``nix-shell my-env.nix`` if you have downloaded one environment file as ``my-env.nix`` in your current working directory.
 For more information about this usage, please read our tutorial :ref:`tuto_reproducible_experiment`.
 
 Installing Batsim in your system via Nix
