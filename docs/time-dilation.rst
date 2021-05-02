@@ -1,15 +1,15 @@
 .. _time_dilation:
 
-Time Dilation
-=============
+Progression of simulation time
+==============================
 
 In a real system, resource management procedures are called from time to time to take some decisions.
 This example shows how the simulation time is managed in Batsim.
-It stresses how it enables to take decision making time into account during the simulation.
+It stresses how decision making time can be taken into account in the simulation.
 
 This case study consists in taking the decision to execute two jobs (``j2`` and ``j3``) when job ``j1`` completes.
 The important point here is that the decision-making procedure takes some time and takes the decision in an online fashion:
-The decision to execute ``j1`` is made before the decision to execute ``j2``.
+The decision to execute ``j2`` is made before the decision to execute ``j3``, and here we want to inject the scheduling time into the simulation.
 
 .. image:: img/proto/case1_overview.png
 
