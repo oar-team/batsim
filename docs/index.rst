@@ -70,6 +70,7 @@ please cite it (`bibtex <https://hal.archives-ouvertes.fr/hal-01333471v1/bibtex>
    :caption: Developer Manual
 
    Contributing <contributing.rst>
+   Development environment <setting-up-dev-env.rst>
    How to run tests? <howto-test.rst>
    Continuous Integration <ci.rst>
    Release procedure <release.rst>
