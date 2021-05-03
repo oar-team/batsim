@@ -185,20 +185,128 @@ Now you just have to hack ``./cmd/batsim.bash`` so that it runs ``batsim`` with 
 
   You can do the exact same trick for any source code that your debugger cannot find. You can also create initialization files for your debugger to load these directories automatically.
 
-Hacking several packages at the same time
------------------------------------------
-Sometimes, you not only need to hack Batsim but also one of its dependency (SimGrid, intervalset...) or a scheduler (batsched, pybatsim).
-This is for example the case when you add a protocol feature.
+.. _changing_batsim_dependencies:
 
-.. todo::
+Changing Batsim dependencies
+----------------------------
+Sometimes, you not only need to hack Batsim but also one of its dependencies,
+which happens quite often with SimGrid.
+In this section we will see how :download:`default.nix <../default.nix>` can be hacked to use a custom SimGrid version,
+that can either come from your own git repository (fork) or just from your local filesystem.
 
-    Write a simple SimGrid/batsched/pybatsim hack example.
+As ``simgrid`` is an *input* of :download:`default.nix <../default.nix>`, its value can be overridden when :download:`default.nix <../default.nix>` is evaluated by giving command-line arguments to ``nix-build`` or ``nix-shell`` without modifying the file at all. However, we will **not** take this approach here as modifying :download:`default.nix <../default.nix>` is easier to do. We will instead create a new SimGrid package called ``my-custom-simgrid`` then tell the ``batsim`` package to use our new custom SimGrid.
+As I write these lines, :download:`default.nix <../default.nix>` defines and returns a `Nix set`_ named ``jobs``. It's **inside** ``jobs`` that we will add our new package. Here is a first version of ``my-custom-simgrid``
 
-    For now, please refer to the :ref:`tuto_reproducible_experiment` tutorial that do similar Nix manipulations, or :ref:`contact_us` if you need help with this.
+.. code-block:: nix
 
+    my-custom-simgrid = (kapack.simgrid-light.override { inherit debug; }).overrideAttrs (attr: rec {
+      src = pkgs.fetchgit {
+        rev = "44bca631e482bd6e48a926393437d0959b661218";
+        url = "https://framagit.org/mpoquet/simgrid.git";
+        sha256 = "sha256:1fs0sdwx77yrakbffh00g7hxqladbjpqcs15lcx37viahjlk7fp0";
+      };
+    });
+
+Here is an explanation of the various subparts of this Nix expression:
+
+- ``my-custom-simgrid = ...;`` defines a new *attribute* named ``my-custom-simgrid`` in the embracing set (named ``jobs``).
+- ``(kapack.simgrid-light.override { inherit debug; })`` *overrides* the **inputs** of the ``simgrid-light`` SimGrid version defined in `NUR-Kapack`_, by customizing its ``debug`` input. ``inherit debug;`` is strictly equivalent to ``debug=debug;``. Most packages in `NUR-Kapack`_ have a ``debug`` input that make packages generate and keep debug information (DWARF symbols).
+- ``<package>.overrideAttrs (attr: rec {...})`` *overrides* the **definition** of ``<package>`` (here ``package`` is a lightweight SimGrid with debug information). This will enable us in next lines to *override* the package source code.
+- ``src = pkgs.fetchgit {rev="..."; url="..."; sha256="...";};`` defines a new source for the package we are overriding. Here, the source code will be fetched from a Git repository on url ``https://framagit.org/mpoquet/simgrid.git`` and commit ``44bca631e482bd6e48a926393437d0959b661218``. The ``sha256`` attribute is a checksum used by Nix to make sure the fetched data is the expected one.
+
+.. note::
+
+    Filling the ``sha256`` field can seem tricky for Nix newcomers.
+    A fast way to do it is to:
+
+    1. Fill the field with a random `SHA-256`_ string.
+       For example, calling ``echo simgrid | sha256sum`` will generate a valid SHA-256 string.
+    2. Try to build your package (here, ``nix-build -A my-custom-simgrid``).
+       Nix will cry about hash mismatch.
+
+       .. code-block:: text
+
+            hash mismatch in fixed-output derivation '/nix/storesk57v94s4y55b6r0xfzzy6g3sfsg20mi-simgrid-44bca63':
+              wanted: sha256:1g3jwfnij8016b866frc8jl46fp39ivlznm1ib726xjz700lr3kr
+              got:    sha256:1fs0sdwx77yrakbffh00g7hxqladbjpqcs15lcx37viahjlk7fp0
+    3. Copy the ``got`` value computed by Nix into your Nix expression.
+
+You can now modify the ``batsim`` package to use ``my-custom-simgrid`` instead of ``simgrid``. This is done by changing the ``simgrid`` input when we *override* the Batsim package defined in `NUR-Kapack`_, as shown in this diff:
+
+.. code-block:: diff
+
+    -    batsim = (kapack.batsim.override { inherit debug simgrid; }).overrideAttrs (attr: rec {
+    +    batsim = (kapack.batsim.override { inherit debug; simgrid=my-custom-simgrid; }).overrideAttrs (attr: rec {
+
+And that's it, the ``batsim`` package now uses the SimGrid version we just defined :).
+
+If you want to use a local SimGrid version rather than one from a Git repository,
+the steps to follow are the same, you just need to change the source of your ``my-custom-simgrid`` package:
+
+.. code-block:: nix
+
+    my-custom-simgrid = (kapack.simgrid-light.override { inherit debug; }).overrideAttrs (attr: rec {
+      src = /path/to/your/local/simgrid/source/repository;
+    });
+
+.. _hacking_batsim_and_scheduler_at_same_time:
+
+Hacking Batsim and a scheduler at the same time
+-----------------------------------------------
+
+Similarly to :ref:`changing_batsim_dependencies`,
+it is quite common to work on both Batsim and a scheduler at the same time.
+This is notably the case when modifying the :ref:`protocol`.
+This section shows how to hack batsched/pybatsim and Batsim at the same time.
+
+A first simple way to do this is to bypass our Nix environments and put your own version of batsched/pybatsim in the ``PATH`` of the shell that launches the integration tests.
+The procedure to achieve this is very similar to what we have done in :ref:`run_tests_from_iteratively_built_batsim` so you can refer to it for details on how to setup your ``PATH`` environment variable. Here are short instructions on how to build your own local version of batsched and pybatsim:
+
+- **Batsched** can be obtained from `batsched's git repository`_ and is built in the same way as Batsim.
+  From the root of batsched's git repository,
+  you can enter a shell able to build the batsched executable by calling ``nix-shell -A batsched``.
+  ``meson build`` should then generate a build directory.
+  And finally, ``ninja -C build`` should compile a ``batsched`` executable in the build directory.
+- **Pybatsim** can be obtained from `pybatsim's git repository`_.
+  As I write these lines, pybatsim does not have a clean Nix environment support for now, but you can enter a virtualenv_ to work on pybatsim with the following commands (from the root of pybatsim's git repository).
+  First, either install python/virtualenv in your local machine or enter a Nix shell that has python and virtualenv: ``nix-shell -p python3Packages.virtualenv``. Then, create a new virtualenv by calling ``virtualenv venv`` and set your environment variables by calling ``source ./venv/bin/activate``. You can then build/install a local pybatsim by calling ``pip install .``.
+
+From there, hacking the environment of a shell that runs Batsim integration tests should be very easy for batsched, but it can be a bit tricky for pybatsim as it uses Python. Instead, you can decide to go for a Nix setup to change the versions of batsched or pybatsim, in a very similar fashion to what we did in :ref:`changing_batsim_dependencies`. Here is an example on what to add in the ``jobs`` `Nix set`_ in Batsim's :download:`default.nix <../default.nix>` to create your custom versions of batsched and pybatsim:
+
+.. code-block:: nix
+
+    my-custom-batsched = (kapack.batsched.override { inherit debug; }).overrideAttrs (attr: rec {
+      src = /path/to/your/local/batsched/source/repository;
+      preConfigure = "rm -rf build";
+    });
+
+    my-custom-pybatsim = kapack.pybatsim.overridePythonAttrs(attr: rec {
+      src = /path/to/your/local/pybatsim/source/repository;
+    });
+
+This Nix expression is very similar to what we have done and explained in :ref:`changing_batsim_dependencies`, so please refer to it for a detailed explanation of this snippet. A new Nix trick here is ``overridePythonAttrs``, which does exactly the same as ``overrideAttrs`` but with the additional dark magic to make it work with Python. We also added ``preConfigure = "rm -rf build";`` in the ``my-custom-batsched`` package definition, this line makes sure the Nix build starts from a clean ``build`` directory (this does **not** removes the ``build`` directory in your local repository that contain batsched's sources, the only directory deleted by this command is in the temporary copy done by Nix when it builds the package). You can also of course use a git repository as the package source instead of a directory in your local filesystem (once again, see :ref:`changing_batsim_dependencies` for details).
+
+Then, you can change the ``integration_tests`` attribute in :download:`default.nix <../default.nix>` to use your versions of batsched and pybatsim,
+as shown in the following diff:
+
+.. code-block:: diff
+
+        buildInputs = with pkgs.python37Packages; [
+    -     batsim batsched batexpe pkgs.redis
+    -     pybatsim pytest pytest_html pandas] ++
+    +     batsim my-custom-batsched batexpe pkgs.redis
+    +     my-custom-pybatsim pytest pytest_html pandas] ++
+        pkgs.lib.optional doValgrindAnalysis [ pkgs.valgrind ];
+
+Now, whenever you run the ``integration_tests`` (``nix-build -A integration_tests``) or enter a shell to do so (``nix-shell -A integration_tests``), the environment should use your custom versions of batsched and pybatsim.
 
 .. _Nix: https://nixos.org/nix/
 .. _NUR-Kapack: https://github.com/oar-team/nur-kapack
 .. _Running Meson: https://mesonbuild.com/Running-Meson.html
 .. _Meson's built-in options: https://mesonbuild.com/Builtin-options.html
 .. _cgdb: https://cgdb.github.io/
+.. _Nix set: https://nixos.wiki/wiki/Nix_Expression_Language#Types
+.. _SHA-256: https://en.wikipedia.org/wiki/SHA-2
+.. _batsched's git repository: https://framagit.org/batsim/batsched/
+.. _pybatsim's git repository: https://gitlab.inria.fr/batsim/pybatsim
+.. _virtualenv: https://virtualenv.pypa.io/en/latest/
