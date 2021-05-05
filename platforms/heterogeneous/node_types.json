@@ -1,12 +1,31 @@
 {
-  "Superserver SYS-6019P-MT": {
-    "id": "sys6019p",
+  "Example Node": {
+    "id": "example_node",
     "processors": [
-      { "type": "Xeon Silver 4114", "number": "2" }
+      { "type": "CPU", "model": "Example CPU", "number": "2" },
+      { "type": "GPU", "model": "Example GPU", "number": "1" }
     ],
-    "memory": {
-      "type": "DDR4-2400",
-      "capacity_gib": "32"
-    }
+    "memory_gib": "128"
+  },
+  "System x iDataPlex dx360 M4": {
+    "id": "dx360m4",
+    "processors": [
+      { "type": "CPU", "model": "Xeon Sandy Bridge E5-2670", "number": "2" }
+    ],
+    "memory_gib": "64"
+  },
+  "System x iDataPlex dx360 M3": {
+    "id": "dx360m3",
+    "processors": [
+      { "type": "GPU", "model": "Tesla M2090", "number": "2" }
+    ],
+    "memory_gib": "64"
+  },
+  "POWER 730 Express": {
+    "id": "p730ex",
+    "processors": [
+      { "type": "CPU", "model": "POWER 7", "number": "2" }
+    ],
+    "memory_gib": "64"
   }
 }
