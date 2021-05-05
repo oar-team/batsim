@@ -3,6 +3,7 @@ import argparse
 import json
 import xml.dom.minidom as xml_format
 import xml.etree.ElementTree as xml
+from collections import OrderedDict
 
 def main():
     """
@@ -45,7 +46,7 @@ def main():
             """
 
             return xml.SubElement(platform_xml, "zone",
-                attrib={"id": "main", "routing": "Full"})
+                attrib=OrderedDict({"id": "main", "routing": "Full"}))
 
         def master_zone():
             """
@@ -58,10 +59,10 @@ def main():
                 """
 
                 xml.SubElement(master_zone_xml, "host",
-                    attrib={"id": "master_host", "speed": "1Gf"})
+                    attrib=OrderedDict({"id": "master_host", "speed": "1Gf"}))
 
             master_zone_xml = xml.SubElement(main_zone_xml, "zone",
-                attrib={"id": "master", "routing": "None"})
+                attrib=OrderedDict({"id": "master", "routing": "None"}))
             master_host()
 
         def config_node():
@@ -74,10 +75,10 @@ def main():
                 Define node and proc config properties.
                 """
                 return xml.SubElement(main_zone_xml, "zone",
-                    attrib={"id": "config", "routing": "None"})
+                    attrib=OrderedDict({"id": "config", "routing": "None"}))
 
             return xml.SubElement(config_zone(), "zone",
-                attrib={"id": "node", "routing": "None"})
+                attrib=OrderedDict({"id": "node", "routing": "None"}))
 
         def clusters():
             """
@@ -97,9 +98,9 @@ def main():
 
                     if node["type"] not in recorded_nodes:
                         config_node_type_xml = xml.SubElement(config_node_xml, "zone",
-                            attrib={"id": node["type"], "routing": "None"})
+                            attrib=OrderedDict({"id": node["type"], "routing": "None"}))
                         xml.SubElement(config_node_type_xml, "prop",
-                            attrib={"id": "memory", "value": node_template["memory_gib"]})
+                            attrib=OrderedDict({"id": "memory", "value": node_template["memory_gib"]}))
                         recorded_nodes[node["type"]] = True
 
                 def udlink():
@@ -130,7 +131,7 @@ def main():
                             """
 
                             xml.SubElement(core_xml, "prop",
-                                attrib={"id": "node_type", "value": node["type"]})
+                                attrib=OrderedDict({"id": "node_type", "value": node["type"]}))
                             for prop in proc_template["core_properties"]:
                                 xml.SubElement(core_xml, "prop", attrib=prop)
 
@@ -140,8 +141,8 @@ def main():
                             """
 
                             xml.SubElement(cluster_xml, "host_link",
-                                attrib={"id": core_id, "up": udlink_id, "down": udlink_id})
-                        
+                                attrib=OrderedDict({"id": core_id, "up": udlink_id, "down": udlink_id}))
+
                         for core_idx in range(int(proc_template["nb_cores"])):
                             core_id = "cor_{}_{}".format(core_idx, proc_id)
                             _core_attrs = {"id": core_id}
@@ -170,7 +171,7 @@ def main():
                 """
 
                 xml.SubElement(cluster_xml, "router",
-                    attrib={"id": "rou_{}".format(cluster_idx)})
+                    attrib=OrderedDict({"id": "rou_{}".format(cluster_idx)}))
 
             def backbone():
                 """
@@ -186,7 +187,7 @@ def main():
             for cluster in platform["clusters"]:
                 cluster_id = "clu_{}".format(cluster_idx)
                 cluster_xml = xml.SubElement(main_zone_xml, "zone",
-                    attrib={"id": cluster_id, "routing": "Cluster"})
+                    attrib=OrderedDict({"id": cluster_id, "routing": "Cluster"}))
                 nodes()
                 router()
                 backbone()
@@ -209,13 +210,13 @@ def main():
 
             for cluster_idx in range(len(platform["clusters"])):
                 route_xml = xml.SubElement(main_zone_xml, "zoneRoute",
-                    attrib={"src": "clu_{}".format(cluster_idx), "dst": "master",
-                        "gw_src": "rou_{}".format(cluster_idx), "gw_dst": "master_host"})
+                    attrib=OrderedDict({"src": "clu_{}".format(cluster_idx), "dst": "master",
+                        "gw_src": "rou_{}".format(cluster_idx), "gw_dst": "master_host"}))
                 xml.SubElement(route_xml, "link_ctn",
-                    attrib={"id": "tomh_clu_{}".format(cluster_idx)})
+                    attrib=OrderedDict({"id": "tomh_clu_{}".format(cluster_idx)}))
 
         platform_xml = xml.Element("platform",
-            attrib={"version": "4.1"})
+            attrib=OrderedDict({"version": "4.1"}))
         main_zone_xml = main_zone()
         master_zone()
         config_node_xml = config_node()
