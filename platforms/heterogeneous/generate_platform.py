@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import defusedxml.minidom as xml_format
-from defusedxml.lxml import _etree as xml
+import xml.dom.minidom as xml_format
+import xml.etree.ElementTree as xml
 
 def main():
     """
@@ -141,7 +141,7 @@ def main():
 
                             xml.SubElement(cluster_xml, "host_link",
                                 attrib={"id": core_id, "up": udlink_id, "down": udlink_id})
-
+                        
                         for core_idx in range(int(proc_template["nb_cores"])):
                             core_id = "cor_{}_{}".format(core_idx, proc_id)
                             _core_attrs = {"id": core_id}
