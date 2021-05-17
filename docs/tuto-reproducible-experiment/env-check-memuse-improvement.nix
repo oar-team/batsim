@@ -1,7 +1,11 @@
+#
+# WARNING: do NOT use old kapack for new work!
+# make sure you use NUR-kapack instead!
+#
 { old_kapack ? import
   ( fetchTarball "https://github.com/oar-team/kapack/archive/773d3909d78f1043ffb589a725773699210d71d5.tar.gz") {}
 , kapack ? import
-  ( fetchTarball "https://github.com/oar-team/kapack/archive/f70b1149a9ae30fafe87af46e517985bacc331c3.tar.gz") {}
+  ( fetchTarball "https://github.com/oar-team/nur-kapack/archive/1672831224a21d6c34350d8f78cff9266e3e28a2.tar.gz") {}
 }:
 
 with kapack.pkgs;
@@ -21,7 +25,7 @@ let
       dontStrip = false;
     });
     # a more recent Batsim, after the introduction of smart pointers.
-    batsim = kapack.batsim_dev.overrideAttrs (attr: rec {
+    batsim = (kapack.batsim-310.override{simgrid=kapack.simgrid-325;}).overrideAttrs (attr: rec {
       name = "batsim-3.1.0-5906dbe";
       src = fetchgit {
         url = "https://framagit.org/batsim/batsim.git";
@@ -33,7 +37,7 @@ let
       dontStrip = false;
     });
     # set of scheduling algorithms
-    batsched = kapack.batsched.overrideAttrs (attr: rec {
+    batsched = kapack.batsched-130.overrideAttrs (attr: rec {
       name = "batsched-1.3.0-dev";
       src = fetchgit {
         url = "https://framagit.org/batsim/batsched.git";
@@ -59,7 +63,7 @@ let
     };
 
     # a python tool to transform massif traces to exploitable data
-    massif_to_csv = kapack.pythonPackages.buildPythonPackage rec {
+    massif_to_csv = kapack.pkgs.python3Packages.buildPythonPackage rec {
       pname = "massif_to_csv";
       version = "0.1.0";
       propagatedBuildInputs = [msparser];
@@ -70,11 +74,11 @@ let
     };
 
     # a massif_to_csv dependency
-    msparser = kapack.pythonPackages.buildPythonPackage rec {
+    msparser = kapack.pkgs.python3Packages.buildPythonPackage rec {
       pname = "msparser";
       version = "1.4";
       buildInputs = [
-        kapack.pythonPackages.pytest
+        kapack.pkgs.python3Packages.pytest
       ];
       src = builtins.fetchurl {
         url = "https://files.pythonhosted.org/packages/e0/68/aece1c5e75b49d95f304d2df029ae69583ef59a55694ec683e2452d70637/msparser-1.4.tar.gz";

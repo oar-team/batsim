@@ -15,11 +15,10 @@ This tutorial introduces main Nix_ concepts and focuses on those useful for repr
 lowering the entry cost in the Nix_ ecosystem.
 
 .. warning::
-  This tutorial uses old versions of Batsim/schedulers/Kapack_.
-  It should still work (otherwise please :ref:`contact_us` to report the issue) and the presented steps to improve the experiment repeatibility remain relevant.
+  This tutorial uses old versions of Batsim and scheduler.
+  It should still work (otherwise this is a bug, please :ref:`contact_us` to report the issue) and the presented steps to improve the experiment repeatibility are still relevant.
 
-  However, if you are looking for a starting environment for your experiment, please note that repositories and versions are outdated.
-  In particular, Kapack_ efforts have moved to the `NUR-Kapack`_ repository, so you need to use the `NUR-Kapack`_ repository instead of Kapack_ for up-to-date Batsim/schedulers/SimGrid/etc. package definitions.
+  However, please refer to :ref:`using_batsim_from_well_defined_nix_env` if you are looking for a starting environment to copy/paste for your experiment, **not** to these files.
 
 Defining a reproducible environment
 -----------------------------------
@@ -134,7 +133,7 @@ Finally, here is the notebook source:
   :caption: :download:`notebook.Rmd <./notebook.Rmd>`
   :language: md
 
-The notebook can be run with the following command.
+The notebook can be run with the following command — which will run the simulations and analyses from the notebook.
 
 .. code-block:: bash
 
