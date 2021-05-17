@@ -65,6 +65,10 @@ Using Batsim from a well-defined Nix environment
 Defining a software environment from which your simulations run is quite straightforward with Nix.
 **This is the recommended way to use Batsim.**
 
+.. raw:: html
+
+    <script id="asciicast-414663" src="https://asciinema.org/a/414663.js" async></script>
+
 For example, the following file defines an en environment from which you can execute batsim and a scheduler implementation. It uses the last release of our tools.
 
 .. literalinclude:: ./tuto-first-simulation/tuto-env.nix
