@@ -239,7 +239,7 @@ Miscellaneous
 - Various bug fixes.
 - Removed the python experiment scripts that were located in ``tools/experiments``,
   as robin_ became the standard tool to execute Batsim experiments.
-- Removed git submodules. Please now use schedulers directly from their repositories or from kapack_.
+- Removed git submodules. Please now use schedulers directly from their repositories or from kapack.
 - Removed dependencies to GMP and cppzmq.
 - Batsim now mainly uses the s4u SimGrid interface.
   If you used to set SimGrid configuration/logging options through Batsim CLI,
@@ -440,7 +440,6 @@ Changed
 .. _intervalset: https://framagit.org/batsim/intervalset
 .. _batexpe: https://framagit.org/batsim/batexpe/
 .. _robin: https://framagit.org/batsim/batexpe/blob/master/doc/robin.md
-.. _kapack: https://github.com/oar-team/kapack/
 .. _`docopt-cpp`: https://github.com/docopt/docopt.cpp
 .. _pugixml: https://pugixml.org/
 .. _Meson: https://mesonbuild.com/
