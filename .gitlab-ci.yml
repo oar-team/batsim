@@ -71,6 +71,16 @@ tuto_first_simulation-stable:
     - nix-shell ./tuto-env.nix --command './run_simulation_manually.bash'
     - nix-shell ./tuto-env.nix --command './run_simulation_robin.bash'
 
+tuto_first_simulation-pinned:
+  stage: big_stage
+  only:
+    - schedules
+  script:
+    - cd docs/tuto-first-simulation
+    - nix-shell --pure ./tuto-env-pinned.nix --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-shell ./tuto-env-pinned.nix --command './run_simulation_manually.bash'
+    - nix-shell ./tuto-env-pinned.nix --command './run_simulation_robin.bash'
+
 tuto_first_simulation:
   stage: big_stage
   only:

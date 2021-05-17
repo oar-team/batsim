@@ -65,22 +65,26 @@ Using Batsim from a well-defined Nix environment
 Defining a software environment from which your simulations run is quite straightforward with Nix.
 **This is the recommended way to use Batsim.**
 
-For example, the following file defines an en environment from which you can execute batsim and a scheduler implementation.
-It uses the last release of our tools.
+For example, the following file defines an en environment from which you can execute batsim and a scheduler implementation. It uses the last release of our tools.
 
 .. literalinclude:: ./tuto-first-simulation/tuto-env.nix
   :caption: :download:`tuto-env.nix <./tuto-first-simulation/tuto-env.nix>`
   :language: nix
 
-If you want latest commit of the same tools instead, you can define your environment like this:
+After downloading an environment file on your machine's filesystem, you can enter the environment thanks to ``nix-shell`` — for example ``nix-shell ./env.nix`` if you downloaded :download:`tuto-env.nix <./tuto-first-simulation/tuto-env.nix>` into you current working directory as ``env.nix``.
+The strength of this approach is that you can easily tune which version you want to use for each tool.
+For example, the next environment uses the latest commit of the master branch of the same tools.
 
 .. literalinclude:: ./tuto-first-simulation/tuto-env-master.nix
   :caption: :download:`tuto-env-master.nix <./tuto-first-simulation/tuto-env-master.nix>`
   :language: nix
 
-You can enter such environments thanks to ``nix-shell`` —
-for example ``nix-shell my-env.nix`` if you have downloaded one environment file as ``my-env.nix`` in your current working directory.
-For more information about this usage, please read our tutorial :ref:`tuto_reproducible_experiment`.
+And here is a more advanced example where you can specify the git repository and commit to use for every tool.
+This can be used as a base to start an experiment using Batsim, as you will probably need to implement new algorithms/features in a scheduler, Batsim or both. You may also be interested in reading :ref:`tuto_reproducible_experiment` for good practice advices.
+
+.. literalinclude:: ./tuto-first-simulation/tuto-env-pinned.nix
+  :caption: :download:`tuto-env-pinned.nix <./tuto-first-simulation/tuto-env-pinned.nix>`
+  :language: nix
 
 Installing Batsim in your system via Nix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
