@@ -43,6 +43,7 @@ For example:
 Roles can also be added via the :ref:`cli` command ``-r, --add-role-to-hosts <hosts_role_map>``, where
 ``hosts_role_map`` is formated as ``<hostname1[,hostname2,...]>:<role>``.
 
+.. _platform_energy_model:
 
 Energy model
 ------------
