@@ -20,21 +20,28 @@ using namespace std;
 
 void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, const std::string & termination_mbox_name, int rank)
 {
-    // Prepare data for smpi_replay_run
-    char * str_instance_id = nullptr;
-    int ret = asprintf(&str_instance_id, "%s", job->id.to_cstring());
-    (void) ret; // Avoids a warning if assertions are ignored
-    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+    try
+    {
+        // Prepare data for smpi_replay_run
+        char * str_instance_id = nullptr;
+        int ret = asprintf(&str_instance_id, "%s", job->id.to_cstring());
+        (void) ret; // Avoids a warning if assertions are ignored
+        xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
-    XBT_INFO("Replaying rank %d of job %s (SMPI)", rank, job->id.to_cstring());
-    smpi_replay_run(str_instance_id, rank, 0, profile_data->trace_filenames[static_cast<size_t>(rank)].c_str());
-    XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_cstring());
+        XBT_INFO("Replaying rank %d of job %s (SMPI)", rank, job->id.to_cstring());
+        smpi_replay_run(str_instance_id, rank, 0, profile_data->trace_filenames[static_cast<size_t>(rank)].c_str());
+        XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_cstring());
 
-    // Tell parent process that replay has finished for this rank.
-    auto mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
-    auto rank_copy = new unsigned int;
-    *rank_copy = static_cast<unsigned int>(rank);
-    mbox->put(static_cast<void*>(rank_copy), 4);
+        // Tell parent process that replay has finished for this rank.
+        auto mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
+        auto rank_copy = new unsigned int;
+        *rank_copy = static_cast<unsigned int>(rank);
+        mbox->put(static_cast<void*>(rank_copy), 4);
+    }
+    catch (const simgrid::NetworkFailureException & e)
+    {
+        XBT_INFO("Caught a NetworkFailureException caught: %s", e.what());
+    }
 }
 
 int execute_task(BatTask * btask,
