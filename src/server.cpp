@@ -176,6 +176,8 @@ void server_on_probe_data(ServerData *data,
                           IPMessage *task_data)
 {
     xbt_assert(task_data->data != nullptr);
+    static_cast<void>(data);
+    
 }
 // a faire
 void server_on_add_probe(ServerData *data,
