@@ -87,6 +87,15 @@ public:
                                           bool allow_compute_sharing,
                                           bool allow_storage_sharing,
                                           double date) = 0;
+    /**
+     * @brief Generates a string representation of the message containing the data of a probe.
+     * @param[in] probe_name The name of the probe.
+     * @param[in] date The message date. Must be greater than or equal to the inner events dates.
+     * @param[in] value The value wich has been measured
+     */
+    virtual void append_probe_data(const std::string & probe_name,
+                    double date, 
+                    double value) = 0;
 
     /**
      * @brief Appends a SIMULATION_ENDS event.
@@ -215,6 +224,12 @@ public:
      */
     virtual std::string generate_current_message(double date) = 0;
 
+
+
+
+
+
+
     /**
      * @brief Returns whether the Writer has content
      * @return Whether the Writer has content
@@ -244,6 +259,16 @@ public:
      * @brief Destroys a JsonProtocolWriter
      */
     ~JsonProtocolWriter();
+
+    /**
+     * @brief Generates a string representation of the message containing the data of a probe.
+     * @param[in] probe_name The name of the probe.
+     * @param[in] date The message date. Must be greater than or equal to the inner events dates.
+     * @param[in] value The value wich has been measured
+     */
+    void append_probe_data(const std::string & probe_name,
+                    double date, 
+                    double value);
 
     // Messages from Batsim to the Scheduler
     /**
@@ -573,6 +598,25 @@ public:
      * @param[in] data_object The data associated with the event (JSON object)
      */
     void handle_kill_job(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
+     * @brief Handles a ADD_PROBE event
+     * @param[in] event_number The event number in [0,nb_events[.
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_add_probe(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+    /**
+     * @brief Handles a PROBE_DATA event
+     * @param[in] event_number The event number in [0,nb_events[.
+     * @param[in] timestamp The event timestamp
+     * @param[in] data_object The data associated with the event (JSON object)
+     */
+    void handle_probe_data(int event_number, double timestamp, const rapidjson::Value & data_object);
+
+
+
 
 private:
     /**

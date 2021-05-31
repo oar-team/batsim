@@ -151,6 +151,12 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::EVENT_OCCURRED:
             s = "EVENT_OCCURRED";
             break;
+        case IPMessageType::PROBE_DATA:
+            s = "PROBE_DATA";
+            break;
+        case IPMessageType::SCHED_ADD_PROBE:
+            s="SCHED_ADD_PROBE";
+            break;
     }
 
     return s;
@@ -300,6 +306,16 @@ IPMessage::~IPMessage()
             auto * msg = static_cast<EventOccurredMessage *>(data);
             delete msg;
         } break;
+        case IPMessageType::PROBE_DATA:
+        {
+            auto * msg = static_cast<ProbeDataMessage *>(data);
+            delete msg;
+        } break;
+        case IPMessageType::SCHED_ADD_PROBE:
+        {
+            auto * msg = static_cast<SchedAddProbeMessage *>(data);
+            delete msg;
+        }break;
     }
 
     data = nullptr;

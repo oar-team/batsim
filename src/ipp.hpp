@@ -40,6 +40,7 @@ enum class IPMessageType
     ,SCHED_TELL_ME_ENERGY   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform consumed energy).
     ,SCHED_SET_JOB_METADATA //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a SET_JOB_METADATA message).
     ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
+    ,SCHED_ADD_PROBE        //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a ADD_PROBE message).
     ,WAIT_QUERY             //!< Server -> Scheduler. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,SCHED_READY            //!< Scheduler -> Server. The scheduler tells the server that the scheduler is ready (the scheduler is ready, messages can be sent to it).
     ,WAITING_DONE           //!< Waiter -> Server. The waiter tells the server that the target time has been reached.
@@ -54,7 +55,10 @@ enum class IPMessageType
     ,TO_JOB_MSG                //!< Scheduler -> Server. The scheduler sends a message to a job.
     ,FROM_JOB_MSG              //!< Job -> Server. The job wants to send a message to the scheduler via the server.
     ,EVENT_OCCURRED            //!< Sumbitter -> Server. The event submitter tells the server that one or several events have occurred.
+    ,PROBE_DATA              //!
 };
+
+
 
 /**
  * @brief Contains the different types of submitters
@@ -75,6 +79,15 @@ namespace std
     };
 }
 /// @endcond
+
+/**
+ * @brief The content of the PROBE_DATA message 
+ */
+struct ProbeDataMessage
+{
+    std::string probe_name;
+    double value;
+};
 
 /**
  * @brief The content of the SUBMITTER_HELLO message
@@ -234,6 +247,20 @@ struct SchedWaitAnswerMessage
     double processing_time; //!< The duration for which the resources would be used
     double expected_time; //!< The expected waiting time supplied by the scheduler
 };
+
+/**
+ * @brief the content of the SchedAddProbe message 
+ */ 
+struct SchedAddProbeMessage
+{
+    std::string name;
+    //trigger
+    //metrics
+    // bool filter;
+    //smoothing parameters
+    IntervalSet machine_ids; 
+};
+
 
 /**
  * @brief The content of the SwitchON/SwitchOFF message
