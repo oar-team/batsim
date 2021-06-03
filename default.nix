@@ -11,6 +11,7 @@
 , werror ? false
 , doValgrindAnalysis ? false
 , debug ? true
+, useClang ? false
 , simgrid ? kapack.simgrid-light.override { inherit debug; }
 , batsched ? kapack.batsched-master
 , batexpe ? kapack.batexpe
@@ -25,11 +26,14 @@ let
   pythonPackages = pkgs.python3Packages;
   buildPythonPackage = pythonPackages.buildPythonPackage;
 
+  custom-stdenv-base = if useClang then pkgs.clangStdenv else pkgs.gccStdenv;
+  custom-stdenv = if debug then (pkgs.stdenvAdapters.keepDebugInfo custom-stdenv-base) else custom-stdenv-base;
+
   jobs = rec {
     inherit pkgs;
     inherit kapack;
     # Batsim executable binary file.
-    batsim = (kapack.batsim.override { inherit debug simgrid; }).overrideAttrs (attr: rec {
+    batsim = (kapack.batsim.override { inherit debug simgrid; stdenv = custom-stdenv; }).overrideAttrs (attr: rec {
       buildInputs = attr.buildInputs
         ++ pkgs.lib.optional doUnitTests [pkgs.gtest.dev];
       src = pkgs.lib.sourceByRegex ./. [
@@ -40,10 +44,13 @@ let
         "^meson\.build"
         "^meson_options\.txt"
       ];
+      patches = [];
+      mesonBuildType = if debug then "debug" else "release";
       mesonFlags = [ "--warnlevel=3" ]
         ++ pkgs.lib.optional werror [ "--werror" ]
         ++ pkgs.lib.optional doUnitTests [ "-Ddo_unit_tests=true" ]
         ++ pkgs.lib.optional doCoverage [ "-Db_coverage=true" ];
+      ninjaFlags = [ "-v" ];
 
       # Unit tests
       doCheck = doUnitTests;
