@@ -22,7 +22,7 @@
 
 let
   pkgs = kapack.pkgs;
-  pythonPackages = pkgs.python37Packages;
+  pythonPackages = pkgs.python3Packages;
   buildPythonPackage = pythonPackages.buildPythonPackage;
 
   jobs = rec {
@@ -103,7 +103,7 @@ let
         "^events"
         "^events/.*\.txt"
       ];
-      buildInputs = with pkgs.python37Packages; [
+      buildInputs = with pkgs.python3Packages; [
         batsim batsched batexpe pkgs.redis
         pybatsim pytest pytest_html pandas] ++
       pkgs.lib.optional doValgrindAnalysis [ pkgs.valgrind ];
