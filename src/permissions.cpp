@@ -1,6 +1,7 @@
 #include "permissions.hpp"
 
 #include <map>
+#include <stdexcept>
 
 const static std::map<std::string, roles::Permissions> map_str_to_role = {
     {"master", roles::Permissions::MASTER},
