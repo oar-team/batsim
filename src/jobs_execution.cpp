@@ -600,7 +600,7 @@ void killer_process(BatsimContext * context,
                 // There was no ptask running, directly kill the actor
 
                 // Let's kill all the involved processes
-                xbt_assert(job->execution_actors.size() > 0);
+                xbt_assert(job->execution_actors.size() > 0, "kill inconsistency: no actors to kill while job's task could not be cancelled");
                 for (simgrid::s4u::ActorPtr actor : job->execution_actors)
                 {
                     XBT_INFO("Killing process '%s'", actor->get_cname());

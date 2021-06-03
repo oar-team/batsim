@@ -29,7 +29,7 @@ void test_wrapper_my_strcmp(const std::string & s1, const std::string & s2, int 
 {
     xbt_assert(expected_sign == 0 ||
                expected_sign == 1 ||
-               expected_sign == -1);
+               expected_sign == -1, "expected_sign (%d) not in {-1, 0, 1}", expected_sign);
 
     int ret_my_cmp = string_numeric_comparator(s1, s2);
     int sign_my_cmp = test_wrapper_sign_or_null(ret_my_cmp);

@@ -518,13 +518,13 @@ void Machines::update_machines_on_job_end(const JobPtr job,
         int machine_id = *it;
         Machine * machine = _machines[static_cast<size_t>(machine_id)];
 
-        xbt_assert(!machine->jobs_being_computed.empty());
+        xbt_assert(!machine->jobs_being_computed.empty(), "inconsistency: marking machine %d on job '%s' end, while no job is being computed on the machine", machine_id, job->id.to_cstring());
         const auto previous_top_job = *machine->jobs_being_computed.begin();
 
         // Let's erase jobID in the jobs_being_computed data structure
         size_t ret = machine->jobs_being_computed.erase(job);
         (void) ret; // Avoids a warning if assertions are ignored
-        xbt_assert(ret == 1);
+        xbt_assert(ret == 1, "could not erase job '%s' from jobs being computed of machine %d", job->id.to_cstring(), machine_id);
 
         if (machine->jobs_being_computed.empty())
         {
@@ -591,7 +591,7 @@ string machine_state_to_string(MachineState state)
 Machine::Machine(Machines *machines) :
     machines(machines)
 {
-    xbt_assert(this->machines != nullptr);
+    xbt_assert(this->machines != nullptr, "wrong call: machines is null");
     const vector<MachineState> machine_states = {MachineState::SLEEPING, MachineState::IDLE,
                                                  MachineState::COMPUTING,
                                                  MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING,
@@ -696,7 +696,7 @@ void Machine::update_machine_state(MachineState new_state)
     long double current_date = static_cast<long double>(simgrid::s4u::Engine::get_clock());
 
     long double delta_time = current_date - last_state_change_date;
-    xbt_assert(delta_time >= 0);
+    xbt_assert(delta_time >= 0, "time inconsistency: time has decreased since last call");
 
     time_spent_in_each_state[state] += delta_time;
 

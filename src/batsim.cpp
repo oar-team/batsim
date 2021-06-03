@@ -83,7 +83,7 @@ bool file_exists(const std::string & filename)
  */
 std::string absolute_filename(const std::string & filename)
 {
-    xbt_assert(filename.length() > 0);
+    xbt_assert(filename.length() > 0, "filename '%s' is not a filename...", filename.c_str());
 
     // Let's assume filenames starting by "/" are absolute.
     if (filename[0] == '/')

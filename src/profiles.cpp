@@ -646,7 +646,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         fs::path base_dir = json_filename;
         base_dir = base_dir.parent_path();
         XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
-        xbt_assert(fs::exists(base_dir) && fs::is_directory(base_dir));
+        xbt_assert(fs::exists(base_dir) && fs::is_directory(base_dir), "directory '%s' does not exist or is not a directory", base_dir.string().c_str());
 
         //XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
         //XBT_INFO("trace = '%s'", trace.c_str());
