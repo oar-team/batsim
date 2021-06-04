@@ -1,8 +1,8 @@
 { kapack ? import
-    (fetchTarball "https://github.com/oar-team/nur-kapack/archive/master.tar.gz")
+    (fetchTarball "https://framagit.org/api/v4/projects/batsim%2Fbatsim/repository/archive.tar.gz?sha=probes")
   {}
-, doUnitTests ? true
-, doCoverage ? true
+, doUnitTests ? false
+, doCoverage ? false
 , coverageCobertura ? false
 , coverageCoveralls ? false
 , coverageGcovTxt ? false
@@ -14,7 +14,13 @@
 , simgrid ? kapack.simgrid-light.override { inherit debug; }
 , batsched ? kapack.batsched-master
 , batexpe ? kapack.batexpe
-, pybatsim ? kapack.pybatsim-master
+# , pybatsim ? kapack.pybatsim-master
+, pybatsim ? kapack.pybatsim.overridePythonAttrs(old: rec {
+    src = builtins.fetchGit {
+    url = "https://gitlab.inria.fr/batsim/pybatsim.git";
+    ref = "probes";
+};
+  })
 # set this to avoid running tests over and over
 # (e.g., to debug coverage reports or to run tests and coverage report separately)
 , testVersion ? toString builtins.currentTime
