@@ -15,7 +15,7 @@
 class Jobs;
 struct Job;
 class Profiles;
-struct JobIdentifier;
+class JobIdentifier;
 struct BatsimContext;
 
 /**

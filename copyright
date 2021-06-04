@@ -14,18 +14,3 @@ Copyright:
   2017     , Steffen Lackner <lackner@cs.tu-darmstadt.de>
   2017     , Adrien Faure <adrien.faure2@gmail.com>
 License: LGPL-3.0
-
-Files: src/docopt/*
-Copyright: 2013 Jared Grubb. All rights reserved.
-License: Expat
-Comment: See details in the source directory
-
-Files: src/pugixml-1.7/*
-Copyright: 2006-2017 Arseny Kapoulkine
-License: Expat
-
-Files: cmake/Modules/Findrapidjson.cmake
-Copyright:
-  2011 Milo Yip (miloyip@gmail.com)
-  2013 Rafal Jeczalik (rjeczalik@gmail.com)
-License: Expat

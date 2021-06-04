@@ -288,19 +288,19 @@ void JsonProtocolWriter::append_job_submitted(const string &job_id,
   Value data(rapidjson::kObjectType);
   data.AddMember("job_id", Value().SetString(job_id.c_str(), _alloc), _alloc);
 
-  if (!_context->redis_enabled)
-  {
-    Document job_description_doc;
-    job_description_doc.Parse(job_json_description.c_str());
-    xbt_assert(!job_description_doc.HasParseError());
+    if (!_context->redis_enabled)
+    {
+        Document job_description_doc;
+        job_description_doc.Parse(job_json_description.c_str());
+        xbt_assert(!job_description_doc.HasParseError(), "JSON parse error");
 
     data.AddMember("job", Value().CopyFrom(job_description_doc, _alloc), _alloc);
 
-    if (_context->submission_forward_profiles)
-    {
-      Document profile_description_doc;
-      profile_description_doc.Parse(profile_json_description.c_str());
-      xbt_assert(!profile_description_doc.HasParseError());
+        if (_context->submission_forward_profiles)
+        {
+            Document profile_description_doc;
+            profile_description_doc.Parse(profile_json_description.c_str());
+            xbt_assert(!profile_description_doc.HasParseError(), "JSON parse error");
 
       data.AddMember("profile", Value().CopyFrom(profile_description_doc, _alloc), _alloc);
     }
@@ -554,11 +554,11 @@ void JsonProtocolWriter::append_query_estimate_waiting_time(const string &job_id
 
   Value estimate_object(rapidjson::kObjectType);
 
-  Document job_description_doc;
-  job_description_doc.Parse(job_json_description.c_str());
-  xbt_assert(!job_description_doc.HasParseError());
-  estimate_object.AddMember("job_id", Value().SetString(job_id.c_str(), _alloc), _alloc);
-  estimate_object.AddMember("job", Value().CopyFrom(job_description_doc, _alloc), _alloc);
+    Document job_description_doc;
+    job_description_doc.Parse(job_json_description.c_str());
+    xbt_assert(!job_description_doc.HasParseError(), "JSON parse error");
+    estimate_object.AddMember("job_id", Value().SetString(job_id.c_str(), _alloc), _alloc);
+    estimate_object.AddMember("job", Value().CopyFrom(job_description_doc, _alloc), _alloc);
 
   Value requests_object(rapidjson::kObjectType);
   requests_object.AddMember("estimate_waiting_time", estimate_object, _alloc);
@@ -673,10 +673,10 @@ void JsonProtocolWriter::append_notify_generic_event(const std::string &json_des
   event.AddMember("timestamp", Value().SetDouble(date), _alloc);
   event.AddMember("type", Value().SetString("NOTIFY"), _alloc);
 
-  Document event_doc;
-  event_doc.Parse(json_desc_str.c_str());
-  xbt_assert(!event_doc.HasParseError());
-  event.AddMember("data", Value().CopyFrom(event_doc, _alloc), _alloc);
+    Document event_doc;
+    event_doc.Parse(json_desc_str.c_str());
+    xbt_assert(!event_doc.HasParseError(), "JSON parse error");
+    event.AddMember("data", Value().CopyFrom(event_doc, _alloc), _alloc);
 
   _events.PushBack(event, _alloc);
 }
@@ -1041,7 +1041,7 @@ void JsonProtocolReader::handle_execute_job(int event_number,
       message->allocation->mapping.push_back(mit->second);
     }
 
-    xbt_assert(message->allocation->mapping.size() == mapping_map.size());
+    xbt_assert(message->allocation->mapping.size() == mapping_map.size(), "internal inconsistency on mapping size");
   }
 
   // *************************************

@@ -1,8 +1,0 @@
-batcmd: batsim -v debug -p ../../../platforms/small_platform.xml
-  --events ../../../events/test_events_4hosts.txt
-failure-timeout: 0
-output-dir: .
-ready-timeout: 3
-schedcmd: pybatsim fillerSchedWithEvents
-simulation-timeout: 30
-success-timeout: 3

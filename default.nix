@@ -11,6 +11,7 @@
 , werror ? false
 , doValgrindAnalysis ? false
 , debug ? true
+, useClang ? false
 , simgrid ? kapack.simgrid-light.override { inherit debug; }
 , batsched ? kapack.batsched-master
 , batexpe ? kapack.batexpe
@@ -28,14 +29,17 @@
 
 let
   pkgs = kapack.pkgs;
-  pythonPackages = pkgs.python37Packages;
+  pythonPackages = pkgs.python3Packages;
   buildPythonPackage = pythonPackages.buildPythonPackage;
+
+  custom-stdenv-base = if useClang then pkgs.clangStdenv else pkgs.gccStdenv;
+  custom-stdenv = if debug then (pkgs.stdenvAdapters.keepDebugInfo custom-stdenv-base) else custom-stdenv-base;
 
   jobs = rec {
     inherit pkgs;
     inherit kapack;
     # Batsim executable binary file.
-    batsim = (kapack.batsim.override { inherit debug simgrid; }).overrideAttrs (attr: rec {
+    batsim = (kapack.batsim.override { inherit debug simgrid; stdenv = custom-stdenv; }).overrideAttrs (attr: rec {
       buildInputs = attr.buildInputs
         ++ pkgs.lib.optional doUnitTests [pkgs.gtest.dev];
       src = pkgs.lib.sourceByRegex ./. [
@@ -46,10 +50,13 @@ let
         "^meson\.build"
         "^meson_options\.txt"
       ];
+      patches = [];
+      mesonBuildType = if debug then "debug" else "release";
       mesonFlags = [ "--warnlevel=3" ]
         ++ pkgs.lib.optional werror [ "--werror" ]
         ++ pkgs.lib.optional doUnitTests [ "-Ddo_unit_tests=true" ]
         ++ pkgs.lib.optional doCoverage [ "-Db_coverage=true" ];
+      ninjaFlags = [ "-v" ];
 
       # Unit tests
       doCheck = doUnitTests;
@@ -109,9 +116,9 @@ let
         "^events"
         "^events/.*\.txt"
       ];
-      buildInputs = with pkgs.python37Packages; [
+      buildInputs = with pkgs.python3Packages; [
         batsim batsched batexpe pkgs.redis
-        pybatsim pytest pytest_html pandas] ++
+        pybatsim pytest pytest-html pandas] ++
       pkgs.lib.optional doValgrindAnalysis [ pkgs.valgrind ];
 
       pytestArgs = "-ra test/ --html=./report/pytest_report.html" +
@@ -278,33 +285,6 @@ let
         mkdir -p $out
         cp -r _build/html $out/
       '';
-    };
-
-    # Dependencies not in nixpkgs as I write these lines.
-    pytest_metadata = buildPythonPackage {
-      name = "pytest-metadata-1.8.0";
-      doCheck = false;
-      propagatedBuildInputs = [
-        pythonPackages.pytest
-        pythonPackages.setuptools_scm
-      ];
-      src = builtins.fetchurl {
-        url = "https://files.pythonhosted.org/packages/12/38/eed3a1e00c765e4da61e4e833de41c3458cef5d18e819d09f0f160682993/pytest-metadata-1.8.0.tar.gz";
-        sha256 = "1fk6icip2x1nh4kzhbc8cnqrs77avpqvj7ny3xadfh6yhn9aaw90";
-      };
-    };
-
-    pytest_html = buildPythonPackage {
-      name = "pytest-html-1.20.0";
-      doCheck = false;
-      propagatedBuildInputs = [
-        pythonPackages.pytest
-        pytest_metadata
-      ];
-      src = builtins.fetchurl {
-        url = "https://files.pythonhosted.org/packages/08/3e/63d998f26c7846d3dac6da152d1b93db3670538c5e2fe18b88690c1f52a7/pytest-html-1.20.0.tar.gz";
-        sha256 = "17jyn4czkihrs225nkpj0h113hc03y0cl07myb70jkaykpfmrim7";
-      };
     };
   };
 in

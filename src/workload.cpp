@@ -255,8 +255,8 @@ void Workloads::delete_jobs(const vector<JobIdentifier> & job_ids,
 
 void Workloads::insert_workload(const std::string &workload_name, Workload *workload)
 {
-    xbt_assert(!exists(workload_name));
-    xbt_assert(!exists(workload->name));
+    xbt_assert(!exists(workload_name), "workload '%s' already exists", workload_name.c_str());
+    xbt_assert(!exists(workload->name), "workload '%s' already exists", workload->name.c_str());
 
     workload->name = workload_name;
     _workloads[workload_name] = workload;

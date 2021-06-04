@@ -16,14 +16,14 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(pstate, "pstate"); //!< Logging
 
 void switch_on_machine_process(BatsimContext *context, int machine_id, int new_pstate)
 {
-    xbt_assert(context->machines.exists(machine_id));
+    xbt_assert(context->machines.exists(machine_id), "machine %d does not exist", machine_id);
     Machine * machine = context->machines[machine_id];
 
-    xbt_assert(machine->host == simgrid::s4u::this_actor::get_host());
-    xbt_assert(machine->state == MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING);
-    xbt_assert(machine->jobs_being_computed.empty());
-    xbt_assert(machine->has_pstate(new_pstate));
-    xbt_assert(machine->pstates[new_pstate] == PStateType::COMPUTATION_PSTATE);
+    xbt_assert(machine->host == simgrid::s4u::this_actor::get_host(), "host inconsistency: actor executed with wrong machine arg (%d)", machine_id);
+    xbt_assert(machine->state == MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING, "machine %d is not TRANSITING_FROM_SLEEPING_TO_COMPUTING", machine_id);
+    xbt_assert(machine->jobs_being_computed.empty(), "jobs are running on machine %d", machine_id);
+    xbt_assert(machine->has_pstate(new_pstate), "machine %d has no pstate %d", machine_id, new_pstate);
+    xbt_assert(machine->pstates[new_pstate] == PStateType::COMPUTATION_PSTATE, "pstate %d of machine %d is not a computation pstate", new_pstate, machine_id);
 
     int current_pstate = machine->host->get_pstate();
     int on_ps = machine->sleep_pstates[current_pstate]->switch_on_virtual_pstate;
@@ -51,14 +51,14 @@ void switch_on_machine_process(BatsimContext *context, int machine_id, int new_p
 
 void switch_off_machine_process(BatsimContext * context, int machine_id, int new_pstate)
 {
-    xbt_assert(context->machines.exists(machine_id));
+    xbt_assert(context->machines.exists(machine_id), "machine %d does not exist", machine_id);
     Machine * machine = context->machines[machine_id];
 
-    xbt_assert(machine->host == simgrid::s4u::this_actor::get_host());
-    xbt_assert(machine->state == MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING);
-    xbt_assert(machine->jobs_being_computed.empty());
-    xbt_assert(machine->has_pstate(new_pstate));
-    xbt_assert(machine->pstates[new_pstate] == PStateType::SLEEP_PSTATE);
+    xbt_assert(machine->host == simgrid::s4u::this_actor::get_host(), "host inconsistency: actor executed with wrong machine arg (%d)", machine_id);
+    xbt_assert(machine->state == MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING, "machine %d is not TRANSITING_FROM_COMPUTING_TO_SLEEPING", machine_id);
+    xbt_assert(machine->jobs_being_computed.empty(), "jobs are running on machine %d", machine_id);
+    xbt_assert(machine->has_pstate(new_pstate), "machine %d has no pstate %d", machine_id, new_pstate);
+    xbt_assert(machine->pstates[new_pstate] == PStateType::SLEEP_PSTATE, "pstate %d of machine %d is not a computation pstate", new_pstate, machine_id);
 
     int off_ps = machine->sleep_pstates[new_pstate]->switch_off_virtual_pstate;
 
@@ -106,7 +106,7 @@ bool CurrentSwitches::mark_switch_as_done(int machine_id,
                                           IntervalSet & all_machines,
                                           BatsimContext * context)
 {
-    xbt_assert(_switches.count(target_pstate) == 1);
+    xbt_assert(_switches.count(target_pstate) == 1, "switch count inconsistency");
 
     std::list<Switch*> & list = _switches[target_pstate];
 
