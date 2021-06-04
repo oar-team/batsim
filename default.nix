@@ -1,5 +1,5 @@
 { kapack ? import
-    (fetchTarball "https://framagit.org/api/v4/projects/batsim%2Fbatsim/repository/archive.tar.gz?sha=probes")
+    (fetchTarball "https://github.com/oar-team/nur-kapack/archive/master.tar.gz")
   {}
 , doUnitTests ? false
 , doCoverage ? false
