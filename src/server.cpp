@@ -179,7 +179,7 @@ void server_on_probe_data(ServerData *data,
     static_cast<void>(data);
     
 }
-// a faire
+
 void server_on_add_probe(ServerData *data,
                          IPMessage *task_data)
 {
@@ -191,8 +191,9 @@ void server_on_add_probe(ServerData *data,
     auto *message = static_cast<SchedAddProbeMessage *>(task_data->data);
     IntervalSet hosts = message->machine_ids;
     std::string name = message->name;
-    Probe probe = new_probe(name, hosts);
-    double value = probe.power_consumption(data->context);
+    std::string met = message->metrics;
+    Probe probe = new_probe(name,met, hosts,data->context);
+    double value = probe.return_value();
     data->context->proto_writer->append_probe_data(name,simgrid::s4u::Engine::get_clock(),value);
 }
 

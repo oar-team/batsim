@@ -2,11 +2,11 @@
     (fetchTarball "https://github.com/oar-team/nur-kapack/archive/master.tar.gz")
   {}
 , doUnitTests ? false
-, doCoverage ? false
+, doCoverage ? true
 , coverageCobertura ? false
 , coverageCoveralls ? false
-, coverageGcovTxt ? false
-, coverageHtml ? false
+, coverageGcovTxt ? true
+, coverageHtml ? true
 , coverageSonarqube ? false
 , werror ? false
 , doValgrindAnalysis ? false
@@ -15,13 +15,13 @@
 , simgrid ? kapack.simgrid-light.override { inherit debug; }
 , batsched ? kapack.batsched-master
 , batexpe ? kapack.batexpe
+, pytest_file_or_dir ? "test/"
 # , pybatsim ? kapack.pybatsim-master
 , pybatsim ? kapack.pybatsim.overridePythonAttrs(old: rec {
-    src = builtins.fetchGit {
-    url = "https://gitlab.inria.fr/batsim/pybatsim.git";
-    ref = "probes";
-};
+    src = /home/julien/Documents/StageBatsim/Code/pybatsim;
   })
+
+  
 # set this to avoid running tests over and over
 # (e.g., to debug coverage reports or to run tests and coverage report separately)
 , testVersion ? toString builtins.currentTime
@@ -121,7 +121,8 @@ let
         pybatsim pytest pytest-html pandas] ++
       pkgs.lib.optional doValgrindAnalysis [ pkgs.valgrind ];
 
-      pytestArgs = "-ra test/ --html=./report/pytest_report.html" +
+      
+      pytestArgs = "-ra ${pytest_file_or_dir} --html=./report/pytest_report.html" +
         pkgs.lib.optionalString doValgrindAnalysis " --with-valgrind";
 
       preBuild = pkgs.lib.optionalString doCoverage ''

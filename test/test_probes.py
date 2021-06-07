@@ -13,8 +13,8 @@ def probe(platform, workload, algorithm):
 
     batcmd = gen_batsim_cmd(platform.filename, workload.filename, output_dir, "")
     instance = RobinInstance(output_dir=output_dir,
-        batcmd=batcmd,
-        schedcmd=f"pybatsim testSched",
+        batcmd=batcmd+' --energy',
+        schedcmd=f"pybatsim testProbesOneShot",
         simulation_timeout=30, ready_timeout=5,
         success_timeout=10, failure_timeout=0
     )

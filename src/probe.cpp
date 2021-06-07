@@ -22,43 +22,57 @@ using namespace roles;
 
 
 
-Probe new_probe(std::string name,const IntervalSet & machines){
+Probe new_probe(std::string name,std::string metrics ,const IntervalSet & machines, BatsimContext * context){
     Probe nwprobe;
     nwprobe.name = name;
+    nwprobe.metrics = metrics;
     nwprobe.id_machines = machines;
+    nwprobe.context = context;
     return nwprobe;
 }
 
-long double Probe::get_consumed_energy(BatsimContext * context){
+double Probe::get_consumed_energy(){
     if (!context->energy_used)
     {
         return 0;
     }
 
-    long double consumed_energy = 0;
+     double consumed_energy = 0;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
     {
         int machine_id = *it;
         Machine * machine = context->machines[machine_id];
-        consumed_energy += static_cast<long double>(sg_host_get_consumed_energy(machine->host));
+        consumed_energy += sg_host_get_consumed_energy(machine->host);
     }
 
-    return consumed_energy;
+    return static_cast<double>(consumed_energy);
 }
 
 
-double Probe::power_consumption(BatsimContext * context){
+double Probe::power_consumption(){
     if (!context->energy_used)
     {
         return 0;
     }
+
     double current_consumption = 0;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
-    {
+    {   
         int machine_id = *it;
         Machine * machine = context->machines[machine_id];
-        current_consumption += static_cast<double>(sg_host_get_current_consumption(machine->host));
+        current_consumption += sg_host_get_current_consumption(machine->host);
     }
     return current_consumption;
+}
+
+double Probe::return_value(){ 
+    double value = 0;
+    if(metrics.compare("power consumption")){
+        value = power_consumption();
+    }
+    else if (metrics.compare("energy consumed")){
+        value = get_consumed_energy();
+    }
+    return value;
 }
 

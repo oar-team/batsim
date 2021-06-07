@@ -1671,9 +1671,12 @@ void JsonProtocolReader::handle_add_probe(int event_number,
   xbt_assert(name_value.IsString(), "Invalid JSON message: in event %d (ADD_PROBE): ['data']['name'] should be a string", event_number);
   message->name = name_value.GetString();
 
+  const Value &metric = data_object["metrics"];
+  message->metrics = metric.GetString();
+
   const Value &resources_value = data_object["resources"];
-  xbt_assert(resources_value.IsString(), "Invalid JSON message: the 'resources' value in the 'data' value of event %d (ADD_PROBE) should be a string.", event_number);
-  string resources = resources_value.GetString();
+
+  string resources = resources_value["hosts"].GetString();
   try
   {
     message->machine_ids = IntervalSet::from_string_hyphen(resources, " ", "-");

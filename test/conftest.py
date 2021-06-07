@@ -118,7 +118,7 @@ def pytest_generate_tests(metafunc):
         "py_probe":"testProbesOneShot",
     }
     basic_algorithms = ["fcfs", "easyfast", "filler"]
-    probe_algorithms = ["testProbesOneShot"]
+    probe_algorithms = ['testProbesOneShot']
     energy_algorithms = ["sleeper"] #fixme: enable "energywatcher" once algo fixed
     metadata_algorithms = ['filler', 'submitter']
 
@@ -211,8 +211,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('pybatsim_filler_algorithm', generate_pybatsim_algorithms(algorithms_def, ['py_filler']))
     if 'pybatsim_filler_events_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('pybatsim_filler_events_algorithm', generate_pybatsim_algorithms(algorithms_def, ['py_filler_events']))
-    if 'pybatsim_probe_algorithm' in metafunc.fixturenames:
-        metafunc.parametrize('pybatsim_probe_algorithm', generate_pybatsim_algorithms(algorithms_def, probe_algorithms))
+    if 'probe_algorithm' in metafunc.fixturenames:
+        metafunc.parametrize('probe_algorithm', generate_pybatsim_algorithms(algorithms_def, ['py_probe']))
 
     # Misc. fixtures.
     if 'redis_mode' in metafunc.fixturenames:
