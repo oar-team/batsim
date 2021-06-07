@@ -23,6 +23,6 @@ def probe(platform, workload, algorithm):
     ret = run_robin(robin_filename)
     if ret.returncode != 0: raise Exception(f'Bad robin return code ({ret.returncode})')
 
-def test_probe1(small_platform, small_workload, probe_algorithm):
-    probe(small_platform, small_workload, probe_algorithm)
+def test_probe1(energy_platform, small_workload, probe_algorithm):
+    probe(energy_platform, small_workload, probe_algorithm)
 
