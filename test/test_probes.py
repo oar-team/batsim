@@ -11,9 +11,9 @@ def probe(platform, workload, algorithm):
 
     # if algorithm.sched_implem != 'pybatsim': raise Exception('This test only supports pybatsim for now')
 
-    batcmd = gen_batsim_cmd(platform.filename, workload.filename, output_dir, "")
+    batcmd = gen_batsim_cmd(platform.filename, workload.filename, output_dir, "--energy")
     instance = RobinInstance(output_dir=output_dir,
-        batcmd=batcmd+' --energy',
+        batcmd=batcmd,
         schedcmd=f"pybatsim testProbesOneShot",
         simulation_timeout=30, ready_timeout=5,
         success_timeout=10, failure_timeout=0
