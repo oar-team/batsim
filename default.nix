@@ -16,10 +16,10 @@
 , batsched ? kapack.batsched-master
 , batexpe ? kapack.batexpe
 , pytest_file_or_dir ? "test/"
-# , pybatsim ? kapack.pybatsim-master
-, pybatsim ? kapack.pybatsim.overridePythonAttrs(old: rec {
-    src = /home/julien/Documents/StageBatsim/Code/pybatsim;
-  })
+, pybatsim ? kapack.pybatsim-master
+# , pybatsim ? kapack.pybatsim.overridePythonAttrs(old: rec {
+#     src = /home/julien/Documents/StageBatsim/Code/pybatsim;
+#   })
 
   
 # set this to avoid running tests over and over
