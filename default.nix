@@ -16,12 +16,12 @@
 , batsched ? kapack.batsched-master
 , batexpe ? kapack.batexpe
 , pytest_file_or_dir ? "test/"
-# , pybatsim ? kapack.pybatsim.overridePythonAttrs(old: rec {
-#     src = fetchTarball "https://gitlab.inria.fr/api/v4/projects/batsim%2Fpybatsim/repository/archive.tar.gz?sha=probes";
-#   })
 , pybatsim ? kapack.pybatsim.overridePythonAttrs(old: rec {
-    src = /home/julien/Documents/StageBatsim/Code/pybatsim;
+    src = fetchTarball "https://gitlab.inria.fr/api/v4/projects/batsim%2Fpybatsim/repository/archive.tar.gz?sha=probes";
   })
+# , pybatsim ? kapack.pybatsim.overridePythonAttrs(old: rec {
+#     src = /home/julien/Documents/StageBatsim/Code/pybatsim;
+#   })
 
   
 # set this to avoid running tests over and over
