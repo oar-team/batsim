@@ -20,8 +20,14 @@ jobs:
           cachix --version
           cachix use ${CACHIX_CACHE}
       - uses: actions/checkout@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build docker containers
         run: |
           source ~/.nix-profile/etc/profile.d/nix.sh
           nix-build https://github.com/oar-team/nur-kapack/archive/master.tar.gz -A batsim-docker-master -o ./container-tarball
-          docker --version
+          docker load -i ./container-tarball
+          docker push oarteam/batsim:latest
