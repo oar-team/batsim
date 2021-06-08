@@ -36,6 +36,7 @@
 #include <simgrid/s4u.hpp>
 #include <smpi/smpi.h>
 #include <simgrid/plugins/energy.h>
+#include <simgrid/plugins/load.h>
 #include <simgrid/version.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
@@ -194,6 +195,7 @@ Most common options:
                                      Example: -r host8:master -r host1,host2:storage
   -E, --energy                       Enables the SimGrid energy plugin and
                                      outputs energy-related files.
+  -L, --load                         Enables the SimGrid load plugin.
 
 Execution context options:
   -s, --socket-endpoint <endpoint>   The Decision process socket endpoint
@@ -438,6 +440,7 @@ Other options:
     main_args.hosts_roles_map[main_args.master_host_name] = "master";
 
     main_args.energy_used = args["--energy"].asBool();
+    main_args.load_used = args["--load"].asBool();
 
 
     // get roles mapping
@@ -801,6 +804,11 @@ int main(int argc, char * argv[])
     if (main_args.energy_used)
     {
         sg_host_energy_plugin_init();
+    }
+
+    if (main_args.load_used)
+    {
+        sg_host_load_plugin_init();
     }
 
     // Instantiate SimGrid

@@ -13,11 +13,20 @@
 struct BatsimContext;
 class Probes;
 
+enum class Metric
+{
+    CONSUMED_ENERGY,
+    POWER_CONSUMPTION,
+    CURRENT_LOAD,
+    AVERAGE_LOAD,
+    UNKNOWN
+};
+
 
 struct Probe{
 
     std::string name;
-    std::string metrics;
+    Metric metrics;
     IntervalSet id_machines;
     BatsimContext * context;
 
@@ -29,14 +38,26 @@ struct Probe{
     /**
      * @brief Returns the vale of the consumed energy of machines which are contains in the id_marchiens IntervalSet
      */
-     double get_consumed_energy();
+     double consumed_energy();
 
 
     /** 
-     * @brief Returns the power_consumption of machines which are study by our probe
+     * @brief Returns the power_consumption of machines which are studied by our probe
      */
 
     double power_consumption();
+
+    /**
+     * @brief Returns the current_load of machines which are studied by our probe_name
+     */
+
+    double current_load();
+
+    /**
+     * @brief Returns the load average of machines which are studied by our probe_name
+     */
+
+    double average_load();
 
 };
 

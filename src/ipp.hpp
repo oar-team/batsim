@@ -15,6 +15,7 @@
 
 #include <intervalset.hpp>
 
+#include <probe.hpp>
 #include "pointers.hpp"
 #include "jobs.hpp"
 #include "events.hpp"

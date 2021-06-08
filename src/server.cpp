@@ -191,10 +191,31 @@ void server_on_add_probe(ServerData *data,
     auto *message = static_cast<SchedAddProbeMessage *>(task_data->data);
     IntervalSet hosts = message->machine_ids;
     std::string name = message->name;
-    std::string met = message->metrics;
+    Metric met = string_to_metric(message->metrics);
+
     Probe probe = new_probe(name,met, hosts,data->context);
     double value = probe.return_value();
     data->context->proto_writer->append_probe_data(name,simgrid::s4u::Engine::get_clock(),value);
+}
+
+Metric string_to_metric(std::string metrics){
+    Metric met;
+    if (metrics.compare("current load")==0){
+        met = Metric::CURRENT_LOAD;
+    }
+    else if (metrics.compare("power consumption")==0){
+        met = Metric::POWER_CONSUMPTION;
+    }
+    else if (metrics.compare("average load")==0){
+        met = Metric::AVERAGE_LOAD;
+    }
+    else if (metrics.compare("energy consumed")==0){
+        met = Metric::CONSUMED_ENERGY;
+    }
+    else {
+        met = Metric::UNKNOWN;
+    }
+    return met;
 }
 
 void server_on_submitter_hello(ServerData *data,

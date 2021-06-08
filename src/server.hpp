@@ -66,6 +66,8 @@ bool is_simulation_finished(ServerData *data);
 
 void server_on_probe_data(ServerData *data, IPMessage *task_data);
 
+Metric string_to_metric(std::string metrics);
+
 void server_on_add_probe(ServerData *data, IPMessage *task_data);
 
 /**
