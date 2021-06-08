@@ -3,7 +3,7 @@
 Installation
 ============
 This page presents how to install Batsim and some of its tools.
-We recommend `Using Nix`_, but you may prefer `Using Batsim from a Docker container`_ or `Building it yourself`_.
+We recommend `Using Nix`_, but you may prefer `Using Batsim from a Docker container`_, `Using Batsim with Singularity`_ or just `Building it yourself`_.
 
 .. _using_nix_introduction:
 
@@ -113,7 +113,7 @@ This can be done with ``nix-env --install``.
 Using Batsim from a Docker container
 ------------------------------------
 
-Batsim and all its runtime dependencies are packaged in the `oarteam/batsim <https://hub.docker.com/r/oarteam/batsim>`_ Docker container, which allows to run batsim without any installation on a Linux host — assuming that Docker is installed.
+Batsim and all its runtime dependencies are packaged in the `oarteam/batsim`_ Docker container, which allows to run batsim without any installation on a Linux host — assuming that Docker is installed.
 
 .. code:: bash
 
@@ -131,6 +131,17 @@ Here is a quick explanation on the various parameters.
 - ``-v $PWD:/data`` shares your local directory so batsim can find input files and write output files.
 - ``oarteam/batsim:latest`` is the image to run. ``latest`` is built from master branch's last commit.
 - ``-p /data/platf.xml -w /data/wload.json`` are batsim arguments (see :ref:`cli`).
+
+Using Batsim with Singularity
+-----------------------------
+
+The `oarteam/batsim`_ docker containers can directly be executed by Singularity_.
+
+.. code:: bash
+
+    singularity exec \
+        docker://oarteam/batsim:latest \
+        batsim -p /data/platf.xml -w /data/wload.json
 
 Building it yourself
 --------------------
@@ -176,3 +187,5 @@ You can also use CMake_ if you prefer but please note that our cmake support is 
 .. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
 .. _Batsim packages definition: https://github.com/oar-team/nur-kapack/tree/master/pkgs/batsim
 .. _kapack's main file: https://github.com/oar-team/nur-kapack/blob/master/default.nix
+.. _Singularity: https://en.wikipedia.org/wiki/Singularity_(software)
+.. _oarteam/batsim: https://hub.docker.com/r/oarteam/batsim
