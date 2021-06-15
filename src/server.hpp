@@ -74,13 +74,17 @@ void server_on_probe_data(ServerData *data, IPMessage *task_data);
 
 
 /**
- * @brief 
+ * @brief React to a server add probe event
+ * @param[in] data The data associated with the server_process
+ */
+
 void server_on_add_probe(ServerData *data, IPMessage *task_data);
 
 /**
  * @brief Generates and sends the message to the scheduler via a request_reply_scheduler_process
  * @param[in,out] data The data associated with the server_process
  */
+
 void generate_and_send_message(ServerData *data);
 
 /**
