@@ -73,6 +73,7 @@ struct BatsimContext
     unsigned long long nb_grouped_switches = 0;     //!< The number of switches done in the simulation (should equal to the number of received SET_RESOURCE_STATE events). Does not count transition states.
 
     bool energy_used;                               //!< Stores whether the energy part of Batsim should be used
+    bool load_used;                                 //!< Stores whether the load part of Basim should be used
     bool smpi_used;                                 //!< Stores whether SMPI should be used
     bool allow_compute_sharing;                     //!< Stores whether sharing (using the same machine to run different jobs concurrently) should be allowed on compute machines
     bool allow_storage_sharing;                     //!< Stores whether sharing (using the same machine to run different jobs concurrently) should be allowed on storage machines

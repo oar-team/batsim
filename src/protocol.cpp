@@ -26,15 +26,20 @@ JsonProtocolWriter::~JsonProtocolWriter()
 {
 }
 
-void JsonProtocolWriter::append_probe_data(const string &probe_name,
+void JsonProtocolWriter::append_aggregate_probe_data(const string &probe_name,
                                     double date,
-                                    double value)
+                                    double value,
+                                    std::string aggregation,
+                                    Metrics met)
 {
   /*
+  aggregate case
     {
   "timestamp": "0.01",
   "type": "PROBE_DATA",
   "data": {
+    "aggregate": true,
+    "type of aggregation": "addition",
     "name": "my-amazing-probe",
     "value": 20
   }
@@ -50,8 +55,63 @@ void JsonProtocolWriter::append_probe_data(const string &probe_name,
   event.AddMember("type", Value().SetString("PROBE_DATA"), _alloc);
 
   Value data(rapidjson::kObjectType);
+  std::string me = metric_to_string(met);
+
   data.AddMember("name", Value().SetString(probe_name.c_str(), _alloc), _alloc);
+  data.AddMember("aggregate", Value().SetBool(true), _alloc);
+  data.AddMember("type of aggregation", Value().SetString(aggregation.c_str(), _alloc), _alloc);
+  data.AddMember("metrics",Value().SetString(me.c_str(), _alloc), _alloc);
+  
   data.AddMember("value", Value().SetDouble(value), _alloc);
+  event.AddMember("data", data, _alloc);
+
+  _events.PushBack(event, _alloc);
+}
+
+void JsonProtocolWriter::append_detailed_probe_data(const string &probe_name,
+                                    double date,
+                                    std::vector<DetailedData> value,
+                                    Metrics met)
+{
+  /*
+  {
+  "timestamp": "0.01",
+  "type": "PROBE_DATA",
+  "data": {
+    "aggregate": false,
+    "name": "my-amazing-probe",
+    "value" : [ {"resource":"1", "value":20.0}, {"resource":"2", "value":20.0} ]
+  }
+}
+*/
+  xbt_assert(date >= _last_date, "Date inconsistency");
+  _last_date = date;
+  _is_empty = false;
+  Value event(rapidjson::kObjectType);
+
+  event.AddMember("timestamp", Value().SetDouble(date), _alloc);
+  event.AddMember("type", Value().SetString("PROBE_DATA"), _alloc);
+  std::string me = metric_to_string(met);
+
+  Value data(rapidjson::kObjectType);
+  data.AddMember("name", Value().SetString(probe_name.c_str(), _alloc), _alloc);
+  data.AddMember("aggregate", Value().SetBool(false), _alloc);
+  data.AddMember("metrics",Value().SetString(me.c_str(), _alloc), _alloc);
+
+  //We define an array to add in the data part of our event
+  int size_vec = value.size();
+  Value Myarray(rapidjson::kArrayType);
+  for (int i =0 ; i < size_vec ; i++){
+    rapidjson::Value objValue;
+    objValue.SetObject();
+    DetailedData val = value.at(i);
+    objValue.AddMember("ressource", Value().SetString((std::to_string(val.id)).c_str(),_alloc), _alloc);
+    objValue.AddMember("value",Value().SetDouble(val.value), _alloc);
+    Myarray.PushBack(objValue, _alloc);
+  }
+
+  data.AddMember("value",Myarray,_alloc);
+ 
   event.AddMember("data", data, _alloc);
 
   _events.PushBack(event, _alloc);
@@ -1651,6 +1711,7 @@ void JsonProtocolReader::handle_add_probe(int event_number,
     "metrics": "power consumption",
     "filter": "true",
     "smoothing": "none",
+    "aggregate": "true",
     "resources": {
       "hosts": "10"
     }
@@ -1659,12 +1720,12 @@ void JsonProtocolReader::handle_add_probe(int event_number,
   auto *message = new SchedAddProbeMessage;
 
   xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should be an object", event_number);
-  xbt_assert(data_object.MemberCount() == 6, "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should be of size 6 (size=%d)", event_number, data_object.MemberCount());
   xbt_assert(data_object.HasMember("name"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'name' key.", event_number);
   xbt_assert(data_object.HasMember("trigger"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'trigger' key.", event_number);
   xbt_assert(data_object.HasMember("metrics"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'metrics' key.", event_number);
   xbt_assert(data_object.HasMember("filter"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'filter' key.", event_number);
   xbt_assert(data_object.HasMember("smoothing"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'smoothing' key.", event_number);
+  xbt_assert(data_object.HasMember("aggregate"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'aggregate' key.", event_number);
   xbt_assert(data_object.HasMember("resources"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'resources' key.", event_number);
 
   const Value &name_value = data_object["name"];
@@ -1672,19 +1733,108 @@ void JsonProtocolReader::handle_add_probe(int event_number,
   message->name = name_value.GetString();
 
   const Value &metric = data_object["metrics"];
-  message->metrics = metric.GetString();
+  message->metrics = string_to_metric(metric.GetString());
+
+
+  const Value &aggregate = data_object["aggregate"];
+  std::string agg = aggregate.GetString();
+  xbt_assert(agg.compare("true") ==0 || agg.compare("false")==0, "Invalid JSON message : the aggregate field must be a boolean");
+  if(agg.compare("true")==0){
+    message->aggregate = true;
+    xbt_assert(data_object.HasMember("type of aggregation"));
+    const Value &aggregation = data_object["type of aggregation"];
+    std::string tps = aggregation.GetString();
+    message->type_of_aggregation = string_to_type_of_aggregation(tps);
+  }
+  else{
+    message->aggregate = false;
+    message->type_of_aggregation = TypeOfAggregation::NONE;
+  }
 
   const Value &resources_value = data_object["resources"];
-
   string resources = resources_value["hosts"].GetString();
+  
   try
   {
     message->machine_ids = IntervalSet::from_string_hyphen(resources, " ", "-");
   }
   catch (const std::exception &e)
   {
-    throw std::runtime_error(std::string("Invalid JSON message: ") + e.what());
+    throw std::runtime_error(std::string("Invalid JSON message : ") + e.what());
   }
-
   send_message_at_time(timestamp, "server", IPMessageType::SCHED_ADD_PROBE, static_cast<void *>(message));
 }
+
+
+
+
+Metrics string_to_metric(std::string metrics){
+    Metrics met;
+    if (metrics.compare("current load")==0){
+        met = Metrics::CURRENT_LOAD;
+    }
+    else if (metrics.compare("power consumption")==0){
+        met = Metrics::POWER_CONSUMPTION;
+    }
+    else if (metrics.compare("average load")==0){
+        met = Metrics::AVERAGE_LOAD;
+    }
+    else if (metrics.compare("energy consumed")==0){
+        met = Metrics::CONSUMED_ENERGY;
+    }
+    else {
+        met = Metrics::UNKNOWN;
+    }
+    xbt_assert(met != Metrics::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of metrics");
+    return met;
+}
+
+std::string metric_to_string(Metrics met){
+  std::string res ="";
+  switch(met){
+      case Metrics::CONSUMED_ENERGY :
+        res = "energy consumed";
+        break;
+      case Metrics::POWER_CONSUMPTION :
+        res="power consumption";
+        break;
+      case Metrics::AVERAGE_LOAD :
+        res ="average load";
+        break;
+      case Metrics::CURRENT_LOAD :
+        res="current load";
+        break;
+      default:
+        break;
+
+  }
+  return res;
+}
+
+
+
+TypeOfAggregation string_to_type_of_aggregation(std::string aggregation){
+  TypeOfAggregation type;
+  if (aggregation.compare("addition")==0){
+        type = TypeOfAggregation::ADDITION;
+    }
+    else if (aggregation.compare("minimum")==0){
+        type = TypeOfAggregation::MINIMUM;
+    }
+    else if (aggregation.compare("maximum")==0){
+        type = TypeOfAggregation::MAXIMUM;
+    }
+    else if (aggregation.compare("average")==0){
+        type = TypeOfAggregation::AVERAGE;
+    }
+    else if (aggregation.compare("none")){
+        type = TypeOfAggregation::NONE;
+    }
+    else {
+        type = TypeOfAggregation::UNKNOWN;
+    }
+    xbt_assert(type != TypeOfAggregation::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of aggregation");
+    return type;
+}
+
+

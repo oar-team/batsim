@@ -950,6 +950,7 @@ void set_configuration(BatsimContext *context,
     context->export_prefix = main_args.export_prefix;
     context->workflow_nb_concurrent_jobs_limit = main_args.workflow_nb_concurrent_jobs_limit;
     context->energy_used = main_args.energy_used;
+    context->load_used = main_args.load_used;
     context->allow_compute_sharing = main_args.allow_compute_sharing;
     context->allow_storage_sharing = main_args.allow_storage_sharing;
     context->trace_schedule = main_args.enable_schedule_tracing;

@@ -64,10 +64,17 @@ struct ServerData
  */
 bool is_simulation_finished(ServerData *data);
 
+
+/**
+ * @brief Generates and sends the message to the scheduler of the taskdata message
+ * @param[in] data The data associated with the server_process
+ */
+
 void server_on_probe_data(ServerData *data, IPMessage *task_data);
 
-Metric string_to_metric(std::string metrics);
 
+/**
+ * @brief 
 void server_on_add_probe(ServerData *data, IPMessage *task_data);
 
 /**

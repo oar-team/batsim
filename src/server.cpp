@@ -184,38 +184,23 @@ void server_on_add_probe(ServerData *data,
                          IPMessage *task_data)
 {
     xbt_assert(task_data->data != nullptr);
-    xbt_assert(data->context->energy_used,
-               "Received a request about the energy consumption of the "
-               "machines but energy simulation is not enabled. "
-               "Try --help to enable it.");
     auto *message = static_cast<SchedAddProbeMessage *>(task_data->data);
     IntervalSet hosts = message->machine_ids;
     std::string name = message->name;
-    Metric met = string_to_metric(message->metrics);
-
-    Probe probe = new_probe(name,met, hosts,data->context);
-    double value = probe.return_value();
-    data->context->proto_writer->append_probe_data(name,simgrid::s4u::Engine::get_clock(),value);
-}
-
-Metric string_to_metric(std::string metrics){
-    Metric met;
-    if (metrics.compare("current load")==0){
-        met = Metric::CURRENT_LOAD;
+    Metrics met = message->metrics;
+    bool agg = message->aggregate;
+    std::string aggregation = aggregation_to_string(message->type_of_aggregation);
+    TypeOfAggregation type = message->type_of_aggregation;
+    Probe probe = new_probe(name,met, type, agg, hosts,data->context);
+    if(agg){
+        double value = probe.aggregate_value();
+        data->context->proto_writer->append_aggregate_probe_data(name,simgrid::s4u::Engine::get_clock(),value,aggregation,met);
     }
-    else if (metrics.compare("power consumption")==0){
-        met = Metric::POWER_CONSUMPTION;
+    else{
+        std::vector<DetailedData> value = probe.detailed_value();
+        data->context->proto_writer->append_detailed_probe_data(name,simgrid::s4u::Engine::get_clock(),value,met);
     }
-    else if (metrics.compare("average load")==0){
-        met = Metric::AVERAGE_LOAD;
-    }
-    else if (metrics.compare("energy consumed")==0){
-        met = Metric::CONSUMED_ENERGY;
-    }
-    else {
-        met = Metric::UNKNOWN;
-    }
-    return met;
+    //faire un if pour bien montrer qu'on est en one shot et bouger l'assert d'energy
 }
 
 void server_on_submitter_hello(ServerData *data,

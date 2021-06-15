@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <vector>
 #include <string>
 #include <map>
 
@@ -15,6 +14,24 @@
 #include "ipp.hpp"
 
 struct BatsimContext;
+/**
+ * @brief convert a string into metrics
+ */
+
+Metrics string_to_metric(std::string metrics);
+
+
+/**
+ * @brief convert metrics into string
+ */
+
+std::string metric_to_string(Metrics met);
+
+/**
+ * @brief convert a string into a type of aggregation
+ */
+
+TypeOfAggregation string_to_type_of_aggregation(std::string aggregation);
 
 /**
  * @brief Custom rapidjson Writer to force fixed float writing precision
@@ -93,9 +110,22 @@ public:
      * @param[in] date The message date. Must be greater than or equal to the inner events dates.
      * @param[in] value The value wich has been measured
      */
-    virtual void append_probe_data(const std::string & probe_name,
+    virtual void append_aggregate_probe_data(const std::string & probe_name,
                     double date, 
-                    double value) = 0;
+                    double value,
+                    std::string aggregation,
+                    Metrics met) = 0;
+
+    /**
+     * @brief Generates a string representation of the message containing the data of a probe.
+     * @param[in] probe_name The name of the probe.
+     * @param[in] date The message date. Must be greater than or equal to the inner events dates.
+     * @param[in] value The value wich has been measured
+     */
+    virtual void append_detailed_probe_data(const std::string & probe_name,
+                    double date, 
+                    std::vector<DetailedData> value,
+                    Metrics met) = 0;
 
     /**
      * @brief Appends a SIMULATION_ENDS event.
@@ -266,9 +296,24 @@ public:
      * @param[in] date The message date. Must be greater than or equal to the inner events dates.
      * @param[in] value The value wich has been measured
      */
-    void append_probe_data(const std::string & probe_name,
+    void append_aggregate_probe_data(const std::string & probe_name,
                     double date, 
-                    double value);
+                    double value,
+                    std::string aggregation,
+                    Metrics met);
+
+
+
+    /**
+     * @param[in] probe_name The name of the probe.
+     * @param[in] date The message date. Must be greater than or equal to the inner events dates.
+     * @param[in] value The vector of detailed value mesured
+     */
+    
+    void append_detailed_probe_data(const std::string &probe_name,
+                                    double date,
+                                    std::vector<DetailedData> value,
+                                    Metrics met);
 
     // Messages from Batsim to the Scheduler
     /**
