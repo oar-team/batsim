@@ -188,17 +188,15 @@ void server_on_add_probe(ServerData *data,
     IntervalSet hosts = message->machine_ids;
     std::string name = message->name;
     Metrics met = message->metrics;
-    bool agg = message->aggregate;
-    std::string aggregation = aggregation_to_string(message->type_of_aggregation);
-    TypeOfAggregation type = message->type_of_aggregation;
-    Probe probe = new_probe(name,met, type, agg, hosts,data->context);
-    if(agg){
-        double value = probe.aggregate_value();
-        data->context->proto_writer->append_aggregate_probe_data(name,simgrid::s4u::Engine::get_clock(),value,aggregation,met);
-    }
-    else{
+    TypeOfAggregation type = message->aggregation;
+    Probe probe = new_probe(name,met, type, hosts,data->context);
+    if(type == TypeOfAggregation::NONE){
         std::vector<DetailedData> value = probe.detailed_value();
         data->context->proto_writer->append_detailed_probe_data(name,simgrid::s4u::Engine::get_clock(),value,met);
+    }
+    else{
+        double value = probe.aggregate_value();
+        data->context->proto_writer->append_aggregate_probe_data(name,simgrid::s4u::Engine::get_clock(),value,type,met);
     }
     //faire un if pour bien montrer qu'on est en one shot et bouger l'assert d'energy
 }

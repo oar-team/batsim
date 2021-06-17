@@ -257,8 +257,7 @@ struct SchedAddProbeMessage
     std::string name;
     //trigger
     Metrics metrics;
-    bool aggregate;
-    TypeOfAggregation type_of_aggregation;
+    TypeOfAggregation aggregation;
     // bool filter;
     //smoothing parameters
     IntervalSet machine_ids; 

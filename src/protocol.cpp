@@ -29,7 +29,7 @@ JsonProtocolWriter::~JsonProtocolWriter()
 void JsonProtocolWriter::append_aggregate_probe_data(const string &probe_name,
                                     double date,
                                     double value,
-                                    std::string aggregation,
+                                    TypeOfAggregation aggregation,
                                     Metrics met)
 {
   /*
@@ -58,8 +58,7 @@ void JsonProtocolWriter::append_aggregate_probe_data(const string &probe_name,
   std::string me = metric_to_string(met);
 
   data.AddMember("name", Value().SetString(probe_name.c_str(), _alloc), _alloc);
-  data.AddMember("aggregate", Value().SetBool(true), _alloc);
-  data.AddMember("type of aggregation", Value().SetString(aggregation.c_str(), _alloc), _alloc);
+  data.AddMember("aggregation", Value().SetString(aggregation_to_string(aggregation).c_str(), _alloc), _alloc);
   data.AddMember("metrics",Value().SetString(me.c_str(), _alloc), _alloc);
   
   data.AddMember("value", Value().SetDouble(value), _alloc);
@@ -95,7 +94,7 @@ void JsonProtocolWriter::append_detailed_probe_data(const string &probe_name,
 
   Value data(rapidjson::kObjectType);
   data.AddMember("name", Value().SetString(probe_name.c_str(), _alloc), _alloc);
-  data.AddMember("aggregate", Value().SetBool(false), _alloc);
+  data.AddMember("aggregation", Value().SetString("none"), _alloc);
   data.AddMember("metrics",Value().SetString(me.c_str(), _alloc), _alloc);
 
   //We define an array to add in the data part of our event
@@ -1725,7 +1724,7 @@ void JsonProtocolReader::handle_add_probe(int event_number,
   xbt_assert(data_object.HasMember("metrics"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'metrics' key.", event_number);
   xbt_assert(data_object.HasMember("filter"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'filter' key.", event_number);
   xbt_assert(data_object.HasMember("smoothing"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'smoothing' key.", event_number);
-  xbt_assert(data_object.HasMember("aggregate"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'aggregate' key.", event_number);
+  xbt_assert(data_object.HasMember("aggregation"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'aggregate' key.", event_number);
   xbt_assert(data_object.HasMember("resources"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'resources' key.", event_number);
 
   const Value &name_value = data_object["name"];
@@ -1736,21 +1735,9 @@ void JsonProtocolReader::handle_add_probe(int event_number,
   message->metrics = string_to_metric(metric.GetString());
 
 
-  const Value &aggregate = data_object["aggregate"];
+  const Value &aggregate = data_object["aggregation"];
   std::string agg = aggregate.GetString();
-  xbt_assert(agg.compare("true") ==0 || agg.compare("false")==0, "Invalid JSON message : the aggregate field must be a boolean");
-  if(agg.compare("true")==0){
-    message->aggregate = true;
-    xbt_assert(data_object.HasMember("type of aggregation"));
-    const Value &aggregation = data_object["type of aggregation"];
-    std::string tps = aggregation.GetString();
-    message->type_of_aggregation = string_to_type_of_aggregation(tps);
-  }
-  else{
-    message->aggregate = false;
-    message->type_of_aggregation = TypeOfAggregation::NONE;
-  }
-
+  message->aggregation = string_to_type_of_aggregation(agg);
   const Value &resources_value = data_object["resources"];
   string resources = resources_value["hosts"].GetString();
   
@@ -1827,7 +1814,7 @@ TypeOfAggregation string_to_type_of_aggregation(std::string aggregation){
     else if (aggregation.compare("average")==0){
         type = TypeOfAggregation::AVERAGE;
     }
-    else if (aggregation.compare("none")){
+    else if (aggregation.compare("none")==0){
         type = TypeOfAggregation::NONE;
     }
     else {

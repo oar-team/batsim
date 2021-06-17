@@ -113,7 +113,7 @@ public:
     virtual void append_aggregate_probe_data(const std::string & probe_name,
                     double date, 
                     double value,
-                    std::string aggregation,
+                    TypeOfAggregation aggregation,
                     Metrics met) = 0;
 
     /**
@@ -299,7 +299,7 @@ public:
     void append_aggregate_probe_data(const std::string & probe_name,
                     double date, 
                     double value,
-                    std::string aggregation,
+                    TypeOfAggregation aggregation,
                     Metrics met);
 
 

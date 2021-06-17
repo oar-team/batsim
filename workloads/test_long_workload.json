@@ -3,24 +3,16 @@
 
     "nb_res": 4,
     "jobs": [
-        {"id": 0, "subtime": 1e0, "walltime": 100, "res": 4, "profile": "2"},
-        {"id": 1, "subtime": 1e1, "walltime": 100, "res": 4, "profile": "2"},
-        {"id": 2, "subtime": 1e2, "walltime": 100, "res": 4, "profile": "1"},
-        {"id": 3, "subtime": 1e3, "walltime": 3,   "res": 4, "profile": "1"},
-        {"id": 4, "subtime": 1e4, "walltime": 100, "res": 4, "profile": "1"},
-        {"id": 5, "subtime": 1e5, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id": 6, "subtime": 1e6, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id": 7, "subtime": 1e7, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id": 8, "subtime": 1e8, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id": 9, "subtime": 1e9, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id":10, "subtime":1e10, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id":11, "subtime":1e11, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id":12, "subtime":1e12, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id":13, "subtime":1e13, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id":14, "subtime":1e14, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id":15, "subtime":1e15, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id":16, "subtime":1e16, "walltime": 30,  "res": 1, "profile": "4"},
-        {"id":17, "subtime":1e17, "walltime": 30,  "res": 1, "profile": "4"}
+        {"id": 0, "subtime": 0.1, "walltime": 100, "res": 4, "profile": "2"},
+        {"id": 1, "subtime": 0.2, "walltime": 100, "res": 4, "profile": "2"},
+        {"id": 2, "subtime": 0.3, "walltime": 100, "res": 4, "profile": "1"},
+        {"id": 3, "subtime": 0.4, "walltime": 3,   "res": 4, "profile": "1"},
+        {"id": 4, "subtime": 0.5, "walltime": 100, "res": 4, "profile": "1"},
+        {"id": 5, "subtime": 0.6, "walltime": 30,  "res": 1, "profile": "4"},
+        {"id": 6, "subtime": 0.7, "walltime": 30,  "res": 1, "profile": "4"},
+        {"id": 7, "subtime": 0.8, "walltime": 30,  "res": 1, "profile": "4"},
+        {"id": 8, "subtime": 0.9, "walltime": 30,  "res": 1, "profile": "4"},
+        {"id": 9, "subtime": 1, "walltime": 30,  "res": 1, "profile": "4"}
     ],
 
     "profiles": {

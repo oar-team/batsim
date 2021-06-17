@@ -41,8 +41,7 @@ struct DetailedData{
 struct Probe{
 
     std::string name;
-    bool aggregate;
-    TypeOfAggregation type_of_aggregation;
+    TypeOfAggregation aggregation;
     Metrics metrics;
     IntervalSet id_machines;
     BatsimContext * context;
@@ -229,4 +228,4 @@ struct Probe{
      * @param[in] name the name of the new probe 
      * @param[in] machines the IntervalSet of machines that our probe will work on.
      */ 
-    Probe new_probe(std::string name, Metrics met, bool agg, const IntervalSet & machines, BatsimContext * context);
+    Probe new_probe(std::string name, Metrics met, TypeOfAggregation agg, const IntervalSet & machines, BatsimContext * context);

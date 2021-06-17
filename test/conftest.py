@@ -97,6 +97,7 @@ def pytest_generate_tests(metafunc):
     energymini_workloads = ['energymini0', 'energymini50', 'energymini100']
     tuto_stencil_workloads = ['tutostencil']
     workflows = ['genome']
+    farfuture = ["farfuture"]
 
     # Algorithms
     algorithms_def = {
@@ -146,6 +147,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('properties_platform', generate_platforms(platform_dir, platforms_def, ['properties_platform']))
 
     # Workloads
+    if 'farfuture' in metafunc.fixturenames:
+        metafunc.parametrize('farfuture', generate_workloads(workload_dir, workloads_def, [key for key in farfuture]))
     if 'workload' in metafunc.fixturenames:
         metafunc.parametrize('workload', generate_workloads(workload_dir, workloads_def, [key for key in workload_def]))
     if 'workflow' in metafunc.fixturenames:

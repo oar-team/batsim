@@ -23,22 +23,19 @@ using namespace roles;
 
 
 
-Probe new_probe(std::string name,Metrics metrics, TypeOfAggregation type, bool agg ,const IntervalSet & machines, BatsimContext * context){
+Probe new_probe(std::string name,Metrics metrics, TypeOfAggregation agg,const IntervalSet & machines, BatsimContext * context){
     Probe nwprobe;
     nwprobe.name = name;
     xbt_assert(metrics != Metrics::UNKNOWN, "A metric is not recognized by batsim");
     nwprobe.metrics = metrics;
-    nwprobe.aggregate = agg;
-    if(agg){
-        xbt_assert(type != TypeOfAggregation::UNKNOWN && type!= TypeOfAggregation::NONE, "The type of aggregation is not recognized by batsim");
-        nwprobe.type_of_aggregation = type;
-    }
+    nwprobe.aggregation = agg;
     nwprobe.id_machines = machines;
     nwprobe.context = context;
     return nwprobe;
 }
 
 double Probe::consumed_energy(int machine_id){
+    xbt_assert(context->energy_used,"The energy plugin has not been initialized");
     Machine * machine = context->machines[machine_id];
     double res = sg_host_get_consumed_energy(machine->host);
     return res;
@@ -183,28 +180,8 @@ double Probe::maximum_agg_load(){
 }
 
   
-// double Probe::median_consumed_energy(){
-//     int size = id_machines.size();
-//     double *
-// }
-
- 
-// double Probe::median_power_consumption();
-
-  
-// double Probe::median_current_load();
-
-  
-// double Probe::median_agg_load();
-
-
 
 double Probe::added_consumed_energy(){
-    if (!context->energy_used)
-    {
-        return 0;
-    }
-
     double res = 0;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
     {
@@ -216,6 +193,7 @@ double Probe::added_consumed_energy(){
 }
 
 double Probe::power_consumption(int machine_id){
+    xbt_assert(context->energy_used,"The energy plugin has not been initialized");
     Machine * machine = context->machines[machine_id];
     double res = sg_host_get_current_consumption(machine->host);
     return res;
@@ -223,11 +201,6 @@ double Probe::power_consumption(int machine_id){
 
 
 double Probe::added_power_consumption(){
-    if (!context->load_used)
-    {
-        return 0;
-    }
-
     double res = 0;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
     {   
@@ -238,18 +211,13 @@ double Probe::added_power_consumption(){
 }
 
 double Probe::current_load(int machine_id){
+    xbt_assert(context->load_used, "The load plugin has not been initialized");
     Machine * machine = context->machines[machine_id];
     double res = sg_host_get_current_load(machine->host);
     return res;
 }
 
 double Probe::added_current_load(){
-    if (!context->energy_used)
-    {
-        xbt_assert(false,"le probleme est la");
-        return 0;
-    }
-
     double res = 0;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
     {   
@@ -260,18 +228,13 @@ double Probe::added_current_load(){
 }
 
 double Probe::average_load(int machine_id){
+    xbt_assert(context->load_used, "The load plugin has not been initialized");
     Machine * machine = context->machines[machine_id];
     double res = sg_host_get_avg_load(machine->host);
     return res;
 }
 
 double Probe::added_average_load(){
-    if (!context->load_used)
-    {
-        xbt_assert(false,"le probleme est la");
-        return 0;
-    }
-
     double res = 0;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
     {   
@@ -374,7 +337,7 @@ double Probe::aggregate_average(){
 
 double Probe::aggregate_value(){
     double res =0;
-    switch(type_of_aggregation){
+    switch(aggregation){
         case TypeOfAggregation::ADDITION :
             res = aggregate_addition();
             break;
