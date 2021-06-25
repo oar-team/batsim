@@ -29,6 +29,11 @@ def probe(platform, workload, algorithm):
 # def test_probe2(platform, long_workload, probe_algorithm):
 #     probe(platform, long_workload, probe_algorithm)
 
-def test_probe3(energy_platform, farfuture, probe_algorithm):
-    probe(energy_platform, farfuture, probe_algorithm)
+# def test_probe3(energy_platform, farfuture, probe_algorithm):
+#     probe(energy_platform, long_workload, probe_algorithm)
+
+def test_probe4(probe_platform, probe_workload, probe_algorithm):
+    probe(probe_platform, probe_workload, probe_algorithm)
+
+
 

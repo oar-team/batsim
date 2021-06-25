@@ -14,18 +14,39 @@
 #include "ipp.hpp"
 
 struct BatsimContext;
+
+
 /**
- * @brief convert a string into metrics
+ * @brief create vector of string from a string and a sepaparator character
+ */
+
+std::vector<std::string> split(const std::string & src, char delim);
+
+/**
+ * @brief converts a string into a Metrics
  */
 
 Metrics string_to_metric(std::string metrics);
 
+/**
+ * @brief converts a string into a TypeOfTrigger
+ */
+
+TypeOfTrigger  string_to_type_of_trigger(std::string trigger);
+
 
 /**
- * @brief convert metrics into string
+ * @brief converts metrics into string
  */
 
 std::string metric_to_string(Metrics met);
+
+
+/**
+ * @brief converts a string into a TypeOfObject
+ */
+
+TypeOfObject string_to_type_of_object(std::string object);
 
 /**
  * @brief convert a string into a type of aggregation
@@ -116,15 +137,28 @@ public:
                     TypeOfAggregation aggregation,
                     Metrics met) = 0;
 
+
+
     /**
-     * @brief Generates a string representation of the message containing the data of a probe.
+     * @brief Generates a string representation of the message containing the detailed data of a link probe.
      * @param[in] probe_name The name of the probe.
      * @param[in] date The message date. Must be greater than or equal to the inner events dates.
-     * @param[in] value The value wich has been measured
+     * @param[in] value The vector of value wich has been measured
+     */
+    virtual void append_detailed_link_probe_data(const std::string &probe_name,
+                                    double date,
+                                    std::vector<DetailedLinkData> value,
+                                    Metrics met)=0;
+
+    /**
+     * @brief Generates a string representation of the message containing the detailed data of a host probe.
+     * @param[in] probe_name The name of the probe.
+     * @param[in] date The message date. Must be greater than or equal to the inner events dates.
+     * @param[in] value The vector of value wich has been measured
      */
     virtual void append_detailed_probe_data(const std::string & probe_name,
                     double date, 
-                    std::vector<DetailedData> value,
+                    std::vector<DetailedHostData> value,
                     Metrics met) = 0;
 
     /**
@@ -307,13 +341,23 @@ public:
     /**
      * @param[in] probe_name The name of the probe.
      * @param[in] date The message date. Must be greater than or equal to the inner events dates.
-     * @param[in] value The vector of detailed value mesured
+     * @param[in] value The vector of detailed host value mesured
      */
     
     void append_detailed_probe_data(const std::string &probe_name,
                                     double date,
-                                    std::vector<DetailedData> value,
+                                    std::vector<DetailedHostData> value,
                                     Metrics met);
+
+    /**
+     * @param[in] probe_name The name of the probe.
+     * @param[in] date The message date. Must be greater than or equal to the inner events dates.
+     * @param[in] value The vector of detailed link value mesured
+     */
+    void append_detailed_link_probe_data(const std::string &probe_name,
+                                    double date,
+                                    std::vector<DetailedLinkData> value,
+                                    Metrics met);                            
 
     // Messages from Batsim to the Scheduler
     /**

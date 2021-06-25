@@ -10,6 +10,8 @@
 #include <simgrid/host.h>
 #include <simgrid/plugins/energy.h>
 #include <simgrid/plugins/load.h>
+#include <simgrid/s4u/Link.hpp>
+
 
 #include "batsim.hpp"
 #include "context.hpp"
@@ -21,17 +23,134 @@
 using namespace std;
 using namespace roles;
 
+void verif_name(BatsimContext* context, std::string name){
+    vector<Probe> probes = context->probes;
+    for (unsigned i =0 ; i < probes.size(); i++){
+        if((probes[i].name).compare(name)==0){
+            xbt_die("This name is already taken by another probe");
+        }
+    }
+}
 
-
-Probe new_probe(std::string name,Metrics metrics, TypeOfAggregation agg,const IntervalSet & machines, BatsimContext * context){
+Probe new_host_probe(std::string name, TypeOfTrigger trigger, Metrics metrics, TypeOfAggregation agg,const IntervalSet & machines, BatsimContext * context){
+    verif_name(context,name);
     Probe nwprobe;
+    nwprobe.object = TypeOfObject::HOST;
     nwprobe.name = name;
+    nwprobe.trigger = trigger;
     xbt_assert(metrics != Metrics::UNKNOWN, "A metric is not recognized by batsim");
     nwprobe.metrics = metrics;
     nwprobe.aggregation = agg;
     nwprobe.id_machines = machines;
     nwprobe.context = context;
+    context->probes.push_back(nwprobe);
     return nwprobe;
+}
+
+Probe new_link_probe(std::string name, TypeOfTrigger trigger, Metrics met, TypeOfAggregation agg, vector<std::string> links_name, BatsimContext * context){
+    verif_name(context,name);
+    Probe nwprobe;
+    nwprobe.object = TypeOfObject::LINK;
+    nwprobe.name = name;
+    nwprobe.trigger = trigger;
+    xbt_assert(met != Metrics::UNKNOWN, "A metric is not recognized by batsim");
+    nwprobe.metrics = met;
+    nwprobe.aggregation = agg;
+    nwprobe.context = context;
+    vector<simgrid::s4u::Link*> links_to_add;
+    for(unsigned i = 0 ; i < links_name.size();i++){
+        simgrid::s4u::Link* link = simgrid::s4u::Link::by_name(links_name[i]);
+        links_to_add.push_back(link);
+    }
+    nwprobe.links = links_to_add;
+    context->probes.push_back(nwprobe);
+    return nwprobe;
+}
+
+
+void Probe::activation(){
+    if(object == TypeOfObject::LINK){
+                track_links();
+            }
+    switch(trigger){
+        case TypeOfTrigger::ONE_SHOT :
+            one_shot_reaction();
+            break;
+        default :
+            xbt_die("Unsupported or not yet implemented type of trigger");
+    }
+}
+
+void Probe::destruction(){
+    vector<Probe> probes = context->probes;
+    Probe probe;
+    switch(object){
+        case TypeOfObject::LINK :
+            untrack_links();
+            break;
+        default :
+            for (unsigned i =0 ; i< probes.size(); i++){
+                probe = probes[i];
+                if((probe.name).compare(name)==0){
+                    probes.erase(probes.begin()+i);
+                    break;
+                }
+            }
+            break;
+    }
+}
+
+void Probe::track_links(){
+    if(object != TypeOfObject::LINK){
+        xbt_die("This probe does not work on links");
+    }
+    for (unsigned i =0 ; i < links.size(); i++){
+        simgrid::s4u::Link* link = links[i];
+        sg_link_load_track(link);
+    }
+}
+
+void Probe::untrack_links(){
+    if(object != TypeOfObject::LINK){
+        xbt_die("This probe does not work on links");
+    }
+    for (unsigned i =0 ; i < links.size(); i++){
+        simgrid::s4u::Link* link = links[i];
+        sg_link_load_untrack(link);
+    }
+}
+
+void Probe::one_shot_reaction(){
+    vector<DetailedHostData> host_value;
+    vector<DetailedLinkData> link_value;
+    double value;
+    switch(aggregation){
+        case TypeOfAggregation::NONE :
+            switch(object){
+                case TypeOfObject::HOST :
+                    host_value = detailed_value();
+                    context->proto_writer->append_detailed_probe_data(name,simgrid::s4u::Engine::get_clock(),host_value,metrics);
+                    destruction();
+                    break;
+                case TypeOfObject::LINK :
+                    link_value = link_detailed_value();
+                    context->proto_writer->append_detailed_link_probe_data(name,simgrid::s4u::Engine::get_clock(),link_value,metrics);
+                    destruction();
+                    break;
+                default :
+                    xbt_die("Unsupported type of object");
+                    break;
+            }
+            break;
+        case TypeOfAggregation::UNKNOWN :
+            xbt_die("Unsupported type of aggregation");
+            break;
+        default :
+            value = aggregate_value();
+            context->proto_writer->append_aggregate_probe_data(name,simgrid::s4u::Engine::get_clock(),value,aggregation,metrics);
+            destruction();
+            break;
+    }
 }
 
 double Probe::consumed_energy(int machine_id){
@@ -244,7 +363,177 @@ double Probe::added_average_load(){
     return res;
 }
 
+/** Links Function */
 
+
+double Probe::link_current_load(simgrid::s4u::Link* link){
+    double res = link->get_usage();
+    return res;
+}
+
+double Probe::link_average_load(simgrid::s4u::Link* link){
+    double res = sg_link_get_avg_load(link);
+    return res;
+}
+
+double Probe::link_consumed_energy(simgrid::s4u::Link* link){
+    double res = sg_link_get_consumed_energy(link);
+    return res;
+}
+
+double Probe::link_power_consumption(simgrid::s4u::Link* link){
+    // double res = sg_link_get_current_consumption(link);
+    // return res;
+    return 0;
+}
+
+
+double Probe::added_link_current_load(){
+    double res =0;
+    for(unsigned i =0 ; i < links.size(); i++){
+        simgrid::s4u::Link* link = links[i];
+        res +=link_current_load(link);
+    }
+    return res;
+}
+
+double Probe::added_link_average_load(){
+    double res =0;
+    for(unsigned i =0 ; i < links.size(); i++){
+        simgrid::s4u::Link* link = links[i];
+        res +=link_average_load(link);
+    }
+    return res;
+}
+
+double Probe::added_link_consumed_energy(){
+    double res =0;
+    for(unsigned i =0 ; i < links.size(); i++){
+        simgrid::s4u::Link* link = links[i];
+        res +=link_consumed_energy(link);
+    }
+    return res;
+}
+
+double Probe::added_link_power_consumption(){
+    double res =0;
+    for(unsigned i =0 ; i < links.size(); i++){
+        simgrid::s4u::Link* link = links[i];
+        res +=link_power_consumption(link);
+    }
+    return res;
+}
+
+double Probe::minimum_link_current_load(){
+    double res = link_current_load(links[0]);
+    for (unsigned i =1 ; i < links.size();i++){
+        double intermediate = link_current_load(links[i]);
+        if(intermediate < res){
+            res = intermediate;
+        }
+    }
+    return res;
+}
+
+double Probe::minimum_link_average_load(){
+    double res = link_average_load(links[0]);
+    for (unsigned i =1 ; i < links.size();i++){
+        double intermediate = link_average_load(links[i]);
+        if(intermediate < res){
+            res = intermediate;
+        }
+    }
+    return res;
+}
+
+double Probe::minimum_link_consumed_energy(){
+    double res = link_consumed_energy(links[0]);
+    for (unsigned i =1 ; i < links.size();i++){
+        double intermediate = link_consumed_energy(links[i]);
+        if(intermediate < res){
+            res = intermediate;
+        }
+    }
+    return res;
+}
+
+double Probe::minimum_link_power_consumption(){
+    double res = link_current_load(links[0]);
+    for (unsigned i =1 ; i < links.size();i++){
+        double intermediate = link_power_consumption(links[i]);
+        if(intermediate < res){
+            res = intermediate;
+        }
+    }
+    return res;
+}
+
+double Probe::maximum_link_current_load(){
+    double res =0;
+    for (unsigned i =0; i < links.size(); i++){
+        double intermediate = link_current_load(links[i]);
+        if(intermediate > res){
+            res = intermediate;
+        }
+    }
+    return res;
+}
+
+
+double Probe::maximum_link_average_load(){
+    double res =0;
+    for (unsigned i =0; i < links.size(); i++){
+        double intermediate = link_average_load(links[i]);
+        if(intermediate > res){
+            res = intermediate;
+        }
+    }
+    return res;
+}
+
+double Probe::maximum_link_consumed_energy(){
+    double res =0;
+    for (unsigned i =0; i < links.size(); i++){
+        double intermediate = link_consumed_energy(links[i]);
+        if(intermediate > res){
+            res = intermediate;
+        }
+    }
+    return res;
+}
+
+double Probe::maximum_link_power_consumption(){
+    double res =0;
+    for (unsigned i =0; i < links.size(); i++){
+        double intermediate = link_power_consumption(links[i]);
+        if(intermediate > res){
+            res = intermediate;
+        }
+    }
+    return res;
+}
+
+
+
+double Probe::average_link_current_load(){
+    double res = added_link_current_load()/links.size();
+    return res;
+}
+
+double Probe::average_link_average_load(){
+    double res = added_link_average_load()/links.size();
+    return res;
+}
+
+double Probe::average_link_consumed_energy(){
+    double res = added_link_consumed_energy()/links.size();
+    return res;
+}
+
+double Probe::average_link_power_consumption(){
+    double res = added_link_power_consumption()/links.size(); 
+    return res;
+}
 
 
 double Probe::aggregate_addition(){ 
@@ -335,8 +624,97 @@ double Probe::aggregate_average(){
     return res;
 }
 
+double Probe::link_aggregate_addition(){ 
+    double res = 0;
+    switch(metrics)
+    {
+        case Metrics::CONSUMED_ENERGY :
+            res = added_link_consumed_energy();
+            break;
+        case Metrics::POWER_CONSUMPTION :
+            res = added_link_power_consumption();
+            break;
+        case Metrics::CURRENT_LOAD :
+            res = added_link_current_load();
+            break;
+        case Metrics::AVERAGE_LOAD :
+            res = added_link_average_load();
+            break;
+        default:
+            break;
+    }
+    return res;
+}
+
+double Probe::link_aggregate_maximum(){ 
+    double res = 0;
+    switch(metrics)
+    {
+        case Metrics::CONSUMED_ENERGY :
+            res = maximum_link_consumed_energy();
+            break;
+        case Metrics::POWER_CONSUMPTION :
+            res = maximum_link_power_consumption();
+            break;
+        case Metrics::CURRENT_LOAD :
+            res = maximum_link_current_load();
+            break;
+        case Metrics::AVERAGE_LOAD :
+            res = maximum_link_average_load();
+            break;
+        default:
+            break;
+    }
+    return res;
+}
+
+double Probe::link_aggregate_minimum(){ 
+    double res = 0;
+    switch(metrics)
+    {
+        case Metrics::CONSUMED_ENERGY :
+            res = minimum_link_consumed_energy();
+            break;
+        case Metrics::POWER_CONSUMPTION :
+            res = minimum_link_power_consumption();
+            break;
+        case Metrics::CURRENT_LOAD :
+            res = minimum_link_current_load();
+            break;
+        case Metrics::AVERAGE_LOAD :
+            res = minimum_link_average_load();
+            break;
+        default:
+            break;
+    }
+    return res;
+}
+
+double Probe::link_aggregate_average(){ 
+    double res = 0;
+    switch(metrics)
+    {
+        case Metrics::CONSUMED_ENERGY :
+            res = average_link_consumed_energy();
+            break;
+        case Metrics::CURRENT_LOAD :
+            res = average_link_current_load();
+            break;
+        case Metrics::POWER_CONSUMPTION :
+            res = average_link_power_consumption();
+            break;
+        case Metrics::AVERAGE_LOAD :
+            res = average_link_average_load();
+            break;
+        default:
+            break;
+    }
+    return res;
+}
+
 double Probe::aggregate_value(){
     double res =0;
+    if(object == TypeOfObject::HOST){
     switch(aggregation){
         case TypeOfAggregation::ADDITION :
             res = aggregate_addition();
@@ -353,14 +731,35 @@ double Probe::aggregate_value(){
         default :
             break;
     }
+    }
+    else{
+        switch(aggregation){
+        case TypeOfAggregation::ADDITION :
+            res = link_aggregate_addition();
+            break;
+        case TypeOfAggregation::MINIMUM :
+            res = link_aggregate_minimum();
+            break;
+        case TypeOfAggregation::MAXIMUM :
+            res = link_aggregate_maximum();
+            break;
+        case TypeOfAggregation::AVERAGE :
+            res = link_aggregate_average();
+            break;
+        default :
+            break;
+    }
+    }
     return res;
 }
 
-vector<DetailedData> Probe::detailed_consumed_energy(){
-    std::vector<DetailedData> res;
+
+
+vector<DetailedHostData> Probe::detailed_consumed_energy(){
+    std::vector<DetailedHostData> res;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it){
         int id = *it;
-        DetailedData to_add;
+        DetailedHostData to_add;
         to_add.id= id;
         to_add.value = consumed_energy(id);
         res.push_back(to_add);
@@ -368,11 +767,11 @@ vector<DetailedData> Probe::detailed_consumed_energy(){
     return res;
 }
 
-vector<DetailedData> Probe::detailed_power_consumption(){
-    std::vector<DetailedData> res;
+vector<DetailedHostData> Probe::detailed_power_consumption(){
+    std::vector<DetailedHostData> res;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it){
         int id = *it;
-        DetailedData to_add;
+        DetailedHostData to_add;
         to_add.id= id;
         to_add.value = power_consumption(id);
         res.push_back(to_add);
@@ -380,11 +779,11 @@ vector<DetailedData> Probe::detailed_power_consumption(){
     return res;    
 }
 
-vector<DetailedData> Probe::detailed_current_load(){
-    std::vector<DetailedData> res;
+vector<DetailedHostData> Probe::detailed_current_load(){
+    std::vector<DetailedHostData> res;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it){
         int id = *it;
-        DetailedData to_add;
+        DetailedHostData to_add;
         to_add.id= id;
         to_add.value = current_load(id);
         res.push_back(to_add);
@@ -392,11 +791,11 @@ vector<DetailedData> Probe::detailed_current_load(){
     return res;    
 }
 
-vector<DetailedData> Probe::detailed_average_load(){
-    std::vector<DetailedData> res;
+vector<DetailedHostData> Probe::detailed_average_load(){
+    std::vector<DetailedHostData> res;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it){
         int id = *it;
-        DetailedData to_add;
+        DetailedHostData to_add;
         to_add.id= id;
         to_add.value = average_load(id);
         res.push_back(to_add);
@@ -404,8 +803,8 @@ vector<DetailedData> Probe::detailed_average_load(){
     return res;    
 }
 
-vector<DetailedData> Probe::detailed_value(){
-    std::vector<DetailedData> res;
+vector<DetailedHostData> Probe::detailed_value(){
+    std::vector<DetailedHostData> res;
     switch(metrics)
     {
         case Metrics::CONSUMED_ENERGY :
@@ -419,6 +818,79 @@ vector<DetailedData> Probe::detailed_value(){
             break;
         case Metrics::AVERAGE_LOAD :
             res = detailed_average_load();
+            break;
+        default:
+            break;
+    }
+    return res;
+}
+
+vector<DetailedLinkData> Probe::link_detailed_consumed_energy(){
+    vector<DetailedLinkData> res;
+    for (unsigned i =0 ; i < links.size(); i++){
+        simgrid::s4u::Link* link = links[i];
+        DetailedLinkData data;
+        data.name = link->get_cname();
+        data.value = link_consumed_energy(link);
+        res.push_back(data);
+    }
+    return res;
+}
+
+vector<DetailedLinkData> Probe::link_detailed_current_load(){
+    vector<DetailedLinkData> res;
+    for (unsigned i =0 ; i < links.size(); i++){
+        simgrid::s4u::Link* link = links[i];
+        DetailedLinkData data;
+        data.name = link->get_cname();
+        data.value = link_current_load(link);
+        res.push_back(data);
+    }
+    return res;
+}
+
+vector<DetailedLinkData> Probe::link_detailed_power_consumption(){
+    vector<DetailedLinkData> res;
+    for (unsigned i =0 ; i < links.size(); i++){
+        simgrid::s4u::Link* link = links[i];
+        DetailedLinkData data;
+        data.name = link->get_cname();
+        data.value = link_power_consumption(link);
+        res.push_back(data);
+    }
+    return res;
+}
+
+vector<DetailedLinkData> Probe::link_detailed_average_load(){
+    vector<DetailedLinkData> res;
+    for (unsigned i =0 ; i < links.size(); i++){
+        simgrid::s4u::Link* link = links[i];
+        DetailedLinkData data;
+        data.name = link->get_cname();
+        data.value = link_average_load(link);
+        res.push_back(data);
+    }
+    return res;
+}
+
+
+
+
+vector<DetailedLinkData> Probe::link_detailed_value(){
+    std::vector<DetailedLinkData> res;
+    switch(metrics)
+    {
+        case Metrics::CONSUMED_ENERGY :
+            res = link_detailed_consumed_energy();
+            break;
+        case Metrics::CURRENT_LOAD :
+            res = link_detailed_current_load();
+            break;
+        case Metrics::POWER_CONSUMPTION :
+            res = link_detailed_power_consumption();
+            break;
+        case Metrics::AVERAGE_LOAD :
+            res = link_detailed_average_load();
             break;
         default:
             break;
@@ -441,11 +913,17 @@ std::string  aggregation_to_string(TypeOfAggregation type){
         case TypeOfAggregation::AVERAGE :
             res = "average";
             break;
+        case TypeOfAggregation::NONE :
+            res = "none";
+            break;
         default :
+            res = "unknown";
             break;
     }
     return res;
 }
+
+
 
 
 

@@ -763,6 +763,7 @@ int main(int argc, char * argv[])
     bool run_simulation = false;
 
     parse_main_args(argc, argv, main_args, return_code, run_simulation);
+    
 
     if (main_args.dump_execution_context)
     {
@@ -799,17 +800,6 @@ int main(int argc, char * argv[])
 
     // Let's configure how Batsim should be logged
     configure_batsim_logging_output(main_args);
-
-    // Initialize the energy plugin before creating the engine
-    if (main_args.energy_used)
-    {
-        sg_host_energy_plugin_init();
-    }
-
-    if (main_args.load_used)
-    {
-        sg_host_load_plugin_init();
-    }
 
     // Instantiate SimGrid
 
@@ -853,6 +843,19 @@ int main(int argc, char * argv[])
         XBT_INFO("SMPI will be used.");
         context.workloads.register_smpi_applications(); // todo: SMPI workflows
         SMPI_init();
+    }
+
+    // Initialize the energy plugin before creating the engine
+    if (main_args.energy_used)
+    {
+        sg_host_energy_plugin_init();
+        sg_link_energy_plugin_init();
+    }
+
+    if (main_args.load_used)
+    {
+        sg_host_load_plugin_init();
+        sg_link_load_plugin_init();
     }
 
     // Let's create the machines

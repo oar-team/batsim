@@ -63,6 +63,7 @@ def pytest_generate_tests(metafunc):
         "properties_platform": "properties_example.xml",
     }
     energy_platforms = ["energy128notopo", "energy128cluster"]
+    probe_platforms = ["energy128cluster"]
 
     # Workloads
     workloads_def = {
@@ -78,6 +79,7 @@ def pytest_generate_tests(metafunc):
         "genome": "GENOME.d.351024866.5.dax",
         "long": "test_batsim_paper_workload_seed1.json",
         "mixed": "test_various_profile_types.json",
+        "probe": "probe_long_workload.json",
         "samesubmittime": "test_same_submit_time.json",
         "smpicomp1": "test_smpi_compute_only.json",
         "smpicomp2": "test_smpi_compute_only_2_jobs.json",
@@ -98,6 +100,7 @@ def pytest_generate_tests(metafunc):
     tuto_stencil_workloads = ['tutostencil']
     workflows = ['genome']
     farfuture = ["farfuture"]
+    probe = ["probe"]
 
     # Algorithms
     algorithms_def = {
@@ -137,6 +140,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('platform', generate_platforms(platform_dir, platforms_def, [key for key in platforms_def]))
     if 'energy_platform' in metafunc.fixturenames:
         metafunc.parametrize('energy_platform', generate_platforms(platform_dir, platforms_def, energy_platforms))
+    if 'probe_platform' in metafunc.fixturenames:
+        metafunc.parametrize('probe_platform', generate_platforms(platform_dir, platforms_def, probe_platforms))
     if 'small_platform' in metafunc.fixturenames:
         metafunc.parametrize('small_platform', generate_platforms(platform_dir, platforms_def, ['small']))
     if 'cluster_platform' in metafunc.fixturenames:
@@ -181,6 +186,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('delaysequences_workload', generate_workloads(workload_dir, workloads_def, ['delaysequences']))
     if 'mixed_workload' in metafunc.fixturenames:
         metafunc.parametrize('mixed_workload', generate_workloads(workload_dir, workloads_def, ['mixed']))
+    if 'probe_workload' in metafunc.fixturenames:
+        metafunc.parametrize('probe_workload', generate_workloads(workload_dir, workloads_def, probe))
 
     # External Events
     if 'simple_events' in metafunc.fixturenames:

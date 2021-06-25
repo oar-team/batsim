@@ -11,6 +11,7 @@
 #include "context.hpp"
 #include "jobs.hpp"
 #include "network.hpp"
+#include "probe.hpp"
 
 using namespace rapidjson;
 using namespace std;
@@ -26,6 +27,44 @@ JsonProtocolWriter::~JsonProtocolWriter()
 {
 }
 
+
+void JsonProtocolWriter::append_detailed_link_probe_data(const string &probe_name,
+                                    double date,
+                                    std::vector<DetailedLinkData> value,
+                                    Metrics met){
+  xbt_assert(date >= _last_date, "Date inconsistency");
+  _last_date = date;
+  _is_empty = false;
+  Value event(rapidjson::kObjectType);
+
+  event.AddMember("timestamp", Value().SetDouble(date), _alloc);
+  event.AddMember("type", Value().SetString("PROBE_DATA"), _alloc);
+  std::string me = metric_to_string(met);
+
+  Value data(rapidjson::kObjectType);
+  data.AddMember("name", Value().SetString(probe_name.c_str(), _alloc), _alloc);
+  data.AddMember("aggregation", Value().SetString("none"), _alloc);
+  data.AddMember("metrics",Value().SetString(me.c_str(), _alloc), _alloc);
+
+  //We define an array to add in the data part of our event
+  int size_vec = value.size();
+  Value Myarray(rapidjson::kArrayType);
+  for (int i =0 ; i < size_vec ; i++){
+    rapidjson::Value objValue;
+    objValue.SetObject();
+    DetailedLinkData val = value.at(i);
+    objValue.AddMember("ressource", Value().SetString((val.name).c_str(),_alloc), _alloc);
+    objValue.AddMember("value",Value().SetDouble(val.value), _alloc);
+    Myarray.PushBack(objValue, _alloc);
+  }
+
+  data.AddMember("value",Myarray,_alloc);
+ 
+  event.AddMember("data", data, _alloc);
+
+  _events.PushBack(event, _alloc);
+}
+
 void JsonProtocolWriter::append_aggregate_probe_data(const string &probe_name,
                                     double date,
                                     double value,
@@ -33,14 +72,12 @@ void JsonProtocolWriter::append_aggregate_probe_data(const string &probe_name,
                                     Metrics met)
 {
   /*
-  aggregate case
     {
   "timestamp": "0.01",
   "type": "PROBE_DATA",
   "data": {
-    "aggregate": true,
-    "type of aggregation": "addition",
     "name": "my-amazing-probe",
+    "aggregation": "addition",
     "value": 20
   }
 }
@@ -69,7 +106,7 @@ void JsonProtocolWriter::append_aggregate_probe_data(const string &probe_name,
 
 void JsonProtocolWriter::append_detailed_probe_data(const string &probe_name,
                                     double date,
-                                    std::vector<DetailedData> value,
+                                    std::vector<DetailedHostData> value,
                                     Metrics met)
 {
   /*
@@ -77,8 +114,9 @@ void JsonProtocolWriter::append_detailed_probe_data(const string &probe_name,
   "timestamp": "0.01",
   "type": "PROBE_DATA",
   "data": {
-    "aggregate": false,
     "name": "my-amazing-probe",
+    "aggregation": "none",
+    "metrics": "power consumption",
     "value" : [ {"resource":"1", "value":20.0}, {"resource":"2", "value":20.0} ]
   }
 }
@@ -103,7 +141,7 @@ void JsonProtocolWriter::append_detailed_probe_data(const string &probe_name,
   for (int i =0 ; i < size_vec ; i++){
     rapidjson::Value objValue;
     objValue.SetObject();
-    DetailedData val = value.at(i);
+    DetailedHostData val = value.at(i);
     objValue.AddMember("ressource", Value().SetString((std::to_string(val.id)).c_str(),_alloc), _alloc);
     objValue.AddMember("value",Value().SetDouble(val.value), _alloc);
     Myarray.PushBack(objValue, _alloc);
@@ -1725,29 +1763,48 @@ void JsonProtocolReader::handle_add_probe(int event_number,
   xbt_assert(data_object.HasMember("filter"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'filter' key.", event_number);
   xbt_assert(data_object.HasMember("smoothing"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'smoothing' key.", event_number);
   xbt_assert(data_object.HasMember("aggregation"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'aggregate' key.", event_number);
+  xbt_assert(data_object.HasMember("object"),"Invalid JSON message: the 'object' value of event %d (ADD_PROBE) should contain a 'object' key",event_number);
   xbt_assert(data_object.HasMember("resources"), "Invalid JSON message: the 'data' value of event %d (ADD_PROBE) should contain a 'resources' key.", event_number);
 
   const Value &name_value = data_object["name"];
   xbt_assert(name_value.IsString(), "Invalid JSON message: in event %d (ADD_PROBE): ['data']['name'] should be a string", event_number);
   message->name = name_value.GetString();
 
+  const Value &trigger = data_object["trigger"];
+  message->trigger = string_to_type_of_trigger(trigger.GetString());
+
   const Value &metric = data_object["metrics"];
   message->metrics = string_to_metric(metric.GetString());
 
 
   const Value &aggregate = data_object["aggregation"];
-  std::string agg = aggregate.GetString();
-  message->aggregation = string_to_type_of_aggregation(agg);
+  message->aggregation = string_to_type_of_aggregation(aggregate.GetString());
+
+  const Value &object = data_object["object"];
+  message->object = string_to_type_of_object(object.GetString());
+
   const Value &resources_value = data_object["resources"];
-  string resources = resources_value["hosts"].GetString();
-  
-  try
+  std::string resources;
+  vector<std::string> links;
+  switch (message->object)
   {
-    message->machine_ids = IntervalSet::from_string_hyphen(resources, " ", "-");
-  }
-  catch (const std::exception &e)
-  {
-    throw std::runtime_error(std::string("Invalid JSON message : ") + e.what());
+  case TypeOfObject::HOST :
+    resources = resources_value["hosts"].GetString(); 
+    try
+    {
+      message->machine_ids = IntervalSet::from_string_hyphen(resources, " ", "-");
+    }
+    catch (const std::exception &e)
+    {
+      throw std::runtime_error(std::string("Invalid JSON message : ") + e.what());
+    }
+    break;
+  case TypeOfObject::LINK :
+    links = split(resources_value["links"].GetString(),' ');
+    message->links_names = links;
+    break;
+  default :
+    break;
   }
   send_message_at_time(timestamp, "server", IPMessageType::SCHED_ADD_PROBE, static_cast<void *>(message));
 }
@@ -1771,8 +1828,8 @@ Metrics string_to_metric(std::string metrics){
     }
     else {
         met = Metrics::UNKNOWN;
+        XBT_ERROR("Unknown type of object");
     }
-    xbt_assert(met != Metrics::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of metrics");
     return met;
 }
 
@@ -1792,6 +1849,7 @@ std::string metric_to_string(Metrics met){
         res="current load";
         break;
       default:
+        res = "unknown";
         break;
 
   }
@@ -1824,4 +1882,43 @@ TypeOfAggregation string_to_type_of_aggregation(std::string aggregation){
     return type;
 }
 
+TypeOfObject string_to_type_of_object(std::string object){
+  TypeOfObject res;
+  if(object.compare("host")==0){
+    res = TypeOfObject::HOST;
+  }
+  else if(object.compare("link")==0){
+    res = TypeOfObject::LINK;
+  }
+  else{
+    res = TypeOfObject::UNKNOWN;
+  }
+  xbt_assert(res != TypeOfObject::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of object");
+  return res;
+}
 
+TypeOfTrigger  string_to_type_of_trigger(std::string trigger){
+  TypeOfTrigger res;
+  if(trigger.compare("one shot")==0){
+    res = TypeOfTrigger::ONE_SHOT;
+  }
+  else{
+    res = TypeOfTrigger::UNKNOWN;
+  }
+  xbt_assert(res != TypeOfTrigger::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of trigger");
+  return res;
+}
+
+
+std::vector<std::string> split(const std::string & src, char delim) {
+   using namespace std;
+   vector<string> v;
+   auto p = begin(src);
+   for(auto q = find(p, end(src), delim); q != end(src); q = find(++p, end(src), delim)) {
+      v.emplace_back(p, q);
+      p = q;
+   }
+   if (p != end(src))
+      v.emplace_back(p, end(src));
+   return v;
+}

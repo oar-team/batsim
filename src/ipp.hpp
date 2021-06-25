@@ -255,12 +255,14 @@ struct SchedWaitAnswerMessage
 struct SchedAddProbeMessage
 {
     std::string name;
-    //trigger
+    TypeOfTrigger trigger;
     Metrics metrics;
     TypeOfAggregation aggregation;
+    TypeOfObject object;
     // bool filter;
     //smoothing parameters
     IntervalSet machine_ids; 
+    std::vector<std::string> links_names;
 };
 
 

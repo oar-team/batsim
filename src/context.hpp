@@ -19,6 +19,7 @@
 #include "network.hpp"
 #include "profiles.hpp"
 #include "protocol.hpp"
+#include "probe.hpp"
 #include "pstate.hpp"
 #include "storage.hpp"
 #include "workflow.hpp"
@@ -39,6 +40,8 @@ struct BatsimContext
     AbstractProtocolReader * proto_reader = nullptr;//!< The protocol reader
     AbstractProtocolWriter * proto_writer = nullptr;//!< The protocol writer
 
+
+    std::vector<Probe> probes;
     Machines machines;                              //!< The machines
     Workloads workloads;                            //!< The workloads
     Workflows workflows;                            //!< The workflows
