@@ -1869,6 +1869,9 @@ TypeOfAggregation string_to_type_of_aggregation(std::string aggregation){
     else if (aggregation.compare("maximum")==0){
         type = TypeOfAggregation::MAXIMUM;
     }
+    else if (aggregation.compare("median")==0){
+        type = TypeOfAggregation::MEDIAN;
+    }
     else if (aggregation.compare("average")==0){
         type = TypeOfAggregation::AVERAGE;
     }

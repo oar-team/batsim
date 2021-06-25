@@ -26,6 +26,7 @@ enum class TypeOfAggregation
 {
     ADDITION,
     AVERAGE,
+    MEDIAN,
     MINIMUM,
     MAXIMUM,
     NONE,
@@ -53,7 +54,17 @@ struct DetailedHostData{
 struct DetailedLinkData{
     std::string name; 
     double value;
+    
 };
+
+    /**
+     * @brief Returns true if the value field of a is less than the value field of b
+     */
+
+    bool operator<(DetailedHostData const &a, DetailedHostData const &b);
+
+    bool operator<(DetailedLinkData const &a, DetailedLinkData const &b);
+
 
 
 
@@ -125,6 +136,18 @@ struct Probe{
      * @brief Returns the average of the load
      */
     double average_agg_load();
+
+    /**
+     * @brief Returns the median of consumed energy
+     */
+
+    double median_consumed_energy();
+
+    double median_power_consumption();
+
+    double median_current_load();
+
+    double median_agg_load();
 
     /**
      * @brief Returns the minimum of the consumed energy
@@ -270,6 +293,12 @@ struct Probe{
     double aggregate_average();
 
     /**
+     * @brief Returns the aggregate median value according to the type of the Metrics
+     */
+
+    double aggregate_median();
+
+    /**
      * @brief Returns the aggregate value
      */
     
@@ -324,6 +353,30 @@ struct Probe{
      */
     
     double link_aggregate_average();
+
+    /**
+     * @brief Returns the median link value depending on the  Metrics
+     */
+
+    double link_aggregate_median();
+
+    /**
+     * @brief Returns the median link consumed energy
+     */
+
+    double median_link_consumed_energy();
+
+    /**
+     * @brief Returns the median link current load
+     */
+
+    double median_link_current_load();
+
+    /**
+     * @brief Returns the average link average load
+     */
+
+    double median_link_agg_load();
 
     /**
      * @brief Returns the added link current load

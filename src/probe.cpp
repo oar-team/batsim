@@ -187,6 +187,43 @@ double Probe::average_agg_load(){
     return res;
 }
 
+bool operator<(DetailedHostData const &a, DetailedHostData const &b){
+    if(a.value < b.value){
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+double Probe::median_consumed_energy(){
+    vector<DetailedHostData> vec = detailed_consumed_energy();
+    std::sort(vec.begin(), vec.end());
+    int index = vec.size()/2;
+    return (vec.at(index)).value;
+}
+
+double Probe::median_power_consumption(){
+    vector<DetailedHostData> vec = detailed_power_consumption();
+    std::sort(vec.begin(), vec.end());
+    int index = vec.size()/2;
+    return (vec.at(index)).value;
+}
+
+double Probe::median_current_load(){
+    vector<DetailedHostData> vec = detailed_current_load();
+    std::sort(vec.begin(), vec.end());
+    int index = vec.size()/2;
+    return (vec.at(index)).value;
+}
+
+double Probe::median_agg_load(){
+    vector<DetailedHostData> vec = detailed_average_load();
+    std::sort(vec.begin(), vec.end());
+    int index = vec.size()/2;
+    return (vec.at(index)).value;
+}
+
     
 double Probe::minimum_consumed_energy(){
     double res = consumed_energy(*(id_machines.elements_begin()));
@@ -499,6 +536,38 @@ double Probe::average_link_consumed_energy(){
 }
 
 
+bool operator<(DetailedLinkData const &a, DetailedLinkData const &b){
+    if(a.value < b.value){
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+double Probe::median_link_consumed_energy(){
+    vector<DetailedLinkData> vec = link_detailed_consumed_energy();
+    std::sort(vec.begin(), vec.end());
+    int index = vec.size()/2;
+    return (vec.at(index)).value;
+}
+
+
+double Probe::median_link_current_load(){
+    vector<DetailedLinkData> vec = link_detailed_current_load();
+    std::sort(vec.begin(), vec.end());
+    int index = vec.size()/2;
+    return (vec.at(index)).value;
+}
+
+double Probe::median_link_agg_load(){
+    vector<DetailedLinkData> vec = link_detailed_average_load();
+    std::sort(vec.begin(), vec.end());
+    int index = vec.size()/2;
+    return (vec.at(index)).value;
+}
+
+
 double Probe::aggregate_addition(){ 
     double res = 0;
     switch(metrics)
@@ -587,6 +656,28 @@ double Probe::aggregate_average(){
     return res;
 }
 
+double Probe::aggregate_median(){
+    double res = 0;
+    switch(metrics)
+    {
+        case Metrics::CONSUMED_ENERGY :
+            res = median_consumed_energy();
+            break;
+        case Metrics::CURRENT_LOAD :
+            res = median_current_load();
+            break;
+        case Metrics::AVERAGE_LOAD :
+            res = median_agg_load();
+            break;
+        case Metrics::POWER_CONSUMPTION :
+            res = median_power_consumption();
+            break;
+        default:
+            break;
+    }
+    return res;
+}
+
 double Probe::link_aggregate_addition(){ 
     double res = 0;
     switch(metrics)
@@ -663,6 +754,25 @@ double Probe::link_aggregate_average(){
     return res;
 }
 
+double Probe::link_aggregate_median(){
+    double res = 0;
+    switch(metrics)
+    {
+        case Metrics::CONSUMED_ENERGY :
+            res = median_link_consumed_energy();
+            break;
+        case Metrics::CURRENT_LOAD :
+            res = median_link_current_load();
+            break;
+        case Metrics::AVERAGE_LOAD :
+            res = median_link_agg_load();
+            break;
+        default:
+            break;
+    }
+    return res;
+}
+
 double Probe::aggregate_value(){
     double res =0;
     if(object == TypeOfObject::HOST){
@@ -678,6 +788,9 @@ double Probe::aggregate_value(){
             break;
         case TypeOfAggregation::AVERAGE :
             res = aggregate_average();
+            break;
+        case TypeOfAggregation::MEDIAN :
+            res = aggregate_median();
             break;
         default :
             break;
@@ -696,6 +809,9 @@ double Probe::aggregate_value(){
             break;
         case TypeOfAggregation::AVERAGE :
             res = link_aggregate_average();
+            break;
+        case TypeOfAggregation::MEDIAN :
+            res = link_aggregate_median();
             break;
         default :
             break;
@@ -848,6 +964,9 @@ std::string  aggregation_to_string(TypeOfAggregation type){
             break;
         case TypeOfAggregation::AVERAGE :
             res = "average";
+            break;
+        case TypeOfAggregation::MEDIAN :
+            res = "median";
             break;
         case TypeOfAggregation::NONE :
             res = "none";
