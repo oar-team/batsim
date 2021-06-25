@@ -300,74 +300,122 @@ struct Probe{
 
     double link_consumed_energy(simgrid::s4u::Link* link);
 
-    /**
-     * @brief Returns the power consumption of the link passed in parameter
-     */
-
-    double link_power_consumption(simgrid::s4u::Link* link);
 
     /**
-     * @brief Returns the added aggregate value
+     * @brief Returns the link added aggregate value
      */
 
     double link_aggregate_addition();
 
     /**
-     * @brief Returns the minimum value
+     * @brief Returns the link minimum value
      */
            
     double link_aggregate_minimum();
 
     /**
-     * @brief Returns the maximum value
+     * @brief Returns the link maximum value
      */
            
     double link_aggregate_maximum();
 
     /**
-     * @brief Returns the averaged aggregate value
+     * @brief Returns the averaged link aggregate value
      */
     
     double link_aggregate_average();
 
+    /**
+     * @brief Returns the added link current load
+     */
 
     double added_link_current_load();
 
+    /**
+     * @brief Returns the added link average load
+     */ 
+
     double added_link_average_load();
+
+    /**
+     * @brief Returns the added link consumed energy
+     */ 
 
     double added_link_consumed_energy();
 
-    double added_link_power_consumption();
+
+    /**
+     * @brief Returns the minimum link current load
+     */ 
 
     double minimum_link_current_load();
 
+    /**
+     * @brief Returns the minimum link average load
+     */ 
+
     double minimum_link_average_load();
+
+    /**
+     * @brief Returns the minimum link consumed energy
+     */ 
 
     double minimum_link_consumed_energy();
 
-    double minimum_link_power_consumption();
+
+    /**
+     * @brief Return the maximum link current load
+     */ 
 
     double maximum_link_current_load();
 
+    /**
+     * @brief Returns the maximum link average load
+     */ 
+
     double maximum_link_average_load();
 
-    double maximum_link_consumed_energy();
+    /**
+     * @brief Returns the maximum link consumed energy
+     */ 
 
-    double maximum_link_power_consumption();
+    double maximum_link_consumed_energy();
+    
+
+    /**
+     * @brief Returns the averaged link current load
+     */ 
 
     double average_link_current_load();
+    
+    /**
+     * @brief Returns the averaged link average load
+     */ 
 
     double average_link_average_load();
 
+    /**
+     * @brief Returns the averaged link consumed energy
+     */ 
+
     double average_link_consumed_energy();
 
-    double average_link_power_consumption();
+   
+    /**
+     * @brief Returns the details of the link consumed energy
+     */ 
 
     std::vector<DetailedLinkData> link_detailed_consumed_energy();
 
+    /**
+     * @brief Returns the details of the link current load
+     */ 
+
     std::vector<DetailedLinkData> link_detailed_current_load();
 
-    std::vector<DetailedLinkData> link_detailed_power_consumption();
+    /**
+     * @brief Returns the details of the link average load
+     */ 
 
     std::vector<DetailedLinkData> link_detailed_average_load();
 };

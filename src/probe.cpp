@@ -53,7 +53,7 @@ Probe new_link_probe(std::string name, TypeOfTrigger trigger, Metrics met, TypeO
     nwprobe.object = TypeOfObject::LINK;
     nwprobe.name = name;
     nwprobe.trigger = trigger;
-    xbt_assert(met != Metrics::UNKNOWN, "A metric is not recognized by batsim");
+    xbt_assert(met != Metrics::UNKNOWN && met != Metrics::POWER_CONSUMPTION, "A metric is not recognized by batsim");
     nwprobe.metrics = met;
     nwprobe.aggregation = agg;
     nwprobe.context = context;
@@ -381,11 +381,6 @@ double Probe::link_consumed_energy(simgrid::s4u::Link* link){
     return res;
 }
 
-double Probe::link_power_consumption(simgrid::s4u::Link* link){
-    // double res = sg_link_get_current_consumption(link);
-    // return res;
-    return 0;
-}
 
 
 double Probe::added_link_current_load(){
@@ -415,14 +410,6 @@ double Probe::added_link_consumed_energy(){
     return res;
 }
 
-double Probe::added_link_power_consumption(){
-    double res =0;
-    for(unsigned i =0 ; i < links.size(); i++){
-        simgrid::s4u::Link* link = links[i];
-        res +=link_power_consumption(link);
-    }
-    return res;
-}
 
 double Probe::minimum_link_current_load(){
     double res = link_current_load(links[0]);
@@ -457,16 +444,7 @@ double Probe::minimum_link_consumed_energy(){
     return res;
 }
 
-double Probe::minimum_link_power_consumption(){
-    double res = link_current_load(links[0]);
-    for (unsigned i =1 ; i < links.size();i++){
-        double intermediate = link_power_consumption(links[i]);
-        if(intermediate < res){
-            res = intermediate;
-        }
-    }
-    return res;
-}
+
 
 double Probe::maximum_link_current_load(){
     double res =0;
@@ -502,16 +480,6 @@ double Probe::maximum_link_consumed_energy(){
     return res;
 }
 
-double Probe::maximum_link_power_consumption(){
-    double res =0;
-    for (unsigned i =0; i < links.size(); i++){
-        double intermediate = link_power_consumption(links[i]);
-        if(intermediate > res){
-            res = intermediate;
-        }
-    }
-    return res;
-}
 
 
 
@@ -527,11 +495,6 @@ double Probe::average_link_average_load(){
 
 double Probe::average_link_consumed_energy(){
     double res = added_link_consumed_energy()/links.size();
-    return res;
-}
-
-double Probe::average_link_power_consumption(){
-    double res = added_link_power_consumption()/links.size(); 
     return res;
 }
 
@@ -609,14 +572,14 @@ double Probe::aggregate_average(){
         case Metrics::CONSUMED_ENERGY :
             res = average_consumed_energy();
             break;
-        case Metrics::POWER_CONSUMPTION :
-            res = average_power_consumption();
-            break;
         case Metrics::CURRENT_LOAD :
             res = average_current_load();
             break;
         case Metrics::AVERAGE_LOAD :
             res = average_agg_load();
+            break;
+        case Metrics::POWER_CONSUMPTION :
+            res = average_power_consumption();
             break;
         default:
             break;
@@ -630,9 +593,6 @@ double Probe::link_aggregate_addition(){
     {
         case Metrics::CONSUMED_ENERGY :
             res = added_link_consumed_energy();
-            break;
-        case Metrics::POWER_CONSUMPTION :
-            res = added_link_power_consumption();
             break;
         case Metrics::CURRENT_LOAD :
             res = added_link_current_load();
@@ -653,9 +613,6 @@ double Probe::link_aggregate_maximum(){
         case Metrics::CONSUMED_ENERGY :
             res = maximum_link_consumed_energy();
             break;
-        case Metrics::POWER_CONSUMPTION :
-            res = maximum_link_power_consumption();
-            break;
         case Metrics::CURRENT_LOAD :
             res = maximum_link_current_load();
             break;
@@ -674,9 +631,6 @@ double Probe::link_aggregate_minimum(){
     {
         case Metrics::CONSUMED_ENERGY :
             res = minimum_link_consumed_energy();
-            break;
-        case Metrics::POWER_CONSUMPTION :
-            res = minimum_link_power_consumption();
             break;
         case Metrics::CURRENT_LOAD :
             res = minimum_link_current_load();
@@ -699,9 +653,6 @@ double Probe::link_aggregate_average(){
             break;
         case Metrics::CURRENT_LOAD :
             res = average_link_current_load();
-            break;
-        case Metrics::POWER_CONSUMPTION :
-            res = average_link_power_consumption();
             break;
         case Metrics::AVERAGE_LOAD :
             res = average_link_average_load();
@@ -849,18 +800,6 @@ vector<DetailedLinkData> Probe::link_detailed_current_load(){
     return res;
 }
 
-vector<DetailedLinkData> Probe::link_detailed_power_consumption(){
-    vector<DetailedLinkData> res;
-    for (unsigned i =0 ; i < links.size(); i++){
-        simgrid::s4u::Link* link = links[i];
-        DetailedLinkData data;
-        data.name = link->get_cname();
-        data.value = link_power_consumption(link);
-        res.push_back(data);
-    }
-    return res;
-}
-
 vector<DetailedLinkData> Probe::link_detailed_average_load(){
     vector<DetailedLinkData> res;
     for (unsigned i =0 ; i < links.size(); i++){
@@ -885,9 +824,6 @@ vector<DetailedLinkData> Probe::link_detailed_value(){
             break;
         case Metrics::CURRENT_LOAD :
             res = link_detailed_current_load();
-            break;
-        case Metrics::POWER_CONSUMPTION :
-            res = link_detailed_power_consumption();
             break;
         case Metrics::AVERAGE_LOAD :
             res = link_detailed_average_load();
