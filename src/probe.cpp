@@ -20,6 +20,7 @@
 #include "permissions.hpp"
 
 
+
 using namespace std;
 using namespace roles;
 
@@ -32,37 +33,35 @@ void verif_name(BatsimContext* context, std::string name){
     }
 }
 
-Probe new_host_probe(std::string name, TypeOfTrigger trigger, Metrics metrics, TypeOfAggregation agg,const IntervalSet & machines, BatsimContext * context){
-    verif_name(context,name);
-    Probe nwprobe;
-    nwprobe.object = TypeOfObject::HOST;
-    nwprobe.name = name;
-    nwprobe.trigger = trigger;
-    xbt_assert(metrics != Metrics::UNKNOWN, "A metric is not recognized by batsim");
-    nwprobe.metrics = metrics;
-    nwprobe.aggregation = agg;
-    nwprobe.id_machines = machines;
-    nwprobe.context = context;
-    context->probes.push_back(nwprobe);
-    return nwprobe;
-}
 
-Probe new_link_probe(std::string name, TypeOfTrigger trigger, Metrics met, TypeOfAggregation agg, vector<std::string> links_name, BatsimContext * context){
-    verif_name(context,name);
+
+Probe new_probe(IPMessage *task_data, BatsimContext* context){
+    auto *message = static_cast<SchedAddProbeMessage *>(task_data->data);
+    verif_name(context,message->name);
     Probe nwprobe;
-    nwprobe.object = TypeOfObject::LINK;
-    nwprobe.name = name;
-    nwprobe.trigger = trigger;
-    xbt_assert(met != Metrics::UNKNOWN && met != Metrics::POWER_CONSUMPTION, "A metric is not recognized by batsim");
-    nwprobe.metrics = met;
-    nwprobe.aggregation = agg;
     nwprobe.context = context;
+    nwprobe.name = message->name;
+    nwprobe.object = message->object;
+    nwprobe.metrics = message->metrics;
+    nwprobe.trigger = message->trigger;
+    nwprobe.aggregation = message->aggregation;
     vector<simgrid::s4u::Link*> links_to_add;
-    for(unsigned i = 0 ; i < links_name.size();i++){
-        simgrid::s4u::Link* link = simgrid::s4u::Link::by_name(links_name[i]);
-        links_to_add.push_back(link);
+    std::vector<std::string> new_links_names;
+    switch(nwprobe.object){
+        case TypeOfObject::LINK :
+            new_links_names = message->links_names;
+            for(unsigned i = 0 ; i < new_links_names.size();i++){
+                simgrid::s4u::Link* link = simgrid::s4u::Link::by_name(new_links_names[i]);
+                links_to_add.push_back(link);
     }
-    nwprobe.links = links_to_add;
+            nwprobe.links = links_to_add;
+            break;
+        case TypeOfObject::HOST :  
+            nwprobe.id_machines = message->machine_ids;
+            break;
+        default :
+            break;
+    }
     context->probes.push_back(nwprobe);
     return nwprobe;
 }

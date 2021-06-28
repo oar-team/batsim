@@ -1783,34 +1783,55 @@ void JsonProtocolReader::handle_add_probe(int event_number,
   const Value &object = data_object["object"];
   message->object = string_to_type_of_object(object.GetString());
 
-  const Value &resources_value = data_object["resources"];
-  std::string resources;
-  vector<std::string> links;
-  switch (message->object)
-  {
-  case TypeOfObject::HOST :
-    resources = resources_value["hosts"].GetString(); 
-    try
-    {
-      message->machine_ids = IntervalSet::from_string_hyphen(resources, " ", "-");
-    }
-    catch (const std::exception &e)
-    {
-      throw std::runtime_error(std::string("Invalid JSON message : ") + e.what());
-    }
-    break;
-  case TypeOfObject::LINK :
-    links = split(resources_value["links"].GetString(),' ');
-    message->links_names = links;
-    break;
-  default :
-    break;
+  switch(message->object){
+    case TypeOfObject::LINK :
+      complete_SchedAddProbeMessage_link(data_object,message);
+      break; 
+    case TypeOfObject::HOST :
+      complete_SchedAddProbeMessage_host(data_object,message);
+      break;
+    default :
+      break;
   }
   send_message_at_time(timestamp, "server", IPMessageType::SCHED_ADD_PROBE, static_cast<void *>(message));
 }
 
+void complete_SchedAddProbeMessage_host(const Value &data_object,SchedAddProbeMessage* message){
+  const Value &resources_value = data_object["resources"];
+  std::string resources = resources_value["hosts"].GetString(); 
+  TypeOfTrigger trigger = message->trigger;
+  try
+  {
+      message->machine_ids = IntervalSet::from_string_hyphen(resources, " ", "-");
+  }
+  catch (const std::exception &e)
+  {
+      throw std::runtime_error(std::string("Invalid JSON message : ") + e.what());
+  }
+  switch(trigger){
+    case TypeOfTrigger::PERIODIC :
+      message->period = std::stoi(resources_value["period"].GetString());
+      break;
+    default :
+      break;
+  }
+}
 
-
+void complete_SchedAddProbeMessage_link(const Value &data_object,SchedAddProbeMessage* message){
+  const Value &resources_value = data_object["resources"];
+  std::string resources = resources_value["links"].GetString();
+  vector<std::string> links;
+  links = split(resources_value["links"].GetString(),' ');
+  TypeOfTrigger trigger = message->trigger;
+  message->links_names = links;
+  switch(trigger){
+    case TypeOfTrigger::PERIODIC :
+      message->period = std::stoi(resources_value["period"].GetString());
+      break;
+    default :
+      break;
+  }
+}
 
 Metrics string_to_metric(std::string metrics){
     Metrics met;
@@ -1828,7 +1849,7 @@ Metrics string_to_metric(std::string metrics){
     }
     else {
         met = Metrics::UNKNOWN;
-        XBT_ERROR("Unknown type of object");
+        xbt_die("Unknown type of object");
     }
     return met;
 }
@@ -1904,6 +1925,9 @@ TypeOfTrigger  string_to_type_of_trigger(std::string trigger){
   TypeOfTrigger res;
   if(trigger.compare("one shot")==0){
     res = TypeOfTrigger::ONE_SHOT;
+  }
+  else if (trigger.compare("periodic")==0){
+    res = TypeOfTrigger::PERIODIC;
   }
   else{
     res = TypeOfTrigger::UNKNOWN;

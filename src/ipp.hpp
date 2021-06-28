@@ -263,6 +263,7 @@ struct SchedAddProbeMessage
     //smoothing parameters
     IntervalSet machine_ids; 
     std::vector<std::string> links_names;
+    int period;
 };
 
 

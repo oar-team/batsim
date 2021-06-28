@@ -9,9 +9,14 @@
 
 #include <simgrid/s4u/Link.hpp>
 #include "machines.hpp"
+#include "ipp.hpp"
+
+
 
 
 struct BatsimContext;
+struct IPMessage;
+
 
 enum class Metrics
 {
@@ -43,6 +48,7 @@ enum class TypeOfObject
 enum class TypeOfTrigger
 {
     ONE_SHOT,
+    PERIODIC,
     UNKNOWN
 };
 
@@ -480,20 +486,9 @@ struct Probe{
     std::string aggregation_to_string(TypeOfAggregation type);
 
     /**
-     * @brief returns a new host probe.
-     * @param[in] name the name of the new probe.
-     * @param[in] met the metrics that we want to study
-     * @param[in] agg the type of aggregation that we want, NONE if we don't want to aggregate
-     * @param[in] machines the IntervalSet of machines that our probe will work on.
-     * @param[in] context the batsim context.
-     */ 
-    Probe new_host_probe(std::string name, TypeOfTrigger trigger, Metrics met, TypeOfAggregation agg,const IntervalSet & machines, BatsimContext * context);
-
-    /**
-     * @brief returns a new link probe 
-     * @param[in] name the name of the new probe 
-     * @param[in] met the metrics that we want to study
-     * @param[in] agg the type of aggregation that we want, NONE if we don't want to aggregate
-     * @param[in] context the batsim context.
+     * @brief returns a new probe 
+     * @param[in] task_data the data that we will use to initialize the probe
+     * @param[in] context the batsim context
      */
-    Probe new_link_probe(std::string name, TypeOfTrigger trigger, Metrics met, TypeOfAggregation agg, std::vector<std::string> links_name, BatsimContext * context);
+    
+    Probe new_probe(IPMessage* task_data, BatsimContext* context);

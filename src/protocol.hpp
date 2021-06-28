@@ -54,6 +54,10 @@ TypeOfObject string_to_type_of_object(std::string object);
 
 TypeOfAggregation string_to_type_of_aggregation(std::string aggregation);
 
+void complete_SchedAddProbeMessage_host(const rapidjson::Value &data_object,SchedAddProbeMessage* message);
+
+void complete_SchedAddProbeMessage_link(const rapidjson::Value &data_object,SchedAddProbeMessage* message);
+
 /**
  * @brief Custom rapidjson Writer to force fixed float writing precision
  */

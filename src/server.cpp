@@ -184,28 +184,8 @@ void server_on_add_probe(ServerData *data,
                          IPMessage *task_data)
 {
     xbt_assert(task_data->data != nullptr);
-    auto *message = static_cast<SchedAddProbeMessage *>(task_data->data);
-    IntervalSet hosts = message->machine_ids;
-    std::string name = message->name;
-    TypeOfTrigger trigger = message->trigger;
-    Metrics met = message->metrics;
-    TypeOfAggregation type = message->aggregation;
-    TypeOfObject object = message->object;
-    Probe new_probe;
-    vector<DetailedHostData> host_value;
-    vector<DetailedLinkData> link_value;
-    switch(object){
-        case TypeOfObject::HOST :
-            new_probe = new_host_probe(name,trigger,met,type, message->machine_ids, data->context);
-            break;
-        case TypeOfObject::LINK :
-            new_probe = new_link_probe(name,trigger,met,type,message->links_names, data->context);
-            break;
-        default :
-            xbt_die("Unknown type of object to study");
-            break;
-        }
-        new_probe.activation();
+    Probe nwprobe = new_probe(task_data, data->context);
+    nwprobe.activation();
 }
     
 
