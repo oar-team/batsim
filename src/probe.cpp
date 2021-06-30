@@ -13,11 +13,8 @@
 #include <simgrid/s4u/Link.hpp>
 
 
-#include "batsim.hpp"
-#include "context.hpp"
-#include "export.hpp"
-#include "jobs.hpp"
-#include "permissions.hpp"
+#include "protocol.hpp"
+#include "server.hpp"
 
 
 
@@ -25,9 +22,9 @@ using namespace std;
 using namespace roles;
 
 void verif_name(BatsimContext* context, std::string name){
-    vector<Probe> probes = context->probes;
-    for (unsigned i =0 ; i < probes.size(); i++){
-        if((probes[i].name).compare(name)==0){
+    auto probes = context->probes;
+    for (auto* probe : probes){
+        if((probe->name).compare(name)==0){
             xbt_die("This name is already taken by another probe");
         }
     }
@@ -35,29 +32,37 @@ void verif_name(BatsimContext* context, std::string name){
 
 
 
-Probe new_probe(IPMessage *task_data, BatsimContext* context){
+Probe* new_probe(IPMessage *task_data, ServerData* data){
     auto *message = static_cast<SchedAddProbeMessage *>(task_data->data);
-    verif_name(context,message->name);
-    Probe nwprobe;
-    nwprobe.context = context;
-    nwprobe.name = message->name;
-    nwprobe.object = message->object;
-    nwprobe.metrics = message->metrics;
-    nwprobe.trigger = message->trigger;
-    nwprobe.aggregation = message->aggregation;
+    nwprobe->context = data->context;
+    verif_name(nwprobe->context,message->name);
+    Probe* nwprobe;
+    nwprobe->name = message->name;
+    nwprobe->object = message->object;
+    nwprobe->metrics = message->metrics;
+    nwprobe->trigger = message->trigger;
+    nwprobe->aggregation = message->aggregation;
     vector<simgrid::s4u::Link*> links_to_add;
     std::vector<std::string> new_links_names;
-    switch(nwprobe.object){
+    switch(nwprobe->object){
         case TypeOfObject::LINK :
             new_links_names = message->links_names;
             for(unsigned i = 0 ; i < new_links_names.size();i++){
                 simgrid::s4u::Link* link = simgrid::s4u::Link::by_name(new_links_names[i]);
                 links_to_add.push_back(link);
     }
-            nwprobe.links = links_to_add;
+            nwprobe->links = links_to_add;
             break;
         case TypeOfObject::HOST :  
-            nwprobe.id_machines = message->machine_ids;
+            nwprobe->id_machines = message->machine_ids;
+            break;
+        default :
+            break;
+    }
+    switch(nwprobe->trigger){
+        case TypeOfTrigger::PERIODIC :
+            nwprobe->period = message->period;
+            nwprobe->nb_samples = message->nb_samples;
             break;
         default :
             break;
@@ -68,6 +73,8 @@ Probe new_probe(IPMessage *task_data, BatsimContext* context){
 
 
 void Probe::activation(){
+    std::vector<simgrid::s4u::Host*> list;
+    Machine * machine;
     if(object == TypeOfObject::LINK){
                 track_links();
             }
@@ -75,22 +82,28 @@ void Probe::activation(){
         case TypeOfTrigger::ONE_SHOT :
             one_shot_reaction();
             break;
+        case TypeOfTrigger::PERIODIC :
+            machine = context->machines[0];
+            simgrid::s4u::Actor::create("test", machine->host, periodic, this);
+            // simgrid::s4u::Actor::create("test", machine->host, test_sleep, this);
+
+            break;
         default :
             xbt_die("Unsupported or not yet implemented type of trigger");
+            break;
     }
 }
 
 void Probe::destruction(){
-    vector<Probe> probes = context->probes;
-    Probe probe;
+    vector<Probe*> probes = context->probes;
     switch(object){
         case TypeOfObject::LINK :
             untrack_links();
             break;
         default :
             for (unsigned i =0 ; i< probes.size(); i++){
-                probe = probes[i];
-                if((probe.name).compare(name)==0){
+                auto probe = probes[i];
+                if((probe->name).compare(name)==0){
                     probes.erase(probes.begin()+i);
                     break;
                 }
@@ -120,20 +133,20 @@ void Probe::untrack_links(){
 }
 
 void Probe::one_shot_reaction(){
-    vector<DetailedHostData> host_value;
-    vector<DetailedLinkData> link_value;
-    double value;
+    auto *message = new ProbeDataMessage;
+    message->probe_name = name;
+    message->aggregation = aggregation;
+    message->metrics = metrics;
+    message->object = object;
     switch(aggregation){
         case TypeOfAggregation::NONE :
             switch(object){
                 case TypeOfObject::HOST :
-                    host_value = detailed_value();
-                    context->proto_writer->append_detailed_probe_data(name,simgrid::s4u::Engine::get_clock(),host_value,metrics);
+                    message->vechd = detailed_value();
                     destruction();
                     break;
                 case TypeOfObject::LINK :
-                    link_value = link_detailed_value();
-                    context->proto_writer->append_detailed_link_probe_data(name,simgrid::s4u::Engine::get_clock(),link_value,metrics);
+                    message->vecld = link_detailed_value();
                     destruction();
                     break;
                 default :
@@ -145,12 +158,13 @@ void Probe::one_shot_reaction(){
             xbt_die("Unsupported type of aggregation");
             break;
         default :
-            value = aggregate_value();
-            context->proto_writer->append_aggregate_probe_data(name,simgrid::s4u::Engine::get_clock(),value,aggregation,metrics);
+            message->value = aggregate_value();
             destruction();
             break;
     }
+    data->context->proto_writer->send_message_at_time(simgrid::s4u::Engine::get_clock(), "server", IPMessageType::PROBE_DATA, static_cast <void*>(message));
 }
+
 
 double Probe::consumed_energy(int machine_id){
     xbt_assert(context->energy_used,"The energy plugin has not been initialized");
@@ -977,6 +991,50 @@ std::string  aggregation_to_string(TypeOfAggregation type){
     return res;
 }
 
+
+/** Periodic probe*/
+
+void periodic(Probe* probe){
+    vector<DetailedHostData> host_value; 
+    double value;
+    for (int i =0 ; i< probe->nb_samples ;i ++){
+        switch(probe->aggregation){
+            case TypeOfAggregation::NONE : 
+                host_value = probe->detailed_value();
+                probe->context->proto_writer->append_detailed_probe_data(probe->name,simgrid::s4u::Engine::get_clock(),host_value,probe->metrics);
+                break;
+            default :
+                value = probe->aggregate_value();
+                probe->context->proto_writer->append_aggregate_probe_data(probe->name,simgrid::s4u::Engine::get_clock(),value,probe->aggregation,probe->metrics);
+                break;
+        }
+        simgrid::s4u::this_actor::sleep_for(probe->period);
+    }
+    probe->destruction();
+}
+
+void test_sleep(Probe* probe){ 
+    vector<DetailedHostData> host_value; 
+    double value;
+    int nb = probe->nb_samples;
+    for (int i =0 ; i< nb ; i++){
+    switch(probe->aggregation){
+            case TypeOfAggregation::NONE : 
+                host_value = probe->detailed_value();
+                probe->context->proto_writer->append_detailed_probe_data(probe->name,simgrid::s4u::Engine::get_clock(),host_value,probe->metrics);
+                break;
+            default :
+                value = probe->aggregate_value();
+                probe->context->proto_writer->append_aggregate_probe_data(probe->name,simgrid::s4u::Engine::get_clock(),value,probe->aggregation,probe->metrics);
+                break;
+        }
+    }
+
+    for (int j =0 ; j < nb; j++){
+        simgrid::s4u::this_actor::sleep_for(probe->period);
+}
+    
+}
 
 
 

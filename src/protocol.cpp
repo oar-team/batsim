@@ -1799,6 +1799,7 @@ void JsonProtocolReader::handle_add_probe(int event_number,
 void complete_SchedAddProbeMessage_host(const Value &data_object,SchedAddProbeMessage* message){
   const Value &resources_value = data_object["resources"];
   std::string resources = resources_value["hosts"].GetString(); 
+  XBT_INFO("Ressources : %s", resources.c_str());
   TypeOfTrigger trigger = message->trigger;
   try
   {
@@ -1811,6 +1812,7 @@ void complete_SchedAddProbeMessage_host(const Value &data_object,SchedAddProbeMe
   switch(trigger){
     case TypeOfTrigger::PERIODIC :
       message->period = std::stoi(resources_value["period"].GetString());
+      message->nb_samples = std::stoi(resources_value["nb_samples"].GetString());
       break;
     default :
       break;
@@ -1826,7 +1828,8 @@ void complete_SchedAddProbeMessage_link(const Value &data_object,SchedAddProbeMe
   message->links_names = links;
   switch(trigger){
     case TypeOfTrigger::PERIODIC :
-      message->period = std::stoi(resources_value["period"].GetString());
+      message->period = std::stod(resources_value["period"].GetString());
+      message->nb_samples = std::stoi(resources_value["nb_samples"].GetString());
       break;
     default :
       break;

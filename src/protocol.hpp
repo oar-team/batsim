@@ -12,6 +12,7 @@
 #include "machines.hpp"
 #include "workload.hpp"
 #include "ipp.hpp"
+#include "probe.hpp"
 
 struct BatsimContext;
 

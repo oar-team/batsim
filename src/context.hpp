@@ -41,7 +41,7 @@ struct BatsimContext
     AbstractProtocolWriter * proto_writer = nullptr;//!< The protocol writer
 
 
-    std::vector<Probe> probes;
+    std::vector<Probe*> probes;
     Machines machines;                              //!< The machines
     Workloads workloads;                            //!< The workloads
     Workflows workflows;                            //!< The workflows

@@ -10,7 +10,7 @@
 #include <simgrid/s4u/Link.hpp>
 #include "machines.hpp"
 #include "ipp.hpp"
-
+#include "server.hpp"
 
 
 
@@ -77,6 +77,11 @@ struct DetailedLinkData{
 
 struct Probe{
 
+private :
+    Probe() = default;
+    
+public :
+
     std::string name;
     TypeOfObject object;
     TypeOfAggregation aggregation;
@@ -85,6 +90,9 @@ struct Probe{
     BatsimContext * context;
     std::vector<simgrid::s4u::Link*> links;
     TypeOfTrigger trigger;
+    double period;
+    int nb_samples;
+
 
     /**
      * @brief Active the probe and track links which have to be tracked.
@@ -479,6 +487,9 @@ struct Probe{
     std::vector<DetailedLinkData> link_detailed_average_load();
 };
 
+
+    void periodic(Probe* probe);
+
 /**
  * @brief Returns a string corresponding to the TypeOfAggregation field of
  */
@@ -491,4 +502,8 @@ struct Probe{
      * @param[in] context the batsim context
      */
     
-    Probe new_probe(IPMessage* task_data, BatsimContext* context);
+    Probe* new_probe(IPMessage* task_data, ServerData* data);
+
+    void test_sleep(Probe* probe);
+
+    

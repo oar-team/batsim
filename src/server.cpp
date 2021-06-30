@@ -14,12 +14,10 @@
 #include <simgrid/s4u.hpp>
 
 #include "context.hpp"
-#include "ipp.hpp"
 #include "network.hpp"
 #include "jobs_execution.hpp"
 
 #include "probe.hpp"
-#include "probe.cpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(server, "server"); //!< Logging
 
@@ -176,7 +174,23 @@ void server_on_probe_data(ServerData *data,
                           IPMessage *task_data)
 {
     xbt_assert(task_data->data != nullptr);
-    static_cast<void>(data);
+    auto *message = static_cast<ProbeDataMessage*>(task_data->data); 
+    switch(message->aggregation){
+        case TypeOfAggregation::NONE :
+            data->context->proto_writer->append_aggregate_probe_data(message->probe_name,simgrid::s4u::Engine::get_clock(),message->value,message->aggregation,message->metrics);
+            break;
+        default :
+            switch(message->object){
+                case TypeOfObject::LINK :
+                    data->context->proto_writer->append_detailed_link_probe_data(message->probe_name,simgrid::s4u::Engine::get_clock(),message->vecld,message->metrics);
+                    break;
+                case TypeOfObject::HOST :
+                    data->context->proto_writer->append_detailed_probe_data(message->probe_name,simgrid::s4u::Engine::get_clock(),message->vechd,message->metrics);
+                    break;
+                default :
+                    break;
+            }
+    }
     
 }
 
@@ -184,8 +198,8 @@ void server_on_add_probe(ServerData *data,
                          IPMessage *task_data)
 {
     xbt_assert(task_data->data != nullptr);
-    Probe nwprobe = new_probe(task_data, data->context);
-    nwprobe.activation();
+    Probe* nwprobe = new_probe(task_data, data);
+    nwprobe->activation();
 }
     
 

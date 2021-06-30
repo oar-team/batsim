@@ -87,7 +87,12 @@ namespace std
 struct ProbeDataMessage
 {
     std::string probe_name;
+    TypeOfAggregation aggregation;
     double value;
+    Metrics metrics;
+    TypeOfObject object;
+    std::vector<DetailedLinkData> vecld;
+    std::vector<DetailedHostData> vechd;
 };
 
 /**
@@ -263,7 +268,8 @@ struct SchedAddProbeMessage
     //smoothing parameters
     IntervalSet machine_ids; 
     std::vector<std::string> links_names;
-    int period;
+    double period;
+    int nb_samples;
 };
 
 
