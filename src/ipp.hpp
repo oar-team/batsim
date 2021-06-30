@@ -15,7 +15,6 @@
 
 #include <intervalset.hpp>
 
-#include <probe.hpp>
 #include "pointers.hpp"
 #include "jobs.hpp"
 #include "events.hpp"
@@ -81,18 +80,65 @@ namespace std
 }
 /// @endcond
 
+enum class ProbeMetrics
+{
+    CONSUMED_ENERGY,
+    POWER_CONSUMPTION,
+    CURRENT_LOAD,
+    AVERAGE_LOAD,
+    UNKNOWN
+};
+
+enum class ProbeAggregationType
+{
+    ADDITION,
+    AVERAGE,
+    MEDIAN,
+    MINIMUM,
+    MAXIMUM,
+    NONE,
+    UNKNOWN
+};
+
+enum class ProbeResourceType
+{
+    HOST,
+    LINK,
+    UNKNOWN
+};
+
+enum class ProbeTriggerType
+{
+    ONE_SHOT,
+    PERIODIC,
+    UNKNOWN
+};
+
+struct ProbeDetailedHostData
+{
+    int id;
+    double value;
+};
+
+struct ProbeDetailedLinkData
+{
+    std::string name;
+    double value;
+
+};
+
 /**
  * @brief The content of the PROBE_DATA message 
  */
 struct ProbeDataMessage
 {
     std::string probe_name;
-    TypeOfAggregation aggregation;
+    ProbeAggregationType aggregation;
     double value;
-    Metrics metrics;
-    TypeOfObject object;
-    std::vector<DetailedLinkData> vecld;
-    std::vector<DetailedHostData> vechd;
+    ProbeMetrics metrics;
+    ProbeResourceType object;
+    std::vector<ProbeDetailedLinkData> vecld;
+    std::vector<ProbeDetailedHostData> vechd;
 };
 
 /**
@@ -260,10 +306,10 @@ struct SchedWaitAnswerMessage
 struct SchedAddProbeMessage
 {
     std::string name;
-    TypeOfTrigger trigger;
-    Metrics metrics;
-    TypeOfAggregation aggregation;
-    TypeOfObject object;
+    ProbeTriggerType trigger;
+    ProbeMetrics metrics;
+    ProbeAggregationType aggregation;
+    ProbeResourceType object;
     // bool filter;
     //smoothing parameters
     IntervalSet machine_ids; 

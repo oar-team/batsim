@@ -27,33 +27,33 @@ std::vector<std::string> split(const std::string & src, char delim);
  * @brief converts a string into a Metrics
  */
 
-Metrics string_to_metric(std::string metrics);
+ProbeMetrics string_to_metric(std::string metrics);
 
 /**
  * @brief converts a string into a TypeOfTrigger
  */
 
-TypeOfTrigger  string_to_type_of_trigger(std::string trigger);
+ProbeTriggerType  string_to_type_of_trigger(std::string trigger);
 
 
 /**
  * @brief converts metrics into string
  */
 
-std::string metric_to_string(Metrics met);
+std::string metric_to_string(ProbeMetrics met);
 
 
 /**
  * @brief converts a string into a TypeOfObject
  */
 
-TypeOfObject string_to_type_of_object(std::string object);
+ProbeResourceType string_to_type_of_object(std::string object);
 
 /**
  * @brief convert a string into a type of aggregation
  */
 
-TypeOfAggregation string_to_type_of_aggregation(std::string aggregation);
+ProbeAggregationType string_to_type_of_aggregation(std::string aggregation);
 
 void complete_SchedAddProbeMessage_host(const rapidjson::Value &data_object,SchedAddProbeMessage* message);
 
@@ -139,8 +139,8 @@ public:
     virtual void append_aggregate_probe_data(const std::string & probe_name,
                     double date, 
                     double value,
-                    TypeOfAggregation aggregation,
-                    Metrics met) = 0;
+                    ProbeAggregationType aggregation,
+                    ProbeMetrics met) = 0;
 
 
 
@@ -152,8 +152,8 @@ public:
      */
     virtual void append_detailed_link_probe_data(const std::string &probe_name,
                                     double date,
-                                    std::vector<DetailedLinkData> value,
-                                    Metrics met)=0;
+                                    std::vector<ProbeDetailedLinkData> value,
+                                    ProbeMetrics met)=0;
 
     /**
      * @brief Generates a string representation of the message containing the detailed data of a host probe.
@@ -163,8 +163,8 @@ public:
      */
     virtual void append_detailed_probe_data(const std::string & probe_name,
                     double date, 
-                    std::vector<DetailedHostData> value,
-                    Metrics met) = 0;
+                    std::vector<ProbeDetailedHostData> value,
+                    ProbeMetrics met) = 0;
 
     /**
      * @brief Appends a SIMULATION_ENDS event.
@@ -338,8 +338,8 @@ public:
     void append_aggregate_probe_data(const std::string & probe_name,
                     double date, 
                     double value,
-                    TypeOfAggregation aggregation,
-                    Metrics met);
+                    ProbeAggregationType aggregation,
+                    ProbeMetrics met);
 
 
 
@@ -351,8 +351,8 @@ public:
     
     void append_detailed_probe_data(const std::string &probe_name,
                                     double date,
-                                    std::vector<DetailedHostData> value,
-                                    Metrics met);
+                                    std::vector<ProbeDetailedHostData> value,
+                                    ProbeMetrics met);
 
     /**
      * @param[in] probe_name The name of the probe.
@@ -361,8 +361,8 @@ public:
      */
     void append_detailed_link_probe_data(const std::string &probe_name,
                                     double date,
-                                    std::vector<DetailedLinkData> value,
-                                    Metrics met);                            
+                                    std::vector<ProbeDetailedLinkData> value,
+                                    ProbeMetrics met);
 
     // Messages from Batsim to the Scheduler
     /**

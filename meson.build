@@ -64,6 +64,8 @@ src_without_main = [
     'src/permissions.cpp',
     'src/permissions.hpp',
     'src/pointers.hpp',
+    'src/probe.cpp',
+    'src/probe.hpp',
     'src/profiles.cpp',
     'src/profiles.hpp',
     'src/protocol.cpp',

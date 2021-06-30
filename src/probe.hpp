@@ -1,5 +1,3 @@
-
-
 #pragma once
 
 #include <set>
@@ -12,68 +10,15 @@
 #include "ipp.hpp"
 #include "server.hpp"
 
-
-
 struct BatsimContext;
 struct IPMessage;
 
+/**
+ * @brief Returns true if the value field of a is less than the value field of b
+ */
 
-enum class Metrics
-{
-    CONSUMED_ENERGY,
-    POWER_CONSUMPTION,
-    CURRENT_LOAD,
-    AVERAGE_LOAD,
-    UNKNOWN
-};
-
-enum class TypeOfAggregation
-{
-    ADDITION,
-    AVERAGE,
-    MEDIAN,
-    MINIMUM,
-    MAXIMUM,
-    NONE,
-    UNKNOWN
-};
-
-enum class TypeOfObject
-{
-    HOST,
-    LINK,
-    UNKNOWN
-};
-
-enum class TypeOfTrigger
-{
-    ONE_SHOT,
-    PERIODIC,
-    UNKNOWN
-};
-
-struct DetailedHostData{
-    int id;
-    double value;
-};
-
-struct DetailedLinkData{
-    std::string name; 
-    double value;
-    
-};
-
-    /**
-     * @brief Returns true if the value field of a is less than the value field of b
-     */
-
-    bool operator<(DetailedHostData const &a, DetailedHostData const &b);
-
-    bool operator<(DetailedLinkData const &a, DetailedLinkData const &b);
-
-
-
-
+bool operator<(ProbeDetailedHostData const &a, ProbeDetailedHostData const &b);
+bool operator<(ProbeDetailedLinkData const &a, ProbeDetailedLinkData const &b);
 
 struct Probe{
 
@@ -83,16 +28,15 @@ private :
 public :
 
     std::string name;
-    TypeOfObject object;
-    TypeOfAggregation aggregation;
-    Metrics metrics;
+    ProbeResourceType object;
+    ProbeAggregationType aggregation;
+    ProbeMetrics metrics;
     IntervalSet id_machines;
     BatsimContext * context;
     std::vector<simgrid::s4u::Link*> links;
-    TypeOfTrigger trigger;
+    ProbeTriggerType trigger;
     double period;
     int nb_samples;
-
 
     /**
      * @brief Active the probe and track links which have to be tracked.
@@ -256,31 +200,31 @@ public :
      * @brief Returns a vector composed of NonAggrData wich corresponds to machine id and consumed energy associated
      */
 
-    std::vector<DetailedHostData> detailed_consumed_energy();
+    std::vector<ProbeDetailedHostData> detailed_consumed_energy();
 
     /**
      * @brief Returns a vector composed of NonAggrData wich corresponds to machine id and the power consumption associated
      */
 
-   std::vector<DetailedHostData> detailed_power_consumption();
+   std::vector<ProbeDetailedHostData> detailed_power_consumption();
 
     /**
      * @brief Returns a vector composed of NonAggrData wich corresponds to machine id and the average load associated
      */
 
-    std::vector<DetailedHostData> detailed_average_load();
+    std::vector<ProbeDetailedHostData> detailed_average_load();
 
     /**
      * @brief Returns a vector composed of NonAggrData wich corresponds to machine id and the current load associated
      */
 
-    std::vector<DetailedHostData> detailed_current_load();
+    std::vector<ProbeDetailedHostData> detailed_current_load();
 
 
     /**
      * @brief Returns a vector of value which has been measured
      */
-    std::vector<DetailedHostData> detailed_value();
+    std::vector<ProbeDetailedHostData> detailed_value();
 
     /**
      * @brief Returns the aggregate added value according to the type of the Metrics
@@ -322,7 +266,7 @@ public :
      * @brief Returns the link detailed value
      */
 
-    std::vector<DetailedLinkData> link_detailed_value();
+    std::vector<ProbeDetailedLinkData> link_detailed_value();
 
 
     /**
@@ -472,19 +416,19 @@ public :
      * @brief Returns the details of the link consumed energy
      */ 
 
-    std::vector<DetailedLinkData> link_detailed_consumed_energy();
+    std::vector<ProbeDetailedLinkData> link_detailed_consumed_energy();
 
     /**
      * @brief Returns the details of the link current load
      */ 
 
-    std::vector<DetailedLinkData> link_detailed_current_load();
+    std::vector<ProbeDetailedLinkData> link_detailed_current_load();
 
     /**
      * @brief Returns the details of the link average load
      */ 
 
-    std::vector<DetailedLinkData> link_detailed_average_load();
+    std::vector<ProbeDetailedLinkData> link_detailed_average_load();
 };
 
 
@@ -494,7 +438,7 @@ public :
  * @brief Returns a string corresponding to the TypeOfAggregation field of
  */
 
-    std::string aggregation_to_string(TypeOfAggregation type);
+    std::string aggregation_to_string(ProbeAggregationType type);
 
     /**
      * @brief returns a new probe 

@@ -12,11 +12,9 @@
 #include <simgrid/plugins/load.h>
 #include <simgrid/s4u/Link.hpp>
 
-
+#include "context.hpp"
 #include "protocol.hpp"
 #include "server.hpp"
-
-
 
 using namespace std;
 using namespace roles;
@@ -34,18 +32,21 @@ void verif_name(BatsimContext* context, std::string name){
 
 Probe* new_probe(IPMessage *task_data, ServerData* data){
     auto *message = static_cast<SchedAddProbeMessage *>(task_data->data);
-    nwprobe->context = data->context;
-    verif_name(nwprobe->context,message->name);
+    verif_name(data->context, message->name);
+
     Probe* nwprobe;
+    nwprobe->context = data->context;
     nwprobe->name = message->name;
     nwprobe->object = message->object;
     nwprobe->metrics = message->metrics;
     nwprobe->trigger = message->trigger;
     nwprobe->aggregation = message->aggregation;
+
     vector<simgrid::s4u::Link*> links_to_add;
     std::vector<std::string> new_links_names;
+
     switch(nwprobe->object){
-        case TypeOfObject::LINK :
+        case ProbeResourceType::LINK :
             new_links_names = message->links_names;
             for(unsigned i = 0 ; i < new_links_names.size();i++){
                 simgrid::s4u::Link* link = simgrid::s4u::Link::by_name(new_links_names[i]);
@@ -53,21 +54,21 @@ Probe* new_probe(IPMessage *task_data, ServerData* data){
     }
             nwprobe->links = links_to_add;
             break;
-        case TypeOfObject::HOST :  
+        case ProbeResourceType::HOST :  
             nwprobe->id_machines = message->machine_ids;
             break;
         default :
             break;
     }
     switch(nwprobe->trigger){
-        case TypeOfTrigger::PERIODIC :
+        case ProbeTriggerType::PERIODIC :
             nwprobe->period = message->period;
             nwprobe->nb_samples = message->nb_samples;
             break;
         default :
             break;
     }
-    context->probes.push_back(nwprobe);
+    data->context->probes.push_back(nwprobe);
     return nwprobe;
 }
 
@@ -75,14 +76,14 @@ Probe* new_probe(IPMessage *task_data, ServerData* data){
 void Probe::activation(){
     std::vector<simgrid::s4u::Host*> list;
     Machine * machine;
-    if(object == TypeOfObject::LINK){
+    if(object == ProbeResourceType::LINK){
                 track_links();
             }
     switch(trigger){
-        case TypeOfTrigger::ONE_SHOT :
+        case ProbeTriggerType::ONE_SHOT :
             one_shot_reaction();
             break;
-        case TypeOfTrigger::PERIODIC :
+        case ProbeTriggerType::PERIODIC :
             machine = context->machines[0];
             simgrid::s4u::Actor::create("test", machine->host, periodic, this);
             // simgrid::s4u::Actor::create("test", machine->host, test_sleep, this);
@@ -97,7 +98,7 @@ void Probe::activation(){
 void Probe::destruction(){
     vector<Probe*> probes = context->probes;
     switch(object){
-        case TypeOfObject::LINK :
+        case ProbeResourceType::LINK :
             untrack_links();
             break;
         default :
@@ -113,7 +114,7 @@ void Probe::destruction(){
 }
 
 void Probe::track_links(){
-    if(object != TypeOfObject::LINK){
+    if(object != ProbeResourceType::LINK){
         xbt_die("This probe does not work on links");
     }
     for (unsigned i =0 ; i < links.size(); i++){
@@ -123,7 +124,7 @@ void Probe::track_links(){
 }
 
 void Probe::untrack_links(){
-    if(object != TypeOfObject::LINK){
+    if(object != ProbeResourceType::LINK){
         xbt_die("This probe does not work on links");
     }
     for (unsigned i =0 ; i < links.size(); i++){
@@ -139,13 +140,13 @@ void Probe::one_shot_reaction(){
     message->metrics = metrics;
     message->object = object;
     switch(aggregation){
-        case TypeOfAggregation::NONE :
+        case ProbeAggregationType::NONE :
             switch(object){
-                case TypeOfObject::HOST :
+                case ProbeResourceType::HOST :
                     message->vechd = detailed_value();
                     destruction();
                     break;
-                case TypeOfObject::LINK :
+                case ProbeResourceType::LINK :
                     message->vecld = link_detailed_value();
                     destruction();
                     break;
@@ -154,7 +155,7 @@ void Probe::one_shot_reaction(){
                     break;
             }
             break;
-        case TypeOfAggregation::UNKNOWN :
+        case ProbeAggregationType::UNKNOWN :
             xbt_die("Unsupported type of aggregation");
             break;
         default :
@@ -162,7 +163,8 @@ void Probe::one_shot_reaction(){
             destruction();
             break;
     }
-    data->context->proto_writer->send_message_at_time(simgrid::s4u::Engine::get_clock(), "server", IPMessageType::PROBE_DATA, static_cast <void*>(message));
+    //data->context->proto_writer->send_message_at_time(simgrid::s4u::Engine::get_clock(), "server", IPMessageType::PROBE_DATA, static_cast <void*>(message));
+    //NO. private function.
 }
 
 
@@ -200,7 +202,7 @@ double Probe::average_agg_load(){
     return res;
 }
 
-bool operator<(DetailedHostData const &a, DetailedHostData const &b){
+bool operator<(ProbeDetailedHostData const &a, ProbeDetailedHostData const &b){
     if(a.value < b.value){
         return true;
     }
@@ -210,28 +212,28 @@ bool operator<(DetailedHostData const &a, DetailedHostData const &b){
 }
 
 double Probe::median_consumed_energy(){
-    vector<DetailedHostData> vec = detailed_consumed_energy();
+    vector<ProbeDetailedHostData> vec = detailed_consumed_energy();
     std::sort(vec.begin(), vec.end());
     int index = vec.size()/2;
     return (vec.at(index)).value;
 }
 
 double Probe::median_power_consumption(){
-    vector<DetailedHostData> vec = detailed_power_consumption();
+    vector<ProbeDetailedHostData> vec = detailed_power_consumption();
     std::sort(vec.begin(), vec.end());
     int index = vec.size()/2;
     return (vec.at(index)).value;
 }
 
 double Probe::median_current_load(){
-    vector<DetailedHostData> vec = detailed_current_load();
+    vector<ProbeDetailedHostData> vec = detailed_current_load();
     std::sort(vec.begin(), vec.end());
     int index = vec.size()/2;
     return (vec.at(index)).value;
 }
 
 double Probe::median_agg_load(){
-    vector<DetailedHostData> vec = detailed_average_load();
+    vector<ProbeDetailedHostData> vec = detailed_average_load();
     std::sort(vec.begin(), vec.end());
     int index = vec.size()/2;
     return (vec.at(index)).value;
@@ -549,7 +551,7 @@ double Probe::average_link_consumed_energy(){
 }
 
 
-bool operator<(DetailedLinkData const &a, DetailedLinkData const &b){
+bool operator<(ProbeDetailedLinkData const &a, ProbeDetailedLinkData const &b){
     if(a.value < b.value){
         return true;
     }
@@ -559,7 +561,7 @@ bool operator<(DetailedLinkData const &a, DetailedLinkData const &b){
 }
 
 double Probe::median_link_consumed_energy(){
-    vector<DetailedLinkData> vec = link_detailed_consumed_energy();
+    vector<ProbeDetailedLinkData> vec = link_detailed_consumed_energy();
     std::sort(vec.begin(), vec.end());
     int index = vec.size()/2;
     return (vec.at(index)).value;
@@ -567,14 +569,14 @@ double Probe::median_link_consumed_energy(){
 
 
 double Probe::median_link_current_load(){
-    vector<DetailedLinkData> vec = link_detailed_current_load();
+    vector<ProbeDetailedLinkData> vec = link_detailed_current_load();
     std::sort(vec.begin(), vec.end());
     int index = vec.size()/2;
     return (vec.at(index)).value;
 }
 
 double Probe::median_link_agg_load(){
-    vector<DetailedLinkData> vec = link_detailed_average_load();
+    vector<ProbeDetailedLinkData> vec = link_detailed_average_load();
     std::sort(vec.begin(), vec.end());
     int index = vec.size()/2;
     return (vec.at(index)).value;
@@ -585,16 +587,16 @@ double Probe::aggregate_addition(){
     double res = 0;
     switch(metrics)
     {
-        case Metrics::CONSUMED_ENERGY :
+        case ProbeMetrics::CONSUMED_ENERGY :
             res = added_consumed_energy();
             break;
-        case Metrics::POWER_CONSUMPTION :
+        case ProbeMetrics::POWER_CONSUMPTION :
             res = added_power_consumption();
             break;
-        case Metrics::CURRENT_LOAD :
+        case ProbeMetrics::CURRENT_LOAD :
             res = added_current_load();
             break;
-        case Metrics::AVERAGE_LOAD :
+        case ProbeMetrics::AVERAGE_LOAD :
             res = added_average_load();
             break;
         default:
@@ -607,16 +609,16 @@ double Probe::aggregate_minimum(){
     double res = 0;
     switch(metrics)
     {
-        case Metrics::CONSUMED_ENERGY :
+        case ProbeMetrics::CONSUMED_ENERGY :
             res = minimum_consumed_energy();
             break;
-        case Metrics::POWER_CONSUMPTION :
+        case ProbeMetrics::POWER_CONSUMPTION :
             res = minimum_power_consumption();
             break;
-        case Metrics::CURRENT_LOAD :
+        case ProbeMetrics::CURRENT_LOAD :
             res = minimum_current_load();
             break;
-        case Metrics::AVERAGE_LOAD :
+        case ProbeMetrics::AVERAGE_LOAD :
             res = minimum_agg_load();
             break;
         default:
@@ -629,16 +631,16 @@ double Probe::aggregate_maximum(){
     double res = 0;
     switch(metrics)
     {
-        case Metrics::CONSUMED_ENERGY :
+        case ProbeMetrics::CONSUMED_ENERGY :
             res = maximum_consumed_energy();
             break;
-        case Metrics::POWER_CONSUMPTION :
+        case ProbeMetrics::POWER_CONSUMPTION :
             res = maximum_power_consumption();
             break;
-        case Metrics::CURRENT_LOAD :
+        case ProbeMetrics::CURRENT_LOAD :
             res = maximum_current_load();
             break;
-        case Metrics::AVERAGE_LOAD :
+        case ProbeMetrics::AVERAGE_LOAD :
             res = maximum_agg_load();
             break;
         default:
@@ -651,16 +653,16 @@ double Probe::aggregate_average(){
     double res = 0;
     switch(metrics)
     {
-        case Metrics::CONSUMED_ENERGY :
+        case ProbeMetrics::CONSUMED_ENERGY :
             res = average_consumed_energy();
             break;
-        case Metrics::CURRENT_LOAD :
+        case ProbeMetrics::CURRENT_LOAD :
             res = average_current_load();
             break;
-        case Metrics::AVERAGE_LOAD :
+        case ProbeMetrics::AVERAGE_LOAD :
             res = average_agg_load();
             break;
-        case Metrics::POWER_CONSUMPTION :
+        case ProbeMetrics::POWER_CONSUMPTION :
             res = average_power_consumption();
             break;
         default:
@@ -673,16 +675,16 @@ double Probe::aggregate_median(){
     double res = 0;
     switch(metrics)
     {
-        case Metrics::CONSUMED_ENERGY :
+        case ProbeMetrics::CONSUMED_ENERGY :
             res = median_consumed_energy();
             break;
-        case Metrics::CURRENT_LOAD :
+        case ProbeMetrics::CURRENT_LOAD :
             res = median_current_load();
             break;
-        case Metrics::AVERAGE_LOAD :
+        case ProbeMetrics::AVERAGE_LOAD :
             res = median_agg_load();
             break;
-        case Metrics::POWER_CONSUMPTION :
+        case ProbeMetrics::POWER_CONSUMPTION :
             res = median_power_consumption();
             break;
         default:
@@ -695,13 +697,13 @@ double Probe::link_aggregate_addition(){
     double res = 0;
     switch(metrics)
     {
-        case Metrics::CONSUMED_ENERGY :
+        case ProbeMetrics::CONSUMED_ENERGY :
             res = added_link_consumed_energy();
             break;
-        case Metrics::CURRENT_LOAD :
+        case ProbeMetrics::CURRENT_LOAD :
             res = added_link_current_load();
             break;
-        case Metrics::AVERAGE_LOAD :
+        case ProbeMetrics::AVERAGE_LOAD :
             res = added_link_average_load();
             break;
         default:
@@ -714,13 +716,13 @@ double Probe::link_aggregate_maximum(){
     double res = 0;
     switch(metrics)
     {
-        case Metrics::CONSUMED_ENERGY :
+        case ProbeMetrics::CONSUMED_ENERGY :
             res = maximum_link_consumed_energy();
             break;
-        case Metrics::CURRENT_LOAD :
+        case ProbeMetrics::CURRENT_LOAD :
             res = maximum_link_current_load();
             break;
-        case Metrics::AVERAGE_LOAD :
+        case ProbeMetrics::AVERAGE_LOAD :
             res = maximum_link_average_load();
             break;
         default:
@@ -733,13 +735,13 @@ double Probe::link_aggregate_minimum(){
     double res = 0;
     switch(metrics)
     {
-        case Metrics::CONSUMED_ENERGY :
+        case ProbeMetrics::CONSUMED_ENERGY :
             res = minimum_link_consumed_energy();
             break;
-        case Metrics::CURRENT_LOAD :
+        case ProbeMetrics::CURRENT_LOAD :
             res = minimum_link_current_load();
             break;
-        case Metrics::AVERAGE_LOAD :
+        case ProbeMetrics::AVERAGE_LOAD :
             res = minimum_link_average_load();
             break;
         default:
@@ -752,13 +754,13 @@ double Probe::link_aggregate_average(){
     double res = 0;
     switch(metrics)
     {
-        case Metrics::CONSUMED_ENERGY :
+        case ProbeMetrics::CONSUMED_ENERGY :
             res = average_link_consumed_energy();
             break;
-        case Metrics::CURRENT_LOAD :
+        case ProbeMetrics::CURRENT_LOAD :
             res = average_link_current_load();
             break;
-        case Metrics::AVERAGE_LOAD :
+        case ProbeMetrics::AVERAGE_LOAD :
             res = average_link_average_load();
             break;
         default:
@@ -771,13 +773,13 @@ double Probe::link_aggregate_median(){
     double res = 0;
     switch(metrics)
     {
-        case Metrics::CONSUMED_ENERGY :
+        case ProbeMetrics::CONSUMED_ENERGY :
             res = median_link_consumed_energy();
             break;
-        case Metrics::CURRENT_LOAD :
+        case ProbeMetrics::CURRENT_LOAD :
             res = median_link_current_load();
             break;
-        case Metrics::AVERAGE_LOAD :
+        case ProbeMetrics::AVERAGE_LOAD :
             res = median_link_agg_load();
             break;
         default:
@@ -788,21 +790,21 @@ double Probe::link_aggregate_median(){
 
 double Probe::aggregate_value(){
     double res =0;
-    if(object == TypeOfObject::HOST){
+    if(object == ProbeResourceType::HOST){
     switch(aggregation){
-        case TypeOfAggregation::ADDITION :
+        case ProbeAggregationType::ADDITION :
             res = aggregate_addition();
             break;
-        case TypeOfAggregation::MINIMUM :
+        case ProbeAggregationType::MINIMUM :
             res = aggregate_minimum();
             break;
-        case TypeOfAggregation::MAXIMUM :
+        case ProbeAggregationType::MAXIMUM :
             res = aggregate_maximum();
             break;
-        case TypeOfAggregation::AVERAGE :
+        case ProbeAggregationType::AVERAGE :
             res = aggregate_average();
             break;
-        case TypeOfAggregation::MEDIAN :
+        case ProbeAggregationType::MEDIAN :
             res = aggregate_median();
             break;
         default :
@@ -811,19 +813,19 @@ double Probe::aggregate_value(){
     }
     else{
         switch(aggregation){
-        case TypeOfAggregation::ADDITION :
+        case ProbeAggregationType::ADDITION :
             res = link_aggregate_addition();
             break;
-        case TypeOfAggregation::MINIMUM :
+        case ProbeAggregationType::MINIMUM :
             res = link_aggregate_minimum();
             break;
-        case TypeOfAggregation::MAXIMUM :
+        case ProbeAggregationType::MAXIMUM :
             res = link_aggregate_maximum();
             break;
-        case TypeOfAggregation::AVERAGE :
+        case ProbeAggregationType::AVERAGE :
             res = link_aggregate_average();
             break;
-        case TypeOfAggregation::MEDIAN :
+        case ProbeAggregationType::MEDIAN :
             res = link_aggregate_median();
             break;
         default :
@@ -835,11 +837,11 @@ double Probe::aggregate_value(){
 
 
 
-vector<DetailedHostData> Probe::detailed_consumed_energy(){
-    std::vector<DetailedHostData> res;
+vector<ProbeDetailedHostData> Probe::detailed_consumed_energy(){
+    std::vector<ProbeDetailedHostData> res;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it){
         int id = *it;
-        DetailedHostData to_add;
+        ProbeDetailedHostData to_add;
         to_add.id= id;
         to_add.value = consumed_energy(id);
         res.push_back(to_add);
@@ -847,11 +849,11 @@ vector<DetailedHostData> Probe::detailed_consumed_energy(){
     return res;
 }
 
-vector<DetailedHostData> Probe::detailed_power_consumption(){
-    std::vector<DetailedHostData> res;
+vector<ProbeDetailedHostData> Probe::detailed_power_consumption(){
+    std::vector<ProbeDetailedHostData> res;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it){
         int id = *it;
-        DetailedHostData to_add;
+        ProbeDetailedHostData to_add;
         to_add.id= id;
         to_add.value = power_consumption(id);
         res.push_back(to_add);
@@ -859,11 +861,11 @@ vector<DetailedHostData> Probe::detailed_power_consumption(){
     return res;    
 }
 
-vector<DetailedHostData> Probe::detailed_current_load(){
-    std::vector<DetailedHostData> res;
+vector<ProbeDetailedHostData> Probe::detailed_current_load(){
+    std::vector<ProbeDetailedHostData> res;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it){
         int id = *it;
-        DetailedHostData to_add;
+        ProbeDetailedHostData to_add;
         to_add.id= id;
         to_add.value = current_load(id);
         res.push_back(to_add);
@@ -871,11 +873,11 @@ vector<DetailedHostData> Probe::detailed_current_load(){
     return res;    
 }
 
-vector<DetailedHostData> Probe::detailed_average_load(){
-    std::vector<DetailedHostData> res;
+vector<ProbeDetailedHostData> Probe::detailed_average_load(){
+    std::vector<ProbeDetailedHostData> res;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it){
         int id = *it;
-        DetailedHostData to_add;
+        ProbeDetailedHostData to_add;
         to_add.id= id;
         to_add.value = average_load(id);
         res.push_back(to_add);
@@ -883,20 +885,20 @@ vector<DetailedHostData> Probe::detailed_average_load(){
     return res;    
 }
 
-vector<DetailedHostData> Probe::detailed_value(){
-    std::vector<DetailedHostData> res;
+vector<ProbeDetailedHostData> Probe::detailed_value(){
+    std::vector<ProbeDetailedHostData> res;
     switch(metrics)
     {
-        case Metrics::CONSUMED_ENERGY :
+        case ProbeMetrics::CONSUMED_ENERGY :
             res = detailed_consumed_energy();
             break;
-        case Metrics::POWER_CONSUMPTION :
+        case ProbeMetrics::POWER_CONSUMPTION :
             res = detailed_power_consumption();
             break;
-        case Metrics::CURRENT_LOAD :
+        case ProbeMetrics::CURRENT_LOAD :
             res = detailed_current_load();
             break;
-        case Metrics::AVERAGE_LOAD :
+        case ProbeMetrics::AVERAGE_LOAD :
             res = detailed_average_load();
             break;
         default:
@@ -905,11 +907,11 @@ vector<DetailedHostData> Probe::detailed_value(){
     return res;
 }
 
-vector<DetailedLinkData> Probe::link_detailed_consumed_energy(){
-    vector<DetailedLinkData> res;
+vector<ProbeDetailedLinkData> Probe::link_detailed_consumed_energy(){
+    vector<ProbeDetailedLinkData> res;
     for (unsigned i =0 ; i < links.size(); i++){
         simgrid::s4u::Link* link = links[i];
-        DetailedLinkData data;
+        ProbeDetailedLinkData data;
         data.name = link->get_cname();
         data.value = link_consumed_energy(link);
         res.push_back(data);
@@ -917,11 +919,11 @@ vector<DetailedLinkData> Probe::link_detailed_consumed_energy(){
     return res;
 }
 
-vector<DetailedLinkData> Probe::link_detailed_current_load(){
-    vector<DetailedLinkData> res;
+vector<ProbeDetailedLinkData> Probe::link_detailed_current_load(){
+    vector<ProbeDetailedLinkData> res;
     for (unsigned i =0 ; i < links.size(); i++){
         simgrid::s4u::Link* link = links[i];
-        DetailedLinkData data;
+        ProbeDetailedLinkData data;
         data.name = link->get_cname();
         data.value = link_current_load(link);
         res.push_back(data);
@@ -929,11 +931,11 @@ vector<DetailedLinkData> Probe::link_detailed_current_load(){
     return res;
 }
 
-vector<DetailedLinkData> Probe::link_detailed_average_load(){
-    vector<DetailedLinkData> res;
+vector<ProbeDetailedLinkData> Probe::link_detailed_average_load(){
+    vector<ProbeDetailedLinkData> res;
     for (unsigned i =0 ; i < links.size(); i++){
         simgrid::s4u::Link* link = links[i];
-        DetailedLinkData data;
+        ProbeDetailedLinkData data;
         data.name = link->get_cname();
         data.value = link_average_load(link);
         res.push_back(data);
@@ -944,17 +946,17 @@ vector<DetailedLinkData> Probe::link_detailed_average_load(){
 
 
 
-vector<DetailedLinkData> Probe::link_detailed_value(){
-    std::vector<DetailedLinkData> res;
+vector<ProbeDetailedLinkData> Probe::link_detailed_value(){
+    std::vector<ProbeDetailedLinkData> res;
     switch(metrics)
     {
-        case Metrics::CONSUMED_ENERGY :
+        case ProbeMetrics::CONSUMED_ENERGY :
             res = link_detailed_consumed_energy();
             break;
-        case Metrics::CURRENT_LOAD :
+        case ProbeMetrics::CURRENT_LOAD :
             res = link_detailed_current_load();
             break;
-        case Metrics::AVERAGE_LOAD :
+        case ProbeMetrics::AVERAGE_LOAD :
             res = link_detailed_average_load();
             break;
         default:
@@ -963,25 +965,25 @@ vector<DetailedLinkData> Probe::link_detailed_value(){
     return res;
 }
 
-std::string  aggregation_to_string(TypeOfAggregation type){
+std::string  aggregation_to_string(ProbeAggregationType type){
     std::string res ="";
     switch(type){
-        case TypeOfAggregation::ADDITION :
+        case ProbeAggregationType::ADDITION :
             res = "addition";
             break;
-        case TypeOfAggregation::MINIMUM :
+        case ProbeAggregationType::MINIMUM :
             res = "minimum";
             break;
-        case TypeOfAggregation::MAXIMUM :
+        case ProbeAggregationType::MAXIMUM :
             res = "maximum";
             break;
-        case TypeOfAggregation::AVERAGE :
+        case ProbeAggregationType::AVERAGE :
             res = "average";
             break;
-        case TypeOfAggregation::MEDIAN :
+        case ProbeAggregationType::MEDIAN :
             res = "median";
             break;
-        case TypeOfAggregation::NONE :
+        case ProbeAggregationType::NONE :
             res = "none";
             break;
         default :
@@ -995,11 +997,11 @@ std::string  aggregation_to_string(TypeOfAggregation type){
 /** Periodic probe*/
 
 void periodic(Probe* probe){
-    vector<DetailedHostData> host_value; 
+    vector<ProbeDetailedHostData> host_value; 
     double value;
     for (int i =0 ; i< probe->nb_samples ;i ++){
         switch(probe->aggregation){
-            case TypeOfAggregation::NONE : 
+            case ProbeAggregationType::NONE : 
                 host_value = probe->detailed_value();
                 probe->context->proto_writer->append_detailed_probe_data(probe->name,simgrid::s4u::Engine::get_clock(),host_value,probe->metrics);
                 break;
@@ -1014,12 +1016,12 @@ void periodic(Probe* probe){
 }
 
 void test_sleep(Probe* probe){ 
-    vector<DetailedHostData> host_value; 
+    vector<ProbeDetailedHostData> host_value; 
     double value;
     int nb = probe->nb_samples;
     for (int i =0 ; i< nb ; i++){
     switch(probe->aggregation){
-            case TypeOfAggregation::NONE : 
+            case ProbeAggregationType::NONE : 
                 host_value = probe->detailed_value();
                 probe->context->proto_writer->append_detailed_probe_data(probe->name,simgrid::s4u::Engine::get_clock(),host_value,probe->metrics);
                 break;

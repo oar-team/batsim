@@ -30,8 +30,8 @@ JsonProtocolWriter::~JsonProtocolWriter()
 
 void JsonProtocolWriter::append_detailed_link_probe_data(const string &probe_name,
                                     double date,
-                                    std::vector<DetailedLinkData> value,
-                                    Metrics met){
+                                    std::vector<ProbeDetailedLinkData> value,
+                                    ProbeMetrics met){
   xbt_assert(date >= _last_date, "Date inconsistency");
   _last_date = date;
   _is_empty = false;
@@ -52,7 +52,7 @@ void JsonProtocolWriter::append_detailed_link_probe_data(const string &probe_nam
   for (int i =0 ; i < size_vec ; i++){
     rapidjson::Value objValue;
     objValue.SetObject();
-    DetailedLinkData val = value.at(i);
+    ProbeDetailedLinkData val = value.at(i);
     objValue.AddMember("ressource", Value().SetString((val.name).c_str(),_alloc), _alloc);
     objValue.AddMember("value",Value().SetDouble(val.value), _alloc);
     Myarray.PushBack(objValue, _alloc);
@@ -68,8 +68,8 @@ void JsonProtocolWriter::append_detailed_link_probe_data(const string &probe_nam
 void JsonProtocolWriter::append_aggregate_probe_data(const string &probe_name,
                                     double date,
                                     double value,
-                                    TypeOfAggregation aggregation,
-                                    Metrics met)
+                                    ProbeAggregationType aggregation,
+                                    ProbeMetrics met)
 {
   /*
     {
@@ -106,8 +106,8 @@ void JsonProtocolWriter::append_aggregate_probe_data(const string &probe_name,
 
 void JsonProtocolWriter::append_detailed_probe_data(const string &probe_name,
                                     double date,
-                                    std::vector<DetailedHostData> value,
-                                    Metrics met)
+                                    std::vector<ProbeDetailedHostData> value,
+                                    ProbeMetrics met)
 {
   /*
   {
@@ -141,7 +141,7 @@ void JsonProtocolWriter::append_detailed_probe_data(const string &probe_name,
   for (int i =0 ; i < size_vec ; i++){
     rapidjson::Value objValue;
     objValue.SetObject();
-    DetailedHostData val = value.at(i);
+    ProbeDetailedHostData val = value.at(i);
     objValue.AddMember("ressource", Value().SetString((std::to_string(val.id)).c_str(),_alloc), _alloc);
     objValue.AddMember("value",Value().SetDouble(val.value), _alloc);
     Myarray.PushBack(objValue, _alloc);
@@ -1784,10 +1784,10 @@ void JsonProtocolReader::handle_add_probe(int event_number,
   message->object = string_to_type_of_object(object.GetString());
 
   switch(message->object){
-    case TypeOfObject::LINK :
+    case ProbeResourceType::LINK :
       complete_SchedAddProbeMessage_link(data_object,message);
       break; 
-    case TypeOfObject::HOST :
+    case ProbeResourceType::HOST :
       complete_SchedAddProbeMessage_host(data_object,message);
       break;
     default :
@@ -1800,7 +1800,7 @@ void complete_SchedAddProbeMessage_host(const Value &data_object,SchedAddProbeMe
   const Value &resources_value = data_object["resources"];
   std::string resources = resources_value["hosts"].GetString(); 
   XBT_INFO("Ressources : %s", resources.c_str());
-  TypeOfTrigger trigger = message->trigger;
+  ProbeTriggerType trigger = message->trigger;
   try
   {
       message->machine_ids = IntervalSet::from_string_hyphen(resources, " ", "-");
@@ -1810,7 +1810,7 @@ void complete_SchedAddProbeMessage_host(const Value &data_object,SchedAddProbeMe
       throw std::runtime_error(std::string("Invalid JSON message : ") + e.what());
   }
   switch(trigger){
-    case TypeOfTrigger::PERIODIC :
+    case ProbeTriggerType::PERIODIC :
       message->period = std::stoi(resources_value["period"].GetString());
       message->nb_samples = std::stoi(resources_value["nb_samples"].GetString());
       break;
@@ -1824,10 +1824,10 @@ void complete_SchedAddProbeMessage_link(const Value &data_object,SchedAddProbeMe
   std::string resources = resources_value["links"].GetString();
   vector<std::string> links;
   links = split(resources_value["links"].GetString(),' ');
-  TypeOfTrigger trigger = message->trigger;
+  ProbeTriggerType trigger = message->trigger;
   message->links_names = links;
   switch(trigger){
-    case TypeOfTrigger::PERIODIC :
+    case ProbeTriggerType::PERIODIC :
       message->period = std::stod(resources_value["period"].GetString());
       message->nb_samples = std::stoi(resources_value["nb_samples"].GetString());
       break;
@@ -1836,40 +1836,40 @@ void complete_SchedAddProbeMessage_link(const Value &data_object,SchedAddProbeMe
   }
 }
 
-Metrics string_to_metric(std::string metrics){
-    Metrics met;
+ProbeMetrics string_to_metric(std::string metrics){
+    ProbeMetrics met;
     if (metrics.compare("current load")==0){
-        met = Metrics::CURRENT_LOAD;
+        met = ProbeMetrics::CURRENT_LOAD;
     }
     else if (metrics.compare("power consumption")==0){
-        met = Metrics::POWER_CONSUMPTION;
+        met = ProbeMetrics::POWER_CONSUMPTION;
     }
     else if (metrics.compare("average load")==0){
-        met = Metrics::AVERAGE_LOAD;
+        met = ProbeMetrics::AVERAGE_LOAD;
     }
     else if (metrics.compare("energy consumed")==0){
-        met = Metrics::CONSUMED_ENERGY;
+        met = ProbeMetrics::CONSUMED_ENERGY;
     }
     else {
-        met = Metrics::UNKNOWN;
+        met = ProbeMetrics::UNKNOWN;
         xbt_die("Unknown type of object");
     }
     return met;
 }
 
-std::string metric_to_string(Metrics met){
+std::string metric_to_string(ProbeMetrics met){
   std::string res ="";
   switch(met){
-      case Metrics::CONSUMED_ENERGY :
+      case ProbeMetrics::CONSUMED_ENERGY :
         res = "energy consumed";
         break;
-      case Metrics::POWER_CONSUMPTION :
+      case ProbeMetrics::POWER_CONSUMPTION :
         res="power consumption";
         break;
-      case Metrics::AVERAGE_LOAD :
+      case ProbeMetrics::AVERAGE_LOAD :
         res ="average load";
         break;
-      case Metrics::CURRENT_LOAD :
+      case ProbeMetrics::CURRENT_LOAD :
         res="current load";
         break;
       default:
@@ -1882,60 +1882,60 @@ std::string metric_to_string(Metrics met){
 
 
 
-TypeOfAggregation string_to_type_of_aggregation(std::string aggregation){
-  TypeOfAggregation type;
+ProbeAggregationType string_to_type_of_aggregation(std::string aggregation){
+  ProbeAggregationType type;
   if (aggregation.compare("addition")==0){
-        type = TypeOfAggregation::ADDITION;
+        type = ProbeAggregationType::ADDITION;
     }
     else if (aggregation.compare("minimum")==0){
-        type = TypeOfAggregation::MINIMUM;
+        type = ProbeAggregationType::MINIMUM;
     }
     else if (aggregation.compare("maximum")==0){
-        type = TypeOfAggregation::MAXIMUM;
+        type = ProbeAggregationType::MAXIMUM;
     }
     else if (aggregation.compare("median")==0){
-        type = TypeOfAggregation::MEDIAN;
+        type = ProbeAggregationType::MEDIAN;
     }
     else if (aggregation.compare("average")==0){
-        type = TypeOfAggregation::AVERAGE;
+        type = ProbeAggregationType::AVERAGE;
     }
     else if (aggregation.compare("none")==0){
-        type = TypeOfAggregation::NONE;
+        type = ProbeAggregationType::NONE;
     }
     else {
-        type = TypeOfAggregation::UNKNOWN;
+        type = ProbeAggregationType::UNKNOWN;
     }
-    xbt_assert(type != TypeOfAggregation::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of aggregation");
+    xbt_assert(type != ProbeAggregationType::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of aggregation");
     return type;
 }
 
-TypeOfObject string_to_type_of_object(std::string object){
-  TypeOfObject res;
+ProbeResourceType string_to_type_of_object(std::string object){
+  ProbeResourceType res;
   if(object.compare("host")==0){
-    res = TypeOfObject::HOST;
+    res = ProbeResourceType::HOST;
   }
   else if(object.compare("link")==0){
-    res = TypeOfObject::LINK;
+    res = ProbeResourceType::LINK;
   }
   else{
-    res = TypeOfObject::UNKNOWN;
+    res = ProbeResourceType::UNKNOWN;
   }
-  xbt_assert(res != TypeOfObject::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of object");
+  xbt_assert(res != ProbeResourceType::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of object");
   return res;
 }
 
-TypeOfTrigger  string_to_type_of_trigger(std::string trigger){
-  TypeOfTrigger res;
+ProbeTriggerType  string_to_type_of_trigger(std::string trigger){
+  ProbeTriggerType res;
   if(trigger.compare("one shot")==0){
-    res = TypeOfTrigger::ONE_SHOT;
+    res = ProbeTriggerType::ONE_SHOT;
   }
   else if (trigger.compare("periodic")==0){
-    res = TypeOfTrigger::PERIODIC;
+    res = ProbeTriggerType::PERIODIC;
   }
   else{
-    res = TypeOfTrigger::UNKNOWN;
+    res = ProbeTriggerType::UNKNOWN;
   }
-  xbt_assert(res != TypeOfTrigger::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of trigger");
+  xbt_assert(res != ProbeTriggerType::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of trigger");
   return res;
 }
 
