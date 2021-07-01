@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -23,23 +24,17 @@ struct IPMessage;
 bool operator<(ProbeDetailedHostData const &a, ProbeDetailedHostData const &b);
 bool operator<(ProbeDetailedLinkData const &a, ProbeDetailedLinkData const &b);
 
+struct Probe;
+void periodic(Probe* probe);
+
 struct Probe{
-
-private :
-    Probe() = default;
-    
 public :
-
-    std::string name;
-    ProbeResourceType object;
-    ProbeAggregationType aggregation;
-    ProbeMetrics metrics;
-    IntervalSet id_machines;
-    BatsimContext * context;
-    std::vector<simgrid::s4u::Link*> links;
-    ProbeTriggerType trigger;
-    double period;
-    int nb_samples;
+    /**
+     * @brief returns a new probe
+     * @param[in] task_data the data that we will use to initialize the probe
+     * @param[in] context the batsim context
+     */
+    static std::shared_ptr<Probe> new_probe(IPMessage* task_data, ServerData* data);
 
     /**
      * @brief Active the probe and track links which have to be tracked.
@@ -432,25 +427,26 @@ public :
      */ 
 
     std::vector<ProbeDetailedLinkData> link_detailed_average_load();
+
+private:
+    Probe() = default;
+    friend void periodic(Probe*);
+
+private:
+    std::string name;
+    ProbeResourceType object;
+    ProbeAggregationType aggregation;
+    ProbeMetrics metrics;
+    IntervalSet id_machines;
+    BatsimContext * context;
+    std::vector<simgrid::s4u::Link*> links;
+    ProbeTriggerType trigger;
+    double period;
+    int nb_samples;
 };
-
-
-    void periodic(Probe* probe);
 
 /**
  * @brief Returns a string corresponding to the TypeOfAggregation field of
  */
 
-    std::string aggregation_to_string(ProbeAggregationType type);
-
-    /**
-     * @brief returns a new probe 
-     * @param[in] task_data the data that we will use to initialize the probe
-     * @param[in] context the batsim context
-     */
-    
-    Probe* new_probe(IPMessage* task_data, ServerData* data);
-
-
-    
-
+std::string aggregation_to_string(ProbeAggregationType type);

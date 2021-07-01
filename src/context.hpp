@@ -40,8 +40,7 @@ struct BatsimContext
     AbstractProtocolReader * proto_reader = nullptr;//!< The protocol reader
     AbstractProtocolWriter * proto_writer = nullptr;//!< The protocol writer
 
-
-    std::vector<Probe*> probes;
+    std::unordered_map<std::string, std::shared_ptr<Probe> > probes;
     Machines machines;                              //!< The machines
     Workloads workloads;                            //!< The workloads
     Workflows workflows;                            //!< The workflows

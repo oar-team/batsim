@@ -199,9 +199,8 @@ void server_on_add_probe(ServerData *data,
                          IPMessage *task_data)
 {
     xbt_assert(task_data->data != nullptr);
-    Probe* nwprobe = new_probe(task_data, data);
-    xbt_die("stop");
-    nwprobe->activation();
+    auto probe = Probe::new_probe(task_data, data);
+    probe->activation();
 }
     
 

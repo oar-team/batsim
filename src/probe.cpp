@@ -16,26 +16,14 @@
 #include "protocol.hpp"
 #include "server.hpp"
 
-
-
 using namespace std;
 using namespace roles;
 
-void verif_name(BatsimContext* context, std::string name){
-    auto probes = context->probes;
-    for (auto* probe : probes){
-        if((probe->name).compare(name)==0){
-            xbt_die("This name is already taken by another probe");
-        }
-    }
-}
-
-
-
-Probe* new_probe(IPMessage *task_data, ServerData* data){
+std::shared_ptr<Probe> Probe::new_probe(IPMessage *task_data, ServerData* data)
+{
     auto *message = static_cast<SchedAddProbeMessage *>(task_data->data);
-    verif_name(data->context, message->name);
-    Probe* nwprobe;
+
+    std::shared_ptr<Probe> nwprobe(new Probe);
     nwprobe->context = data->context;
     nwprobe->name = message->name;
     nwprobe->object = message->object;
@@ -44,76 +32,78 @@ Probe* new_probe(IPMessage *task_data, ServerData* data){
     nwprobe->aggregation = message->aggregation;
     nwprobe->id_machines = message->machine_ids;
 
-
     vector<simgrid::s4u::Link*> links_to_add;
     std::vector<std::string> new_links_names;
 
     switch(nwprobe->object){
-        case ProbeResourceType::LINK :
-            new_links_names = message->links_names;
-            for(unsigned i = 0 ; i < new_links_names.size();i++){
-                simgrid::s4u::Link* link = simgrid::s4u::Link::by_name(new_links_names[i]);
-                links_to_add.push_back(link);
-    }
-            nwprobe->links = links_to_add;
-            break;
-        case ProbeResourceType::HOST :  {
-            nwprobe->id_machines = message->machine_ids;
+    case ProbeResourceType::LINK: {
+        new_links_names = message->links_names;
+        for(unsigned i = 0 ; i < new_links_names.size();i++){
+            simgrid::s4u::Link* link = simgrid::s4u::Link::by_name(new_links_names[i]);
+            links_to_add.push_back(link);
         }
-            break;
-        default :
-            break;
+        nwprobe->links = links_to_add;
+    } break;
+    case ProbeResourceType::HOST: {
+        nwprobe->id_machines = message->machine_ids;
+    } break;
+    default :
+        //TODO xbt_die() or similar
+        break;
     }
-    switch(nwprobe->trigger){
-        case ProbeTriggerType::PERIODIC :
-            nwprobe->period = message->period;
-            nwprobe->nb_samples = message->nb_samples;
-            break;
-        default :
-            break;
+
+    switch(nwprobe->trigger) {
+    case ProbeTriggerType::PERIODIC:
+        nwprobe->period = message->period;
+        nwprobe->nb_samples = message->nb_samples;
+        break;
+    default :
+        break;
     }
-    data->context->probes.push_back(nwprobe);
+
+    // check probe name
+    if (data->context->probes.find(nwprobe->name) != data->context->probes.end())
+    {
+        throw std::runtime_error("Probe name inconsistency: '" + nwprobe->name + "' already exists");
+    }
+
+    // add persistent probes in long term memory
+    if (nwprobe->trigger == ProbeTriggerType::PERIODIC)
+    {
+        data->context->probes[nwprobe->name] = nwprobe;
+    }
+
     return nwprobe;
 }
 
-
 void Probe::activation(){
-    std::vector<simgrid::s4u::Host*> list;
-    Machine * machine;
     if(object == ProbeResourceType::LINK){
-                track_links();
-            }
+        track_links();
+    }
     switch(trigger){
         case ProbeTriggerType::ONE_SHOT :
             one_shot_reaction();
             break;
         case ProbeTriggerType::PERIODIC :
-            machine = context->machines[0];
+            Machine * machine = context->machines[0];
             simgrid::s4u::Actor::create("test", machine->host, periodic, this);
             // simgrid::s4u::Actor::create("test", machine->host, test_sleep, this);
-
-            break;
-        default :
-            xbt_die("Unsupported or not yet implemented type of trigger");
-            break;
     }
 }
 
 void Probe::destruction(){
-    vector<Probe*> probes = context->probes;
-    switch(object){
-        case ProbeResourceType::LINK :
-            untrack_links();
-            break;
-        default :
-            for (unsigned i =0 ; i< probes.size(); i++){
-                auto probe = probes[i];
-                if((probe->name).compare(name)==0){
-                    probes.erase(probes.begin()+i);
-                    break;
-                }
-            }
-            break;
+    switch(object) {
+    case ProbeResourceType::LINK: {
+        // TODO: handle shared resources
+        untrack_links();
+    } break;
+    }
+
+    // Remove probe from "global" probes present in it
+    auto probe_it = context->probes.find(name);
+    if (probe_it != context->probes.end())
+    {
+        context->probes.erase(probe_it);
     }
 }
 
@@ -143,7 +133,7 @@ void Probe::one_shot_reaction(){
     message->aggregation = aggregation;
     message->metrics = metrics;
     message->object = object;
-    switch(aggregation){
+    switch(aggregation) {
         case ProbeAggregationType::NONE :
             switch(object){
                 case ProbeResourceType::HOST :
