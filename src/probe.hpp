@@ -4,11 +4,14 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <xbt.h>
+
 
 #include <simgrid/s4u/Link.hpp>
 #include "machines.hpp"
 #include "ipp.hpp"
 #include "server.hpp"
+
 
 struct BatsimContext;
 struct IPMessage;
@@ -448,6 +451,6 @@ public :
     
     Probe* new_probe(IPMessage* task_data, ServerData* data);
 
-    void test_sleep(Probe* probe);
 
     
+

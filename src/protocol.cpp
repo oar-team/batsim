@@ -1799,7 +1799,6 @@ void JsonProtocolReader::handle_add_probe(int event_number,
 void complete_SchedAddProbeMessage_host(const Value &data_object,SchedAddProbeMessage* message){
   const Value &resources_value = data_object["resources"];
   std::string resources = resources_value["hosts"].GetString(); 
-  XBT_INFO("Ressources : %s", resources.c_str());
   ProbeTriggerType trigger = message->trigger;
   try
   {

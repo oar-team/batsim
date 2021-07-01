@@ -169,7 +169,8 @@ void generate_and_send_message(ServerData *data)
                                 data->context, send_buffer);
     data->sched_ready = false;
 }
-//a faire
+
+
 void server_on_probe_data(ServerData *data,
                           IPMessage *task_data)
 {
@@ -199,6 +200,7 @@ void server_on_add_probe(ServerData *data,
 {
     xbt_assert(task_data->data != nullptr);
     Probe* nwprobe = new_probe(task_data, data);
+    xbt_die("stop");
     nwprobe->activation();
 }
     

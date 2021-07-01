@@ -16,6 +16,8 @@
 #include "protocol.hpp"
 #include "server.hpp"
 
+
+
 using namespace std;
 using namespace roles;
 
@@ -33,7 +35,6 @@ void verif_name(BatsimContext* context, std::string name){
 Probe* new_probe(IPMessage *task_data, ServerData* data){
     auto *message = static_cast<SchedAddProbeMessage *>(task_data->data);
     verif_name(data->context, message->name);
-
     Probe* nwprobe;
     nwprobe->context = data->context;
     nwprobe->name = message->name;
@@ -41,6 +42,8 @@ Probe* new_probe(IPMessage *task_data, ServerData* data){
     nwprobe->metrics = message->metrics;
     nwprobe->trigger = message->trigger;
     nwprobe->aggregation = message->aggregation;
+    nwprobe->id_machines = message->machine_ids;
+
 
     vector<simgrid::s4u::Link*> links_to_add;
     std::vector<std::string> new_links_names;
@@ -54,8 +57,9 @@ Probe* new_probe(IPMessage *task_data, ServerData* data){
     }
             nwprobe->links = links_to_add;
             break;
-        case ProbeResourceType::HOST :  
+        case ProbeResourceType::HOST :  {
             nwprobe->id_machines = message->machine_ids;
+        }
             break;
         default :
             break;
@@ -144,11 +148,9 @@ void Probe::one_shot_reaction(){
             switch(object){
                 case ProbeResourceType::HOST :
                     message->vechd = detailed_value();
-                    destruction();
                     break;
                 case ProbeResourceType::LINK :
                     message->vecld = link_detailed_value();
-                    destruction();
                     break;
                 default :
                     xbt_die("Unsupported type of object");
@@ -160,11 +162,10 @@ void Probe::one_shot_reaction(){
             break;
         default :
             message->value = aggregate_value();
-            destruction();
             break;
     }
-    //data->context->proto_writer->send_message_at_time(simgrid::s4u::Engine::get_clock(), "server", IPMessageType::PROBE_DATA, static_cast <void*>(message));
-    //NO. private function.
+    send_message("server", IPMessageType::PROBE_DATA, static_cast <void*>(message));
+    destruction();
 }
 
 
@@ -997,17 +998,16 @@ std::string  aggregation_to_string(ProbeAggregationType type){
 /** Periodic probe*/
 
 void periodic(Probe* probe){
-    vector<ProbeDetailedHostData> host_value; 
-    double value;
+    auto *message = new ProbeDataMessage;
     for (int i =0 ; i< probe->nb_samples ;i ++){
         switch(probe->aggregation){
             case ProbeAggregationType::NONE : 
-                host_value = probe->detailed_value();
-                probe->context->proto_writer->append_detailed_probe_data(probe->name,simgrid::s4u::Engine::get_clock(),host_value,probe->metrics);
+                message->vechd = probe->detailed_value();
+                send_message("server", IPMessageType::PROBE_DATA, static_cast <void*>(message));
                 break;
             default :
-                value = probe->aggregate_value();
-                probe->context->proto_writer->append_aggregate_probe_data(probe->name,simgrid::s4u::Engine::get_clock(),value,probe->aggregation,probe->metrics);
+                message->value = probe->aggregate_value();
+                send_message("server", IPMessageType::PROBE_DATA, static_cast <void*>(message));
                 break;
         }
         simgrid::s4u::this_actor::sleep_for(probe->period);
@@ -1015,28 +1015,7 @@ void periodic(Probe* probe){
     probe->destruction();
 }
 
-void test_sleep(Probe* probe){ 
-    vector<ProbeDetailedHostData> host_value; 
-    double value;
-    int nb = probe->nb_samples;
-    for (int i =0 ; i< nb ; i++){
-    switch(probe->aggregation){
-            case ProbeAggregationType::NONE : 
-                host_value = probe->detailed_value();
-                probe->context->proto_writer->append_detailed_probe_data(probe->name,simgrid::s4u::Engine::get_clock(),host_value,probe->metrics);
-                break;
-            default :
-                value = probe->aggregate_value();
-                probe->context->proto_writer->append_aggregate_probe_data(probe->name,simgrid::s4u::Engine::get_clock(),value,probe->aggregation,probe->metrics);
-                break;
-        }
-    }
 
-    for (int j =0 ; j < nb; j++){
-        simgrid::s4u::this_actor::sleep_for(probe->period);
-}
-    
-}
 
 
 

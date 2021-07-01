@@ -6,6 +6,7 @@ project('batsim', 'cpp',
 )
 
 batversion = meson.project_version()
+
 # Override version name from git information if possible
 git = find_program('git', required: false)
 if git.found()
