@@ -70,4 +70,4 @@ Batsim users (= schedulers) can only switch into computation or sleep power stat
     - Finish to describe the Batsim energy model.
     - Add instantiation examples.
 
-.. _SimGrid documentation: https://simgrid.org/doc/latest/platform.html
+.. _SimGrid documentation: https://simgrid.org/doc/latest/Platform.html
