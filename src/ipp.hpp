@@ -85,8 +85,7 @@ enum class ProbeMetrics
     CONSUMED_ENERGY,
     POWER_CONSUMPTION,
     CURRENT_LOAD,
-    AVERAGE_LOAD,
-    UNKNOWN
+    AVERAGE_LOAD
 };
 
 enum class ProbeAggregationType
@@ -96,22 +95,19 @@ enum class ProbeAggregationType
     MEDIAN,
     MINIMUM,
     MAXIMUM,
-    NONE,
-    UNKNOWN
+    NONE
 };
 
 enum class ProbeResourceType
 {
     HOST,
-    LINK,
-    UNKNOWN
+    LINK
 };
 
 enum class ProbeTriggerType
 {
     ONE_SHOT,
-    PERIODIC,
-    UNKNOWN
+    PERIODIC
 };
 
 struct ProbeDetailedHostData

@@ -1850,7 +1850,6 @@ ProbeMetrics string_to_metric(std::string metrics){
         met = ProbeMetrics::CONSUMED_ENERGY;
     }
     else {
-        met = ProbeMetrics::UNKNOWN;
         xbt_die("Unknown type of object");
     }
     return met;
@@ -1871,10 +1870,6 @@ std::string metric_to_string(ProbeMetrics met){
       case ProbeMetrics::CURRENT_LOAD :
         res="current load";
         break;
-      default:
-        res = "unknown";
-        break;
-
   }
   return res;
 }
@@ -1902,9 +1897,8 @@ ProbeAggregationType string_to_type_of_aggregation(std::string aggregation){
         type = ProbeAggregationType::NONE;
     }
     else {
-        type = ProbeAggregationType::UNKNOWN;
+        xbt_die("Unrecognized type of aggregation");
     }
-    xbt_assert(type != ProbeAggregationType::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of aggregation");
     return type;
 }
 
@@ -1917,9 +1911,8 @@ ProbeResourceType string_to_type_of_object(std::string object){
     res = ProbeResourceType::LINK;
   }
   else{
-    res = ProbeResourceType::UNKNOWN;
+    xbt_die("Unrecognized type of object");
   }
-  xbt_assert(res != ProbeResourceType::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of object");
   return res;
 }
 
@@ -1932,9 +1925,8 @@ ProbeTriggerType  string_to_type_of_trigger(std::string trigger){
     res = ProbeTriggerType::PERIODIC;
   }
   else{
-    res = ProbeTriggerType::UNKNOWN;
+    xbt_die("Unrecognized type of trigger");
   }
-  xbt_assert(res != ProbeTriggerType::UNKNOWN,"Invalid JSON message : Batsim doesn't support this type of trigger");
   return res;
 }
 

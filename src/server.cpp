@@ -175,12 +175,9 @@ void server_on_probe_data(ServerData *data,
                           IPMessage *task_data)
 {
     xbt_assert(task_data->data != nullptr);
-    auto *message = static_cast<ProbeDataMessage*>(task_data->data); 
+    auto *message = static_cast<ProbeDataMessage*>(task_data->data);
     switch(message->aggregation){
         case ProbeAggregationType::NONE :
-            data->context->proto_writer->append_aggregate_probe_data(message->probe_name,simgrid::s4u::Engine::get_clock(),message->value,message->aggregation,message->metrics);
-            break;
-        default :
             switch(message->object){
                 case ProbeResourceType::LINK :
                     data->context->proto_writer->append_detailed_link_probe_data(message->probe_name,simgrid::s4u::Engine::get_clock(),message->vecld,message->metrics);
@@ -188,11 +185,12 @@ void server_on_probe_data(ServerData *data,
                 case ProbeResourceType::HOST :
                     data->context->proto_writer->append_detailed_probe_data(message->probe_name,simgrid::s4u::Engine::get_clock(),message->vechd,message->metrics);
                     break;
-                default :
-                    break;
             }
+            break;
+        default :{
+            data->context->proto_writer->append_aggregate_probe_data(message->probe_name,simgrid::s4u::Engine::get_clock(),message->value,message->aggregation,message->metrics);
+        }break;
     }
-    
 }
 
 void server_on_add_probe(ServerData *data,
@@ -202,7 +200,7 @@ void server_on_add_probe(ServerData *data,
     auto probe = Probe::new_probe(task_data, data);
     probe->activation();
 }
-    
+
 
 
 void server_on_submitter_hello(ServerData *data,

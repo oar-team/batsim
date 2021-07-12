@@ -48,7 +48,7 @@ std::shared_ptr<Probe> Probe::new_probe(IPMessage *task_data, ServerData* data)
         nwprobe->id_machines = message->machine_ids;
     } break;
     default :
-        //TODO xbt_die() or similar
+        xbt_die("Unknown type of ressources");
         break;
     }
 
@@ -97,6 +97,9 @@ void Probe::destruction(){
         // TODO: handle shared resources
         untrack_links();
     } break;
+    case ProbeResourceType::HOST: {
+
+    } break;
     }
 
     // Remove probe from "global" probes present in it
@@ -134,27 +137,24 @@ void Probe::one_shot_reaction(){
     message->metrics = metrics;
     message->object = object;
     switch(aggregation) {
-        case ProbeAggregationType::NONE :
+        case ProbeAggregationType::NONE :{
             switch(object){
-                case ProbeResourceType::HOST :
+                case ProbeResourceType::HOST :{
                     message->vechd = detailed_value();
-                    break;
-                case ProbeResourceType::LINK :
+                    break;}
+                case ProbeResourceType::LINK :{
                     message->vecld = link_detailed_value();
-                    break;
-                default :
-                    xbt_die("Unsupported type of object");
-                    break;
+                    }break;
             }
+        }
             break;
-        case ProbeAggregationType::UNKNOWN :
-            xbt_die("Unsupported type of aggregation");
-            break;
-        default :
+        default :{
             message->value = aggregate_value();
             break;
+        }
     }
-    send_message("server", IPMessageType::PROBE_DATA, static_cast <void*>(message));
+    dsend_message("server", IPMessageType::PROBE_DATA, static_cast <void*>(message));
+    // generic_send_message("server", IPMessageType::PROBE_DATA, static_cast <void*>(message), true);
     destruction();
 }
 
@@ -172,7 +172,7 @@ double Probe::average_consumed_energy(){
     return res;
 }
 
-    
+
 double Probe::average_power_consumption(){
     int size = id_machines.size();
     double res = added_power_consumption() / size;
@@ -180,13 +180,13 @@ double Probe::average_power_consumption(){
 }
 
 
-   
+
 double Probe::average_current_load(){
     int size = id_machines.size();
     double res = added_current_load() / size;
     return res;
 }
-   
+
 double Probe::average_agg_load(){
     int size = id_machines.size();
     double res = added_current_load() / size;
@@ -230,7 +230,7 @@ double Probe::median_agg_load(){
     return (vec.at(index)).value;
 }
 
-    
+
 double Probe::minimum_consumed_energy(){
     double res = consumed_energy(*(id_machines.elements_begin()));
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
@@ -244,7 +244,7 @@ double Probe::minimum_consumed_energy(){
     return res;
 }
 
-    
+
 double Probe::minimum_power_consumption(){
     double res = power_consumption(*(id_machines.elements_begin()));
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
@@ -258,7 +258,7 @@ double Probe::minimum_power_consumption(){
     return res;
 }
 
-    
+
 double Probe::minimum_current_load(){
     double res = current_load(*(id_machines.elements_begin()));
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
@@ -272,7 +272,7 @@ double Probe::minimum_current_load(){
     return res;
 }
 
-   
+
 double Probe::minimum_agg_load(){
     double res = average_load(*(id_machines.elements_begin()));
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
@@ -300,7 +300,7 @@ double Probe::maximum_consumed_energy(){
     return res;
 }
 
-  
+
 double Probe::maximum_power_consumption(){
     double res = 0;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
@@ -314,7 +314,7 @@ double Probe::maximum_power_consumption(){
     return res;
 }
 
-  
+
 double Probe::maximum_current_load(){
     double res = 0;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
@@ -341,7 +341,7 @@ double Probe::maximum_agg_load(){
     return res;
 }
 
-  
+
 
 double Probe::added_consumed_energy(){
     double res = 0;
@@ -365,7 +365,7 @@ double Probe::power_consumption(int machine_id){
 double Probe::added_power_consumption(){
     double res = 0;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
-    {   
+    {
         int machine_id = *it;
         res += power_consumption(machine_id);
     }
@@ -382,7 +382,7 @@ double Probe::current_load(int machine_id){
 double Probe::added_current_load(){
     double res = 0;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
-    {   
+    {
         int machine_id = *it;
         res += current_load(machine_id);
     }
@@ -399,7 +399,7 @@ double Probe::average_load(int machine_id){
 double Probe::added_average_load(){
     double res = 0;
     for (auto it = id_machines.elements_begin(); it != id_machines.elements_end(); ++it)
-    {   
+    {
         int machine_id = *it;
         res += average_load(machine_id);
     }
@@ -574,7 +574,7 @@ double Probe::median_link_agg_load(){
 }
 
 
-double Probe::aggregate_addition(){ 
+double Probe::aggregate_addition(){
     double res = 0;
     switch(metrics)
     {
@@ -684,7 +684,7 @@ double Probe::aggregate_median(){
     return res;
 }
 
-double Probe::link_aggregate_addition(){ 
+double Probe::link_aggregate_addition(){
     double res = 0;
     switch(metrics)
     {
@@ -703,7 +703,7 @@ double Probe::link_aggregate_addition(){
     return res;
 }
 
-double Probe::link_aggregate_maximum(){ 
+double Probe::link_aggregate_maximum(){
     double res = 0;
     switch(metrics)
     {
@@ -722,7 +722,7 @@ double Probe::link_aggregate_maximum(){
     return res;
 }
 
-double Probe::link_aggregate_minimum(){ 
+double Probe::link_aggregate_minimum(){
     double res = 0;
     switch(metrics)
     {
@@ -741,7 +741,7 @@ double Probe::link_aggregate_minimum(){
     return res;
 }
 
-double Probe::link_aggregate_average(){ 
+double Probe::link_aggregate_average(){
     double res = 0;
     switch(metrics)
     {
@@ -849,7 +849,7 @@ vector<ProbeDetailedHostData> Probe::detailed_power_consumption(){
         to_add.value = power_consumption(id);
         res.push_back(to_add);
     }
-    return res;    
+    return res;
 }
 
 vector<ProbeDetailedHostData> Probe::detailed_current_load(){
@@ -861,7 +861,7 @@ vector<ProbeDetailedHostData> Probe::detailed_current_load(){
         to_add.value = current_load(id);
         res.push_back(to_add);
     }
-    return res;    
+    return res;
 }
 
 vector<ProbeDetailedHostData> Probe::detailed_average_load(){
@@ -873,7 +873,7 @@ vector<ProbeDetailedHostData> Probe::detailed_average_load(){
         to_add.value = average_load(id);
         res.push_back(to_add);
     }
-    return res;    
+    return res;
 }
 
 vector<ProbeDetailedHostData> Probe::detailed_value(){
@@ -984,20 +984,24 @@ std::string  aggregation_to_string(ProbeAggregationType type){
     return res;
 }
 
-
 /** Periodic probe*/
 
 void periodic(Probe* probe){
     auto *message = new ProbeDataMessage;
+    message->probe_name = probe->name;
+    message->aggregation = probe->aggregation;
+    message->metrics = probe->metrics;
+    message->object = probe->object;
     for (int i =0 ; i< probe->nb_samples ;i ++){
         switch(probe->aggregation){
-            case ProbeAggregationType::NONE : 
+            case ProbeAggregationType::NONE :
                 message->vechd = probe->detailed_value();
-                send_message("server", IPMessageType::PROBE_DATA, static_cast <void*>(message));
+                send_message("server", IPMessageType::PROBE_DATA, static_cast<void*>(message));
                 break;
             default :
+                xbt_die("Not implemented");
                 message->value = probe->aggregate_value();
-                send_message("server", IPMessageType::PROBE_DATA, static_cast <void*>(message));
+                dsend_message("server", IPMessageType::PROBE_DATA, static_cast<void*>(message));
                 break;
         }
         simgrid::s4u::this_actor::sleep_for(probe->period);
