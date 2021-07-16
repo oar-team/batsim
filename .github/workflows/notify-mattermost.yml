@@ -29,7 +29,7 @@ jobs:
           ACTION_TYPE: ${{ github.event.action }}
           COMMENT_AUTHOR_LOGIN: ${{ github.event.comment.user.login }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
-          ISSUE_TITLE: ${{ github.event.title }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
           echo "${COMMENT_AUTHOR_LOGIN} ${ACTION_TYPE} a comment on [issue ${ISSUE_NUMBER}](${ISSUE_URL}) — ${ISSUE_TITLE}"
