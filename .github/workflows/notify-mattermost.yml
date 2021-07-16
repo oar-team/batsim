@@ -5,7 +5,7 @@ on:
   issues:
     types: [opened, edited, deleted, closed, reopened, locked, unlocked]
   issue_comment:
-    types: [created, edited]
+    types: [created, edited, deleted]
 jobs:
   notify-mattermost:
     name: Notify Mattermost
@@ -15,7 +15,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         env:
           ACTION_TYPE: ${{ github.event.action }}
-          AUTHOR_LOGIN: ${{ github.event.pull_request.user.login }}
+          AUTHOR_LOGIN: ${{ github.event.sender.login }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -23,15 +23,21 @@ jobs:
           echo "${AUTHOR_LOGIN} ${ACTION_TYPE} [pull request ${PR_NUMBER} (${PR_TITLE})](${PR_URL})"
 
       - name: Generate issue message (any)
-        if: ${{ github.event_name == 'issue' }}
+        if: ${{ github.event_name == 'issues' }}
+        env:
+          ACTION_TYPE: ${{ github.event.action }}
+          AUTHOR_LOGIN: ${{ github.event.sender.login }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          echo "Something happened about an issue? ${{ github.event.action }}"
+          echo "${AUTHOR_LOGIN} ${ACTION_TYPE} [issue ${ISSUE_NUMBER} (${ISSUE_TITLE})](${ISSUE_URL})"
 
       - name: Generate issue_comment message (any)
         if: ${{ github.event_name == 'issue_comment' }}
         env:
           ACTION_TYPE: ${{ github.event.action }}
-          AUTHOR_LOGIN: ${{ github.event.comment.user.login }}
+          AUTHOR_LOGIN: ${{ github.event.sender.login }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
