@@ -45,7 +45,7 @@ jobs:
           echo "{\"text\":\"${AUTHOR_LOGIN} ${ACTION_TYPE} a comment on [issue ${ISSUE_NUMBER} (${ISSUE_TITLE})](${ISSUE_URL})\"}" > mattermost.json
 
       - name: Send message to mattermost
-      - uses: mattermost/action-mattermost-notify@master
         env:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
           MATTERMOST_ICON: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+        uses: mattermost/action-mattermost-notify@master
