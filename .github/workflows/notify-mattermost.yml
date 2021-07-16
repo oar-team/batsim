@@ -20,6 +20,10 @@ jobs:
         run: |
           echo "Something happened about an issue? ${{ github.event.payload.action }}"
 
+      - name: Generate issue_comment message (any)
+        if: ${{ github.event_name == 'issue_comment' }}
+        run: |
+          echo "Something happened about an issue_comment"
       - name: Generate issue_comment message (created)
         if: ${{ github.event_name == 'issue_comment' && github.event.payload.action == 'created' }}
         run: |
