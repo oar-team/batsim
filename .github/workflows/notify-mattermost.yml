@@ -13,8 +13,11 @@ jobs:
     steps:
       - name: Generate pull request message (any)
         if: ${{ github.event_name == 'pull_request' }}
+        env:
+          ACTION_TYPE: ${{ github.event.action }}
         run: |
-          echo "Something happened about a pull request? ${{ github.event.action }}"
+          echo "Something happened about a pull request: ${ACTION_TYPE}"
+
       - name: Generate issue message (any)
         if: ${{ github.event_name == 'issue' }}
         run: |
@@ -22,8 +25,10 @@ jobs:
 
       - name: Generate issue_comment message (any)
         if: ${{ github.event_name == 'issue_comment' }}
+        env:
+          ACTION_TYPE: ${{ github.event.action }}
         run: |
-          echo "Something happened about an issue_comment"
+          echo "Something happened about an issue_comment: ${ACTION_TYPE}"
       - name: Generate issue_comment message (created)
         if: ${{ github.event_name == 'issue_comment' && github.event.action == 'created' }}
         run: |
