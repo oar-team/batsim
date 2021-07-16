@@ -32,7 +32,7 @@ jobs:
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          echo "${COMMENT_AUTHOR_LOGIN} ${ACTION_TYPE} a comment on [issue ${ISSUE_NUMBER}](${ISSUE_URL}) (${ISSUE_TITLE})"
+          echo "${COMMENT_AUTHOR_LOGIN} ${ACTION_TYPE} a comment on [issue ${ISSUE_NUMBER} (${ISSUE_TITLE})](${ISSUE_URL})"
 
       - name: Dump GitHub context
         env:
