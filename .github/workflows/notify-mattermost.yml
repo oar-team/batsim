@@ -32,6 +32,10 @@ jobs:
         if: ${{ github.event_name == 'issue_comment' && github.event.payload.action == 'edited' }}
         run: |
           echo "An issue_comment has been edited"
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github.event) }}
+        run: echo "$GITHUB_CONTEXT"
       # - uses: mattermost/action-mattermost-notify@master
       #   env:
       #     MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
