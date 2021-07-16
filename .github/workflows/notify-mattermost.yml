@@ -19,10 +19,15 @@ jobs:
         if: ${{ github.event_name == 'issue' }}
         run: |
           echo "Something happened about an issue? ${{ github.event.payload.action }}"
-      - name: Generate issue_comment message (any)
-        if: ${{ github.event_name == 'issue_comment' }}
+
+      - name: Generate issue_comment message (created)
+        if: ${{ github.event_name == 'issue_comment' && github.event.payload.action == 'created' }}
         run: |
-          echo "Something happened about an issue_comment? ${{ github.event.payload.action }}"
+          echo "An issue_comment has been created"
+      - name: Generate issue_comment message (edited)
+        if: ${{ github.event_name == 'issue_comment' && github.event.payload.action == 'edited' }}
+        run: |
+          echo "An issue_comment has been edited"
       # - uses: mattermost/action-mattermost-notify@master
       #   env:
       #     MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
