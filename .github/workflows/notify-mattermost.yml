@@ -22,7 +22,7 @@ jobs:
       - name: Generate pull request message (any)
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          echo "Something happened about a pull request?"
+          echo "Something happened about a pull request? ${{ github.event.type }}"
       # - uses: mattermost/action-mattermost-notify@master
       #   env:
       #     MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
