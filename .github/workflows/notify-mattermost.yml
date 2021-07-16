@@ -11,7 +11,7 @@ jobs:
     name: Notify Mattermost
     runs-on: ubuntu-latest
     steps:
-      - name: Generate pull request message (any)
+      - name: Generate pull request message
         if: ${{ github.event_name == 'pull_request' }}
         env:
           ACTION_TYPE: ${{ github.event.action }}
@@ -20,9 +20,9 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          echo "${AUTHOR_LOGIN} ${ACTION_TYPE} [pull request ${PR_NUMBER} (${PR_TITLE})](${PR_URL})"
+          echo "{\"text\":\"${AUTHOR_LOGIN} ${ACTION_TYPE} [pull request ${PR_NUMBER} (${PR_TITLE})](${PR_URL})\"}" > mattermost.json
 
-      - name: Generate issue message (any)
+      - name: Generate issue message
         if: ${{ github.event_name == 'issues' }}
         env:
           ACTION_TYPE: ${{ github.event.action }}
@@ -31,9 +31,9 @@ jobs:
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          echo "${AUTHOR_LOGIN} ${ACTION_TYPE} [issue ${ISSUE_NUMBER} (${ISSUE_TITLE})](${ISSUE_URL})"
+          echo "{\"text\":\"${AUTHOR_LOGIN} ${ACTION_TYPE} [issue ${ISSUE_NUMBER} (${ISSUE_TITLE})](${ISSUE_URL})\"}" > mattermost.json
 
-      - name: Generate issue_comment message (any)
+      - name: Generate issue_comment message
         if: ${{ github.event_name == 'issue_comment' }}
         env:
           ACTION_TYPE: ${{ github.event.action }}
@@ -42,12 +42,10 @@ jobs:
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          echo "${AUTHOR_LOGIN} ${ACTION_TYPE} a comment on [issue ${ISSUE_NUMBER} (${ISSUE_TITLE})](${ISSUE_URL})"
+          echo "{\"text\":\"${AUTHOR_LOGIN} ${ACTION_TYPE} a comment on [issue ${ISSUE_NUMBER} (${ISSUE_TITLE})](${ISSUE_URL})\"}" > mattermost.json
 
-      - name: Dump GitHub context
+      - name: Send message to mattermost
+      - uses: mattermost/action-mattermost-notify@master
         env:
-          GITHUB_CONTEXT: ${{ toJSON(github.event) }}
-        run: echo "$GITHUB_CONTEXT"
-      # - uses: mattermost/action-mattermost-notify@master
-      #   env:
-      #     MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          MATTERMOST_ICON: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
