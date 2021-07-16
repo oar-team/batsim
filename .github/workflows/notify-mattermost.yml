@@ -15,8 +15,12 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         env:
           ACTION_TYPE: ${{ github.event.action }}
+          AUTHOR_LOGIN: ${{ github.event.pull_request.user.login }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          echo "Something happened about a pull request: ${ACTION_TYPE}"
+          echo "${AUTHOR_LOGIN} ${ACTION_TYPE} [pull request ${PR_NUMBER} (${PR_TITLE})](${PR_URL})"
 
       - name: Generate issue message (any)
         if: ${{ github.event_name == 'issue' }}
@@ -27,12 +31,12 @@ jobs:
         if: ${{ github.event_name == 'issue_comment' }}
         env:
           ACTION_TYPE: ${{ github.event.action }}
-          COMMENT_AUTHOR_LOGIN: ${{ github.event.comment.user.login }}
+          AUTHOR_LOGIN: ${{ github.event.comment.user.login }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          echo "${COMMENT_AUTHOR_LOGIN} ${ACTION_TYPE} a comment on [issue ${ISSUE_NUMBER} (${ISSUE_TITLE})](${ISSUE_URL})"
+          echo "${AUTHOR_LOGIN} ${ACTION_TYPE} a comment on [issue ${ISSUE_NUMBER} (${ISSUE_TITLE})](${ISSUE_URL})"
 
       - name: Dump GitHub context
         env:
