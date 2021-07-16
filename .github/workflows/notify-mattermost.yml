@@ -14,15 +14,15 @@ jobs:
       - name: Generate pull request message (any)
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          echo "Something happened about a pull request? ${{ github.event.type }}"
+          echo "Something happened about a pull request? ${{ github.event.payload.action }}"
       - name: Generate issue message (any)
         if: ${{ github.event_name == 'issue' }}
         run: |
-          echo "Something happened about an issue? ${{ github.event.type }}"
+          echo "Something happened about an issue? ${{ github.event.payload.action }}"
       - name: Generate issue_comment message (any)
         if: ${{ github.event_name == 'issue_comment' }}
         run: |
-          echo "Something happened about an issue_comment? ${{ github.event.type }}"
+          echo "Something happened about an issue_comment? ${{ github.event.payload.action }}"
       # - uses: mattermost/action-mattermost-notify@master
       #   env:
       #     MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
