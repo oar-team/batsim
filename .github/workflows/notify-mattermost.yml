@@ -1,0 +1,28 @@
+name: Notify Mattermost
+on:
+  pull_request:
+    types: [opened, edited, closed, reopened]
+  issues:
+    types: [opened, edited, deleted, closed, reopened, locked, unlocked]
+  issue_comment:
+    types: [created, edited]
+jobs:
+  notify-mattermost:
+    name: Notify Mattermost
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate pull request message (opened)
+        if: ${{ github.event_name == 'pull_request' && github.event_type == 'opened' }}
+        run: |
+          echo "A pull request has been opened?"
+      - name: Generate pull request message (edited)
+        if: ${{ github.event_name == 'pull_request' && github.event_type == 'edited' }}
+        run: |
+          echo "A pull request has been edited?"
+      - name: Generate pull request message (any)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          echo "Something happened about a pull request?"
+      # - uses: mattermost/action-mattermost-notify@master
+      #   env:
+      #     MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
