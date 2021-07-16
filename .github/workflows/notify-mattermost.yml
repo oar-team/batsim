@@ -44,6 +44,11 @@ jobs:
         run: |
           echo "{\"text\":\"${AUTHOR_LOGIN} ${ACTION_TYPE} a comment on [issue ${ISSUE_NUMBER} (${ISSUE_TITLE})](${ISSUE_URL})\"}" > mattermost.json
 
+      - name: Print message
+        run: |
+          cat mattermost.json
+          cat mattermost.json | jq
+
       - name: Send message to mattermost
         env:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
