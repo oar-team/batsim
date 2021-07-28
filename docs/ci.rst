@@ -14,8 +14,8 @@ Batsim is tested under Gitlab's continuous integration system.
   Enable Batsim's Cachix cache to not recompile dependencies: ``cachix add batsim``.
 
 Additionnally, a Batsim container is deployed on Dockerhub_ for each commit on the master branch.
-This is done on Travis_ whose script is defined in :download:`.travis.yml <../.travis.yml>` (from Batsim's repository root directory).
+This is done on `GitHub Actions`_ whose script is defined in :download:`build-docker-containers.yml <../.github/workflows/build-docker-containers.yml>` (from Batsim's repository root directory).
 
 .. _Batsim's Framagit Pipelines: https://framagit.org/batsim/batsim/pipelines
 .. _Dockerhub: https://hub.docker.com/repository/docker/oarteam/batsim
-.. _Travis: https://travis-ci.org/github/oar-team/batsim
+.. _GitHub Actions: https://github.com/oar-team/batsim/actions

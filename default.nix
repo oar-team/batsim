@@ -225,7 +225,9 @@ let
 
       src = pkgs.lib.sourceByRegex ./. [
         "^\.gitlab-ci\.yml"
-        "^\.travis\.yml"
+        "^\.github"
+        "^\.github/workflows"
+        "^\.github/workflows/build-docker-containers.yml"
         "^default.nix"
         "^doc"
         "^doc/batsim_rjms_overview.png"
