@@ -46,6 +46,7 @@ please cite it (`bibtex <https://hal.archives-ouvertes.fr/hal-01333471v1/bibtex>
    Using Redis <redis.rst>
    Using the I/O model <IO.rst>
    Interval set <interval-set.rst>
+   Frequently Asked Questions <faq.rst>
    Changelog <changelog.rst>
    Contact us <contact.rst>
 
