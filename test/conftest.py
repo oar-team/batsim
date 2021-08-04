@@ -117,7 +117,7 @@ def pytest_generate_tests(metafunc):
         "py_filler_events": "fillerSchedWithEvents",
     }
     basic_algorithms = ["fcfs", "easyfast", "filler"]
-    energy_algorithms = ["sleeper"] #fixme: enable "energywatcher" once algo fixed
+    energy_algorithms = ["sleeper", "energywatcher"]
     metadata_algorithms = ['filler', 'submitter']
 
     # External Events
