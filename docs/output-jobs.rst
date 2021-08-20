@@ -30,7 +30,7 @@ This file has the following fields in this order.
   Equals to :math:`starting\_time - submission\_time`.
 - ``turnaround_time``, the time the job spend in the system. Equals to :math:`finish\_time - submission\_time`.
 - ``stretch``: equals to :math:`turnaround\_time / execution\_time`.
-- ``consumed_energy``, The total amount of energy (in joules) consumed by the machines during the execution of the job.
+- ``consumed_energy``, the total amount of energy (in joules) consumed by the ``allocated_resources`` during the execution of the job. Warning: no energy sharing or allocation is done in case there is more than one job running on a machine.
 - ``allocated_resources``, the resources onto which the job has been allocated (see :ref:`interval_set_string_representation`).
 - ``metadata``, user-specified metadata about the job (empty string by default).
 
