@@ -124,7 +124,8 @@ void server_process(BatsimContext * context)
                     !data->end_of_simulation_sent)
                 {
                     XBT_INFO("The simulation seems finished.");
-                    data->context->proto_writer->append_simulation_ends(simgrid::s4u::Engine::get_clock());
+                    data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
+                    data->context->proto_msg_builder->add_simulation_ends();
                     generate_and_send_message(data);
                     data->end_of_simulation_sent = true;
                 }
@@ -214,14 +215,16 @@ void server_on_submitter_bye(ServerData * data,
     {
         if(data->submitter_counters[submitter_type].nb_submitters_finished == data->submitter_counters[submitter_type].expected_nb_submitters)
         {
-            data->context->proto_writer->append_notify("no_more_external_event_to_occur", simgrid::s4u::Engine::get_clock());
+            data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
+            data->context->proto_msg_builder->add_all_static_external_events_have_been_injected();
         }
     }
     else if (submitter_type == SubmitterType::JOB_SUBMITTER)
     {
         if(data->submitter_counters[submitter_type].nb_submitters_finished == data->submitter_counters[submitter_type].expected_nb_submitters)
         {
-          data->context->proto_writer->append_notify("no_more_static_job_to_submit", simgrid::s4u::Engine::get_clock());
+            data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
+            data->context->proto_msg_builder->add_all_static_jobs_have_been_submitted();
         }
 
         if (message->is_workflow_submitter)
@@ -258,11 +261,11 @@ void server_on_job_completed(ServerData * data,
     XBT_INFO("Job %s has COMPLETED. %d jobs completed so far",
              job->id.to_cstring(), data->nb_completed_jobs);
 
-    data->context->proto_writer->append_job_completed(message->job->id.to_string(),
-                                                      job_state_to_string(job->state),
-                                                      job->allocation.to_string_hyphen(" "),
-                                                      job->return_code,
-                                                      simgrid::s4u::Engine::get_clock());
+    data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
+    data->context->proto_msg_builder->add_job_completed(
+                job->id.to_string(),
+                job_state_to_proto_final_job_state(job->state),
+                job->return_code);
 
     data->context->jobs_tracer.write_job(job);
     data->jobs_to_be_deleted.push_back(message->job->id);
@@ -303,18 +306,8 @@ void server_on_job_submitted(ServerData * data,
         ++data->nb_submitted_jobs;
         XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far", job->id.to_cstring(), data->nb_submitted_jobs);
 
-        string job_json_description, profile_json_description;
-
-        job_json_description = job->json_description;
-        if (data->context->submission_forward_profiles)
-        {
-            profile_json_description = job->profile->json_description;
-        }
-
-        data->context->proto_writer->append_job_submitted(job->id.to_string(),
-                                                          job_json_description,
-                                                          profile_json_description,
-                                                          simgrid::s4u::Engine::get_clock());
+        data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
+        data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), job->to_proto_job(), simgrid::s4u::Engine::get_clock());
     }
 }
 
@@ -341,9 +334,10 @@ void server_on_event_machine_unavailable(ServerData * data,
             machine->update_machine_state(MachineState::UNAVAILABLE);
         }
         // Notify the decision process that some machines have become unavailable
-        data->context->proto_writer->append_notify_resource_event("event_machine_unavailable",
+        /*data->context->proto_writer->append_notify_resource_event("event_machine_unavailable",
                                                                   machines,
-                                                                  simgrid::s4u::Engine::get_clock());
+                                                                  simgrid::s4u::Engine::get_clock());*/
+        // TODO: handle me in batprotocol
     }
 }
 
@@ -375,9 +369,10 @@ void server_on_event_machine_available(ServerData * data,
             }
         }
         // Notify the decision process that some machines have become available
-        data->context->proto_writer->append_notify_resource_event("event_machine_available",
+        /*data->context->proto_writer->append_notify_resource_event("event_machine_available",
                                                                   machines,
-                                                                  simgrid::s4u::Engine::get_clock());
+                                                                  simgrid::s4u::Engine::get_clock());*/
+        // TODO: handle me in batprotocol
     }
 }
 
@@ -387,8 +382,9 @@ void server_on_event_generic(ServerData * data,
 
     // Just forward the json object
     auto * event_data = static_cast<GenericEventData*>(event->data);
-    data->context->proto_writer->append_notify_generic_event(event_data->json_desc_str,
-                                                             simgrid::s4u::Engine::get_clock());
+    /*data->context->proto_writer->append_notify_generic_event(event_data->json_desc_str,
+                                                             simgrid::s4u::Engine::get_clock());*/
+    // TODO: handle me in batprotocol
 }
 
 void server_on_event_occurred(ServerData * data,
@@ -473,9 +469,10 @@ void server_on_pstate_modification(ServerData * data,
                                                                         all_switched_machines,
                                                                         data->context))
                 {
-                    data->context->proto_writer->append_resource_state_changed(all_switched_machines,
+                    /*data->context->proto_writer->append_resource_state_changed(all_switched_machines,
                                                                                std::to_string(message->new_pstate),
-                                                                               simgrid::s4u::Engine::get_clock());
+                                                                               simgrid::s4u::Engine::get_clock());*/
+                    // TODO: handle me in batprotocol
                 }
             }
             else if (machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
@@ -524,7 +521,8 @@ void server_on_waiting_done(ServerData * data,
                             IPMessage * task_data)
 {
     (void) task_data;
-    data->context->proto_writer->append_requested_call(simgrid::s4u::Engine::get_clock());
+    /*data->context->proto_writer->append_requested_call(simgrid::s4u::Engine::get_clock());*/
+    // TODO: implement the new call me later
     --data->nb_waiters;
 }
 
@@ -561,7 +559,8 @@ void server_on_sched_tell_me_energy(ServerData * data,
                "machines but energy simulation is not enabled. "
                "Try --help to enable it.");
     double total_consumed_energy = static_cast<double>(data->context->machines.total_consumed_energy(data->context));
-    data->context->proto_writer->append_answer_energy(total_consumed_energy, simgrid::s4u::Engine::get_clock());
+    //data->context->proto_writer->append_answer_energy(total_consumed_energy, simgrid::s4u::Engine::get_clock());
+    // TODO: implement probes
 }
 
 void server_on_wait_query(ServerData * data,
@@ -598,9 +597,10 @@ void server_on_switched(ServerData * data,
             data->context->machine_state_tracer.write_machine_states(simgrid::s4u::Engine::get_clock());
         }
 
-        data->context->proto_writer->append_resource_state_changed(all_switched_machines,
+        /*data->context->proto_writer->append_resource_state_changed(all_switched_machines,
                                                                    std::to_string(message->new_pstate),
-                                                                   simgrid::s4u::Engine::get_clock());
+                                                                   simgrid::s4u::Engine::get_clock());*/
+        // TODO: implement me in batprotocol
     }
 
     --data->nb_switching_machines;
@@ -635,14 +635,12 @@ void server_on_killing_done(ServerData * data,
 
             really_killed_job_ids_str.push_back(job_id.to_string());
 
-            // also add a job complete message for the jobs that have really been
-            // killed
-            data->context->proto_writer->append_job_completed(
-                job->id.to_string(),
-                job_state_to_string(job->state),
-                job->allocation.to_string_hyphen(" "),
-                job->return_code,
-                simgrid::s4u::Engine::get_clock());
+            // also add a job complete message for the jobs that have really been killed
+            data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
+            data->context->proto_msg_builder->add_job_completed(
+                        job->id.to_string(),
+                        job_state_to_proto_final_job_state(job->state),
+                        job->return_code);
 
             data->context->jobs_tracer.write_job(job);
             data->jobs_to_be_deleted.push_back(job->id);
@@ -682,19 +680,8 @@ void server_on_register_job(ServerData * data,
 
     if (data->context->registration_sched_ack)
     {
-        // TODO Sleep until submit time is reached before sending the ack (JOB_SUBMITTED)
-        string job_json_description, profile_json_description;
-
-        job_json_description = job->json_description;
-        if (data->context->submission_forward_profiles)
-        {
-            profile_json_description = job->profile->json_description;
-        }
-
-        data->context->proto_writer->append_job_submitted(job->id.to_string(),
-                                                          job_json_description,
-                                                          profile_json_description,
-                                                          simgrid::s4u::Engine::get_clock());
+        data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
+        data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), job->to_proto_job(), simgrid::s4u::Engine::get_clock());
     }
 }
 

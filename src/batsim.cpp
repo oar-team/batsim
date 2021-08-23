@@ -841,6 +841,7 @@ int main(int argc, char * argv[])
         // Let's create the protocol reader and writer
         context.proto_reader = new JsonProtocolReader(&context);
         context.proto_writer = new JsonProtocolWriter(&context);
+        context.proto_msg_builder = new batprotocol::MessageBuilder(true);
 
         // Let's execute the initial processes
         start_initial_simulation_processes(main_args, &context);

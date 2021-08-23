@@ -14,6 +14,7 @@
 
 #include <simgrid/s4u.hpp>
 
+#include <batprotocol.hpp>
 #include <intervalset.hpp>
 
 #include "pointers.hpp"
@@ -269,6 +270,13 @@ public:
     static JobPtr from_json(const std::string & json_str,
                            Workload * workload,
                            const std::string & error_prefix = "Invalid JSON job");
+
+    /**
+     * @brief Create a batprotocol::Job from a Batsim Job
+     * @return The corresponding batprotocol::Job
+     */
+    std::shared_ptr<batprotocol::Job> to_proto_job() const;
+
     /**
      * @brief Checks whether a job is complete (regardless of the job success)
      * @return true if the job is complete (=has started then finished), false otherwise.
@@ -434,3 +442,10 @@ std::string job_state_to_string(const JobState & state);
  * @return A JobState corresponding to a given std::string
  */
 JobState job_state_from_string(const std::string & state);
+
+/**
+ * @brief Returns a batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
+ * @param[in] state The Batsim JobState
+ * @return A batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
+ */
+batprotocol::fb::FinalJobState job_state_to_proto_final_job_state(const JobState & state);

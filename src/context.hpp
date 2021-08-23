@@ -12,6 +12,8 @@
 
 #include <rapidjson/document.h>
 
+#include <batprotocol.hpp>
+
 #include "events.hpp"
 #include "export.hpp"
 #include "jobs.hpp"
@@ -37,6 +39,7 @@ struct BatsimContext
     void * zmq_socket = nullptr;                    //!< The Zero MQ socket (REQ)
     AbstractProtocolReader * proto_reader = nullptr;//!< The protocol reader
     AbstractProtocolWriter * proto_writer = nullptr;//!< The protocol writer
+    batprotocol::MessageBuilder * proto_msg_builder = nullptr; //!< The batprotocol message builder
 
     Machines machines;                              //!< The machines
     Workloads workloads;                            //!< The workloads

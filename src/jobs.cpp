@@ -553,6 +553,18 @@ JobPtr Job::from_json(const std::string & json_str,
     return Job::from_json(doc, workload, error_prefix);
 }
 
+std::shared_ptr<batprotocol::Job> Job::to_proto_job() const
+{
+    auto job = batprotocol::Job::make();
+    job->set_host_number(requested_nb_res); // TODO: handle core/ghost requests
+    job->set_walltime(walltime);
+    job->set_profile(profile->name); // TODO: handle ghost jobs without profile
+    // TODO: handle extra data
+    // TODO: handle job rigidity
+
+    return job;
+}
+
 std::string job_state_to_string(const JobState & state)
 {
     string job_state("UNKNOWN");
@@ -629,4 +641,30 @@ JobState job_state_from_string(const std::string & state)
     }
 
     return new_state;
+}
+
+batprotocol::fb::FinalJobState job_state_to_proto_final_job_state(const JobState & state)
+{
+    using namespace batprotocol;
+
+    switch (state)
+    {
+    case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
+        return fb::FinalJobState_COMPLETED_SUCCESSFULLY;
+        break;
+    case JobState::JOB_STATE_COMPLETED_FAILED:
+        return fb::FinalJobState_COMPLETED_FAILED;
+        break;
+    case JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED:
+        return fb::FinalJobState_COMPLETED_WALLTIME_REACHED;
+        break;
+    case JobState::JOB_STATE_COMPLETED_KILLED:
+        return fb::FinalJobState_COMPLETED_KILLED;
+        break;
+    case JobState::JOB_STATE_REJECTED:
+        return fb::FinalJobState_REJECTED;
+        break;
+    default:
+        xbt_assert(false, "Invalid (non-final) job state received: %d", static_cast<int>(state));
+    }
 }
