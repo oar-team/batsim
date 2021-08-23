@@ -198,15 +198,6 @@ Most common options:
 Execution context options:
   -s, --socket-endpoint <endpoint>   The Decision process socket endpoint
                                      Decision process [default: tcp://localhost:28000].
-  --enable-redis                     Enables Redis to communicate with the scheduler.
-                                     Other redis options are ignored if this option is not set.
-                                     Please refer to Batsim's documentation for more information.
-  --redis-hostname <redis_host>      The Redis server hostname. Ignored if --enable-redis is not set.
-                                     [default: 127.0.0.1]
-  --redis-port <redis_port>          The Redis server port. Ignored if --enable-redis is not set.
-                                     [default: 6379]
-  --redis-prefix <prefix>            The Redis prefix. Ignored if --enable-redis is not set.
-                                     [default: default]
 
 Output options:
   -e, --export <prefix>              The export filename prefix used to generate
@@ -259,7 +250,7 @@ Other options:
                                      One storage resource may be used by several jobs at the same time.
   --no-sched                         If set, the jobs in the workloads are
                                      computed one by one, one after the other,
-                                     without scheduler nor Redis.
+                                     without scheduler.
   --sched-cfg <cfg_str>              Sets the scheduler configuration string.
                                      This is forwarded to the scheduler in the first protocol message.
   --sched-cfg-file <cfg_file>        Same as --sched-cfg, but value is read from a file instead.
@@ -461,19 +452,6 @@ Other options:
     }
 
     main_args.socket_endpoint = args["--socket-endpoint"].asString();
-    main_args.redis_enabled = args["--enable-redis"].asBool();
-    main_args.redis_hostname = args["--redis-hostname"].asString();
-    try
-    {
-        main_args.redis_port = static_cast<int>(args["--redis-port"].asLong());
-    }
-    catch(const std::exception &)
-    {
-        XBT_ERROR("Cannot read the Redis port '%s' as a long integer.",
-                  args["--redis-port"].asString().c_str());
-        error = true;
-    }
-    main_args.redis_prefix = args["--redis-prefix"].asString();
 
     // Output options
     // **************
@@ -581,7 +559,7 @@ Other options:
 
 void configure_batsim_logging_output(const MainArguments & main_args)
 {
-    vector<string> log_categories_to_set = {"workload", "job_submitter", "redis", "jobs", "machines", "pstate",
+    vector<string> log_categories_to_set = {"workload", "job_submitter", "jobs", "machines", "pstate",
                                             "workflow", "jobs_execution", "server", "export", "profiles", "machine_range",
                                             "events", "event_submitter", "protocol",
                                             "network", "ipp", "task_execution"};
@@ -770,10 +748,6 @@ int main(int argc, char * argv[])
 
         // Generate the content to dump
         object.AddMember("socket_endpoint", Value().SetString(main_args.socket_endpoint.c_str(), alloc), alloc);
-        object.AddMember("redis_enabled", Value().SetBool(main_args.redis_enabled), alloc);
-        object.AddMember("redis_hostname", Value().SetString(main_args.redis_hostname.c_str(), alloc), alloc);
-        object.AddMember("redis_port", Value().SetInt(main_args.redis_port), alloc);
-        object.AddMember("redis_prefix", Value().SetString(main_args.redis_prefix.c_str(), alloc), alloc);
 
         object.AddMember("export_prefix", Value().SetString(main_args.export_prefix.c_str(), alloc), alloc);
 
@@ -919,7 +893,6 @@ void set_configuration(BatsimContext *context,
     // *************************************
     // Let's update the BatsimContext values
     // *************************************
-    context->redis_enabled = main_args.redis_enabled;
     context->submission_forward_profiles = main_args.forward_profiles_on_submission;
     context->registration_sched_enabled = main_args.dynamic_registration_enabled;
     context->registration_sched_ack = main_args.ack_dynamic_registration;
@@ -944,12 +917,6 @@ void set_configuration(BatsimContext *context,
     // **************************************************************************************
     context->config_json.SetObject();
     auto & alloc = context->config_json.GetAllocator();
-
-    // redis
-    context->config_json.AddMember("redis-enabled", Value().SetBool(main_args.redis_enabled), alloc);
-    context->config_json.AddMember("redis-hostname", Value().SetString(main_args.redis_hostname.c_str(), alloc), alloc);
-    context->config_json.AddMember("redis-port", Value().SetInt(main_args.redis_port), alloc);
-    context->config_json.AddMember("redis-prefix", Value().SetString(main_args.redis_prefix.c_str(), alloc), alloc);
 
     // job_submission
     context->config_json.AddMember("profiles-forwarded-on-submission", Value().SetBool(main_args.forward_profiles_on_submission), alloc);

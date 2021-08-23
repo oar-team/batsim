@@ -14,7 +14,7 @@
 , useClang ? false
 , simgrid ? kapack.simgrid-light.override { inherit debug; }
 , batsched ? kapack.batsched-master
-, batexpe ? kapack.batexpe
+, batexpe ? kapack.batexpe-master
 , pybatsim ? kapack.pybatsim-master
 # set this to avoid running tests over and over
 # (e.g., to debug coverage reports or to run tests and coverage report separately)

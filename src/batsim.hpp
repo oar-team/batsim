@@ -23,7 +23,7 @@ enum class VerbosityLevel
 enum class ProgramType
 {
     BATSIM      //!< Classical Batsim executable
-    ,BATEXEC    //!< Batexec: Simpler execution, without scheduler, socket nor redis
+    ,BATEXEC    //!< Batexec: Simpler execution, without external scheduler
 };
 
 /**
@@ -73,10 +73,6 @@ struct MainArguments
 
     // Execution context
     std::string socket_endpoint;                            //!< The Decision process socket endpoint
-    bool redis_enabled = false;                             //!< Whether Redis is enabled
-    std::string redis_hostname;                             //!< The Redis (data storage) server host name
-    int redis_port = 0;                                     //!< The Redis (data storage) server port
-    std::string redis_prefix;                               //!< The Redis (data storage) instance prefix
 
     // Job related
     bool forward_profiles_on_submission = false;            //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
