@@ -43,11 +43,11 @@ find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(simgrid REQUIRED IMPORTED_TARGET simgrid)
 pkg_check_modules(rapidjson REQUIRED IMPORTED_TARGET RapidJSON)
-pkg_check_modules(redox REQUIRED IMPORTED_TARGET redox)
 pkg_check_modules(libzmq REQUIRED IMPORTED_TARGET libzmq)
 pkg_check_modules(docopt REQUIRED IMPORTED_TARGET docopt)
 pkg_check_modules(pugixml REQUIRED IMPORTED_TARGET pugixml)
 pkg_check_modules(intervalset REQUIRED IMPORTED_TARGET intervalset)
+pkg_check_modules(batprotocol-cpp REQUIRED IMPORTED_TARGET batprotocol-cpp)
 
 # (boost does not provide pkgconfig files)
 find_package(Boost 1.58)
@@ -74,22 +74,22 @@ add_executable(batsim ${batsim_SRC})
 # Libraries to link
 target_link_libraries(batsim
     ${simgrid_LIBRARIES}
-    ${redox_LIBRARIES}
     ${libzmq_LIBRARIES}
     ${docopt_LIBRARIES}
     ${pugixml_LIBRARIES}
     ${intervalset_LIBRARIES}
+    ${batprotocol-cpp_LIBRARIES}
     "'stdc++fs'"
 )
 
 include_directories(
     ${simgrid_INCLUDE_DIRS}
     ${rapidjson_INCLUDE_DIRS}
-    ${redox_INCLUDE_DIRS}
     ${libzmq_INCLUDE_DIRS}
     ${docopt_INCLUDE_DIRS}
     ${pugixml_INCLUDE_DIRS}
     ${intervalset_INCLUDE_DIRS}
+    ${batprotocol-cpp_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIR}
 )
 
