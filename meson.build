@@ -26,6 +26,7 @@ libzmq_dep = dependency('libzmq')
 docopt_dep = dependency('docopt')
 pugixml_dep = dependency('pugixml')
 intervalset_dep = dependency('intervalset')
+batprotocol_cpp_dep = dependency('batprotocol-cpp')
 
 batsim_deps = [
     simgrid_dep,
@@ -35,7 +36,8 @@ batsim_deps = [
     libzmq_dep,
     docopt_dep,
     pugixml_dep,
-    intervalset_dep
+    intervalset_dep,
+    batprotocol_cpp_dep
 ]
 
 # Source files
