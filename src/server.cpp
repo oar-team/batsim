@@ -53,13 +53,10 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::PSTATE_MODIFICATION] = server_on_pstate_modification;
     handler_map[IPMessageType::SCHED_EXECUTE_JOB] = server_on_execute_job;
     handler_map[IPMessageType::SCHED_CHANGE_JOB_STATE] = server_on_change_job_state;
-    handler_map[IPMessageType::TO_JOB_MSG] = server_on_to_job_msg;
-    handler_map[IPMessageType::FROM_JOB_MSG] = server_on_from_job_msg;
     handler_map[IPMessageType::SCHED_REJECT_JOB] = server_on_reject_job;
     handler_map[IPMessageType::SCHED_KILL_JOB] = server_on_kill_jobs;
     handler_map[IPMessageType::SCHED_CALL_ME_LATER] = server_on_call_me_later;
     handler_map[IPMessageType::SCHED_TELL_ME_ENERGY] = server_on_sched_tell_me_energy;
-    handler_map[IPMessageType::SCHED_SET_JOB_METADATA] = server_on_set_job_metadata;
     handler_map[IPMessageType::SCHED_WAIT_ANSWER] = server_on_sched_wait_answer;
     handler_map[IPMessageType::WAIT_QUERY] = server_on_wait_query;
     handler_map[IPMessageType::SCHED_READY] = server_on_sched_ready;
@@ -70,7 +67,6 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SWITCHED_ON] = server_on_switched;
     handler_map[IPMessageType::SWITCHED_OFF] = server_on_switched;
     handler_map[IPMessageType::END_DYNAMIC_REGISTER] = server_on_end_dynamic_register;
-    handler_map[IPMessageType::CONTINUE_DYNAMIC_REGISTER] = server_on_continue_dynamic_register;
     handler_map[IPMessageType::EVENT_OCCURRED] = server_on_event_occurred;
 
     /* Currently, there is one job submtiter per input file (workload or workflow).
@@ -674,13 +670,6 @@ void server_on_end_dynamic_register(ServerData * data,
     data->context->registration_sched_finished = true;
 }
 
-void server_on_continue_dynamic_register(ServerData * data,
-                                  IPMessage * task_data)
-{
-    (void) task_data;
-    data->context->registration_sched_finished = false;
-}
-
 void server_on_register_job(ServerData * data,
                           IPMessage * task_data)
 {
@@ -717,23 +706,6 @@ void server_on_register_profile(ServerData * data,
     (void) data;
     (void) message;
     // TODO: remove me?
-}
-
-void server_on_set_job_metadata(ServerData * data,
-                                IPMessage * task_data)
-{
-    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<SetJobMetadataMessage *>(task_data->data);
-
-    JobIdentifier job_identifier = JobIdentifier(message->job_id);
-    if (!(data->context->workloads.job_is_registered(job_identifier)))
-    {
-        xbt_die("The job '%s' does not exist, cannot set its metadata", message->job_id.to_cstring());
-    }
-
-    auto job = data->context->workloads.job_at(job_identifier);
-    job->metadata = message->metadata;
-    XBT_DEBUG("Metadata of job '%s' has been set", message->job_id.to_cstring());
 }
 
 void server_on_change_job_state(ServerData * data,
@@ -805,40 +777,6 @@ void server_on_change_job_state(ServerData * data,
     }
 
     job->state = new_state;
-}
-
-void server_on_to_job_msg(ServerData * data,
-                          IPMessage * task_data)
-{
-    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<ToJobMessage *>(task_data->data);
-
-    if (!(data->context->workloads.job_is_registered(message->job_id)))
-    {
-        xbt_die("The job '%s' does not exist, cannot send a message to that job.", message->job_id.to_cstring());
-    }
-    auto job = data->context->workloads.job_at(message->job_id);
-
-    XBT_INFO("Send message to job: Job '%s' message='%s'",
-             job->id.to_cstring(),
-             message->message.c_str());
-
-    job->incoming_message_buffer.push_back(message->message);
-}
-
-void server_on_from_job_msg(ServerData * data,
-                          IPMessage * task_data)
-{
-    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<FromJobMessage *>(task_data->data);
-
-    auto job = data->context->workloads.job_at(message->job_id);
-
-    XBT_INFO("Send message to scheduler: Job %s", job->id.to_cstring());
-
-    data->context->proto_writer->append_from_job_message(message->job_id.to_string(),
-                                                         message->message,
-                                                         simgrid::s4u::Engine::get_clock());
 }
 
 void server_on_reject_job(ServerData * data,

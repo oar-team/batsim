@@ -38,7 +38,6 @@ enum class IPMessageType
     ,SCHED_KILL_JOB         //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (kill a job).
     ,SCHED_CALL_ME_LATER    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to be called in the future).
     ,SCHED_TELL_ME_ENERGY   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform consumed energy).
-    ,SCHED_SET_JOB_METADATA //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a SET_JOB_METADATA message).
     ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,WAIT_QUERY             //!< Server -> Scheduler. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,SCHED_READY            //!< Scheduler -> Server. The scheduler tells the server that the scheduler is ready (the scheduler is ready, messages can be sent to it).
@@ -50,9 +49,6 @@ enum class IPMessageType
     ,SWITCHED_ON            //!< SwitcherON -> Server. The switcherON process tells the server the machine pstate has been changed
     ,SWITCHED_OFF           //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
     ,END_DYNAMIC_REGISTER     //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
-    ,CONTINUE_DYNAMIC_REGISTER //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions continue.
-    ,TO_JOB_MSG                //!< Scheduler -> Server. The scheduler sends a message to a job.
-    ,FROM_JOB_MSG              //!< Job -> Server. The job wants to send a message to the scheduler via the server.
     ,EVENT_OCCURRED            //!< Sumbitter -> Server. The event submitter tells the server that one or several events have occurred.
 };
 

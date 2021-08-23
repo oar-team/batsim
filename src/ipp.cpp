@@ -106,9 +106,6 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_WAIT_ANSWER:
             s = "SCHED_WAIT_ANSWER";
             break;
-        case IPMessageType::SCHED_SET_JOB_METADATA:
-            s = "SCHED_SET_JOB_METADATA";
-            break;
         case IPMessageType::WAIT_QUERY:
             s = "WAIT_QUERY";
             break;
@@ -138,15 +135,6 @@ std::string ip_message_type_to_string(IPMessageType type)
             break;
         case IPMessageType::END_DYNAMIC_REGISTER:
             s = "END_DYNAMIC_REGISTER";
-            break;
-        case IPMessageType::CONTINUE_DYNAMIC_REGISTER:
-            s = "CONTINUE_DYNAMIC_REGISTER";
-            break;
-        case IPMessageType::TO_JOB_MSG:
-            s = "TO_JOB_MSG";
-            break;
-        case IPMessageType::FROM_JOB_MSG:
-            s = "FROM_JOB_MSG";
             break;
         case IPMessageType::EVENT_OCCURRED:
             s = "EVENT_OCCURRED";
@@ -228,11 +216,6 @@ IPMessage::~IPMessage()
         case IPMessageType::SCHED_TELL_ME_ENERGY:
         {
         } break;
-        case IPMessageType::SCHED_SET_JOB_METADATA:
-        {
-            auto * msg = static_cast<SetJobMetadataMessage *>(data);
-            delete msg;
-        } break;
         case IPMessageType::WAIT_QUERY:
         {
             auto * msg = static_cast<WaitQueryMessage *>(data);
@@ -281,19 +264,6 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::END_DYNAMIC_REGISTER:
         {
-        } break;
-        case IPMessageType::CONTINUE_DYNAMIC_REGISTER:
-        {
-        } break;
-        case IPMessageType::TO_JOB_MSG:
-        {
-            auto * msg = static_cast<ToJobMessage *>(data);
-            delete msg;
-        } break;
-        case IPMessageType::FROM_JOB_MSG:
-        {
-            auto * msg = static_cast<FromJobMessage *>(data);
-            delete msg;
         } break;
         case IPMessageType::EVENT_OCCURRED:
         {

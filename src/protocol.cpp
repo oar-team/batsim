@@ -432,36 +432,6 @@ void JsonProtocolWriter::append_job_killed(const vector<string> & job_ids,
     _events.PushBack(event, _alloc);
 }
 
-void JsonProtocolWriter::append_from_job_message(const string & job_id,
-                                                 const Document & message,
-                                                 double date)
-{
-    /* {
-      "timestamp": 10.0,
-      "type": "FROM_JOB_MSG",
-      "data": {
-            "job_id": "w0!1",
-            "msg": "some_message"
-      }
-    } */
-
-    xbt_assert(date >= _last_date, "Date inconsistency");
-    _last_date = date;
-    _is_empty = false;
-
-    Value data(rapidjson::kObjectType);
-    data.AddMember("job_id",
-                   Value().SetString(job_id.c_str(), _alloc), _alloc);
-    data.AddMember("msg", Value().CopyFrom(message, _alloc), _alloc);
-
-    Value event(rapidjson::kObjectType);
-    event.AddMember("timestamp", Value().SetDouble(date), _alloc);
-    event.AddMember("type", Value().SetString("FROM_JOB_MSG"), _alloc);
-    event.AddMember("data", data, _alloc);
-
-    _events.PushBack(event, _alloc);
-}
-
 void JsonProtocolWriter::append_resource_state_changed(const IntervalSet & resources,
                                                        const string & new_state,
                                                        double date)
@@ -687,9 +657,7 @@ JsonProtocolReader::JsonProtocolReader(BatsimContext *context) :
     _type_to_handler_map["REGISTER_JOB"] = &JsonProtocolReader::handle_register_job;
     _type_to_handler_map["REGISTER_PROFILE"] = &JsonProtocolReader::handle_register_profile;
     _type_to_handler_map["SET_RESOURCE_STATE"] = &JsonProtocolReader::handle_set_resource_state;
-    _type_to_handler_map["SET_JOB_METADATA"] = &JsonProtocolReader::handle_set_job_metadata;
     _type_to_handler_map["NOTIFY"] = &JsonProtocolReader::handle_notify;
-    _type_to_handler_map["TO_JOB_MSG"] = &JsonProtocolReader::handle_to_job_msg;
 }
 
 JsonProtocolReader::~JsonProtocolReader()
@@ -1196,45 +1164,6 @@ void JsonProtocolReader::handle_set_resource_state(int event_number,
     send_message_at_time(timestamp, "server", IPMessageType::PSTATE_MODIFICATION, static_cast<void*>(message));
 }
 
-void JsonProtocolReader::handle_set_job_metadata(int event_number,
-                                                 double timestamp,
-                                                 const Value & data_object)
-{
-    (void) event_number; // Avoids a warning if assertions are ignored
-    (void) timestamp;
-    /* {
-      "timestamp": 13.0,
-      "type": "SET_JOB_METADATA",
-      "data": {
-        "job_id": "wload!42",
-        "metadata": "scheduler-defined string"
-      }
-    } */
-
-    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (SET_JOB_METADATA) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() == 2, "Invalid JSON message: the 'data' value of event %d (SET_JOB_METADATA) should be of size 2 (size=%d)", event_number, data_object.MemberCount());
-
-    xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (SET_JOB_METADATA) should have a 'job_id' key", event_number);
-    const Value & job_id_value = data_object["job_id"];
-    xbt_assert(job_id_value.IsString(), "Invalid JSON message: in event %d (SET_JOB_METADATA): ['data']['job_id'] should be a string", event_number);
-    string job_id = job_id_value.GetString();
-
-    xbt_assert(data_object.HasMember("metadata"), "Invalid JSON message: the 'data' value of event %d (SET_JOB_METADATA) should contain a 'metadata' key.", event_number);
-    const Value & metadata_value = data_object["metadata"];
-    xbt_assert(metadata_value.IsString(), "Invalid JSON message: the 'metadata' value in the 'data' value of event %d (SET_JOB_METADATA) should be a string.", event_number);
-    string metadata = metadata_value.GetString();
-
-    // Check metadata validity regarding CSV output
-    std::regex r("[^\"]*");
-    xbt_assert(std::regex_match(metadata, r), "Invalid JSON message: the 'metadata' value in the 'data' value of event %d (SET_JOB_METADATA) should not contain double quotes (got ###%s###)", event_number, metadata.c_str());
-
-    auto * message = new SetJobMetadataMessage;
-    message->job_id = JobIdentifier(job_id);
-    message->metadata = metadata;
-
-    send_message_at_time(timestamp, "server", IPMessageType::SCHED_SET_JOB_METADATA, static_cast<void*>(message));
-}
-
 void JsonProtocolReader::handle_change_job_state(int event_number,
                                        double timestamp,
                                        const Value &data_object)
@@ -1305,49 +1234,12 @@ void JsonProtocolReader::handle_notify(int event_number,
     {
         send_message_at_time(timestamp, "server", IPMessageType::END_DYNAMIC_REGISTER);
     }
-    else if (notify_type == "continue_registration")
-    {
-        send_message_at_time(timestamp, "server", IPMessageType::CONTINUE_DYNAMIC_REGISTER);
-    }
     else
     {
         xbt_assert(false, "Unknown NOTIFY type received ('%s').", notify_type.c_str());
     }
 
     (void) timestamp;
-}
-
-void JsonProtocolReader::handle_to_job_msg(int event_number,
-                                       double timestamp,
-                                       const Value &data_object)
-{
-    (void) event_number; // Avoids a warning if assertions are ignored
-    /* {
-      "timestamp": 42.0,
-      "type": "TO_JOB_MSG",
-      "data": {
-            "job_id": "w!0",
-            "msg": "Some answer"
-      }
-    } */
-
-    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (TO_JOB_MSG) should be an object", event_number);
-
-    xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (TO_JOB_MSG) should have a 'job_id' key", event_number);
-    const Value & job_id_value = data_object["job_id"];
-    xbt_assert(job_id_value.IsString(), "Invalid JSON message: in event %d (TO_JOB_MSG): ['data']['job_id'] should be a string", event_number);
-    string job_id = job_id_value.GetString();
-
-    xbt_assert(data_object.HasMember("msg"), "Invalid JSON msg: the 'data' value of event %d (TO_JOB_MSG) should have a 'msg' key", event_number);
-    const Value & msg_value = data_object["msg"];
-    xbt_assert(msg_value.IsString(), "Invalid JSON msg: in event %d (TO_JOB_MSG): ['data']['msg'] should be a string", event_number);
-    string msg = msg_value.GetString();
-
-    auto * message = new ToJobMessage;
-    message->job_id = JobIdentifier(job_id);
-    message->message = msg;
-
-    send_message_at_time(timestamp, "server", IPMessageType::TO_JOB_MSG, static_cast<void*>(message));
 }
 
 void JsonProtocolReader::handle_register_job(int event_number,
