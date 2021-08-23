@@ -11,8 +11,6 @@ Platform = namedtuple('Platform', ['name', 'filename'])
 ExternalEvents = namedtuple('ExternalEvents', ['name', 'filename'])
 Algorithm = namedtuple('Algorithm', ['name', 'sched_implem', 'sched_algo_name'])
 
-RedisMode = namedtuple('RedisMode', ['name', 'enabled'])
-
 def generate_platforms(platform_dir, definition, accepted_names):
     return [Platform(
         name=name,
@@ -209,27 +207,3 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('pybatsim_filler_algorithm', generate_pybatsim_algorithms(algorithms_def, ['py_filler']))
     if 'pybatsim_filler_events_algorithm' in metafunc.fixturenames:
         metafunc.parametrize('pybatsim_filler_events_algorithm', generate_pybatsim_algorithms(algorithms_def, ['py_filler_events']))
-
-    # Misc. fixtures.
-    if 'redis_mode' in metafunc.fixturenames:
-        metafunc.parametrize('redis_mode', [RedisMode('redis', True), RedisMode('noredis', False)])
-
-@pytest.fixture(scope="session", autouse=True)
-def manage_redis_server(request):
-    print('Trying to run a redis-server...')
-    proc = subprocess.Popen('redis-server', stdout=subprocess.PIPE)
-    try:
-        out, _ = proc.communicate(timeout=1)
-        if 'Address already in use' in str(out):
-            print("Could not run redis-server (address already in use).")
-            print("Assuming that the process using the TCP port is another redis-server instance and going on.")
-        else:
-            raise Exception("Could not run redis-server (unhandled reason), aborting.")
-    except subprocess.TimeoutExpired:
-        print('redis-server has been running for 1 second.')
-        print('Assuming redis-server has started successfully and going on.')
-
-    def on_finalize():
-        print('Killing the spawned redis-server (if any)...')
-        proc.kill()
-    request.addfinalizer(on_finalize)

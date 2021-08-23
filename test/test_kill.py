@@ -18,14 +18,13 @@ KillDelayMode = namedtuple('KillDelayMode', ['name', 'kill_delay'])
 # Kill a job a given amount of time after starting its execution. #
 ###################################################################
 
-def kill_after_delay(platform, workload, algorithm, redis_mode, nb_kills_per_job, delay_before_kill):
-    test_name = f'kill-{delay_before_kill.name}-{nb_kills_per_job.name}-{algorithm.name}-{platform.name}-{workload.name}-{redis_mode.name}'
+def kill_after_delay(platform, workload, algorithm, nb_kills_per_job, delay_before_kill):
+    test_name = f'kill-{delay_before_kill.name}-{nb_kills_per_job.name}-{algorithm.name}-{platform.name}-{workload.name}'
     output_dir, robin_filename, schedconf_filename = init_instance(test_name)
 
     if algorithm.sched_implem != 'batsched': raise Exception('This test only supports batsched for now')
 
     batparams = "--forward-profiles-on-submission"
-    if redis_mode.enabled == True: batparams = batparams + " --enable-redis"
     batcmd = gen_batsim_cmd(platform.filename, workload.filename, output_dir, batparams)
 
     schedconf_content = {
@@ -63,36 +62,35 @@ def kill_after_delay(platform, workload, algorithm, redis_mode, nb_kills_per_job
 
 @pytest.mark.parametrize("nb_kills_per_job", [KillCountMode(f'{n}kills', n) for n in [1,2]])
 @pytest.mark.parametrize("delay_before_kill", [KillDelayMode(f'after{n}', n) for n in [5,10,15]])
-def test_kill_after_delay(small_platform, small_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill):
-    kill_after_delay(small_platform, small_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill)
+def test_kill_after_delay(small_platform, small_workload, killer_algorithm, nb_kills_per_job, delay_before_kill):
+    kill_after_delay(small_platform, small_workload, killer_algorithm, nb_kills_per_job, delay_before_kill)
 
 @pytest.mark.parametrize("nb_kills_per_job", [KillCountMode(f'{n}kills', n) for n in [1,2]])
 @pytest.mark.parametrize("delay_before_kill", [KillDelayMode(f'after{n}', n) for n in [5,10,15]])
-def test_kill_after_delay_sequences(small_platform, delaysequences_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill):
-    kill_after_delay(small_platform, delaysequences_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill)
+def test_kill_after_delay_sequences(small_platform, delaysequences_workload, killer_algorithm, nb_kills_per_job, delay_before_kill):
+    kill_after_delay(small_platform, delaysequences_workload, killer_algorithm, nb_kills_per_job, delay_before_kill)
 
 @pytest.mark.parametrize("nb_kills_per_job", [KillCountMode(f'{n}kills', n) for n in [1,2]])
 @pytest.mark.parametrize("delay_before_kill", [KillDelayMode(f'after{n}', n) for n in [0]])
-def test_kill_after_delay0(small_platform, small_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill):
-    kill_after_delay(small_platform, small_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill)
+def test_kill_after_delay0(small_platform, small_workload, killer_algorithm, nb_kills_per_job, delay_before_kill):
+    kill_after_delay(small_platform, small_workload, killer_algorithm, nb_kills_per_job, delay_before_kill)
 
 @pytest.mark.parametrize("nb_kills_per_job", [KillCountMode(f'{n}kills', n) for n in [1]])
 @pytest.mark.parametrize("delay_before_kill", [KillDelayMode(f'after{n}', n) for n in [1]])
-def test_kill_after_delay_smpi(small_platform, smpi_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill):
-    kill_after_delay(small_platform, smpi_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill)
+def test_kill_after_delay_smpi(small_platform, smpi_workload, killer_algorithm, nb_kills_per_job, delay_before_kill):
+    kill_after_delay(small_platform, smpi_workload, killer_algorithm, nb_kills_per_job, delay_before_kill)
 
 #####################################################
 # Kill the running job when a new one is submitted. #
 #####################################################
 
-def kill_on_new_submit(platform, workload, algorithm, redis_mode):
-    test_name = f'kill-onnewsubmit-{algorithm.name}-{platform.name}-{workload.name}-{redis_mode.name}'
+def kill_on_new_submit(platform, workload, algorithm):
+    test_name = f'kill-onnewsubmit-{algorithm.name}-{platform.name}-{workload.name}'
     output_dir, robin_filename, _ = init_instance(test_name)
 
     if algorithm.sched_implem != 'batsched': raise Exception('This test only supports batsched for now')
 
     batparams = "--forward-profiles-on-submission"
-    if redis_mode.enabled == True: batparams = batparams + " --enable-redis"
     batcmd = gen_batsim_cmd(platform.filename, workload.filename, output_dir, batparams)
 
     instance = RobinInstance(output_dir=output_dir,
@@ -106,20 +104,19 @@ def kill_on_new_submit(platform, workload, algorithm, redis_mode):
     ret = run_robin(robin_filename)
     if ret.returncode != 0: raise Exception(f'Bad robin return code ({ret.returncode})')
 
-def test_kill_on_new_submit(small_platform, small_workload, killer2_algorithm, redis_mode):
-    kill_on_new_submit(small_platform, small_workload, killer2_algorithm, redis_mode)
+def test_kill_on_new_submit(small_platform, small_workload, killer2_algorithm):
+    kill_on_new_submit(small_platform, small_workload, killer2_algorithm)
 
 ###############################################################################
 # Kill jobs after a given delay, check that the given progress is consistent. #
 ###############################################################################
-def kill_progress(platform, workload, algorithm, redis_mode, nb_kills_per_job, delay_before_kill):
-    test_name = f'kill-{delay_before_kill.name}-{nb_kills_per_job.name}-{algorithm.name}-{platform.name}-{workload.name}-{redis_mode.name}'
+def kill_progress(platform, workload, algorithm, nb_kills_per_job, delay_before_kill):
+    test_name = f'kill-{delay_before_kill.name}-{nb_kills_per_job.name}-{algorithm.name}-{platform.name}-{workload.name}'
     output_dir, robin_filename, schedconf_filename = init_instance(test_name)
 
     if algorithm.sched_implem != 'batsched': raise Exception('This test only supports batsched for now')
 
     batparams = "--forward-profiles-on-submission"
-    if redis_mode.enabled == True: batparams = batparams + " --enable-redis"
     batcmd = gen_batsim_cmd(platform.filename, workload.filename, output_dir, batparams)
 
     schedconf_content = {
@@ -162,5 +159,5 @@ def kill_progress(platform, workload, algorithm, redis_mode, nb_kills_per_job, d
 
 @pytest.mark.parametrize("nb_kills_per_job", [KillCountMode(f'{n}kills', n) for n in [1]])
 @pytest.mark.parametrize("delay_before_kill", [KillDelayMode(f'after{n}', n) for n in [5]])
-def test_kill_progress(small_platform, one_job_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill):
-    kill_progress(small_platform, one_job_workload, killer_algorithm, redis_mode, nb_kills_per_job, delay_before_kill)
+def test_kill_progress(small_platform, one_job_workload, killer_algorithm, nb_kills_per_job, delay_before_kill):
+    kill_progress(small_platform, one_job_workload, killer_algorithm, nb_kills_per_job, delay_before_kill)

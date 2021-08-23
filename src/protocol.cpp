@@ -229,14 +229,7 @@ void JsonProtocolWriter::append_job_submitted(const string & job_id,
                                               const string & profile_json_description,
                                               double date)
 {
-    /* "with_redis": {
-      "timestamp": 10.0,
-      "type": "JOB_SUBMITTED",
-      "data": {
-        "job_ids": ["w0!1", "w0!2"]
-      }
-    },
-    "without_redis": {
+    /* "without_redis": {
       "timestamp": 10.0,
       "type": "JOB_SUBMITTED",
       "data": {
@@ -260,22 +253,19 @@ void JsonProtocolWriter::append_job_submitted(const string & job_id,
     Value data(rapidjson::kObjectType);
     data.AddMember("job_id", Value().SetString(job_id.c_str(), _alloc), _alloc);
 
-    if (!_context->redis_enabled)
+    Document job_description_doc;
+    job_description_doc.Parse(job_json_description.c_str());
+    xbt_assert(!job_description_doc.HasParseError(), "JSON parse error");
+
+    data.AddMember("job", Value().CopyFrom(job_description_doc, _alloc), _alloc);
+
+    if (_context->submission_forward_profiles)
     {
-        Document job_description_doc;
-        job_description_doc.Parse(job_json_description.c_str());
-        xbt_assert(!job_description_doc.HasParseError(), "JSON parse error");
+        Document profile_description_doc;
+        profile_description_doc.Parse(profile_json_description.c_str());
+        xbt_assert(!profile_description_doc.HasParseError(), "JSON parse error");
 
-        data.AddMember("job", Value().CopyFrom(job_description_doc, _alloc), _alloc);
-
-        if (_context->submission_forward_profiles)
-        {
-            Document profile_description_doc;
-            profile_description_doc.Parse(profile_json_description.c_str());
-            xbt_assert(!profile_description_doc.HasParseError(), "JSON parse error");
-
-            data.AddMember("profile", Value().CopyFrom(profile_description_doc, _alloc), _alloc);
-        }
+        data.AddMember("profile", Value().CopyFrom(profile_description_doc, _alloc), _alloc);
     }
 
     Value event(rapidjson::kObjectType);
@@ -1365,14 +1355,7 @@ void JsonProtocolReader::handle_register_job(int event_number,
                                            const Value &data_object)
 {
     (void) event_number; // Avoids a warning if assertions are ignored
-    /* "with_redis": {
-      "timestamp": 10.0,
-      "type": "REGISTER_JOB",
-      "data": {
-        "job_id": "w12!45",
-      }
-    },
-    "without_redis": {
+    /* "without_redis": {
       "timestamp": 10.0,
       "type": "REGISTER_JOB",
       "data": {
@@ -1401,27 +1384,17 @@ void JsonProtocolReader::handle_register_job(int event_number,
     string job_id_str = job_id_value.GetString();
     JobIdentifier job_id(job_id_str);
 
-    // Read the job description, either directly or from Redis
-    if (data_object.HasMember("job"))
-    {
-        xbt_assert(!context->redis_enabled, "Invalid JSON message: in event %d (REGISTER_JOB): 'job' object is given but redis seems enabled...", event_number);
+    // Read the job description
+    xbt_assert(data_object.HasMember("job"), "Invalid JSON message: in event %d (REGISTER_JOB): 'job' object is missing", event_number);
 
-        const Value & job_object = data_object["job"];
-        xbt_assert(job_object.IsObject(), "Invalid JSON message: in event %d (REGISTER_JOB): ['data']['job'] should be an object", event_number);
+    const Value & job_object = data_object["job"];
+    xbt_assert(job_object.IsObject(), "Invalid JSON message: in event %d (REGISTER_JOB): ['data']['job'] should be an object", event_number);
 
-        StringBuffer buffer;
-        ::Writer<rapidjson::StringBuffer> writer(buffer);
-        job_object.Accept(writer);
+    StringBuffer buffer;
+    ::Writer<rapidjson::StringBuffer> writer(buffer);
+    job_object.Accept(writer);
 
-        message->job_description = string(buffer.GetString(), buffer.GetSize());
-    }
-    else
-    {
-        xbt_assert(context->redis_enabled, "Invalid JSON message: in event %d (REGISTER_JOB): ['data']['job'] is unset but redis seems disabled...", event_number);
-
-        string job_key = RedisStorage::job_key(job_id);
-        message->job_description = context->storage.get(job_key);
-    }
+    message->job_description = string(buffer.GetString(), buffer.GetSize());
 
     // Load job into memory. TODO: this should be between the protocol parsing and the injection in the events, not here.
     xbt_assert(context->workloads.exists(job_id.workload_name()),

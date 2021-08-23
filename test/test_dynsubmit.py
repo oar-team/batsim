@@ -9,8 +9,6 @@ from helper import *
 import json
 import pytest
 
-# Whether Redis should be used or not.
-RedisMode = namedtuple('RedisMode', ['name', 'enabled'])
 # Whether Batsim should acknowledge dynamic submissions or not.
 DynamicSubmissionAcknowledgementMode = namedtuple('DynamicSubmissionAcknowledgementMode', ['name', 'enabled'])
 # The number of jobs that should be submitted dynamically.
@@ -28,19 +26,18 @@ SchedulerSubmissionMode = namedtuple('SchedulerSubmissionMode',
     SchedulerSubmissionMode('same-profiles-noresend-separatep', False, False, True, True)])
 
 def test_dynsubmit(small_platform, dynsub_workload, submitter_algorithm,
-    redis_mode, dyn_sub_ack_mode, nb_dynamic_jobs, sched_submission_mode):
+    dyn_sub_ack_mode, nb_dynamic_jobs, sched_submission_mode):
     dynsubmit(small_platform, dynsub_workload, submitter_algorithm,
-        redis_mode, dyn_sub_ack_mode, nb_dynamic_jobs, sched_submission_mode)
+        dyn_sub_ack_mode, nb_dynamic_jobs, sched_submission_mode)
 
 def dynsubmit(platform, workload, algorithm,
-    redis_mode, dyn_sub_ack_mode, nb_dynamic_jobs, sched_submission_mode):
-    test_name = f'dynsubmit-{workload.name}-{sched_submission_mode.name}-{redis_mode.name}-{dyn_sub_ack_mode.name}-{nb_dynamic_jobs.name}'
+    dyn_sub_ack_mode, nb_dynamic_jobs, sched_submission_mode):
+    test_name = f'dynsubmit-{workload.name}-{sched_submission_mode.name}-{dyn_sub_ack_mode.name}-{nb_dynamic_jobs.name}'
     output_dir, robin_filename, schedconf_filename = init_instance(test_name)
 
     if algorithm.sched_implem != 'batsched': raise Exception('This test only supports batsched for now')
 
     batparams = "--enable-dynamic-jobs"
-    if redis_mode.enabled == True: batparams = batparams + " --enable-redis"
     if dyn_sub_ack_mode.enabled == True: batparams = batparams + " --acknowledge-dynamic-jobs"
     if sched_submission_mode.reuse_profiles == True: batparams = batparams + " --enable-profile-reuse"
 

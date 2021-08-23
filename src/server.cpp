@@ -309,13 +309,10 @@ void server_on_job_submitted(ServerData * data,
 
         string job_json_description, profile_json_description;
 
-        if (!data->context->redis_enabled)
+        job_json_description = job->json_description;
+        if (data->context->submission_forward_profiles)
         {
-            job_json_description = job->json_description;
-            if (data->context->submission_forward_profiles)
-            {
-                profile_json_description = job->profile->json_description;
-            }
+            profile_json_description = job->profile->json_description;
         }
 
         data->context->proto_writer->append_job_submitted(job->id.to_string(),
@@ -699,13 +696,10 @@ void server_on_register_job(ServerData * data,
         // TODO Sleep until submit time is reached before sending the ack (JOB_SUBMITTED)
         string job_json_description, profile_json_description;
 
-        if (!data->context->redis_enabled)
+        job_json_description = job->json_description;
+        if (data->context->submission_forward_profiles)
         {
-            job_json_description = job->json_description;
-            if (data->context->submission_forward_profiles)
-            {
-                profile_json_description = job->profile->json_description;
-            }
+            profile_json_description = job->profile->json_description;
         }
 
         data->context->proto_writer->append_job_submitted(job->id.to_string(),

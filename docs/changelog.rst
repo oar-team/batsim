@@ -19,6 +19,13 @@ Unreleased
 - `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
 
+Removed (**breaks**)
+~~~~~~~~~~~~~~~~~~~~
+
+- Redis is no longer supported to carry meta-information about simulation events.
+  All related CLI arguments no longer exist: ``--enable-redis``, ``--redis-hostname``, ``--redis-port``, ``--redis-prefix``.
+  All related execution context keys no longer exist: ``redis_enabled``, ``redis_hostname``, ``redis_port``, ``redis_prefix``.
+
 ........................................................................................................................
 
 v4.0.0

@@ -856,16 +856,6 @@ int main(int argc, char * argv[])
 
     if (main_args.program_type == ProgramType::BATSIM)
     {
-        if (context.redis_enabled)
-        {
-            // Let's prepare Redis' connection
-            context.storage.set_instance_key_prefix(main_args.redis_prefix);
-            context.storage.connect_to_server(main_args.redis_hostname, main_args.redis_port);
-
-            // Let's store some metadata about the current instance in the data storage
-            context.storage.set("nb_res", std::to_string(context.machines.nb_machines()));
-        }
-
         // Let's create the socket
         context.zmq_context = zmq_ctx_new();
         xbt_assert(context.zmq_context != nullptr, "Cannot create ZMQ context");

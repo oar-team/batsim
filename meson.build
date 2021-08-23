@@ -21,7 +21,6 @@ add_project_link_arguments(['-lstdc++fs'], language : 'cpp')
 simgrid_dep = dependency('simgrid')
 boost_dep = dependency('boost')
 rapidjson_dep = dependency('RapidJSON')
-redox_dep = dependency('redox')
 libzmq_dep = dependency('libzmq')
 docopt_dep = dependency('docopt')
 pugixml_dep = dependency('pugixml')
@@ -32,7 +31,6 @@ batsim_deps = [
     simgrid_dep,
     boost_dep,
     rapidjson_dep,
-    redox_dep,
     libzmq_dep,
     docopt_dep,
     pugixml_dep,
@@ -74,8 +72,6 @@ src_without_main = [
     'src/pstate.hpp',
     'src/server.cpp',
     'src/server.hpp',
-    'src/storage.cpp',
-    'src/storage.hpp',
     'src/task_execution.cpp',
     'src/task_execution.hpp',
     'src/workflow.cpp',

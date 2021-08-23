@@ -125,19 +125,6 @@ void static_job_submitter_process(BatsimContext * context,
             // Populate the vector of job identifiers to submit
             jobs_to_send.push_back(job);
 
-            // Let's put the metadata about the job into the data storage
-            if (context->redis_enabled)
-            {
-                string job_key = RedisStorage::job_key(job->id);
-                string profile_key = RedisStorage::profile_key(workload->name, job->profile->name);
-
-                context->storage.set(job_key, job->json_description);
-                if (context->submission_forward_profiles)
-                {
-                    context->storage.set(profile_key, job->profile->json_description);
-                }
-            }
-
             if (is_first_job)
             {
                 is_first_job = false;
@@ -320,17 +307,6 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
 
     // Put the metadata about the job into the data storage
     JobIdentifier job_id(workload_name, job_number);
-    if (context->redis_enabled)
-    {
-        string job_key = RedisStorage::job_key(job_id);
-        context->storage.set(job_key, job_json_description);
-
-        if (context->submission_forward_profiles)
-        {
-            string profile_key = RedisStorage::profile_key(workflow_name, profile_name);
-            context->storage.set(profile_key, profile->json_description);
-        }
-    }
 
     // Submit the job
     JobSubmittedMessage * msg = new JobSubmittedMessage;

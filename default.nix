@@ -112,7 +112,7 @@ let
         "^events/.*\.txt"
       ];
       buildInputs = with pkgs.python3Packages; [
-        batsim batsched batexpe pkgs.redis
+        batsim batsched batexpe
         pybatsim pytest pytest-html pandas] ++
       pkgs.lib.optional doValgrindAnalysis [ pkgs.valgrind ];
 

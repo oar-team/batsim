@@ -20,7 +20,6 @@
 #include "profiles.hpp"
 #include "protocol.hpp"
 #include "pstate.hpp"
-#include "storage.hpp"
 #include "workflow.hpp"
 #include "workload.hpp"
 
@@ -49,8 +48,6 @@ struct BatsimContext
     MachineStateTracer machine_state_tracer;        //!< The MachineStateTracer
     JobsTracer jobs_tracer;                         //!< The JobsTracer
     CurrentSwitches current_switches;               //!< The current switches
-
-    RedisStorage storage;                           //!< The RedisStorage
 
     rapidjson::Document config_json;                //!< The configuration information sent to the scheduler
     bool redis_enabled;                             //!< Stores whether Redis should be used

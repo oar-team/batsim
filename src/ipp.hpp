@@ -119,7 +119,7 @@ struct JobSubmittedMessage
 struct JobRegisteredByDPMessage
 {
     JobPtr job; //!< The freshly registered job
-    std::string job_description; //!< The job description string (empty if redis is enabled)
+    std::string job_description; //!< The job description string
 };
 
 /**
@@ -138,7 +138,7 @@ struct ProfileRegisteredByDPMessage
 struct SetJobMetadataMessage
 {
     JobIdentifier job_id; //!< The JobIdentifier of the job whose metedata should be changed
-    std::string metadata; //!< The job metadata string (empty if redis is enabled)
+    std::string metadata; //!< The job metadata string
 };
 
 /**
