@@ -50,7 +50,6 @@ struct BatsimContext
     CurrentSwitches current_switches;               //!< The current switches
 
     rapidjson::Document config_json;                //!< The configuration information sent to the scheduler
-    bool redis_enabled;                             //!< Stores whether Redis should be used
     bool submission_forward_profiles;               //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
     bool registration_sched_enabled;                //!< Stores whether the scheduler will be able to register jobs and profiles during the simulation
     bool registration_sched_finished = false;       //!< Stores whether the scheduler has finished submitting jobs.
