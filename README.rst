@@ -31,7 +31,7 @@ Please refer to `Batsim's documentation`_ for more.
     :scale: 100%
     :target: https://github.com/oar-team/batsim/issues
 
-.. |internal-issues| image:: https://img.shields.io/badge/internal%20issues-github-orange.svg
+.. |internal-issues| image:: https://img.shields.io/badge/internal%20issues-gitlab%20inria-orange.svg
     :alt: internal issues
     :scale: 100%
     :target: https://gitlab.inria.fr/batsim/batsim/issues
