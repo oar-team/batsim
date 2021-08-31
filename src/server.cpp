@@ -28,13 +28,9 @@ void server_process(BatsimContext * context)
     data->context = context;
 
     // Let's tell the Decision process that the simulation is about to begin
-    // (and that some data can be read from the data storage)
-    context->proto_writer->append_simulation_begins(context->machines,
-                                                    context->workloads,
-                                                    context->config_json,
-                                                    context->allow_compute_sharing,
-                                                    context->allow_storage_sharing,
-                                                    simgrid::s4u::Engine::get_clock());
+    context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
+    auto simulation_begins = protocol::to_simulation_begins(context);
+    context->proto_msg_builder->add_simulation_begins(simulation_begins);
 
     string send_buffer = context->proto_writer->generate_current_message(simgrid::s4u::Engine::get_clock());
     context->proto_writer->clear();

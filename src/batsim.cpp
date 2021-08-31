@@ -143,6 +143,26 @@ VerbosityLevel verbosity_level_from_string(const std::string & str)
     }
 }
 
+std::string MainArguments::generate_execution_context_json() const
+{
+    using namespace rapidjson;
+    Document object;
+    auto & alloc = object.GetAllocator();
+    object.SetObject();
+
+    // Generate the content to dump
+    object.AddMember("socket_endpoint", Value().SetString(this->socket_endpoint.c_str(), alloc), alloc);
+    object.AddMember("export_prefix", Value().SetString(this->export_prefix.c_str(), alloc), alloc);
+    object.AddMember("external_scheduler", Value().SetBool(this->program_type == ProgramType::BATSIM), alloc);
+
+    // Dump the object to a string
+    StringBuffer buffer;
+    rapidjson::Writer<StringBuffer> writer(buffer);
+    object.Accept(writer);
+
+    return buffer.GetString();
+}
+
 void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code,
                      bool & run_simulation)
 {
@@ -524,6 +544,14 @@ Other options:
 
     main_args.terminate_with_last_workflow = args["--ignore-beyond-last-workflow"].asBool();
 
+    // Raw argv
+    // ********
+    main_args.raw_argv.reserve(argc);
+    for (int i = 0 ; i < argc; ++i)
+    {
+        main_args.raw_argv.push_back(std::string(argv[i]));
+    }
+
     // Other options
     // *************
     main_args.dump_execution_context = args["--dump-execution-context"].asBool();
@@ -741,25 +769,10 @@ int main(int argc, char * argv[])
 
     if (main_args.dump_execution_context)
     {
-        using namespace rapidjson;
-        Document object;
-        auto & alloc = object.GetAllocator();
-        object.SetObject();
-
-        // Generate the content to dump
-        object.AddMember("socket_endpoint", Value().SetString(main_args.socket_endpoint.c_str(), alloc), alloc);
-
-        object.AddMember("export_prefix", Value().SetString(main_args.export_prefix.c_str(), alloc), alloc);
-
-        object.AddMember("external_scheduler", Value().SetBool(main_args.program_type == ProgramType::BATSIM), alloc);
-
-        // Dump the object to a string
-        StringBuffer buffer;
-        rapidjson::Writer<StringBuffer> writer(buffer);
-        object.Accept(writer);
+        auto execution_context_json = main_args.generate_execution_context_json();
 
         // Print the string then terminate
-        printf("%s\n", buffer.GetString());
+        printf("%s\n", execution_context_json.c_str());
         return 0;
     }
 
@@ -894,6 +907,7 @@ void set_configuration(BatsimContext *context,
     // *************************************
     // Let's update the BatsimContext values
     // *************************************
+    context->main_args = &main_args;
     context->submission_forward_profiles = main_args.forward_profiles_on_submission;
     context->registration_sched_enabled = main_args.dynamic_registration_enabled;
     context->registration_sched_ack = main_args.ack_dynamic_registration;

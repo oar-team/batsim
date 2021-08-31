@@ -112,6 +112,12 @@ struct Machine
      * @param[in] new_state The new state of the machine
      */
     void update_machine_state(MachineState new_state);
+
+    /**
+     * @brief Returns the computation speed of all pstates
+     * @return The computation speed of all pstates
+     */
+    std::shared_ptr<std::vector<double> > pstate_speeds() const;
 };
 
 /**

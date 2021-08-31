@@ -8,6 +8,7 @@
 
 #include <rapidjson/stringbuffer.h>
 
+#include "batsim.hpp"
 #include "context.hpp"
 #include "jobs.hpp"
 #include "network.hpp"
@@ -1559,6 +1560,65 @@ batprotocol::fb::FinalJobState job_state_to_final_job_state(const JobState & sta
     default:
         xbt_assert(false, "Invalid (non-final) job state received: %d", static_cast<int>(state));
     }
+}
+
+batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context)
+{
+    using namespace batprotocol;
+
+    SimulationBegins begins;
+
+    // Hosts
+    begins.set_host_number(context->machines.nb_machines());
+    for (const Machine * machine : context->machines.compute_machines())
+    {
+        auto host = machine->host;
+        begins.add_host(machine->id, machine->name, host->get_pstate(), host->get_pstate_count(), fb::HostState_IDLE, host->get_core_count(), machine->pstate_speeds());
+
+        for (auto & kv : machine->properties)
+        {
+            begins.set_host_property(machine->id, kv.first, kv.second);
+        }
+
+        for (auto & kv : machine->zone_properties)
+        {
+            begins.set_host_zone_property(machine->id, kv.first, kv.second);
+        }
+    }
+
+    for (const Machine * machine : context->machines.storage_machines())
+    {
+        auto host = machine->host;
+        begins.add_host(machine->id, machine->name, host->get_pstate(), host->get_pstate_count(), fb::HostState_IDLE, host->get_core_count(), machine->pstate_speeds());
+        begins.set_host_as_storage(machine->id);
+
+        for (auto & kv : machine->properties)
+        {
+            begins.set_host_property(machine->id, kv.first, kv.second);
+        }
+
+        for (auto & kv : machine->zone_properties)
+        {
+            begins.set_host_zone_property(machine->id, kv.first, kv.second);
+        }
+    }
+
+    // Workloads
+    for (const auto & kv : context->workloads.workloads())
+    {
+        const auto & workload_name = kv.first;
+        const auto * workload = kv.second;
+
+        begins.add_workload(workload_name, workload->file);
+
+        // TODO: add profiles if requested by the user
+    }
+
+    // Misc.
+    begins.set_batsim_execution_context(context->main_args->generate_execution_context_json());
+    begins.set_batsim_arguments(std::make_shared<std::vector<std::string> >(context->main_args->raw_argv));
+
+    return begins;
 }
 
 

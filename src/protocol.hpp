@@ -584,4 +584,11 @@ std::shared_ptr<batprotocol::Job> to_job(const Job & job);
  */
 batprotocol::fb::FinalJobState job_state_to_final_job_state(const JobState & state);
 
+/**
+ * @brief to_simulation_begins
+ * @param context
+ * @return
+ */
+batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context);
+
 } // end of namespace protocol

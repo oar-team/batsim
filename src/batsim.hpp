@@ -96,6 +96,9 @@ struct MainArguments
     int workflow_nb_concurrent_jobs_limit = 0;              //!< Limits the number of concurrent jobs for workflows
     bool terminate_with_last_workflow = false;              //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
+    // Raw argv
+    std::vector<std::string> raw_argv;                      //!< The strings the Batsim process received as argv.
+
     // Other
     std::vector<std::string> simgrid_config;                //!< The list of configuration options to pass to SimGrid.
     std::vector<std::string> simgrid_logging;               //!< The list of simulation logging options to pass to SimGrid.
@@ -108,6 +111,13 @@ struct MainArguments
     ProgramType program_type = ProgramType::BATSIM;         //!< The program type (Batsim or Batexec at the moment)
     std::string pfs_host_name;                              //!< The name of the SimGrid host which serves as parallel file system (a.k.a. large-capacity storage tier)
     std::string hpst_host_name;                             //!< The name of the SimGrid host which serves as the high-performance storage tier
+
+public:
+    /**
+     * @brief Generate a JSON string that describes Batsim's execution context
+     * @return A JSON string that describes Batsim's execution context
+     */
+    std::string generate_execution_context_json() const;
 };
 
 /**

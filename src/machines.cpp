@@ -705,6 +705,18 @@ void Machine::update_machine_state(MachineState new_state)
     last_state_change_date = current_date;
 }
 
+std::shared_ptr<std::vector<double> > Machine::pstate_speeds() const
+{
+    std::shared_ptr<std::vector<double> > speeds(new std::vector<double>);
+    speeds->reserve(host->get_pstate_count());
+    for (int i = 0; i < host->get_pstate_count(); ++i)
+    {
+        speeds->push_back(host->get_pstate_speed(i));
+    }
+
+    return speeds;
+}
+
 int string_numeric_comparator(const std::string & s1, const std::string & s2)
 {
     // Const C strings for s1 and s2
