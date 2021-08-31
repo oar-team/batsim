@@ -52,9 +52,6 @@ int execute_task(BatTask * btask,
     auto job = static_cast<JobPtr>(btask->parent_job);
     auto profile = btask->profile;
 
-    // Init task
-    btask->parent_job = job;
-
     if (profile->is_parallel_task())
     {
         int return_code = execute_parallel_task(btask, allocation, remaining_time,
@@ -78,14 +75,21 @@ int execute_task(BatTask * btask,
                  profile_index_in_sequence++)
             {
                 // Traces how the execution is going so that progress can be retrieved if needed
-                btask->current_task_index = sequence_iteration * static_cast<unsigned int>(data->sequence.size()) + profile_index_in_sequence;
-                BatTask * sub_btask = btask->sub_tasks[btask->current_task_index];
+                btask->current_repetition = sequence_iteration;
+                btask->current_task_index = profile_index_in_sequence;
+
+                xbt_assert(btask->sub_tasks.empty(), "internal inconsistency: there should be no current sub_tasks");
+                auto sub_profile = data->profile_sequence[profile_index_in_sequence];
+                BatTask * sub_btask = new BatTask(JobPtr(btask->parent_job), sub_profile);
+                btask->sub_tasks.push_back(sub_btask);
 
                 string task_name = "seq" + job->id.to_string() + "'" + sub_btask->profile->name + "'";
                 XBT_DEBUG("Creating sequential task '%s'", task_name.c_str());
 
                 int ret_last_profile = execute_task(sub_btask, context, allocation,
                                                     remaining_time);
+
+                btask->sub_tasks.clear();
 
                 // The whole sequence fails if a subtask fails
                 if (ret_last_profile != 0)
@@ -227,58 +231,9 @@ int do_delay_task(double sleeptime, double * remaining_time)
     }
 }
 
-/**
- * @brief Initializes logging structures associated with a task (job execution)
- * @param[in] job The job that is about to be executed
- * @param[in] profile The profile that is about to be executed
- * @param[in] io_profile The IO profile that may also be executed
- * @return The BatTask* associated with the sequential task
- */
-BatTask * initialize_sequential_tasks(JobPtr job, ProfilePtr profile, ProfilePtr io_profile)
-{
-    BatTask * task = new BatTask(job, profile);
-
-    // leaf of the task tree
-    if (profile->type != ProfileType::SEQUENCE)
-    {
-        task->io_profile = io_profile;
-        return task;
-    }
-
-    // it's a sequence profile
-    auto * data = static_cast<SequenceProfileData *>(profile->data);
-
-    // Sequences can be repeated several times
-    for (unsigned int repeated = 0; repeated < data->repeat; repeated++)
-    {
-        for (unsigned int i = 0; i < data->sequence.size(); i++)
-        {
-            // Get profile from name
-            auto sub_profile = data->profile_sequence[i];
-
-            // Manage io profile
-            ProfilePtr sub_io_profile = nullptr;
-            if (io_profile != nullptr)
-            {
-                auto * io_data = static_cast<SequenceProfileData*>(io_profile->data);
-                sub_io_profile = io_data->profile_sequence[i];
-            }
-
-            // recusrsive call
-            BatTask * sub_btask = initialize_sequential_tasks(
-                    job, sub_profile, sub_io_profile);
-
-            task->sub_tasks.push_back(sub_btask);
-        }
-    }
-
-    return task;
-}
-
 void execute_job_process(BatsimContext * context,
                          SchedulingAllocation * allocation,
-                         bool notify_server_at_end,
-                         ProfilePtr io_profile)
+                         bool notify_server_at_end)
 {
     auto job = allocation->job;
 
@@ -287,7 +242,7 @@ void execute_job_process(BatsimContext * context,
     double remaining_time = static_cast<double>(job->walltime);
 
     // Create the root task
-    job->task = initialize_sequential_tasks(job, job->profile, io_profile);
+    job->task = new BatTask(job, job->profile);
     unsigned int nb_allocated_resources = allocation->machine_ids.size();
 
     if (allocation->mapping.size() == 0)
@@ -481,18 +436,14 @@ void killer_process(BatsimContext * context,
 
         if (job->state == JobState::JOB_STATE_RUNNING)
         {
-            BatTask * job_progress = job->compute_job_progress();
+            auto task = job->task;
+            xbt_assert(task != nullptr, "Internal error");
 
-            // Consistency checks
-            if (job->profile->is_parallel_task() ||
-                job->profile->type == ProfileType::DELAY)
-            {
-                xbt_assert(job_progress != nullptr,
-                           "Parallel and delay profiles should contain jobs progress");
-            }
+            // Compute and store the kill progress of this job.
+            auto kill_progress = protocol::battask_to_kill_progress(task);
 
-            // Store job progress in the message
-            message->jobs_progress[job_id] = job_progress;
+            // Store job progress in the message.
+            message->jobs_progress[job_id.to_string()] = kill_progress;
 
             // Try to cancel parallel task Executors, if any
             bool cancelled_ptask = cancel_ptask(job->task);

@@ -14,7 +14,6 @@
 
 #include <simgrid/s4u.hpp>
 
-#include <batprotocol.hpp>
 #include <intervalset.hpp>
 
 #include "pointers.hpp"
@@ -170,22 +169,14 @@ struct BatTask
     ~BatTask();
 
     /**
-     * @brief Computes the current progress of a task
-     * @details This function does recursive calls if needed (composed tasks).
-     *          compute_leaf_progress is called on leaves.
+     * @brief Returns a name unique to this BatTask instance.
+     * @return A name unique to this BatTask instance.
      */
-    void compute_tasks_progress();
-
-private:
-    /**
-     * @brief Compute the progress of a leaf task
-     */
-    void compute_leaf_progress();
+    std::string unique_name() const;
 
 public:
     JobPtrWeak parent_job; //!< The parent job that owns this task
     ProfilePtr profile; //!< The task profile. The corresponding profile tells how the job should be computed
-    ProfilePtr io_profile = nullptr; //!< The task additional io profile. This profile, if defined will b merge to the task profile before execution
 
     // Manage parallel profiles
     simgrid::s4u::ExecPtr ptask = nullptr; //!< The final task to execute (only set for BatTask leaves with parallel profiles)
@@ -195,11 +186,11 @@ public:
     double delay_task_required = -1; //!< Stores how long delay tasks should last (only set for BatTask leaves with delay profiles)
 
     // manage sequential profile
-    std::vector<BatTask*> sub_tasks; //!< List of sub tasks that must be executed sequentially. Only set for BatTask non-leaves with sequential profiles at the moment, but it may be used for parallel composition in the future.
+    std::vector<BatTask*> sub_tasks; //!< List of sub BatTasks currently being executed. Only set for composition profiles.
+    unsigned int current_repetition = static_cast<unsigned int>(-1); //!< The current repetition number (=iteration number) of the whole sequence.
     unsigned int current_task_index = static_cast<unsigned int>(-1); //!< Index of the task that is currently being executed in the sub_tasks vector. Only set for BatTask non-leaves with sequential profiles.
-    double current_task_progress_ratio = 0; //!< Gives the progress of the current task from 0 to 1. Only set for BatTask non-leaves with sequential profiles.
+    double current_task_progress_ratio = -1; //!< Gives the progress of the current task from 0 to 1. Only set for BatTask non-leaves with sequential profiles.
 };
-
 
 /**
  * @brief Represents a job
@@ -242,12 +233,6 @@ struct Job
 
 public:
     /**
-     * @brief Computes the task progression of this job
-     * @return The task progress tree with filled-up associated values
-     */
-    BatTask * compute_job_progress();
-
-    /**
      * @brief Creates a new-allocated Job from a JSON description
      * @param[in] json_desc The JSON description of the job
      * @param[in] workload The Workload the job is in
@@ -270,12 +255,6 @@ public:
     static JobPtr from_json(const std::string & json_str,
                            Workload * workload,
                            const std::string & error_prefix = "Invalid JSON job");
-
-    /**
-     * @brief Create a batprotocol::Job from a Batsim Job
-     * @return The corresponding batprotocol::Job
-     */
-    std::shared_ptr<batprotocol::Job> to_proto_job() const;
 
     /**
      * @brief Checks whether a job is complete (regardless of the job success)
@@ -442,10 +421,3 @@ std::string job_state_to_string(const JobState & state);
  * @return A JobState corresponding to a given std::string
  */
 JobState job_state_from_string(const std::string & state);
-
-/**
- * @brief Returns a batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
- * @param[in] state The Batsim JobState
- * @return A batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
- */
-batprotocol::fb::FinalJobState job_state_to_proto_final_job_state(const JobState & state);

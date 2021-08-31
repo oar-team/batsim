@@ -13,6 +13,7 @@
 
 #include <simgrid/s4u.hpp>
 
+#include <batprotocol.hpp>
 #include <intervalset.hpp>
 
 #include "pointers.hpp"
@@ -246,7 +247,7 @@ struct SwitchMessage
 struct KillingDoneMessage
 {
     std::vector<JobIdentifier> jobs_ids; //!< The IDs of the jobs whose kill has been requested
-    std::map<JobIdentifier, BatTask *> jobs_progress; //!< Stores the progress of the jobs that have really been killed.
+    std::map<std::string, std::shared_ptr<batprotocol::KillProgress>> jobs_progress; //!< Stores the progress of the jobs that have really been killed.
     bool acknowledge_kill_on_protocol; //!< Whether to send a JOB_KILLED event to acknowledge the kills
 };
 

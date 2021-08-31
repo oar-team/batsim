@@ -264,7 +264,7 @@ void server_on_job_completed(ServerData * data,
     data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
     data->context->proto_msg_builder->add_job_completed(
                 job->id.to_string(),
-                job_state_to_proto_final_job_state(job->state),
+                protocol::job_state_to_final_job_state(job->state),
                 job->return_code);
 
     data->context->jobs_tracer.write_job(job);
@@ -307,7 +307,7 @@ void server_on_job_submitted(ServerData * data,
         XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far", job->id.to_cstring(), data->nb_submitted_jobs);
 
         data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
-        data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), job->to_proto_job(), simgrid::s4u::Engine::get_clock());
+        data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), simgrid::s4u::Engine::get_clock());
     }
 }
 
@@ -612,21 +612,16 @@ void server_on_killing_done(ServerData * data,
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<KillingDoneMessage *>(task_data->data);
 
-    map<string, BatTask *> jobs_progress_str;
     vector<string> really_killed_job_ids_str;
     vector<string> job_ids_str;
     job_ids_str.reserve(message->jobs_ids.size());
 
-    // manage job Id list
     for (const JobIdentifier & job_id : message->jobs_ids)
     {
         job_ids_str.push_back(job_id.to_string());
 
-        // store job progress from BatTask tree in str
-        jobs_progress_str[job_id.to_string()] = message->jobs_progress[job_id];
-
         const auto job = data->context->workloads.job_at(job_id);
-        if ( job->state == JobState::JOB_STATE_COMPLETED_KILLED)
+        if (job->state == JobState::JOB_STATE_COMPLETED_KILLED)
         {
             data->nb_running_jobs--;
             xbt_assert(data->nb_running_jobs >= 0, "inconsistency: no jobs are running");
@@ -639,7 +634,7 @@ void server_on_killing_done(ServerData * data,
             data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
             data->context->proto_msg_builder->add_job_completed(
                         job->id.to_string(),
-                        job_state_to_proto_final_job_state(job->state),
+                        protocol::job_state_to_final_job_state(job->state),
                         job->return_code);
 
             data->context->jobs_tracer.write_job(job);
@@ -654,7 +649,7 @@ void server_on_killing_done(ServerData * data,
                  boost::algorithm::join(job_ids_str, ",").c_str(),
                  boost::algorithm::join(really_killed_job_ids_str, ",").c_str());
 
-        data->context->proto_writer->append_job_killed(job_ids_str, jobs_progress_str, simgrid::s4u::Engine::get_clock());
+        data->context->proto_msg_builder->add_jobs_killed(job_ids_str, message->jobs_progress);
     }
 
     --data->nb_killers;
@@ -681,7 +676,7 @@ void server_on_register_job(ServerData * data,
     if (data->context->registration_sched_ack)
     {
         data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
-        data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), job->to_proto_job(), simgrid::s4u::Engine::get_clock());
+        data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), simgrid::s4u::Engine::get_clock());
     }
 }
 
@@ -969,7 +964,7 @@ void server_on_execute_job(ServerData * data,
     string pname = "job_" + job->id.to_string();
     auto actor = simgrid::s4u::Actor::create(pname.c_str(),
                                              data->context->machines[allocation->machine_ids.first_element()]->host,
-                                             execute_job_process, data->context, allocation, true, message->io_profile);
+                                             execute_job_process, data->context, allocation, true);
     job->execution_actors.insert(actor);
 }
 

@@ -56,9 +56,8 @@ int execute_task(BatTask * btask,
  * @param context The BatsimContext
  * @param allocation The job allocation
  * @param notify_server_at_end Whether a message to the server must be sent after job completion
- * @param io_profile The optional IO profile
  */
-void execute_job_process(BatsimContext *context, SchedulingAllocation *allocation, bool notify_server_at_end, ProfilePtr io_profile);
+void execute_job_process(BatsimContext *context, SchedulingAllocation *allocation, bool notify_server_at_end);
 
 /**
  * @brief The process in charge of waiting for a given amount of time (related to the NOPMeLater message)

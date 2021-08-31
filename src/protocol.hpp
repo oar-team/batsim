@@ -8,6 +8,7 @@
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 
+#include <batprotocol.hpp>
 #include <intervalset.hpp>
 
 #include "machines.hpp"
@@ -559,3 +560,28 @@ private:
     std::vector<std::string> accepted_requests = {"consumed_energy"}; //!< The currently acceptes requests for the QUERY_REQUEST message
     BatsimContext * context = nullptr; //!< The BatsimContext
 };
+
+namespace protocol
+{
+
+/**
+ * @brief Computes the KillProgress of a BatTask
+ * @param[in] The task whose kill progress must be computed
+ * @return The KillProgress of the given BatTask
+ */
+std::shared_ptr<batprotocol::KillProgress> battask_to_kill_progress(const BatTask * task);
+
+/**
+ * @brief Create a batprotocol::Job from a Batsim Job
+ * @return The corresponding batprotocol::Job
+ */
+std::shared_ptr<batprotocol::Job> to_job(const Job & job);
+
+/**
+ * @brief Returns a batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
+ * @param[in] state The Batsim JobState
+ * @return A batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
+ */
+batprotocol::fb::FinalJobState job_state_to_final_job_state(const JobState & state);
+
+} // end of namespace protocol

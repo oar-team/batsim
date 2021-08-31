@@ -1458,3 +1458,108 @@ void JsonProtocolReader::send_message_at_time(double when,
     // Let's actually send the message
     generic_send_message(destination_mailbox, type, data, detached);
 }
+
+namespace protocol
+{
+
+std::shared_ptr<batprotocol::KillProgress> battask_to_kill_progress(const BatTask * task)
+{
+    auto kp = batprotocol::KillProgress::make(task->unique_name());
+
+    std::stack<const BatTask *> tasks;
+    tasks.push(task);
+
+    while (!tasks.empty())
+    {
+        auto t = tasks.top();
+        tasks.pop();
+
+        switch (t->profile->type)
+        {
+        case ProfileType::PARALLEL: // missing breaks are not a mistake.
+        case ProfileType::PARALLEL_HOMOGENEOUS:
+        case ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
+        case ProfileType::PARALLEL_HOMOGENEOUS_PFS:
+        case ProfileType::DATA_STAGING:
+        { // Profile is a parallel task.
+            double task_progress_ratio = 0;
+            if (t->ptask != nullptr) // The parallel task has already started
+            {
+                // WARNING: 'get_remaining_ratio' is not returning the flops amount but the remaining quantity of work
+                // from 1 (not started yet) to 0 (completely finished)
+                task_progress_ratio = 1 - t->ptask->get_remaining_ratio();
+            }
+            kp->add_atomic(t->unique_name(), t->profile->name, task_progress_ratio);
+        } break;
+        case ProfileType::DELAY:
+        {
+            double task_progress_ratio = 1;
+            if (t->delay_task_required != 0)
+            {
+                xbt_assert(t->delay_task_start != -1, "Internal error");
+                double runtime = simgrid::s4u::Engine::get_clock() - t->delay_task_start;
+                task_progress_ratio = runtime / t->delay_task_required;
+            }
+
+            kp->add_atomic(t->unique_name(), t->profile->name, task_progress_ratio);
+        } break;
+        case ProfileType::SMPI: {
+            kp->add_atomic(t->unique_name(), t->profile->name, -1);
+        } break;
+        case ProfileType::SEQUENCE: {
+            xbt_assert(t->sub_tasks.size() == 1, "Internal error");
+            auto sub_task = t->sub_tasks[0];
+            tasks.push(sub_task);
+            xbt_assert(sub_task != nullptr, "Internal error");
+
+            kp->add_sequential(t->unique_name(), t->profile->name, t->current_repetition, t->current_task_index, sub_task->unique_name());
+        } break;
+        default:
+            xbt_die("Unimplemented kill progress of profile type %d", (int)task->profile->type);
+        }
+    }
+
+    return kp;
+}
+
+std::shared_ptr<batprotocol::Job> to_job(const Job & job)
+{
+    auto proto_job = batprotocol::Job::make();
+    proto_job->set_host_number(job.requested_nb_res); // TODO: handle core/ghost requests
+    proto_job->set_walltime(job.walltime);
+    proto_job->set_profile(job.profile->name); // TODO: handle ghost jobs without profile
+    // TODO: handle extra data
+    // TODO: handle job rigidity
+
+    return proto_job;
+}
+
+
+batprotocol::fb::FinalJobState job_state_to_final_job_state(const JobState & state)
+{
+    using namespace batprotocol;
+
+    switch (state)
+    {
+    case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
+        return fb::FinalJobState_COMPLETED_SUCCESSFULLY;
+        break;
+    case JobState::JOB_STATE_COMPLETED_FAILED:
+        return fb::FinalJobState_COMPLETED_FAILED;
+        break;
+    case JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED:
+        return fb::FinalJobState_COMPLETED_WALLTIME_REACHED;
+        break;
+    case JobState::JOB_STATE_COMPLETED_KILLED:
+        return fb::FinalJobState_COMPLETED_KILLED;
+        break;
+    case JobState::JOB_STATE_REJECTED:
+        return fb::FinalJobState_REJECTED;
+        break;
+    default:
+        xbt_assert(false, "Invalid (non-final) job state received: %d", static_cast<int>(state));
+    }
+}
+
+
+} // end of namespace protocol
