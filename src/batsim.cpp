@@ -853,7 +853,6 @@ int main(int argc, char * argv[])
 
         // Let's create the protocol reader and writer
         context.proto_reader = new JsonProtocolReader(&context);
-        context.proto_writer = new JsonProtocolWriter(&context);
         context.proto_msg_builder = new batprotocol::MessageBuilder(true);
 
         // Let's execute the initial processes
@@ -877,8 +876,8 @@ int main(int argc, char * argv[])
     delete context.proto_reader;
     context.proto_reader = nullptr;
 
-    delete context.proto_writer;
-    context.proto_writer = nullptr;
+    delete context.proto_msg_builder;
+    context.proto_msg_builder = nullptr;
 
     // If SMPI had been used, it should be finalized
     if (context.smpi_used)

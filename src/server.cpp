@@ -32,8 +32,9 @@ void server_process(BatsimContext * context)
     auto simulation_begins = protocol::to_simulation_begins(context);
     context->proto_msg_builder->add_simulation_begins(simulation_begins);
 
-    string send_buffer = context->proto_writer->generate_current_message(simgrid::s4u::Engine::get_clock());
-    context->proto_writer->clear();
+    context->proto_msg_builder->finish_message(simgrid::s4u::Engine::get_clock());
+    string send_buffer = std::string((const char*)context->proto_msg_builder->buffer_pointer(), context->proto_msg_builder->buffer_size());
+    context->proto_msg_builder->clear(simgrid::s4u::Engine::get_clock());
 
     simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
                                 request_reply_scheduler_process,
@@ -103,7 +104,7 @@ void server_process(BatsimContext * context)
             mailbox_empty("server")                  // The server mailbox must be empty
             )
         {
-            if (!context->proto_writer->is_empty()) // There is something to send to the scheduler
+            if (context->proto_msg_builder->has_events()) // There is something to send to the scheduler
             {
                 generate_and_send_message(data);
                 if (!data->jobs_to_be_deleted.empty())
@@ -151,8 +152,9 @@ void server_process(BatsimContext * context)
 
 void generate_and_send_message(ServerData * data)
 {
-    string send_buffer = data->context->proto_writer->generate_current_message(simgrid::s4u::Engine::get_clock());
-    data->context->proto_writer->clear();
+    data->context->proto_msg_builder->finish_message(simgrid::s4u::Engine::get_clock());
+    string send_buffer = std::string((const char*)data->context->proto_msg_builder->buffer_pointer(), data->context->proto_msg_builder->buffer_size());
+    data->context->proto_msg_builder->clear(simgrid::s4u::Engine::get_clock());
 
     simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
                                 request_reply_scheduler_process,

@@ -38,7 +38,6 @@ struct BatsimContext
     void * zmq_context = nullptr;                   //!< The Zero MQ context
     void * zmq_socket = nullptr;                    //!< The Zero MQ socket (REQ)
     AbstractProtocolReader * proto_reader = nullptr;//!< The protocol reader
-    AbstractProtocolWriter * proto_writer = nullptr;//!< The protocol writer
     batprotocol::MessageBuilder * proto_msg_builder = nullptr; //!< The batprotocol message builder
     MainArguments * main_args = nullptr;            //!< The arguments received by Batsim's main
 
