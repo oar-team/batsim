@@ -13,9 +13,25 @@
 , debug ? true
 , useClang ? false
 , simgrid ? kapack.simgrid-light.override { inherit debug; }
-, batsched ? kapack.batsched-master
+, batsched ? kapack.batsched.overrideAttrs (old: {
+    src = kapack.pkgs.fetchFromGitLab {
+      domain = "framagit.org";
+      owner = "batsim";
+      repo = "batsched";
+      rev = "17072778995100fc90214ea4910bf5b171adfd0d";
+      sha256 = "12r8b14rwa26wx34l1492vdvyn2s7mch3ixlz46s6imi1ximywa8";
+    };
+  })
 , batexpe ? kapack.batexpe
-, pybatsim ? kapack.pybatsim-master
+, pybatsim ? kapack.pybatsim.overrideAttrs (old: {
+    src = kapack.pkgs.fetchFromGitLab {
+      domain = "gitlab.inria.fr";
+      owner = "batsim";
+      repo = "pybatsim";
+      rev = "880dd60c537d7d7a8246daaf5b2d1f7bfea3cbf4";
+      sha256 = "1xa0r1h8xv1x51v0zddw3m52n250wph8jsm1ga67v18k7582kav4";
+    };
+  })
 # set this to avoid running tests over and over
 # (e.g., to debug coverage reports or to run tests and coverage report separately)
 , testVersion ? toString builtins.currentTime
