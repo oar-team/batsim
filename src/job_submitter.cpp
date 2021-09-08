@@ -366,7 +366,7 @@ static std::tuple<int,double,double> wait_for_query_answer(string submitter_name
 void batexec_job_launcher_process(BatsimContext * context,
                                   std::string workload_name)
 {
-    Workload * workload = context->workloads.at(workload_name);
+/*    Workload * workload = context->workloads.at(workload_name);
 
     auto & jobs = workload->jobs->jobs();
     for (auto & mit : jobs)
@@ -393,5 +393,5 @@ void batexec_job_launcher_process(BatsimContext * context,
                                                  context->machines[alloc->machine_ids.first_element()]->host,
                                                  execute_job_process, context, alloc, false);
         job->execution_actors.insert(actor);
-    }
+    }*/
 }

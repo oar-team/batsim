@@ -109,7 +109,7 @@ void Profiles::remove_profile(const std::string & profile_name)
     }
 
     // If the profile is composed, also remove links to subprofiles.
-    if (mit->second->type == ProfileType::SEQUENCE)
+    if (mit->second->type == ProfileType::SEQUENTIAL_COMPOSITION)
     {
         auto * profile_data = static_cast<SequenceProfileData*>(mit->second->data);
         for (const auto & subprofile : profile_data->profile_sequence)
@@ -170,7 +170,7 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::PARALLEL)
+    else if (type == ProfileType::PTASK)
     {
         auto * d = static_cast<ParallelProfileData *>(data);
         if (d != nullptr)
@@ -179,18 +179,9 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::PARALLEL_HOMOGENEOUS)
+    else if (type == ProfileType::PTASK_HOMOGENEOUS)
     {
         auto * d = static_cast<ParallelHomogeneousProfileData *>(data);
-        if (d != nullptr)
-        {
-            delete d;
-            d = nullptr;
-        }
-    }
-    else if (type == ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
-    {
-        auto * d = static_cast<ParallelHomogeneousTotalAmountProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -206,7 +197,7 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::SEQUENCE)
+    else if (type == ProfileType::SEQUENTIAL_COMPOSITION)
     {
         auto * d = static_cast<SequenceProfileData *>(data);
         if (d != nullptr)
@@ -215,16 +206,16 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::PARALLEL_HOMOGENEOUS_PFS)
+    else if (type == ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS)
     {
-        auto * d = static_cast<ParallelHomogeneousPFSProfileData *>(data);
+        auto * d = static_cast<ParallelTaskOnStorageHomogeneousProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
             d = nullptr;
         }
     }
-    else if (type == ProfileType::DATA_STAGING)
+    else if (type == ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES)
     {
         auto * d = static_cast<DataStagingProfileData *>(data);
         if (d != nullptr)
@@ -287,12 +278,6 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
     if (profile_type == "delay")
     {
-        /*
-        {
-            "type": "delay",
-            "delay": 20.20
-        }
-        */
         profile->type = ProfileType::DELAY;
         DelayProfileData * data = new DelayProfileData;
 
@@ -307,19 +292,9 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "parallel")
+    else if (profile_type == "ptask")
     {
-        /*
-        {
-            "type": "parallel",
-            "cpu": [5e6,  0,  0,  0],
-            "com": [5e6,  0,  0,  0,
-                    5e6,5e6,  0,  0,
-                    5e6,5e6,  0,  0,
-                    5e6,5e6,5e6,  0]
-        }
-        */
-        profile->type = ProfileType::PARALLEL;
+        profile->type = ProfileType::PTASK;
         ParallelProfileData * data = new ParallelProfileData;
 
         // basic checks
@@ -367,16 +342,9 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "parallel_homogeneous")
+    else if (profile_type == "parallel_homogeneous" || profile_type == "parallel_homogeneous_total")
     {
-        /*
-        {
-            "type": "parallel_homogeneous",
-            "cpu": 10e6,
-            "com": 1e6
-        }
-        */
-        profile->type = ProfileType::PARALLEL_HOMOGENEOUS;
+        profile->type = ProfileType::PTASK_HOMOGENEOUS;
         ParallelHomogeneousProfileData * data = new ParallelHomogeneousProfileData;
 
         xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
@@ -395,48 +363,16 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         xbt_assert(data->com >= 0, "%s: profile '%s' has a non-positive 'com' field (%g)",
                    error_prefix.c_str(), profile_name.c_str(), data->com);
 
-        profile->data = data;
-    }
-    else if (profile_type == "parallel_homogeneous_total")
-    {
-        /*
-        {
-            "type": "parallel_homogeneous_total",
-            "cpu": 10e6,
-            "com": 1e6
-        }
-        */
-        profile->type = ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT;
-        ParallelHomogeneousTotalAmountProfileData * data = new ParallelHomogeneousTotalAmountProfileData;
-
-        xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["cpu"].IsNumber(), "%s: profile '%s' has a non-number 'cpu' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        data->cpu = json_desc["cpu"].GetDouble();
-        xbt_assert(data->cpu >= 0, "%s: profile '%s' has a non-positive 'cpu' field (%g)",
-                   error_prefix.c_str(), profile_name.c_str(), data->cpu);
-
-        xbt_assert(json_desc.HasMember("com"), "%s: profile '%s' has no 'com' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["com"].IsNumber(), "%s: profile '%s' has a non-number 'com' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        data->com = json_desc["com"].GetDouble();
-        xbt_assert(data->com >= 0, "%s: profile '%s' has a non-positive 'com' field (%g)",
-                   error_prefix.c_str(), profile_name.c_str(), data->com);
+        auto strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue;
+        if (profile_type == "parallel_homogeneous_total")
+            strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsSpreadUniformly;
+        data->strategy = strategy;
 
         profile->data = data;
     }
-    else if (profile_type == "composed")
+    else if (profile_type == "sequential_composition")
     {
-        /*
-        {
-            "type": "composed",
-            "repeat" : 4,
-            "seq": ["simple","homogeneous","simple"]
-        }
-        */
-        profile->type = ProfileType::SEQUENCE;
+        profile->type = ProfileType::SEQUENTIAL_COMPOSITION;
         SequenceProfileData * data = new SequenceProfileData;
 
         unsigned int repeat = 1;
@@ -468,18 +404,10 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "parallel_homogeneous_pfs")
+    else if (profile_type == "ptask_on_storage_homogeneous")
     {
-        /*
-        {
-            "type": "parallel_homogeneous_pfs",
-            "bytes_to_read": 10e5,
-            "bytes_to_write": 10e5,
-            "storage": "my_io_node" //optional (default: 'pfs')
-        }
-        */
-        profile->type = ProfileType::PARALLEL_HOMOGENEOUS_PFS;
-        ParallelHomogeneousPFSProfileData * data = new ParallelHomogeneousPFSProfileData;
+        profile->type = ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS;
+        ParallelTaskOnStorageHomogeneousProfileData * data = new ParallelTaskOnStorageHomogeneousProfileData;
 
         xbt_assert(json_desc.HasMember("bytes_to_read") or json_desc.HasMember("bytes_to_write"), "%s: profile '%s' has no 'bytes_to_read' or 'bytes_to_write' field (0 if not set)",
                    error_prefix.c_str(), profile_name.c_str());
@@ -516,19 +444,13 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
             data->storage_label = json_desc[key.c_str()].GetString();
         }
 
+        // TODO: strategy
+
         profile->data = data;
     }
-    else if (profile_type == "data_staging")
+    else if (profile_type == "ptask_data_staging_between_storages")
     {
-        /*
-        {
-            "type": "data_staging",
-            "nb_bytes": 10e5,
-            "from": "pfs",
-            "to": "lcfs"
-        }
-        */
-        profile->type = ProfileType::DATA_STAGING;
+        profile->type = ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES;
         DataStagingProfileData * data = new DataStagingProfileData;
 
         xbt_assert(json_desc.HasMember("nb_bytes"), "%s: profile '%s' has no 'nb_bytes' field",
@@ -554,6 +476,8 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         data->to_storage_label = json_desc["to"].GetString();
 
         profile->data = data;
+
+        // TODO: check that associated jobs request 0 resources
     }
     else if (profile_type == "send")
     {
@@ -703,13 +627,18 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
 bool Profile::is_parallel_task() const
 {
-    return (type == ProfileType::PARALLEL) ||
-           (type == ProfileType::PARALLEL_HOMOGENEOUS) ||
-           (type == ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT) ||
-           (type == ProfileType::PARALLEL_HOMOGENEOUS_PFS) ||
-           (type == ProfileType::DATA_STAGING);
+    return (type == ProfileType::PTASK) ||
+           (type == ProfileType::PTASK_HOMOGENEOUS) ||
+           (type == ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS) ||
+           (type == ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES);
 }
 
+bool Profile::is_rigid() const
+{
+    return (type == ProfileType::PTASK) ||
+           (type == ProfileType::SMPI) ||
+           (type == ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES); // always uses 2 storages (and 0 compute nodes)
+}
 
 std::string profile_type_to_string(const ProfileType & type)
 {
@@ -720,26 +649,23 @@ std::string profile_type_to_string(const ProfileType & type)
     case ProfileType::DELAY:
         str = "DELAY";
         break;
-    case ProfileType::PARALLEL:
-        str = "PARALLEL";
+    case ProfileType::PTASK:
+        str = "PTASK";
         break;
-    case ProfileType::PARALLEL_HOMOGENEOUS:
-        str = "PARALLEL_HOMOGENEOUS";
-        break;
-    case ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
-        str = "PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT";
+    case ProfileType::PTASK_HOMOGENEOUS:
+        str = "PTASK_HOMOGENEOUS";
         break;
     case ProfileType::SMPI:
         str = "SMPI";
         break;
-    case ProfileType::SEQUENCE:
-        str = "SEQUENCE";
+    case ProfileType::SEQUENTIAL_COMPOSITION:
+        str = "SEQUENTIAL_COMPOSITION";
         break;
-    case ProfileType::PARALLEL_HOMOGENEOUS_PFS:
-        str = "PARALLEL_HOMOGENEOUS_PFS";
+    case ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS:
+        str = "PTASK_ON_STORAGE_HOMOGENEOUS";
         break;
-    case ProfileType::DATA_STAGING:
-        str = "DATA_STAGING";
+    case ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES:
+        str = "PTASK_DATA_STAGING_BETWEEN_STORAGES";
         break;
     case ProfileType::SCHEDULER_SEND:
         str = "SCHEDULER_SEND";

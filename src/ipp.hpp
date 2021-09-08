@@ -37,6 +37,7 @@ enum class IPMessageType
     ,SCHED_CHANGE_JOB_STATE //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (change the state of a job).
     ,SCHED_REJECT_JOB       //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (reject a job).
     ,SCHED_KILL_JOB         //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (kill a job).
+    ,SCHED_HELLO            //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (say hello).
     ,SCHED_CALL_ME_LATER    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to be called in the future).
     ,SCHED_TELL_ME_ENERGY   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform consumed energy).
     ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
@@ -158,23 +159,17 @@ struct ChangeJobStateMessage
 /**
  * @brief The content of the JobRejected message
  */
-struct JobRejectedMessage
+struct RejectJobMessage
 {
-    JobIdentifier job_id; //!< The JobIdentifier
+    JobPtr job; //!< The Job to reject
 };
 
-/**
- * @brief A subpart of the SchedulingAllocation message
- */
-struct SchedulingAllocation
+struct AllocationPlacement
 {
-    JobPtr job; //!< The Job to execute
-    IntervalSet machine_ids; //!< User defined allocation in range of machines ids
-    std::vector<int> mapping; //!< The mapping from executors (~=ranks) to resource ids. Can be empty, in which case it will NOT be used (a round robin will be used instead). If not empty, must be of the same size of the job, and each value must be in [0,nb_allocated_res[.
-    std::map<std::string, int> storage_mapping; //!< mapping from label given in the profile and machine id
-    std::vector<simgrid::s4u::Host*> hosts;  //!< The list of SimGrid hosts that would be used (one executor per host)
-    std::vector<simgrid::s4u::Host*> io_hosts;  //!< The list of SimGrid hosts that would be used for additional io job that will be merged to the job (one executor per host)
-    IntervalSet io_allocation; //!< The user defined additional io allocation in machine ids
+    IntervalSet hosts; //!< The allocated SimGrid hosts
+    bool use_predefined_strategy; //!< Whether to use a predefined strategy or a custom mapping for placement
+    batprotocol::fb::PredefinedExecutorPlacementStrategy predefined_strategy; //!< The predefined placement strategy
+    std::vector<unsigned int> custom_mapping; //!< The custom placement mapping. The vector size must match the amount of SimGrid executors, which is defined by the (profile, host_allocation) tuple. The value at index i is used to determine where SimGrid executor i runs. Values are NOT host resource ids, they are unsigned integers in [0, size(host_allocation)[ that are used to refer to hosts indirectly via host_allocation.
 };
 
 /**
@@ -182,16 +177,30 @@ struct SchedulingAllocation
  */
 struct ExecuteJobMessage
 {
-    SchedulingAllocation * allocation; //!< The allocation itself
-    ProfilePtr io_profile = nullptr; //!< The optional io profile
+    JobPtr job; //!< The Job to execute
+    std::shared_ptr<AllocationPlacement> job_allocation; //!< The main allocation/placement for the job.
+    std::map<std::string, std::shared_ptr<AllocationPlacement> > profile_allocation_override; //!< Optional overrides for the allocation/placement of each profile within the job.
+    std::map<std::string, int> storage_mapping; //!< Mapping from label given in the profile and machine id
 };
 
 /**
  * @brief The content of the KILL_JOB message
  */
-struct KillJobMessage
+struct KillJobsMessage
 {
-    std::vector<JobIdentifier> jobs_ids; //!< The ids of the jobs to kill
+    std::vector<JobPtr> jobs; //!< The jobs to kill. Some jobs can be removed from this vector to avoid double kills.
+    std::vector<std::string> job_ids; //!< IDs of the jobs to kill. This is kept separated from jobs as job_ids will be used to ACK the kills even if all jobs have not been killed (some may have finished in the meantime).
+};
+
+/**
+ * @brief The content of the SCHED_HELLO message
+ */
+struct ExternalDecisionComponentHelloMessage
+{
+    std::string batprotocol_version; //!< The batprotocol version used by the external decision component
+    std::string edc_name; //!< The name of the external decision component
+    std::string edc_version; //!< The version of the external decision component
+    std::string edc_commit; //!< The commit of the external decision component
 };
 
 /**
@@ -200,7 +209,7 @@ struct KillJobMessage
 struct PStateModificationMessage
 {
     IntervalSet machine_ids; //!< The IDs of the machines on which the pstate should be changed
-    int new_pstate; //!< The power state into which the machines should be put
+    int new_pstate = -1; //!< The power state into which the machines should be put
 };
 
 /**
@@ -208,7 +217,7 @@ struct PStateModificationMessage
  */
 struct CallMeLaterMessage
 {
-    double target_time; //!< The time at which Batsim should send a message to the decision real process
+    double target_time = -1; //!< The time at which Batsim should send a message to the decision real process
 };
 
 /**
@@ -237,8 +246,8 @@ struct SchedWaitAnswerMessage
  */
 struct SwitchMessage
 {
-    int machine_id; //!< The unique number of the machine which should be switched ON
-    int new_pstate; //!< The power state the machine should be put into
+    int machine_id = -1; //!< The unique number of the machine which should be switched ON
+    int new_pstate = -1; //!< The power state the machine should be put into
 };
 
 /**
@@ -246,9 +255,11 @@ struct SwitchMessage
  */
 struct KillingDoneMessage
 {
-    std::vector<JobIdentifier> jobs_ids; //!< The IDs of the jobs whose kill has been requested
-    std::map<std::string, std::shared_ptr<batprotocol::KillProgress>> jobs_progress; //!< Stores the progress of the jobs that have really been killed.
-    bool acknowledge_kill_on_protocol; //!< Whether to send a JOB_KILLED event to acknowledge the kills
+    KillJobsMessage * kill_jobs_message = nullptr; //!< The KillJobsMessage that initiated the kills
+    std::map<std::string, std::shared_ptr<batprotocol::KillProgress>> jobs_progress; //!< Stores the progress of the jobs that have really been killed
+    bool acknowledge_kill_on_protocol = false; //!< Whether to send a JOB_KILLED event to acknowledge the kills
+
+    ~KillingDoneMessage();
 };
 
 /**

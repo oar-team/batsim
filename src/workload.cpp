@@ -127,7 +127,7 @@ void Workload::check_validity()
     for (auto mit : profiles->profiles())
     {
         auto profile = mit.second;
-        if (profile->type == ProfileType::SEQUENCE)
+        if (profile->type == ProfileType::SEQUENTIAL_COMPOSITION)
         {
             auto * data = static_cast<SequenceProfileData *>(profile->data);
             data->profile_sequence.reserve(data->sequence.size());
@@ -160,7 +160,7 @@ void Workload::check_single_job_validity(const JobPtr job)
                "Invalid job %s: the associated profile '%s' does not exist",
                job->id.to_cstring(), job->profile->name.c_str());
 
-    if (job->profile->type == ProfileType::PARALLEL)
+    if (job->profile->type == ProfileType::PTASK)
     {
         auto * data = static_cast<ParallelProfileData *>(job->profile->data);
         (void) data; // Avoids a warning if assertions are ignored

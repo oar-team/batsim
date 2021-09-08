@@ -468,22 +468,6 @@ public:
     void handle_answer(int event_number, double timestamp, const rapidjson::Value & data_object);
 
     /**
-     * @brief Handles a REJECT_JOB event
-     * @param[in] event_number The event number in [0,nb_events[.
-     * @param[in] timestamp The event timestamp
-     * @param[in] data_object The data associated with the event (JSON object)
-     */
-    void handle_reject_job(int event_number, double timestamp, const rapidjson::Value & data_object);
-
-    /**
-     * @brief Handles an EXECUTE_JOB event
-     * @param[in] event_number The event number in [0,nb_events[.
-     * @param[in] timestamp The event timestamp
-     * @param[in] data_object The data associated with the event (JSON object)
-     */
-    void handle_execute_job(int event_number, double timestamp, const rapidjson::Value & data_object);
-
-    /**
      * @brief Handles an CHANGE_JOB_STATE event
      * @param[in] event_number The event number in [0,nb_events[.
      * @param[in] timestamp The event timestamp
@@ -530,14 +514,6 @@ public:
      * @param[in] data_object The data associated with the event (JSON object)
      */
     void handle_register_profile(int event_number, double timestamp, const rapidjson::Value & data_object);
-
-    /**
-     * @brief Handles a KILL_JOB event
-     * @param[in] event_number The event number in [0,nb_events[.
-     * @param[in] timestamp The event timestamp
-     * @param[in] data_object The data associated with the event (JSON object)
-     */
-    void handle_kill_job(int event_number, double timestamp, const rapidjson::Value & data_object);
 
 private:
     /**
@@ -590,5 +566,10 @@ batprotocol::fb::FinalJobState job_state_to_final_job_state(const JobState & sta
  * @return
  */
 batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context);
+
+ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * execute_job, BatsimContext * context);
+RejectJobMessage * from_reject_job(const batprotocol::fb::RejectJobEvent * reject_job, BatsimContext * context);
+KillJobsMessage * from_kill_jobs(const batprotocol::fb::KillJobsEvent * kill_jobs, BatsimContext * context);
+ExternalDecisionComponentHelloMessage * from_edc_hello(const batprotocol::fb::ExternalDecisionComponentHelloEvent * edc_hello, BatsimContext * context);
 
 } // end of namespace protocol

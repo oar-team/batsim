@@ -10,6 +10,7 @@
 #include <vector>
 #include <memory>
 
+#include <batprotocol.hpp>
 #include <rapidjson/document.h>
 
 #include "pointers.hpp"
@@ -21,13 +22,12 @@ enum class ProfileType
 {
     UNSET
     ,DELAY                                     //!< a delay. Its data is of type DelayProfileData
-    ,PARALLEL                                  //!< composed of a computation vector and a communication matrix. Its data is of type ParallelProfileData
-    ,PARALLEL_HOMOGENEOUS                      //!< a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type ParallelHomogeneousProfileData
-    ,PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT         //!< a homogeneous parallel task that spreads the given amounts of computation and communication among all the nodes. Its data is of type ParallelHomogeneousTotalAmountProfileData
+    ,PTASK                                     //!< composed of a computation vector and a communication matrix. Its data is of type ParallelProfileData
+    ,PTASK_HOMOGENEOUS                         //!< a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type ParallelHomogeneousProfileData
     ,SMPI                                      //!< a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
-    ,SEQUENCE                                  //!< non-atomic: it is composed of a sequence of other profiles
-    ,PARALLEL_HOMOGENEOUS_PFS                  //!< Read and writes data to a PFS storage nodes. data type ParallelHomogeneousPFSProfileData
-    ,DATA_STAGING                              //!< for moving data between the pfs hosts. Its data is of type DataStagingProfileData
+    ,SEQUENTIAL_COMPOSITION                    //!< non-atomic: it is composed of a sequence of other profiles
+    ,PTASK_ON_STORAGE_HOMOGENEOUS              //!< Read and writes data to a PFS storage nodes. data type ParallelHomogeneousPFSProfileData
+    ,PTASK_DATA_STAGING_BETWEEN_STORAGES       //!< for moving data between the pfs hosts. Its data is of type DataStagingProfileData
     ,SCHEDULER_SEND                            //!< a profile simulating a message sent to the scheduler. Its data is of type SchedulerSendProfileData
     ,SCHEDULER_RECV                            //!< receives a message from the scheduler and can execute a profile based on a value comparison of the message. Its data is of type SchedulerRecvProfileData
 };
@@ -83,6 +83,12 @@ struct Profile
      * @return Whether a profile is a parallel task (or its derivatives)
      */
     bool is_parallel_task() const;
+
+    /**
+     * @brief Returns whether a profile is rigid or not.
+     * @return Whether a profile is rigid or not.
+     */
+    bool is_rigid() const;
 };
 
 /**
@@ -108,18 +114,11 @@ struct ParallelProfileData
  */
 struct ParallelHomogeneousProfileData
 {
-    double cpu; //!< The computation amount on each node
-    double com; //!< The communication amount between each pair of nodes
+    double cpu = 0.0; //!< The computation amount on each node
+    double com = 0.0; //!< The communication amount between each pair of nodes
+    batprotocol::fb::HomogeneousParallelTaskGenerationStrategy strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue; //!< The strategy to populate the matrices
 };
 
-/**
- * @brief The data associated to PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT profiles
- */
-struct ParallelHomogeneousTotalAmountProfileData
-{
-    double cpu; //!< The computation amount to spread over the nodes
-    double com; //!< The communication amount to spread over each pair of nodes
-};
 /**
  * @brief The data associated to DELAY profiles
  */
@@ -149,11 +148,12 @@ struct SequenceProfileData
 /**
  * @brief The data associated to PARALLEL_HOMOGENEOUS_PFS profiles
  */
-struct ParallelHomogeneousPFSProfileData
+struct ParallelTaskOnStorageHomogeneousProfileData
 {
     double bytes_to_read = 0;             //!< The amount of bytes to reads from the PFS storage node for each nodes (default: 0)
     double bytes_to_write = 0;            //!< The amount of bytes to writes to the PFS storage for each nodes (default: 0)
     std::string storage_label = "pfs";    //!< A label that defines the PFS storage node (default: "pfs")
+    batprotocol::fb::HomogeneousParallelTaskGenerationStrategy strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue; //!< The strategy to populate the communication matrix
 };
 
 /**

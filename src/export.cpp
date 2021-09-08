@@ -1165,7 +1165,7 @@ void JobsTracer::write_job(const JobPtr job)
                 _max_slowdown = slowdown;
             }
 
-            const IntervalSet & allocation = job->allocation;
+            const IntervalSet & allocation = job->execution_request->job_allocation->hosts;
             for (size_t i = 0; i < allocation.size(); ++i)
             {
                 _machines_utilization[allocation[static_cast<int>(i)]] += job->runtime;
@@ -1193,8 +1193,8 @@ void JobsTracer::write_job(const JobPtr job)
     _job_map["turnaround_time"] = rejected ? "" : to_string(static_cast<double>(job->starting_time + job->runtime - job->submission_time));
     _job_map["stretch"] = rejected ? "" : to_string(static_cast<double>((job->starting_time + job->runtime - job->submission_time) / job->runtime));
     _job_map["consumed_energy"] = rejected ? "" : to_string(job->consumed_energy);
-    _job_map["allocated_resources"] = job->allocation.to_string_hyphen(" ");
-    _job_map["metadata"] = '"' + job->metadata + '"';
+    _job_map["allocated_resources"] = job->execution_request->job_allocation->hosts.to_string_hyphen(" ");
+
     // And then write them
     for (string & mit : _job_keys)
     {

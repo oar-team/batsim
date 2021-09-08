@@ -12,14 +12,16 @@
 /**
  * @brief The process in charge of killing a job if it reaches its walltime
  * @param[in] context The BatsimContext
- * @param[in] jobs_ids The ids of the jobs to kill
+ * @param[in] kill_jobs_msg The message that initiated the kills
  * @param[in] killed_job_state The JobState to be set for every killed Job
  * @param[in] acknowledge_kill_on_protocol Whether to acknwoledge the kill to the decision process through the protocol
  */
-void killer_process(BatsimContext *context,
-                    std::vector<JobIdentifier> jobs_ids,
-                    JobState killed_job_state = JobState::JOB_STATE_COMPLETED_KILLED,
-                    bool acknowledge_kill_on_protocol = true);
+void killer_process(
+    BatsimContext *context,
+    KillJobsMessage * kill_jobs_msg,
+    JobState killed_job_state = JobState::JOB_STATE_COMPLETED_KILLED,
+    bool acknowledge_kill_on_protocol = true
+);
 
 /**
  * @brief The process in charge of executing a rank of a SMPI profile
@@ -40,24 +42,30 @@ int do_delay_task(double sleeptime, double * remaining_time);
 
 /**
  * @brief Execute a BatTask recursively regarding on its profile type
- * @param[in,out] btask the task to execute
- * @param[in] context usefull information about Batsim context
- * @param[in] allocation the host to execute the task to
+ * @param[in,out] btask The task to execute
+ * @param[in] context The BatsimContext
+ * @param[in] execute_job_msg User-given information about how the task should be executed
  * @param[in,out] remaining_time remaining time of the current task
  * @return the profile return code if successful, -1 if walltime reached, -2 if parallel task has been cancelled
  */
-int execute_task(BatTask * btask,
-                 BatsimContext *context,
-                 const SchedulingAllocation * allocation,
-                 double * remaining_time);
+int execute_task(
+    BatTask * btask,
+    BatsimContext *context,
+    const std::shared_ptr<ExecuteJobMessage> & execute_job_msg,
+    double * remaining_time
+);
 
 /**
  * @brief The process in charge of executing a job
  * @param context The BatsimContext
- * @param allocation The job allocation
+ * @param job The job to execute
  * @param notify_server_at_end Whether a message to the server must be sent after job completion
  */
-void execute_job_process(BatsimContext *context, SchedulingAllocation *allocation, bool notify_server_at_end);
+void execute_job_process(
+    BatsimContext *context,
+    JobPtr job,
+    bool notify_server_at_end
+);
 
 /**
  * @brief The process in charge of waiting for a given amount of time (related to the NOPMeLater message)
@@ -66,10 +74,9 @@ void execute_job_process(BatsimContext *context, SchedulingAllocation *allocatio
  */
 void waiter_process(double target_time, const ServerData *server_data);
 
-
 /**
- * @brief Cancels the ptask and subptask Executor associated with this BatTask, if any
+ * @brief Cancels the ptasks associated with this BatTask (recursively), if any
  * @param[in] btask The BatTask whose ptask should be cancelled
- * @return whether a ptask was cancelled
+ * @return True if one or more ptasks have been cancelled by this call, false otherwise
  */
-bool cancel_ptask(BatTask * btask);
+bool cancel_ptasks(BatTask * btask);

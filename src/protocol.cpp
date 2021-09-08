@@ -650,11 +650,8 @@ JsonProtocolReader::JsonProtocolReader(BatsimContext *context) :
 {
     _type_to_handler_map["QUERY"] = &JsonProtocolReader::handle_query;
     _type_to_handler_map["ANSWER"] = &JsonProtocolReader::handle_answer;
-    _type_to_handler_map["REJECT_JOB"] = &JsonProtocolReader::handle_reject_job;
-    _type_to_handler_map["EXECUTE_JOB"] = &JsonProtocolReader::handle_execute_job;
     _type_to_handler_map["CHANGE_JOB_STATE"] = &JsonProtocolReader::handle_change_job_state;
     _type_to_handler_map["CALL_ME_LATER"] = &JsonProtocolReader::handle_call_me_later;
-    _type_to_handler_map["KILL_JOB"] = &JsonProtocolReader::handle_kill_job;
     _type_to_handler_map["REGISTER_JOB"] = &JsonProtocolReader::handle_register_job;
     _type_to_handler_map["REGISTER_PROFILE"] = &JsonProtocolReader::handle_register_profile;
     _type_to_handler_map["SET_RESOURCE_STATE"] = &JsonProtocolReader::handle_set_resource_state;
@@ -808,284 +805,6 @@ void JsonProtocolReader::handle_answer(int event_number,
             xbt_assert(0, "Invalid JSON message: unknown ANSWER type '%s' in event %d", key_value.c_str(), event_number);
         }
     }
-}
-
-void JsonProtocolReader::handle_reject_job(int event_number,
-                                           double timestamp,
-                                           const Value &data_object)
-{
-    (void) event_number; // Avoids a warning if assertions are ignored
-    /* {
-      "timestamp": 10.0,
-      "type": "REJECT_JOB",
-      "data": { "job_id": "w12!45" }
-    } */
-
-    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (REJECT_JOB) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (REJECT_JOB) should be of size 1 (size=%d)", event_number, data_object.MemberCount());
-
-    xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (REJECT_JOB) should contain a 'job_id' key.", event_number);
-    const Value & job_id_value = data_object["job_id"];
-    xbt_assert(job_id_value.IsString(), "Invalid JSON message: the 'job_id' value in the 'data' value of event %d (REJECT_JOB) should be a string.", event_number);
-    string job_id = job_id_value.GetString();
-
-    JobRejectedMessage * message = new JobRejectedMessage;
-    message->job_id = JobIdentifier(job_id);
-
-    send_message_at_time(timestamp, "server", IPMessageType::SCHED_REJECT_JOB, static_cast<void*>(message));
-}
-
-void JsonProtocolReader::handle_execute_job(int event_number,
-                                            double timestamp,
-                                            const Value &data_object)
-{
-    (void) event_number; // Avoids a warning if assertions are ignored
-    /* {
-      "timestamp": 10.0,
-      "type": "EXECUTE_JOB",
-      "data": {
-        "job_id": "w12!45",
-        "alloc": "2-3",
-        "mapping": {"0": "0", "1": "0", "2": "1", "3": "1"}
-        "storage_mapping": {
-          "pfs": 2
-        }
-        "additional_io_job": {
-          "alloc": "2-3 5-6",
-          "profile_name": "my_io_job",
-          "profile": {
-            "type": "parallel",
-            "cpu": 0,
-            "com": [0  ,5e6,5e6,5e6,
-                    5e6,0  ,5e6,0  ,
-                    0  ,5e6,4e6,0  ,
-                    0  ,0  ,0  ,0  ]
-          }
-        }
-      }
-    } */
-
-    ExecuteJobMessage * message = new ExecuteJobMessage;
-    message->allocation = new SchedulingAllocation;
-
-    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() == 2 || data_object.MemberCount() == 3, "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should be of size in {2,3} (size=%d)", event_number, data_object.MemberCount());
-
-    // ******************
-    // Get Job identifier
-    // ******************
-    // Let's read it from the JSON message
-    xbt_assert(data_object.HasMember("job_id"), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should contain a 'job_id' key.", event_number);
-    const Value & job_id_value = data_object["job_id"];
-    xbt_assert(job_id_value.IsString(), "Invalid JSON message: the 'job_id' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
-    string job_id_str = job_id_value.GetString();
-
-    // Let's retrieve the job identifier
-    JobIdentifier job_id = JobIdentifier(job_id_str);
-
-    // Retrieve the job behind the identifier
-    message->allocation->job = context->workloads.job_at(job_id);
-
-    // *********************
-    // Allocation management
-    // *********************
-    // Let's read it from the JSON message
-    xbt_assert(data_object.HasMember("alloc"), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should contain a 'alloc' key.", event_number);
-    const Value & alloc_value = data_object["alloc"];
-    xbt_assert(alloc_value.IsString(), "Invalid JSON message: the 'alloc' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
-    string alloc = alloc_value.GetString();
-
-    try { message->allocation->machine_ids = IntervalSet::from_string_hyphen(alloc, " ", "-"); }
-    catch(const std::exception & e) { throw std::runtime_error(std::string("Invalid JSON message: ") + e.what());}
-
-    int nb_allocated_resources = static_cast<int>(message->allocation->machine_ids.size());
-    (void) nb_allocated_resources; // Avoids a warning if assertions are ignored
-    xbt_assert(nb_allocated_resources > 0, "Invalid JSON message: in event %d (EXECUTE_JOB): the number of allocated resources should be strictly positive (got %d).", event_number, nb_allocated_resources);
-
-    // *****************************
-    // Mapping management (optional)
-    // *****************************
-    if (data_object.HasMember("mapping"))
-    {
-        const Value & mapping_value = data_object["mapping"];
-        xbt_assert(mapping_value.IsObject(), "Invalid JSON message: the 'mapping' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
-        xbt_assert(mapping_value.MemberCount() > 0, "Invalid JSON: the 'mapping' value in the 'data' value of event %d (EXECUTE_JOB) must be a non-empty object", event_number);
-        map<int,int> mapping_map;
-
-        // Let's fill the map from the JSON description
-        for (auto it = mapping_value.MemberBegin(); it != mapping_value.MemberEnd(); ++it)
-        {
-            const Value & key_value = it->name;
-            const Value & value_value = it->value;
-
-            xbt_assert(key_value.IsInt() || key_value.IsString(), "Invalid JSON message: Invalid 'mapping' of event %d (EXECUTE_JOB): a key is not an integer nor a string", event_number);
-            xbt_assert(value_value.IsInt() || value_value.IsString(), "Invalid JSON message: Invalid 'mapping' of event %d (EXECUTE_JOB): a value is not an integer nor a string", event_number);
-
-            int executor;
-            int resource;
-
-            try
-            {
-                if (key_value.IsInt())
-                {
-                    executor = key_value.GetInt();
-                }
-                else
-                {
-                    executor = std::stoi(key_value.GetString());
-                }
-
-                if (value_value.IsInt())
-                {
-                    resource = value_value.GetInt();
-                }
-                else
-                {
-                    resource = std::stoi(value_value.GetString());
-                }
-            }
-            catch (const std::exception &)
-            {
-                xbt_assert(false, "Invalid JSON message: Invalid 'mapping' object of event %d (EXECUTE_JOB): all keys and values must be integers (or strings representing integers)", event_number);
-                throw;
-            }
-
-            mapping_map[executor] = resource;
-        }
-
-        // Let's write the mapping as a vector (keys will be implicit between 0 and nb_executor-1)
-        message->allocation->mapping.reserve(mapping_map.size());
-        auto mit = mapping_map.begin();
-        int nb_inserted = 0;
-
-        xbt_assert(mit->first == nb_inserted, "Invalid JSON message: Invalid 'mapping' object of event %d (EXECUTE_JOB): no resource associated to executor %d.", event_number, nb_inserted);
-        xbt_assert(mit->second >= 0 && mit->second < nb_allocated_resources, "Invalid JSON message: Invalid 'mapping' object of event %d (EXECUTE_JOB): executor %d should use the %d-th resource within the allocation, but there are only %d allocated resources.", event_number, mit->first, mit->second, nb_allocated_resources);
-        message->allocation->mapping.push_back(mit->second);
-
-        for (++mit, ++nb_inserted; mit != mapping_map.end(); ++mit, ++nb_inserted)
-        {
-            xbt_assert(mit->first == nb_inserted, "Invalid JSON message: Invalid 'mapping' object of event %d (EXECUTE_JOB): no resource associated to executor %d.", event_number, nb_inserted);
-            xbt_assert(mit->second >= 0 && mit->second < nb_allocated_resources, "Invalid JSON message: Invalid 'mapping' object of event %d (EXECUTE_JOB): executor %d should use the %d-th resource within the allocation, but there are only %d allocated resources.", event_number, mit->first, mit->second, nb_allocated_resources);
-            message->allocation->mapping.push_back(mit->second);
-        }
-
-        xbt_assert(message->allocation->mapping.size() == mapping_map.size(), "internal inconsistency on mapping size");
-    }
-
-    // *************************************
-    // Storage Mapping management (optional)
-    // *************************************
-    // Only needed if the executed job profile use storage labels
-    //
-    if (data_object.HasMember("storage_mapping"))
-    {
-        const Value & mapping_value = data_object["storage_mapping"];
-        xbt_assert(mapping_value.IsObject(), "Invalid JSON message: the 'storage_mapping' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
-        xbt_assert(mapping_value.MemberCount() > 0, "Invalid JSON: the 'storage_mapping' value in the 'data' value of event %d (EXECUTE_JOB) must be a non-empty object", event_number);
-        map<string, int> storage_mapping_map;
-
-        // Let's fill the map from the JSON description
-        for (auto it = mapping_value.MemberBegin(); it != mapping_value.MemberEnd(); ++it)
-        {
-            const Value & key_value = it->name;
-            const Value & value_value = it->value;
-
-            xbt_assert(key_value.IsString(), "Invalid JSON message: Invalid 'storage_mapping' of event %d (EXECUTE_JOB): a key is not a string", event_number);
-            xbt_assert(value_value.IsInt(), "Invalid JSON message: Invalid 'storage_mapping' of event %d (EXECUTE_JOB): a value is not an integer", event_number);
-            storage_mapping_map[key_value.GetString()] = value_value.GetInt();
-        }
-        message->allocation->storage_mapping = storage_mapping_map;
-    }
-
-    // *************************************
-    // Additional io job management (optional)
-    // *************************************
-    if (data_object.HasMember("additional_io_job"))
-    {
-        XBT_DEBUG("Found additional_io_job in the EXECUTE_JOB message");
-        const Value & io_job_value = data_object["additional_io_job"];
-
-        // Read the profile description
-        xbt_assert(io_job_value.HasMember("profile_name"), "Invalid JSON message: In event %d (EXECUTE_JOB): the 'profile_name' field is mandatory in the 'additional_io_job' object", event_number);
-
-        xbt_assert(io_job_value["profile_name"].IsString(), "Invalid JSON message: Invalid 'profile_name' of event %d (EXECUTE_JOB): should be a string", event_number);
-        string profile_name = io_job_value["profile_name"].GetString();
-
-        Workload * workload = context->workloads.at(job_id.workload_name());
-        if (io_job_value.HasMember("profile"))
-        {
-            if (workload->profiles->exists(profile_name))
-            {
-                xbt_die("The given profile name '%s' already exists! Already registered profile: %s",
-                        profile_name.c_str(),
-                        workload->profiles->at(profile_name)->json_description.c_str());
-            }
-            else
-            {
-                const Value & profile_object = io_job_value["profile"];
-                xbt_assert(profile_object.IsObject(), "Invalid JSON message: in event %d (EXECUTE_JOB): ['data']['profile'] should be an object", event_number);
-
-                StringBuffer buffer;
-                ::Writer<rapidjson::StringBuffer> writer(buffer);
-                profile_object.Accept(writer);
-
-                string additional_io_job_profile_description = string(buffer.GetString(), buffer.GetSize());
-                // create the io_profile
-                auto new_io_profile = Profile::from_json(profile_name, additional_io_job_profile_description,
-                    "Invalid JSON profile received from the scheduler for the 'additional_io_job'");
-                // Add it to the wokload
-                workload->profiles->add_profile(profile_name, new_io_profile);
-            }
-
-        }
-        // get the profile
-        xbt_assert(workload->profiles->exists(profile_name),
-                    "The given profile name '%s' does not exists",
-                   profile_name.c_str());
-        auto io_profile = workload->profiles->at(profile_name);
-
-        // manage sequence profile special case
-        if (io_profile->type == ProfileType::SEQUENCE)
-        {
-            auto job_profile = workload->jobs->at(job_id)->profile;
-            xbt_assert(job_profile->type == ProfileType::SEQUENCE,
-                    "the job io profile is a '%s' profile but the the original job is '%s': they must have compatible profile in order to be merged",
-                    profile_type_to_string(io_profile->type).c_str(),
-                    profile_type_to_string(job_profile->type).c_str());
-
-            // check if it has the same size
-            auto * job_data = static_cast<SequenceProfileData*>(job_profile->data);
-            auto * io_data = static_cast<SequenceProfileData*>(io_profile->data);
-            xbt_assert(job_data->sequence.size() == io_data->sequence.size(),
-                    " IO profile sequence size (%zu) and job profile sequence size (%zu) should be the same",
-                    io_data->sequence.size(),
-                    job_data->sequence.size());
-            //for (unsigned int i=0; i < io_data->sequence.size(); i++)
-            //{
-            //    xbt_assert(workload->profiles->exists(io_data->sequence[i]),
-            //        "The given profile name '%s' does not exists",
-            //        io_data->sequence[i].c_str());
-            //}
-        }
-
-        message->io_profile = io_profile;
-
-        // get IO allocation
-        xbt_assert(io_job_value.HasMember("alloc"), "Invalid JSON message: the 'data' value of event %d (EXECUTE_JOB) should contain a 'alloc' key.", event_number);
-        const Value & alloc_value = io_job_value["alloc"];
-        xbt_assert(alloc_value.IsString(), "Invalid JSON message: the 'alloc' value in the 'data' value of event %d (EXECUTE_JOB) should be a string.", event_number);
-        string alloc = alloc_value.GetString();
-
-        try { message->allocation->io_allocation = IntervalSet::from_string_hyphen(alloc, " ", "-"); }
-        catch(const std::exception & e) { throw std::runtime_error(std::string("Invalid JSON message: bad IO allocation: ") + e.what());}
-    }
-    else
-    {
-        XBT_DEBUG("The optional field 'additional_io_job' was not found");
-    }
-
-    // Everything has been parsed correctly, let's inject the message into the simulation.
-    send_message_at_time(timestamp, "server", IPMessageType::SCHED_EXECUTE_JOB, static_cast<void*>(message));
 }
 
 void JsonProtocolReader::handle_call_me_later(int event_number,
@@ -1412,37 +1131,6 @@ void JsonProtocolReader::handle_register_profile(int event_number,
     send_message_at_time(timestamp, "server", IPMessageType::PROFILE_REGISTERED_BY_DP, static_cast<void*>(message));
 }
 
-void JsonProtocolReader::handle_kill_job(int event_number,
-                                         double timestamp,
-                                         const Value &data_object)
-{
-    (void) event_number; // Avoids a warning if assertions are ignored
-    /* {
-      "timestamp": 10.0,
-      "type": "KILL_JOB",
-      "data": {"job_ids": ["w0!1", "w0!2"]}
-    } */
-
-    auto * message = new KillJobMessage;
-
-    xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (KILL_JOB) should be an object", event_number);
-    xbt_assert(data_object.MemberCount() == 1, "Invalid JSON message: the 'data' value of event %d (KILL_JOB) should be of size 1 (size=%d)", event_number, data_object.MemberCount());
-
-    xbt_assert(data_object.HasMember("job_ids"), "Invalid JSON message: the 'data' value of event %d (KILL_JOB) should contain a 'job_ids' key.", event_number);
-    const Value & job_ids_array = data_object["job_ids"];
-    xbt_assert(job_ids_array.IsArray(), "Invalid JSON message: the 'job_ids' value in the 'data' value of event %d (KILL_JOB) should be an array.", event_number);
-    xbt_assert(job_ids_array.Size() > 0, "Invalid JSON message: the 'job_ids' array in the 'data' value of event %d (KILL_JOB) should be non-empty.", event_number);
-    message->jobs_ids.resize(job_ids_array.Size());
-
-    for (unsigned int i = 0; i < job_ids_array.Size(); ++i)
-    {
-        const Value & job_id_value = job_ids_array[i];
-        message->jobs_ids[i] = JobIdentifier(job_id_value.GetString());
-    }
-
-    send_message_at_time(timestamp, "server", IPMessageType::SCHED_KILL_JOB, static_cast<void*>(message));
-}
-
 void JsonProtocolReader::send_message_at_time(double when,
                                       const string &destination_mailbox,
                                       IPMessageType type,
@@ -1477,11 +1165,10 @@ std::shared_ptr<batprotocol::KillProgress> battask_to_kill_progress(const BatTas
 
         switch (t->profile->type)
         {
-        case ProfileType::PARALLEL: // missing breaks are not a mistake.
-        case ProfileType::PARALLEL_HOMOGENEOUS:
-        case ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
-        case ProfileType::PARALLEL_HOMOGENEOUS_PFS:
-        case ProfileType::DATA_STAGING:
+        case ProfileType::PTASK: // missing breaks are not a mistake.
+        case ProfileType::PTASK_HOMOGENEOUS:
+        case ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS:
+        case ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES:
         { // Profile is a parallel task.
             double task_progress_ratio = 0;
             if (t->ptask != nullptr) // The parallel task has already started
@@ -1507,7 +1194,7 @@ std::shared_ptr<batprotocol::KillProgress> battask_to_kill_progress(const BatTas
         case ProfileType::SMPI: {
             kp->add_atomic(t->unique_name(), t->profile->name, -1);
         } break;
-        case ProfileType::SEQUENCE: {
+        case ProfileType::SEQUENTIAL_COMPOSITION: {
             xbt_assert(t->sub_tasks.size() == 1, "Internal error");
             auto sub_task = t->sub_tasks[0];
             tasks.push(sub_task);
@@ -1621,5 +1308,116 @@ batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context
     return begins;
 }
 
+ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * execute_job, BatsimContext * context)
+{
+    auto * msg = new ExecuteJobMessage;
+
+    // Retrieve job
+    JobIdentifier job_id(execute_job->job_id()->str());
+    msg->job = context->workloads.job_at(job_id);
+
+    // Build main job's allocation
+    msg->job_allocation = std::make_shared<AllocationPlacement>();
+    msg->job_allocation->hosts = IntervalSet::from_string_hyphen(execute_job->allocation()->host_allocation()->str());
+
+    using namespace batprotocol::fb;
+    switch (execute_job->allocation()->executor_placement_type())
+    {
+    case ExecutorPlacement_NONE: {
+        xbt_assert("invalid ExecuteJob received: executor placement type of job's main allocation is NONE");
+    } break;
+    case ExecutorPlacement_PredefinedExecutorPlacementStrategyWrapper: {
+        msg->job_allocation->use_predefined_strategy = true;
+        msg->job_allocation->predefined_strategy = execute_job->allocation()->executor_placement_as_PredefinedExecutorPlacementStrategyWrapper()->strategy();
+    } break;
+    case ExecutorPlacement_CustomExecutorToHostMapping: {
+        msg->job_allocation->use_predefined_strategy = false;
+        auto custom_mapping = execute_job->allocation()->executor_placement_as_CustomExecutorToHostMapping()->mapping();
+        msg->job_allocation->custom_mapping.reserve(custom_mapping->size());
+        for (unsigned int i = 0; i < custom_mapping->size(); ++i)
+        {
+            msg->job_allocation->custom_mapping[i] = custom_mapping->Get(i);
+        }
+    } break;
+    }
+
+    // Build override allocations for profiles
+    for (unsigned int i = 0; i < execute_job->profile_allocation_override()->size(); ++i)
+    {
+        auto override_alloc = std::make_shared<::AllocationPlacement>();
+        auto override = execute_job->profile_allocation_override()->Get(i);
+        auto profile_name = override->profile_id()->str();
+        msg->profile_allocation_override[profile_name] = override_alloc;
+
+        override_alloc->hosts = IntervalSet::from_string_hyphen(override->host_allocation()->str());
+
+        switch (override->executor_placement_type())
+        {
+        case ExecutorPlacement_NONE: {
+            xbt_assert("invalid ExecuteJob received: executor placement type of job's main allocation is NONE");
+        } break;
+        case ExecutorPlacement_PredefinedExecutorPlacementStrategyWrapper: {
+            override_alloc->use_predefined_strategy = true;
+            override_alloc->predefined_strategy = execute_job->allocation()->executor_placement_as_PredefinedExecutorPlacementStrategyWrapper()->strategy();
+        } break;
+        case ExecutorPlacement_CustomExecutorToHostMapping: {
+            override_alloc->use_predefined_strategy = false;
+            auto custom_mapping = execute_job->allocation()->executor_placement_as_CustomExecutorToHostMapping()->mapping();
+            override_alloc->custom_mapping.reserve(custom_mapping->size());
+            for (unsigned int i = 0; i < custom_mapping->size(); ++i)
+            {
+                override_alloc->custom_mapping[i] = custom_mapping->Get(i);
+            }
+        } break;
+        }
+    }
+
+    // Storage overrides
+    for (unsigned int i = 0; i < execute_job->storage_placement()->size(); ++i)
+    {
+        auto storage_placement = execute_job->storage_placement()->Get(i);
+        msg->storage_mapping[storage_placement->storage_name()->str()] = storage_placement->host_id();
+    }
+
+    return msg;
+}
+
+RejectJobMessage *from_reject_job(const batprotocol::fb::RejectJobEvent * reject_job, BatsimContext * context)
+{
+    auto msg = new RejectJobMessage;
+
+    JobIdentifier job_id(reject_job->job_id()->str());
+    msg->job = context->workloads.job_at(job_id);
+
+    return msg;
+}
+
+KillJobsMessage *from_kill_jobs(const batprotocol::fb::KillJobsEvent * kill_jobs, BatsimContext * context)
+{
+    auto msg = new KillJobsMessage;
+
+    msg->job_ids.reserve(kill_jobs->job_ids()->size());
+    msg->jobs.reserve(kill_jobs->job_ids()->size());
+    for (unsigned int i = 0; i < kill_jobs->job_ids()->size(); ++i)
+    {
+        JobIdentifier job_id(kill_jobs->job_ids()->Get(i)->str());
+        msg->job_ids.push_back(job_id.to_string());
+        msg->jobs.push_back(context->workloads.job_at(job_id));
+    }
+
+    return msg;
+}
+
+ExternalDecisionComponentHelloMessage *from_edc_hello(const batprotocol::fb::ExternalDecisionComponentHelloEvent * edc_hello, BatsimContext * context)
+{
+    auto msg = new ExternalDecisionComponentHelloMessage;
+
+    msg->batprotocol_version = edc_hello->batprotocol_version()->str();
+    msg->edc_name = edc_hello->decision_component_name()->str();
+    msg->edc_version = edc_hello->decision_component_version()->str();
+    msg->edc_commit = edc_hello->decision_component_commit()->str();
+
+    return msg;
+}
 
 } // end of namespace protocol

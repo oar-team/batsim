@@ -22,6 +22,7 @@ class Profiles;
 struct Profile;
 class Workload;
 struct Job;
+struct ExecuteJobMessage;
 
 /**
  * @brief A simple structure used to identify one job
@@ -212,10 +213,8 @@ struct Job
     std::set<simgrid::s4u::ActorPtr> execution_actors; //!< The actors involved in running the job
     std::deque<std::string> incoming_message_buffer; //!< The buffer for incoming messages from the scheduler.
 
-    // Scheduler allocation and metadata
-    IntervalSet allocation; //!< The machines on which the job has been executed.
-    std::vector<int> smpi_ranks_to_hosts_mapping; //!< If the job uses a SMPI profile, stores which host number each MPI rank should use. These numbers must be in [0,required_nb_res[.
-    std::string metadata; //!< Metadata that the scheduler can set on the job
+    // Execution information, as sent by the decision component
+    std::shared_ptr<ExecuteJobMessage> execution_request; //!< The execution request as sent by the decision component via an EXECUTE_JOB event.
 
     // Current state
     JobState state = JobState::JOB_STATE_NOT_SUBMITTED; //!< The current state of the job
@@ -230,6 +229,7 @@ struct Job
     long double walltime = -1; //!< The job walltime: if the job is executed for more than this amount of time, it will be killed. Set at -1 to disable this behavior
     unsigned int requested_nb_res = 0; //!< The number of resources the job is requested to be executed on
     int return_code = -1; //!< The return code of the job
+    bool is_rigid = true; //!< Whether the number of allocated resources must match the number of requested resources.
 
 public:
     /**

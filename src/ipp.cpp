@@ -189,9 +189,9 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SCHED_EXECUTE_JOB:
         {
-            auto * msg = static_cast<ExecuteJobMessage *>(data);
-            // The Allocations themselves are not memory-deallocated there but at the end of the job execution.
-            delete msg;
+            // As the data contained in it is needed during the job execution,
+            // this data lifetime is bound to the job's lifetime.
+            // In other words, data deallocation will be done when the corresponding job will be deallocated.
         } break;
         case IPMessageType::SCHED_CHANGE_JOB_STATE:
         {
@@ -200,13 +200,13 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SCHED_REJECT_JOB:
         {
-            auto * msg = static_cast<JobRejectedMessage *>(data);
+            auto * msg = static_cast<RejectJobMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_KILL_JOB:
         {
-            auto * msg = static_cast<KillJobMessage *>(data);
-            delete msg;
+            // The data of this event is used during the full lifetime of the jobs kill,
+            // it is deallocated when the kills have been done.
         } break;
         case IPMessageType::SCHED_CALL_ME_LATER:
         {
@@ -273,6 +273,12 @@ IPMessage::~IPMessage()
     }
 
     data = nullptr;
+}
+
+KillingDoneMessage::~KillingDoneMessage()
+{
+    delete kill_jobs_message;
+    kill_jobs_message = nullptr;
 }
 
 std::string submitter_type_to_string(SubmitterType type)

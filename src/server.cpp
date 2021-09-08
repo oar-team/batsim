@@ -612,11 +612,12 @@ void server_on_killing_done(ServerData * data,
 
     vector<string> really_killed_job_ids_str;
     vector<string> job_ids_str;
-    job_ids_str.reserve(message->jobs_ids.size());
+    job_ids_str.reserve(message->kill_jobs_message->job_ids.size());
 
-    for (const JobIdentifier & job_id : message->jobs_ids)
+    for (auto & job_id_str : message->kill_jobs_message->job_ids)
     {
-        job_ids_str.push_back(job_id.to_string());
+        JobIdentifier job_id(job_id_str);
+        job_ids_str.push_back(job_id_str);
 
         const auto job = data->context->workloads.job_at(job_id);
         if (job->state == JobState::JOB_STATE_COMPLETED_KILLED)
@@ -626,14 +627,15 @@ void server_on_killing_done(ServerData * data,
             data->nb_completed_jobs++;
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_completed_jobs + nb_running_jobs > nb_submitted_jobs");
 
-            really_killed_job_ids_str.push_back(job_id.to_string());
+            really_killed_job_ids_str.push_back(job_id_str);
 
-            // also add a job complete message for the jobs that have really been killed
+            // Also add a job complete message for the jobs that have really been killed
             data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
             data->context->proto_msg_builder->add_job_completed(
-                        job->id.to_string(),
-                        protocol::job_state_to_final_job_state(job->state),
-                        job->return_code);
+                job->id.to_string(),
+                protocol::job_state_to_final_job_state(job->state),
+                job->return_code
+            );
 
             data->context->jobs_tracer.write_job(job);
             data->jobs_to_be_deleted.push_back(job->id);
@@ -642,8 +644,7 @@ void server_on_killing_done(ServerData * data,
 
     if (message->acknowledge_kill_on_protocol)
     {
-        // The kills have been asked by the decision process
-        XBT_INFO("Jobs {%s} have been killed (the following ones have REALLY been killed: {%s})",
+        XBT_INFO("Finished the requested kills of jobs {%s}. The following jobs have REALLY been killed: {%s})",
                  boost::algorithm::join(job_ids_str, ",").c_str(),
                  boost::algorithm::join(really_killed_job_ids_str, ",").c_str());
 
@@ -763,19 +764,13 @@ void server_on_reject_job(ServerData * data,
                           IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<JobRejectedMessage *>(task_data->data);
+    auto * message = static_cast<RejectJobMessage *>(task_data->data);
+    auto job = message->job;
 
-    if (!(data->context->workloads.job_is_registered(message->job_id)))
-    {
-        xbt_die("Job '%s' does not exist.", message->job_id.to_cstring());
-    }
-
-    auto job = data->context->workloads.job_at(message->job_id);
-    (void) job; // Avoids a warning if assertions are ignored
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
-               "Invalid rejection received: job '%s' cannot be rejected at the present time. "
-               "To be rejected, a job must be submitted and not allocated yet.",
-               job->id.to_cstring());
+        "Invalid job rejection received: job '%s' has state='%s' which is not SUBMITTED.",
+        job->id.to_cstring(), job_state_to_string(job->state).c_str()
+    );
 
     job->state = JobState::JOB_STATE_REJECTED;
     data->nb_completed_jobs++;
@@ -783,47 +778,43 @@ void server_on_reject_job(ServerData * data,
     XBT_INFO("Job '%s' has been rejected", job->id.to_cstring());
 
     data->context->jobs_tracer.write_job(job);
-    data->jobs_to_be_deleted.push_back(message->job_id);
+    data->jobs_to_be_deleted.push_back(message->job->id);
 }
 
-void server_on_kill_jobs(ServerData * data,
-                         IPMessage * task_data)
+void server_on_kill_jobs(ServerData * data, IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<KillJobMessage *>(task_data->data);
+    auto * message = static_cast<KillJobsMessage *>(task_data->data);
 
-    std::vector<JobIdentifier> jobs_ids_to_kill;
-
-    for (const JobIdentifier & job_id : message->jobs_ids)
+    // Traverse jobs and discard those whose kill has already been requested (to avoid double kill of jobs).
+    for (auto job_it = message->jobs.begin(); job_it != message->jobs.end() ; )
     {
-        xbt_assert(data->context->workloads.job_is_registered(job_id),
-                   "Trying to kill job '%s' but it does not exist.", job_id.to_cstring());
+        JobPtr job = *job_it;
 
-        auto job = data->context->workloads.job_at(job_id);
-
-        // Let's discard jobs whose kill has already been requested
         if (!job->kill_requested)
         {
-            // Let's check the job state
+            // Check the job state
             xbt_assert(job->state == JobState::JOB_STATE_RUNNING || job->is_complete(),
-                       "Invalid KILL_JOB: job_id '%s' refers to a job not being executed nor completed.",
-                       job_id.to_cstring());
+                "Invalid KILL_JOB: job_id '%s' is neither being executed nor completed, it has state='%s'",
+                job->id.to_cstring(), job_state_to_string(job->state).c_str()
+            );
 
-            // Let's mark that the job kill has been requested
+            // Mark that the job kill has been requested
             job->kill_requested = true;
 
-            // The job is included in the killer_process arguments
-            jobs_ids_to_kill.push_back(job_id);
+            ++job_it;
+        }
+        else
+        {
+            // Erase the current job from the vector and continue iterating over it.
+            job_it = message->jobs.erase(job_it);
         }
     }
 
-    if (jobs_ids_to_kill.size() > 0)
-    {
-        simgrid::s4u::Actor::create("killer_process", simgrid::s4u::this_actor::get_host(),
-                                    killer_process, data->context, jobs_ids_to_kill,
-                                    JobState::JOB_STATE_COMPLETED_KILLED, true);
-        ++data->nb_killers;
-    }
+    simgrid::s4u::Actor::create("killer_process", simgrid::s4u::this_actor::get_host(), killer_process,
+        data->context, message, JobState::JOB_STATE_COMPLETED_KILLED, true
+    );
+    ++data->nb_killers;
 }
 
 void server_on_call_me_later(ServerData * data,
@@ -846,10 +837,14 @@ void server_on_call_me_later(ServerData * data,
 void server_on_execute_job(ServerData * data,
                            IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<ExecuteJobMessage *>(task_data->data);
-    auto * allocation = message->allocation;
-    auto job = allocation->job;
+    xbt_assert(task_data->data != nullptr,  "inconsistency: task_data has null data");
+
+    // Bind the message memory lifecycle to the corresponding job's lifecycle.
+    std::shared_ptr<ExecuteJobMessage> message(static_cast<ExecuteJobMessage *>(task_data->data));
+    task_data->data = nullptr;
+    auto allocation = message->job_allocation;
+    auto job = message->job;
+    job->execution_request = message;
 
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
                "Cannot execute job '%s': its state (%s) is not JOB_STATE_SUBMITTED.",
@@ -860,9 +855,10 @@ void server_on_execute_job(ServerData * data,
     data->nb_running_jobs++;
     xbt_assert(data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_running_jobs > nb_submitted_jobs");
 
+    // Check that the allocated hosts have the right permissions.
     if (!data->context->allow_compute_sharing || !data->context->allow_storage_sharing)
     {
-        for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
+        for (auto machine_id_it = allocation->hosts.elements_begin(); machine_id_it != allocation->hosts.elements_end(); ++machine_id_it)
         {
             int machine_id = *machine_id_it;
             const Machine * machine = data->context->machines[machine_id];
@@ -873,7 +869,7 @@ void server_on_execute_job(ServerData * data,
                            "Job '%s': Invalid allocation ('%s'): machine %d (hostname='%s') is currently computing jobs (these ones:"
                            " {%s}) whereas time-sharing on compute machines is disabled (rerun with --help to display the available options).",
                            job->id.to_cstring(),
-                           allocation->machine_ids.to_string_hyphen().c_str(),
+                           allocation->hosts.to_string_hyphen().c_str(),
                            machine->id, machine->name.c_str(),
                            machine->jobs_being_computed_as_string().c_str());
             }
@@ -884,7 +880,7 @@ void server_on_execute_job(ServerData * data,
                            "Job '%s': Invalid allocation ('%s'): machine %d (hostname='%s') is currently computing jobs (these ones:"
                            " {%s}) whereas time-sharing on storage machines is disabled (rerun with --help to display the available options).",
                            job->id.to_cstring(),
-                           allocation->machine_ids.to_string_hyphen().c_str(),
+                           allocation->hosts.to_string_hyphen().c_str(),
                            machine->id, machine->name.c_str(),
                            machine->jobs_being_computed_as_string().c_str());
             }
@@ -892,7 +888,7 @@ void server_on_execute_job(ServerData * data,
     }
 
     // Check that every machine can compute the job
-    for (auto machine_id_it = allocation->machine_ids.elements_begin(); machine_id_it != allocation->machine_ids.elements_end(); ++machine_id_it)
+    for (auto machine_id_it = allocation->hosts.elements_begin(); machine_id_it != allocation->hosts.elements_end(); ++machine_id_it)
     {
         int machine_id = *machine_id_it;
         Machine * machine = data->context->machines[machine_id];
@@ -901,7 +897,7 @@ void server_on_execute_job(ServerData * data,
                    "Job '%s': Invalid job allocation ('%s'): machine %d (hostname='%s') cannot compute jobs now "
                    "(the machine is not computing nor idle, its state is '%s')",
                    job->id.to_cstring(),
-                   allocation->machine_ids.to_string_hyphen().c_str(),
+                   allocation->hosts.to_string_hyphen().c_str(),
                    machine->id, machine->name.c_str(),
                    machine_state_to_string(machine->state).c_str());
 
@@ -914,55 +910,42 @@ void server_on_execute_job(ServerData * data,
         xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
                    "Job '%s': Invalid job allocation ('%s'): machine %d (hostname='%s') is not in a computation pstate (ps=%d)",
                    job->id.to_cstring(),
-                   allocation->machine_ids.to_string_hyphen().c_str(),
+                   allocation->hosts.to_string_hyphen().c_str(),
                    machine->id, machine->name.c_str(), ps);
         }
     }
 
-    // Only PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT profile, or a sequence of those profile, are able to manage the following scenario:
-    // The scheduler allocated a different number of resources than the number of requested resources.
-    bool is_sequence_of_parhgtot = false;
-    if (job->profile->type == ProfileType::SEQUENCE)
+    /*
+    if (job->is_rigid)
     {
-        is_sequence_of_parhgtot = true;
-        const auto & profile_seq = static_cast<SequenceProfileData *>(job->profile->data)->profile_sequence;
-        for (const auto & subprofile : profile_seq)
+        // TODO: adapt to core requests
+        if (allocation->use_predefined_strategy)
         {
-            if (subprofile->type != ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT)
-            {
-                is_sequence_of_parhgtot = false;
-            }
-        }
-    }
-
-    if (!(job->profile->type == ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT || is_sequence_of_parhgtot))
-    {
-        if (allocation->mapping.size() != 0)
-        {
-            xbt_assert(static_cast<unsigned int>(allocation->mapping.size()) == job->requested_nb_res,
-                       "Job '%s' allocation ('%s') is invalid. The decision process set a custom mapping for this job, "
-                       "but the custom mapping size (%zu) does not match the job requested number of machines (%d).",
-                       job->id.to_cstring(),
-                       allocation->machine_ids.to_string_hyphen().c_str(),
-                       allocation->mapping.size(), job->requested_nb_res);
-        }
-        else
-        {
-            xbt_assert(static_cast<unsigned int>(allocation->machine_ids.size()) == job->requested_nb_res,
-                       "Job '%s' allocation ('%s') is invalid. The job requires %d machines but only %u were given. "
+            xbt_assert(static_cast<unsigned int>(allocation->hosts.size()) == job->requested_nb_res,
+                       "Job '%s' allocation ('%s') is invalid. The job is rigid and thus requires exactly %d machines but %u were given. "
                        "Using a different number of machines than the one requested is prevented by default. "
                        "If you meant to use multiple executors per machine, please specify a custom execution mapping "
                        "specifying which allocated machine each executor should use.",
                        job->id.to_cstring(),
-                       allocation->machine_ids.to_string_hyphen().c_str(),
-                       job->requested_nb_res, allocation->machine_ids.size());
+                       allocation->hosts.to_string_hyphen().c_str(),
+                       job->requested_nb_res, allocation->hosts.size());
         }
-    }
+        else
+        {
+            xbt_assert(static_cast<unsigned int>(allocation->hosts.size()) == job->requested_nb_res,
+                       "Job '%s' allocation ('%s') is invalid. The decision process set a custom mapping for this job, "
+                       "but the custom mapping size (%zu) does not match the job requested number of machines (%d).",
+                       job->id.to_cstring(),
+                       allocation->hosts.to_string_hyphen().c_str(),
+                       allocation->mapping.size(), job->requested_nb_res);
+        }
+    }*/
 
     string pname = "job_" + job->id.to_string();
     auto actor = simgrid::s4u::Actor::create(pname.c_str(),
-                                             data->context->machines[allocation->machine_ids.first_element()]->host,
-                                             execute_job_process, data->context, allocation, true);
+        data->context->machines[allocation->hosts.first_element()]->host,
+        execute_job_process, data->context, job, true
+    );
     job->execution_actors.insert(actor);
 }
 
@@ -977,4 +960,3 @@ bool is_simulation_finished(ServerData * data)
            (data->nb_waiters == 0) && // No waiter process is running
            (data->nb_killers == 0); // No jobs is being killed
 }
-

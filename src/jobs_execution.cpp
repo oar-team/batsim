@@ -44,18 +44,29 @@ void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, const std::
     }
 }
 
-int execute_task(BatTask * btask,
-                 BatsimContext *context,
-                 const SchedulingAllocation * allocation,
-                 double * remaining_time)
+int execute_task(
+    BatTask * btask,
+    BatsimContext *context,
+    const std::shared_ptr<ExecuteJobMessage> & execute_job_msg,
+    double * remaining_time)
 {
     auto job = static_cast<JobPtr>(btask->parent_job);
     auto profile = btask->profile;
 
+    // Determine which AllocationPlacement to use for this task.
+    std::shared_ptr<AllocationPlacement> alloc_placement = execute_job_msg->job_allocation;
+    auto alloc_placement_it = execute_job_msg->profile_allocation_override.find(btask->profile->name);
+    if (alloc_placement_it != execute_job_msg->profile_allocation_override.end())
+    {
+        alloc_placement = alloc_placement_it->second;
+    }
+
+    // TODO: generate final hosts to use (from allocated hosts, profile data, placement strategy or custom mapping)
+    // should be quite simple for profile_type != composition_ptask_merge
+
     if (profile->is_parallel_task())
     {
-        int return_code = execute_parallel_task(btask, allocation, remaining_time,
-                                           context);
+        int return_code = execute_parallel_task(btask, alloc_placement, remaining_time, context);
         if (return_code != 0)
         {
             return return_code;
@@ -63,7 +74,7 @@ int execute_task(BatTask * btask,
 
         return profile->return_code;
     }
-    else if (profile->type == ProfileType::SEQUENCE)
+    else if (profile->type == ProfileType::SEQUENTIAL_COMPOSITION)
     {
         auto * data = static_cast<SequenceProfileData *>(profile->data);
 
@@ -86,8 +97,7 @@ int execute_task(BatTask * btask,
                 string task_name = "seq" + job->id.to_string() + "'" + sub_btask->profile->name + "'";
                 XBT_DEBUG("Creating sequential task '%s'", task_name.c_str());
 
-                int ret_last_profile = execute_task(sub_btask, context, allocation,
-                                                    remaining_time);
+                int ret_last_profile = execute_task(sub_btask, context, execute_job_msg, remaining_time);
 
                 btask->sub_tasks.clear();
 
@@ -116,89 +126,7 @@ int execute_task(BatTask * btask,
     }
     else if (profile->type == ProfileType::SMPI)
     {
-        auto * data = static_cast<SmpiProfileData *>(profile->data);
-
-        unsigned int nb_ranks = static_cast<unsigned int>(data->trace_filenames.size());
-
-        // Let's use the default mapping is none is provided (round-robin on hosts, as we do not
-        // know the number of cores on each host)
-        if (job->smpi_ranks_to_hosts_mapping.empty())
-        {
-            job->smpi_ranks_to_hosts_mapping.resize(nb_ranks);
-            int host_to_use = 0;
-            for (unsigned int i = 0; i < nb_ranks; ++i)
-            {
-                job->smpi_ranks_to_hosts_mapping[i] = host_to_use;
-                ++host_to_use %= job->requested_nb_res; // ++ is done first
-            }
-        }
-
-        // Use a mailbox so that child actors tell us when they have finished.
-        std::map<unsigned int, simgrid::s4u::ActorPtr> child_actors;
-        const std::string termination_mbox_name = simgrid::s4u::this_actor::get_name() + "_smpi_termination";
-        auto termination_mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
-
-        xbt_assert(nb_ranks == job->smpi_ranks_to_hosts_mapping.size(),
-                   "Invalid job %s: SMPI ranks_to_host mapping has an invalid size, as it should "
-                   "use %d MPI ranks but the ranking states that there are %zu ranks.",
-                   job->id.to_cstring(), nb_ranks, job->smpi_ranks_to_hosts_mapping.size());
-
-        for (unsigned int rank = 0; rank < nb_ranks; ++rank)
-        {
-            std::string actor_name = job->id.to_string() + "_" + std::to_string(rank);
-            simgrid::s4u::Host* host_to_use = allocation->hosts[static_cast<size_t>(job->smpi_ranks_to_hosts_mapping[rank])];
-            simgrid::s4u::ActorPtr actor = simgrid::s4u::Actor::create(actor_name, host_to_use, smpi_replay_process, job, data, termination_mbox_name, rank);
-            child_actors[rank] = actor;
-            job->execution_actors.insert(actor);
-        }
-
-        const bool has_walltime = (*remaining_time >= 0);
-
-        // Wait until all child actors have finished.
-        while (!child_actors.empty())
-        {
-            try
-            {
-                const double time_before_get = simgrid::s4u::Engine::get_clock();
-
-                unsigned int * finished_rank = nullptr;
-                if (has_walltime)
-                {
-                    finished_rank = termination_mbox->get<unsigned int>(*remaining_time);
-                }
-                else
-                {
-                    finished_rank = termination_mbox->get<unsigned int>();
-                }
-
-                xbt_assert(child_actors.count(*finished_rank) == 1, "Internal error: unexpected rank received (%u)", *finished_rank);
-                job->execution_actors.erase(child_actors[*finished_rank]);
-                child_actors.erase(*finished_rank);
-                delete finished_rank;
-
-                if (has_walltime)
-                {
-                    *remaining_time = *remaining_time - (simgrid::s4u::Engine::get_clock() - time_before_get);
-                }
-            }
-            catch (const simgrid::TimeoutException&)
-            {
-                XBT_DEBUG("Timeout reached while executing SMPI profile '%s' (job's walltime reached).", job->profile->name.c_str());
-
-                // Kill all remaining child actors.
-                for (auto mit : child_actors)
-                {
-                    auto child_actor = mit.second;
-                    job->execution_actors.erase(child_actor);
-                    child_actor->kill();
-                }
-                child_actors.clear();
-
-                return -1;
-            }
-        }
-
-        return profile->return_code;
+        return execute_smpi_trace_replay(btask, alloc_placement, remaining_time, context);
     }
     else
         xbt_die("Cannot execute job %s: the profile '%s' is of unknown type: %s",
@@ -231,69 +159,31 @@ int do_delay_task(double sleeptime, double * remaining_time)
     }
 }
 
-void execute_job_process(BatsimContext * context,
-                         SchedulingAllocation * allocation,
-                         bool notify_server_at_end)
+void execute_job_process(
+    BatsimContext * context,
+    JobPtr job,
+    bool notify_server_at_end)
 {
-    auto job = allocation->job;
-
     job->starting_time = static_cast<long double>(simgrid::s4u::Engine::get_clock());
-    job->allocation = allocation->machine_ids;
     double remaining_time = static_cast<double>(job->walltime);
+    const auto & execution_request = job->execution_request;
 
     // Create the root task
     job->task = new BatTask(job, job->profile);
-    unsigned int nb_allocated_resources = allocation->machine_ids.size();
 
-    if (allocation->mapping.size() == 0)
-    {
-        // Default mapping
-        allocation->mapping.resize(nb_allocated_resources);
-        for (unsigned int i = 0; i < nb_allocated_resources; ++i)
-        {
-            allocation->mapping[i] = static_cast<int>(i);
-        }
-    }
-
-    // generate the hosts used by the job
-    allocation->hosts.clear();
-    allocation->hosts.reserve(nb_allocated_resources);
-
-    // create hosts list from mapping
-    for (unsigned int executor_id = 0; executor_id < allocation->mapping.size(); ++executor_id)
-    {
-        int machine_id_within_allocated_resources = allocation->mapping[executor_id];
-        int machine_id = allocation->machine_ids[machine_id_within_allocated_resources];
-
-        simgrid::s4u::Host* to_add = context->machines[machine_id]->host;
-        allocation->hosts.push_back(to_add);
-    }
-
-    // Also generate io hosts list if any
-    XBT_DEBUG("IO allocation: %s, size of the allocation: %d" ,
-            allocation->io_allocation.to_string_hyphen().c_str(),
-            allocation->io_allocation.size());
-    allocation->io_hosts.reserve(allocation->io_allocation.size());
-    for (unsigned int id = 0; id < allocation->io_allocation.size(); ++id)
-    {
-        allocation->io_hosts.push_back(context->machines[static_cast<int>(id)]->host);
-    }
-
-    // If energy is enabled, let us compute the energy used by the machines before running the job
     if (context->energy_used)
     {
-        job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
-        // Let's trace the consumed energy
+        // If energy is enabled, compute the energy used by the machines before running the job
+        job->consumed_energy = consumed_energy_on_machines(context, execution_request->job_allocation->hosts);
+
+        // Trace the consumed energy
         context->energy_tracer.add_job_start(simgrid::s4u::Engine::get_clock(), job->id);
     }
 
-    // Job computation
-    context->machines.update_machines_on_job_run(job, allocation->machine_ids,
-                                                 context);
+    context->machines.update_machines_on_job_run(job, execution_request->job_allocation->hosts, context);
 
-    // Execute the process
-    job->return_code = execute_task(job->task, context, allocation,
-                                    &remaining_time);
+    // Execute the task
+    job->return_code = execute_task(job->task, context, execution_request, &remaining_time);
     if (job->return_code == 0)
     {
         XBT_INFO("Job '%s' finished in time (success)", job->id.to_cstring());
@@ -301,8 +191,7 @@ void execute_job_process(BatsimContext * context,
     }
     else if (job->return_code > 0)
     {
-        XBT_INFO("Job '%s' finished in time (failed: return_code=%d)",
-                 job->id.to_cstring(), job->return_code);
+        XBT_INFO("Job '%s' finished in time (failed: return_code=%d)", job->id.to_cstring(), job->return_code);
         job->state = JobState::JOB_STATE_COMPLETED_FAILED;
     }
     else if (job->return_code == -1)
@@ -311,8 +200,7 @@ void execute_job_process(BatsimContext * context,
         job->state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
         if (context->trace_schedule)
         {
-            context->paje_tracer.add_job_kill(job->id, allocation->machine_ids,
-                                              simgrid::s4u::Engine::get_clock(), true);
+            context->paje_tracer.add_job_kill(job->id, execution_request->job_allocation->hosts, simgrid::s4u::Engine::get_clock(), true);
         }
     }
     else if (job->return_code == -2)
@@ -321,8 +209,7 @@ void execute_job_process(BatsimContext * context,
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
         if (context->trace_schedule)
         {
-            context->paje_tracer.add_job_kill(job->id, allocation->machine_ids,
-                                              simgrid::s4u::Engine::get_clock(), true);
+            context->paje_tracer.add_job_kill(job->id, execution_request->job_allocation->hosts, simgrid::s4u::Engine::get_clock(), true);
         }
     }
     else
@@ -330,7 +217,7 @@ void execute_job_process(BatsimContext * context,
         xbt_die("Job '%s' completed with unknown return code: %d", job->id.to_cstring(), job->return_code);
     }
 
-    context->machines.update_machines_on_job_end(job, allocation->machine_ids, context);
+    context->machines.update_machines_on_job_end(job, execution_request->job_allocation->hosts, context);
     job->runtime = static_cast<long double>(simgrid::s4u::Engine::get_clock()) - job->starting_time;
     if (job->runtime == 0)
     {
@@ -343,7 +230,7 @@ void execute_job_process(BatsimContext * context,
     {
         // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
         long double consumed_energy_before = job->consumed_energy;
-        job->consumed_energy = consumed_energy_on_machines(context, job->allocation) - consumed_energy_before;
+        job->consumed_energy = consumed_energy_on_machines(context, execution_request->job_allocation->hosts) - consumed_energy_before;
 
         // Let's trace the consumed energy
         context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
@@ -355,7 +242,7 @@ void execute_job_process(BatsimContext * context,
 
         // Let us tell the server that the job completed
         JobCompletedMessage * message = new JobCompletedMessage;
-        message->job = allocation->job;
+        message->job = job;
 
         send_message("server", IPMessageType::JOB_COMPLETED, static_cast<void*>(message));
     }
@@ -395,8 +282,7 @@ void waiter_process(double target_time, const ServerData * server_data)
     }
 }
 
-
-bool cancel_ptask(BatTask * btask)
+bool cancel_ptasks(BatTask * btask)
 {
     bool cancelled = false;
     if (btask->ptask != nullptr)
@@ -406,33 +292,38 @@ bool cancel_ptask(BatTask * btask)
         cancelled = true;
     }
 
-    // If this is a sequence profile, recursively ask to cancel sub ptasks
+    // If this is a composed task, cancel sub_tasks recursively
     if (!btask->sub_tasks.empty())
     {
-        cancelled = cancelled or cancel_ptask(btask->sub_tasks[btask->current_task_index]);
+        for (auto * sub_task : btask->sub_tasks)
+        {
+            bool newly_cancelled = cancel_ptasks(sub_task);
+            cancelled = cancelled || newly_cancelled;
+        }
     }
 
     return cancelled;
 }
 
 
-void killer_process(BatsimContext * context,
-                    std::vector<JobIdentifier> jobs_ids,
-                    JobState killed_job_state,
-                    bool acknowledge_kill_on_protocol)
+void killer_process(
+    BatsimContext * context,
+    KillJobsMessage * kill_jobs_msg,
+    JobState killed_job_state,
+    bool acknowledge_kill_on_protocol)
 {
     KillingDoneMessage * message = new KillingDoneMessage;
-    message->jobs_ids = jobs_ids;
+    message->kill_jobs_message = kill_jobs_msg;
     message->acknowledge_kill_on_protocol = acknowledge_kill_on_protocol;
 
-    for (const JobIdentifier & job_id : jobs_ids)
+    for (auto job : kill_jobs_msg->jobs)
     {
-        auto job = context->workloads.job_at(job_id);
-
         xbt_assert(! (job->state == JobState::JOB_STATE_REJECTED ||
                       job->state == JobState::JOB_STATE_SUBMITTED ||
                       job->state == JobState::JOB_STATE_NOT_SUBMITTED),
-                   "Bad kill: job %s has not been started", job->id.to_cstring());
+            "Invalid kill: job %s has not been started (state='%s'",
+            job->id.to_cstring(), job_state_to_string(job->state).c_str()
+        );
 
         if (job->state == JobState::JOB_STATE_RUNNING)
         {
@@ -443,16 +334,16 @@ void killer_process(BatsimContext * context,
             auto kill_progress = protocol::battask_to_kill_progress(task);
 
             // Store job progress in the message.
-            message->jobs_progress[job_id.to_string()] = kill_progress;
+            message->jobs_progress[job->id.to_string()] = kill_progress;
 
-            // Try to cancel parallel task Executors, if any
-            bool cancelled_ptask = cancel_ptask(job->task);
+            // Try to cancel the parallel task executors if they exist
+            bool cancelled_ptask = cancel_ptasks(job->task);
 
             if (!cancelled_ptask)
             {
-                // There was no ptask running, directly kill the actor
+                // There was no ptask running, directly kill the actors
 
-                // Let's kill all the involved processes
+                // Kill all the involved processes
                 xbt_assert(job->execution_actors.size() > 0, "kill inconsistency: no actors to kill while job's task could not be cancelled");
                 for (simgrid::s4u::ActorPtr actor : job->execution_actors)
                 {
@@ -461,10 +352,10 @@ void killer_process(BatsimContext * context,
                 }
                 job->execution_actors.clear();
 
-                // Let's update the job information
+                // Update the job information
                 job->state = killed_job_state;
 
-                context->machines.update_machines_on_job_end(job, job->allocation, context);
+                context->machines.update_machines_on_job_end(job, job->execution_request->job_allocation->hosts, context);
                 job->runtime = static_cast<long double>(simgrid::s4u::Engine::get_clock()) - job->starting_time;
 
                 xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%Lg)!", job->id.to_cstring(), job->runtime);
@@ -479,12 +370,12 @@ void killer_process(BatsimContext * context,
                 if (context->energy_used)
                 {
                     long double consumed_energy_before = job->consumed_energy;
-                    job->consumed_energy = consumed_energy_on_machines(context, job->allocation);
+                    job->consumed_energy = consumed_energy_on_machines(context, job->execution_request->job_allocation->hosts);
 
                     // The consumed energy is the difference (consumed_energy_after_job - consumed_energy_before_job)
                     job->consumed_energy = job->consumed_energy - consumed_energy_before;
 
-                    // Let's trace the consumed energy
+                    // Trace the consumed energy
                     context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
                 }
             }
