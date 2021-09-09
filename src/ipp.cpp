@@ -39,6 +39,51 @@ void generic_send_message(const std::string & destination_mailbox,
               ip_message_type_to_string(type).c_str(), data);
 }
 
+void send_message_at_time(
+    const std::string & destination_mailbox,
+    IPMessage * message,
+    double when,
+    bool detached)
+{
+    // Wait until "when" time point is reached, if needed
+    double current_time = simgrid::s4u::Engine::get_clock();
+    if (when > current_time)
+    {
+        simgrid::s4u::this_actor::sleep_for(when - current_time);
+    }
+
+    // Actually send the message
+    auto mailbox = simgrid::s4u::Mailbox::by_name(destination_mailbox);
+    const uint64_t message_size = 1;
+
+    if (detached)
+    {
+        mailbox->put_async(message, message_size);
+    }
+    else
+    {
+        mailbox->put(message, message_size);
+    }
+}
+
+void send_message_at_time(
+    const std::string & destination_mailbox,
+    IPMessageType type,
+    void * data,
+    double when,
+    bool detached)
+{
+    // Wait until "when" time point is reached, if needed
+    double current_time = simgrid::s4u::Engine::get_clock();
+    if (when > current_time)
+    {
+        simgrid::s4u::this_actor::sleep_for(when - current_time);
+    }
+
+    // Actually send the message
+    generic_send_message(destination_mailbox, type, data, detached);
+}
+
 void send_message(const std::string & destination_mailbox, IPMessageType type, void * data)
 {
     generic_send_message(destination_mailbox, type, data, false);
@@ -94,7 +139,7 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_REJECT_JOB:
             s = "SCHED_REJECT_JOB";
             break;
-        case IPMessageType::SCHED_KILL_JOB:
+        case IPMessageType::SCHED_KILL_JOBS:
             s = "SCHED_KILL_JOB";
             break;
         case IPMessageType::SCHED_CALL_ME_LATER:
@@ -203,7 +248,7 @@ IPMessage::~IPMessage()
             auto * msg = static_cast<RejectJobMessage *>(data);
             delete msg;
         } break;
-        case IPMessageType::SCHED_KILL_JOB:
+        case IPMessageType::SCHED_KILL_JOBS:
         {
             // The data of this event is used during the full lifetime of the jobs kill,
             // it is deallocated when the kills have been done.

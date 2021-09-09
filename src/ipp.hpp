@@ -36,7 +36,7 @@ enum class IPMessageType
     ,SCHED_EXECUTE_JOB      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (execute a job).
     ,SCHED_CHANGE_JOB_STATE //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (change the state of a job).
     ,SCHED_REJECT_JOB       //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (reject a job).
-    ,SCHED_KILL_JOB         //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (kill a job).
+    ,SCHED_KILL_JOBS         //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (kill a job).
     ,SCHED_HELLO            //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (say hello).
     ,SCHED_CALL_ME_LATER    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to be called in the future).
     ,SCHED_TELL_ME_ENERGY   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform consumed energy).
@@ -303,6 +303,12 @@ struct IPMessage
     void * data;        //!< The message data (can be NULL if type is in [SCHED_NOP, SUBMITTER_HELLO, SUBMITTER_BYE, SUBMITTER_READY]). Otherwise, it is either a JobSubmittedMessage*, a JobCompletedMessage* or a SchedulingAllocationMessage* according to type.
 };
 
+struct IPMessageWithTimestamp
+{
+    IPMessage * message = nullptr;
+    double timestamp = -1;
+};
+
 /**
  * @brief Sends a message from the given process to the given mailbox
  * @param[in] destination_mailbox The destination mailbox
@@ -310,10 +316,28 @@ struct IPMessage
  * @param[in] data The data associated with the message
  * @param[in] detached Whether the send should be detached (put or put_async)
  */
-void generic_send_message(const std::string & destination_mailbox,
-                          IPMessageType type,
-                          void * data,
-                          bool detached);
+void generic_send_message(
+    const std::string & destination_mailbox,
+    IPMessageType type,
+    void * data,
+    bool detached
+);
+
+void send_message_at_time(
+    const std::string & destination_mailbox,
+    IPMessage * message,
+    double when,
+    bool detached = false
+);
+
+void send_message_at_time(
+    const std::string & destination_mailbox,
+    IPMessageType type,
+    void * data,
+    double when,
+    bool detached = false
+);
+
 /**
  * @brief Sends a message from the given process to the given mailbox
  * @param[in] destination_mailbox The destination mailbox

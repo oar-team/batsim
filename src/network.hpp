@@ -8,6 +8,7 @@
 #include <string>
 
 #include "ipp.hpp"
+
 struct BatsimContext;
 
 /**
@@ -17,3 +18,5 @@ struct BatsimContext;
  * @param[in] send_buffer The message to send to the Decision real process
  */
 void request_reply_scheduler_process(BatsimContext *context, std::string send_buffer);
+
+void inject_messages(double now, const std::vector<IPMessageWithTimestamp> & messages);

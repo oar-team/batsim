@@ -19,6 +19,7 @@
 
 #include "context.hpp"
 #include "ipp.hpp"
+#include "protocol.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(network, "network"); //!< Logging
 
@@ -30,7 +31,6 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
 
     try
     {
-        // TODO: Make sure the message is sent as UTF-8?
         string message_to_send = send_buffer;
 
         // Send the message
@@ -55,7 +55,10 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
         long double elapsed_microseconds = static_cast<long double>(chrono::duration <long double, micro> (end - start).count());
         context->microseconds_used_by_scheduler += elapsed_microseconds;
 
-        context->proto_reader->parse_and_apply_message(message_received);
+        double now = -1;
+        std::vector<IPMessageWithTimestamp> messages;
+        protocol::parse_batprotocol_message(message_received, now, messages, context);
+        inject_messages(now, messages);
     }
     catch(const std::runtime_error & error)
     {
@@ -67,4 +70,14 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
         XBT_INFO("Output files flushed. Aborting execution now.");
         throw runtime_error("Execution aborted (connection broken)");
     }
+}
+
+void inject_messages(double now, const std::vector<IPMessageWithTimestamp> & messages)
+{
+    for (unsigned int i = 0; i < messages.size(); ++i)
+    {
+        send_message_at_time("server", messages[i].message, messages[i].timestamp, false);
+    }
+
+    send_message_at_time("server", IPMessageType::SCHED_READY, nullptr, now, false);
 }

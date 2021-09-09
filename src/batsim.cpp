@@ -851,8 +851,7 @@ int main(int argc, char * argv[])
         int err = zmq_connect(context.zmq_socket, main_args.socket_endpoint.c_str());
         xbt_assert(err == 0, "Cannot connect ZMQ socket to '%s' (errno=%s)", main_args.socket_endpoint.c_str(), strerror(errno));
 
-        // Let's create the protocol reader and writer
-        context.proto_reader = new JsonProtocolReader(&context);
+        // Create the protocol message manager
         context.proto_msg_builder = new batprotocol::MessageBuilder(true);
 
         // Let's execute the initial processes
@@ -872,9 +871,6 @@ int main(int argc, char * argv[])
 
     zmq_ctx_destroy(context.zmq_context);
     context.zmq_socket = nullptr;
-
-    delete context.proto_reader;
-    context.proto_reader = nullptr;
 
     delete context.proto_msg_builder;
     context.proto_msg_builder = nullptr;

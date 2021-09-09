@@ -1420,4 +1420,57 @@ ExternalDecisionComponentHelloMessage *from_edc_hello(const batprotocol::fb::Ext
     return msg;
 }
 
+void parse_batprotocol_message(const std::string & buffer, double & now, std::vector<IPMessageWithTimestamp> & messages, BatsimContext * context)
+{
+    auto parsed = flatbuffers::GetRoot<batprotocol::fb::Message>(buffer.data());
+    now = parsed->now();
+    messages.resize(parsed->events()->size());
+
+    double preceding_event_timestamp = -1;
+    if (parsed->events()->size() > 0)
+        preceding_event_timestamp = parsed->events()->Get(0)->timestamp();
+
+    for (unsigned int i = 0; i < parsed->events()->size(); ++i)
+    {
+        auto event_timestamp = parsed->events()->Get(i);
+        auto ip_message = new IPMessage;
+
+        messages[i].timestamp = event_timestamp->timestamp();
+        messages[i].message = ip_message;
+
+        xbt_assert(messages[i].timestamp <= now,
+            "invalid event %u (type='%s') in message: event timestamp (%g) is after message's now (%g)",
+            i, batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()], messages[i].timestamp, now
+        );
+        xbt_assert(messages[i].timestamp >= preceding_event_timestamp,
+            "invalid event %u (type='%s') in message: event timestamp (%g) is before preceding event's timestamp (%g) while events should be in chronological order",
+            i, batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()], messages[i].timestamp, preceding_event_timestamp
+        );
+
+        using namespace batprotocol::fb;
+        switch (event_timestamp->event_type())
+        {
+        case Event_RejectJobEvent: {
+            ip_message->type = IPMessageType::SCHED_REJECT_JOB;
+            ip_message->data = static_cast<void *>(from_reject_job(event_timestamp->event_as_RejectJobEvent(), context));
+        } break;
+        case Event_ExecuteJobEvent: {
+            ip_message->type = IPMessageType::SCHED_EXECUTE_JOB;
+            ip_message->data = static_cast<void *>(from_execute_job(event_timestamp->event_as_ExecuteJobEvent(), context));
+        } break;
+        case Event_KillJobsEvent: {
+            ip_message->type = IPMessageType::SCHED_KILL_JOBS;
+            ip_message->data = static_cast<void *>(from_kill_jobs(event_timestamp->event_as_KillJobsEvent(), context));
+        } break;
+        case Event_ExternalDecisionComponentHelloEvent: {
+            ip_message->type = IPMessageType::SCHED_HELLO;
+            ip_message->data = static_cast<void *>(from_edc_hello(event_timestamp->event_as_ExternalDecisionComponentHelloEvent(), context));
+        } break;
+        default: {
+            xbt_assert("Unhandled event type received (%s)", batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()]);
+        } break;
+        }
+    }
+}
+
 } // end of namespace protocol

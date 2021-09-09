@@ -560,16 +560,13 @@ std::shared_ptr<batprotocol::Job> to_job(const Job & job);
  */
 batprotocol::fb::FinalJobState job_state_to_final_job_state(const JobState & state);
 
-/**
- * @brief to_simulation_begins
- * @param context
- * @return
- */
 batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context);
 
 ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * execute_job, BatsimContext * context);
 RejectJobMessage * from_reject_job(const batprotocol::fb::RejectJobEvent * reject_job, BatsimContext * context);
 KillJobsMessage * from_kill_jobs(const batprotocol::fb::KillJobsEvent * kill_jobs, BatsimContext * context);
 ExternalDecisionComponentHelloMessage * from_edc_hello(const batprotocol::fb::ExternalDecisionComponentHelloEvent * edc_hello, BatsimContext * context);
+
+void parse_batprotocol_message(const std::string & buffer, double & now, std::vector<IPMessageWithTimestamp> & messages, BatsimContext * context);
 
 } // end of namespace protocol

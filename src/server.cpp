@@ -51,7 +51,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_EXECUTE_JOB] = server_on_execute_job;
     handler_map[IPMessageType::SCHED_CHANGE_JOB_STATE] = server_on_change_job_state;
     handler_map[IPMessageType::SCHED_REJECT_JOB] = server_on_reject_job;
-    handler_map[IPMessageType::SCHED_KILL_JOB] = server_on_kill_jobs;
+    handler_map[IPMessageType::SCHED_KILL_JOBS] = server_on_kill_jobs;
     handler_map[IPMessageType::SCHED_CALL_ME_LATER] = server_on_call_me_later;
     handler_map[IPMessageType::SCHED_TELL_ME_ENERGY] = server_on_sched_tell_me_energy;
     handler_map[IPMessageType::SCHED_WAIT_ANSWER] = server_on_sched_wait_answer;
