@@ -9,10 +9,18 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(ipp, "ipp"); //!< Logging
 
-void generic_send_message(const std::string & destination_mailbox,
-                          IPMessageType type,
-                          void * data,
-                          bool detached)
+/**
+ * @brief Sends a message from the given process to the given mailbox
+ * @param[in] destination_mailbox The destination mailbox
+ * @param[in] type The type of the message to send
+ * @param[in] data The data associated with the message
+ * @param[in] detached Whether the send should be detached (put or put_async)
+ */
+void generic_send_message(
+    const std::string & destination_mailbox,
+    IPMessageType type,
+    void * data,
+    bool detached)
 {
     IPMessage * message = new IPMessage;
     message->type = type;
@@ -39,6 +47,13 @@ void generic_send_message(const std::string & destination_mailbox,
               ip_message_type_to_string(type).c_str(), data);
 }
 
+/**
+ * @brief Send an inter-actor message at a given time, sleeping until the desired time is reached if needed
+ * @param[in] destination_mailbox The mailbox onto which the message should be put
+ * @param[in] message The message to send
+ * @param[in] when The time at which the message should be sent
+ * @param[in] detached If false, this function returns when the message has been transferred (time increases after "when"). Otherwise, this function returns quickly and time does not increase beyond "when".
+ */
 void send_message_at_time(
     const std::string & destination_mailbox,
     IPMessage * message,
@@ -66,6 +81,14 @@ void send_message_at_time(
     }
 }
 
+/**
+ * @brief Send an inter-actor message at a given time, sleeping until the desired time is reached if needed
+ * @param[in] destination_mailbox The mailbox onto which the message should be put
+ * @param[in] type The inter-actor message type to send
+ * @param[in] data The inter-actor message data to send
+ * @param[in] when The time at which the message should be sent
+ * @param[in] detached If false, this function returns when the message has been transferred (time increases after "when"). Otherwise, this function returns quickly and time does not increase beyond "when".
+ */
 void send_message_at_time(
     const std::string & destination_mailbox,
     IPMessageType type,
@@ -84,16 +107,57 @@ void send_message_at_time(
     generic_send_message(destination_mailbox, type, data, detached);
 }
 
+/**
+ * @brief Sends a message from the given process to the given mailbox
+ * @param[in] destination_mailbox The destination mailbox
+ * @param[in] type The type of message to send
+ * @param[in] data The data associated to the message
+ */
 void send_message(const std::string & destination_mailbox, IPMessageType type, void * data)
 {
     generic_send_message(destination_mailbox, type, data, false);
 }
 
+/**
+ * @brief Sends a message from the given process to the given mailbox
+ * @param[in] destination_mailbox The destination mailbox
+ * @param[in] type The type of message to send
+ * @param[in] data The data associated to the message
+ */
+void send_message(const char *destination_mailbox, IPMessageType type, void *data)
+{
+    const string str = destination_mailbox;
+    send_message(str, type, data);
+}
+
+/**
+ * @brief Sends a message from the given process to the given mailbox
+ * @param[in] destination_mailbox The destination mailbox
+ * @param[in] type The type of message to send
+ * @param[in] data The data associated to the message
+ */
 void dsend_message(const std::string & destination_mailbox, IPMessageType type, void * data)
 {
     generic_send_message(destination_mailbox, type, data, true);
 }
 
+/**
+ * @brief Sends a message from the given process to the given mailbox
+ * @param[in] destination_mailbox The destination mailbox
+ * @param[in] type The type of message to send
+ * @param[in] data The data associated to the message
+ */
+void dsend_message(const char *destination_mailbox, IPMessageType type, void *data)
+{
+    const string str = destination_mailbox;
+    dsend_message(str, type, data);
+}
+
+/**
+ * @brief Receive a message on a given mailbox
+ * @param[in] reception_mailbox The mailbox name
+ * @return The received message. Must be deallocated by the caller.
+ */
 IPMessage * receive_message(const std::string & reception_mailbox)
 {
     auto mailbox = simgrid::s4u::Mailbox::by_name(reception_mailbox);
@@ -101,12 +165,22 @@ IPMessage * receive_message(const std::string & reception_mailbox)
     return message;
 }
 
+/**
+ * @brief Check if the mailbox is empty
+ * @param[in] reception_mailbox The mailbox name
+ * @return Boolean indicating if the mailbox is empty
+ */
 bool mailbox_empty(const std::string & reception_mailbox)
 {
     auto mailbox = simgrid::s4u::Mailbox::by_name(reception_mailbox);
     return mailbox->empty();
 }
 
+/**
+ * @brief Transforms a IPMessageType into a std::string
+ * @param[in] type The IPMessageType
+ * @return The std::string corresponding to the type
+ */
 std::string ip_message_type_to_string(IPMessageType type)
 {
     string s;
@@ -187,18 +261,6 @@ std::string ip_message_type_to_string(IPMessageType type)
     }
 
     return s;
-}
-
-void send_message(const char *destination_mailbox, IPMessageType type, void *data)
-{
-    const string str = destination_mailbox;
-    send_message(str, type, data);
-}
-
-void dsend_message(const char *destination_mailbox, IPMessageType type, void *data)
-{
-    const string str = destination_mailbox;
-    dsend_message(str, type, data);
 }
 
 IPMessage::~IPMessage()
@@ -326,6 +388,11 @@ KillingDoneMessage::~KillingDoneMessage()
     kill_jobs_message = nullptr;
 }
 
+/**
+ * @brief Transforms a SumbitterType into a std::string
+ * @param[in] type The SubmitterType
+ * @return The std::string corresponding to the type
+ */
 std::string submitter_type_to_string(SubmitterType type)
 {
     string s;

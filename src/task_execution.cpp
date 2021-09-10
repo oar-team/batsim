@@ -23,7 +23,7 @@ using namespace roles;
  *        parallel task profile. Also set the prefix name of the task.
  * @param[out] computation_amount the computation matrix to be simulated by the parallel task
  * @param[out] communication_amount the communication matrix to be simulated by the parallel task
- * @param[in] nb_res the number of resources the task have to run on
+ * @param[in] nb_executors the number of resources the task have to run on
  * @param[in] profile_data the profile data
  */
 void generate_parallel_task(
@@ -264,10 +264,10 @@ void debug_print_ptask(const std::vector<double>& computation_vector,
  * @brief Checks if the hosts allocated to a ptask can execute it
  * @param[in] machines_to_use The machines that will execute the ptask
  * @param[in] computation_vector The ptask computation vector
- * @param[in] context The BatsimContext
  */
-void check_ptask_execution_permission(const std::vector<Machine *> & machines_to_use,
-                                      const std::vector<double> & computation_vector)
+void check_ptask_execution_permission(
+    const std::vector<Machine *> & machines_to_use,
+    const std::vector<double> & computation_vector)
 {
     xbt_assert(machines_to_use.size() == computation_vector.size(), "internal inconsistency");
     for (unsigned int i = 0; i < machines_to_use.size(); ++i)
@@ -282,6 +282,14 @@ void check_ptask_execution_permission(const std::vector<Machine *> & machines_to
     }
 }
 
+/**
+ * @brief Execute a task that corresponds to a parallel task profile
+ * @param[in,out] btask The task to execute. Progress information is stored within it.
+ * @param[in] alloc_placement Where the task should be executed
+ * @param[in,out] remaining_time The remaining time of the current task. It will be automatically killed if 0 is reached.
+ * @param[in] context The BatsimContext
+ * @return The profile return code on success, -1 on timeout (remaining time reached 0), -2 on task cancelled (issued by another SimGrid actor)
+ */
 int execute_parallel_task(
     BatTask * btask,
     const std::shared_ptr<AllocationPlacement> & alloc_placement,
@@ -356,6 +364,16 @@ int execute_parallel_task(
     return ret;
 }
 
+/**
+ * @brief Prepare all data required to execute a ptask, in particular computation/communication matrices and hosts to use
+ * @param[in] context The BatsimContext
+ * @param[in] btask The task to execute
+ * @param[in] alloc_placement The allocation/placement to use for the ptask
+ * @param[out] computation_vector The computation vector of the ptask
+ * @param[out] communication_matrix The communication matrix of the ptask
+ * @param[out] hosts_to_use The hosts that will be used to execute the ptask
+ * @param[out] machines_to_use The hosts that will be used to execute the ptask
+ */
 void prepare_ptask(
     const BatsimContext * context,
     const BatTask * btask,
@@ -408,6 +426,15 @@ void prepare_ptask(
     }
 }
 
+/**
+ * @brief Generate a host list from a set of hosts and a predefined strategy
+ * @param[in] context The BatsimContext
+ * @param[in] nb_executors The number of executors (=SimGrid actors) that will execute this profile
+ * @param[in] allocated_hosts The allocated hosts to use
+ * @param[in] predefined_strategy The predefined executor placement strategy to apply
+ * @param[out] hosts_to_use The resulting host list
+ * @param[out] machines_to_use The resulting machine list
+ */
 void hosts_from_predefined_strategy(
     const BatsimContext * context,
     int nb_executors,
@@ -462,6 +489,15 @@ void hosts_from_predefined_strategy(
     }
 }
 
+/**
+ * @brief Generate a host list from a set of hosts and a custom executor to host mapping.
+ * @param[in] context The BatsimContext
+ * @param[in] nb_executors The number of executors (=SimGrid actors) that will execute this profile
+ * @param[in] allocated_hosts The allocated hosts to use
+ * @param[in] custom_mapping The custom executor to host mapping. Values are expected to be in [0, allocated_hosts.size()[.
+ * @param[out] hosts_to_use The resulting host list
+ * @param[out] machines_to_use The resulting machine list
+ */
 void hosts_from_custom_executor_to_host_mapping(
     const BatsimContext * context,
     int nb_executors,
@@ -490,6 +526,14 @@ void hosts_from_custom_executor_to_host_mapping(
     }
 }
 
+/**
+ * @brief Generate a host list from an AllocationPlacement.
+ * @param[in] context The BatsimContext
+ * @param[in] nb_executors The number of executors (=SimGrid actors) that will execute this profile
+ * @param[in] allocation The AllocationPlacement
+ * @param[out] hosts_to_use The resulting host list
+ * @param[out] machines_to_use The resulting machine list
+ */
 void hosts_from_alloc_placement(
     const BatsimContext * context,
     int nb_executors,
@@ -507,7 +551,12 @@ void hosts_from_alloc_placement(
     }
 }
 
-
+/**
+ * @brief Determine how many executors (=SimGrid actors) should execute a given task
+ * @param[in] btask The BatTask to execute
+ * @param[in] alloc_placement The allocation/placement of the profile
+ * @return The number of executors to execute the profile
+ */
 int determine_task_nb_executors(
     const BatTask * btask,
     const std::shared_ptr<AllocationPlacement> & alloc_placement)
@@ -541,6 +590,13 @@ int determine_task_nb_executors(
     }
 }
 
+/**
+ * @brief Returns a storage machine from a storage label
+ * @param[in] storage_label The machine to search by name
+ * @param[in] storage_mapping Mapping from storage labels to machine ids
+ * @param[in] context The BatsimContext
+ * @return
+ */
 const Machine * machine_from_storage_label(
     const std::string & storage_label,
     const std::map<std::string, int> & storage_mapping,
@@ -572,6 +628,14 @@ const Machine * machine_from_storage_label(
     return storage_machine;
 }
 
+/**
+ * @brief Execute a task that corresponds to a trace replay profile
+ * @param[in,out] btask The task to execute. Progress information is stored within it.
+ * @param[in] allocation Where the task should be executed
+ * @param[in,out] remaining_time The remaining time of the current task. It will be automatically killed if 0 is reached.
+ * @param[in] context The BatsimContext
+ * @return The profile return code on success, -1 on timeout (remaining time reached 0), -2 on task cancelled (issued by another SimGrid actor)
+ */
 int execute_smpi_trace_replay(
     BatTask * btask,
     const std::shared_ptr<AllocationPlacement> & allocation,

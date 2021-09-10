@@ -540,26 +540,10 @@ private:
 namespace protocol
 {
 
-/**
- * @brief Computes the KillProgress of a BatTask
- * @param[in] The task whose kill progress must be computed
- * @return The KillProgress of the given BatTask
- */
 std::shared_ptr<batprotocol::KillProgress> battask_to_kill_progress(const BatTask * task);
-
-/**
- * @brief Create a batprotocol::Job from a Batsim Job
- * @return The corresponding batprotocol::Job
- */
 std::shared_ptr<batprotocol::Job> to_job(const Job & job);
 
-/**
- * @brief Returns a batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
- * @param[in] state The Batsim JobState
- * @return A batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
- */
 batprotocol::fb::FinalJobState job_state_to_final_job_state(const JobState & state);
-
 batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context);
 
 ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * execute_job, BatsimContext * context);

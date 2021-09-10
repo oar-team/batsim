@@ -164,6 +164,9 @@ struct RejectJobMessage
     JobPtr job; //!< The Job to reject
 };
 
+/**
+ * @brief A host allocation with an executor placement on it
+ */
 struct AllocationPlacement
 {
     IntervalSet hosts; //!< The allocated SimGrid hosts
@@ -303,19 +306,15 @@ struct IPMessage
     void * data;        //!< The message data (can be NULL if type is in [SCHED_NOP, SUBMITTER_HELLO, SUBMITTER_BYE, SUBMITTER_READY]). Otherwise, it is either a JobSubmittedMessage*, a JobCompletedMessage* or a SchedulingAllocationMessage* according to type.
 };
 
+/**
+ * @brief Just an IPMessage with its associated timestamp
+ */
 struct IPMessageWithTimestamp
 {
-    IPMessage * message = nullptr;
-    double timestamp = -1;
+    IPMessage * message = nullptr; //!< The IPMessage
+    double timestamp = -1; //!< The timestamp
 };
 
-/**
- * @brief Sends a message from the given process to the given mailbox
- * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of the message to send
- * @param[in] data The data associated with the message
- * @param[in] detached Whether the send should be detached (put or put_async)
- */
 void generic_send_message(
     const std::string & destination_mailbox,
     IPMessageType type,
@@ -338,62 +337,15 @@ void send_message_at_time(
     bool detached = false
 );
 
-/**
- * @brief Sends a message from the given process to the given mailbox
- * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of message to send
- * @param[in] data The data associated to the message
- */
 void send_message(const std::string & destination_mailbox, IPMessageType type, void * data = nullptr);
-
-/**
- * @brief Sends a message from the given process to the given mailbox
- * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of message to send
- * @param[in] data The data associated to the message
- */
 void send_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
 
-/**
- * @brief Sends a message from the given process to the given mailbox
- * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of message to send
- * @param[in] data The data associated to the message
- */
 void dsend_message(const std::string & destination_mailbox, IPMessageType type, void * data = nullptr);
-
-/**
- * @brief Sends a message from the given process to the given mailbox
- * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of message to send
- * @param[in] data The data associated to the message
- */
 void dsend_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
 
-/**
- * @brief Receive a message on a given mailbox
- * @param[in] reception_mailbox The mailbox name
- * @return The received message. Must be deallocated by the caller.
- */
 IPMessage * receive_message(const std::string & reception_mailbox);
 
-/**
- * @brief Check if the mailbox is empty
- * @param[in] reception_mailbox The mailbox name
- * @return Boolean indicating if the mailbox is empty
- */
 bool mailbox_empty(const std::string & reception_mailbox);
 
-/**
- * @brief Transforms a IPMessageType into a std::string
- * @param[in] type The IPMessageType
- * @return The std::string corresponding to the type
- */
 std::string ip_message_type_to_string(IPMessageType type);
-
-/**
- * @brief Transforms a SumbitterType into a std::string
- * @param[in] type The SubmitterType
- * @return The std::string corresponding to the type
- */
 std::string submitter_type_to_string(SubmitterType type);

@@ -1151,6 +1151,11 @@ void JsonProtocolReader::send_message_at_time(double when,
 namespace protocol
 {
 
+/**
+ * @brief Computes the KillProgress of a BatTask
+ * @param[in] The task whose kill progress must be computed
+ * @return The KillProgress of the given BatTask
+ */
 std::shared_ptr<batprotocol::KillProgress> battask_to_kill_progress(const BatTask * task)
 {
     auto kp = batprotocol::KillProgress::make(task->unique_name());
@@ -1210,6 +1215,10 @@ std::shared_ptr<batprotocol::KillProgress> battask_to_kill_progress(const BatTas
     return kp;
 }
 
+/**
+ * @brief Create a batprotocol::Job from a Batsim Job
+ * @return The corresponding batprotocol::Job
+ */
 std::shared_ptr<batprotocol::Job> to_job(const Job & job)
 {
     auto proto_job = batprotocol::Job::make();
@@ -1222,7 +1231,11 @@ std::shared_ptr<batprotocol::Job> to_job(const Job & job)
     return proto_job;
 }
 
-
+/**
+ * @brief Returns a batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
+ * @param[in] state The Batsim JobState
+ * @return A batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
+ */
 batprotocol::fb::FinalJobState job_state_to_final_job_state(const JobState & state)
 {
     using namespace batprotocol;

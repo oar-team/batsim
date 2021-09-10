@@ -25,6 +25,12 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(network, "network"); //!< Logging
 
 using namespace std;
 
+/**
+ * @brief The process in charge of doing a Request-Reply iteration with the Decision real process
+ * @details This process sends a message to the Decision real process (Request) then waits for the answered message (Reply)
+ * @param[in] context The BatsimContext
+ * @param[in] send_buffer The message to send to the Decision real process
+ */
 void request_reply_scheduler_process(BatsimContext * context, std::string send_buffer)
 {
     XBT_DEBUG("Buffer received in REQ-REP: '%s'", send_buffer.c_str());
@@ -58,7 +64,13 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
         double now = -1;
         std::vector<IPMessageWithTimestamp> messages;
         protocol::parse_batprotocol_message(message_received, now, messages, context);
-        inject_messages(now, messages);
+
+        for (unsigned int i = 0; i < messages.size(); ++i)
+        {
+            send_message_at_time("server", messages[i].message, messages[i].timestamp, false);
+        }
+
+        send_message_at_time("server", IPMessageType::SCHED_READY, nullptr, now, false);
     }
     catch(const std::runtime_error & error)
     {
@@ -70,14 +82,4 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
         XBT_INFO("Output files flushed. Aborting execution now.");
         throw runtime_error("Execution aborted (connection broken)");
     }
-}
-
-void inject_messages(double now, const std::vector<IPMessageWithTimestamp> & messages)
-{
-    for (unsigned int i = 0; i < messages.size(); ++i)
-    {
-        send_message_at_time("server", messages[i].message, messages[i].timestamp, false);
-    }
-
-    send_message_at_time("server", IPMessageType::SCHED_READY, nullptr, now, false);
 }
