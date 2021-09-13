@@ -80,6 +80,7 @@ target_link_libraries(batsim
     ${intervalset_LIBRARIES}
     ${batprotocol-cpp_LIBRARIES}
     "'stdc++fs'"
+    ${CMAKE_DL_LIBS} # dlmopen and friends
 )
 
 include_directories(
