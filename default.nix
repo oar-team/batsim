@@ -16,6 +16,7 @@
 , batsched ? kapack.batsched-master
 , batexpe ? kapack.batexpe-master
 , pybatsim ? kapack.pybatsim-master
+, batprotocol-cpp ? kapack.batprotocol-cpp
 # set this to avoid running tests over and over
 # (e.g., to debug coverage reports or to run tests and coverage report separately)
 , testVersion ? toString builtins.currentTime
@@ -35,7 +36,7 @@ let
     # Batsim executable binary file.
     batsim = (kapack.batsim.override { inherit debug simgrid; stdenv = custom-stdenv; }).overrideAttrs (attr: rec {
       buildInputs = attr.buildInputs
-        ++ [kapack.batprotocol-cpp]
+        ++ [batprotocol-cpp]
         ++ pkgs.lib.optional doUnitTests [pkgs.gtest.dev];
       src = pkgs.lib.sourceByRegex ./. [
         "^src"
@@ -91,6 +92,17 @@ let
       name = "batsim-dev-shell-qtcreator-cmake";
       buildInputs = batsim.buildInputs ++
         [pkgs.cmake pkgs.qtcreator];
+    };
+
+    edc_libs = custom-stdenv.mkDerivation rec {
+      name = "batsim-test-edc-libs";
+      src = pkgs.lib.sourceByRegex ./test/edc-lib [
+        "^.*\.?pp"
+        "^.*\.h"
+        "^meson\.build"
+        "^meson_options\.txt"
+      ];
+      buildInputs = [ pkgs.meson pkgs.ninja pkgs.pkgconfig batprotocol-cpp ];
     };
 
     # Batsim integration tests.
