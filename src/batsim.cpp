@@ -151,7 +151,7 @@ std::string MainArguments::generate_execution_context_json() const
     object.SetObject();
 
     // Generate the content to dump
-    object.AddMember("socket_endpoint", Value().SetString(this->socket_endpoint.c_str(), alloc), alloc);
+    object.AddMember("socket_endpoint", Value().SetString(this->edc_socket_endpoint.c_str(), alloc), alloc);
     object.AddMember("export_prefix", Value().SetString(this->export_prefix.c_str(), alloc), alloc);
     object.AddMember("external_scheduler", Value().SetBool(this->program_type == ProgramType::BATSIM), alloc);
 
@@ -178,7 +178,8 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
 R"(A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.
 
 Usage:
-  batsim -p <platform_file> [-w <workload_file>...]
+  batsim -p <platform_file> (-s <endpoint> | -l <path>)
+                            [-w <workload_file>...]
                             [-W <workflow_file>...]
                             [--WS (<cut_workflow_file> <start_time>)...]
                             [--sg-cfg <opt_name:opt_value>...]
@@ -216,8 +217,10 @@ Most common options:
                                      outputs energy-related files.
 
 Execution context options:
-  -s, --socket-endpoint <endpoint>   The Decision process socket endpoint
-                                     Decision process [default: tcp://localhost:28000].
+  -s, --edc-socket-endpoint <endpoint> Add an external decision component as a process
+                                     through a ZMQ socket connection.
+  -l, --edc-library <path>           Add an external decision component as a library
+                                     called through a C API.
 
 Output options:
   -e, --export <prefix>              The export filename prefix used to generate
@@ -471,7 +474,15 @@ Other options:
         }
     }
 
-    main_args.socket_endpoint = args["--socket-endpoint"].asString();
+    if (args["--edc-socket-endpoint"].isString())
+    {
+        main_args.edc_socket_endpoint = args["--edc-socket-endpoint"].asString();
+    }
+
+    if (args["--edc-library"].isString())
+    {
+        main_args.edc_library_path = args["--edc-library"].asString();
+    }
 
     // Output options
     // **************
@@ -843,13 +854,23 @@ int main(int argc, char * argv[])
 
     if (main_args.program_type == ProgramType::BATSIM)
     {
-        // Let's create the socket
-        context.zmq_context = zmq_ctx_new();
-        xbt_assert(context.zmq_context != nullptr, "Cannot create ZMQ context");
-        context.zmq_socket = zmq_socket(context.zmq_context, ZMQ_REQ);
-        xbt_assert(context.zmq_socket != nullptr, "Cannot create ZMQ REQ socket (errno=%s)", strerror(errno));
-        int err = zmq_connect(context.zmq_socket, main_args.socket_endpoint.c_str());
-        xbt_assert(err == 0, "Cannot connect ZMQ socket to '%s' (errno=%s)", main_args.socket_endpoint.c_str(), strerror(errno));
+        if (!main_args.edc_socket_endpoint.empty())
+        {
+            // Create the socket
+            context.zmq_context = zmq_ctx_new();
+            xbt_assert(context.zmq_context != nullptr, "Cannot create ZMQ context");
+            context.zmq_socket = zmq_socket(context.zmq_context, ZMQ_REQ);
+            xbt_assert(context.zmq_socket != nullptr, "Cannot create ZMQ REQ socket (errno=%s)", strerror(errno));
+            int err = zmq_connect(context.zmq_socket, main_args.edc_socket_endpoint.c_str());
+            xbt_assert(err == 0, "Cannot connect ZMQ socket to '%s' (errno=%s)", main_args.edc_socket_endpoint.c_str(), strerror(errno));
+        }
+        else
+        {
+            // Load the external library
+            xbt_assert(!main_args.edc_library_path.empty(), "internal inconsistency");
+            context.edc_library = new ExternalLibrary(main_args.edc_library_path);
+            context.edc_library->init(nullptr, 0u, 0x1);
+        }
 
         // Create the protocol message manager
         context.proto_msg_builder = new batprotocol::MessageBuilder(true);

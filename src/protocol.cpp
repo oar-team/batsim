@@ -1433,9 +1433,9 @@ ExternalDecisionComponentHelloMessage *from_edc_hello(const batprotocol::fb::Ext
     return msg;
 }
 
-void parse_batprotocol_message(const std::string & buffer, double & now, std::vector<IPMessageWithTimestamp> & messages, BatsimContext * context)
+void parse_batprotocol_message(const uint8_t * buffer, double & now, std::vector<IPMessageWithTimestamp> & messages, BatsimContext * context)
 {
-    auto parsed = flatbuffers::GetRoot<batprotocol::fb::Message>(buffer.data());
+    auto parsed = flatbuffers::GetRoot<batprotocol::fb::Message>(buffer);
     now = parsed->now();
     messages.resize(parsed->events()->size());
 

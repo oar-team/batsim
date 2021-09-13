@@ -72,7 +72,8 @@ struct MainArguments
     std::map<std::string, std::string> hosts_roles_map;     //!< The hosts/roles mapping to be added to the hosts properties.
 
     // Execution context
-    std::string socket_endpoint;                            //!< The Decision process socket endpoint
+    std::string edc_socket_endpoint;                        //!< The External Decision Component process socket endpoint. Empty if unset.
+    std::string edc_library_path;                           //!< The External Decision Component library path. Empty if unset.
 
     // Job related
     bool forward_profiles_on_submission = false;            //!< Stores whether the profile information of submitted jobs should be sent to the scheduler

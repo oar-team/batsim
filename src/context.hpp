@@ -14,6 +14,7 @@
 
 #include <batprotocol.hpp>
 
+#include "edc.hpp"
 #include "events.hpp"
 #include "export.hpp"
 #include "jobs.hpp"
@@ -36,7 +37,9 @@ typedef std::chrono::time_point<std::chrono::high_resolution_clock> my_timestamp
 struct BatsimContext
 {
     void * zmq_context = nullptr;                   //!< The Zero MQ context
-    void * zmq_socket = nullptr;                    //!< The Zero MQ socket (REQ)
+    void * zmq_socket = nullptr;                    //!< External Decision Component, as a ZeroMQ socket
+    ExternalLibrary * edc_library = nullptr;        //!< External Decision Component, as a library
+
     batprotocol::MessageBuilder * proto_msg_builder = nullptr; //!< The batprotocol message builder
     MainArguments * main_args = nullptr;            //!< The arguments received by Batsim's main
 

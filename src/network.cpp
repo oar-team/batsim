@@ -31,31 +31,39 @@ using namespace std;
  * @param[in] context The BatsimContext
  * @param[in] send_buffer The message to send to the Decision real process
  */
-void request_reply_scheduler_process(BatsimContext * context, std::string send_buffer)
+void request_reply_scheduler_process(BatsimContext * context, std::string send_buffer) // TODO: no copy!
 {
     XBT_DEBUG("Buffer received in REQ-REP: '%s'", send_buffer.c_str());
 
     try
     {
-        string message_to_send = send_buffer;
-
-        // Send the message
-        XBT_INFO("Sending '%s'", message_to_send.c_str());
-        if (zmq_send(context->zmq_socket, message_to_send.data(), message_to_send.size(), 0) == -1)
-            throw std::runtime_error(std::string("Cannot send message on socket (errno=") + strerror(errno) + ")");
-
-        auto start = chrono::steady_clock::now();
         string message_received;
+        uint8_t * msg_buffer = nullptr;
+        auto start = chrono::steady_clock::now();
 
-        // Get the reply
-        zmq_msg_t msg;
-        zmq_msg_init(&msg);
-        if (zmq_msg_recv(&msg, context->zmq_socket, 0) == -1)
-            throw std::runtime_error(std::string("Cannot read message on socket (errno=") + strerror(errno) + ")");
+        if (context->zmq_socket != nullptr)
+        {
+            // Send the message on the socket
+            XBT_INFO("Sending '%s'", send_buffer.c_str());
+            if (zmq_send(context->zmq_socket, send_buffer.data(), send_buffer.size(), 0) == -1)
+                throw std::runtime_error(std::string("Cannot send message on socket (errno=") + strerror(errno) + ")");
 
-        string raw_message_received(static_cast<char*>(zmq_msg_data(&msg)), zmq_msg_size(&msg));
-        message_received = raw_message_received;
-        XBT_INFO("Received '%s'", message_received.c_str());
+            // Get the reply
+            zmq_msg_t msg;
+            zmq_msg_init(&msg);
+            if (zmq_msg_recv(&msg, context->zmq_socket, 0) == -1)
+                throw std::runtime_error(std::string("Cannot read message on socket (errno=") + strerror(errno) + ")");
+
+            message_received = std::string(static_cast<char*>(zmq_msg_data(&msg)), zmq_msg_size(&msg));
+            msg_buffer = (uint8_t *)message_received.c_str();
+            XBT_INFO("Received '%s'", message_received.c_str());
+        }
+        else
+        {
+            // Call the external library
+            if (context->edc_library->take_decisions((uint8_t *)send_buffer.c_str(), &msg_buffer) != 0)
+                throw std::runtime_error("Error while calling take_decisions on the external library");
+        }
 
         auto end = chrono::steady_clock::now();
         long double elapsed_microseconds = static_cast<long double>(chrono::duration <long double, micro> (end - start).count());
@@ -63,7 +71,7 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
 
         double now = -1;
         std::vector<IPMessageWithTimestamp> messages;
-        protocol::parse_batprotocol_message(message_received, now, messages, context);
+        protocol::parse_batprotocol_message(msg_buffer, now, messages, context);
 
         for (unsigned int i = 0; i < messages.size(); ++i)
         {
