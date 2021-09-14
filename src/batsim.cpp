@@ -178,7 +178,8 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
 R"(A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.
 
 Usage:
-  batsim -p <platform_file> (-s <endpoint> | -l <path>)
+  batsim -p <platform_file> [-s <endpoint>...]
+                            [-l <path>...]
                             [-w <workload_file>...]
                             [-W <workflow_file>...]
                             [--WS (<cut_workflow_file> <start_time>)...]
@@ -217,8 +218,9 @@ Most common options:
                                      outputs energy-related files.
 
 Execution context options:
-  -s, --edc-socket-endpoint <endpoint> Add an external decision component as a process
-                                     through a ZMQ socket connection.
+  -s, --edc-socket <endpoint>        Add an external decision component as a process
+                                     called through RPC via a ZMQ socket.
+                                     Example value: tcp://localhost:28000.
   -l, --edc-library <path>           Add an external decision component as a library
                                      called through a C API.
 
@@ -474,14 +476,26 @@ Other options:
         }
     }
 
-    if (args["--edc-socket-endpoint"].isString())
-    {
-        main_args.edc_socket_endpoint = args["--edc-socket-endpoint"].asString();
-    }
+    // External decision components
+    // ****************************
+    vector<string> edc_socket_endpoints = args["--edc-socket"].asStringList();
+    vector<string> edc_library_paths = args["--edc-library"].asStringList();
+    const auto nb_edc = edc_socket_endpoints.size() + edc_library_paths.size();
+    xbt_assert(nb_edc <= 1, "Simulation with several external decision components is not supported for now, aborting.");
 
-    if (args["--edc-library"].isString())
+    if (nb_edc == 0)
     {
-        main_args.edc_library_path = args["--edc-library"].asString();
+        XBT_ERROR("At least one external decision component should be set. This can be done via --edc-socket or --edc-library command-line options.");
+        error = true;
+        return_code |= 0x80;
+    }
+    else if (edc_socket_endpoints.size() > 0)
+    {
+        main_args.edc_socket_endpoint = edc_socket_endpoints[0];
+    }
+    else
+    {
+        main_args.edc_library_path = edc_library_paths[0];
     }
 
     // Output options
