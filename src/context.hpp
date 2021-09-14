@@ -39,6 +39,7 @@ struct BatsimContext
     void * zmq_context = nullptr;                   //!< The Zero MQ context
     void * zmq_socket = nullptr;                    //!< External Decision Component, as a ZeroMQ socket
     ExternalLibrary * edc_library = nullptr;        //!< External Decision Component, as a library
+    bool edc_json_format = false;                   //!< Whether JSON format or flatbuffers's binary format should be used to communicate with EDCs.
 
     batprotocol::MessageBuilder * proto_msg_builder = nullptr; //!< The batprotocol message builder
     MainArguments * main_args = nullptr;            //!< The arguments received by Batsim's main

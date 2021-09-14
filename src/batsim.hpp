@@ -74,6 +74,7 @@ struct MainArguments
     // Execution context
     std::string edc_socket_endpoint;                        //!< The External Decision Component process socket endpoint. Empty if unset.
     std::string edc_library_path;                           //!< The External Decision Component library path. Empty if unset.
+    bool edc_json_format = false;                           //!< If true, messages to communicate with EDCs should be sent as JSON strings.
 
     // Job related
     bool forward_profiles_on_submission = false;            //!< Stores whether the profile information of submitted jobs should be sent to the scheduler

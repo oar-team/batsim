@@ -41,10 +41,14 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
         uint8_t * msg_buffer = nullptr;
         auto start = chrono::steady_clock::now();
 
+        if (context->edc_json_format)
+        {
+            XBT_INFO("Sending '%s'", send_buffer.c_str());
+        }
+
         if (context->zmq_socket != nullptr)
         {
             // Send the message on the socket
-            XBT_INFO("Sending '%s'", send_buffer.c_str());
             if (zmq_send(context->zmq_socket, send_buffer.data(), send_buffer.size(), 0) == -1)
                 throw std::runtime_error(std::string("Cannot send message on socket (errno=") + strerror(errno) + ")");
 
@@ -56,7 +60,6 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
 
             message_received = std::string(static_cast<char*>(zmq_msg_data(&msg)), zmq_msg_size(&msg));
             msg_buffer = (uint8_t *)message_received.c_str();
-            XBT_INFO("Received '%s'", message_received.c_str());
         }
         else
         {
@@ -68,6 +71,11 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
         auto end = chrono::steady_clock::now();
         long double elapsed_microseconds = static_cast<long double>(chrono::duration <long double, micro> (end - start).count());
         context->microseconds_used_by_scheduler += elapsed_microseconds;
+
+        if (context->edc_json_format)
+        {
+            XBT_INFO("Received '%s'", (char *)msg_buffer);
+        }
 
         double now = -1;
         std::vector<IPMessageWithTimestamp> messages;

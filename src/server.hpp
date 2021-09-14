@@ -47,6 +47,7 @@ struct ServerData
     int nb_waiters = 0; //!< The number of pending CALL_ME_LATER waiters
     int nb_killers = 0; //!< The number of killers
     bool sched_ready = true;    //!< Whether the scheduler can be called now
+    bool sched_said_hello = false; //!< Whether the scheduler said hello
 
     bool end_of_simulation_sent = false; //!< Whether the SIMULATION_ENDS event has been sent to the scheduler
     bool end_of_simulation_ack_received = false; //!< Whether the SIMULATION_ENDS acknowledgement (empty message) has been received
@@ -270,3 +271,10 @@ void server_on_execute_job(ServerData * data,
  */
 void server_on_change_job_state(ServerData * data,
                            IPMessage * task_data);
+
+/**
+ * @brief Server SCHED_HELLO handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_edc_hello(ServerData * data, IPMessage * task_data);

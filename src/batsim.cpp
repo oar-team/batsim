@@ -223,6 +223,9 @@ Execution context options:
                                      Example value: tcp://localhost:28000.
   -l, --edc-library <path>           Add an external decision component as a library
                                      called through a C API.
+  -j, --enable-edc-json-format       Enable the use of JSON instead of flatbuffers's binary format
+                                     for communications with external decision components.
+                                     [default: false]
 
 Output options:
   -e, --export <prefix>              The export filename prefix used to generate
@@ -497,6 +500,8 @@ Other options:
     {
         main_args.edc_library_path = edc_library_paths[0];
     }
+
+    main_args.edc_json_format = args["--enable-edc-json-format"].asBool();
 
     // Output options
     // **************
@@ -868,6 +873,7 @@ int main(int argc, char * argv[])
 
     if (main_args.program_type == ProgramType::BATSIM)
     {
+        context.edc_json_format = main_args.edc_json_format;
         if (!main_args.edc_socket_endpoint.empty())
         {
             // Create the socket
@@ -883,7 +889,12 @@ int main(int argc, char * argv[])
             // Load the external library
             xbt_assert(!main_args.edc_library_path.empty(), "internal inconsistency");
             context.edc_library = new ExternalLibrary(main_args.edc_library_path);
-            context.edc_library->init(nullptr, 0u, 0x1);
+            uint8_t flags = 0;
+            if (main_args.edc_json_format)
+                flags |= 0x2;
+            else
+                flags |= 0x1;
+            context.edc_library->init(nullptr, 0u, flags);
         }
 
         // Create the protocol message manager

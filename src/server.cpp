@@ -27,13 +27,17 @@ void server_process(BatsimContext * context)
     ServerData * data = new ServerData;
     data->context = context;
 
-    // Let's tell the Decision process that the simulation is about to begin
+    // Say hello to the external decision process.
     context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
-    auto simulation_begins = protocol::to_simulation_begins(context);
-    context->proto_msg_builder->add_simulation_begins(simulation_begins);
+    context->proto_msg_builder->add_batsim_hello("TODO");
 
     context->proto_msg_builder->finish_message(simgrid::s4u::Engine::get_clock());
-    string send_buffer = std::string((const char*)context->proto_msg_builder->buffer_pointer(), context->proto_msg_builder->buffer_size());
+    string send_buffer;
+    // TODO: no copy!
+    if (context->edc_json_format)
+        send_buffer = std::string(context->proto_msg_builder->buffer_as_json()->c_str());
+    else
+        send_buffer = std::string((const char*)context->proto_msg_builder->buffer_pointer(), context->proto_msg_builder->buffer_size());
     context->proto_msg_builder->clear(simgrid::s4u::Engine::get_clock());
 
     simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
@@ -50,6 +54,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::PSTATE_MODIFICATION] = server_on_pstate_modification;
     handler_map[IPMessageType::SCHED_EXECUTE_JOB] = server_on_execute_job;
     handler_map[IPMessageType::SCHED_CHANGE_JOB_STATE] = server_on_change_job_state;
+    handler_map[IPMessageType::SCHED_HELLO] = server_on_edc_hello;
     handler_map[IPMessageType::SCHED_REJECT_JOB] = server_on_reject_job;
     handler_map[IPMessageType::SCHED_KILL_JOBS] = server_on_kill_jobs;
     handler_map[IPMessageType::SCHED_CALL_ME_LATER] = server_on_call_me_later;
@@ -153,7 +158,14 @@ void server_process(BatsimContext * context)
 void generate_and_send_message(ServerData * data)
 {
     data->context->proto_msg_builder->finish_message(simgrid::s4u::Engine::get_clock());
-    string send_buffer = std::string((const char*)data->context->proto_msg_builder->buffer_pointer(), data->context->proto_msg_builder->buffer_size());
+    string send_buffer;
+    // TODO: no copy!
+    if (data->context->edc_json_format)
+    {
+        send_buffer = std::string(data->context->proto_msg_builder->buffer_as_json()->c_str());
+    }
+    else
+        send_buffer = std::string((const char*)data->context->proto_msg_builder->buffer_pointer(), data->context->proto_msg_builder->buffer_size());
     data->context->proto_msg_builder->clear(simgrid::s4u::Engine::get_clock());
 
     simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
@@ -959,4 +971,16 @@ bool is_simulation_finished(ServerData * data)
            (data->nb_switching_machines == 0) && // No machine is being switched
            (data->nb_waiters == 0) && // No waiter process is running
            (data->nb_killers == 0); // No jobs is being killed
+}
+
+void server_on_edc_hello(ServerData *data, IPMessage *task_data)
+{
+    xbt_assert(!data->sched_said_hello, "External decision component said hello twice!");
+    data->sched_said_hello = true;
+
+    (void) task_data;
+    // TODO: check batprotocol version compatibility, store&log scheduler tracability info...
+
+    auto simulation_begins = protocol::to_simulation_begins(data->context);
+    data->context->proto_msg_builder->add_simulation_begins(simulation_begins);
 }

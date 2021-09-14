@@ -1435,7 +1435,13 @@ ExternalDecisionComponentHelloMessage *from_edc_hello(const batprotocol::fb::Ext
 
 void parse_batprotocol_message(const uint8_t * buffer, double & now, std::vector<IPMessageWithTimestamp> & messages, BatsimContext * context)
 {
-    auto parsed = flatbuffers::GetRoot<batprotocol::fb::Message>(buffer);
+    uint8_t * input_buffer = const_cast<uint8_t *>(buffer);
+    if (context->edc_json_format)
+    {
+        context->proto_msg_builder->parse_json_message((const char *)buffer, input_buffer);
+    }
+
+    auto parsed = flatbuffers::GetRoot<batprotocol::fb::Message>(input_buffer);
     now = parsed->now();
     messages.resize(parsed->events()->size());
 
@@ -1460,6 +1466,7 @@ void parse_batprotocol_message(const uint8_t * buffer, double & now, std::vector
             i, batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()], messages[i].timestamp, preceding_event_timestamp
         );
 
+        XBT_INFO("Parsing an event of type=%s", batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()]);
         using namespace batprotocol::fb;
         switch (event_timestamp->event_type())
         {
