@@ -1193,7 +1193,11 @@ void JobsTracer::write_job(const JobPtr job)
     _job_map["turnaround_time"] = rejected ? "" : to_string(static_cast<double>(job->starting_time + job->runtime - job->submission_time));
     _job_map["stretch"] = rejected ? "" : to_string(static_cast<double>((job->starting_time + job->runtime - job->submission_time) / job->runtime));
     _job_map["consumed_energy"] = rejected ? "" : to_string(job->consumed_energy);
-    _job_map["allocated_resources"] = job->execution_request->job_allocation->hosts.to_string_hyphen(" ");
+
+    if (job->execution_request.get() != nullptr)
+        _job_map["allocated_resources"] = job->execution_request->job_allocation->hosts.to_string_hyphen(" ");
+    else
+        _job_map["allocated_resources"] = "";
 
     // And then write them
     for (string & mit : _job_keys)
