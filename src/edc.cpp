@@ -4,6 +4,8 @@
 
 #include <xbt/asserts.h>
 
+XBT_LOG_NEW_DEFAULT_CATEGORY(edc, "edc"); //!< Logging
+
 /**
  * @brief Build an ExternalLibrary from a library path.
  * @param[in] lib_path The path of the library to load as an External Decision Component.
@@ -21,6 +23,8 @@ ExternalLibrary::ExternalLibrary(const std::string & lib_path)
     init = (uint8_t (*)(const uint8_t*, uint8_t, uint8_t)) load_lib_symbol(lib_handle, "batsim_edc_init");
     deinit = (uint8_t (*)()) load_lib_symbol(lib_handle, "batsim_edc_deinit");
     take_decisions = (uint8_t (*)(const uint8_t*, uint8_t**)) load_lib_symbol(lib_handle, "batsim_edc_take_decisions");
+
+    XBT_INFO("loaded external decision component library from '%s'", lib_path.c_str());
 }
 
 /**
