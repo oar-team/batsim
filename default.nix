@@ -16,7 +16,7 @@
 , batsched ? kapack.batsched-master
 , batexpe ? kapack.batexpe-master
 , pybatsim ? kapack.pybatsim-master
-, batprotocol-cpp ? kapack.batprotocol-cpp
+, batprotocol-cpp ? kapack.batprotocol-cpp.override { inherit debug; }
 # set this to avoid running tests over and over
 # (e.g., to debug coverage reports or to run tests and coverage report separately)
 , testVersion ? toString builtins.currentTime
@@ -48,6 +48,8 @@ let
       ];
       patches = [];
       mesonBuildType = if debug then "debug" else "release";
+      CXXFLAGS = if debug then "-O0" else "";
+      dontStrip = debug;
       mesonFlags = [ "--warnlevel=3" ]
         ++ pkgs.lib.optional werror [ "--werror" ]
         ++ pkgs.lib.optional doUnitTests [ "-Ddo_unit_tests=true" ]
@@ -102,7 +104,11 @@ let
         "^meson\.build"
         "^meson_options\.txt"
       ];
-      buildInputs = [ pkgs.meson pkgs.ninja pkgs.pkgconfig batprotocol-cpp ];
+      buildInputs = [ pkgs.meson pkgs.ninja pkgs.pkgconfig ] ++
+        [ batprotocol-cpp kapack.intervalset ];
+      mesonBuildType = if debug then "debug" else "release";
+      CXXFLAGS = if debug then "-O0" else "";
+      dontStrip = debug;
     };
 
     # Batsim integration tests.
