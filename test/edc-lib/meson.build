@@ -6,6 +6,8 @@ project('batsim_edc_libs', 'cpp',
 )
 
 batprotocol_cpp_dep = dependency('batprotocol-cpp')
+boost_dep = dependency('boost')
+intervalset_dep = dependency('intervalset')
 deps = [
   batprotocol_cpp_dep
 ]
@@ -16,5 +18,10 @@ common = [
 
 rejecter = shared_library('rejecter', common + ['rejecter.cpp'],
   dependencies: deps,
+  install: true,
+)
+
+exec1by1 = shared_library('exec1by1', common + ['exec1by1.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep],
   install: true,
 )
