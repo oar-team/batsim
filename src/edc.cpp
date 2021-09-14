@@ -16,7 +16,7 @@ ExternalLibrary::ExternalLibrary(const std::string & lib_path)
     // - loaded from the desired path/at the desired version if specified in the loaded ELF (e.g., via DT_RUNPATH).
     // - privatized, that is to say that their global variables are not shared between different components.
     lib_handle = dlmopen(LM_ID_NEWLM, lib_path.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND);
-    xbt_assert(lib_handle != NULL, "dlmopen error: %s", dlerror());
+    xbt_assert(lib_handle != NULL, "dlmopen failed while loading external decision component library: %s", dlerror());
 
     init = (uint8_t (*)(const uint8_t*, uint8_t, uint8_t)) load_lib_symbol(lib_handle, "batsim_edc_init");
     deinit = (uint8_t (*)()) load_lib_symbol(lib_handle, "batsim_edc_deinit");
@@ -35,9 +35,9 @@ ExternalLibrary::~ExternalLibrary()
 /**
  * @brief Load a symbol from a library handle.
  * @details Just a wrapper around dlsym.
- * @param[in] lib_handle The library handle where to
- * @param[in] symbol
- * @return
+ * @param[in] lib_handle The library handle where the symbol should be loaded
+ * @param[in] symbol The symbol to load
+ * @return The address of the symbol loaded
  */
 void * load_lib_symbol(void * lib_handle, const char * symbol)
 {
