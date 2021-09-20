@@ -210,6 +210,9 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_CHANGE_JOB_STATE:
             s = "SCHED_CHANGE_JOB_STATE";
             break;
+        case IPMessageType::SCHED_HELLO:
+            s = "SCHED_HELLO";
+            break;
         case IPMessageType::SCHED_REJECT_JOB:
             s = "SCHED_REJECT_JOB";
             break;
@@ -303,6 +306,11 @@ IPMessage::~IPMessage()
         case IPMessageType::SCHED_CHANGE_JOB_STATE:
         {
             auto * msg = static_cast<ChangeJobStateMessage *>(data);
+            delete msg;
+        } break;
+        case IPMessageType::SCHED_HELLO:
+        {
+            auto * msg = static_cast<ExternalDecisionComponentHelloMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_REJECT_JOB:
