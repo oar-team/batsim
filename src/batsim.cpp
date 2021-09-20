@@ -289,6 +289,8 @@ Other options:
   --forward-unknown-events           Enables the forwarding to the scheduler of external events that
                                      are unknown to Batsim. Ignored if there were no event inputs with --events.
                                      [default: false]
+  --edc-library-load-method <method> The method used to load external decision components as libraries.
+                                     Available values: dlmopen, dlopen. [default: dlmopen]
   -h, --help                         Shows this help.
 )";
 
@@ -502,6 +504,22 @@ Other options:
     }
 
     main_args.edc_json_format = args["--enable-edc-json-format"].asBool();
+
+    std::string edc_lib_load_method_str(args["--edc-library-load-method"].asString());
+    if (edc_lib_load_method_str == "dlmopen")
+    {
+        main_args.edc_library_load_method = EdcLibraryLoadMethod::DLMOPEN;
+    }
+    else if (edc_lib_load_method_str == "dlopen")
+    {
+        main_args.edc_library_load_method = EdcLibraryLoadMethod::DLOPEN;
+    }
+    else
+    {
+        XBT_ERROR("Invalid parameter given to --edc-library-load-method: '%s'.", edc_lib_load_method_str.c_str());
+        error = true;
+        return_code |= 0x80;
+    }
 
     // Output options
     // **************
@@ -888,7 +906,7 @@ int main(int argc, char * argv[])
         {
             // Load the external library
             xbt_assert(!main_args.edc_library_path.empty(), "internal inconsistency");
-            context.edc_library = new ExternalLibrary(main_args.edc_library_path);
+            context.edc_library = new ExternalLibrary(main_args.edc_library_path, main_args.edc_library_load_method);
             uint8_t flags = 0;
             if (main_args.edc_json_format)
                 flags |= 0x2;
