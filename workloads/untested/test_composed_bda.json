@@ -12,7 +12,8 @@
             "seq" : ["tot_test", "tot_test"]
         },
         "tot_test": {
-            "type": "parallel_homogeneous_total",
+            "type": "ptask_homogeneous",
+            "generation_strategy": "defined_amount_spread_uniformly",
             "cpu": 1e10,
             "com": 1e7
         }

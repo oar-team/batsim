@@ -54,7 +54,7 @@
             "delay": 10
         },
         "compute_only_10s":{
-            "type":"parallel_homogeneous",
+            "type":"ptask_homogeneous",
             "cpu": 1e10,
             "com": 0
         }

@@ -6,7 +6,7 @@
 
     "profiles": {
         "hg_10": {
-            "type": "parallel_homogeneous",
+            "type": "ptask_homogeneous",
             "cpu": 1e9,
             "com": 0
         }
