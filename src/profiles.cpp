@@ -342,7 +342,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "parallel_homogeneous" || profile_type == "parallel_homogeneous_total")
+    else if (profile_type == "ptask_homogeneous")
     {
         profile->type = ProfileType::PTASK_HOMOGENEOUS;
         ParallelHomogeneousProfileData * data = new ParallelHomogeneousProfileData;
@@ -364,8 +364,17 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
                    error_prefix.c_str(), profile_name.c_str(), data->com);
 
         auto strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue;
-        if (profile_type == "parallel_homogeneous_total")
-            strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsSpreadUniformly;
+        if (json_desc.HasMember("generation_strategy"))
+        {
+            xbt_assert(json_desc["generation_strategy"].IsString(), "%s: profile '%s' has a non-string 'generation_strategy' field",
+                error_prefix.c_str(), profile_name.c_str());
+
+            std::string strategy_str = json_desc["generation_strategy"].GetString();
+            if (strategy_str == "defined_amount_used_for_each_value")
+                strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue;
+            else if (strategy_str == "defined_amount_spread_uniformly")
+                strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsSpreadUniformly;
+        }
         data->strategy = strategy;
 
         profile->data = data;
@@ -445,7 +454,6 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         }
 
         // TODO: strategy
-
         profile->data = data;
     }
     else if (profile_type == "ptask_data_staging_between_storages")
