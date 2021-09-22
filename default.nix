@@ -47,14 +47,11 @@ let
         "^meson_options\.txt"
       ];
       patches = [];
-      mesonBuildType = if debug then "debug" else "release";
-      CXXFLAGS = if debug then "-O0" else "";
-      dontStrip = debug;
+
       mesonFlags = [ "--warnlevel=3" ]
         ++ pkgs.lib.optional werror [ "--werror" ]
         ++ pkgs.lib.optional doUnitTests [ "-Ddo_unit_tests=true" ]
         ++ pkgs.lib.optional doCoverage [ "-Db_coverage=true" ];
-      ninjaFlags = [ "-v" ];
 
       # Unit tests
       doCheck = doUnitTests;
@@ -106,9 +103,13 @@ let
       ];
       buildInputs = [ pkgs.meson pkgs.ninja pkgs.pkgconfig ] ++
         [ batprotocol-cpp kapack.intervalset ];
+
+      ninjaFlags = [ "-v" ];
+
       mesonBuildType = if debug then "debug" else "release";
       CXXFLAGS = if debug then "-O0" else "";
       dontStrip = debug;
+      hardeningDisable = if debug then [ "fortify" ] else [];
     };
 
     # Batsim integration tests.
