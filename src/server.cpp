@@ -26,26 +26,14 @@ void server_process(BatsimContext * context)
 {
     ServerData * data = new ServerData;
     data->context = context;
+    data->sched_ready = true;
 
     // Say hello to the external decision process.
     context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
     context->proto_msg_builder->add_batsim_hello("TODO");
+    generate_and_send_message(data);
 
-    context->proto_msg_builder->finish_message(simgrid::s4u::Engine::get_clock());
-    string send_buffer;
-    // TODO: no copy!
-    if (context->edc_json_format)
-        send_buffer = std::string(context->proto_msg_builder->buffer_as_json()->c_str());
-    else
-        send_buffer = std::string((const char*)context->proto_msg_builder->buffer_pointer(), context->proto_msg_builder->buffer_size());
-    context->proto_msg_builder->clear(simgrid::s4u::Engine::get_clock());
-
-    simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
-                                request_reply_scheduler_process,
-                                context, send_buffer);
-    data->sched_ready = false;
-
-    // Let's prepare a handler map to react on events
+    // Prepare a handler map to react to events
     std::map<IPMessageType, std::function<void(ServerData *, IPMessage *)>> handler_map;
     handler_map[IPMessageType::JOB_SUBMITTED] = server_on_job_submitted;
     handler_map[IPMessageType::JOB_REGISTERED_BY_DP] = server_on_register_job;
@@ -157,20 +145,26 @@ void server_process(BatsimContext * context)
 
 void generate_and_send_message(ServerData * data)
 {
-    data->context->proto_msg_builder->finish_message(simgrid::s4u::Engine::get_clock());
-    string send_buffer;
-    // TODO: no copy!
-    if (data->context->edc_json_format)
-    {
-        send_buffer = std::string(data->context->proto_msg_builder->buffer_as_json()->c_str());
-    }
-    else
-        send_buffer = std::string((const char*)data->context->proto_msg_builder->buffer_pointer(), data->context->proto_msg_builder->buffer_size());
-    data->context->proto_msg_builder->clear(simgrid::s4u::Engine::get_clock());
+    auto context = data->context;
+    context->proto_msg_builder->finish_message(simgrid::s4u::Engine::get_clock());
+
+    const uint8_t * send_data_src = nullptr;
+    uint8_t * send_data = nullptr;
+    uint32_t send_data_size = 0u;
+    batprotocol::serialize_message(*context->proto_msg_builder, context->edc_json_format, send_data_src, send_data_size);
+
+    // Copy the message in another buffer to make sure no memory problem arises,
+    // as the event queue is cleared now and the actual data transmission is done later in another SimGrid actor that handles the communication layer.
+    // TODO: this copy could be avoided if communicating with the scheduler was done here.
+    send_data = (uint8_t*) malloc(send_data_size * sizeof(uint8_t));
+    xbt_assert(send_data != nullptr, "could not allocate memory to send message to decision component (requested %u bytes to malloc)", send_data_size);
+    memcpy(send_data, send_data_src, send_data_size * sizeof(uint8_t));
+
+    context->proto_msg_builder->clear(simgrid::s4u::Engine::get_clock());
 
     simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
                                 request_reply_scheduler_process,
-                                data->context, send_buffer);
+                                context, send_data, send_data_size);
     data->sched_ready = false;
 }
 

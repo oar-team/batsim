@@ -32,9 +32,9 @@ ExternalLibrary::ExternalLibrary(const std::string & lib_path, const EdcLibraryL
 
     xbt_assert(lib_handle != NULL, "dlmopen failed while loading external decision component library: %s", dlerror());
 
-    init = (uint8_t (*)(const uint8_t*, uint8_t, uint8_t)) load_lib_symbol(lib_handle, "batsim_edc_init");
+    init = (uint8_t (*)(const uint8_t*, uint32_t, uint8_t)) load_lib_symbol(lib_handle, "batsim_edc_init");
     deinit = (uint8_t (*)()) load_lib_symbol(lib_handle, "batsim_edc_deinit");
-    take_decisions = (uint8_t (*)(const uint8_t*, uint8_t**)) load_lib_symbol(lib_handle, "batsim_edc_take_decisions");
+    take_decisions = (uint8_t (*)(const uint8_t*, uint32_t, uint8_t**, uint32_t*)) load_lib_symbol(lib_handle, "batsim_edc_take_decisions");
 
     XBT_INFO("loaded external decision component library from '%s'", lib_path.c_str());
 }

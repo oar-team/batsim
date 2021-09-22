@@ -23,7 +23,7 @@ extern "C" {
  *                  Currently, this is only used to know which data format should be used (flatbuffers's binary format or flatbuffer's JSON format).
  * @return Zero if and only if you could initialize yourself successfully.
  */
-uint8_t batsim_edc_init(const uint8_t * data, uint8_t size, uint8_t flags);
+uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint8_t flags);
 
 /**
  * @brief The batsim_edc_deinit() function is called by Batsim when it stops calling your decision component.
@@ -38,12 +38,14 @@ uint8_t batsim_edc_deinit();
  * @param[in] what_happened A Batsim protocol message that contains what happened in the simulation since the previous call to your decision component
  *                          (that is to say, since last batsim_edc_take_decisions() call or since the initial batsim_edc_init() at the beginning of the simulation).
  *                          The message format depends on what flags were given to batsim_edc_init().
+ * @param[in] what_happened_size The size (in bytes) of the what_happened input buffer.
  * @param[out] decisions A Batsim protocol message that contains the decisions taken by this function.
  *                       The buffer should be formatted according to the flags given to batsim_edc_init().
  *                       This buffer must be allocated by you and must persist in memory at least until the next batsim_edc_take_decisions() or batsim_edc_deinit() call.
+ * @param[out] decisions_size The size (in bytes) of the decisions output buffer.
  * @return Zero if and only if you could take decisions.
  */
-uint8_t batsim_edc_take_decisions(const uint8_t * what_happened, uint8_t ** decisions);
+uint8_t batsim_edc_take_decisions(const uint8_t * what_happened, uint32_t what_happened_size, uint8_t ** decisions, uint32_t * decisions_size);
 
 #ifdef __cplusplus
 }

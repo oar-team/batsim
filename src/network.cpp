@@ -31,25 +31,23 @@ using namespace std;
  * @param[in] context The BatsimContext
  * @param[in] send_buffer The message to send to the Decision real process
  */
-void request_reply_scheduler_process(BatsimContext * context, std::string send_buffer) // TODO: no copy!
+void request_reply_scheduler_process(BatsimContext * context, uint8_t * data, uint32_t data_size)
 {
-    XBT_DEBUG("Buffer received in REQ-REP: '%s'", send_buffer.c_str());
-
     try
     {
-        string message_received;
         uint8_t * msg_buffer = nullptr;
+        uint32_t msg_buffer_size = 0u;
         auto start = chrono::steady_clock::now();
 
         if (context->edc_json_format)
         {
-            XBT_INFO("Sending '%s'", send_buffer.c_str());
+            XBT_INFO("Sending '%s'", (const char*) data);
         }
 
         if (context->zmq_socket != nullptr)
         {
             // Send the message on the socket
-            if (zmq_send(context->zmq_socket, send_buffer.data(), send_buffer.size(), 0) == -1)
+            if (zmq_send(context->zmq_socket, data, data_size, 0) == -1)
                 throw std::runtime_error(std::string("Cannot send message on socket (errno=") + strerror(errno) + ")");
 
             // Get the reply
@@ -58,14 +56,28 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
             if (zmq_msg_recv(&msg, context->zmq_socket, 0) == -1)
                 throw std::runtime_error(std::string("Cannot read message on socket (errno=") + strerror(errno) + ")");
 
-            message_received = std::string(static_cast<char*>(zmq_msg_data(&msg)), zmq_msg_size(&msg));
-            msg_buffer = (uint8_t *)message_received.c_str();
+            msg_buffer = (uint8_t *)zmq_msg_data(&msg);
+            msg_buffer_size = zmq_msg_size(&msg);
         }
         else
         {
             // Call the external library
-            if (context->edc_library->take_decisions((uint8_t *)send_buffer.c_str(), &msg_buffer) != 0)
-                throw std::runtime_error("Error while calling take_decisions on the external library");
+            uint8_t return_code = 0u;
+            try
+            {
+                XBT_DEBUG("Calling the external library");
+                return_code = context->edc_library->take_decisions(data, data_size, &msg_buffer, &msg_buffer_size);
+                XBT_DEBUG("External library call finished");
+            }
+            catch (const std::exception & e)
+            {
+                throw std::runtime_error("Exception thrown by the external library take_decisions function: " + std::string(e.what()));
+            }
+
+            if (return_code != 0)
+            {
+                throw std::runtime_error("Error while calling take_decisions on the external library: returned " + std::to_string(return_code));
+            }
         }
 
         auto end = chrono::steady_clock::now();
@@ -77,9 +89,12 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
             XBT_INFO("Received '%s'", (char *)msg_buffer);
         }
 
+        free(data);
+        data = nullptr;
+
         double now = -1;
         std::vector<IPMessageWithTimestamp> messages;
-        protocol::parse_batprotocol_message(msg_buffer, now, messages, context);
+        protocol::parse_batprotocol_message(msg_buffer, msg_buffer_size, now, messages, context);
 
         for (unsigned int i = 0; i < messages.size(); ++i)
         {
@@ -92,6 +107,9 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
     {
         XBT_INFO("Runtime error received: %s", error.what());
         XBT_INFO("Flushing output files...");
+
+        free(data);
+        data = nullptr;
 
         finalize_batsim_outputs(context);
 

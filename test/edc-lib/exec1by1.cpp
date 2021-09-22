@@ -20,7 +20,7 @@ std::list<SchedJob*> * jobs = nullptr;
 SchedJob * currently_running_job = nullptr;
 uint32_t platform_nb_hosts = 0;
 
-uint8_t batsim_edc_init(const uint8_t * data, uint8_t size, uint8_t flags)
+uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint8_t flags)
 {
     format_binary = ((flags & BATSIM_EDC_FORMAT_BINARY) != 0);
     if ((flags & (BATSIM_EDC_FORMAT_BINARY | BATSIM_EDC_FORMAT_JSON)) != flags)
@@ -57,12 +57,13 @@ uint8_t batsim_edc_deinit()
     return 0;
 }
 
-uint8_t batsim_edc_take_decisions(const uint8_t * what_happened, uint8_t ** decisions)
+uint8_t batsim_edc_take_decisions(
+    const uint8_t * what_happened,
+    uint32_t what_happened_size,
+    uint8_t ** decisions,
+    uint32_t * decisions_size)
 {
-    uint8_t * input_buffer = const_cast<uint8_t *>(what_happened);
-    if (!format_binary)
-        mb->parse_json_message((const char *)what_happened, input_buffer);
-    auto parsed = flatbuffers::GetRoot<fb::Message>(input_buffer);
+    auto * parsed = deserialize_message(*mb, !format_binary, what_happened);
     mb->clear(parsed->now());
 
     auto nb_events = parsed->events()->size();
@@ -118,9 +119,6 @@ uint8_t batsim_edc_take_decisions(const uint8_t * what_happened, uint8_t ** deci
     }
 
     mb->finish_message(parsed->now());
-    if (format_binary)
-        *decisions = (uint8_t*) mb->buffer_pointer();
-    else
-        *decisions = (uint8_t*) mb->buffer_as_json()->c_str();
+    serialize_message(*mb, !format_binary, const_cast<const uint8_t **>(decisions), decisions_size);
     return 0;
 }

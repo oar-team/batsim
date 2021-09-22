@@ -11,4 +11,4 @@
 
 struct BatsimContext;
 
-void request_reply_scheduler_process(BatsimContext *context, std::string send_buffer);
+void request_reply_scheduler_process(BatsimContext *context, uint8_t * data, uint32_t data_size);
