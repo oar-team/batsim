@@ -551,6 +551,6 @@ RejectJobMessage * from_reject_job(const batprotocol::fb::RejectJobEvent * rejec
 KillJobsMessage * from_kill_jobs(const batprotocol::fb::KillJobsEvent * kill_jobs, BatsimContext * context);
 ExternalDecisionComponentHelloMessage * from_edc_hello(const batprotocol::fb::ExternalDecisionComponentHelloEvent * edc_hello, BatsimContext * context);
 
-void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::vector<IPMessageWithTimestamp> & messages, BatsimContext * context);
+void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp> > & messages, BatsimContext * context);
 
 } // end of namespace protocol

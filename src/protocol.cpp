@@ -1433,12 +1433,12 @@ ExternalDecisionComponentHelloMessage *from_edc_hello(const batprotocol::fb::Ext
     return msg;
 }
 
-void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::vector<IPMessageWithTimestamp> & messages, BatsimContext * context)
+void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp> > & messages, BatsimContext * context)
 {
     (void) buffer_size;
     auto parsed = batprotocol::deserialize_message(*context->proto_msg_builder, context->edc_json_format, buffer);
     now = parsed->now();
-    messages.resize(parsed->events()->size());
+    messages->resize(parsed->events()->size());
 
     double preceding_event_timestamp = -1;
     if (parsed->events()->size() > 0)
@@ -1449,16 +1449,16 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
         auto event_timestamp = parsed->events()->Get(i);
         auto ip_message = new IPMessage;
 
-        messages[i].timestamp = event_timestamp->timestamp();
-        messages[i].message = ip_message;
+        messages->at(i).timestamp = event_timestamp->timestamp();
+        messages->at(i).message = ip_message;
 
-        xbt_assert(messages[i].timestamp <= now,
+        xbt_assert(messages->at(i).timestamp <= now,
             "invalid event %u (type='%s') in message: event timestamp (%g) is after message's now (%g)",
-            i, batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()], messages[i].timestamp, now
+            i, batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()], messages->at(i).timestamp, now
         );
-        xbt_assert(messages[i].timestamp >= preceding_event_timestamp,
+        xbt_assert(messages->at(i).timestamp >= preceding_event_timestamp,
             "invalid event %u (type='%s') in message: event timestamp (%g) is before preceding event's timestamp (%g) while events should be in chronological order",
-            i, batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()], messages[i].timestamp, preceding_event_timestamp
+            i, batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()], messages->at(i).timestamp, preceding_event_timestamp
         );
 
         XBT_INFO("Parsing an event of type=%s", batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()]);

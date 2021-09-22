@@ -66,10 +66,10 @@ struct ServerData
 bool is_simulation_finished(ServerData * data);
 
 /**
- * @brief Generates and sends the message to the scheduler via a request_reply_scheduler_process
+ * @brief Finish current message, call take_decisions on the external decision component and spawn another actor to inject the decisions into the simulation
  * @param[in,out] data The data associated with the server_process
  */
-void generate_and_send_message(ServerData * data);
+void finish_message_and_call_edc(ServerData * data);
 
 /**
  * @brief Process used to orchestrate the simulation

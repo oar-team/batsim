@@ -5,8 +5,10 @@
 
 #include "server.hpp"
 
+#include <chrono>
 #include <string>
 #include <set>
+#include <stdexcept>
 #include <memory>
 
 #include <boost/algorithm/string.hpp>
@@ -31,7 +33,7 @@ void server_process(BatsimContext * context)
     // Say hello to the external decision process.
     context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
     context->proto_msg_builder->add_batsim_hello("TODO");
-    generate_and_send_message(data);
+    finish_message_and_call_edc(data);
 
     // Prepare a handler map to react to events
     std::map<IPMessageType, std::function<void(ServerData *, IPMessage *)>> handler_map;
@@ -99,7 +101,7 @@ void server_process(BatsimContext * context)
         {
             if (context->proto_msg_builder->has_events()) // There is something to send to the scheduler
             {
-                generate_and_send_message(data);
+                finish_message_and_call_edc(data);
                 if (!data->jobs_to_be_deleted.empty())
                 {
                     data->context->workloads.delete_jobs(data->jobs_to_be_deleted,
@@ -116,7 +118,7 @@ void server_process(BatsimContext * context)
                     XBT_INFO("The simulation seems finished.");
                     data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
                     data->context->proto_msg_builder->add_simulation_ends();
-                    generate_and_send_message(data);
+                    finish_message_and_call_edc(data);
                     data->end_of_simulation_sent = true;
                 }
             }
@@ -143,29 +145,74 @@ void server_process(BatsimContext * context)
     delete data;
 }
 
-void generate_and_send_message(ServerData * data)
+void finish_message_and_call_edc(ServerData * data)
 {
     auto context = data->context;
+
+    // finalize the message and serialize it
     context->proto_msg_builder->finish_message(simgrid::s4u::Engine::get_clock());
 
-    const uint8_t * send_data_src = nullptr;
-    uint8_t * send_data = nullptr;
-    uint32_t send_data_size = 0u;
-    batprotocol::serialize_message(*context->proto_msg_builder, context->edc_json_format, send_data_src, send_data_size);
+    uint8_t * what_happened_buffer = nullptr;
+    uint32_t what_happened_buffer_size = 0u;
+    batprotocol::serialize_message(*context->proto_msg_builder, context->edc_json_format, (const uint8_t**)&what_happened_buffer, &what_happened_buffer_size);
 
-    // Copy the message in another buffer to make sure no memory problem arises,
-    // as the event queue is cleared now and the actual data transmission is done later in another SimGrid actor that handles the communication layer.
-    // TODO: this copy could be avoided if communicating with the scheduler was done here.
-    send_data = (uint8_t*) malloc(send_data_size * sizeof(uint8_t));
-    xbt_assert(send_data != nullptr, "could not allocate memory to send message to decision component (requested %u bytes to malloc)", send_data_size);
-    memcpy(send_data, send_data_src, send_data_size * sizeof(uint8_t));
+    // call the external decision component
+    uint8_t * decisions_buffer = nullptr;
+    uint32_t decisions_buffer_size = 0u;
+    try
+    {
+        if (context->edc_json_format)
+        {
+            XBT_INFO("Sending '%s'", (const char*) what_happened_buffer);
+        }
 
+        auto start = chrono::steady_clock::now();
+
+        if (context->zmq_socket != nullptr)
+        {
+            zmq_call_take_decisions(context->zmq_socket, what_happened_buffer, what_happened_buffer_size, &decisions_buffer, &decisions_buffer_size);
+        }
+        else
+        {
+            context->edc_library->call_take_decisions(what_happened_buffer, what_happened_buffer_size, &decisions_buffer, &decisions_buffer_size);
+        }
+
+        auto end = chrono::steady_clock::now();
+        long double elapsed_microseconds = static_cast<long double>(chrono::duration <long double, micro> (end - start).count());
+        context->microseconds_used_by_scheduler += elapsed_microseconds;
+
+        if (context->edc_json_format)
+        {
+            XBT_INFO("Received '%s'", (char *)decisions_buffer);
+        }
+    }
+    catch(const std::runtime_error & error)
+    {
+        XBT_INFO("Runtime error received: %s", error.what());
+        XBT_INFO("Flushing output files...");
+
+        free(data);
+        data = nullptr;
+
+        finalize_batsim_outputs(context);
+
+        XBT_INFO("Output files flushed. Aborting execution now.");
+        throw runtime_error("Execution aborted (communication with external decision component failed)");
+    }
+
+    // parse the decisions and store them in an inter-actor message list
+    double now = -1;
+    std::shared_ptr<std::vector<IPMessageWithTimestamp> > messages(new std::vector<IPMessageWithTimestamp>());
+    protocol::parse_batprotocol_message(decisions_buffer, decisions_buffer_size, now, messages, context);
+
+    // the what_happened buffer is no longer needed, the associated MessageBuilder can be cleared
     context->proto_msg_builder->clear(simgrid::s4u::Engine::get_clock());
 
-    simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
-                                request_reply_scheduler_process,
-                                context, send_data, send_data_size);
+    // inject decisions from another actor, so the server can receive them
     data->sched_ready = false;
+    simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
+        edc_decisions_injector, messages, now
+    );
 }
 
 void server_on_submitter_hello(ServerData * data,

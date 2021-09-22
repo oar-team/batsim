@@ -26,6 +26,8 @@
 #include "workflow.hpp"
 #include "workload.hpp"
 
+struct ExternalLibrary;
+
 /**
  * @brief Stores a high-resolution timestamp
  */

@@ -1,8 +1,18 @@
 #pragma once
+
 #include <cstdint>
+#include <memory>
 #include <string>
+#include <vector>
 
 #include "batsim.hpp"
+#include "context.hpp"
+#include "ipp.hpp"
+
+namespace batprotocol
+{
+    class MessageBuilder;
+}
 
 /**
  * @brief A structure to call an External Decision Component as a library from a C API.
@@ -16,6 +26,12 @@ struct ExternalLibrary
 
     ExternalLibrary(const std::string & lib_path, const EdcLibraryLoadMethod & load_method);
     ~ExternalLibrary();
+
+    void call_take_decisions(uint8_t * what_happened_buffer, uint32_t what_happened_buffer_size, uint8_t ** decisions_buffer, uint32_t * decisions_buffer_size);
 };
 
 void * load_lib_symbol(void * lib_handle, const char * symbol);
+
+void zmq_call_take_decisions(void * zmq_socket, uint8_t * what_happened_buffer, uint32_t what_happened_buffer_size, uint8_t ** decisions_buffer, uint32_t * decisions_buffer_size);
+
+void edc_decisions_injector(std::shared_ptr<std::vector<IPMessageWithTimestamp> > messages, double now);
