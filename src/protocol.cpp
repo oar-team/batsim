@@ -11,7 +11,6 @@
 #include "batsim.hpp"
 #include "context.hpp"
 #include "jobs.hpp"
-#include "network.hpp"
 
 using namespace rapidjson;
 using namespace std;

@@ -17,7 +17,6 @@
 
 #include "context.hpp"
 #include "ipp.hpp"
-#include "network.hpp"
 #include "jobs_execution.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(server, "server"); //!< Logging

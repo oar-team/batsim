@@ -19,7 +19,6 @@
 #include "export.hpp"
 #include "jobs.hpp"
 #include "machines.hpp"
-#include "network.hpp"
 #include "profiles.hpp"
 #include "protocol.hpp"
 #include "pstate.hpp"
