@@ -15,7 +15,6 @@ struct BatsimContext;
 enum class VerbosityLevel
 {
     QUIET           //!< Almost nothing should be displayed
-    ,NETWORK_ONLY   //!< Only network messages should be displayed
     ,INFORMATION    //!< Informations should be displayed (default)
     ,DEBUG          //!< Debug informations should be displayed too
 };

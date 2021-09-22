@@ -124,10 +124,6 @@ VerbosityLevel verbosity_level_from_string(const std::string & str)
     {
         return VerbosityLevel::QUIET;
     }
-    else if (str == "network-only")
-    {
-        return VerbosityLevel::NETWORK_ONLY;
-    }
     else if (str == "information")
     {
         return VerbosityLevel::INFORMATION;
@@ -257,8 +253,8 @@ Job-related options:
 
 Verbosity options:
   -v, --verbosity <verbosity_level>  Sets the Batsim verbosity level. Available
-                                     values: quiet, network-only, information,
-                                     debug [default: information].
+                                     values: quiet, information, debug
+                                     [default: information].
   -q, --quiet                        Shortcut for --verbosity quiet
 
 Workflow options:
@@ -634,13 +630,28 @@ Other options:
 
 void configure_batsim_logging_output(const MainArguments & main_args)
 {
-    vector<string> log_categories_to_set = {"workload", "job_submitter", "jobs", "machines", "pstate",
-                                            "workflow", "jobs_execution", "server", "export", "profiles", "machine_range",
-                                            "events", "event_submitter", "protocol",
-                                            "network", "ipp", "task_execution"};
+    vector<string> log_categories_to_set = {
+        "batsim",
+        "edc",
+        "events",
+        "event_submitter",
+        "export",
+        "ipp",
+        "jobs",
+        "jobs_execution",
+        "job_submitter",
+        "machines",
+        "profiles",
+        "protocol",
+        "pstate",
+        "server",
+        "task_execution",
+        "workflow",
+        "workload"
+    };
     string log_threshold_to_set = "critical";
 
-    if (main_args.verbosity == VerbosityLevel::QUIET || main_args.verbosity == VerbosityLevel::NETWORK_ONLY)
+    if (main_args.verbosity == VerbosityLevel::QUIET)
     {
         log_threshold_to_set = "error";
     }
@@ -661,12 +672,6 @@ void configure_batsim_logging_output(const MainArguments & main_args)
     {
         const string final_str = log_cat + ".thresh:" + log_threshold_to_set;
         xbt_log_control_set(final_str.c_str());
-    }
-
-    // In network-only, we add a rule to display the network info
-    if (main_args.verbosity == VerbosityLevel::NETWORK_ONLY)
-    {
-        xbt_log_control_set("network.thresh:info");
     }
 
     // Batsim is always set to info, to allow to trace Batsim's input easily
