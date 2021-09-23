@@ -182,7 +182,6 @@ Usage:
                             [--sg-log <log_option>...]
                             [-r <hosts_roles_map>...]
                             [--events <events_file>...]
-                            [--sched-cfg <cfg_str> | --sched-cfg-file <cfg_file>]
                             [options]
   batsim --help
   batsim --version
@@ -274,9 +273,6 @@ Other options:
   --no-sched                         If set, the jobs in the workloads are
                                      computed one by one, one after the other,
                                      without scheduler.
-  --sched-cfg <cfg_str>              Sets the scheduler configuration string.
-                                     This is forwarded to the scheduler in the first protocol message.
-  --sched-cfg-file <cfg_file>        Same as --sched-cfg, but value is read from a file instead.
   --sg-cfg <opt_name:opt_value>      Forwards a given option_name:option_value to SimGrid.
                                      Refer to SimGrid configuring documentation for more information.
   --sg-log <log_option>              Forwards a given logging option to SimGrid.
@@ -611,15 +607,6 @@ Other options:
     else
     {
         main_args.program_type = ProgramType::BATSIM;
-    }
-
-    if (args["--sched-cfg"].isString())
-    {
-        main_args.sched_config = args["--sched-cfg"].asString();
-    }
-    if (args["--sched-cfg-file"].isString())
-    {
-        main_args.sched_config_file = args["--sched-cfg-file"].asString();
     }
 
     main_args.simgrid_config = args["--sg-cfg"].asStringList();
@@ -1001,15 +988,5 @@ void set_configuration(BatsimContext *context,
     context->config_json.AddMember("profile-reuse-enabled", Value().SetBool(!context->garbage_collect_profiles), alloc);
 
     // others
-    std::string sched_config;
-    if (!main_args.sched_config.empty())
-    {
-        sched_config = main_args.sched_config;
-    }
-    else if (!main_args.sched_config_file.empty())
-    {
-        sched_config = read_whole_file_as_string(main_args.sched_config_file);
-    }
-    context->config_json.AddMember("sched-config", Value().SetString(sched_config.c_str(), alloc), alloc);
     context->config_json.AddMember("forward-unknown-events", Value().SetBool(main_args.forward_unknown_events), alloc);
 }
