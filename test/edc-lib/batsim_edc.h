@@ -23,7 +23,7 @@ extern "C" {
  *                  Currently, this is only used to know which data format should be used (flatbuffers's binary format or flatbuffer's JSON format).
  * @return Zero if and only if you could initialize yourself successfully.
  */
-uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint8_t flags);
+uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags);
 
 /**
  * @brief The batsim_edc_deinit() function is called by Batsim when it stops calling your decision component.

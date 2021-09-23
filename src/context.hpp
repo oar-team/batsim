@@ -25,7 +25,7 @@
 #include "workflow.hpp"
 #include "workload.hpp"
 
-struct ExternalLibrary;
+struct ExternalDecisionComponent;
 
 /**
  * @brief Stores a high-resolution timestamp
@@ -38,8 +38,7 @@ typedef std::chrono::time_point<std::chrono::high_resolution_clock> my_timestamp
 struct BatsimContext
 {
     void * zmq_context = nullptr;                   //!< The Zero MQ context
-    void * zmq_socket = nullptr;                    //!< External Decision Component, as a ZeroMQ socket
-    ExternalLibrary * edc_library = nullptr;        //!< External Decision Component, as a library
+    ExternalDecisionComponent * edc = nullptr;      //!> The External Decision Component
     bool edc_json_format = false;                   //!< Whether JSON format or flatbuffers's binary format should be used to communicate with EDCs.
 
     batprotocol::MessageBuilder * proto_msg_builder = nullptr; //!< The batprotocol message builder

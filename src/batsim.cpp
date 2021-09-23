@@ -898,25 +898,23 @@ int main(int argc, char * argv[])
         context.edc_json_format = main_args.edc_json_format;
         if (!main_args.edc_socket_endpoint.empty())
         {
-            // Create the socket
+            // Create a ZeroMQ context
             context.zmq_context = zmq_ctx_new();
-            xbt_assert(context.zmq_context != nullptr, "Cannot create ZMQ context");
-            context.zmq_socket = zmq_socket(context.zmq_context, ZMQ_REQ);
-            xbt_assert(context.zmq_socket != nullptr, "Cannot create ZMQ REQ socket (errno=%s)", strerror(errno));
-            int err = zmq_connect(context.zmq_socket, main_args.edc_socket_endpoint.c_str());
-            xbt_assert(err == 0, "Cannot connect ZMQ socket to '%s' (errno=%s)", main_args.edc_socket_endpoint.c_str(), strerror(errno));
+
+            // Create and connect the socket
+            context.edc = ExternalDecisionComponent::new_process(context.zmq_context, main_args.edc_socket_endpoint);
         }
         else
         {
-            // Load the external library
-            xbt_assert(!main_args.edc_library_path.empty(), "internal inconsistency");
-            context.edc_library = new ExternalLibrary(main_args.edc_library_path, main_args.edc_library_load_method);
+            // Generate initialization flags
             uint8_t flags = 0;
             if (main_args.edc_json_format)
                 flags |= 0x2;
             else
                 flags |= 0x1;
-            context.edc_library->init(nullptr, 0u, flags);
+
+            // Load the external library
+            context.edc = ExternalDecisionComponent::new_library(main_args.edc_library_path, main_args.edc_library_load_method, nullptr, 0u, flags);
         }
 
         // Create the protocol message manager
@@ -934,11 +932,11 @@ int main(int argc, char * argv[])
     // Simulation main loop, handled by s4u
     engine.run();
 
-    zmq_close(context.zmq_socket);
-    context.zmq_socket = nullptr;
+    delete context.edc;
+    context.edc = nullptr;
 
     zmq_ctx_destroy(context.zmq_context);
-    context.zmq_socket = nullptr;
+    context.zmq_context = nullptr;
 
     delete context.proto_msg_builder;
     context.proto_msg_builder = nullptr;

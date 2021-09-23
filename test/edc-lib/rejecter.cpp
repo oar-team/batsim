@@ -8,7 +8,7 @@ using namespace batprotocol;
 MessageBuilder * mb = nullptr;
 bool format_binary = true; // whether flatbuffers binary or json format should be used
 
-uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint8_t flags)
+uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
 {
     format_binary = ((flags & BATSIM_EDC_FORMAT_BINARY) != 0);
     if ((flags & (BATSIM_EDC_FORMAT_BINARY | BATSIM_EDC_FORMAT_JSON)) != flags)
