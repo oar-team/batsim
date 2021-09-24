@@ -25,7 +25,7 @@
 #include "workflow.hpp"
 #include "workload.hpp"
 
-struct ExternalDecisionComponent;
+class ExternalDecisionComponent;
 
 /**
  * @brief Stores a high-resolution timestamp

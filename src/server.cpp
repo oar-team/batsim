@@ -167,7 +167,7 @@ void finish_message_and_call_edc(ServerData * data)
 
         auto start = chrono::steady_clock::now();
 
-        context->edc->call_take_decisions(what_happened_buffer, what_happened_buffer_size, &decisions_buffer, &decisions_buffer_size);
+        context->edc->take_decisions(what_happened_buffer, what_happened_buffer_size, &decisions_buffer, &decisions_buffer_size);
 
         auto end = chrono::steady_clock::now();
         long double elapsed_microseconds = static_cast<long double>(chrono::duration <long double, micro> (end - start).count());
