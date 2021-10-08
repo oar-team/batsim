@@ -5,7 +5,6 @@ variables:
 
 stages:
   - big_stage
-  - deploy
 
 ###############################################################################
 # Build and test
@@ -36,27 +35,6 @@ build_and_test:
       - /builds/batsim/batsim/doxydoc_html
       - /builds/batsim/batsim/integration_tests
       - /builds/batsim/batsim/coverage_report
-
-###############################################################################
-# Deploy
-###############################################################################
-deploy_code_doc:
-  stage: deploy
-  script:
-      # Pushes Batsim's code doc (doxygen) onto the gforge website.
-      # SSH setup (do NOT run these commands on your machine)
-      - echo "$EXAMPLE_ENV_VAR"
-      - eval $(ssh-agent -s)
-      - echo "$SSH_PRIVATE_KEY" | tr -d ' ' | base64 --decode | ssh-add -
-      - mkdir -p ~/.ssh
-      - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
-      # Finally push the code documentation on the gforge website
-      - cd /builds/batsim/batsim/
-      - rsync -rlgoDz --delete doxydoc_html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs/batsim/doxygen
-  dependencies:
-    - build_and_test
-  only:
-    - master
 
 ###############################################################################
 # Tutorials
