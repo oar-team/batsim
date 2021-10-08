@@ -62,6 +62,7 @@ deploy_code_doc:
 # Tutorials
 ###############################################################################
 tuto_first_simulation-stable:
+  allow_failure: true
   stage: big_stage
   only:
     - schedules
@@ -72,6 +73,7 @@ tuto_first_simulation-stable:
     - nix-shell ./tuto-env.nix --command './run_simulation_robin.bash'
 
 tuto_first_simulation-pinned:
+  allow_failure: true
   stage: big_stage
   only:
     - schedules
@@ -82,6 +84,7 @@ tuto_first_simulation-pinned:
     - nix-shell ./tuto-env-pinned.nix --command './run_simulation_robin.bash'
 
 tuto_first_simulation:
+  allow_failure: true
   stage: big_stage
   only:
     - schedules
