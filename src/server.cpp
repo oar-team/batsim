@@ -464,13 +464,13 @@ void server_on_pstate_modification(ServerData * data,
     {
         const int machine_id = *machine_it;
         Machine * machine = data->context->machines[machine_id];
-        int curr_pstate = machine->host->get_pstate();
+        unsigned long curr_pstate = machine->host->get_pstate();
 
         if (machine->pstates[curr_pstate] == PStateType::COMPUTATION_PSTATE)
         {
             if (machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE)
             {
-                XBT_INFO("Switching machine %d ('%s') pstate : %d -> %d.", machine->id,
+                XBT_INFO("Switching machine %d ('%s') pstate : %lu -> %lu.", machine->id,
                          machine->name.c_str(), curr_pstate, message->new_pstate);
                 machine->host->set_pstate(message->new_pstate);
                 xbt_assert(machine->host->get_pstate() == message->new_pstate, "pstate inconsistency: the desired pstate has not been set");
@@ -497,14 +497,14 @@ void server_on_pstate_modification(ServerData * data,
             }
             else
             {
-                XBT_ERROR("Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %d -> %d",
+                XBT_ERROR("Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %lu -> %lu",
                           machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
             }
         }
         else if (machine->pstates[curr_pstate] == PStateType::SLEEP_PSTATE)
         {
             xbt_assert(machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE,
-                    "Switching from a sleep pstate to a non-computation pstate on machine %d ('%s') : %d -> %d, which is forbidden",
+                    "Switching from a sleep pstate to a non-computation pstate on machine %d ('%s') : %lu -> %lu, which is forbidden",
                     machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
 
             machine->update_machine_state(MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING);
@@ -517,7 +517,7 @@ void server_on_pstate_modification(ServerData * data,
         }
         else
         {
-            XBT_ERROR("Machine %d ('%s') has an invalid pstate : %d", machine->id, machine->name.c_str(), curr_pstate);
+            XBT_ERROR("Machine %d ('%s') has an invalid pstate : %lu", machine->id, machine->name.c_str(), curr_pstate);
         }
     }
 

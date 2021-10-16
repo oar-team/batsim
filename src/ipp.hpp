@@ -203,7 +203,7 @@ struct KillJobMessage
 struct PStateModificationMessage
 {
     IntervalSet machine_ids; //!< The IDs of the machines on which the pstate should be changed
-    int new_pstate; //!< The power state into which the machines should be put
+    unsigned long new_pstate; //!< The power state into which the machines should be put
 };
 
 /**
@@ -241,7 +241,7 @@ struct SchedWaitAnswerMessage
 struct SwitchMessage
 {
     int machine_id; //!< The unique number of the machine which should be switched ON
-    int new_pstate; //!< The power state the machine should be put into
+    unsigned long new_pstate; //!< The power state the machine should be put into
 };
 
 /**
