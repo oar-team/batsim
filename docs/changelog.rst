@@ -16,12 +16,23 @@ Starting with version `v1.0.0`_, Batsim adheres to `Semantic Versioning`_ and it
 Unreleased
 ----------
 
-- `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...HEAD>`_
+- `Commits since v4.1.0 <https://github.com/oar-team/batsim/compare/v4.1.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
+
+........................................................................................................................
+
+v4.1.0
+------
+
+- `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...v4.1.0>`_
+- ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-4.1.0``
+
+Changed
+~~~~~~~
+- Updated Batsim code / example platforms / platform generators so that they work with SimGrid-3.29.0.
 
 Miscellaneous
 ~~~~~~~~~~~~~
-- Updated Batsim code / example platforms / platform generators so that they work with SimGrid-3.29.0.
 - Improved readibility of Batsim assertion error messages.
 - Improved documentation.
 

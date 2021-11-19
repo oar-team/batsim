@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Download a tarball of Batsim's latest release.
-batversion='4.0.0'
+batversion='4.1.0'
 curl --output "/tmp/batsim-v${batversion}.tar.gz" \
     "https://framagit.org/batsim/batsim/-/archive/v${batversion}/batsim-v${batversion}.tar.gz"
 
