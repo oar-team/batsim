@@ -19,6 +19,12 @@ Unreleased
 - `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
 
+Miscellaneous
+~~~~~~~~~~~~~
+- Updated Batsim code / example platforms / platform generators so that they work with SimGrid-3.29.0.
+- Improved readibility of Batsim assertion error messages.
+- Improved documentation.
+
 ........................................................................................................................
 
 v4.0.0
