@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-'''Walltime tests.
+'''Tests on the stencil tutorial.
 
-These tests run workFLOWs instead of workLOADs.
+These tests check that the composed profile on the Batsim stencil tutorial behaves as expected
+when run in parallel.
 '''
 import pandas as pd
 import pytest
