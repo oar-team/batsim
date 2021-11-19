@@ -26,10 +26,17 @@ v4.1.0
 
 - `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...v4.1.0>`_
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-4.1.0``
+- Recommended SimGrid release: 3.29.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/releases>`_)
 
 Changed
 ~~~~~~~
 - Updated Batsim code / example platforms / platform generators so that they work with SimGrid-3.29.0.
+
+Fixed
+~~~~~
+- SimGrid < 3.27.0 had an `interaction issue with parallel tasks and multicore hosts <https://framagit.org/simgrid/simgrid/-/issues/37>`_.
+  As this release is compatible with SimGrid-3.29.0, Batsim users can now use this interaction more safely,
+  even if `an interaction issue with pstate changes, parallel tasks and multicore hosts <https://framagit.org/simgrid/simgrid/-/issues/95>`_ still exists as of SimGrid-3.29.0.
 
 Miscellaneous
 ~~~~~~~~~~~~~
