@@ -25,6 +25,7 @@ enum class ProfileType
     ,PARALLEL_HOMOGENEOUS                      //!< a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type ParallelHomogeneousProfileData
     ,PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT         //!< a homogeneous parallel task that spreads the given amounts of computation and communication among all the nodes. Its data is of type ParallelHomogeneousTotalAmountProfileData
     ,SMPI                                      //!< a SimGrid MPI time-independent trace. Its data is of type SmpiProfileData
+    ,USAGE_TRACE                               //!< a usage over time trace. Its data is of type UsageTraceData
     ,SEQUENCE                                  //!< non-atomic: it is composed of a sequence of other profiles
     ,PARALLEL_HOMOGENEOUS_PFS                  //!< Read and writes data to a PFS storage nodes. data type ParallelHomogeneousPFSProfileData
     ,DATA_STAGING                              //!< for moving data between the pfs hosts. Its data is of type DataStagingProfileData
@@ -132,6 +133,11 @@ struct DelayProfileData
  * @brief The data associated to SMPI profiles
  */
 struct SmpiProfileData
+{
+    std::vector<std::string> trace_filenames; //!< all defined tracefiles
+};
+
+struct UsageTraceProfileData
 {
     std::vector<std::string> trace_filenames; //!< all defined tracefiles
 };
