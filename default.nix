@@ -42,6 +42,7 @@ let
   pythonPackages = pkgs.python3Packages;
   buildPythonPackage = pythonPackages.buildPythonPackage;
 
+  #custom-stdenv-base = if useClang then pkgs.llvmPackages_11.stdenv else pkgs.gcc11Stdenv;
   custom-stdenv-base = if useClang then pkgs.clangStdenv else pkgs.gccStdenv;
   custom-stdenv = if debug then (pkgs.stdenvAdapters.keepDebugInfo custom-stdenv-base) else custom-stdenv-base;
 

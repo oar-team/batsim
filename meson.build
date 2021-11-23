@@ -17,7 +17,6 @@ endif
 message('batsim version set to: ' + batversion)
 
 # Dependencies
-add_project_link_arguments(['-lstdc++fs'], language : 'cpp')
 simgrid_dep = dependency('simgrid')
 boost_dep = dependency('boost')
 rapidjson_dep = dependency('RapidJSON')
@@ -26,6 +25,15 @@ libzmq_dep = dependency('libzmq')
 docopt_dep = dependency('docopt')
 pugixml_dep = dependency('pugixml')
 intervalset_dep = dependency('intervalset')
+
+# old gcc/llvm c++ std libraries have implemented the filesystem lib in a separate lib
+# - https://releases.llvm.org/11.0.1/projects/libcxx/docs/UsingLibcxx.html#using-filesystem
+# - https://gcc.gnu.org/gcc-9/changes.html
+if meson.get_compiler('cpp').get_id() == 'clang' and meson.get_compiler('cpp').version().version_compare('<9.0')
+  add_project_link_arguments(['-lstdc++fs'], language : 'cpp')
+elif meson.get_compiler('cpp').get_id() == 'gcc' and meson.get_compiler('cpp').version().version_compare('<9.0')
+  add_project_link_arguments(['-lstdc++fs'], language : 'cpp')
+endif
 
 batsim_deps = [
     simgrid_dep,
