@@ -847,6 +847,9 @@ int main(int argc, char * argv[])
         SMPI_init();
     }
 
+    // Register Batsim replay functions
+    xbt_replay_action_register("m_usage", usage_trace_replayer);
+
     // Let's create the machines
     create_machines(main_args, &context, max_nb_machines_to_use);
 

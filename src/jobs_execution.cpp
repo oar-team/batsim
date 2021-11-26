@@ -13,7 +13,6 @@
 
 #include <simgrid/s4u.hpp>
 #include <simgrid/plugins/energy.h>
-#include <xbt/replay.hpp>
 
 #include <smpi/smpi.h>
 
@@ -69,6 +68,13 @@ void usage_trace_replayer(simgrid::xbt::ReplayAction & action)
     ptask->wait();
 }
 
+/**
+ * @brief The actor that replays a usage trace
+ * @param[in] job The job whose trace is from
+ * @param[in] data The profile data of the job
+ * @param[in] termination_mbox_name The mailbox to use to synchronize the job termination
+ * @param[in] rank The rank of the actor of the job
+ */
 void usage_trace_replayer_process(JobPtr job, UsageTraceProfileData * data, const std::string & termination_mbox_name, int rank)
 {
     try

@@ -137,6 +137,9 @@ struct SmpiProfileData
     std::vector<std::string> trace_filenames; //!< all defined tracefiles
 };
 
+/**
+ * @brief The data associated to USAGE_TRACE profiles
+ */
 struct UsageTraceProfileData
 {
     std::vector<std::string> trace_filenames; //!< all defined tracefiles
