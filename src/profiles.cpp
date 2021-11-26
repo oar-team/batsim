@@ -206,6 +206,15 @@ Profile::~Profile()
             d = nullptr;
         }
     }
+    else if (type == ProfileType::USAGE_TRACE)
+    {
+        auto * d = static_cast<UsageTraceProfileData *>(data);
+        if (d != nullptr)
+        {
+            delete d;
+            d = nullptr;
+        }
+    }
     else if (type == ProfileType::SEQUENCE)
     {
         auto * d = static_cast<SequenceProfileData *>(data);
@@ -628,11 +637,8 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         }
         profile->data = data;
     }
-    else if (profile_type == "smpi")
+    else if (profile_type == "smpi" || "usage_trace")
     {
-        profile->type = ProfileType::SMPI;
-        SmpiProfileData * data = new SmpiProfileData;
-
         xbt_assert(json_desc.HasMember("trace"), "%s: profile '%s' has no 'trace' field",
                    error_prefix.c_str(), profile_name.c_str());
         xbt_assert(json_desc["trace"].IsString(), "%s: profile '%s' has a non-string 'trace' field",
@@ -659,18 +665,32 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         ifstream trace_file(trace_path.string());
         xbt_assert(trace_file.is_open(), "Cannot open file '%s'", trace_path.string().c_str());
 
+        std::vector<std::string> trace_filenames;
         string line;
         while (std::getline(trace_file, line))
         {
             boost::trim_right(line);
             fs::path rank_trace_path = trace_path.parent_path().string() + "/" + line;
-            data->trace_filenames.push_back(rank_trace_path.string());
+            trace_filenames.push_back(rank_trace_path.string());
         }
 
-        string filenames = boost::algorithm::join(data->trace_filenames, ", ");
+        string filenames = boost::algorithm::join(trace_filenames, ", ");
         XBT_INFO("Filenames of profile '%s': [%s]", profile_name.c_str(), filenames.c_str());
 
-        profile->data = data;
+        if (profile_type == "smpi")
+        {
+            profile->type = ProfileType::SMPI;
+            auto * data = new SmpiProfileData;
+            data->trace_filenames = trace_filenames;
+            profile->data = data;
+        }
+        else
+        {
+            profile->type = ProfileType::USAGE_TRACE;
+            auto * data = new UsageTraceProfileData;
+            data->trace_filenames = trace_filenames;
+            profile->data = data;
+        }
     }
     else
     {
@@ -731,6 +751,9 @@ std::string profile_type_to_string(const ProfileType & type)
         break;
     case ProfileType::SMPI:
         str = "SMPI";
+        break;
+    case ProfileType::USAGE_TRACE:
+        str = "USAGE_TRACE";
         break;
     case ProfileType::SEQUENCE:
         str = "SEQUENCE";

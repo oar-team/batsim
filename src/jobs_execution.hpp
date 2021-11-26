@@ -8,6 +8,13 @@
 #include "ipp.hpp"
 #include "context.hpp"
 
+#include <xbt/replay.hpp>
+
+/**
+ * @brief Replays a usage over time trace action (one line)
+ * @param[in] action The action to replay
+ */
+void usage_trace_replayer(simgrid::xbt::ReplayAction & action);
 
 /**
  * @brief The process in charge of killing a job if it reaches its walltime

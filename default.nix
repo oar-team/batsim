@@ -124,6 +124,9 @@ let
         "^workloads/smpi"
         "^workloads/smpi/.*"
         "^workloads/smpi/.*/.*\.txt"
+        "^workloads/usage-trace"
+        "^workloads/usage-trace/.*"
+        "^workloads/usage-trace/.*/.*\.txt"
         "^events"
         "^events/.*\.txt"
       ];

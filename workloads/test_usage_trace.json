@@ -1,0 +1,54 @@
+{
+    "nb_res": 4,
+    "jobs": [
+        {"id":  0, "subtime":   0, "walltime": 100, "res": 2, "profile": "delay-10s"},
+
+        {"id": 10, "subtime": 100, "walltime": 100, "res": 2, "profile": "ut-homo-onephase-100"},
+        {"id": 11, "subtime": 101, "walltime": 100, "res": 2, "profile": "ut-homo-onephase-100"},
+
+        {"id": 20, "subtime": 200, "walltime": 100, "res": 2, "profile": "ut-homo-onephase-50"},
+        {"id": 21, "subtime": 201, "walltime": 100, "res": 2, "profile": "ut-homo-onephase-50"},
+
+        {"id": 30, "subtime": 300, "walltime": 100, "res": 2, "profile": "ut-homo-twophases-100-10"},
+        {"id": 31, "subtime": 301, "walltime": 100, "res": 2, "profile": "ut-homo-twophases-100-10"},
+
+        {"id": 40, "subtime": 400, "walltime": 100, "res": 2, "profile": "ut-hetero-onephase-20-60"},
+        {"id": 41, "subtime": 401, "walltime": 100, "res": 2, "profile": "ut-hetero-onephase-20-60"},
+
+        {"id": 50, "subtime": 500, "walltime": 100, "res": 2, "profile": "ut-hetero-onephase-10-twophases-1-97"},
+        {"id": 51, "subtime": 501, "walltime": 100, "res": 2, "profile": "ut-hetero-onephase-10-twophases-1-97"},
+
+        {"id": 60, "subtime": 1000, "walltime": 2000, "res": 4, "profile": "ut-from-real-trace"}
+    ],
+
+    "profiles": {
+        "delay-10s": {
+            "type": "delay",
+            "delay": 10
+        },
+        "ut-hetero-onephase-20-60": {
+            "type": "usage_trace",
+            "trace": "usage-trace/hetero-onephase-20-60/traces.txt"
+        },
+        "ut-hetero-onephase-10-twophases-1-97": {
+            "type": "usage_trace",
+            "trace": "usage-trace/hetero-onephase-10-twophases-1-97/traces.txt"
+        },
+        "ut-homo-onephase-100": {
+            "type": "usage_trace",
+            "trace": "usage-trace/homo-onephase-100/traces.txt"
+        },
+        "ut-homo-onephase-50": {
+            "type": "usage_trace",
+            "trace": "usage-trace/homo-onephase-50/traces.txt"
+        },
+        "ut-homo-twophases-100-10": {
+            "type": "usage_trace",
+            "trace": "usage-trace/homo-twophases-100-10/traces.txt"
+        },
+        "ut-from-real-trace": {
+            "type": "usage_trace",
+            "trace": "usage-trace/from-real-trace/3858728.txt"
+        }
+    }
+}
