@@ -19,6 +19,11 @@ Unreleased
 - `Commits since v4.1.0 <https://github.com/oar-team/batsim/compare/v4.1.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
 
+Added
+~~~~~
+- New :ref:`usage_trace_replay_profile` profile, that enables the replay of usage traces over time.
+  This is especially helpful to replay applications from their power consumption traces.
+
 ........................................................................................................................
 
 v4.1.0

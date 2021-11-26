@@ -285,6 +285,8 @@ Profiles of this type correspond to the replay of a SMPI time-independent trace.
       "trace": "smpi/compute_only/traces.txt"
     }
 
+.. _usage_trace_replay_profile:
+
 Usage trace replay
 ^^^^^^^^^^^^^^^^^^
 Profiles of this type correspond to the replay of usage traces over time.
