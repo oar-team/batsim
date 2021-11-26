@@ -5,6 +5,7 @@ import subprocess
 from collections import namedtuple
 from os.path import abspath, basename, dirname, realpath
 import helper
+import pandas as pd
 
 Workload = namedtuple('Workload', ['name', 'filename'])
 Platform = namedtuple('Platform', ['name', 'filename'])
@@ -233,3 +234,10 @@ def manage_redis_server(request):
         print('Killing the spawned redis-server (if any)...')
         proc.kill()
     request.addfinalizer(on_finalize)
+
+@pytest.fixture(scope="session", autouse=True)
+def configure_pandas():
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.expand_frame_repr', False)
+    pd.set_option('max_colwidth', None)
