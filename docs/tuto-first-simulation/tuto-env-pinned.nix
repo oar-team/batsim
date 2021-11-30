@@ -48,6 +48,7 @@ let my-packages = rec {
       my-batsched
       my-pybatsim
       kapack.batexpe
+      kapack.pkgs.curl
     ];
   };
 };
