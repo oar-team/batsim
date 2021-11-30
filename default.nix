@@ -109,6 +109,16 @@ let
         [pkgs.cmake pkgs.qtcreator];
     };
 
+    # Shell used by CI to push coverage results on codecov's infrastructure.
+    codecov_push_shell = pkgs.mkShell rec {
+      name = "codecov-push-shell";
+      buildInputs = [
+        pkgs.curl
+        pkgs.git
+        pkgs.python3Packages.codecov
+      ];
+    };
+
     # Batsim integration tests.
     integration_tests = pkgs.stdenv.mkDerivation rec {
       pname = "batsim-integration-tests";
