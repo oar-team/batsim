@@ -1,18 +1,10 @@
-This directory contains:
-- the [definition](./Dockerfile) of the Docker container used for Batsim
-  continuous integration system
-- a wrapper to easily update the container and push it on
+This directory contains the definition of the main Docker container used by the CIs of the Batsim ecosystem.
+
+List of files.
+- [default.nix](./default.nix) defines how to build the container.
+- [Makefile](./Makefile) is a wrapper to build/push the container on
   [Docker Hub](https://hub.docker.com/r/oarteam/batsim_ci/)
 
-Build
-=====
-
-To use docker cache, simply run ``make build``.  
-To disable docker cache: ``make build-nocache``.
-
-Push to Docker Hub
-==================
-
-``` bash
-make push
-```
+List of commands.
+- Build: ``make build``
+- Push on Docker Hub: ``make push``
