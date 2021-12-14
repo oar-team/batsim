@@ -30,6 +30,7 @@ v4.1.0
 ------
 
 - `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...v4.1.0>`_
+- Release date: 2021-11-19
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-4.1.0``
 - Recommended SimGrid release: 3.29.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/releases>`_)
 
