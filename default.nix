@@ -298,7 +298,7 @@ let
         "^docs/tuto-sched-implem/.*\.rst"
         "^env"
         "^env/docker"
-        "^env/docker/Dockerfile"
+        "^env/docker/default\.nix"
         "^events"
         "^events/test_events_4hosts\.txt"
         "^workloads"
