@@ -42,7 +42,7 @@ Fixed
 ~~~~~
 - SimGrid < 3.27.0 had an `interaction issue with parallel tasks and multicore hosts <https://framagit.org/simgrid/simgrid/-/issues/37>`_.
   As this release is compatible with SimGrid-3.29.0, Batsim users can now use this interaction more safely,
-  even if `an interaction issue with pstate changes, parallel tasks and multicore hosts <https://framagit.org/simgrid/simgrid/-/issues/95>`_ still exists as of SimGrid-3.29.0.
+  even if it should be used with care as the behavior is inconsistent with pstate change and only seem to work on computation-only parallel tasks (cf. `simgrid issue 95 <https://framagit.org/simgrid/simgrid/-/issues/95>`_).
 
 Miscellaneous
 ~~~~~~~~~~~~~
