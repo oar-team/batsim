@@ -23,7 +23,7 @@
     };
   })
 , batexpe ? kapack.batexpe
-, pybatsim ? kapack.pybatsim.overrideAttrs (old: {
+, pybatsim ? kapack.pybatsim-320.overrideAttrs (old: {
     src = kapack.pkgs.fetchFromGitLab {
       domain = "gitlab.inria.fr";
       owner = "batsim";
