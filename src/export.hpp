@@ -201,7 +201,6 @@ public:
      * @param[out] r The red, whose value is in [0,1]
      * @param[out] g The green, whose value is in [0,1]
      * @param[out] b The blue, whose value is in [0,1]
-     * @return Nothing.
      */
     static void hsv_to_rgb(double h, double s, double v, double & r, double & g, double & b);
 

@@ -80,7 +80,6 @@ public:
      * @param[in] allow_compute_sharing Whether sharing is enabled on compute machines
      * @param[in] allow_storage_sharing Whether sharing is enabled on storage machines
      * @param[in] date The event date. Must be greater than or equal to the previous event.
-     * @return Nothing.
      */
     virtual void append_simulation_begins(Machines & machines,
                                           Workloads & workloads,
@@ -92,7 +91,6 @@ public:
     /**
      * @brief Appends a SIMULATION_ENDS event.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
-     * @return Nothing.
      */
     virtual void append_simulation_ends(double date) = 0;
 
@@ -103,7 +101,6 @@ public:
      * @param[in] profile_json_description The profile JSON description (optional if redis is
      *            disabled or if profiles are not forwarded)
      * @param[in] date The event date. Must be greater than or equal to the previous event.
-     * @return Nothing.
      */
     virtual void append_job_submitted(const std::string & job_id,
                                       const std::string & job_json_description,
@@ -117,7 +114,6 @@ public:
      * @param[in] job_alloc last allocation of the job
      * @param[in] return_code The job return code
      * @param[in] date The event date. Must be greater than or equal to the previous event.
-     * @return Nothing.
      */
     virtual void append_job_completed(const std::string & job_id,
                                       const std::string & job_state,
@@ -130,7 +126,6 @@ public:
      * @param[in] job_ids The identifiers of the jobs that have been killed.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
      * @param[in] job_progress Contains the progress of each job that has really been killed.
-     * @return Nothing.
      */
     virtual void append_job_killed(const std::vector<std::string> & job_ids,
                                    const std::map<std::string, BatTask *> & job_progress,
@@ -141,7 +136,6 @@ public:
      * @param[in] job_id The identifier of the job which sends the message.
      * @param[in] message The message to be sent to the scheduler.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
-     * @return Nothing.
      */
     virtual void append_from_job_message(const std::string & job_id,
                                          const rapidjson::Document & message,
@@ -152,7 +146,6 @@ public:
      * @param[in] resources The resources whose state has changed.
      * @param[in] new_state The state the machines are now in.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
-     * @return Nothing.
      */
     virtual void append_resource_state_changed(const IntervalSet & resources,
                                                const std::string & new_state,
@@ -163,7 +156,6 @@ public:
      * @param[in] job_id The identifier of the potential job
      * @param[in] job_json_description The job JSON description of the potential job
      * @param[in] date The event date. Must be greater than or equal to the previous event.
-     * @return Nothing.
      */
     virtual void append_query_estimate_waiting_time(const std::string & job_id,
                                                     const std::string & job_json_description,
@@ -173,7 +165,6 @@ public:
      * @brief Appends an ANSWER (energy) event.
      * @param[in] consumed_energy The total consumed energy in joules
      * @param[in] date The event date. Must be greater than or equal to the previous event.
-     * @return Nothing.
      */
     virtual void append_answer_energy(double consumed_energy,
                                       double date) = 0;
@@ -182,7 +173,6 @@ public:
      * @brief Appends a NOTIFY event.
      * @param notify_type The type of the NOTIFY event
      * @param date The event date. Must be greater than or equal to the previous event date.
-     * @return Nothing.
      */
     virtual void append_notify(const std::string & notify_type,
                                double date) = 0;
@@ -192,7 +182,6 @@ public:
      * @param notify_type The type of the resource event
      * @param resources The list of resources involved by the event
      * @param date The event date. Must be greater than or equal to the previous event date.
-     * @return Nothing.
      */
     virtual void append_notify_resource_event(const std::string & notify_type,
                                               const IntervalSet & resources,
@@ -202,7 +191,6 @@ public:
      * @brief Appends a NOTIFY event related to a generic external event.
      * @param[in] json_desc The JSON description of the generic event
      * @param[in] date The event date. Must be greater than or equal to the previous event date.
-     * @return Nothing.
      */
     virtual void append_notify_generic_event(const std::string & json_desc,
                                              double date) = 0;
@@ -210,14 +198,12 @@ public:
     /**
      * @brief Appends a REQUESTED_CALL message.
      * @param[in] date The event date. Must be greater than or equal to the previous event.
-     * @return Nothing.
      */
     virtual void append_requested_call(double date) = 0;
 
     // Management functions
     /**
      * @brief Clears inner content. Should called directly after generate_current_message.
-     * @return Nothing.
      */
     virtual void clear() = 0;
 
@@ -442,7 +428,6 @@ public:
     /**
      * @brief Parses a message and injects events in the simulation
      * @param[in] message The protocol message
-     * @return Nothing.
      */
     virtual void parse_and_apply_message(const std::string & message) = 0;
 };

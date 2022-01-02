@@ -95,7 +95,7 @@ def generate_workload(input_swf, output_json, computation_speed,
     # Let's generate a dict of dictionaries for the profiles
     dprofs = {}
     for profile in profiles:
-        dprofs[str(profile)] = {'type': 'msg_par_hg',
+        dprofs[str(profile)] = {'type': 'parallel_homogeneous',
                                 'cpu': profile * computation_speed,
                                 'com': 0.0}
 

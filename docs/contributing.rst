@@ -3,9 +3,10 @@
 Contributing guidelines
 =======================
 
-- Please feel free to :ref:`contact_us` in case of doubt.
+- Please do :ref:`contact_us` in case of doubt.
 - You found a bug or desire a feature? `Open an issue`_.
-- You want to improve Batsim's code or documentation? `Open a merge/pull request`_.
+- You want to improve Batsim's code or documentation?
+  Read :ref:`setting_up_dev_env` then `Open a merge/pull request`_.
 
 Open an issue
 -------------

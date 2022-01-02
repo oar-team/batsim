@@ -1,0 +1,50 @@
+{
+  "nb_res": 32,
+  "jobs": [
+    {"id": "0", "subtime":   0, "walltime": 3600, "res": 4, "profile": "imaginary_stencil"},
+
+    {"id":"10", "subtime":1000, "walltime": 3600, "res": 4, "profile": "imaginary_stencil"},
+    {"id":"11", "subtime":1000, "walltime": 3600, "res": 4, "profile": "imaginary_stencil"},
+
+    {"id":"20", "subtime":2000, "walltime": 3600, "res": 4, "profile": "imaginary_stencil"},
+    {"id":"21", "subtime":2001, "walltime": 3600, "res": 4, "profile": "imaginary_stencil"},
+
+    {"id":"30", "subtime":3000, "walltime": 3600, "res": 4, "profile": "imaginary_stencil"},
+    {"id":"31", "subtime":3000, "walltime": 3600, "res": 4, "profile": "imaginary_stencil"},
+    {"id":"32", "subtime":3000, "walltime": 3600, "res": 4, "profile": "imaginary_stencil"},
+    {"id":"33", "subtime":3000, "walltime": 3600, "res": 4, "profile": "imaginary_stencil"}
+  ],
+
+  "profiles": {
+    "initial_load": {
+      "type": "parallel_homogeneous_pfs",
+      "bytes_to_read": 67108864,
+      "bytes_to_write": 0,
+      "storage": "pfs"
+    },
+    "100_iterations": {
+      "type": "parallel",
+      "cpu": [   1e9,    1e9,    1e9,    1e9],
+      "com": [     0, 819200, 819200,      0,
+              819200,      0,      0, 819200,
+              819200,      0,      0, 819200,
+                   0, 819200, 819200,      0]
+    },
+    "checkpoint": {
+      "type": "parallel_homogeneous_pfs",
+      "bytes_to_read": 0,
+      "bytes_to_write": 67108864,
+      "storage": "pfs"
+    },
+    "iterations_and_checkpoints": {
+      "type": "composed",
+      "repeat": 10,
+      "seq": ["100_iterations", "checkpoint"]
+    },
+    "imaginary_stencil": {
+      "type": "composed",
+      "repeat": 1,
+      "seq": ["initial_load", "iterations_and_checkpoints"]
+    }
+  }
+}

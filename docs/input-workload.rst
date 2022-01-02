@@ -187,6 +187,8 @@ It allows such profiles to be used with any number of resources while conserving
       "com": 1e6
     }
 
+.. _profile_sequence:
+
 Sequence of profiles
 ^^^^^^^^^^^^^^^^^^^^
 This profile type defines a list of other profiles that should be executed in sequence.

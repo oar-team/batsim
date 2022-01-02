@@ -240,7 +240,7 @@ const Workflow *Workflows::operator[](const std::string &workflow_name) const
 
 Workflow *Workflows::at(const std::string &workflow_name)
 {
-    xbt_assert(exists(workflow_name));
+    xbt_assert(exists(workflow_name), "workflow '%s' does not exist", workflow_name.c_str());
     //    xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
     //    return nullptr;
     return _workflows.at(workflow_name);
@@ -248,7 +248,7 @@ Workflow *Workflows::at(const std::string &workflow_name)
 
 const Workflow *Workflows::at(const std::string &workflow_name) const
 {
-    xbt_assert(exists(workflow_name));
+    xbt_assert(exists(workflow_name), "workflow '%s' does not exist", workflow_name.c_str());
     //xbt_assert(false, "The next line is bad and has been added to make Batsim compile without warning (required by Travis). Please fix it.");
     //return nullptr;
     return _workflows.at(workflow_name);
@@ -256,8 +256,8 @@ const Workflow *Workflows::at(const std::string &workflow_name) const
 
 void Workflows::insert_workflow(const std::string &workflow_name, Workflow *workflow)
 {
-    xbt_assert(!exists(workflow_name));
-    xbt_assert(!exists(workflow->name));
+    xbt_assert(!exists(workflow_name), "workflow '%s' already exists", workflow_name.c_str());
+    xbt_assert(!exists(workflow->name), "workflow '%s' already exists", workflow->name.c_str());
 
     workflow->name = workflow_name;
     _workflows[workflow_name] = workflow;

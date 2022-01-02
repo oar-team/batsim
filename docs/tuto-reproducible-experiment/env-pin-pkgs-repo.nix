@@ -1,5 +1,5 @@
 { kapack ? import
-    ( fetchTarball "https://github.com/oar-team/kapack/archive/773d3909d78f1043ffb589a725773699210d71d5.tar.gz")
+    ( fetchTarball "https://github.com/oar-team/nur-kapack/archive/1672831224a21d6c34350d8f78cff9266e3e28a2.tar.gz")
   {}
 }:
 

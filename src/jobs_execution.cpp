@@ -20,21 +20,28 @@ using namespace std;
 
 void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, const std::string & termination_mbox_name, int rank)
 {
-    // Prepare data for smpi_replay_run
-    char * str_instance_id = nullptr;
-    int ret = asprintf(&str_instance_id, "%s", job->id.to_cstring());
-    (void) ret; // Avoids a warning if assertions are ignored
-    xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+    try
+    {
+        // Prepare data for smpi_replay_run
+        char * str_instance_id = nullptr;
+        int ret = asprintf(&str_instance_id, "%s", job->id.to_cstring());
+        (void) ret; // Avoids a warning if assertions are ignored
+        xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
 
-    XBT_INFO("Replaying rank %d of job %s (SMPI)", rank, job->id.to_cstring());
-    smpi_replay_run(str_instance_id, rank, 0, profile_data->trace_filenames[static_cast<size_t>(rank)].c_str());
-    XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_cstring());
+        XBT_INFO("Replaying rank %d of job %s (SMPI)", rank, job->id.to_cstring());
+        smpi_replay_run(str_instance_id, rank, 0, profile_data->trace_filenames[static_cast<size_t>(rank)].c_str());
+        XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_cstring());
 
-    // Tell parent process that replay has finished for this rank.
-    auto mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
-    auto rank_copy = new unsigned int;
-    *rank_copy = static_cast<unsigned int>(rank);
-    mbox->put(static_cast<void*>(rank_copy), 4);
+        // Tell parent process that replay has finished for this rank.
+        auto mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
+        auto rank_copy = new unsigned int;
+        *rank_copy = static_cast<unsigned int>(rank);
+        mbox->put(static_cast<void*>(rank_copy), 4);
+    }
+    catch (const simgrid::NetworkFailureException & e)
+    {
+        XBT_INFO("Caught a NetworkFailureException caught: %s", e.what());
+    }
 }
 
 int execute_task(BatTask * btask,
@@ -251,11 +258,11 @@ int execute_task(BatTask * btask,
                 unsigned int * finished_rank = nullptr;
                 if (has_walltime)
                 {
-                    finished_rank = static_cast<unsigned int*>(termination_mbox->get(*remaining_time));
+                    finished_rank = termination_mbox->get<unsigned int>(*remaining_time);
                 }
                 else
                 {
-                    finished_rank = static_cast<unsigned int*>(termination_mbox->get());
+                    finished_rank = termination_mbox->get<unsigned int>();
                 }
 
                 xbt_assert(child_actors.count(*finished_rank) == 1, "Internal error: unexpected rank received (%u)", *finished_rank);
@@ -593,7 +600,7 @@ void killer_process(BatsimContext * context,
                 // There was no ptask running, directly kill the actor
 
                 // Let's kill all the involved processes
-                xbt_assert(job->execution_actors.size() > 0);
+                xbt_assert(job->execution_actors.size() > 0, "kill inconsistency: no actors to kill while job's task could not be cancelled");
                 for (simgrid::s4u::ActorPtr actor : job->execution_actors)
                 {
                     XBT_INFO("Killing process '%s'", actor->get_cname());

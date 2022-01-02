@@ -1,5 +1,5 @@
 { kapack ? import
-    ( fetchTarball "https://github.com/oar-team/kapack/archive/773d3909d78f1043ffb589a725773699210d71d5.tar.gz")
+    ( fetchTarball "https://github.com/oar-team/nur-kapack/archive/1672831224a21d6c34350d8f78cff9266e3e28a2.tar.gz")
   {}
 }:
 
@@ -7,7 +7,7 @@ with kapack.pkgs;
 
 let
   self = rec {
-    my_batsim = kapack.batsim.overrideAttrs (attr: rec {
+    my_batsim = kapack.batsim-310.overrideAttrs (attr: rec {
       name = "batsim-3.1.0-346e0de";
       src = fetchgit {
         url = "https://framagit.org/batsim/batsim.git";
@@ -15,7 +15,7 @@ let
         sha256 = "0jacrinzzx6nxm99789xjbip0cn3zfsg874zaazbmicbpllxzh62";
       };
     });
-    my_batsched = kapack.batsched.overrideAttrs (attr: rec {
+    my_batsched = kapack.batsched-130.overrideAttrs (attr: rec {
       name = "batsched-1.3.0-db0450a";
       src = fetchgit {
         url = "https://framagit.org/batsim/batsched.git";
@@ -23,7 +23,7 @@ let
         sha256 = "05bn43xrk4qz8w2v58zkl17vmj4y57y93lrgrpv7jsdkird9a5vw";
       };
     });
-    my_pybatsim = kapack.pybatsim.overrideAttrs (attr: rec {
+    my_pybatsim = kapack.pybatsim-320.overrideAttrs (attr: rec {
       name = "pybatsim-3.1.0-ca81c4a";
       src = fetchgit {
         url = "https://gitlab.inria.fr/batsim/pybatsim.git";

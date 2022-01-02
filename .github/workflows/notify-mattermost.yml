@@ -1,0 +1,56 @@
+name: Notify Mattermost
+on:
+  pull_request:
+    types: [opened, edited, closed, reopened]
+  issues:
+    types: [opened, edited, deleted, closed, reopened, locked, unlocked]
+  issue_comment:
+    types: [created, edited, deleted]
+jobs:
+  notify-mattermost:
+    name: Notify Mattermost
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate pull request message
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          ACTION_TYPE: ${{ github.event.action }}
+          AUTHOR_LOGIN: ${{ github.event.sender.login }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "{\"text\":\"${AUTHOR_LOGIN} ${ACTION_TYPE} [pull request ${PR_NUMBER} (${PR_TITLE})](${PR_URL})\"}" > mattermost.json
+
+      - name: Generate issue message
+        if: ${{ github.event_name == 'issues' }}
+        env:
+          ACTION_TYPE: ${{ github.event.action }}
+          AUTHOR_LOGIN: ${{ github.event.sender.login }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          echo "{\"text\":\"${AUTHOR_LOGIN} ${ACTION_TYPE} [issue ${ISSUE_NUMBER} (${ISSUE_TITLE})](${ISSUE_URL})\"}" > mattermost.json
+
+      - name: Generate issue_comment message
+        if: ${{ github.event_name == 'issue_comment' }}
+        env:
+          ACTION_TYPE: ${{ github.event.action }}
+          AUTHOR_LOGIN: ${{ github.event.sender.login }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          echo "{\"text\":\"${AUTHOR_LOGIN} ${ACTION_TYPE} a comment on [issue ${ISSUE_NUMBER} (${ISSUE_TITLE})](${ISSUE_URL})\"}" > mattermost.json
+
+      - name: Print message
+        run: |
+          cat mattermost.json
+          cat mattermost.json | jq
+
+      - name: Send message to mattermost
+        env:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          MATTERMOST_ICON: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+        uses: mattermost/action-mattermost-notify@master

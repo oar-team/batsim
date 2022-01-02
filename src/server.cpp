@@ -170,7 +170,7 @@ void generate_and_send_message(ServerData * data)
 void server_on_submitter_hello(ServerData * data,
                                IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     xbt_assert(!data->end_of_simulation_sent,
                "A new submitter said hello but the simulation is finished... Aborting.");
     auto * message = static_cast<SubmitterHelloMessage *>(task_data->data);
@@ -198,10 +198,10 @@ void server_on_submitter_hello(ServerData * data,
 void server_on_submitter_bye(ServerData * data,
                              IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<SubmitterByeMessage *>(task_data->data);
 
-    xbt_assert(data->submitters.count(message->submitter_name) == 1);
+    xbt_assert(data->submitters.count(message->submitter_name) == 1, "inconsistency: expected 1 submitter with name '%s', got %lu", message->submitter_name.c_str(), data->submitters.count(message->submitter_name));
     delete data->submitters[message->submitter_name];
     data->submitters.erase(message->submitter_name);
 
@@ -238,7 +238,7 @@ void server_on_submitter_bye(ServerData * data,
 void server_on_job_completed(ServerData * data,
                              IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<JobCompletedMessage *>(task_data->data);
 
     if (data->origin_of_jobs.count(message->job->id) == 1)
@@ -254,9 +254,9 @@ void server_on_job_completed(ServerData * data,
     }
 
     data->nb_running_jobs--;
-    xbt_assert(data->nb_running_jobs >= 0);
+    xbt_assert(data->nb_running_jobs >= 0, "inconsistency: no jobs are running");
     data->nb_completed_jobs++;
-    xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
+    xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_completed_jobs + nb_running_jobs > nb_submitted_jobs");
     auto job = message->job;
 
     XBT_INFO("Job %s has COMPLETED. %d jobs completed so far",
@@ -283,17 +283,17 @@ void server_on_job_submitted(ServerData * data,
         return;
     }
 
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<JobSubmittedMessage *>(task_data->data);
 
-    xbt_assert(data->submitters.count(message->submitter_name) == 1);
+    xbt_assert(data->submitters.count(message->submitter_name) == 1, "inconsistency: expected 1 submitter with name '%s', , got %lu", message->submitter_name.c_str(), data->submitters.count(message->submitter_name));
 
     ServerData::Submitter * submitter = data->submitters.at(message->submitter_name);
     for (JobPtr & job : message->jobs)
     {
         if (submitter->should_be_called_back)
         {
-            xbt_assert(data->origin_of_jobs.count(job->id) == 0);
+            xbt_assert(data->origin_of_jobs.count(job->id) == 0, "inconsistency: submitter should be called back but job's submitter has not been tracked");
             data->origin_of_jobs[job->id] = submitter;
         }
 
@@ -401,7 +401,7 @@ void server_on_event_generic(ServerData * data,
 void server_on_event_occurred(ServerData * data,
                               IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<EventOccurredMessage *>(task_data->data);
 
     for (const Event * event : message->occurred_events)
@@ -429,7 +429,7 @@ void server_on_pstate_modification(ServerData * data,
                "Batsim has not been launched with energy support "
                "(cf. batsim --help).");
 
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<PStateModificationMessage *>(task_data->data);
 
     data->context->current_switches.add_switch(message->machine_ids, message->new_pstate);
@@ -464,16 +464,16 @@ void server_on_pstate_modification(ServerData * data,
     {
         const int machine_id = *machine_it;
         Machine * machine = data->context->machines[machine_id];
-        int curr_pstate = machine->host->get_pstate();
+        unsigned long curr_pstate = machine->host->get_pstate();
 
         if (machine->pstates[curr_pstate] == PStateType::COMPUTATION_PSTATE)
         {
             if (machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE)
             {
-                XBT_INFO("Switching machine %d ('%s') pstate : %d -> %d.", machine->id,
+                XBT_INFO("Switching machine %d ('%s') pstate : %lu -> %lu.", machine->id,
                          machine->name.c_str(), curr_pstate, message->new_pstate);
                 machine->host->set_pstate(message->new_pstate);
-                xbt_assert(machine->host->get_pstate() == message->new_pstate);
+                xbt_assert(machine->host->get_pstate() == message->new_pstate, "pstate inconsistency: the desired pstate has not been set");
 
                 IntervalSet all_switched_machines;
                 if (data->context->current_switches.mark_switch_as_done(machine->id, message->new_pstate,
@@ -497,14 +497,14 @@ void server_on_pstate_modification(ServerData * data,
             }
             else
             {
-                XBT_ERROR("Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %d -> %d",
+                XBT_ERROR("Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %lu -> %lu",
                           machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
             }
         }
         else if (machine->pstates[curr_pstate] == PStateType::SLEEP_PSTATE)
         {
             xbt_assert(machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE,
-                    "Switching from a sleep pstate to a non-computation pstate on machine %d ('%s') : %d -> %d, which is forbidden",
+                    "Switching from a sleep pstate to a non-computation pstate on machine %d ('%s') : %lu -> %lu, which is forbidden",
                     machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
 
             machine->update_machine_state(MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING);
@@ -517,7 +517,7 @@ void server_on_pstate_modification(ServerData * data,
         }
         else
         {
-            XBT_ERROR("Machine %d ('%s') has an invalid pstate : %d", machine->id, machine->name.c_str(), curr_pstate);
+            XBT_ERROR("Machine %d ('%s') has an invalid pstate : %lu", machine->id, machine->name.c_str(), curr_pstate);
         }
     }
 
@@ -588,13 +588,13 @@ void server_on_wait_query(ServerData * data,
 void server_on_switched(ServerData * data,
                         IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<SwitchMessage *>(task_data->data);
 
-    xbt_assert(data->context->machines.exists(message->machine_id));
+    xbt_assert(data->context->machines.exists(message->machine_id), "machine %d does not exist", message->machine_id);
     Machine * machine = data->context->machines[message->machine_id];
     (void) machine; // Avoids a warning if assertions are ignored
-    xbt_assert(machine->host->get_pstate() == message->new_pstate);
+    xbt_assert(machine->host->get_pstate() == message->new_pstate, "pstate inconsistency: the desired pstate has not been set");
 
     IntervalSet all_switched_machines;
     if (data->context->current_switches.mark_switch_as_done(message->machine_id, message->new_pstate,
@@ -616,7 +616,7 @@ void server_on_switched(ServerData * data,
 void server_on_killing_done(ServerData * data,
                             IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<KillingDoneMessage *>(task_data->data);
 
     map<string, BatTask *> jobs_progress_str;
@@ -636,9 +636,9 @@ void server_on_killing_done(ServerData * data,
         if ( job->state == JobState::JOB_STATE_COMPLETED_KILLED)
         {
             data->nb_running_jobs--;
-            xbt_assert(data->nb_running_jobs >= 0);
+            xbt_assert(data->nb_running_jobs >= 0, "inconsistency: no jobs are running");
             data->nb_completed_jobs++;
-            xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
+            xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_completed_jobs + nb_running_jobs > nb_submitted_jobs");
 
             really_killed_job_ids_str.push_back(job_id.to_string());
 
@@ -687,7 +687,7 @@ void server_on_continue_dynamic_register(ServerData * data,
 void server_on_register_job(ServerData * data,
                           IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<JobRegisteredByDPMessage *>(task_data->data);
     auto job = message->job;
 
@@ -718,7 +718,7 @@ void server_on_register_job(ServerData * data,
 void server_on_register_profile(ServerData * data,
                           IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<ProfileRegisteredByDPMessage *>(task_data->data);
     (void) data;
     (void) message;
@@ -728,7 +728,7 @@ void server_on_register_profile(ServerData * data,
 void server_on_set_job_metadata(ServerData * data,
                                 IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<SetJobMetadataMessage *>(task_data->data);
 
     JobIdentifier job_identifier = JobIdentifier(message->job_id);
@@ -745,7 +745,7 @@ void server_on_set_job_metadata(ServerData * data,
 void server_on_change_job_state(ServerData * data,
                                 IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<ChangeJobStateMessage *>(task_data->data);
 
     if (!(data->context->workloads.job_is_registered(message->job_id)))
@@ -768,11 +768,11 @@ void server_on_change_job_state(ServerData * data,
         case JobState::JOB_STATE_RUNNING:
             job->starting_time = static_cast<long double>(simgrid::s4u::Engine::get_clock());
             data->nb_running_jobs++;
-            xbt_assert(data->nb_running_jobs <= data->nb_submitted_jobs);
+            xbt_assert(data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_running_jobs > nb_submitted_jobs");
             break;
         case JobState::JOB_STATE_REJECTED:
             data->nb_completed_jobs++;
-            xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
+            xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_completed_jobs + nb_running_jobs > nb_submitted_jobs");
             data->context->jobs_tracer.write_job(job);
             data->jobs_to_be_deleted.push_back(message->job_id);
             break;
@@ -791,9 +791,9 @@ void server_on_change_job_state(ServerData * data,
         case JobState::JOB_STATE_COMPLETED_KILLED:
             job->runtime = static_cast<long double>(simgrid::s4u::Engine::get_clock()) - job->starting_time;
             data->nb_running_jobs--;
-            xbt_assert(data->nb_running_jobs >= 0);
+            xbt_assert(data->nb_running_jobs >= 0, "inconsistency: no jobs are running");
             data->nb_completed_jobs++;
-            xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs);
+            xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_completed_jobs + nb_running_jobs > nb_submitted_jobs");
             data->context->jobs_tracer.write_job(job);
             data->jobs_to_be_deleted.push_back(message->job_id);
             break;
@@ -816,7 +816,7 @@ void server_on_change_job_state(ServerData * data,
 void server_on_to_job_msg(ServerData * data,
                           IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<ToJobMessage *>(task_data->data);
 
     if (!(data->context->workloads.job_is_registered(message->job_id)))
@@ -835,7 +835,7 @@ void server_on_to_job_msg(ServerData * data,
 void server_on_from_job_msg(ServerData * data,
                           IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<FromJobMessage *>(task_data->data);
 
     auto job = data->context->workloads.job_at(message->job_id);
@@ -850,7 +850,7 @@ void server_on_from_job_msg(ServerData * data,
 void server_on_reject_job(ServerData * data,
                           IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<JobRejectedMessage *>(task_data->data);
 
     if (!(data->context->workloads.job_is_registered(message->job_id)))
@@ -877,7 +877,7 @@ void server_on_reject_job(ServerData * data,
 void server_on_kill_jobs(ServerData * data,
                          IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<KillJobMessage *>(task_data->data);
 
     std::vector<JobIdentifier> jobs_ids_to_kill;
@@ -917,7 +917,7 @@ void server_on_kill_jobs(ServerData * data,
 void server_on_call_me_later(ServerData * data,
                              IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<CallMeLaterMessage *>(task_data->data);
 
     xbt_assert(message->target_time > simgrid::s4u::Engine::get_clock(),
@@ -934,7 +934,7 @@ void server_on_call_me_later(ServerData * data,
 void server_on_execute_job(ServerData * data,
                            IPMessage * task_data)
 {
-    xbt_assert(task_data->data != nullptr);
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<ExecuteJobMessage *>(task_data->data);
     auto * allocation = message->allocation;
     auto job = allocation->job;
@@ -946,7 +946,7 @@ void server_on_execute_job(ServerData * data,
     job->state = JobState::JOB_STATE_RUNNING;
 
     data->nb_running_jobs++;
-    xbt_assert(data->nb_running_jobs <= data->nb_submitted_jobs);
+    xbt_assert(data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_running_jobs > nb_submitted_jobs");
 
     if (!data->context->allow_compute_sharing || !data->context->allow_storage_sharing)
     {
@@ -998,7 +998,7 @@ void server_on_execute_job(ServerData * data,
         // Check that every machine is in a computation pstate
         int ps = machine->host->get_pstate();
         (void) ps; // Avoids a warning if assertions are ignored
-        xbt_assert(machine->has_pstate(ps));
+        xbt_assert(machine->has_pstate(ps), "machine %d has no pstate %d", machine_id, ps);
         xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
                    "Job '%s': Invalid job allocation ('%s'): machine %d (hostname='%s') is not in a computation pstate (ps=%d)",
                    job->id.to_cstring(),

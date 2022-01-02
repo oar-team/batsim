@@ -3,8 +3,8 @@
 <platform version="4.1">
 <zone id="AS0"  routing="Full">
     <host id="master_host" speed="100Mf">
-        <prop id="watt_per_state" value="100:200" />
-        <prop id="watt_off" value="10" />
+        <prop id="wattage_per_state" value="100:200" />
+        <prop id="wattage_off" value="10" />
     </host>
 
     <!-- The state 1 of Mercury is a sleep state.
@@ -12,26 +12,26 @@
     When switching from the state 1 to a computing state, passing by the virtual pstate 3 is mandatory to simulate the time and energy consumed by the switch on.
      -->
     <host id="Mercury" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
-        <prop id="watt_per_state" value="30.0:30.0:100.0, 9.75:9.75:9.75, 200.996721311:200.996721311:200.996721311, 425.1743849:425.1743849:425.1743849" />
-        <prop id="watt_off" value="9.75" />
+        <prop id="wattage_per_state" value="30.0:30.0:100.0, 9.75:9.75:9.75, 200.996721311:200.996721311:200.996721311, 425.1743849:425.1743849:425.1743849" />
+        <prop id="wattage_off" value="9.75" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
 
     <host id="Venus" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
-        <prop id="watt_per_state" value="30.0:30.0:100.0, 9.75:9.75:9.75, 200.996721311:200.996721311:200.996721311, 425.1743849:425.1743849:425.1743849" />
-        <prop id="watt_off" value="9.75" />
+        <prop id="wattage_per_state" value="30.0:30.0:100.0, 9.75:9.75:9.75, 200.996721311:200.996721311:200.996721311, 425.1743849:425.1743849:425.1743849" />
+        <prop id="wattage_off" value="9.75" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
 
     <host id="Earth" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
-        <prop id="watt_per_state" value="30.0:30.0:100.0, 9.75:9.75:9.75, 200.996721311:200.996721311:200.996721311, 425.1743849:425.1743849:425.1743849" />
-        <prop id="watt_off" value="9.75" />
+        <prop id="wattage_per_state" value="30.0:30.0:100.0, 9.75:9.75:9.75, 200.996721311:200.996721311:200.996721311, 425.1743849:425.1743849:425.1743849" />
+        <prop id="wattage_off" value="9.75" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
 
     <host id="Mars" speed="100.0Mf, 1e-9Mf, 0.5f, 0.05f" pstate="0" >
-        <prop id="watt_per_state" value="30.0:30.0:100.0, 9.75:9.75:9.75, 200.996721311:200.996721311:200.996721311, 425.1743849:425.1743849:425.1743849" />
-        <prop id="watt_off" value="9.75" />
+        <prop id="wattage_per_state" value="30.0:30.0:100.0, 9.75:9.75:9.75, 200.996721311:200.996721311:200.996721311, 425.1743849:425.1743849:425.1743849" />
+        <prop id="wattage_off" value="9.75" />
         <prop id="sleep_pstates" value="1:2:3" />
     </host>
 

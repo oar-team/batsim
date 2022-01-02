@@ -55,7 +55,7 @@
         },
         "compute_only_10s":{
             "type":"parallel_homogeneous",
-            "cpu": 1e9,
+            "cpu": 1e10,
             "com": 0
         }
     }

@@ -39,11 +39,23 @@ It should print some metrics and generate several plots in the current directory
 Visualizing Gantt charts
 ------------------------
 
+| Gantt charts can easily be visualized thanks to the Evalys_ Python library.
+| Evalys can take as input a regular SWF workload file or the Batsim ``PREFIX_jobs.csv`` output file to plot the Gantt chart of the jobs with the following script.
+| More detailed plots are presented in the examples_ of the Evalys repository.
+
+.. code:: python
+
+    from evalys.jobset import JobSet
+    from evalys import visu
+    js = JobSet.from_csv("PREFIX_jobs.csv")
+    visu.gantt.plot_gantt(js, label_jobs=True)
+
+
+
 .. todo::
 
     Introduce ViTE_ here and show an output example.
 
-    Talk about Evalys_
 
 Build your own visualization
 ----------------------------
@@ -58,3 +70,4 @@ Build your own visualization
 .. _R: https://www.r-project.org/
 .. _tidyverse: https://www.tidyverse.org/
 .. _Evalys: https://github.com/oar-team/evalys
+.. _examples: https://github.com/oar-team/evalys#examples

@@ -236,7 +236,8 @@ is no expected acknowledgment when sending such an event.
 For now, Batsim can **notify** the scheduler of the following.
 
 - ``no_more_static_job_to_submit``: Batsim tells the scheduler that it has no more jobs to submit from the static submitters. This means that all jobs in the workloads have already been submitted to the scheduler and the scheduler cannot expect more jobs to arrive (except the potential ones through dynamic submission).
-- ``no_more_external_event_to_occur``: Only appliable if a list of events are given as input to Batsim via the ``--events`` command-line option. Batsim tells the scheduler that there is no more external event to occur from the event submitters. That means that all external events have occurred and the scheduler cannot expect a new event to occur.
+- ``no_more_external_event_to_occur``: Only applicable if a list of events are given as input to Batsim via the ``--events`` command-line option. Batsim tells the scheduler that there is no more external event to occur from the event submitters. That means that all external events have occurred and the scheduler cannot expect a new event to occur.
+- ``event_machine_unavailable`` or ``event_machine_available`` if external events are used (cf. :ref:`input_EVENTS`).
 
 For now, the scheduler can **notify** Batsim of the following.
 
@@ -723,7 +724,7 @@ Execute a job on a given :ref:`interval_set` of resources.
 An optional ``mapping`` field can be added to tell Batsim how to map
 executors to resources: Where the executors will be placed inside the
 allocation (resource numbers are shifted to 0). It can be seen as MPI
-rank to host mapping. It only works for the ``smpi`` job profile type.
+rank to host mapping.
 The following example overrides the default round robin mapping to put
 the first two ranks (0 and 1) on the first allocated machine (0, which
 stands for resource id 2), and the last two ranks (2 and 3) on the
@@ -799,6 +800,8 @@ Batsim will send a :ref:`proto_REQUESTED_CALL` event when the desired timestamp 
      "type": "CALL_ME_LATER",
      "data": {"timestamp": 25.5}
    }
+
+.. _proto_KILL_JOB:
 
 KILL_JOB
 ~~~~~~~~

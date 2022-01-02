@@ -16,8 +16,25 @@ Starting with version `v1.0.0`_, Batsim adheres to `Semantic Versioning`_ and it
 Unreleased
 ----------
 
-- `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...HEAD>`_
+- `Commits since v4.1.0 <https://github.com/oar-team/batsim/compare/v4.1.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
+
+........................................................................................................................
+
+v4.1.0
+------
+
+- `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...v4.1.0>`_
+- ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-4.1.0``
+
+Changed
+~~~~~~~
+- Updated Batsim code / example platforms / platform generators so that they work with SimGrid-3.29.0.
+
+Miscellaneous
+~~~~~~~~~~~~~
+- Improved readibility of Batsim assertion error messages.
+- Improved documentation.
 
 ........................................................................................................................
 
@@ -25,6 +42,7 @@ v4.0.0
 ------
 
 - `Commits since v3.1.0 <https://github.com/oar-team/batsim/compare/v3.1.0...v4.0.0>`_
+- Release date: 2020-07-29
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -i batsim-4.0.0``
 - Recommended SimGrid release: 3.25.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/releases>`_)
 
@@ -238,7 +256,7 @@ Miscellaneous
 - Various bug fixes.
 - Removed the python experiment scripts that were located in ``tools/experiments``,
   as robin_ became the standard tool to execute Batsim experiments.
-- Removed git submodules. Please now use schedulers directly from their repositories or from kapack_.
+- Removed git submodules. Please now use schedulers directly from their repositories or from kapack.
 - Removed dependencies to GMP and cppzmq.
 - Batsim now mainly uses the s4u SimGrid interface.
   If you used to set SimGrid configuration/logging options through Batsim CLI,
@@ -439,7 +457,6 @@ Changed
 .. _intervalset: https://framagit.org/batsim/intervalset
 .. _batexpe: https://framagit.org/batsim/batexpe/
 .. _robin: https://framagit.org/batsim/batexpe/blob/master/doc/robin.md
-.. _kapack: https://github.com/oar-team/kapack/
 .. _`docopt-cpp`: https://github.com/docopt/docopt.cpp
 .. _pugixml: https://pugixml.org/
 .. _Meson: https://mesonbuild.com/

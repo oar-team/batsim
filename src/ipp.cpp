@@ -52,7 +52,7 @@ void dsend_message(const std::string & destination_mailbox, IPMessageType type, 
 IPMessage * receive_message(const std::string & reception_mailbox)
 {
     auto mailbox = simgrid::s4u::Mailbox::by_name(reception_mailbox);
-    IPMessage * message = static_cast<IPMessage *>(mailbox->get());
+    IPMessage * message = mailbox->get<IPMessage>();
     return message;
 }
 

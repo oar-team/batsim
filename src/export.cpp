@@ -609,7 +609,7 @@ void PajeTracer::add_job_kill(const JobIdentifier & job_id, const IntervalSet & 
 
 void PajeTracer::generate_colors(int color_count)
 {
-    xbt_assert(color_count > 0);
+    xbt_assert(color_count > 0, "wrong call: color_count (%d) must be strictly positive", color_count);
 
     const int buf_size = 256;
     int nb_printed;
@@ -693,7 +693,7 @@ void PajeTracer::hsv_to_rgb(double h, double s, double v, double & r, double & g
 
 PStateChangeTracer::PStateChangeTracer()
 {
-    xbt_assert(_temporary_buffer == nullptr);
+    xbt_assert(_temporary_buffer == nullptr, "wrong call: _temporary_buffer is null");
     _temporary_buffer = static_cast<char*>(malloc(512 * sizeof(char)));
     xbt_assert(_temporary_buffer != NULL, "Couldn't allocate memory");
 }
@@ -723,7 +723,7 @@ PStateChangeTracer::~PStateChangeTracer()
 
 void PStateChangeTracer::add_pstate_change(double time, const IntervalSet & machines, int pstate_after)
 {
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
 
     const string machines_as_string = machines.to_string_hyphen(" ", "-");
     const size_t minimum_buf_size = 256 + machines_as_string.size();
@@ -744,14 +744,14 @@ void PStateChangeTracer::add_pstate_change(double time, const IntervalSet & mach
 
 void PStateChangeTracer::flush()
 {
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
 
     _wbuf->flush_buffer();
 }
 
 void PStateChangeTracer::close_buffer()
 {
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
 
     delete _wbuf;
     _wbuf = nullptr;
@@ -771,7 +771,7 @@ EnergyConsumptionTracer::~EnergyConsumptionTracer()
 
 void EnergyConsumptionTracer::set_context(BatsimContext *context)
 {
-    xbt_assert(context->energy_used);
+    xbt_assert(context->energy_used, "wrong call: energy is disabled");
     _context = context;
 }
 
@@ -804,14 +804,14 @@ void EnergyConsumptionTracer::add_pstate_change(double date, const IntervalSet &
 
 void EnergyConsumptionTracer::flush()
 {
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
 
     _wbuf->flush_buffer();
 }
 
 void EnergyConsumptionTracer::close_buffer()
 {
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
 
     delete _wbuf;
     _wbuf = nullptr;
@@ -819,7 +819,7 @@ void EnergyConsumptionTracer::close_buffer()
 
 long double EnergyConsumptionTracer::add_entry(double date, char event_type)
 {
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
 
     long double energy = _context->machines.total_consumed_energy(_context);
     long double wattmin = _context->machines.total_wattmin(_context);
@@ -852,7 +852,7 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
     _wbuf->append_text(buf);
 
     free(buf);
@@ -905,8 +905,8 @@ void MachineStateTracer::set_filename(const string &filename)
 
 void MachineStateTracer::write_machine_states(double date)
 {
-    xbt_assert(_context != nullptr);
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_context != nullptr, "wrong call: _context is null");
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
 
     const std::map<MachineState, int> & numbers = _context->machines.nb_machines_in_each_state();
 
@@ -926,7 +926,7 @@ void MachineStateTracer::write_machine_states(double date)
     xbt_assert(nb_printed < buf_size - 1,
                "Writing error: buffer has been completely filled, some information might "
                "have been lost. Please increase Batsim's output temporary buffers' size");
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
     _wbuf->append_text(buf);
 
     free(buf);
@@ -934,14 +934,14 @@ void MachineStateTracer::write_machine_states(double date)
 
 void MachineStateTracer::flush()
 {
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
 
     _wbuf->flush_buffer();
 }
 
 void MachineStateTracer::close_buffer()
 {
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
 
     delete _wbuf;
     _wbuf = nullptr;
@@ -1206,13 +1206,13 @@ void JobsTracer::write_job(const JobPtr job)
 
 void JobsTracer::flush()
 {
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
     _wbuf->flush_buffer();
 }
 
 void JobsTracer::close_buffer()
 {
-    xbt_assert(_wbuf != nullptr);
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
     delete _wbuf;
     _wbuf = nullptr;
 }

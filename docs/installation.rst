@@ -3,7 +3,9 @@
 Installation
 ============
 This page presents how to install Batsim and some of its tools.
-We recommend `Using Nix`_, but you may prefer `Using Batsim from a Docker container`_ or `Building it yourself`_.
+We recommend `Using Nix`_, but you may prefer `Using Batsim from a Docker container`_, `Using Batsim with Singularity`_ or just `Building it yourself`_.
+
+.. _using_nix_introduction:
 
 Using Nix
 ---------
@@ -55,26 +57,38 @@ You usually need to ``source`` a file to access the Nix commands.
 
       sudo echo 1 > /proc/sys/kernel/unprivileged_userns_clone
 
+.. _using_batsim_from_well_defined_nix_env:
+
 Using Batsim from a well-defined Nix environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Defining a software environment from which your simulations run is quite straightforward with Nix.
 **This is the recommended way to use Batsim.**
 
-For example, the following file defines an en environment from which you can execute batsim and a scheduler implementation.
-It uses the last release of our tools.
+.. raw:: html
+
+    <script id="asciicast-414663" src="https://asciinema.org/a/414663.js" async></script>
+
+For example, the following file defines an en environment from which you can execute batsim and a scheduler implementation. It uses the last release of our tools.
 
 .. literalinclude:: ./tuto-first-simulation/tuto-env.nix
   :caption: :download:`tuto-env.nix <./tuto-first-simulation/tuto-env.nix>`
   :language: nix
 
-If you want latest commit of the same tools instead, you can define your environment like this:
+After downloading an environment file on your machine's filesystem, you can enter the environment thanks to ``nix-shell`` — for example ``nix-shell ./env.nix`` if you downloaded :download:`tuto-env.nix <./tuto-first-simulation/tuto-env.nix>` into you current working directory as ``env.nix``.
+The strength of this approach is that you can easily tune which version you want to use for each tool.
+For example, the next environment uses the latest commit of the master branch of the same tools.
 
 .. literalinclude:: ./tuto-first-simulation/tuto-env-master.nix
   :caption: :download:`tuto-env-master.nix <./tuto-first-simulation/tuto-env-master.nix>`
   :language: nix
 
-For more information about this usage, please read our tutorial :ref:`tuto_reproducible_experiment`.
+And here is a more advanced example where you can specify the git repository and commit to use for every tool.
+This can be used as a base to start an experiment using Batsim, as you will probably need to implement new algorithms/features in a scheduler, Batsim or both. You may also be interested in reading :ref:`tuto_reproducible_experiment` for good practice advices.
+
+.. literalinclude:: ./tuto-first-simulation/tuto-env-pinned.nix
+  :caption: :download:`tuto-env-pinned.nix <./tuto-first-simulation/tuto-env-pinned.nix>`
+  :language: nix
 
 Installing Batsim in your system via Nix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -99,7 +113,7 @@ This can be done with ``nix-env --install``.
 Using Batsim from a Docker container
 ------------------------------------
 
-Batsim and all its runtime dependencies are packaged in the `oarteam/batsim <https://hub.docker.com/r/oarteam/batsim>`_ Docker container, which allows to run batsim without any installation on a Linux host — assuming that Docker is installed.
+Batsim and all its runtime dependencies are packaged in the `oarteam/batsim`_ Docker container, which allows to run batsim without any installation on a Linux host — assuming that Docker is installed.
 
 .. code:: bash
 
@@ -118,6 +132,17 @@ Here is a quick explanation on the various parameters.
 - ``oarteam/batsim:latest`` is the image to run. ``latest`` is built from master branch's last commit.
 - ``-p /data/platf.xml -w /data/wload.json`` are batsim arguments (see :ref:`cli`).
 
+Using Batsim with Singularity
+-----------------------------
+
+The `oarteam/batsim`_ docker containers can directly be executed by Singularity_.
+
+.. code:: bash
+
+    singularity exec \
+        docker://oarteam/batsim:latest \
+        batsim -p /data/platf.xml -w /data/wload.json
+
 Building it yourself
 --------------------
 Batsim can be built with the Meson_ (+ Ninja_) build system.
@@ -125,16 +150,16 @@ You can also use CMake_ if you prefer but please note that our cmake support is 
 
 .. warning::
 
-    You first need to install all Batsim dependencies for the following lines to work:
+    You first need to install all Batsim dependencies for the following lines to work.
 
     - Decent clang/gcc (real C++17 support).
     - Decent boost.
     - Recent SimGrid.
     - ZeroMQ.
-    - `Redox <https://github.com/mpoquet/redox/tree/install-pkg-config-file>`_ and its dependencies (hiredis, libev).
+    - Redox (`our fork <https://github.com/mpoquet/redox/tree/install-pkg-config-file>`_ has pkg-config support) and its dependencies (hiredis, libev).
     - RapidJSON.
     - Pugixml.
-    - `Docopt <https://github.com/mpoquet/docopt.cpp/tree/pkgconfig-support>`_.
+    - Docopt.cpp.
 
     **Make sure you install versions of these packages with pkg-config support!**
     The two build systems we use rely on `pkg-config`_ to find dependencies.
@@ -162,3 +187,5 @@ You can also use CMake_ if you prefer but please note that our cmake support is 
 .. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
 .. _Batsim packages definition: https://github.com/oar-team/nur-kapack/tree/master/pkgs/batsim
 .. _kapack's main file: https://github.com/oar-team/nur-kapack/blob/master/default.nix
+.. _Singularity: https://en.wikipedia.org/wiki/Singularity_(software)
+.. _oarteam/batsim: https://hub.docker.com/r/oarteam/batsim

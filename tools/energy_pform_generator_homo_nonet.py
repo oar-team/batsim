@@ -86,8 +86,8 @@ def generate_flat_platform(nb_hosts, output_file):
 
 <AS id="AS0"  routing="Vivaldi">
     <host id="master_host" coordinates="0 0 0" speed="100Mf">
-        <prop id="watt_per_state" value="100:100:200" />
-        <prop id="watt_off" value="10" />
+        <prop id="wattage_per_state" value="100:100:200" />
+        <prop id="wattage_off" value="10" />
     </host>
 
     <!-- The state 3 of Mercury is a sleep state.
@@ -102,8 +102,8 @@ def generate_flat_platform(nb_hosts, output_file):
 
     hosts = "".join(["""
         <host id="host""" + str(i) + """" coordinates="0 0 0" speed=\"""" + speed_str + """" pstate="0" >
-            <prop id="watt_per_state" value=\"""" + watt_per_state + """" />
-            <prop id="watt_off" value="10" />
+            <prop id="wattage_per_state" value=\"""" + watt_per_state + """" />
+            <prop id="wattage_off" value="10" />
             <prop id="sleep_pstates" value=\"""" + sleep_pstates + """" />
         </host>""" for i in hosts_id])
 

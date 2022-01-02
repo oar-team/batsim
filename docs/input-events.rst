@@ -38,6 +38,7 @@ Machine_unavailable
 
 The machines specified by the `resources` field (represented as an :ref:`interval_set`) become unavailable.
 It is no longer possible to execute jobs on these machines, but **jobs that were already running on these machines are not killed**.
+To kill such jobs, please make your decision process send a :ref:`proto_KILL_JOB` event on notification of machines becoming unavailable.
 
 .. code:: json
 

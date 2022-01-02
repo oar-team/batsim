@@ -5,7 +5,6 @@ variables:
 
 stages:
   - big_stage
-  - deploy
 
 ###############################################################################
 # Build and test
@@ -14,52 +13,34 @@ build_and_test:
   stage: big_stage
   script:
     # Build Batsim
-    - export NIX_ARGS="--arg doUnitTests true --arg doCoverage true --arg debug true --arg werror true"
-    - nix-shell --pure ./release.nix -A batsim ${NIX_ARGS} --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
-    - nix-build ./release.nix -A batsim ${NIX_ARGS} && cp -rL result ./batsim
+    - export NIX_ARGS="--arg doUnitTests true --arg doCoverage true --arg debug true --arg werror true --arg coverageCoveralls true --argstr testVersion $(date +%s)"
+    - nix-shell --pure -A batsim ${NIX_ARGS} --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-build -A batsim ${NIX_ARGS}
     # Build doxygen documentation
-    - nix-shell --pure ./release.nix -A doxydoc --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
-    - nix-build ./release.nix -A doxydoc && cp -rL result ./doxydoc_html
+    - nix-shell --pure -A doxydoc --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-build -A doxydoc && cp -rL result ./doxydoc_html
     # Run integration tests
-    - nix-shell --pure ./release.nix -A integration_tests ${NIX_ARGS} --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
-    - nix-build ./release.nix -A integration_tests ${NIX_ARGS} && cp -rL result ./integration_tests
+    - nix-shell --pure -A integration_tests ${NIX_ARGS} --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-build -A integration_tests ${NIX_ARGS} && cp -rL result ./integration_tests
     - if [[ "$(cat ./integration_tests/pytest_returncode)" -ne 0 ]] ; then echo "pytest returned non-zero, aborting" ; exit 1 ; fi
+    # Generate a coverage report
+    - nix-shell --pure -A coverage-report ${NIX_ARGS} --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-build -A coverage-report ${NIX_ARGS} && cp -rL result ./coverage_report
     # Send coverage results to codecov.io
-    - mkdir merged
-    - cp ./batsim/gcno/* ./integration_tests/gcda/* merged/
-    - nix-shell ./release.nix -A batsim ${NIX_ARGS} --command "bash <(curl -s https://codecov.io/bash)"
+    - bash <(curl -s https://codecov.io/bash) -f ./coverage_report/coveralls.json
   artifacts:
     when: always
     expire_in: 8 hours
     paths:
       - /builds/batsim/batsim/doxydoc_html
       - /builds/batsim/batsim/integration_tests
-
-###############################################################################
-# Deploy
-###############################################################################
-deploy_code_doc:
-  stage: deploy
-  script:
-      # Pushes Batsim's code doc (doxygen) onto the gforge website.
-      # SSH setup (do NOT run these commands on your machine)
-      - echo "$EXAMPLE_ENV_VAR"
-      - eval $(ssh-agent -s)
-      - echo "$SSH_PRIVATE_KEY" | tr -d ' ' | base64 --decode | ssh-add -
-      - mkdir -p ~/.ssh
-      - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
-      # Finally push the code documentation on the gforge website
-      - cd /builds/batsim/batsim/
-      - rsync -rlgoDz --delete doxydoc_html/ mpoquet@scm.gforge.inria.fr:/home/groups/batsim/htdocs/batsim/doxygen
-  dependencies:
-    - build_and_test
-  only:
-    - master
+      - /builds/batsim/batsim/coverage_report
 
 ###############################################################################
 # Tutorials
 ###############################################################################
 tuto_first_simulation-stable:
+  allow_failure: true
   stage: big_stage
   only:
     - schedules
@@ -69,7 +50,19 @@ tuto_first_simulation-stable:
     - nix-shell ./tuto-env.nix --command './run_simulation_manually.bash'
     - nix-shell ./tuto-env.nix --command './run_simulation_robin.bash'
 
+tuto_first_simulation-pinned:
+  allow_failure: true
+  stage: big_stage
+  only:
+    - schedules
+  script:
+    - cd docs/tuto-first-simulation
+    - nix-shell --pure ./tuto-env-pinned.nix --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
+    - nix-shell ./tuto-env-pinned.nix --command './run_simulation_manually.bash'
+    - nix-shell ./tuto-env-pinned.nix --command './run_simulation_robin.bash'
+
 tuto_first_simulation:
+  allow_failure: true
   stage: big_stage
   only:
     - schedules

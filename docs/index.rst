@@ -32,6 +32,7 @@ please cite it (`bibtex <https://hal.archives-ouvertes.fr/hal-01333471v1/bibtex>
    Running your first simulation <tuto-first-simulation/tuto.rst>
    Analyzing Batsim results <tuto-result-analysis/tuto.rst>
    Implementing your scheduling algorithm <tuto-sched-implem/tuto.rst>
+   Modelling an application <tuto-app-model/stencil.rst>
    Doing a reproducible experiment <tuto-reproducible-experiment/tuto.rst>
 
 .. toctree::
@@ -41,10 +42,11 @@ please cite it (`bibtex <https://hal.archives-ouvertes.fr/hal-01333471v1/bibtex>
    Installation <installation.rst>
    Command-line interface <cli.rst>
    Protocol <protocol.rst>
-   Time dilation <time-dilation.rst>
+   Time progression <time-dilation.rst>
    Using Redis <redis.rst>
    Using the I/O model <IO.rst>
    Interval set <interval-set.rst>
+   Frequently Asked Questions <faq.rst>
    Changelog <changelog.rst>
    Contact us <contact.rst>
 
@@ -69,6 +71,7 @@ please cite it (`bibtex <https://hal.archives-ouvertes.fr/hal-01333471v1/bibtex>
    :caption: Developer Manual
 
    Contributing <contributing.rst>
+   Development environment <setting-up-dev-env.rst>
    How to run tests? <howto-test.rst>
    Continuous Integration <ci.rst>
    Release procedure <release.rst>

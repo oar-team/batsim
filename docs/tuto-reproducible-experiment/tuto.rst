@@ -14,13 +14,19 @@ we strongly encourage readers to follow a `tutorial about Nix and reproducible e
 This tutorial introduces main Nix_ concepts and focuses on those useful for reproducible experiments,
 lowering the entry cost in the Nix_ ecosystem.
 
+.. warning::
+  This tutorial uses old versions of Batsim and scheduler.
+  It should still work (otherwise this is a bug, please :ref:`contact_us` to report the issue) and the presented steps to improve the experiment repeatibility are still relevant.
+
+  However, please refer to :ref:`using_batsim_from_well_defined_nix_env` if you are looking for a starting environment to copy/paste for your experiment, **not** to these files.
+
 Defining a reproducible environment
 -----------------------------------
 
 A first attempt
 '''''''''''''''
 
-A direct attempt to define such an environment is to use the packages defined in Kapack_.
+A direct attempt to define such an environment is to use the packages defined in `NUR-Kapack`_.
 This is what the following Nix_ file describes.
 
 .. literalinclude:: ./env-first-attempt.nix
@@ -37,13 +43,13 @@ it does not describe the desired versions well enough to be reproductible: If yo
 Pinning the package repository
 ''''''''''''''''''''''''''''''
 
-A first step to improve our setup is to use a specific *pinned* version of Kapack_ (the repository that contains package definitions) instead of its ``master`` branch.
+A first step to improve our setup is to use a specific *pinned* version of `NUR-Kapack`_ (the repository that contains package definitions) instead of its ``master`` branch.
 
 .. literalinclude:: ./env-pin-pkgs-repo.nix
   :caption: :download:`env-pin-pkgs-repo.nix <./env-pin-pkgs-repo.nix>`
   :language: nix
 
-The :download:`env-pin-pkgs-repo.nix <./env-pin-pkgs-repo.nix>` file is exactly the same as the previous one but about its ``kapack`` import definition: `Kapack's commit 773d390`_ is used instead of the ``master`` branch. This makes sure that the versions of the desired packages (``batsim``, ``batsched``…) will not change.
+The :download:`env-pin-pkgs-repo.nix <./env-pin-pkgs-repo.nix>` file is exactly the same as the previous one but about its ``kapack`` import definition: `Kapack's commit 1672831`_ is used instead of the ``master`` branch. This makes sure that the versions of the desired packages (``batsim``, ``batsched``…) will not change.
 
 .. warning::
 
@@ -127,7 +133,7 @@ Finally, here is the notebook source:
   :caption: :download:`notebook.Rmd <./notebook.Rmd>`
   :language: md
 
-The notebook can be run with the following command.
+The notebook can be run with the following command — which will run the simulations and analyses from the notebook.
 
 .. code-block:: bash
 
@@ -135,8 +141,8 @@ The notebook can be run with the following command.
 
 .. _Nix: https://nixos.org/nix/
 .. _tutorial about Nix and reproducible experiments: https://nix-tutorial.gitlabpages.inria.fr/nix-tutorial/
-.. _Kapack: https://github.com/oar-team/kapack
-.. _Kapack's commit 773d390: https://github.com/oar-team/kapack/commit/773d3909d78f1043ffb589a725773699210d71d5
+.. _NUR-Kapack: https://github.com/oar-team/nur-kapack
+.. _Kapack's commit 1672831: https://github.com/oar-team/nur-kapack/commit/1672831224a21d6c34350d8f78cff9266e3e28a2
 .. _batsched: https://framagit.org/batsim/batsched/
 .. _pybatsim: https://gitlab.inria.fr/batsim/pybatsim
 .. _fork: https://en.wikipedia.org/wiki/Fork_(software_development)

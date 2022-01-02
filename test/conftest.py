@@ -57,6 +57,7 @@ def pytest_generate_tests(metafunc):
     platforms_def = {
         "small": "small_platform.xml",
         "cluster512": "cluster512.xml",
+        "cluster512_pfs": "cluster512_pfs.xml",
         "energy128notopo": "energy_platform_homogeneous_no_net_128.xml",
         "energy128cluster": "cluster_energy_128.xml",
         "properties_platform": "properties_example.xml",
@@ -84,6 +85,7 @@ def pytest_generate_tests(metafunc):
         "smpimixed": "test_smpi_mixed_comp_comm.json",
         "smpicollectives": "test_smpi_collectives.json",
         "tuto1": "test_case_study1.json",
+        "tutostencil": "test_tuto_stencil.json",
         "walltime": "test_walltime.json",
         "walltimesmpi": "test_walltime_smpi.json",
     }
@@ -93,6 +95,7 @@ def pytest_generate_tests(metafunc):
     dynsub_workloads = ["delay1", "mixed"]
     moldable_perf_degradation_workloads = ['compute1', 'computetot1']
     energymini_workloads = ['energymini0', 'energymini50', 'energymini100']
+    tuto_stencil_workloads = ['tutostencil']
     workflows = ['genome']
 
     # Algorithms
@@ -114,7 +117,7 @@ def pytest_generate_tests(metafunc):
         "py_filler_events": "fillerSchedWithEvents",
     }
     basic_algorithms = ["fcfs", "easyfast", "filler"]
-    energy_algorithms = ["sleeper"] #fixme: enable "energywatcher" once algo fixed
+    energy_algorithms = ["sleeper", "energywatcher"]
     metadata_algorithms = ['filler', 'submitter']
 
     # External Events
@@ -135,6 +138,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('small_platform', generate_platforms(platform_dir, platforms_def, ['small']))
     if 'cluster_platform' in metafunc.fixturenames:
         metafunc.parametrize('cluster_platform', generate_platforms(platform_dir, platforms_def, ['cluster512']))
+    if 'cluster_pfs_platform' in metafunc.fixturenames:
+        metafunc.parametrize('cluster_pfs_platform', generate_platforms(platform_dir, platforms_def, ['cluster512_pfs']))
     if 'properties_platform' in metafunc.fixturenames:
         metafunc.parametrize('properties_platform', generate_platforms(platform_dir, platforms_def, ['properties_platform']))
 
@@ -143,6 +148,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('workload', generate_workloads(workload_dir, workloads_def, [key for key in workload_def]))
     if 'workflow' in metafunc.fixturenames:
         metafunc.parametrize('workflow', generate_workloads(workload_dir, workloads_def, [key for key in workflows]))
+    if 'tuto_stencil_workload' in metafunc.fixturenames:
+        metafunc.parametrize('tuto_stencil_workload', generate_workloads(workload_dir, workloads_def, [key for key in tuto_stencil_workloads]))
     if 'one_job_workload' in metafunc.fixturenames:
         metafunc.parametrize('one_job_workload', generate_workloads(workload_dir, workloads_def, one_job_workloads))
     if 'small_workload' in metafunc.fixturenames:
