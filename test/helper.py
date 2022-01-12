@@ -40,7 +40,7 @@ failure-timeout: {self.failure_timeout}
 
 def gen_batsim_cmd(platform, workload, output_dir, more_flags, is_workload=True):
     wload_flag = "-w" if is_workload else "-W"
-    batcmd = f"batsim -p '{platform}' {wload_flag} '{workload}' -e '{output_dir}/batres' {more_flags}"
+    batcmd = f"batsim -p '{platform}' {wload_flag} '{workload}' -e '{output_dir}/batres_' {more_flags}"
     if glob_with_valgrind:
         return f"valgrind --leak-check=yes --xml=yes --xml-file='{output_dir}/memcheck.xml' {batcmd}"
     else:
