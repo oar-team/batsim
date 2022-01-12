@@ -19,6 +19,14 @@ Unreleased
 - `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
 
+Changed (**breaks output files**)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Default export prefix is now ``out/`` instead of ``out``,
+  which means output files will be placed into the ``out`` directory by default now.
+  ``_`` is no longer added to Batsim's export prefix.
+  Batsim now recursively creates the export directory if needed.
+
 Removed (**breaks**)
 ~~~~~~~~~~~~~~~~~~~~
 

@@ -347,8 +347,7 @@ int main(int argc, char * argv[])
     // Let's create the machines
     create_machines(main_args, &context, max_nb_machines_to_use);
 
-    // Let's prepare Batsim's outputs
-    XBT_INFO("Batsim's export prefix is '%s'.", context.export_prefix.c_str());
+    // Prepare Batsim's outputs
     prepare_batsim_outputs(&context);
 
     if (main_args.program_type == ProgramType::BATSIM)

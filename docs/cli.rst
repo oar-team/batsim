@@ -87,6 +87,6 @@ you can run:
         --enable-compute-sharing \
         --enable-redis --redis-port 6789 \
         -E --sg-log surf_energy.thresh:critical \
-        --export simu_outputs/out \
+        --export simu_outputs/ \
         --socket-endpoint ipc://foobar \
         -v debug

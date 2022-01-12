@@ -7,6 +7,7 @@
 #include "export.hpp"
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 
 #include <boost/algorithm/string/join.hpp>
@@ -26,9 +27,39 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(export, "export"); //!< Logging
 
 void prepare_batsim_outputs(BatsimContext * context)
 {
+    namespace fs = std::filesystem;
+    fs::path export_prefix_path, export_dir;
+    try
+    {
+        export_prefix_path = fs::path(context->export_prefix);
+        XBT_INFO("Export prefix path is '%s' (absolute canonical path is '%s').", export_prefix_path.c_str(), fs::weakly_canonical(export_prefix_path).c_str());
+    }
+    catch (const fs::filesystem_error & e)
+    {
+        xbt_die("Filesystem error while computing paths from export prefix '%s'. %s", context->export_prefix.c_str(), e.what());
+    }
+
+    export_dir = fs::weakly_canonical(export_prefix_path).remove_filename();
+    if (fs::exists(export_dir))
+    {
+        xbt_assert(fs::is_directory(export_dir), "Export directory ('%s', as resolved from prefix='%s') exists but is not a directory.", export_dir.c_str(), context->export_prefix.c_str());
+    }
+    else
+    {
+        XBT_INFO("Creating export directory '%s' recursively as it does not exist yet.", export_dir.c_str());
+        try
+        {
+            fs::create_directories(export_dir);
+        }
+        catch (const fs::filesystem_error & e)
+        {
+            xbt_die("Filesystem error while creating export directory '%s'. %s", export_dir.c_str(), e.what());
+        }
+    }
+
     if (context->trace_schedule)
     {
-        context->paje_tracer.set_filename(context->export_prefix + "_schedule.trace");
+        context->paje_tracer.set_filename(export_prefix_path.string() + "schedule.trace");
         context->machines.set_tracer(&context->paje_tracer);
         context->paje_tracer.initialize(context, simgrid::s4u::Engine::get_clock());
     }
@@ -36,17 +67,17 @@ void prepare_batsim_outputs(BatsimContext * context)
     if (context->trace_machine_states)
     {
         context->machine_state_tracer.set_context(context);
-        context->machine_state_tracer.set_filename(context->export_prefix + "_machine_states.csv");
+        context->machine_state_tracer.set_filename(export_prefix_path.string() + "machine_states.csv");
     }
 
     if (context->energy_used)
     {
         // Energy consumption tracing
         context->energy_tracer.set_context(context);
-        context->energy_tracer.set_filename(context->export_prefix + "_consumed_energy.csv");
+        context->energy_tracer.set_filename(export_prefix_path.string() + "consumed_energy.csv");
 
         // Power state tracing
-        context->pstate_tracer.setFilename(context->export_prefix + "_pstate_changes.csv");
+        context->pstate_tracer.setFilename(export_prefix_path.string() + "pstate_changes.csv");
 
         std::map<int, IntervalSet> pstate_to_machine_set;
         for (const Machine * machine : context->machines.machines())
@@ -75,8 +106,8 @@ void prepare_batsim_outputs(BatsimContext * context)
     }
 
     context->jobs_tracer.initialize(context,
-                                    context->export_prefix + "_jobs.csv",
-                                    context->export_prefix + "_schedule.csv");
+                                    export_prefix_path.string() + "jobs.csv",
+                                    export_prefix_path.string() + "schedule.csv");
 }
 
 void finalize_batsim_outputs(BatsimContext * context)

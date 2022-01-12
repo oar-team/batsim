@@ -1,5 +1,5 @@
 batcmd: batsim -p /tmp/batsim-src-stable/platforms/cluster512.xml -w /tmp/batsim-src-stable/workloads/test_batsim_paper_workload_seed1.json
-  -e /tmp/expe-out/out
+  -e /tmp/expe-out/out_
 failure-timeout: 5
 output-dir: /tmp/expe-out
 ready-timeout: 10
