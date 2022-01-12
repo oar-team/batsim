@@ -59,7 +59,7 @@ void prepare_batsim_outputs(BatsimContext * context)
 
     if (context->trace_schedule)
     {
-        context->paje_tracer.set_filename(export_prefix_path.string() + "_schedule.trace");
+        context->paje_tracer.set_filename(export_prefix_path.string() + "schedule.trace");
         context->machines.set_tracer(&context->paje_tracer);
         context->paje_tracer.initialize(context, simgrid::s4u::Engine::get_clock());
     }
@@ -67,17 +67,17 @@ void prepare_batsim_outputs(BatsimContext * context)
     if (context->trace_machine_states)
     {
         context->machine_state_tracer.set_context(context);
-        context->machine_state_tracer.set_filename(export_prefix_path.string() + "_machine_states.csv");
+        context->machine_state_tracer.set_filename(export_prefix_path.string() + "machine_states.csv");
     }
 
     if (context->energy_used)
     {
         // Energy consumption tracing
         context->energy_tracer.set_context(context);
-        context->energy_tracer.set_filename(export_prefix_path.string() + "_consumed_energy.csv");
+        context->energy_tracer.set_filename(export_prefix_path.string() + "consumed_energy.csv");
 
         // Power state tracing
-        context->pstate_tracer.setFilename(export_prefix_path.string() + "_pstate_changes.csv");
+        context->pstate_tracer.setFilename(export_prefix_path.string() + "pstate_changes.csv");
 
         std::map<int, IntervalSet> pstate_to_machine_set;
         for (const Machine * machine : context->machines.machines())
@@ -106,8 +106,8 @@ void prepare_batsim_outputs(BatsimContext * context)
     }
 
     context->jobs_tracer.initialize(context,
-                                    export_prefix_path.string() + "_jobs.csv",
-                                    export_prefix_path.string() + "_schedule.csv");
+                                    export_prefix_path.string() + "jobs.csv",
+                                    export_prefix_path.string() + "schedule.csv");
 }
 
 void finalize_batsim_outputs(BatsimContext * context)

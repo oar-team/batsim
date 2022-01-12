@@ -138,7 +138,7 @@ Execution context options:
 
 Output options:
   -e, --export <prefix>              The export filename prefix used to generate
-                                     simulation output [default: out].
+                                     simulation output [default: out/].
   --disable-schedule-tracing         Disables the Pajé schedule outputting.
   --disable-machine-state-tracing    Disables the machine state outputting.
 
