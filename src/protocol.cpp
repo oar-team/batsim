@@ -1429,6 +1429,14 @@ ExternalDecisionComponentHelloMessage *from_edc_hello(const batprotocol::fb::Ext
     msg->edc_version = edc_hello->decision_component_version()->str();
     msg->edc_commit = edc_hello->decision_component_commit()->str();
 
+    msg->requested_simulation_features.dynamic_registration = edc_hello->requested_simulation_features()->dynamic_registration();
+    msg->requested_simulation_features.profile_reuse = edc_hello->requested_simulation_features()->profile_reuse();
+    msg->requested_simulation_features.acknowledge_dynamic_jobs = edc_hello->requested_simulation_features()->acknowledge_dynamic_jobs();
+    msg->requested_simulation_features.forward_profiles_on_job_submission = edc_hello->requested_simulation_features()->forward_profiles_on_job_submission();
+    msg->requested_simulation_features.forward_profiles_on_jobs_killed = edc_hello->requested_simulation_features()->forward_profiles_on_jobs_killed();
+    msg->requested_simulation_features.forward_profiles_on_simulation_begins = edc_hello->requested_simulation_features()->forward_profiles_on_simulation_begins();
+    msg->requested_simulation_features.forward_unknown_external_events = edc_hello->requested_simulation_features()->forward_unknown_external_events();
+
     return msg;
 }
 

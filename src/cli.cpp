@@ -433,19 +433,6 @@ Other options:
     main_args.enable_schedule_tracing = !args["--disable-schedule-tracing"].asBool();
     main_args.enable_machine_state_tracing = !args["--disable-machine-state-tracing"].asBool();
 
-    // Job-related options
-    // *******************
-    main_args.forward_profiles_on_submission = args["--forward-profiles-on-submission"].asBool();
-    main_args.dynamic_registration_enabled = args["--enable-dynamic-jobs"].asBool();
-    main_args.ack_dynamic_registration = args["--acknowledge-dynamic-jobs"].asBool();
-    main_args.profile_reuse_enabled = args["--enable-profile-reuse"].asBool();
-
-    if (main_args.profile_reuse_enabled && !main_args.dynamic_registration_enabled)
-    {
-        XBT_ERROR("Profile reuse is enabled but dynamic registration is not, have you missed something?");
-        error = true;
-    }
-
     // Platform size limit options
     // ***************************
     string m_max_str = args["--mmax"].asString();

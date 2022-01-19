@@ -1012,7 +1012,20 @@ void server_on_edc_hello(ServerData *data, IPMessage *task_data)
     data->sched_said_hello = true;
 
     (void) task_data;
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
+    auto * message = static_cast<ExternalDecisionComponentHelloMessage *>(task_data->data);
     // TODO: check batprotocol version compatibility, store&log scheduler tracability info...
+
+    // TODO: set tunable behavior per EDC, not for all of them
+    data->context->registration_sched_enabled = message->requested_simulation_features.dynamic_registration;
+    data->context->garbage_collect_profiles = !(message->requested_simulation_features.dynamic_registration && message->requested_simulation_features.profile_reuse);
+    data->context->registration_sched_ack = message->requested_simulation_features.acknowledge_dynamic_jobs;
+
+    // TODO: implement these features
+    xbt_assert(!message->requested_simulation_features.forward_profiles_on_job_submission, "Forwarding profiles on job submission is unimplemented");
+    xbt_assert(!message->requested_simulation_features.forward_profiles_on_jobs_killed, "Forwarding profiles on jobs killed is unimplemented");
+    xbt_assert(!message->requested_simulation_features.forward_profiles_on_simulation_begins, "Forwarding profiles simulation begins is unimplemented");
+    xbt_assert(!message->requested_simulation_features.forward_unknown_external_events, "Forwarding unknown external events is unimplemented");
 
     auto simulation_begins = protocol::to_simulation_begins(data->context);
     data->context->proto_msg_builder->add_simulation_begins(simulation_begins);

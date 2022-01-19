@@ -196,6 +196,20 @@ struct KillJobsMessage
 };
 
 /**
+ * @brief Wrapper struct around batprotocol::fb::EDCRequestedSimulationFeatures
+ */
+struct ExternalDecisionComponentRequestedSimulationFeatures
+{
+    bool dynamic_registration = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
+    bool profile_reuse = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
+    bool acknowledge_dynamic_jobs = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
+    bool forward_profiles_on_job_submission = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
+    bool forward_profiles_on_jobs_killed = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
+    bool forward_profiles_on_simulation_begins = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
+    bool forward_unknown_external_events = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
+};
+
+/**
  * @brief The content of the SCHED_HELLO message
  */
 struct ExternalDecisionComponentHelloMessage
@@ -204,6 +218,7 @@ struct ExternalDecisionComponentHelloMessage
     std::string edc_name; //!< The name of the external decision component
     std::string edc_version; //!< The version of the external decision component
     std::string edc_commit; //!< The commit of the external decision component
+    ExternalDecisionComponentRequestedSimulationFeatures requested_simulation_features; //!< The simulation features requested by this EDC
 };
 
 /**

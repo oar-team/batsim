@@ -98,12 +98,6 @@ struct MainArguments
     std::string edc_library_path;                           //!< The External Decision Component library path. Empty if unset.
     bool edc_json_format = false;                           //!< If true, messages to communicate with EDCs should be sent as JSON strings.
 
-    // Job related
-    bool forward_profiles_on_submission = false;            //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
-    bool dynamic_registration_enabled = false;              //!< Stores whether the scheduler will be able to register jobs and profiles during the simulation
-    bool ack_dynamic_registration = false;                  //!< Stores whether Batsim will acknowledge dynamic job registrations (emit JOB_SUBMITTED events)
-    bool profile_reuse_enabled = false;                     //!< Stores whether Batsim will garbage collect the Profiles or they can be re-used by dynamic jobs.
-
     // Output
     std::string export_prefix;                              //!< The filename prefix used to export simulation information
     bool enable_schedule_tracing = false;                   //!< If set to true, the schedule is exported to a Pajé trace file

@@ -427,13 +427,6 @@ void set_configuration(BatsimContext *context,
     // Let's update the BatsimContext values
     // *************************************
     context->main_args = &main_args;
-    context->submission_forward_profiles = main_args.forward_profiles_on_submission;
-    context->registration_sched_enabled = main_args.dynamic_registration_enabled;
-    context->registration_sched_ack = main_args.ack_dynamic_registration;
-    if (main_args.dynamic_registration_enabled && main_args.profile_reuse_enabled)
-    {
-        context->garbage_collect_profiles = false; // It is true by default
-    }
 
     context->platform_filename = main_args.platform_filename;
     context->export_prefix = main_args.export_prefix;
@@ -451,13 +444,4 @@ void set_configuration(BatsimContext *context,
     // **************************************************************************************
     context->config_json.SetObject();
     auto & alloc = context->config_json.GetAllocator();
-
-    // job_submission
-    context->config_json.AddMember("profiles-forwarded-on-submission", Value().SetBool(main_args.forward_profiles_on_submission), alloc);
-    context->config_json.AddMember("dynamic-jobs-enabled", Value().SetBool(main_args.dynamic_registration_enabled), alloc);
-    context->config_json.AddMember("dynamic-jobs-acknowledged", Value().SetBool(main_args.ack_dynamic_registration), alloc);
-    context->config_json.AddMember("profile-reuse-enabled", Value().SetBool(!context->garbage_collect_profiles), alloc);
-
-    // others
-    context->config_json.AddMember("forward-unknown-events", Value().SetBool(main_args.forward_unknown_events), alloc);
 }
