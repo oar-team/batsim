@@ -148,14 +148,17 @@ VerbosityLevel verbosity_level_from_string(const std::string & str)
 
 void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code, bool & run_simulation)
 {
+    bool error = false;
+    return_code = 1;
+    run_simulation = false;
+
     CLI::App app{"Infrastructure simulator for job and I/O scheduling"};
     auto formatter = std::make_shared<MyFormatter>();
     app.formatter(formatter);
 
     // Input
     const std::string input_group_name = "Input options";
-    std::string platform_file;
-    app.add_option("-p,--platform", platform_file, "The SimGrid platform to simulate — cf. https://batsim.rtfd.io/en/latest/input-platform.html")
+    app.add_option("-p,--platform", main_args.platform_filename, "The SimGrid platform to simulate — cf. https://batsim.rtfd.io/en/latest/input-platform.html")
         ->group(input_group_name)
         ->option_text("<file>")
         ->check(CLI::ExistingFile);
@@ -369,6 +372,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         return;
     }
 
+    // TODO: remove this debug info
     for (const auto & edc_lib_string : edc_lib_strings)
     {
         printf("edc-lib: (path='%s', bool=%s, init-cfg='%s')\n",
@@ -378,320 +382,120 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         );
     }
 
-    return_code = 1;
-    run_simulation = false;
-
-    // TODO: change hosts format in roles to support intervals
-    // The <hosts> should be formated as follow:
-    // hostname[intervals],hostname[intervals],...
-    // Where `intervals` is a comma separated list of simple integer
-    // or closed interval separated with a '-'.
-    // Example: -r host[1-5,8]:role1,role2 -r toto,tata:myrole
-
-/*
-    static const char usage[] =
-R"(A tool to simulate (via SimGrid) the behaviour of scheduling algorithms.
-
-Usage:
-  batsim -p <platform_file> [-s <endpoint>...]
-                            [-l <path>...]
-                            [-w <workload_file>...]
-                            [-W <workflow_file>...]
-                            [--WS (<cut_workflow_file> <start_time>)...]
-                            [--sg-cfg <opt_name:opt_value>...]
-                            [--sg-log <log_option>...]
-                            [-r <hosts_roles_map>...]
-                            [--events <events_file>...]
-                            [options]
-  batsim --help
-  batsim --version
-  batsim --simgrid-version
-
-Input options:
-  -p, --platform <platform_file>     The SimGrid platform to simulate.
-  -w, --workload <workload_file>     The workload JSON files to simulate.
-  -W, --workflow <workflow_file>     The workflow XML files to simulate.
-  --WS, --workflow-start (<cut_workflow_file> <start_time>)  The workflow XML
-                                     files to simulate, with the time at which
-                                     they should be started.
-  --events <events_file>             The files containing external events to simulate.
-
-Most common options:
-  -m, --master-host <name>           The name of the host in <platform_file>
-                                     which will be used as the RJMS management
-                                     host (thus NOT used to compute jobs)
-                                     [default: master_host].
-  -r, --add-role-to-hosts <hosts_role_map>  Add a `role` property to the specify host(s).
-                                     The <hosts-roles-map> is formated as <hosts>:<role>
-                                     The <hosts> should be formated as follow:
-                                     hostname1,hostname2,..
-                                     Supported roles are: master, storage, compute_node
-                                     By default, no role means 'compute_node'
-                                     Example: -r host8:master -r host1,host2:storage
-  -E, --energy                       Enables the SimGrid energy plugin and
-                                     outputs energy-related files.
-
-Execution context options:
-  -s, --edc-socket <endpoint>        Add an external decision component as a process
-                                     called through RPC via a ZMQ socket.
-                                     Example value: tcp://localhost:28000.
-  -l, --edc-library <path>           Add an external decision component as a library
-                                     called through a C API.
-  -j, --enable-edc-json-format       Enable the use of JSON instead of flatbuffers's binary format
-                                     for communications with external decision components.
-                                     [default: false]
-
-Output options:
-  -e, --export <prefix>              The export filename prefix used to generate
-                                     simulation output [default: out/].
-  --disable-schedule-tracing         Disables the Pajé schedule outputting.
-  --disable-machine-state-tracing    Disables the machine state outputting.
-
-Platform size limit options:
-  --mmax <nb>                        Limits the number of machines to <nb>.
-                                     0 means no limit [default: 0].
-  --mmax-workload                    If set, limits the number of machines to
-                                     the 'nb_res' field of the input workloads.
-                                     If several workloads are used, the maximum
-                                     of these fields is kept.
-Job-related options:
-  --forward-profiles-on-submission   Attaches the job profile to the job information
-                                     when the scheduler is notified about a job submission.
-                                     [default: false]
-  --enable-dynamic-jobs              Enables dynamic registration of jobs and profiles from the scheduler.
-                                     Please refer to Batsim's documentation for more information.
-                                     [default: false]
-  --acknowledge-dynamic-jobs         Makes Batsim send a JOB_SUBMITTED back to the scheduler when
-                                     Batsim receives a REGISTER_JOB.
-                                     [default: false]
-  --enable-profile-reuse             Enable dynamic jobs to reuse profiles of other jobs.
-                                     Without this options, such profiles would be
-                                     garbage collected.
-                                     The option --enable-dynamic-jobs must be set for this option to work.
-                                     [default: false]
-
-Verbosity options:
-  -v, --verbosity <verbosity_level>  Sets the Batsim verbosity level. Available
-                                     values: quiet, information, debug
-                                     [default: information].
-  -q, --quiet                        Shortcut for --verbosity quiet
-
-Workflow options:
-  --workflow-jobs-limit <job_limit>  Limits the number of possible concurrent
-                                     jobs for workflows. 0 means no limit
-                                     [default: 0].
-  --ignore-beyond-last-workflow      Ignores workload jobs that occur after all
-                                     workflows have completed.
-
-Other options:
-  --dump-execution-context           Does not run the actual simulation but dumps the execution
-                                     context on stdout (formatted as a JSON object).
-  --enable-compute-sharing           Enables compute resource sharing:
-                                     One compute resource may be used by several jobs at the same time.
-  --disable-storage-sharing          Disables storage resource sharing:
-                                     One storage resource may be used by several jobs at the same time.
-  --no-sched                         If set, the jobs in the workloads are
-                                     computed one by one, one after the other,
-                                     without scheduler.
-  --sg-cfg <opt_name:opt_value>      Forwards a given option_name:option_value to SimGrid.
-                                     Refer to SimGrid configuring documentation for more information.
-  --sg-log <log_option>              Forwards a given logging option to SimGrid.
-                                     Refer to SimGrid simulation logging documentation for more information.
-  --forward-unknown-events           Enables the forwarding to the scheduler of external events that
-                                     are unknown to Batsim. Ignored if there were no event inputs with --events.
-                                     [default: false]
-  --edc-library-load-method <method> The method used to load external decision components as libraries.
-                                     Available values: dlmopen, dlopen. [default: dlmopen]
-  -h, --help                         Shows this help.
-)";
-
-    run_simulation = false;
-    return_code = 1;
-    map<string, docopt::value> args = docopt::docopt(usage, { argv + 1, argv + argc },
-                                                     true, STR(BATSIM_VERSION));
-    // Let's do some checks on the arguments!
-    bool error = false;
-    return_code = 0;
-
-    if (args["--simgrid-version"].asBool())
+    if (simgrid_version)
     {
         int sg_major, sg_minor, sg_patch;
         sg_version_get(&sg_major, &sg_minor, &sg_patch);
-
         printf("%d.%d.%d\n", sg_major, sg_minor, sg_patch);
+
+        return_code = 0;
         return;
     }
 
-    // Input files
-    // ***********
-    main_args.platform_filename = args["--platform"].asString();
-    if (!file_exists(main_args.platform_filename))
-    {
-        XBT_ERROR("Platform file '%s' cannot be read.", main_args.platform_filename.c_str());
-        error = true;
-        return_code |= 0x01;
-    }
-
     // Workloads
-    vector<string> workload_files = args["--workload"].asStringList();
     for (size_t i = 0; i < workload_files.size(); i++)
     {
         const string & workload_file = workload_files[i];
-        if (!file_exists(workload_file))
-        {
-            XBT_ERROR("Workload file '%s' cannot be read.", workload_file.c_str());
-            error = true;
-            return_code |= 0x02;
-        }
-        else
-        {
-            MainArguments::WorkloadDescription desc;
-            desc.filename = absolute_filename(workload_file);
-            desc.name = string("w") + to_string(i);
 
-            XBT_INFO("Workload '%s' corresponds to workload file '%s'.",
-                     desc.name.c_str(), desc.filename.c_str());
-            main_args.workload_descriptions.push_back(desc);
-        }
+        MainArguments::WorkloadDescription desc;
+        desc.filename = absolute_filename(workload_file);
+        desc.name = string("w") + to_string(i);
+
+        XBT_INFO("Workload '%s' corresponds to workload file '%s'.", desc.name.c_str(), desc.filename.c_str());
+        main_args.workload_descriptions.push_back(desc);
     }
 
-    // Workflows (without start time)
-    vector<string> workflow_files = args["--workflow"].asStringList();
+    // Workflows (with default start time)
     for (size_t i = 0; i < workflow_files.size(); i++)
     {
         const string & workflow_file = workflow_files[i];
-        if (!file_exists(workflow_file))
+
+        MainArguments::WorkflowDescription desc;
+        desc.filename = absolute_filename(workflow_file);
+        desc.name = string("wf") + to_string(i);
+        desc.workload_name = desc.name;
+        desc.start_time = 0;
+
+        XBT_INFO("Workflow '%s' corresponds to workflow file '%s'.", desc.name.c_str(), desc.filename.c_str());
+        main_args.workflow_descriptions.push_back(desc);
+    }
+
+    // Workflows (with user-given start time)
+    for (unsigned int i = 0; i < cut_workflow_files.size(); ++i)
+    {
+        const string & cut_workflow_file = std::get<0>(cut_workflow_files[i]);
+        const double & cut_workflow_start_time = std::get<1>(cut_workflow_files[i]);
+
+        MainArguments::WorkflowDescription desc;
+        desc.filename = absolute_filename(cut_workflow_file);
+        desc.name = string("wfc") + to_string(i);
+        desc.workload_name = desc.name;
+        desc.start_time = cut_workflow_start_time;
+
+        bool local_error = false;
+        if (!file_exists(cut_workflow_file))
         {
-            XBT_ERROR("Workflow file '%s' cannot be read.", workflow_file.c_str());
+            XBT_ERROR("Cut workflow file '%s' cannot be read.", cut_workflow_file.c_str());
+            local_error = true;
+        }
+        if (desc.start_time < 0)
+        {
+            XBT_ERROR("Workflow's <start_time> should be positive, but %g was given.", desc.start_time);
+            local_error = true;
+        }
+
+        if (local_error)
+        {
             error = true;
-            return_code |= 0x04;
         }
         else
         {
-            MainArguments::WorkflowDescription desc;
-            desc.filename = absolute_filename(workflow_file);
-            desc.name = string("wf") + to_string(i);
-            desc.workload_name = desc.name;
-            desc.start_time = 0;
-
-            XBT_INFO("Workflow '%s' corresponds to workflow file '%s'.",
-                     desc.name.c_str(), desc.filename.c_str());
+            XBT_INFO("Cut workflow '%s' corresponds to workflow file '%s'.", desc.name.c_str(), desc.filename.c_str());
             main_args.workflow_descriptions.push_back(desc);
         }
     }
 
-    // Workflows (with start time)
-    vector<string> cut_workflow_files = args["<cut_workflow_file>"].asStringList();
-    vector<string> cut_workflow_times = args["<start_time>"].asStringList();
-    if (cut_workflow_files.size() != cut_workflow_times.size())
+    // External events
+    for (size_t i = 0; i < external_events_files.size(); i++)
     {
-        XBT_ERROR("--workflow-start parsing results are inconsistent: "
-                  "<cut_workflow_file> and <start_time> have different "
-                  "sizes (%zu and %zu)", cut_workflow_files.size(),
-                  cut_workflow_times.size());
+        const string & events_file = external_events_files[i];
+
+        MainArguments::EventListDescription desc;
+        desc.filename = absolute_filename(events_file);
+        desc.name = string("e") + to_string(i);
+
+        XBT_INFO("Event list '%s' corresponds to events file '%s'.", desc.name.c_str(), desc.filename.c_str());
+        main_args.eventList_descriptions.push_back(desc);
+    }
+
+    // Roles
+    main_args.hosts_roles_map[master_host] = "master";
+    for (size_t i = 0; i < roles_to_add.size(); i++)
+    {
+        const string & hostname = std::get<0>(roles_to_add[i]);
+        const string & role = std::get<1>(roles_to_add[i]);
+        main_args.hosts_roles_map[hostname] = role;
+    }
+
+    main_args.host_energy_used = energy_host;
+    if (energy_link)
+    {
+        XBT_ERROR("--energy-link is not implemented");
         error = true;
-        return_code |= 0x08;
     }
-    else
+    if (energy_host_and_link)
     {
-        for (unsigned int i = 0; i < cut_workflow_files.size(); ++i)
-        {
-            const string & cut_workflow_file = cut_workflow_files[i];
-            const string & cut_workflow_time_str = cut_workflow_times[i];
-            if (!file_exists(cut_workflow_file))
-            {
-                XBT_ERROR("Cut workflow file '%s' cannot be read.", cut_workflow_file.c_str());
-                error = true;
-                return_code |= 0x10;
-            }
-            else
-            {
-                MainArguments::WorkflowDescription desc;
-                desc.filename = absolute_filename(cut_workflow_file);
-                desc.name = string("wfc") + to_string(i);
-                desc.workload_name = desc.name;
-                try
-                {
-                    desc.start_time = std::stod(cut_workflow_time_str);
-
-                    if (desc.start_time < 0)
-                    {
-                        XBT_ERROR("<start_time> %g ('%s') should be positive.",
-                                  desc.start_time, cut_workflow_time_str.c_str());
-                        error = true;
-                        return_code |= 0x20;
-                    }
-                    else
-                    {
-                        XBT_INFO("Cut workflow '%s' corresponds to workflow file '%s'.",
-                                 desc.name.c_str(), desc.filename.c_str());
-                        main_args.workflow_descriptions.push_back(desc);
-                    }
-                }
-                catch (const std::exception &)
-                {
-                    XBT_ERROR("Cannot read the <start_time> '%s' as a double.",
-                              cut_workflow_time_str.c_str());
-                    error = true;
-                    return_code |= 0x40;
-                }
-            }
-        }
+        XBT_ERROR("--energy is not implemented");
+        error = true;
     }
 
-    // EventLists
-    vector<string> events_files = args["--events"].asStringList();
-    for (size_t i = 0; i < events_files.size(); i++)
-    {
-        const string & events_file = events_files[i];
-        if (!file_exists(events_file))
-        {
-            XBT_ERROR("Events file '%s' cannot be read.", events_file.c_str());
-            error = true;
-            return_code |= 0x02;
-        }
-        else
-        {
-            MainArguments::EventListDescription desc;
-            desc.filename = absolute_filename(events_file);
-            desc.name = string("we") + to_string(i);
+    // TODO: continue implementation <-----------------
 
-            XBT_INFO("Event list '%s' corresponds to events file '%s'.",
-                     desc.name.c_str(), desc.filename.c_str());
-            main_args.eventList_descriptions.push_back(desc);
-        }
-    }
+    // TODO: use error to determine return_code/run_simulation
+    return_code = 7;
+    run_simulation = false;
 
-    // Common options
-    // **************
-    main_args.hosts_roles_map = map<string, string>();
-
-    main_args.master_host_name = args["--master-host"].asString();
-    main_args.hosts_roles_map[main_args.master_host_name] = "master";
-
-    main_args.host_energy_used = args["--energy"].asBool();
-
-
-    // get roles mapping
-    vector<string> hosts_roles_maps = args["--add-role-to-hosts"].asStringList();
-    for (unsigned int i = 0; i < hosts_roles_maps.size(); ++i)
-    {
-        vector<string> parsed;
-        boost::split(parsed, hosts_roles_maps[i], boost::is_any_of(":"));
-
-        xbt_assert(parsed.size() == 2, "The roles host mapping should only contain one ':' character");
-        string hosts = parsed[0];
-        string roles = parsed[1];
-        vector<string> host_list;
-
-        boost::split(host_list, hosts, boost::is_any_of(","));
-
-        for (auto & host: host_list)
-        {
-            main_args.hosts_roles_map[host] = roles;
-        }
-    }
-
+/*
     // External decision components
     // ****************************
     vector<string> edc_socket_endpoints = args["--edc-socket"].asStringList();
