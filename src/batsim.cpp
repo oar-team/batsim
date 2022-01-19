@@ -295,7 +295,7 @@ int main(int argc, char * argv[])
     configure_batsim_logging_output(main_args);
 
     // Initialize the energy plugin before creating the engine
-    if (main_args.energy_used)
+    if (main_args.host_energy_used)
     {
         sg_host_energy_plugin_init();
     }
@@ -431,7 +431,7 @@ void set_configuration(BatsimContext *context,
     context->platform_filename = main_args.platform_filename;
     context->export_prefix = main_args.export_prefix;
     context->workflow_nb_concurrent_jobs_limit = main_args.workflow_nb_concurrent_jobs_limit;
-    context->energy_used = main_args.energy_used;
+    context->energy_used = main_args.host_energy_used;
     context->allow_compute_sharing = main_args.allow_compute_sharing;
     context->allow_storage_sharing = main_args.allow_storage_sharing;
     context->trace_schedule = main_args.enable_schedule_tracing;

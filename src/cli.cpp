@@ -364,7 +364,7 @@ Other options:
     main_args.master_host_name = args["--master-host"].asString();
     main_args.hosts_roles_map[main_args.master_host_name] = "master";
 
-    main_args.energy_used = args["--energy"].asBool();
+    main_args.host_energy_used = args["--energy"].asBool();
 
 
     // get roles mapping
