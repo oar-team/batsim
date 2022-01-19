@@ -49,6 +49,16 @@ enum class EdcLibraryLoadMethod
 };
 
 /**
+ * @brief How probes should be traced (AKA whether generated data should be stored onto files)
+ */
+enum class ProbeTracingStrategy
+{
+    AS_PROBE_REQUESTED //!< Use the user-provided information for each probe when it is created
+    ,ALWAYS //!< Always trace all probes
+    ,NEVER //!< Never trace any probe
+};
+
+/**
  * @brief Stores Batsim arguments, a.k.a. the main function arguments
  */
 struct MainArguments
