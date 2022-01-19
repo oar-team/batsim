@@ -48,6 +48,7 @@ pkg_check_modules(docopt REQUIRED IMPORTED_TARGET docopt)
 pkg_check_modules(pugixml REQUIRED IMPORTED_TARGET pugixml)
 pkg_check_modules(intervalset REQUIRED IMPORTED_TARGET intervalset)
 pkg_check_modules(batprotocol-cpp REQUIRED IMPORTED_TARGET batprotocol-cpp)
+pkg_check_modules(cli11 REQUIRED IMPORTED_TARGET CLI11)
 
 # (boost does not provide pkgconfig files)
 find_package(Boost 1.58)
@@ -91,6 +92,7 @@ include_directories(
     ${pugixml_INCLUDE_DIRS}
     ${intervalset_INCLUDE_DIRS}
     ${batprotocol-cpp_INCLUDE_DIRS}
+    ${cli11_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIR}
 )
 
