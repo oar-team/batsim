@@ -50,22 +50,6 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(batsim, "batsim"); //!< Logging
 
-/**
- * @brief Reads a whole file and return its content as a string.
- * @param[in] filename The file to read.
- * @return The file content, as a string.
- */
-static std::string read_whole_file_as_string(const std::string & filename)
-{
-    std::ifstream f(filename);
-    if (!f.is_open())
-    {
-        throw std::runtime_error("cannot read scheduler configuration file '" + filename + "'");
-    }
-
-    return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-}
-
 std::string MainArguments::generate_execution_context_json() const
 {
     using namespace rapidjson;
@@ -143,9 +127,10 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
 {
     int max_nb_machines_in_workloads = -1;
 
-    // Let's create the workloads
+    // Create the workloads
     for (const MainArguments::WorkloadDescription & desc : main_args.workload_descriptions)
     {
+        XBT_INFO("Workload '%s' corresponds to workload file '%s'.", desc.name.c_str(), desc.filename.c_str());
         Workload * workload = Workload::new_static_workload(desc.name, desc.filename);
 
         int nb_machines_in_workload = -1;
@@ -155,9 +140,10 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
         context->workloads.insert_workload(desc.name, workload);
     }
 
-    // Let's create the workflows
+    // Create the workflows
     for (const MainArguments::WorkflowDescription & desc : main_args.workflow_descriptions)
     {
+        XBT_INFO("Workflow '%s' corresponds to workflow file '%s'.", desc.name.c_str(), desc.filename.c_str());
         Workload * workload = Workload::new_static_workload(desc.workload_name, desc.filename);
         workload->jobs = new Jobs;
         workload->profiles = new Profiles;
@@ -175,7 +161,7 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     max_nb_machines_to_use = -1;
     if ((main_args.limit_machines_count_by_workload) && (main_args.limit_machines_count > 0))
     {
-        max_nb_machines_to_use = std::min(main_args.limit_machines_count, max_nb_machines_in_workloads);
+        max_nb_machines_to_use = std::min(static_cast<int>(main_args.limit_machines_count), max_nb_machines_in_workloads);
     }
     else if (main_args.limit_machines_count_by_workload)
     {
@@ -196,8 +182,9 @@ void load_eventLists(const MainArguments & main_args, BatsimContext * context)
 {
     for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
     {
+        XBT_INFO("Event list '%s' corresponds to events file '%s'.", desc.name.c_str(), desc.filename.c_str());
         auto events = new EventList(desc.name, true);
-        events->load_from_json(desc.filename, main_args.forward_unknown_events);
+        events->load_from_json(desc.filename, false);
         context->event_lists[desc.name] = events;
     }
 }
@@ -274,22 +261,44 @@ int main(int argc, char * argv[])
     MainArguments main_args;
     int return_code = 1;
     bool run_simulation = false;
+    bool only_print_information = false;
 
-    parse_main_args(argc, argv, main_args, return_code, run_simulation);
+    parse_main_args(argc, argv, main_args, return_code, run_simulation, only_print_information);
 
-    if (main_args.dump_execution_context)
+    // Print the requested information and exit if this is requested by user
+    if (only_print_information)
     {
-        auto execution_context_json = main_args.generate_execution_context_json();
+        if (main_args.print_simgrid_version)
+        {
+            int sg_major, sg_minor, sg_patch;
+            sg_version_get(&sg_major, &sg_minor, &sg_patch);
+            printf("%d.%d.%d\n", sg_major, sg_minor, sg_patch);
+        }
+        else if (main_args.dump_execution_context)
+        {
+            auto execution_context_json = main_args.generate_execution_context_json();
+            printf("%s\n", execution_context_json.c_str());
+        }
+        else if (main_args.print_batsim_version)
+        {
+            printf("%s\n", STR(BATSIM_VERSION));
+        }
+        else if (main_args.print_batsim_commit)
+        {
+            printf("Printing Batsim git commit is not implemented.\n");
+            return_code = 1;
+        }
+        else if (main_args.print_simgrid_commit)
+        {
+            printf("Printing SimGrid git commit is not implemented.\n");
+            return_code = 1;
+        }
 
-        // Print the string then terminate
-        printf("%s\n", execution_context_json.c_str());
-        return 0;
+        fflush(stdout);
     }
 
     if (!run_simulation)
-    {
         return return_code;
-    }
 
     // Let's configure how Batsim should be logged
     configure_batsim_logging_output(main_args);
@@ -301,7 +310,6 @@ int main(int argc, char * argv[])
     }
 
     // Instantiate SimGrid
-
     simgrid::s4u::Engine engine(&argc, argv);
 
     // Setting SimGrid configuration options, if any
@@ -373,7 +381,7 @@ int main(int argc, char * argv[])
             flags |= 0x2;
         else
             flags |= 0x1;
-        context.edc->init(nullptr, 0u, flags);
+        context.edc->init((const uint8_t*)main_args.edc_init_buffer.data(), main_args.edc_init_buffer.size(), flags);
 
         // Create the protocol message manager
         context.proto_msg_builder = new batprotocol::MessageBuilder(true);
@@ -432,8 +440,8 @@ void set_configuration(BatsimContext *context,
     context->export_prefix = main_args.export_prefix;
     context->workflow_nb_concurrent_jobs_limit = main_args.workflow_nb_concurrent_jobs_limit;
     context->energy_used = main_args.host_energy_used;
-    context->allow_compute_sharing = main_args.allow_compute_sharing;
-    context->allow_storage_sharing = main_args.allow_storage_sharing;
+    context->allow_compute_sharing = false;
+    context->allow_storage_sharing = false;
     context->trace_schedule = main_args.enable_schedule_tracing;
     context->trace_machine_states = main_args.enable_machine_state_tracing;
     context->simulation_start_time = chrono::high_resolution_clock::now();

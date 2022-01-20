@@ -22,10 +22,10 @@ simgrid_dep = dependency('simgrid')
 boost_dep = dependency('boost')
 rapidjson_dep = dependency('RapidJSON')
 libzmq_dep = dependency('libzmq')
-docopt_dep = dependency('docopt')
 pugixml_dep = dependency('pugixml')
 intervalset_dep = dependency('intervalset')
 batprotocol_cpp_dep = dependency('batprotocol-cpp')
+cli11_dep = dependency('CLI11')
 dl_dep = meson.get_compiler('cpp').find_library('dl', required : true) # dlmopen and friends
 
 batsim_deps = [
@@ -33,10 +33,10 @@ batsim_deps = [
     boost_dep,
     rapidjson_dep,
     libzmq_dep,
-    docopt_dep,
     pugixml_dep,
     intervalset_dep,
     batprotocol_cpp_dep,
+    cli11_dep,
     dl_dep,
 ]
 
