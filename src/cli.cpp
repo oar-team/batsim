@@ -1,7 +1,5 @@
 #include "cli.hpp"
 
-#include "docopt/docopt.h"
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <linux/limits.h>

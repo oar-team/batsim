@@ -44,7 +44,6 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(simgrid REQUIRED IMPORTED_TARGET simgrid)
 pkg_check_modules(rapidjson REQUIRED IMPORTED_TARGET RapidJSON)
 pkg_check_modules(libzmq REQUIRED IMPORTED_TARGET libzmq)
-pkg_check_modules(docopt REQUIRED IMPORTED_TARGET docopt)
 pkg_check_modules(pugixml REQUIRED IMPORTED_TARGET pugixml)
 pkg_check_modules(intervalset REQUIRED IMPORTED_TARGET intervalset)
 pkg_check_modules(batprotocol-cpp REQUIRED IMPORTED_TARGET batprotocol-cpp)
@@ -76,7 +75,6 @@ add_executable(batsim ${batsim_SRC})
 target_link_libraries(batsim
     ${simgrid_LIBRARIES}
     ${libzmq_LIBRARIES}
-    ${docopt_LIBRARIES}
     ${pugixml_LIBRARIES}
     ${intervalset_LIBRARIES}
     ${batprotocol-cpp_LIBRARIES}
@@ -88,7 +86,6 @@ include_directories(
     ${simgrid_INCLUDE_DIRS}
     ${rapidjson_INCLUDE_DIRS}
     ${libzmq_INCLUDE_DIRS}
-    ${docopt_INCLUDE_DIRS}
     ${pugixml_INCLUDE_DIRS}
     ${intervalset_INCLUDE_DIRS}
     ${batprotocol-cpp_INCLUDE_DIRS}

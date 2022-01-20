@@ -35,7 +35,7 @@ let
     inherit kapack;
     # Batsim executable binary file.
     batsim = (kapack.batsim.override { inherit debug simgrid; stdenv = custom-stdenv; }).overrideAttrs (attr: rec {
-      buildInputs = attr.buildInputs
+      buildInputs = (pkgs.lib.remove pkgs.docopt_cpp attr.buildInputs)
         ++ [batprotocol-cpp kapack.cli11]
         ++ pkgs.lib.optional doUnitTests [pkgs.gtest.dev];
       src = pkgs.lib.sourceByRegex ./. [
