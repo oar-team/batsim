@@ -16,7 +16,21 @@
 
 using namespace std;
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(cli, "cli"); //!< Logging
+/**
+ * @brief Reads a whole file and return its content as a string.
+ * @param[in] filename The file to read.
+ * @return The file content, as a string.
+ */
+static std::string read_whole_file_as_string(const std::string & filename)
+{
+    std::ifstream f(filename);
+    if (!f.is_open())
+    {
+        throw std::runtime_error("cannot read scheduler configuration file '" + filename + "'");
+    }
+
+    return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+}
 
 // Do not move this class to cli.hpp, it has been put here to optimize compilation time (to avoid the inclusion of CLI.hpp that is heavy on templates).
 class MyFormatter : public CLI::Formatter
@@ -146,11 +160,13 @@ VerbosityLevel verbosity_level_from_string(const std::string & str)
     }
 }
 
-void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code, bool & run_simulation)
+void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & return_code, bool & run_simulation, bool & only_print_information)
 {
     bool error = false;
     return_code = 1;
     run_simulation = false;
+    only_print_information = false;
+    const char * error_prefix = "Command-line parsing error: ";
 
     CLI::App app{"Infrastructure simulator for job and I/O scheduling"};
     auto formatter = std::make_shared<MyFormatter>();
@@ -188,17 +204,14 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
 
     // Output
     const std::string output_group_name = "Output options";
-    std::string export_prefix = "out";
-    app.add_option("-e,--export", export_prefix, "The export filename prefix used to generate simulation outputs. Default: out/")
+    app.add_option("-e,--export", main_args.export_prefix, "The export filename prefix used to generate simulation outputs. Default: out/")
         ->group(output_group_name)
         ->option_text("<prefix>");
 
-    bool trace_machine_state = false;
-    app.add_flag("--trace-machine-state", trace_machine_state, "Enable the generation of output file that traces machine states over time")
+    app.add_flag("--trace-machine-state", main_args.enable_machine_state_tracing, "Enable the generation of output file that traces machine states over time")
         ->group(output_group_name);
 
-    bool trace_pstate_change = false;
-    app.add_flag("--trace-pstate-change", trace_pstate_change, "Enable the generation of output file that traces machine pstate changes over time")
+    app.add_flag("--trace-pstate-change", main_args.enable_pstate_change_tracing, "Enable the generation of output file that traces machine pstate changes over time")
         ->group(output_group_name);
 
     ProbeTracingStrategy probe_tracing_strategy = ProbeTracingStrategy::AS_PROBE_REQUESTED;
@@ -215,7 +228,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
     app.add_option("-l,--edc-library-str", edc_lib_strings, "")
         ->group(edc_group_name)
         ->option_text("(<lib-path> <json-format-bool> <init-str>)...")
-        ->description("Add an EDC as a library loaded by Batsim and called through a C API\n<lib-path> is the path of the library to load\n<json-format-bool> sets format of batprotocol messages (1->JSON, 0->binary)\nContent of <init-str> string is the EDC initialization buffer");
+        ->description("Add an EDC as a library loaded by Batsim and called through a C API\n<lib-path> is the path of the library to load\n<json-format-bool> sets format of batprotocol messages (0->binary, 1->JSON)\nContent of <init-str> string is the EDC initialization buffer");
 
     std::vector<std::tuple<std::string, bool, std::string> > edc_lib_files;
     app.add_option("-L,--edc-library-file", edc_lib_strings, "")
@@ -235,17 +248,15 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         ->option_text("(<socket-endpoint> <json-format-bool> <init-file>)...")
         ->description("Same as --edc-library-file but the EDC is added as a process called through RPC via ZeroMQ");
 
-    EdcLibraryLoadMethod edc_lib_load_method = EdcLibraryLoadMethod::DLMOPEN;
     std::map<std::string, EdcLibraryLoadMethod> ellm_map{{"dlmopen", EdcLibraryLoadMethod::DLMOPEN}, {"dlopen", EdcLibraryLoadMethod::DLOPEN}};
-    app.add_option("--edc-library-load-method", edc_lib_load_method, "How to load EDC libraries in memory. Accepted values: {dlmopen, dlopen}. Default: dlmopen")
+    app.add_option("--edc-library-load-method", main_args.edc_library_load_method, "How to load EDC libraries in memory. Accepted values: {dlmopen, dlopen}. Default: dlmopen")
         ->group(edc_group_name)
         ->option_text("<method>")
         ->transform(CLI::CheckedTransformer(ellm_map, CLI::ignore_case));
 
     // Platform
     const std::string platform_group_name = "Platform options";
-    std::string master_host = "master_host";
-    app.add_option("-m,--master-host", master_host, "The SimGrid host where misc. simulation actors will be run. Default: master_host")
+    app.add_option("-m,--master-host", main_args.master_host_name, "The SimGrid host where misc. simulation actors will be run. Default: master_host")
         ->group(platform_group_name)
         ->option_text("<hostname>");
 
@@ -254,13 +265,11 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         ->group(platform_group_name)
         ->option_text("(<hostname> <role>)...");
 
-    uint32_t platform_mmax = 0;
-    app.add_option("--mmax", platform_mmax, "Limits the number of machines to <nb>. 0 (default) means no limit")
+    app.add_option("--mmax", main_args.limit_machines_count, "Limits the number of machines to <nb>. 0 (default) means no limit")
         ->group(platform_group_name)
         ->option_text("<nb>");
 
-    bool platform_mmax_workload = false;
-    app.add_flag("--mmax-workload", platform_mmax_workload, "If set, limits the number of machines to the 'nb_res' field of the input workloads\nIf several workloads are used, the maximum value of these fields is kept")
+    app.add_flag("--mmax-workload", main_args.limit_machines_count_by_workload, "If set, limits the number of machines to the 'nb_res' field of the input workloads\nIf several workloads are used, the maximum value of these fields is kept")
         ->group(platform_group_name);
 
     // Simulation model
@@ -277,16 +286,15 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         ->group(simulation_model_group_name)
         ->excludes("--energy-host")
         ->excludes("--energy-link");
-    std::vector<std::string> simgrid_configs;
-    app.add_option("--sg-cfg", simgrid_configs, "Set a SimGrid configuration variable — cf. https://simgrid.org/doc/latest/Configuring_SimGrid.html#existing-configuration-items")
+
+    app.add_option("--sg-cfg", main_args.simgrid_config, "Set a SimGrid configuration variable — cf. https://simgrid.org/doc/latest/Configuring_SimGrid.html#existing-configuration-items")
         ->group(simulation_model_group_name)
         ->option_text("<name:value>...");
 
     // Verbosity
     const std::string verbosity_group_name = "Verbosity and debuggability options";
-    VerbosityLevel verbosity_level = VerbosityLevel::INFORMATION;
     std::map<std::string, VerbosityLevel> vl_map{{"quiet", VerbosityLevel::QUIET}, {"info", VerbosityLevel::INFORMATION}, {"debug", VerbosityLevel::DEBUG}};
-    app.add_option("-v,--verbosity", verbosity_level, "Sets verbosity level. Accepted values: {quiet, info, debug}. Default: info")
+    app.add_option("-v,--verbosity", main_args.verbosity, "Sets verbosity level. Accepted values: {quiet, info, debug}. Default: info")
         ->group(verbosity_group_name)
         ->option_text("<level>")
         ->transform(CLI::CheckedTransformer(vl_map, CLI::ignore_case));
@@ -296,20 +304,17 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         ->group(verbosity_group_name)
         ->excludes("--verbosity");
 
-    std::vector<std::string> simgrid_logging_controls;
-    app.add_option("--sg-log", simgrid_logging_controls, "Set a SimGrid logging value — cf. https://simgrid.org/doc/latest/Configuring_SimGrid.html#logging-configuration")
+    app.add_option("--sg-log", main_args.simgrid_logging, "Set a SimGrid logging value — cf. https://simgrid.org/doc/latest/Configuring_SimGrid.html#logging-configuration")
         ->group(verbosity_group_name)
         ->option_text("<cat.key:value>");
 
     // Workflow
     const std::string workflow_group_name = "Workflow options";
-    uint32_t workflow_job_limit = 0;
-    app.add_option("--workflow-jobs-limit", workflow_job_limit, "Limit the number of concurrent jobs for workflows. 0 (default) means no limit")
+    app.add_option("--workflow-jobs-limit", main_args.workflow_nb_concurrent_jobs_limit, "Limit the number of concurrent jobs for workflows. 0 (default) means no limit")
         ->group(workflow_group_name)
         ->option_text("<nb>");
 
-    bool ignore_beyond_last_workflow = false;
-    app.add_flag("--skip-jobs-after-workflows", ignore_beyond_last_workflow, "Skip workload job submissions after all workflows have completed")
+    app.add_flag("--skip-jobs-after-workflows", main_args.terminate_with_last_workflow, "Skip workload job submissions after all workflows have completed")
         ->group(workflow_group_name);
 
     // Configuration file
@@ -331,35 +336,25 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         ->group(misc_group_name)
         ->configurable(false);
 
-    bool batsim_version = false;
-    app.add_flag("--version", batsim_version, "Print Batsim version and exit")
+    app.add_flag("--batsim-version,--version", main_args.print_batsim_version, "Print Batsim version and exit")
         ->group(misc_group_name)
-        ->configurable(false)
-        ->excludes("--help");
+        ->configurable(false);
 
-    bool batsim_commit = false;
-    app.add_flag("--git-commit", batsim_commit, "Print Batsim git commit and exit")
+    app.add_flag("--batsim-git-commit", main_args.print_batsim_commit, "Print Batsim git commit and exit")
         ->group(misc_group_name)
-        ->configurable(false)
-        ->excludes("--help")
-        ->excludes("--version");
+        ->configurable(false);
 
-    bool simgrid_version = false;
-    app.add_flag("--simgrid-version", simgrid_version, "Print SimGrid version and exit")
+    app.add_flag("--simgrid-version", main_args.print_simgrid_version, "Print SimGrid version and exit")
         ->group(misc_group_name)
-        ->configurable(false)
-        ->excludes("--help")
-        ->excludes("--version")
-        ->excludes("--git-commit");
+        ->configurable(false);
 
-    bool dump_execution_context = false;
-    app.add_flag("--dump-execution-context", dump_execution_context, "Print Batsim execution context as JSON and exit")
+    app.add_flag("--simgrid-git-commit", main_args.print_simgrid_commit, "Print SimGrid git commit and exit")
         ->group(misc_group_name)
-        ->configurable(false)
-        ->excludes("--help")
-        ->excludes("--version")
-        ->excludes("--git-commit")
-        ->excludes("--simgrid-version");
+        ->configurable(false);
+
+    app.add_flag("--dump-execution-context", main_args.dump_execution_context, "Print Batsim execution context as JSON and exit")
+        ->group(misc_group_name)
+        ->configurable(false);
 
     try
     {
@@ -369,26 +364,8 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
     {
         return_code = app.exit(e);
         run_simulation = false;
-        return;
-    }
+        only_print_information = false;
 
-    // TODO: remove this debug info
-    for (const auto & edc_lib_string : edc_lib_strings)
-    {
-        printf("edc-lib: (path='%s', bool=%s, init-cfg='%s')\n",
-            std::get<0>(edc_lib_string).c_str(),
-            std::to_string(std::get<1>(edc_lib_string)).c_str(),
-            std::get<2>(edc_lib_string).c_str()
-        );
-    }
-
-    if (simgrid_version)
-    {
-        int sg_major, sg_minor, sg_patch;
-        sg_version_get(&sg_major, &sg_minor, &sg_patch);
-        printf("%d.%d.%d\n", sg_major, sg_minor, sg_patch);
-
-        return_code = 0;
         return;
     }
 
@@ -401,7 +378,6 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         desc.filename = absolute_filename(workload_file);
         desc.name = string("w") + to_string(i);
 
-        XBT_INFO("Workload '%s' corresponds to workload file '%s'.", desc.name.c_str(), desc.filename.c_str());
         main_args.workload_descriptions.push_back(desc);
     }
 
@@ -416,7 +392,6 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         desc.workload_name = desc.name;
         desc.start_time = 0;
 
-        XBT_INFO("Workflow '%s' corresponds to workflow file '%s'.", desc.name.c_str(), desc.filename.c_str());
         main_args.workflow_descriptions.push_back(desc);
     }
 
@@ -435,12 +410,12 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         bool local_error = false;
         if (!file_exists(cut_workflow_file))
         {
-            XBT_ERROR("Cut workflow file '%s' cannot be read.", cut_workflow_file.c_str());
+            fprintf(stderr, "%s--workflow-start <file> '%s' cannot be read.\n", error_prefix, cut_workflow_file.c_str());
             local_error = true;
         }
         if (desc.start_time < 0)
         {
-            XBT_ERROR("Workflow's <start_time> should be positive, but %g was given.", desc.start_time);
+            fprintf(stderr, "%s--workflow-start <start_time> should be positive, but %g was given.\n", error_prefix, desc.start_time);
             local_error = true;
         }
 
@@ -450,7 +425,6 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         }
         else
         {
-            XBT_INFO("Cut workflow '%s' corresponds to workflow file '%s'.", desc.name.c_str(), desc.filename.c_str());
             main_args.workflow_descriptions.push_back(desc);
         }
     }
@@ -464,12 +438,17 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         desc.filename = absolute_filename(events_file);
         desc.name = string("e") + to_string(i);
 
-        XBT_INFO("Event list '%s' corresponds to events file '%s'.", desc.name.c_str(), desc.filename.c_str());
         main_args.eventList_descriptions.push_back(desc);
     }
 
-    // Roles
-    main_args.hosts_roles_map[master_host] = "master";
+    // Platform
+    if (main_args.platform_filename == "")
+    {
+        fprintf(stderr, "%sThe SimGrid platform has not been set.\n", error_prefix);
+        error = true;
+    }
+
+    main_args.hosts_roles_map[main_args.master_host_name] = "master";
     for (size_t i = 0; i < roles_to_add.size(); i++)
     {
         const string & hostname = std::get<0>(roles_to_add[i]);
@@ -480,149 +459,84 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
     main_args.host_energy_used = energy_host;
     if (energy_link)
     {
-        XBT_ERROR("--energy-link is not implemented");
+        fprintf(stderr, "%s--energy-link is not implemented.\n", error_prefix);
         error = true;
     }
     if (energy_host_and_link)
     {
-        XBT_ERROR("--energy is not implemented");
+        fprintf(stderr, "%s--energy is not implemented.\n", error_prefix);
         error = true;
     }
 
-    // TODO: continue implementation <-----------------
-
-    // TODO: use error to determine return_code/run_simulation
-    return_code = 7;
-    run_simulation = false;
-
-/*
-    // External decision components
-    // ****************************
-    vector<string> edc_socket_endpoints = args["--edc-socket"].asStringList();
-    vector<string> edc_library_paths = args["--edc-library"].asStringList();
-    const auto nb_edc = edc_socket_endpoints.size() + edc_library_paths.size();
-    xbt_assert(nb_edc <= 1, "Simulation with several external decision components is not supported for now, aborting.");
-
+    // EDCs
+    const auto nb_edc = edc_lib_files.size() + edc_lib_strings.size() + edc_socket_files.size() + edc_socket_strings.size();
     if (nb_edc == 0)
     {
-        XBT_ERROR("At least one external decision component should be set. This can be done via --edc-socket or --edc-library command-line options.");
-        error = true;
-        return_code |= 0x80;
-    }
-    else if (edc_socket_endpoints.size() > 0)
-    {
-        main_args.edc_socket_endpoint = edc_socket_endpoints[0];
-    }
-    else
-    {
-        main_args.edc_library_path = edc_library_paths[0];
-    }
-
-    main_args.edc_json_format = args["--enable-edc-json-format"].asBool();
-
-    std::string edc_lib_load_method_str(args["--edc-library-load-method"].asString());
-    if (edc_lib_load_method_str == "dlmopen")
-    {
-        main_args.edc_library_load_method = EdcLibraryLoadMethod::DLMOPEN;
-    }
-    else if (edc_lib_load_method_str == "dlopen")
-    {
-        main_args.edc_library_load_method = EdcLibraryLoadMethod::DLOPEN;
-    }
-    else
-    {
-        XBT_ERROR("Invalid parameter given to --edc-library-load-method: '%s'.", edc_lib_load_method_str.c_str());
-        error = true;
-        return_code |= 0x80;
-    }
-
-    // Output options
-    // **************
-    main_args.export_prefix = args["--export"].asString();
-    main_args.enable_schedule_tracing = !args["--disable-schedule-tracing"].asBool();
-    main_args.enable_machine_state_tracing = !args["--disable-machine-state-tracing"].asBool();
-
-    // Platform size limit options
-    // ***************************
-    string m_max_str = args["--mmax"].asString();
-    try
-    {
-        main_args.limit_machines_count = std::stoi(m_max_str);
-    }
-    catch (const std::exception &)
-    {
-        XBT_ERROR("Cannot read <M_max> '%s' as an integer.", m_max_str.c_str());
+        fprintf(stderr, "%sAt least one external decision component (EDC) should be set.\n", error_prefix);
         error = true;
     }
-
-    main_args.limit_machines_count_by_workload = args["--mmax-workload"].asBool();
-
-    // Verbosity options
-    // *****************
-    try
+    else if (nb_edc > 1)
     {
-        main_args.verbosity = verbosity_level_from_string(args["--verbosity"].asString());
-        if (args["--quiet"].asBool())
-        {
-            main_args.verbosity = VerbosityLevel::QUIET;
-        }
-    }
-    catch (const std::exception &)
-    {
-        XBT_ERROR("Invalid <verbosity_level> '%s'.", args["--verbosity"].asString().c_str());
+        fprintf(stderr, "%sUsing several external decision components (EDCs) in a single simulation is not implemented.\n", error_prefix);
         error = true;
     }
-
-    // Workflow options
-    // ****************
-    string workflow_jobs_limit = args["--workflow-jobs-limit"].asString();
-    try
+    else if(edc_socket_strings.size() > 0)
     {
-        main_args.workflow_nb_concurrent_jobs_limit = std::stoi(workflow_jobs_limit);
-        if (main_args.workflow_nb_concurrent_jobs_limit < 0)
-        {
-            XBT_ERROR("The <workflow_limit> %d ('%s') must be positive.", main_args.workflow_nb_concurrent_jobs_limit,
-                      workflow_jobs_limit.c_str());
-            error = true;
-        }
+        main_args.edc_socket_endpoint = std::get<0>(edc_socket_strings[0]);
+        main_args.edc_json_format = std::get<1>(edc_socket_strings[0]);
+        main_args.edc_init_buffer = std::get<2>(edc_socket_strings[0]);
     }
-    catch (const std::exception &)
+    else if(edc_socket_files.size() > 0)
     {
-        XBT_ERROR("Cannot read the <job_limit> '%s' as an integer.", workflow_jobs_limit.c_str());
-        error = true;
+        main_args.edc_socket_endpoint = std::get<0>(edc_socket_files[0]);
+        main_args.edc_json_format = std::get<1>(edc_socket_files[0]);
+        main_args.edc_init_buffer = read_whole_file_as_string(std::get<2>(edc_socket_files[0]));
+    }
+    else if (edc_lib_strings.size() > 0)
+    {
+        main_args.edc_library_path = std::get<0>(edc_lib_strings[0]);
+        main_args.edc_json_format = std::get<1>(edc_lib_strings[0]);
+        main_args.edc_init_buffer = std::get<2>(edc_lib_strings[0]);
+    }
+    else if (edc_lib_files.size() > 0)
+    {
+        main_args.edc_library_path = std::get<0>(edc_lib_files[0]);
+        main_args.edc_json_format = std::get<1>(edc_lib_files[0]);
+        main_args.edc_init_buffer = read_whole_file_as_string(std::get<2>(edc_lib_files[0]));
     }
 
-    main_args.terminate_with_last_workflow = args["--ignore-beyond-last-workflow"].asBool();
+    // Verbosity
+    if (quiet)
+        main_args.verbosity = VerbosityLevel::QUIET;
 
     // Raw argv
-    // ********
     main_args.raw_argv.reserve(argc);
     for (int i = 0 ; i < argc; ++i)
     {
         main_args.raw_argv.push_back(std::string(argv[i]));
     }
 
-    // Other options
-    // *************
-    main_args.dump_execution_context = args["--dump-execution-context"].asBool();
-    main_args.allow_compute_sharing = args["--enable-compute-sharing"].asBool();
-    main_args.allow_storage_sharing = !(args["--disable-storage-sharing"].asBool());
-    if (!main_args.eventList_descriptions.empty())
+    // Should the simulation be run?
+    int nb_stopping_flags = static_cast<int>(main_args.dump_execution_context) +
+        static_cast<int>(main_args.print_batsim_version) +
+        static_cast<int>(main_args.print_batsim_commit) +
+        static_cast<int>(main_args.print_simgrid_version) +
+        static_cast<int>(main_args.print_simgrid_commit);
+    if (nb_stopping_flags > 1)
     {
-        main_args.forward_unknown_events = args["--forward-unknown-events"].asBool();
+        fprintf(stderr, "%sOnly one of the flags that print information and exit should be set.\n", error_prefix);
+        error = true;
     }
-    if (args["--no-sched"].asBool())
+    run_simulation = !error && (nb_stopping_flags == 0);
+    only_print_information = (nb_stopping_flags == 1);
+
+    if (!error)
     {
-        main_args.program_type = ProgramType::BATEXEC;
+        return_code = 0;
     }
     else
     {
-        main_args.program_type = ProgramType::BATSIM;
+        fprintf(stderr, "Aborting as there were errors. Run with --help for more information.\n");
     }
-
-    main_args.simgrid_config = args["--sg-cfg"].asStringList();
-    main_args.simgrid_logging = args["--sg-log"].asStringList();
-
-    run_simulation = !error;
-*/
+    fflush(stderr);
 }
