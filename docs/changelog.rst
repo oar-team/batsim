@@ -19,13 +19,57 @@ Unreleased
 - `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
 
-Changed (**breaks output files**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Architectural changes
+~~~~~~~~~~~~~~~~~~~~~
+
+- The Decision Process concept (a system process external to Batsim that takes decisions) has been replaced with the External Decision Component concept.
+  In short, this is a generalization that enables the use of either external decision processes (as before) or external decision libraries that must respect a given C API.
+  **Rationale.**
+  This should improve simulation performance, as decision components can be called many times during a simulation, and calling a function is much cheaper than doing process-to-process communication.
+  This enables the use of many tools that focuses on single-process applications, such as performance analyzers that will greatly help us optimize Batsim, or advanced debuggers such as rr_.
+  This should be an incentive to waste less energy in simulation campaigns, as taking advantage of multicore machines should be easier now (environmental side effects are much easier to manage without sockets nor redis).
+- The protocol message format has been changed from custom JSON to flatbuffers_.
+  This means messages can now be sent in binary or in JSON (but the JSON format has changed).
+  **Rationale.**
+  Messages are now typed, which we think will be easier to maintain.
+  The definition of the protocol, as well as helper de/serialization libraries around it, are now packaged in the batprotocol_ git repository.
+  Helper libraries are partly generated from a protocol description file, which will help in making sure they remain compatible with each other (without forcing all implementation to support all features).
+  This separation should help maintainability, as protocol updates can be kept consistent among several implementations much more easily than before.
+- Probes have been introduced.
+
+.. todo::
+
+  talk about probes. flag --trace-probe-data
+
+Command-line interface changes (**breaks CLI** unless stated explicitly)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Many changes were made with the introduction of the External Decision Components (EDCs) concept.
+  The ``--socket-endpoint`` option has been replaced by ``--edc-socket-str`` and ``--edc-socket-file`` options.
+  The ``--edc-library-str`` and ``--edc-library-file`` options have been introduced to run EDCs as libraries.
+  Several simulation feature options that could be set from Batsim's command-line are now set from the protocol or directly in mandatory parameters when adding an EDC into the simuation.
+  In other words these options have been removed: ``--forward-profiles-on-submission``, ``--enable-dynamic-jobs``, ``--acknowledge-dynamic-jobs``, ``--enable-profile-reuse``, ``--enable-compute-sharing``, ``--disable-storage-sharing``, ``--sched-cfg``, ``--sched-cfg-file``, ``--forward-unknown-events``.
+- Batsim no longer uses docopt_cpp_ as its command-line parsing library, and now uses CLI11_ instead.
+  This was needed because enabling several EDCs at the same time requires the parsing of options with several arguments.
+  **Rationale**. Should improve maintainability, as CLI11 is much more mature, more regularly maintained, and developed with a saner rationale (e.g., lots of tests).
+- The ``--add-role-to-hosts`` option has been replaced by the ``--add-role`` option, which has a simpler syntax (one call should now be set for each host).
+- The generation of most output files has been disabled by default.
+  The new ``--trace-machine-state`` option replaces ``--disable-machine-state-tracing``.
+  The ``--trace-pstate-change`` option must now be set to generate the power state changes over time CSV file.
+- The ``--energy`` option now enables two SimGrid energy plugins (on hosts and links), while this only enabled the host plugin before.
+  You can use new options ``--energy-host`` and ``--energy-link`` if you only want to enable one of these two plugins.
+- New convenience feature (not a break). A configuration file can be used instead of stating all arguments on Batsim's call. The ``--config`` option reads parameters from a configuration file. The ``--gen-config`` enables the generation of configuration files.
+- New tracability feature (not a break). The ``--batsim-git-commit`` and ``--simgrid-git-commit`` options should now print respectively the Batsim or SimGrid commit that were used to build your final Batsim binary file.
+
+Output file changes (**breaks**)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Default export prefix is now ``out/`` instead of ``out``,
   which means output files will be placed into the ``out`` directory by default now.
   ``_`` is no longer added to Batsim's export prefix.
   Batsim now recursively creates the export directory if needed.
+- Batsim no longer generates Pajé traces, and the ``--disable-schedule-tracing`` command-line option has been removed.
+- As said on command-line interface changes, the generation of many output files has been disabled by default CLI options.
 
 Removed (**breaks**)
 ~~~~~~~~~~~~~~~~~~~~
@@ -459,3 +503,8 @@ Changed
 .. _pugixml: https://pugixml.org/
 .. _Meson: https://mesonbuild.com/
 .. _gtest: https://github.com/google/googletest
+.. _CLI11: https://github.com/CLIUtils/CLI11
+.. _docopt_cpp: https://github.com/docopt/docopt.cpp
+.. _rr: https://rr-project.org/
+.. _flatbuffers: https://google.github.io/flatbuffers/
+.. _batprotocol: https://framagit.org/batsim/batprotocol
