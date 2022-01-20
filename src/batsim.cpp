@@ -381,7 +381,7 @@ int main(int argc, char * argv[])
             flags |= 0x2;
         else
             flags |= 0x1;
-        context.edc->init(nullptr, 0u, flags);
+        context.edc->init((const uint8_t*)main_args.edc_init_buffer.data(), main_args.edc_init_buffer.size(), flags);
 
         // Create the protocol message manager
         context.proto_msg_builder = new batprotocol::MessageBuilder(true);

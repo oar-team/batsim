@@ -229,7 +229,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         ->description("Add an EDC as a library loaded by Batsim and called through a C API\n<lib-path> is the path of the library to load\n<json-format-bool> sets format of batprotocol messages (0->binary, 1->JSON)\nContent of <init-str> string is the EDC initialization buffer");
 
     std::vector<std::tuple<std::string, bool, std::string> > edc_lib_files;
-    app.add_option("-L,--edc-library-file", edc_lib_strings, "")
+    app.add_option("-L,--edc-library-file", edc_lib_files, "")
         ->group(edc_group_name)
         ->option_text("(<lib-path> <json-format-bool> <init-file>)...")
         ->description("Same as --edc-library-str but content of <init-file> file is the EDC initialization buffer");
