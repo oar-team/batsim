@@ -84,6 +84,7 @@ let
       '';
       buildPhase = "ninja";
       installPhase = "ninja install";
+      doCheck = false;
     });
 
     # Convenient development shell for qtcreator+cmake users.
