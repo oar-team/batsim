@@ -1,4 +1,4 @@
 batsim: 4.1.0
-simgrid: 3.29.0
+simgrid: 3.30.0
 batsched: 1.4.0
 robin: v1.2.0
