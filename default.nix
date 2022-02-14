@@ -19,7 +19,7 @@
       owner = "batsim";
       repo = "batsched";
       rev = "17072778995100fc90214ea4910bf5b171adfd0d";
-      sha256 = "12r8b14rwa26wx34l1492vdvyn2s7mch3ixlz46s6imi1ximywa8";
+      sha256 = "SHFfYw+xRqMN+bTHAVk9Wli/2xaJBEpG50YonklYKIs=";
     };
   })
 , batexpe ? kapack.batexpe
@@ -29,7 +29,7 @@
       owner = "batsim";
       repo = "pybatsim";
       rev = "880dd60c537d7d7a8246daaf5b2d1f7bfea3cbf4";
-      sha256 = "1xa0r1h8xv1x51v0zddw3m52n250wph8jsm1ga67v18k7582kav4";
+      sha256 = "gSGiZBb7CN79XNb4cqpdOdGApMOPeRwdPxbASpKKRHo=";
     };
   })
 # set this to avoid running tests over and over
