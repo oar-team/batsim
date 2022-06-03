@@ -185,7 +185,7 @@ let
       pname = "batsim-coverage-report";
       version = integration_tests.version;
 
-      buildInputs = batsim.buildInputs ++ [ kapack.gcovr ]
+      buildInputs = batsim.buildInputs ++ [ pkgs.gcovr ]
         ++ [ batsim integration_tests ];
       src = batsim.src;
 
