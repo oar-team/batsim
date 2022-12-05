@@ -48,7 +48,7 @@ Visualizing Gantt charts
     from evalys.jobset import JobSet
     from evalys import visu
     js = JobSet.from_csv("PREFIX_jobs.csv")
-    visu.gantt.plot_gantt(js, label_jobs=True)
+    visu.gantt.plot_gantt(js)
 
 
 
