@@ -228,21 +228,22 @@ let
       src = pkgs.lib.sourceByRegex ./. [
         "^src"
         "^src/.*\.?pp"
-        "^doc"
-        "^doc/Doxyfile"
-        "^doc/doxygen_mainpage.md"
+        "^docs"
+        "^docs/doxygen"
+        "^docs/doxygen/Doxyfile"
+        "^docs/doxygen/.*\.md"
       ];
       buildInputs = [pkgs.doxygen];
-      buildPhase = "(cd doc && doxygen)";
+      buildPhase = "(cd docs/doxygen && doxygen)";
       installPhase = ''
         mkdir -p $out
-        mv doc/doxygen_doc/html/* $out/
+        mv docs/doxygen/doxygen_doc/html/* $out/
       '';
       checkPhase = ''
-        nb_warnings=$(cat doc/doxygen_warnings.log | wc -l)
+        nb_warnings=$(cat docs/doxygen/doxygen_warnings.log | wc -l)
         if [[ $nb_warnings -gt 0 ]] ; then
           echo "FAILURE: There are doxygen warnings!"
-          cat doc/doxygen_warnings.log
+          cat docs/doxygen/doxygen_warnings.log
           exit 1
         fi
       '';
