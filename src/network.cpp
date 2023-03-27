@@ -50,6 +50,7 @@ void request_reply_scheduler_process(BatsimContext * context, std::string send_b
         string raw_message_received(static_cast<char*>(zmq_msg_data(&msg)), zmq_msg_size(&msg));
         message_received = raw_message_received;
         XBT_INFO("Received '%s'", message_received.c_str());
+        zmq_msg_close(&msg);
 
         auto end = chrono::steady_clock::now();
         long double elapsed_microseconds = static_cast<long double>(chrono::duration <long double, micro> (end - start).count());
