@@ -1,0 +1,140 @@
+{
+  "nodes": {
+    "batprotocol": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "nur-kapack": [
+          "nur-kapack"
+        ]
+      },
+      "locked": {
+        "lastModified": 1685029597,
+        "narHash": "sha256-ZR02fcV/20WxfFVm0kyPKHPeVmPeY2hzdscLpztC1Aw=",
+        "ref": "refs/heads/master",
+        "rev": "ba41123a1ffff6fc45f4a2f0db88ed7c3708f0cb",
+        "revCount": 140,
+        "type": "git",
+        "url": "https://framagit.org/batsim/batprotocol"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://framagit.org/batsim/batprotocol"
+      }
+    },
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1681202837,
+        "narHash": "sha256-H+Rh19JDwRtpVPAWp64F+rlEtxUWBAQW28eAi3SRSzg=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "cfacdce06f30d2b68473a46042957675eebb3401",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "intervalset": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "nur-kapack": [
+          "nur-kapack"
+        ]
+      },
+      "locked": {
+        "lastModified": 1685006270,
+        "narHash": "sha256-cJlbAF8m2PCX2iqepq3uKmKkOOF2bAjSpKMP4KXoevk=",
+        "ref": "refs/heads/master",
+        "rev": "2b449c3b8d88e7ed2008fe618846d437a4fd8ee5",
+        "revCount": 83,
+        "type": "git",
+        "url": "https://framagit.org/batsim/intervalset"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://framagit.org/batsim/intervalset"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1669833724,
+        "narHash": "sha256-/HEZNyGbnQecrgJnfE8d0WC5c1xuPSD2LUpB6YXlg4c=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "4d2b37a84fad1091b9de401eb450aae66f1a741e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "22.11",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nur-kapack": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1682575206,
+        "narHash": "sha256-hjoGc2gOa8IEcwDucNRoE2fryoRciPOJ7GBUShj3OY4=",
+        "owner": "oar-team",
+        "repo": "nur-kapack",
+        "rev": "7fa57b4170962b5c88d077d6f625628e7763c81c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oar-team",
+        "ref": "master",
+        "repo": "nur-kapack",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "batprotocol": "batprotocol",
+        "flake-utils": "flake-utils",
+        "intervalset": "intervalset",
+        "nixpkgs": "nixpkgs",
+        "nur-kapack": "nur-kapack"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

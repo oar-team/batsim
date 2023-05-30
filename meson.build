@@ -102,18 +102,21 @@ batsim = executable('batsim', ['src/batsim.cpp'],
     install: true
 )
 
-# Unit tests.
-if get_option('do_unit_tests')
+# Tests that are internal to Batsim's source code
+# - func-tests checks that Batsim functions behave as expected in isolation
+# - actor-tests checks that Batsim SimGrid actors behave as expected in isolation
+if get_option('do_internal_tests')
     gtest_dep = dependency('gtest_main', version: '>=1.8.0', required: true)
-    test_incdir = include_directories('src/unittest', 'src')
-    test_src = [
-        'src/unittest/test_buffered_outputting.cpp',
-        'src/unittest/test_numeric_strcmp.cpp',
+    test_incdir = include_directories('src/test', 'src')
+    func_test_src = [
+        'src/test/func_test_buffered_outputting.cpp',
+        'src/test/func_test_numeric_strcmp.cpp',
     ]
-    unittest = executable('batunittest',
-        test_src,
+    func_test = executable('batsim-func-tests',
+        func_test_src,
         dependencies: batsim_deps + [batlib_dep, gtest_dep],
-        include_directories: [test_incdir]
+        include_directories: [test_incdir],
+        install: true
     )
-    test('unittest', unittest)
+    test('batsim-func-test', func_test)
 endif
