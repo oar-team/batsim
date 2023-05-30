@@ -43,6 +43,7 @@
         };
         debug-cov-options = debug-options // {
           doCoverage = true;
+          pytest = pkgs.python3Packages.pytest;
         };
         base-defs = { cppMesonDevBase = nur-kapack.lib.${system}.cppMesonDevBase; };
         callPackage = mergedPkgs: deriv-func: attrset: options: pkgs.lib.callPackageWith(mergedPkgs // options) deriv-func attrset;
@@ -51,14 +52,17 @@
           batsim = import ./nix/batsim.nix;
           batsim-internal-test = import ./nix/internal-test.nix;
           batsim-edc-libs = import ./nix/edc-libs.nix;
-          # batsim-edc-test
+          batsim-edc-test = import ./nix/edc-test.nix;
           batsim-coverage-report = import ./nix/coverage-report.nix;
+          batsim-edc-coverage-report = import ./nix/edc-coverage-report.nix;
           # batsim-sphinx-doc
           generate-packages = mergedPkgs: options: {
             batsim = callPackage mergedPkgs batsim {} options;
             batsim-internal-test = callPackage mergedPkgs batsim-internal-test {} options;
             batsim-coverage-report = callPackage mergedPkgs batsim-coverage-report {} options;
             batsim-edc-libs = callPackage mergedPkgs batsim-edc-libs {} options;
+            batsim-edc-test = callPackage mergedPkgs batsim-edc-test {} options;
+            batsim-edc-coverage-report = callPackage mergedPkgs batsim-edc-coverage-report {} options;
           };
         };
         packages-release = functions.generate-packages (pkgs // base-defs // packages-release) release-options;
@@ -72,8 +76,25 @@
           batsim-internal-test = packages-debug-cov.batsim-internal-test;
           batsim-coverage-report = packages-debug-cov.batsim-coverage-report;
           batsim-edc-libs = packages-debug-cov.batsim-edc-libs;
+          batsim-edc-test = packages-debug-cov.batsim-edc-test;
+          batsim-edc-coverage-report = packages-debug-cov.batsim-edc-coverage-report;
         };
-        devShells = {};
+        devShells = {
+          external-test = pkgs.mkShell {
+            buildInputs = [
+              packages-release.batsim
+              packages-release.batsim-edc-libs
+              pkgs.python3Packages.ipython
+              pkgs.python3Packages.pytest
+            ];
+
+            EDC_LD_LIBRARY_PATH = "${packages-release.batsim-edc-libs}/lib";
+            shellHook = ''
+              export PLATFORM_DIR=$(realpath platforms)
+              export WORKLOAD_DIR=$(realpath workloads)
+            '';
+          };
+        };
       }
     );
 }
