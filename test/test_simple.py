@@ -1,30 +1,42 @@
 #!/usr/bin/env python3
 '''Simple tests.
 
-These tests run batsim with most basic features (execute jobs).
+These tests run batsim with most basic features (execute jobs, reject jobs).
 '''
-from helper import *
+import os
+import subprocess
+import pytest
 
-def basic(platform, workload, algorithm):
-    test_name = f'basic-{algorithm.name}-{platform.name}-{workload.name}'
-    output_dir, robin_filename, _ = init_instance(test_name)
+@pytest.fixture(scope="module")
+def platform():
+    return 'small_platform.xml'
 
-    if algorithm.sched_implem != 'batsched': raise Exception('This test only supports batsched for now')
+@pytest.fixture(scope="module")
+def workload():
+    return 'test_delays.json'
 
-    batcmd = gen_batsim_cmd(platform.filename, workload.filename, output_dir, "")
-    instance = RobinInstance(output_dir=output_dir,
-        batcmd=batcmd,
-        schedcmd=f"batsched -v '{algorithm.sched_algo_name}'",
-        simulation_timeout=30, ready_timeout=5,
-        success_timeout=10, failure_timeout=0
-    )
+@pytest.fixture(scope="module", params=['0', '1'])
+def use_json(request):
+    return request.param
 
-    instance.to_file(robin_filename)
-    ret = run_robin(robin_filename)
-    if ret.returncode != 0: raise Exception(f'Bad robin return code ({ret.returncode})')
+def test_reject_all_jobs(platform, workload, use_json):
+    platform_dir = os.environ['PLATFORM_DIR']
+    workload_dir = os.environ['WORKLOAD_DIR']
+    edc_dir = os.environ['EDC_LD_LIBRARY_PATH']
+    p = subprocess.run(['batsim',
+        '-p', f'{platform_dir}/{platform}',
+        '-w', f'{workload_dir}/{workload}',
+        '--edc-library-str', f'{edc_dir}/librejecter.so', use_json, ''
+    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3, encoding='utf-8')
+    assert p.returncode == 0
 
-def test_basic1(small_platform, small_workload, basic_algorithm):
-    basic(small_platform, small_workload, basic_algorithm)
-
-def test_basic2(platform, one_job_workload, basic_algorithm):
-    basic(platform, one_job_workload, basic_algorithm)
+def test_execute_jobs_one_by_one(platform, workload, use_json):
+    platform_dir = os.environ['PLATFORM_DIR']
+    workload_dir = os.environ['WORKLOAD_DIR']
+    edc_dir = os.environ['EDC_LD_LIBRARY_PATH']
+    p = subprocess.run(['batsim',
+        '-p', f'{platform_dir}/{platform}',
+        '-w', f'{workload_dir}/{workload}',
+        '--edc-library-str', f'{edc_dir}/libexec1by1.so', use_json, ''
+    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3, encoding='utf-8')
+    assert p.returncode == 0
