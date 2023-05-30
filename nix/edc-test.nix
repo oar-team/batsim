@@ -1,7 +1,8 @@
 { stdenv, lib
-, batsim, batsim-edc-libs, pytest, pytest-html
+, batsim, batsim-edc-libs, pytest, pytest-html, batsim-internal-test
 , doCoverage ? false
 , failOnTestFailed ? true
+, startFromInternalCoverage ? false
 }:
 
 assert lib.assertMsg (batsim.hasInternalTestBinaries) "batsim has not been compiled with internal tests enabled";
@@ -15,7 +16,7 @@ stdenv.mkDerivation rec {
     batsim-edc-libs
     pytest
     pytest-html
-  ];
+  ] ++ lib.optional startFromInternalCoverage [ batsim-internal-test ];
 
   src = lib.sourceByRegex ../. [
     "^test"
@@ -42,6 +43,8 @@ stdenv.mkDerivation rec {
     mkdir -p gcda
     export GCOV_PREFIX=$(realpath gcda)
     export GCOV_PREFIX_STRIP=${batsim.GCOV_PREFIX_STRIP}
+  '' + lib.optionalString startFromInternalCoverage ''
+    cp --no-preserve=all ${batsim-internal-test}/gcda/*.gcda gcda/
   '';
 
   buildPhase = ''

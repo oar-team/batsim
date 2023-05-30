@@ -68,13 +68,15 @@
         packages-release = functions.generate-packages (pkgs // base-defs // packages-release) release-options;
         packages-debug = functions.generate-packages (pkgs // base-defs // packages-debug) debug-options;
         packages-debug-cov = functions.generate-packages (pkgs // base-defs // packages-debug-cov) debug-cov-options;
-        packages = packages-release // {
+        packages = packages-release // rec {
           ci-batsim-werror-gcc = callPackage (pkgs) functions.batsim ({ stdenv = pkgs.gccStdenv; werror = true; } // base-defs) release-options;
           ci-batsim-werror-clang = callPackage (pkgs) functions.batsim ({ stdenv = pkgs.clangStdenv; werror = true; } // base-defs) release-options;
           ci-batsim-internal-test = packages-debug-cov.batsim-internal-test;
-          ci-batsim-internal-test-coverage-report = callPackage pkgs functions.batsim-coverage-report { batsim = packages-debug-cov.batsim; batsim-test = packages-debug-cov.batsim-internal-test; } debug-cov-options;
           ci-batsim-edc-test = packages-debug-cov.batsim-edc-test;
+          ci-batsim-edc-test-from-internal-gcda = packages-debug-cov.batsim-edc-test.override { startFromInternalCoverage = true; };
+          ci-batsim-internal-test-coverage-report = callPackage pkgs functions.batsim-coverage-report { batsim = packages-debug-cov.batsim; batsim-test = packages-debug-cov.batsim-internal-test; } debug-cov-options;
           ci-batsim-edc-test-coverage-report = callPackage pkgs functions.batsim-coverage-report { batsim = packages-debug-cov.batsim; batsim-test = packages-debug-cov.batsim-edc-test; } debug-cov-options;
+          ci-batsim-test-coverage-report = callPackage pkgs functions.batsim-coverage-report { batsim = packages-debug-cov.batsim; batsim-test = ci-batsim-edc-test-from-internal-gcda; } debug-cov-options;
         };
         devShells = {
           external-test = pkgs.mkShell {
