@@ -50,7 +50,7 @@
         functions = rec {
           batsim = import ./nix/batsim.nix;
           batsim-internal-test = import ./nix/internal-test.nix;
-          # batsim-edc-libs
+          batsim-edc-libs = import ./nix/edc-libs.nix;
           # batsim-edc-test
           batsim-coverage-report = import ./nix/coverage-report.nix;
           # batsim-sphinx-doc
@@ -58,6 +58,7 @@
             batsim = callPackage mergedPkgs batsim {} options;
             batsim-internal-test = callPackage mergedPkgs batsim-internal-test {} options;
             batsim-coverage-report = callPackage mergedPkgs batsim-coverage-report {} options;
+            batsim-edc-libs = callPackage mergedPkgs batsim-edc-libs {} options;
           };
         };
         packages-release = functions.generate-packages (pkgs // base-defs // packages-release) release-options;
@@ -70,6 +71,7 @@
           batsim-debug = packages-debug-cov.batsim;
           batsim-internal-test = packages-debug-cov.batsim-internal-test;
           batsim-coverage-report = packages-debug-cov.batsim-coverage-report;
+          batsim-edc-libs = packages-debug-cov.batsim-edc-libs;
         };
         devShells = {};
       }
