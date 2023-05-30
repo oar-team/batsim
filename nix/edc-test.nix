@@ -1,5 +1,5 @@
 { stdenv, lib
-, batsim, batsim-edc-libs, pytest
+, batsim, batsim-edc-libs, pytest, pytest-html
 , doCoverage ? false
 , failOnTestFailed ? true
 }:
@@ -14,6 +14,7 @@ stdenv.mkDerivation rec {
     batsim
     batsim-edc-libs
     pytest
+    pytest-html
   ];
 
   src = lib.sourceByRegex ../. [
@@ -36,7 +37,7 @@ stdenv.mkDerivation rec {
   PLATFORM_DIR = "${src}/platforms";
   WORKLOAD_DIR = "${src}/workloads";
 
-  pytestArgs = "";
+  pytestArgs = "--html=./report/pytest_report.html --junit-xml=./report/pytest_report.xml";
   preBuild = lib.optionalString doCoverage ''
     mkdir -p gcda
     export GCOV_PREFIX=$(realpath gcda)
@@ -62,6 +63,7 @@ stdenv.mkDerivation rec {
 
   installPhase = ''
     mkdir -p $out
+    cp -r report $out/
   '' + lib.optionalString doCoverage ''
     mv gcda $out/
   '';

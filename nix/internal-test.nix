@@ -19,10 +19,11 @@ stdenv.mkDerivation rec {
     export GCOV_PREFIX=$(realpath gcda)
     export GCOV_PREFIX_STRIP=${batsim.GCOV_PREFIX_STRIP}
   '' + ''
-    batsim-func-tests
+    batsim-func-tests --gtest_output="xml:./test_report.xml"
   '';
   installPhase = ''
     mkdir -p $out
+    cp ./test_report.* $out/
   '' + lib.optionalString doCoverage ''
     mv gcda $out/
   '';

@@ -1,5 +1,5 @@
 { stdenv, lib
-, batsim, batsim-internal-test
+, batsim, batsim-test
 , gcovr
 , coverageCobertura ? true
 , coverageCoveralls ? true
@@ -13,13 +13,13 @@ stdenv.mkDerivation rec {
 
   buildInputs = batsim.buildInputs ++
     [ gcovr ] ++
-    [ batsim batsim-internal-test ];
+    [ batsim batsim-test ];
   src = batsim.src;
 
   buildPhase = ''
     mkdir cov-merged
     cd cov-merged
-    cp ${batsim}/gcno/* ${batsim-internal-test}/gcda/* ./
+    cp ${batsim}/gcno/* ${batsim-test}/gcda/* ./
     gcov -p *.gcno
     mkdir report
   '' + lib.optionalString coverageHtml ''
