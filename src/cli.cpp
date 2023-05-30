@@ -247,7 +247,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         ->description("Same as --edc-library-file but the EDC is added as a process called through RPC via ZeroMQ");
 
     std::map<std::string, EdcLibraryLoadMethod> ellm_map{{"dlmopen", EdcLibraryLoadMethod::DLMOPEN}, {"dlopen", EdcLibraryLoadMethod::DLOPEN}};
-    app.add_option("--edc-library-load-method", main_args.edc_library_load_method, "How to load EDC libraries in memory. Accepted values: {dlmopen, dlopen}. Default: dlmopen")
+    app.add_option("--edc-library-load-method", main_args.edc_library_load_method, "How to load EDC libraries in memory. Accepted values: {dlmopen, dlopen}. Default: dlopen")
         ->group(edc_group_name)
         ->option_text("<method>")
         ->transform(CLI::CheckedTransformer(ellm_map, CLI::ignore_case));

@@ -139,7 +139,7 @@ struct MainArguments
     // Other
     std::vector<std::string> simgrid_config;                //!< The list of configuration options to pass to SimGrid.
     std::vector<std::string> simgrid_logging;               //!< The list of simulation logging options to pass to SimGrid.
-    EdcLibraryLoadMethod edc_library_load_method = EdcLibraryLoadMethod::DLMOPEN; //!< How external decision components should be loaded in memory.
+    EdcLibraryLoadMethod edc_library_load_method = EdcLibraryLoadMethod::DLOPEN; //!< How external decision components should be loaded in memory.
     ProgramType program_type = ProgramType::BATSIM;         //!< The program type (Batsim or Batexec at the moment)
 
 public:
