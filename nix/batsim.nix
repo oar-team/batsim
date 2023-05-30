@@ -10,7 +10,7 @@
 
 (cppMesonDevBase {
   inherit stdenv lib meson ninja pkgconfig debug werror doCoverage;
-  coverageGcnoGlob = "libintervalset.so.p/*.gcno";
+  coverageGcnoGlob = "batsim.p/*.gcno libbatlib.a.p/*.gcno";
 }).overrideAttrs(attrs: rec {
   name = "batsim";
 
@@ -44,6 +44,9 @@
   ++ runtimeDeps;
 
   passthru = rec {
+    hasInternalTestBinaries = doInternalTests;
+    hasDebugSymbols = debug;
+    hasCoverage = doCoverage;
     GCOV_PREFIX_STRIP = "5";
     DEBUG_SRC_DIRS = [ "${src}/src" ];
     GDB_DIR_ARGS = map (x: "--directory=" + x) DEBUG_SRC_DIRS;

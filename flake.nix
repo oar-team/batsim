@@ -41,27 +41,35 @@
           batprotocol-cpp = batprotocol.packages-debug.${system}.batprotocol-cpp;
           intervalset = intervalset.packages-debug.${system}.intervalset;
         };
+        debug-cov-options = debug-options // {
+          doCoverage = true;
+        };
         base-defs = { cppMesonDevBase = nur-kapack.lib.${system}.cppMesonDevBase; };
         callPackage = mergedPkgs: deriv-func: attrset: options: pkgs.lib.callPackageWith(mergedPkgs // options) deriv-func attrset;
       in rec {
         functions = rec {
           batsim = import ./nix/batsim.nix;
-          # batsim-internal-test
+          batsim-internal-test = import ./nix/internal-test.nix;
           # batsim-edc-libs
           # batsim-edc-test
-          # batsim-coverage-report
+          batsim-coverage-report = import ./nix/coverage-report.nix;
           # batsim-sphinx-doc
           generate-packages = mergedPkgs: options: {
             batsim = callPackage mergedPkgs batsim {} options;
+            batsim-internal-test = callPackage mergedPkgs batsim-internal-test {} options;
+            batsim-coverage-report = callPackage mergedPkgs batsim-coverage-report {} options;
           };
         };
         packages-release = functions.generate-packages (pkgs // base-defs // packages-release) release-options;
         packages-debug = functions.generate-packages (pkgs // base-defs // packages-debug) debug-options;
+        packages-debug-cov = functions.generate-packages (pkgs // base-defs // packages-debug-cov) debug-cov-options;
         packages = {
           ci-batsim-werror-gcc = callPackage (pkgs) functions.batsim ({ stdenv = pkgs.gccStdenv; werror = true; } // base-defs) release-options;
           ci-batsim-werror-clang = callPackage (pkgs) functions.batsim ({ stdenv = pkgs.clangStdenv; werror = true; } // base-defs) release-options;
           batsim-release = packages-release.batsim;
-          batsim-debug = packages-debug.batsim;
+          batsim-debug = packages-debug-cov.batsim;
+          batsim-internal-test = packages-debug-cov.batsim-internal-test;
+          batsim-coverage-report = packages-debug-cov.batsim-coverage-report;
         };
         devShells = {};
       }
