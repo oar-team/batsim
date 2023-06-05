@@ -69,8 +69,8 @@
         packages-debug = functions.generate-packages (pkgs // base-defs // packages-debug) debug-options;
         packages-debug-cov = functions.generate-packages (pkgs // base-defs // packages-debug-cov) debug-cov-options;
         packages = packages-release // rec {
-          ci-batsim-werror-gcc = callPackage (pkgs) functions.batsim ({ stdenv = pkgs.gccStdenv; werror = true; } // base-defs) release-options;
-          ci-batsim-werror-clang = callPackage (pkgs) functions.batsim ({ stdenv = pkgs.clangStdenv; werror = true; } // base-defs) release-options;
+          ci-batsim-werror-gcc = callPackage (pkgs // base-defs // packages-release) functions.batsim ({ stdenv = pkgs.gccStdenv; werror = true; }) release-options;
+          ci-batsim-werror-clang = callPackage (pkgs // base-defs // packages-release) functions.batsim ({ stdenv = pkgs.clangStdenv; werror = true; }) release-options;
           ci-batsim-internal-test = packages-debug-cov.batsim-internal-test;
           ci-batsim-edc-test = packages-debug-cov.batsim-edc-test;
           ci-batsim-edc-test-from-internal-gcda = packages-debug-cov.batsim-edc-test.override { startFromInternalCoverage = true; };
