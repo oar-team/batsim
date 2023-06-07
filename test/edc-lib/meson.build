@@ -25,3 +25,8 @@ exec1by1 = shared_library('exec1by1', common + ['exec1by1.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep],
   install: true,
 )
+
+fcfs = shared_library('fcfs', common + ['fcfs.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep],
+  install: true,
+)
