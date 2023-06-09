@@ -3,56 +3,47 @@
 
 These tests run batsim with most basic features (execute jobs, reject jobs).
 '''
+import inspect
 import os
 import subprocess
 import pytest
 
+from helper import prepare_instance, run_batsim
+
+MOD_NAME = __name__.replace('test_', '', 1)
+
 @pytest.fixture(scope="module")
 def platform():
-    return 'small_platform.xml'
+    return 'small_platform'
 
 @pytest.fixture(scope="module")
 def workload():
-    return 'test_delays.json'
+    return 'test_delays'
 
-@pytest.fixture(scope="module", params=['0', '1'])
+@pytest.fixture(scope="module", params=[False, True])
 def use_json(request):
     return request.param
 
-def test_reject_all_jobs(platform, workload, use_json):
-    platform_dir = os.environ['PLATFORM_DIR']
-    workload_dir = os.environ['WORKLOAD_DIR']
-    edc_dir = os.environ['EDC_LD_LIBRARY_PATH']
-    p = subprocess.run(['batsim',
-        '-p', f'{platform_dir}/{platform}',
-        '-w', f'{workload_dir}/{workload}',
-        '--edc-library-str', f'{edc_dir}/librejecter.so', use_json, ''
-    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3, encoding='utf-8')
+def test_rejecter(test_root_dir, platform, workload):
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}-{workload}'
+
+    batcmd, outdir = prepare_instance(instance_name, test_root_dir, platform, 'rejecter', workload)
+    p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
-def test_execute_jobs_one_by_one(platform, workload, use_json):
-    platform_dir = os.environ['PLATFORM_DIR']
-    workload_dir = os.environ['WORKLOAD_DIR']
-    edc_dir = os.environ['EDC_LD_LIBRARY_PATH']
-    p = subprocess.run(['batsim',
-        '-p', f'{platform_dir}/{platform}',
-        '-w', f'{workload_dir}/{workload}',
-        '--edc-library-str', f'{edc_dir}/libexec1by1.so', use_json, ''
-    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3, encoding='utf-8')
+def test_1by1(test_root_dir, platform, workload):
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}-{workload}'
+
+    batcmd, outdir = prepare_instance(instance_name, test_root_dir, platform, 'exec1by1', workload)
+    p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
-def test_fcfs(platform, workload, use_json):
-    platform_dir = os.environ['PLATFORM_DIR']
-    workload_dir = os.environ['WORKLOAD_DIR']
-    edc_dir = os.environ['EDC_LD_LIBRARY_PATH']
-    out_dir = f'/tmp/fcfs-{use_json}'
-    os.makedirs(out_dir, exist_ok=True)
+def test_fcfs(test_root_dir, platform, workload, use_json):
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}-{workload}-' + str(int(use_json))
 
-    with open(f'{out_dir}/batsim.out', 'w') as outfile:
-        with open(f'{out_dir}/batsim.err', 'w') as errfile:
-            p = subprocess.run(['batsim',
-                '-p', f'{platform_dir}/{platform}',
-                '-w', f'{workload_dir}/{workload}',
-                '--edc-library-str', f'{edc_dir}/libfcfs.so', use_json, ''
-            ], stdout=outfile, stderr=errfile, timeout=3, encoding='utf-8')
-            assert p.returncode == 0
+    batcmd, outdir = prepare_instance(instance_name, test_root_dir, platform, 'fcfs', workload, use_json=use_json)
+    p = run_batsim(batcmd, outdir)
+    assert p.returncode == 0
