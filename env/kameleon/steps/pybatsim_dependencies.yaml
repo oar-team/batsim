@@ -1,3 +1,0 @@
-- install dependencies:
-  - exec_in: apt install -y python3-pip
-  - exec_in: pip3 install sortedcontainers pyzmq redis click pandas docopt

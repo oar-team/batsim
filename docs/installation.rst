@@ -146,7 +146,6 @@ The `oarteam/batsim`_ docker containers can directly be executed by Singularity_
 Building it yourself
 --------------------
 Batsim can be built with the Meson_ (+ Ninja_) build system.
-You can also use CMake_ if you prefer but please note that our cmake support is deprecated.
 
 .. warning::
 
@@ -181,7 +180,6 @@ You can also use CMake_ if you prefer but please note that our cmake support is 
 .. _kapack: https://github.com/oar-team/nur-kapack/
 .. _Nix: https://nixos.org/nix/
 .. _Nix installation documentation: https://nixos.org/nix/
-.. _CMake: https://cmake.org/
 .. _Meson: https://mesonbuild.com/
 .. _Ninja: https://ninja-build.org/
 .. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/

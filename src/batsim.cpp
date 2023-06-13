@@ -6,10 +6,10 @@
 /** @def BATSIM_VERSION
  *  @brief What batsim --version should return.
  *
- *  It is either set by CMake or set to vUNKNOWN_PLEASE_COMPILE_VIA_CMAKE
+ *  This is usually set by Batsim's build system (Meson, via Nix or not)
 **/
 #ifndef BATSIM_VERSION
-    #define BATSIM_VERSION vUNKNOWN_PLEASE_COMPILE_VIA_CMAKE
+    #define BATSIM_VERSION vUNKNOWN
 #endif
 
 
