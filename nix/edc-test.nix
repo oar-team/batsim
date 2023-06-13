@@ -66,6 +66,7 @@ stdenv.mkDerivation rec {
 
   installPhase = ''
     mkdir -p $out
+    cp ./pytest_returncode $out/
     cp -r report $out/
   '' + lib.optionalString doCoverage ''
     mv gcda $out/
