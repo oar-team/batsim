@@ -642,7 +642,7 @@ int execute_smpi_trace_replay(
     double * remaining_time,
     BatsimContext * context)
 {
-    auto * data = static_cast<SmpiProfileData *>(btask->profile->data);
+    auto * data = static_cast<ReplaySmpiProfileData *>(btask->profile->data);
     auto profile = btask->profile;
     auto job = JobPtr(btask->parent_job);
 

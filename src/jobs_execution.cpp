@@ -18,7 +18,7 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(jobs_execution, "jobs_execution"); //!< Logging
 
 using namespace std;
 
-void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, const std::string & termination_mbox_name, int rank)
+void smpi_replay_process(JobPtr job, ReplaySmpiProfileData * profile_data, const std::string & termination_mbox_name, int rank)
 {
     try
     {

@@ -109,7 +109,7 @@ void Workload::register_smpi_applications()
 
         if (job->profile->type == ProfileType::REPLAY_SMPI)
         {
-            auto * data = static_cast<SmpiProfileData *>(job->profile->data);
+            auto * data = static_cast<ReplaySmpiProfileData *>(job->profile->data);
 
             XBT_INFO("Registering app. instance='%s', nb_process=%lu",
                      job->id.to_cstring(), data->trace_filenames.size());

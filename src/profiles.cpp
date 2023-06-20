@@ -190,7 +190,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::REPLAY_SMPI)
     {
-        auto * d = static_cast<SmpiProfileData *>(data);
+        auto * d = static_cast<ReplaySmpiProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -569,7 +569,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         if (trace_type == "smpi")
         {
             profile->type = ProfileType::REPLAY_SMPI;
-            SmpiProfileData * data = new SmpiProfileData;
+            ReplaySmpiProfileData * data = new ReplaySmpiProfileData;
 
             xbt_assert(json_desc.HasMember("trace"), "%s: profile '%s' has no 'trace' field",
                        error_prefix.c_str(), profile_name.c_str());

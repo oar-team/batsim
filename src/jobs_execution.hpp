@@ -30,7 +30,7 @@ void killer_process(
  * @param[in] termination_mbox_name The name of the mailbox onto which this function writes to signal its termination.
  * @param[in] rank The rank whose replay is to be simulated
  */
-void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, const std::string & termination_mbox_name, int rank);
+void smpi_replay_process(JobPtr job, ReplaySmpiProfileData * profile_data, const std::string & termination_mbox_name, int rank);
 
 /**
  * @brief Simulates a delay profile (sleeps until finished or walltime)
