@@ -25,6 +25,7 @@ enum class ProfileType
     ,PTASK                                     //!< composed of a computation vector and a communication matrix. Its data is of type ParallelProfileData
     ,PTASK_HOMOGENEOUS                         //!< a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type ParallelHomogeneousProfileData
     ,REPLAY_SMPI                               //!< a SimGrid MPI time-independent trace. Its data is of type ReplaySmpiProfileData
+    ,REPLAY_USAGE                              //!< a usage over time trace. Its data is of type ReplayUsageProfileData
     ,SEQUENTIAL_COMPOSITION                    //!< non-atomic: it is composed of a sequence of other profiles
     ,PTASK_ON_STORAGE_HOMOGENEOUS              //!< Read and writes data to a PFS storage nodes. data type ParallelHomogeneousPFSProfileData
     ,PTASK_DATA_STAGING_BETWEEN_STORAGES       //!< for moving data between the pfs hosts. Its data is of type DataStagingProfileData
@@ -128,9 +129,17 @@ struct DelayProfileData
 };
 
 /**
- * @brief The data associated to SMPI profiles
+ * @brief The data associated to REPLAY_SMPI profiles
  */
 struct ReplaySmpiProfileData
+{
+    std::vector<std::string> trace_filenames; //!< all defined tracefiles
+};
+
+/**
+ * @brief The data associated to REPLAY_USAGE profiles
+ */
+struct ReplayUsageProfileData
 {
     std::vector<std::string> trace_filenames; //!< all defined tracefiles
 };

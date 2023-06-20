@@ -197,6 +197,15 @@ Profile::~Profile()
             d = nullptr;
         }
     }
+    else if (type == ProfileType::REPLAY_USAGE)
+    {
+        auto * d = static_cast<ReplayUsageProfileData *>(data);
+        if (d != nullptr)
+        {
+            delete d;
+            d = nullptr;
+        }
+    }
     else if (type == ProfileType::SEQUENTIAL_COMPOSITION)
     {
         auto * d = static_cast<SequenceProfileData *>(data);
@@ -566,48 +575,51 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         xbt_assert(json_desc["trace_type"].IsString(), "%s: profile '%s' has a non-string 'trace_type' field", error_prefix.c_str(), profile_name.c_str());
         const string trace_type = json_desc["trace_type"].GetString();
 
+        // retrieve trace filenames
+        xbt_assert(json_desc.HasMember("trace_file"), "%s: profile '%s' has no 'trace_file' field", error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["trace_file"].IsString(), "%s: profile '%s' has a non-string 'trace_file' field", error_prefix.c_str(), profile_name.c_str());
+        const string trace_filename = json_desc["trace_file"].GetString();
+
+        xbt_assert(is_from_a_file, "Trying to create a trace_replay profile from another source than a file workload, which is not implemented at the moment.");
+        (void) is_from_a_file; // Avoids a warning if assertions are ignored
+
+        fs::path base_dir = json_filename;
+        base_dir = base_dir.parent_path();
+        XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
+        xbt_assert(fs::exists(base_dir) && fs::is_directory(base_dir), "directory '%s' does not exist or is not a directory", base_dir.string().c_str());
+
+        fs::path trace_path = base_dir.string() + "/" + trace_filename;
+        xbt_assert(fs::exists(trace_path) && fs::is_regular_file(trace_path),
+                   "Invalid JSON: profile '%s' has an invalid 'trace_file' field ('%s'), which leads to a non-existent file ('%s')",
+                   profile_name.c_str(), trace_filename.c_str(), trace_path.string().c_str());
+
+        ifstream trace_file(trace_path.string());
+        xbt_assert(trace_file.is_open(), "Cannot open file '%s'", trace_path.string().c_str());
+
+        std::vector<std::string> trace_filenames;
+        string line;
+        while (std::getline(trace_file, line))
+        {
+            boost::trim_right(line);
+            fs::path rank_trace_path = trace_path.parent_path().string() + "/" + line;
+            trace_filenames.push_back(rank_trace_path.string());
+        }
+
+        string filenames = boost::algorithm::join(trace_filenames, ", ");
+        XBT_INFO("Filenames of profile '%s': [%s]", profile_name.c_str(), filenames.c_str());
+
         if (trace_type == "smpi")
         {
             profile->type = ProfileType::REPLAY_SMPI;
-            ReplaySmpiProfileData * data = new ReplaySmpiProfileData;
-
-            xbt_assert(json_desc.HasMember("trace"), "%s: profile '%s' has no 'trace' field",
-                       error_prefix.c_str(), profile_name.c_str());
-            xbt_assert(json_desc["trace"].IsString(), "%s: profile '%s' has a non-string 'trace' field",
-                       error_prefix.c_str(), profile_name.c_str());
-            const string trace_filename = json_desc["trace"].GetString();
-
-            xbt_assert(is_from_a_file, "Trying to create a SMPI profile from another source than "
-                       "a file workload, which is not implemented at the moment.");
-            (void) is_from_a_file; // Avoids a warning if assertions are ignored
-
-            fs::path base_dir = json_filename;
-            base_dir = base_dir.parent_path();
-            XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
-            xbt_assert(fs::exists(base_dir) && fs::is_directory(base_dir), "directory '%s' does not exist or is not a directory", base_dir.string().c_str());
-
-            //XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
-            //XBT_INFO("trace = '%s'", trace.c_str());
-            fs::path trace_path = base_dir.string() + "/" + trace_filename;
-            //XBT_INFO("trace_path = '%s'", trace_path.string().c_str());
-            xbt_assert(fs::exists(trace_path) && fs::is_regular_file(trace_path),
-                       "Invalid JSON: profile '%s' has an invalid 'trace' field ('%s'), which leads to a non-existent file ('%s')",
-                       profile_name.c_str(), trace_filename.c_str(), trace_path.string().c_str());
-
-            ifstream trace_file(trace_path.string());
-            xbt_assert(trace_file.is_open(), "Cannot open file '%s'", trace_path.string().c_str());
-
-            string line;
-            while (std::getline(trace_file, line))
-            {
-                boost::trim_right(line);
-                fs::path rank_trace_path = trace_path.parent_path().string() + "/" + line;
-                data->trace_filenames.push_back(rank_trace_path.string());
-            }
-
-            string filenames = boost::algorithm::join(data->trace_filenames, ", ");
-            XBT_INFO("Filenames of profile '%s': [%s]", profile_name.c_str(), filenames.c_str());
-
+            auto * data = new ReplaySmpiProfileData;
+            data->trace_filenames = trace_filenames;
+            profile->data = data;
+        }
+        else if (trace_type == "usage")
+        {
+            profile->type = ProfileType::REPLAY_USAGE;
+            auto * data = new ReplayUsageProfileData;
+            data->trace_filenames = trace_filenames;
             profile->data = data;
         }
         else
@@ -676,6 +688,9 @@ std::string profile_type_to_string(const ProfileType & type)
         break;
     case ProfileType::REPLAY_SMPI:
         str = "REPLAY_SMPI";
+        break;
+    case ProfileType::REPLAY_USAGE:
+        str = "REPLAY_USAGE";
         break;
     case ProfileType::SEQUENTIAL_COMPOSITION:
         str = "SEQUENTIAL_COMPOSITION";

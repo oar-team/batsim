@@ -2,6 +2,8 @@
  * @file jobs_execution.cpp
  * @brief Contains functions related to the execution of the jobs
  */
+#include <algorithm>
+#include <cmath>
 #include <regex>
 
 #include "jobs_execution.hpp"
@@ -12,37 +14,9 @@
 #include <simgrid/s4u.hpp>
 #include <simgrid/plugins/energy.h>
 
-#include <smpi/smpi.h>
-
 XBT_LOG_NEW_DEFAULT_CATEGORY(jobs_execution, "jobs_execution"); //!< Logging
 
 using namespace std;
-
-void smpi_replay_process(JobPtr job, ReplaySmpiProfileData * profile_data, const std::string & termination_mbox_name, int rank)
-{
-    try
-    {
-        // Prepare data for smpi_replay_run
-        char * str_instance_id = nullptr;
-        int ret = asprintf(&str_instance_id, "%s", job->id.to_cstring());
-        (void) ret; // Avoids a warning if assertions are ignored
-        xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
-
-        XBT_INFO("Replaying rank %d of job %s (SMPI)", rank, job->id.to_cstring());
-        smpi_replay_run(str_instance_id, rank, 0, profile_data->trace_filenames[static_cast<size_t>(rank)].c_str());
-        XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_cstring());
-
-        // Tell parent process that replay has finished for this rank.
-        auto mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
-        auto rank_copy = new unsigned int;
-        *rank_copy = static_cast<unsigned int>(rank);
-        mbox->put(static_cast<void*>(rank_copy), 4);
-    }
-    catch (const simgrid::NetworkFailureException & e)
-    {
-        XBT_INFO("Caught a NetworkFailureException caught: %s", e.what());
-    }
-}
 
 int execute_task(
     BatTask * btask,
@@ -124,9 +98,22 @@ int execute_task(
         }
         return profile->return_code;
     }
-    else if (profile->type == ProfileType::REPLAY_SMPI)
+    else if (profile->type == ProfileType::REPLAY_SMPI || profile->type == ProfileType::REPLAY_USAGE)
     {
-        return execute_smpi_trace_replay(btask, alloc_placement, remaining_time, context);
+        std::vector<std::string> trace_filenames;
+
+        if (profile->type == ProfileType::REPLAY_SMPI)
+        {
+            auto * data = static_cast<ReplaySmpiProfileData *>(profile->data);
+            trace_filenames = data->trace_filenames;
+        }
+        else
+        {
+            auto * data = static_cast<ReplayUsageProfileData *>(profile->data);
+            trace_filenames = data->trace_filenames;
+        }
+
+        return execute_trace_replay(btask, alloc_placement, remaining_time, context);
     }
     else
         xbt_die("Cannot execute job %s: the profile '%s' is of unknown type: %s",

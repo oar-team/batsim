@@ -29,6 +29,19 @@ stdenv.mkDerivation rec {
     "^workloads/smpi"
     "^workloads/smpi/.*"
     "^workloads/smpi/.*/.*\.txt"
+    "^workloads/usage-trace"
+    "^workloads/usage-trace/from-real-trace"
+    "^workloads/usage-trace/from-real-trace/.*\.txt"
+    "^workloads/usage-trace/hetero-onephase-10-twophases-1-97"
+    "^workloads/usage-trace/hetero-onephase-10-twophases-1-97/.*\.txt"
+    "^workloads/usage-trace/hetero-onephase-20-60"
+    "^workloads/usage-trace/hetero-onephase-20-60/.*\.txt"
+    "^workloads/usage-trace/homo-onephase-100"
+    "^workloads/usage-trace/homo-onephase-100/.*\.txt"
+    "^workloads/usage-trace/homo-onephase-50"
+    "^workloads/usage-trace/homo-onephase-50/.*\.txt"
+    "^workloads/usage-trace/homo-twophases-100-10"
+    "^workloads/usage-trace/homo-twophases-100-10/.*\.txt"
     "^events"
     "^events/.*\.txt"
   ];
@@ -50,9 +63,11 @@ stdenv.mkDerivation rec {
   buildPhase = ''
     runHook preBuild
 
+    mkdir -p $out
+
     # do not force the derivation build to fail if some tests have failed
     set +e
-    pytest ${pytestArgs}
+    pytest ${pytestArgs} --test-output-dir=$out/test-out
     pytest_returncode=$?
     echo $pytest_returncode > ./pytest_returncode
     set -e
@@ -65,7 +80,6 @@ stdenv.mkDerivation rec {
   '';
 
   installPhase = ''
-    mkdir -p $out
     cp ./pytest_returncode $out/
     cp -r report $out/
   '' + lib.optionalString doCoverage ''

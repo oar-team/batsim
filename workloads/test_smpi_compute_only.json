@@ -9,7 +9,7 @@
         "1": {
             "type": "trace_replay",
             "trace_type": "smpi",
-            "trace": "smpi/compute_only/traces.txt"
+            "trace_file": "smpi/compute_only/traces.txt"
         }
     }
 }

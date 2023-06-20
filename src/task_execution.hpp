@@ -1,8 +1,12 @@
 #pragma once
 
+#include <xbt/replay.hpp>
+
 #include "context.hpp"
 #include "ipp.hpp"
 #include "jobs.hpp"
+
+void usage_trace_replayer(simgrid::xbt::ReplayAction & action);
 
 int execute_parallel_task(
     BatTask * btask,
@@ -11,7 +15,7 @@ int execute_parallel_task(
     BatsimContext * context
 );
 
-int execute_smpi_trace_replay(
+int execute_trace_replay(
     BatTask * btask,
     const std::shared_ptr<AllocationPlacement> & allocation,
     double * remaining_time,

@@ -43,6 +43,7 @@
 #include "profiles.hpp"
 #include "protocol.hpp"
 #include "server.hpp"
+#include "task_execution.hpp"
 #include "workload.hpp"
 #include "workflow.hpp"
 
@@ -351,6 +352,9 @@ int main(int argc, char * argv[])
         context.workloads.register_smpi_applications(); // todo: SMPI workflows
         SMPI_init();
     }
+
+    // Register Batsim replay functions
+    xbt_replay_action_register("m_usage", usage_trace_replayer);
 
     // Let's create the machines
     create_machines(main_args, &context, max_nb_machines_to_use);
