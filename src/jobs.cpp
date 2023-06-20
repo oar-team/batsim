@@ -246,7 +246,7 @@ bool Jobs::contains_smpi_job() const
     for (auto & mit : _jobs)
     {
         auto job = mit.second;
-        if (job->profile->type == ProfileType::SMPI)
+        if (job->profile->type == ProfileType::REPLAY_SMPI)
         {
             return true;
         }

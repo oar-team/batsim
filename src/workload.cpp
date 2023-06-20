@@ -107,7 +107,7 @@ void Workload::register_smpi_applications()
     {
         auto job = mit.second;
 
-        if (job->profile->type == ProfileType::SMPI)
+        if (job->profile->type == ProfileType::REPLAY_SMPI)
         {
             auto * data = static_cast<SmpiProfileData *>(job->profile->data);
 

@@ -65,7 +65,7 @@ std::shared_ptr<batprotocol::KillProgress> battask_to_kill_progress(const BatTas
 
             kp->add_atomic(t->unique_name(), t->profile->name, task_progress_ratio);
         } break;
-        case ProfileType::SMPI: {
+        case ProfileType::REPLAY_SMPI: {
             kp->add_atomic(t->unique_name(), t->profile->name, -1);
         } break;
         case ProfileType::SEQUENTIAL_COMPOSITION: {

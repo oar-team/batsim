@@ -27,7 +27,8 @@
 
     "profiles": {
         "smpi_compute_only": {
-            "type": "smpi",
+            "type": "trace_replay",
+            "trace_type": "smpi",
             "trace": "smpi/compute_only/traces.txt"
         }
     }

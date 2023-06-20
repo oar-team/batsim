@@ -7,7 +7,8 @@
 
     "profiles": {
         "1": {
-            "type": "smpi",
+            "type": "trace_replay",
+            "trace_type": "smpi",
             "trace": "smpi/compute_only/traces.txt"
         }
     }

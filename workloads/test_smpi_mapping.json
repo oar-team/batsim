@@ -16,7 +16,8 @@
 
     "profiles": {
         "1": {
-            "type": "smpi",
+            "type": "trace_replay",
+            "trace_type": "smpi",
             "mpi_size": 2,
             "trace": "smpi/mixed_comm_comp/traces.txt"
         }

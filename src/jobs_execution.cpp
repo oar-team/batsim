@@ -124,7 +124,7 @@ int execute_task(
         }
         return profile->return_code;
     }
-    else if (profile->type == ProfileType::SMPI)
+    else if (profile->type == ProfileType::REPLAY_SMPI)
     {
         return execute_smpi_trace_replay(btask, alloc_placement, remaining_time, context);
     }
