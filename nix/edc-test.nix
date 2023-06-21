@@ -1,5 +1,6 @@
 { stdenv, lib
-, batsim, batsim-edc-libs, pytest, pytest-html, batsim-internal-test
+, batsim, batsim-edc-libs, batsim-internal-test
+, pytest, pytest-html, pandas
 , doCoverage ? false
 , failOnTestFailed ? true
 , startFromInternalCoverage ? false
@@ -16,6 +17,7 @@ stdenv.mkDerivation rec {
     batsim-edc-libs
     pytest
     pytest-html
+    pandas
   ] ++ lib.optional startFromInternalCoverage [ batsim-internal-test ];
 
   src = lib.sourceByRegex ../. [

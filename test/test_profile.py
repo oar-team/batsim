@@ -42,15 +42,3 @@ def test_replay_smpi(test_root_dir, smpi_workload_timeoutscale):
     batcmd, outdir = prepare_instance(instance_name, test_root_dir, platform, 'exec1by1', smpi_workload)
     p = run_batsim(batcmd, outdir, timeout=timeout)
     assert p.returncode == 0
-
-def test_replay_usage(test_root_dir):
-    platform = 'small_platform'
-    workload = 'test_usage_trace'
-    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
-    wload_name = workload.replace('test_', '', 1)
-    instance_name = f'{MOD_NAME}-{func_name}-{wload_name}'
-
-    timeout = int(os.getenv('TEST_INSTANCE_TIMEOUT', '5')) * 3
-    batcmd, outdir = prepare_instance(instance_name, test_root_dir, platform, 'exec1by1', workload)
-    p = run_batsim(batcmd, outdir, timeout=timeout)
-    assert p.returncode == 0

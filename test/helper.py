@@ -7,7 +7,7 @@ PLATFORM_DIR = os.environ['PLATFORM_DIR']
 WORKLOAD_DIR = os.environ['WORKLOAD_DIR']
 EDC_DIR = os.environ['EDC_LD_LIBRARY_PATH']
 
-def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, workload: str=None, edc_init_content: str='', use_json: bool=False):
+def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, workload: str=None, edc_init_content: str='', use_json: bool=False, batsim_extra_args: list[str]=None):
     output_dir = f'{test_root_dir}/{name}'
     os.makedirs(output_dir, exist_ok=True)
 
@@ -26,6 +26,9 @@ def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, wor
         batsim_cmd.extend([
             '--workload', f'{WORKLOAD_DIR}/{workload}.json'
         ])
+
+    if batsim_extra_args is not None:
+        batsim_cmd += batsim_extra_args
 
     batsim_cmd_filename = f'{output_dir}/batsim.sh'
     descriptor = os.open(path=batsim_cmd_filename, flags=os.O_WRONLY|os.O_CREAT|os.O_TRUNC, mode=0o700)

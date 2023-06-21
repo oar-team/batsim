@@ -48,6 +48,7 @@
           cppMesonDevBase = nur-kapack.lib.${system}.cppMesonDevBase;
           pytest = pkgs.python3Packages.pytest;
           pytest-html = pkgs.python3Packages.pytest-html;
+          pandas = pkgs.python3Packages.pandas;
         };
         callPackage = mergedPkgs: deriv-func: attrset: options: pkgs.lib.callPackageWith(mergedPkgs // options) deriv-func attrset;
       in rec {
