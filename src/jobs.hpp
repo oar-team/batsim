@@ -209,7 +209,6 @@ struct Job
     Workload * workload = nullptr; //!< The workload the job belongs to
     JobIdentifier id; //!< The job unique identifier
     BatTask * task = nullptr; //!< The root task be executed by this job (profile instantiation).
-    std::string json_description; //!< The JSON description of the job
     std::set<simgrid::s4u::ActorPtr> execution_actors; //!< The actors involved in running the job
     std::deque<std::string> incoming_message_buffer; //!< The buffer for incoming messages from the scheduler.
 

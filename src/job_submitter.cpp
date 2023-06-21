@@ -282,10 +282,6 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     DelayProfileData * data = new DelayProfileData;
     data->delay = task->execution_time;
     profile->data = data;
-    profile->json_description = std::string() + "{" +
-            "\"type\": \"delay\", "+
-            "\"delay\": " + std::to_string(task->execution_time) +
-            "}";
     string profile_name = workflow_name + "_" + task->id; // Create a profile name
     profile->name = profile_name;
     context->workloads.at(workload_name)->profiles->add_profile(profile_name, profile);

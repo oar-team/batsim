@@ -10,7 +10,6 @@
 #include <fstream>
 #include <streambuf>
 #include <algorithm>
-#include <regex>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -18,8 +17,6 @@
 #include <simgrid/s4u.hpp>
 
 #include <rapidjson/document.h>
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
 
 #include "profiles.hpp"
 
@@ -406,55 +403,6 @@ JobPtr Job::from_json(const rapidjson::Value & json_desc,
     xbt_assert(workload->profiles->exists(profile_name), "%s: the profile %s for job %s does not exist",
                error_prefix.c_str(), profile_name.c_str(), j->id.to_string().c_str());
     j->profile = workload->profiles->at(profile_name);
-
-    // Let's get the JSON string which originally described the job
-    // (to conserve potential fields unused by Batsim)
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    json_desc.Accept(writer);
-
-    // Let's replace the job ID by its WLOAD!NUMBER counterpart if needed
-    // in the json raw description
-    string json_description_tmp(buffer.GetString(), buffer.GetSize());
-    /// @cond DOXYGEN_FAILS_PARSING_THIS_REGEX
-    std::regex r(R"("id"\s*:\s*(?:"*[^(,|})]*"*)\s*)");
-    /// @endcond
-    string replacement_str = "\"id\":\"" + j->id.to_string() + "\"";
-    // XBT_INFO("Before regexp: %s", json_description_tmp.c_str());
-    j->json_description = std::regex_replace(json_description_tmp, r, replacement_str);
-
-    // Let's check that the new description is a valid JSON string
-    rapidjson::Document check_doc;
-    check_doc.Parse(j->json_description.c_str());
-    xbt_assert(!check_doc.HasParseError(),
-               "A problem occured when replacing the job_id by its WLOAD!job_name counterpart:"
-               "The output string '%s' is not valid JSON.", j->json_description.c_str());
-    xbt_assert(check_doc.IsObject(),
-               "A problem occured when replacing the job_id by its WLOAD!job_name counterpart: "
-               "The output string '%s' is not valid JSON.", j->json_description.c_str());
-    xbt_assert(check_doc.HasMember("id"),
-               "A problem occured when replacing the job_id by its WLOAD!job_name counterpart: "
-               "The output JSON '%s' has no 'id' field.", j->json_description.c_str());
-    xbt_assert(check_doc["id"].IsString(),
-               "A problem occured when replacing the job_id by its WLOAD!job_name counterpart: "
-               "The output JSON '%s' has a non-string 'id' field.", j->json_description.c_str());
-    xbt_assert(check_doc.HasMember("subtime") && check_doc["subtime"].IsNumber(),
-               "A problem occured when replacing the job_id by its WLOAD!job_name counterpart: "
-               "The output JSON '%s' has no 'subtime' field (or it is not a number)",
-               j->json_description.c_str());
-    xbt_assert((check_doc.HasMember("walltime") && check_doc["walltime"].IsNumber())
-               || (!check_doc.HasMember("walltime")),
-               "A problem occured when replacing the job_id by its WLOAD!job_name counterpart: "
-               "The output JSON '%s' has no 'walltime' field (or it is not a number)",
-               j->json_description.c_str());
-    xbt_assert(check_doc.HasMember("res") && check_doc["res"].IsInt(),
-               "A problem occured when replacing the job_id by its WLOAD!job_name counterpart: "
-               "The output JSON '%s' has no 'res' field (or it is not an integer)",
-               j->json_description.c_str());
-    xbt_assert(check_doc.HasMember("profile") && check_doc["profile"].IsString(),
-               "A problem occured when replacing the job_id by its WLOAD!job_name counterpart: "
-               "The output JSON '%s' has no 'profile' field (or it is not a string)",
-               j->json_description.c_str());
 
     XBT_DEBUG("Job '%s' Loaded", j->id.to_string().c_str());
     return j;

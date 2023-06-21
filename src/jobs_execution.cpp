@@ -116,8 +116,8 @@ int execute_task(
         return execute_trace_replay(btask, alloc_placement, remaining_time, context);
     }
     else
-        xbt_die("Cannot execute job %s: the profile '%s' is of unknown type: %s",
-                job->id.to_cstring(), job->profile->name.c_str(), profile->json_description.c_str());
+        xbt_die("Cannot execute job %s: the profile '%s' is of unknown type (%d)",
+                job->id.to_cstring(), job->profile->name.c_str(), (int)profile->type);
 
     return 1;
 }

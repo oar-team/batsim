@@ -14,8 +14,6 @@
 #include <xbt/asserts.h>
 
 #include <rapidjson/document.h>
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
 
 using namespace std;
 using namespace rapidjson;
@@ -632,13 +630,6 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         xbt_die("Cannot create the profile '%s' of unknown type '%s'",
                 profile_name.c_str(), profile_type.c_str());
     }
-
-
-    // Let's get the JSON string which describes the profile (to conserve potential fields unused by Batsim)
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    json_desc.Accept(writer);
-    profile->json_description = string(buffer.GetString(), buffer.GetSize());
 
     return profile;
 }
