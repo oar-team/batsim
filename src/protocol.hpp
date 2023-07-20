@@ -29,7 +29,7 @@ batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context
 ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * execute_job, BatsimContext * context);
 RejectJobMessage * from_reject_job(const batprotocol::fb::RejectJobEvent * reject_job, BatsimContext * context);
 KillJobsMessage * from_kill_jobs(const batprotocol::fb::KillJobsEvent * kill_jobs, BatsimContext * context);
-ExternalDecisionComponentHelloMessage * from_edc_hello(const batprotocol::fb::ExternalDecisionComponentHelloEvent * edc_hello, BatsimContext * context);
+EDCHelloMessage * from_edc_hello(const batprotocol::fb::EDCHelloEvent * edc_hello, BatsimContext * context);
 
 void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp> > & messages, BatsimContext * context);
 

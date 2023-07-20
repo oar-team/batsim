@@ -310,7 +310,7 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SCHED_HELLO:
         {
-            auto * msg = static_cast<ExternalDecisionComponentHelloMessage *>(data);
+            auto * msg = static_cast<EDCHelloMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_REJECT_JOB:

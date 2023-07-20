@@ -69,7 +69,7 @@ uint8_t batsim_edc_take_decisions(
         switch (event->event_type())
         {
         case fb::Event_BatsimHelloEvent: {
-            mb->add_external_decision_component_hello("fcfs", "0.1.0");
+            mb->add_edc_hello("fcfs", "0.1.0");
         } break;
         case fb::Event_SimulationBeginsEvent: {
             auto simu_begins = event->event_as_SimulationBeginsEvent();
@@ -80,7 +80,7 @@ uint8_t batsim_edc_take_decisions(
         case fb::Event_JobSubmittedEvent: {
             ::Job job{
                 event->event_as_JobSubmittedEvent()->job_id()->str(),
-                event->event_as_JobSubmittedEvent()->job()->computation_resource_request_as_HostNumber()->host_number()
+                event->event_as_JobSubmittedEvent()->job()->resource_request()
             };
 
             if (job.nb_hosts > platform_nb_hosts)

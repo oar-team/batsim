@@ -91,7 +91,7 @@ std::shared_ptr<batprotocol::KillProgress> battask_to_kill_progress(const BatTas
 std::shared_ptr<batprotocol::Job> to_job(const Job & job)
 {
     auto proto_job = batprotocol::Job::make();
-    proto_job->set_host_number(job.requested_nb_res); // TODO: handle core/ghost requests
+    proto_job->set_resource_number(job.requested_nb_res);
     proto_job->set_walltime(job.walltime);
     proto_job->set_profile(job.profile->name); // TODO: handle ghost jobs without profile
     // TODO: handle extra data
@@ -290,9 +290,9 @@ KillJobsMessage *from_kill_jobs(const batprotocol::fb::KillJobsEvent * kill_jobs
     return msg;
 }
 
-ExternalDecisionComponentHelloMessage *from_edc_hello(const batprotocol::fb::ExternalDecisionComponentHelloEvent * edc_hello, BatsimContext * context)
+EDCHelloMessage *from_edc_hello(const batprotocol::fb::EDCHelloEvent * edc_hello, BatsimContext * context)
 {
-    auto msg = new ExternalDecisionComponentHelloMessage;
+    auto msg = new EDCHelloMessage;
 
     msg->batprotocol_version = edc_hello->batprotocol_version()->str();
     msg->edc_name = edc_hello->decision_component_name()->str();
@@ -354,9 +354,9 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
             ip_message->type = IPMessageType::SCHED_KILL_JOBS;
             ip_message->data = static_cast<void *>(from_kill_jobs(event_timestamp->event_as_KillJobsEvent(), context));
         } break;
-        case Event_ExternalDecisionComponentHelloEvent: {
+        case Event_EDCHelloEvent: {
             ip_message->type = IPMessageType::SCHED_HELLO;
-            ip_message->data = static_cast<void *>(from_edc_hello(event_timestamp->event_as_ExternalDecisionComponentHelloEvent(), context));
+            ip_message->data = static_cast<void *>(from_edc_hello(event_timestamp->event_as_EDCHelloEvent(), context));
         } break;
         default: {
             xbt_assert("Unhandled event type received (%s)", batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()]);

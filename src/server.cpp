@@ -1013,7 +1013,7 @@ void server_on_edc_hello(ServerData *data, IPMessage *task_data)
 
     (void) task_data;
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<ExternalDecisionComponentHelloMessage *>(task_data->data);
+    auto * message = static_cast<EDCHelloMessage *>(task_data->data);
     // TODO: check batprotocol version compatibility, store&log scheduler tracability info...
 
     // TODO: set tunable behavior per EDC, not for all of them

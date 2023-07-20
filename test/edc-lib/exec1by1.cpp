@@ -74,7 +74,7 @@ uint8_t batsim_edc_take_decisions(
         switch (event->event_type())
         {
         case fb::Event_BatsimHelloEvent: {
-            mb->add_external_decision_component_hello("exec1by1", "0.1.0");
+            mb->add_edc_hello("exec1by1", "0.1.0");
         } break;
         case fb::Event_SimulationBeginsEvent: {
             auto simu_begins = event->event_as_SimulationBeginsEvent();
@@ -85,14 +85,7 @@ uint8_t batsim_edc_take_decisions(
             auto job = new SchedJob();
             job->job_id = parsed_job->job_id()->str();
 
-            auto host_request = parsed_job->job()->computation_resource_request_as_HostNumber();
-            if (host_request == nullptr)
-            {
-                printf("non-host resource request received for job='%s', aborting\n", job->job_id.c_str());
-                return 1;
-            }
-            job->nb_hosts = host_request->host_number();
-
+            job->nb_hosts = parsed_job->job()->resource_request();
             if (job->nb_hosts > platform_nb_hosts)
             {
                 mb->add_reject_job(job->job_id);

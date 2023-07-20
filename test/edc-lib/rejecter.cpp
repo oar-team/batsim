@@ -50,7 +50,7 @@ uint8_t batsim_edc_take_decisions(
         switch (event->event_type())
         {
         case fb::Event_BatsimHelloEvent: {
-            mb->add_external_decision_component_hello("rejecter", "0.1.0");
+            mb->add_edc_hello("rejecter", "0.1.0");
         } break;
         case fb::Event_JobSubmittedEvent: {
             auto job_id = event->event_as_JobSubmittedEvent()->job_id()->str();

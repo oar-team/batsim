@@ -198,7 +198,7 @@ struct KillJobsMessage
 /**
  * @brief Wrapper struct around batprotocol::fb::EDCRequestedSimulationFeatures
  */
-struct ExternalDecisionComponentRequestedSimulationFeatures
+struct EDCRequestedSimulationFeatures
 {
     bool dynamic_registration = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
     bool profile_reuse = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
@@ -210,15 +210,15 @@ struct ExternalDecisionComponentRequestedSimulationFeatures
 };
 
 /**
- * @brief The content of the SCHED_HELLO message
+ * @brief The content of the EDC_HELLO message
  */
-struct ExternalDecisionComponentHelloMessage
+struct EDCHelloMessage
 {
     std::string batprotocol_version; //!< The batprotocol version used by the external decision component
     std::string edc_name; //!< The name of the external decision component
     std::string edc_version; //!< The version of the external decision component
     std::string edc_commit; //!< The commit of the external decision component
-    ExternalDecisionComponentRequestedSimulationFeatures requested_simulation_features; //!< The simulation features requested by this EDC
+    EDCRequestedSimulationFeatures requested_simulation_features; //!< The simulation features requested by this EDC
 };
 
 /**
