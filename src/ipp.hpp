@@ -298,17 +298,6 @@ struct IPMessage
 /**
  * @brief Sends a message from the given process to the given mailbox
  * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of the message to send
- * @param[in] data The data associated with the message
- * @param[in] detached Whether the send should be detached (put or put_async)
- */
-void generic_send_message(const std::string & destination_mailbox,
-                          IPMessageType type,
-                          void * data,
-                          bool detached);
-/**
- * @brief Sends a message from the given process to the given mailbox
- * @param[in] destination_mailbox The destination mailbox
  * @param[in] type The type of message to send
  * @param[in] data The data associated to the message
  */
@@ -321,22 +310,6 @@ void send_message(const std::string & destination_mailbox, IPMessageType type, v
  * @param[in] data The data associated to the message
  */
 void send_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
-
-/**
- * @brief Sends a message from the given process to the given mailbox
- * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of message to send
- * @param[in] data The data associated to the message
- */
-void dsend_message(const std::string & destination_mailbox, IPMessageType type, void * data = nullptr);
-
-/**
- * @brief Sends a message from the given process to the given mailbox
- * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of message to send
- * @param[in] data The data associated to the message
- */
-void dsend_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
 
 /**
  * @brief Receive a message on a given mailbox

@@ -248,7 +248,7 @@ void server_on_job_completed(ServerData * data,
         msg->job_id = message->job->id;
 
         ServerData::Submitter * submitter = data->origin_of_jobs.at(message->job->id);
-        dsend_message(submitter->mailbox, IPMessageType::SUBMITTER_CALLBACK, static_cast<void*>(msg));
+        send_message(submitter->mailbox, IPMessageType::SUBMITTER_CALLBACK, static_cast<void*>(msg));
 
         data->origin_of_jobs.erase(message->job->id);
     }
@@ -555,7 +555,7 @@ void server_on_sched_wait_answer(ServerData * data,
     *message = *(static_cast<SchedWaitAnswerMessage *>(task_data->data)); // is this necessary?
 
     //    Submitter * submitter = origin_of_wait_queries.at({message->nb_resources,message->processing_time});
-    dsend_message(message->submitter_name, IPMessageType::SCHED_WAIT_ANSWER, static_cast<void*>(message));
+    send_message(message->submitter_name, IPMessageType::SCHED_WAIT_ANSWER, static_cast<void*>(message));
     //    origin_of_wait_queries.erase({message->nb_resources,message->processing_time});
 }
 

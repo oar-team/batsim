@@ -1580,8 +1580,7 @@ void JsonProtocolReader::handle_kill_job(int event_number,
 void JsonProtocolReader::send_message_at_time(double when,
                                       const string &destination_mailbox,
                                       IPMessageType type,
-                                      void *data,
-                                      bool detached) const
+                                      void *data) const
 {
     // Let's wait until "when" time is reached
     double current_time = simgrid::s4u::Engine::get_clock();
@@ -1591,5 +1590,5 @@ void JsonProtocolReader::send_message_at_time(double when,
     }
 
     // Let's actually send the message
-    generic_send_message(destination_mailbox, type, data, detached);
+    send_message(destination_mailbox, type, data);
 }

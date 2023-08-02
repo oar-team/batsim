@@ -581,13 +581,11 @@ private:
      * @param[in] destination_mailbox The destination mailbox
      * @param[in] type The message type
      * @param[in] data The message data
-     * @param[in] detached Whether the send should be detached
      */
     void send_message_at_time(double when,
                       const std::string & destination_mailbox,
                       IPMessageType type,
-                      void * data = nullptr,
-                      bool detached = false) const;
+                      void * data = nullptr) const;
 
 private:
     //! Maps message types to their handler functions
