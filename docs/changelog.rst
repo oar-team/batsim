@@ -16,8 +16,18 @@ Starting with version `v1.0.0`_, Batsim adheres to `Semantic Versioning`_ and it
 Unreleased
 ----------
 
-- `Commits since v4.1.0 <https://github.com/oar-team/batsim/compare/v4.1.0...HEAD>`_
+- `Commits since v4.2.0 <https://github.com/oar-team/batsim/compare/v4.2.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
+
+........................................................................................................................
+
+v4.2.0
+------
+
+- `Commits since v4.1.0 <https://github.com/oar-team/batsim/compare/v4.1.0...v4.2.0>`_
+- Release date: 2023-08-02
+- ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-4.2.0``
+- Recommended SimGrid release: 3.34.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/-/tags>`_)
 
 Added
 ~~~~~
