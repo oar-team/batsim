@@ -39,7 +39,7 @@ v4.1.0
 - `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...v4.1.0>`_
 - Release date: 2021-11-19
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-4.1.0``
-- Recommended SimGrid release: 3.29.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/releases>`_)
+- Recommended SimGrid release: 3.29.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/-/tags>`_)
 
 Changed
 ~~~~~~~
@@ -64,7 +64,7 @@ v4.0.0
 - `Commits since v3.1.0 <https://github.com/oar-team/batsim/compare/v3.1.0...v4.0.0>`_
 - Release date: 2020-07-29
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -i batsim-4.0.0``
-- Recommended SimGrid release: 3.25.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/releases>`_)
+- Recommended SimGrid release: 3.25.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/-/tags>`_)
 
 Changed (**breaks some schedulers**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -116,7 +116,7 @@ v3.1.0
 - `Commits since v3.0.0 <https://github.com/oar-team/batsim/compare/v3.0.0...v3.1.0>`_
 - Release date: 2019-05-26
 - ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-3.1.0``
-- Recommended SimGrid release: 3.24.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/releases>`_)
+- Recommended SimGrid release: 3.24.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/-/tags>`_)
 
 Changed
 ~~~~~~~
