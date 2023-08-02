@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <random>
 
 #include <boost/algorithm/string/join.hpp>
 
@@ -636,7 +637,10 @@ void PajeTracer::generate_colors(int color_count)
 
 void PajeTracer::shuffle_colors()
 {
-    random_shuffle(_colors.begin(), _colors.end());
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    std::shuffle(_colors.begin(), _colors.end(), g);
 }
 
 void PajeTracer::hsv_to_rgb(double h, double s, double v, double & r, double & g, double & b)

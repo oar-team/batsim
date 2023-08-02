@@ -19,17 +19,17 @@
       owner = "batsim";
       repo = "batsched";
       rev = "17072778995100fc90214ea4910bf5b171adfd0d";
-      sha256 = "12r8b14rwa26wx34l1492vdvyn2s7mch3ixlz46s6imi1ximywa8";
+      sha256 = "SHFfYw+xRqMN+bTHAVk9Wli/2xaJBEpG50YonklYKIs=";
     };
   })
 , batexpe ? kapack.batexpe
-, pybatsim ? kapack.pybatsim.overrideAttrs (old: {
+, pybatsim ? kapack.pybatsim-320.overrideAttrs (old: {
     src = kapack.pkgs.fetchFromGitLab {
       domain = "gitlab.inria.fr";
       owner = "batsim";
       repo = "pybatsim";
       rev = "880dd60c537d7d7a8246daaf5b2d1f7bfea3cbf4";
-      sha256 = "1xa0r1h8xv1x51v0zddw3m52n250wph8jsm1ga67v18k7582kav4";
+      sha256 = "gSGiZBb7CN79XNb4cqpdOdGApMOPeRwdPxbASpKKRHo=";
     };
   })
 # set this to avoid running tests over and over
@@ -42,6 +42,7 @@ let
   pythonPackages = pkgs.python3Packages;
   buildPythonPackage = pythonPackages.buildPythonPackage;
 
+  #custom-stdenv-base = if useClang then pkgs.llvmPackages_11.stdenv else pkgs.gcc11Stdenv;
   custom-stdenv-base = if useClang then pkgs.clangStdenv else pkgs.gccStdenv;
   custom-stdenv = if debug then (pkgs.stdenvAdapters.keepDebugInfo custom-stdenv-base) else custom-stdenv-base;
 
@@ -108,6 +109,16 @@ let
         [pkgs.cmake pkgs.qtcreator];
     };
 
+    # Shell used by CI to push coverage results on codecov's infrastructure.
+    codecov_push_shell = pkgs.mkShell rec {
+      name = "codecov-push-shell";
+      buildInputs = [
+        pkgs.curl
+        pkgs.git
+        pkgs.python3Packages.codecov
+      ];
+    };
+
     # Batsim integration tests.
     integration_tests = pkgs.stdenv.mkDerivation rec {
       pname = "batsim-integration-tests";
@@ -123,6 +134,9 @@ let
         "^workloads/smpi"
         "^workloads/smpi/.*"
         "^workloads/smpi/.*/.*\.txt"
+        "^workloads/usage-trace"
+        "^workloads/usage-trace/.*"
+        "^workloads/usage-trace/.*/.*\.txt"
         "^events"
         "^events/.*\.txt"
       ];
@@ -171,7 +185,7 @@ let
       pname = "batsim-coverage-report";
       version = integration_tests.version;
 
-      buildInputs = batsim.buildInputs ++ [ kapack.gcovr ]
+      buildInputs = batsim.buildInputs ++ [ pkgs.gcovr ]
         ++ [ batsim integration_tests ];
       src = batsim.src;
 
@@ -214,21 +228,22 @@ let
       src = pkgs.lib.sourceByRegex ./. [
         "^src"
         "^src/.*\.?pp"
-        "^doc"
-        "^doc/Doxyfile"
-        "^doc/doxygen_mainpage.md"
+        "^docs"
+        "^docs/doxygen"
+        "^docs/doxygen/Doxyfile"
+        "^docs/doxygen/.*\.md"
       ];
       buildInputs = [pkgs.doxygen];
-      buildPhase = "(cd doc && doxygen)";
+      buildPhase = "(cd docs/doxygen && doxygen)";
       installPhase = ''
         mkdir -p $out
-        mv doc/doxygen_doc/html/* $out/
+        mv docs/doxygen/doxygen_doc/html/* $out/
       '';
       checkPhase = ''
-        nb_warnings=$(cat doc/doxygen_warnings.log | wc -l)
+        nb_warnings=$(cat docs/doxygen/doxygen_warnings.log | wc -l)
         if [[ $nb_warnings -gt 0 ]] ; then
           echo "FAILURE: There are doxygen warnings!"
-          cat doc/doxygen_warnings.log
+          cat docs/doxygen/doxygen_warnings.log
           exit 1
         fi
       '';
@@ -284,7 +299,7 @@ let
         "^docs/tuto-sched-implem/.*\.rst"
         "^env"
         "^env/docker"
-        "^env/docker/Dockerfile"
+        "^env/docker/default\.nix"
         "^events"
         "^events/test_events_4hosts\.txt"
         "^workloads"

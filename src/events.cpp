@@ -35,6 +35,9 @@ std::string event_type_to_string(const EventType & type)
     return event_type;
 }
 
+/**
+ * @brief Destroy an Event object
+ */
 Event::~Event()
 {
     if (data != nullptr)

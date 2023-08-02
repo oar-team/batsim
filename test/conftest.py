@@ -5,6 +5,7 @@ import subprocess
 from collections import namedtuple
 from os.path import abspath, basename, dirname, realpath
 import helper
+import pandas as pd
 
 Workload = namedtuple('Workload', ['name', 'filename'])
 Platform = namedtuple('Platform', ['name', 'filename'])
@@ -56,6 +57,7 @@ def pytest_generate_tests(metafunc):
     # Platforms
     platforms_def = {
         "small": "small_platform.xml",
+        "smallusage": "small_platform_usage_replay.xml",
         "cluster512": "cluster512.xml",
         "cluster512_pfs": "cluster512_pfs.xml",
         "energy128notopo": "energy_platform_homogeneous_no_net_128.xml",
@@ -86,6 +88,7 @@ def pytest_generate_tests(metafunc):
         "smpicollectives": "test_smpi_collectives.json",
         "tuto1": "test_case_study1.json",
         "tutostencil": "test_tuto_stencil.json",
+        "usagetrace": "test_usage_trace.json",
         "walltime": "test_walltime.json",
         "walltimesmpi": "test_walltime_smpi.json",
     }
@@ -96,6 +99,7 @@ def pytest_generate_tests(metafunc):
     moldable_perf_degradation_workloads = ['compute1', 'computetot1']
     energymini_workloads = ['energymini0', 'energymini50', 'energymini100']
     tuto_stencil_workloads = ['tutostencil']
+    usage_trace_workloads = ['usagetrace']
     workflows = ['genome']
 
     # Algorithms
@@ -142,6 +146,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('cluster_pfs_platform', generate_platforms(platform_dir, platforms_def, ['cluster512_pfs']))
     if 'properties_platform' in metafunc.fixturenames:
         metafunc.parametrize('properties_platform', generate_platforms(platform_dir, platforms_def, ['properties_platform']))
+    if 'usage_trace_platform' in metafunc.fixturenames:
+        metafunc.parametrize('usage_trace_platform', generate_platforms(platform_dir, platforms_def, ['smallusage']))
 
     # Workloads
     if 'workload' in metafunc.fixturenames:
@@ -162,6 +168,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('moldable_perf_degradation_workload', generate_workloads(workload_dir, workloads_def, moldable_perf_degradation_workloads))
     if 'energymini_workload' in metafunc.fixturenames:
         metafunc.parametrize('energymini_workload', generate_workloads(workload_dir, workloads_def, energymini_workloads))
+    if 'usage_trace_workload' in metafunc.fixturenames:
+        metafunc.parametrize('usage_trace_workload', generate_workloads(workload_dir, workloads_def, usage_trace_workloads))
     if 'samesubmittime_workload' in metafunc.fixturenames:
         metafunc.parametrize('samesubmittime_workload', generate_workloads(workload_dir, workloads_def, ['samesubmittime']))
     if 'walltime_workload' in metafunc.fixturenames:
@@ -233,3 +241,10 @@ def manage_redis_server(request):
         print('Killing the spawned redis-server (if any)...')
         proc.kill()
     request.addfinalizer(on_finalize)
+
+@pytest.fixture(scope="session", autouse=True)
+def configure_pandas():
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.expand_frame_repr', False)
+    pd.set_option('max_colwidth', None)

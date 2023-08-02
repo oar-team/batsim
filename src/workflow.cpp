@@ -200,7 +200,6 @@ Task::Task(const int num_procs, const double execution_time, const std::string &
 
 Task::~Task()
 {
-    delete &(this->id);
     this->parents.clear();
     this->children.clear();
 }

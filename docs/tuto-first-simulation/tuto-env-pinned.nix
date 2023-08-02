@@ -4,17 +4,17 @@ let
 in
 
 let my-packages = rec {
-  # define your own batsim version from batsim-4.0.0
+  # define your own batsim version from batsim-4.1.0
   # (you can select another base, such as batsim-310 for batsim-3.1.0)
-  my-batsim = kapack.batsim-400.overrideAttrs(old: rec {
+  my-batsim = kapack.batsim-410.overrideAttrs(old: rec {
     # define where to the source code of your own batsim version.
     # here, use a given commit on the official batsim git repository on framagit,
     # but you can of course use your own commit/fork instead.
-    version = "c79d95851cd8f80089b7218a2cf85f4b26ebde5f";
+    version = "3e7a7e5ecf1b749c306c532f828219e5a3d70862";
     src = kapack.pkgs.fetchgit rec {
       url = "https://framagit.org/batsim/batsim.git";
       rev = version;
-      sha256 = "0lr3vawdbmajisgvbj5cjqw0wfy9y990yhl20kplarambx40nplp";
+      sha256 = "1f3xij13i4wgd667n0sqdkkzn5b11fz4bmxv9s0yivdniwn6md76";
     };
   });
 
@@ -48,6 +48,7 @@ let my-packages = rec {
       my-batsched
       my-pybatsim
       kapack.batexpe
+      kapack.pkgs.curl
     ];
   };
 };

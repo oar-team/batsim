@@ -9,10 +9,7 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(ipp, "ipp"); //!< Logging
 
-void generic_send_message(const std::string & destination_mailbox,
-                          IPMessageType type,
-                          void * data,
-                          bool detached)
+void send_message(const std::string & destination_mailbox, IPMessageType type, void * data)
 {
     IPMessage * message = new IPMessage;
     message->type = type;
@@ -25,28 +22,11 @@ void generic_send_message(const std::string & destination_mailbox,
               simgrid::s4u::this_actor::get_cname(), destination_mailbox.c_str(),
               ip_message_type_to_string(type).c_str(), data);
 
-    if (detached)
-    {
-        mailbox->put_async(message, message_size);
-    }
-    else
-    {
-        mailbox->put(message, message_size);
-    }
+    mailbox->put(message, message_size);
 
     XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p done",
               simgrid::s4u::this_actor::get_cname(), destination_mailbox.c_str(),
               ip_message_type_to_string(type).c_str(), data);
-}
-
-void send_message(const std::string & destination_mailbox, IPMessageType type, void * data)
-{
-    generic_send_message(destination_mailbox, type, data, false);
-}
-
-void dsend_message(const std::string & destination_mailbox, IPMessageType type, void * data)
-{
-    generic_send_message(destination_mailbox, type, data, true);
 }
 
 IPMessage * receive_message(const std::string & reception_mailbox)
@@ -160,12 +140,6 @@ void send_message(const char *destination_mailbox, IPMessageType type, void *dat
 {
     const string str = destination_mailbox;
     send_message(str, type, data);
-}
-
-void dsend_message(const char *destination_mailbox, IPMessageType type, void *data)
-{
-    const string str = destination_mailbox;
-    dsend_message(str, type, data);
 }
 
 IPMessage::~IPMessage()

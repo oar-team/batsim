@@ -9,5 +9,6 @@ kapack.pkgs.mkShell rec {
     kapack.batsim # simulator
     kapack.batsched # scheduler
     kapack.batexpe # experiment management tools
+    kapack.pkgs.curl # used to retrieve batsim workloads/platforms
   ];
 }

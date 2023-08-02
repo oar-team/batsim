@@ -2,6 +2,8 @@
  * @file jobs_execution.cpp
  * @brief Contains functions related to the execution of the jobs
  */
+#include <algorithm>
+#include <cmath>
 #include <regex>
 
 #include "jobs_execution.hpp"
@@ -31,6 +33,61 @@ void smpi_replay_process(JobPtr job, SmpiProfileData * profile_data, const std::
         XBT_INFO("Replaying rank %d of job %s (SMPI)", rank, job->id.to_cstring());
         smpi_replay_run(str_instance_id, rank, 0, profile_data->trace_filenames[static_cast<size_t>(rank)].c_str());
         XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_cstring());
+
+        // Tell parent process that replay has finished for this rank.
+        auto mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
+        auto rank_copy = new unsigned int;
+        *rank_copy = static_cast<unsigned int>(rank);
+        mbox->put(static_cast<void*>(rank_copy), 4);
+    }
+    catch (const simgrid::NetworkFailureException & e)
+    {
+        XBT_INFO("Caught a NetworkFailureException caught: %s", e.what());
+    }
+}
+
+void usage_trace_replayer(simgrid::xbt::ReplayAction & action)
+{
+    double usage = std::stod(action[2]);
+    double flops = std::stod(action[3]);
+    xbt_assert(isfinite(usage) && usage >= 0.0 && usage <= 1.0, "invalid usage read: %g not in [0,1]", usage);
+    xbt_assert(isfinite(flops) && flops >= 0.0, "invalid flops read: %g not positive and finite", flops);
+
+    // compute how many cores should be used depending on usage and on which host is used
+    const double nb_cores = simgrid::s4u::this_actor::get_host()->get_core_count();
+    const int nb_cores_to_use = std::max(round(usage * nb_cores), 1.0); // use at least 1 core, otherwise using flops is impossible
+
+    // generate ptask
+    std::vector<simgrid::s4u::Host*> hosts_to_use(nb_cores_to_use, simgrid::s4u::this_actor::get_host());
+    std::vector<double> computation_vector(nb_cores_to_use, flops);
+    std::vector<double> communication_matrix;
+
+    // execute ptask
+    simgrid::s4u::ExecPtr ptask = simgrid::s4u::this_actor::exec_init(hosts_to_use, computation_vector, communication_matrix);
+    ptask->start();
+    ptask->wait();
+}
+
+/**
+ * @brief The actor that replays a usage trace
+ * @param[in] job The job whose trace is from
+ * @param[in] data The profile data of the job
+ * @param[in] termination_mbox_name The mailbox to use to synchronize the job termination
+ * @param[in] rank The rank of the actor of the job
+ */
+void usage_trace_replayer_process(JobPtr job, UsageTraceProfileData * data, const std::string & termination_mbox_name, int rank)
+{
+    try
+    {
+        // Prepare data for replay_runner
+        char * str_rank = nullptr;
+        int ret = asprintf(&str_rank, "%d", rank);
+        (void) ret; // Avoids a warning if assertions are ignored
+        xbt_assert(ret != -1, "asprintf failed (not enough memory?)");
+
+        XBT_INFO("Replaying rank %d of job %s (usage trace)", rank, job->id.to_cstring());
+        simgrid::xbt::replay_runner(str_rank, data->trace_filenames[static_cast<size_t>(rank)].c_str());
+        XBT_INFO("Replaying rank %d of job %s (usage trace) done", rank, job->id.to_cstring());
 
         // Tell parent process that replay has finished for this rank.
         auto mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
@@ -208,11 +265,22 @@ int execute_task(BatTask * btask,
         }
         return profile->return_code;
     }
-    else if (profile->type == ProfileType::SMPI)
+    else if (profile->type == ProfileType::SMPI || profile->type == ProfileType::USAGE_TRACE)
     {
-        auto * data = static_cast<SmpiProfileData *>(profile->data);
+        std::vector<std::string> trace_filenames;
 
-        unsigned int nb_ranks = static_cast<unsigned int>(data->trace_filenames.size());
+        if (profile->type == ProfileType::SMPI)
+        {
+            auto * data = static_cast<SmpiProfileData *>(profile->data);
+            trace_filenames = data->trace_filenames;
+        }
+        else
+        {
+            auto * data = static_cast<UsageTraceProfileData *>(profile->data);
+            trace_filenames = data->trace_filenames;
+        }
+
+        unsigned int nb_ranks = static_cast<unsigned int>(trace_filenames.size());
 
         // Let's use the default mapping is none is provided (round-robin on hosts, as we do not
         // know the number of cores on each host)
@@ -241,7 +309,17 @@ int execute_task(BatTask * btask,
         {
             std::string actor_name = job->id.to_string() + "_" + std::to_string(rank);
             simgrid::s4u::Host* host_to_use = allocation->hosts[static_cast<size_t>(job->smpi_ranks_to_hosts_mapping[rank])];
-            simgrid::s4u::ActorPtr actor = simgrid::s4u::Actor::create(actor_name, host_to_use, smpi_replay_process, job, data, termination_mbox_name, rank);
+            simgrid::s4u::ActorPtr actor = nullptr;
+            if (profile->type == ProfileType::SMPI)
+            {
+                auto * data = static_cast<SmpiProfileData *>(profile->data);
+                actor = simgrid::s4u::Actor::create(actor_name, host_to_use, smpi_replay_process, job, data, termination_mbox_name, rank);
+            }
+            else
+            {
+                auto * data = static_cast<UsageTraceProfileData *>(profile->data);
+                actor = simgrid::s4u::Actor::create(actor_name, host_to_use, usage_trace_replayer_process, job, data, termination_mbox_name, rank);
+            }
             child_actors[rank] = actor;
             job->execution_actors.insert(actor);
         }

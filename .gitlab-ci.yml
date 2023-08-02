@@ -27,7 +27,7 @@ build_and_test:
     - nix-shell --pure -A coverage-report ${NIX_ARGS} --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
     - nix-build -A coverage-report ${NIX_ARGS} && cp -rL result ./coverage_report
     # Send coverage results to codecov.io
-    - bash <(curl -s https://codecov.io/bash) -f ./coverage_report/coveralls.json
+    - nix-shell -A codecov_push_shell --command 'codecov -f ./coverage_report/coveralls.json'
   artifacts:
     when: always
     expire_in: 8 hours
@@ -40,7 +40,6 @@ build_and_test:
 # Tutorials
 ###############################################################################
 tuto_first_simulation-stable:
-  allow_failure: true
   stage: big_stage
   only:
     - schedules
@@ -51,7 +50,6 @@ tuto_first_simulation-stable:
     - nix-shell ./tuto-env.nix --command './run_simulation_robin.bash'
 
 tuto_first_simulation-pinned:
-  allow_failure: true
   stage: big_stage
   only:
     - schedules
@@ -62,7 +60,6 @@ tuto_first_simulation-pinned:
     - nix-shell ./tuto-env-pinned.nix --command './run_simulation_robin.bash'
 
 tuto_first_simulation:
-  allow_failure: true
   stage: big_stage
   only:
     - schedules

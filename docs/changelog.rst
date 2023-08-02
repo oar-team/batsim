@@ -16,8 +16,30 @@ Starting with version `v1.0.0`_, Batsim adheres to `Semantic Versioning`_ and it
 Unreleased
 ----------
 
-- `Commits since v4.1.0 <https://github.com/oar-team/batsim/compare/v4.1.0...HEAD>`_
+- `Commits since v4.2.0 <https://github.com/oar-team/batsim/compare/v4.2.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
+
+........................................................................................................................
+
+v4.2.0
+------
+
+- `Commits since v4.1.0 <https://github.com/oar-team/batsim/compare/v4.1.0...v4.2.0>`_
+- Release date: 2023-08-02
+- ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-4.2.0``
+- Recommended SimGrid release: 3.34.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/-/tags>`_)
+
+Added
+~~~~~
+- New :ref:`usage_trace_replay_profile` profile, that enables the replay of usage traces over time.
+  This is especially helpful to replay applications from their power consumption traces.
+
+Fixed
+~~~~~
+- Using ``simgrid::s4u::Mailbox::put_async`` led to invalid memory management of ``simgrid::s4u::Comm`` objects.
+  This sometimes resulted in segmentation faults, especially when using SimGrid 3.34.0.
+  Batsim no longer calls ``put_async``.
+- Batsim's memory consumption increased over time due to lazy/bad ZeroMQ buffers management — cf. `issue 2 (framagit) <https://framagit.org/batsim/batsim/-/issues/2>`_.
 
 ........................................................................................................................
 
@@ -25,11 +47,19 @@ v4.1.0
 ------
 
 - `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...v4.1.0>`_
+- Release date: 2021-11-19
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-4.1.0``
+- Recommended SimGrid release: 3.29.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/-/tags>`_)
 
 Changed
 ~~~~~~~
 - Updated Batsim code / example platforms / platform generators so that they work with SimGrid-3.29.0.
+
+Fixed
+~~~~~
+- SimGrid < 3.27.0 had an `interaction issue with parallel tasks and multicore hosts <https://framagit.org/simgrid/simgrid/-/issues/37>`_.
+  As this release is compatible with SimGrid-3.29.0, Batsim users can now use this interaction more safely,
+  even if it should be used with care as the behavior is inconsistent with pstate change and only seem to work on computation-only parallel tasks (cf. `simgrid issue 95 <https://framagit.org/simgrid/simgrid/-/issues/95>`_).
 
 Miscellaneous
 ~~~~~~~~~~~~~
@@ -44,7 +74,7 @@ v4.0.0
 - `Commits since v3.1.0 <https://github.com/oar-team/batsim/compare/v3.1.0...v4.0.0>`_
 - Release date: 2020-07-29
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -i batsim-4.0.0``
-- Recommended SimGrid release: 3.25.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/releases>`_)
+- Recommended SimGrid release: 3.25.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/-/tags>`_)
 
 Changed (**breaks some schedulers**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,7 +126,7 @@ v3.1.0
 - `Commits since v3.0.0 <https://github.com/oar-team/batsim/compare/v3.0.0...v3.1.0>`_
 - Release date: 2019-05-26
 - ``nix-env -f https://github.com/oar-team/kapack/archive/master.tar.gz -i batsim-3.1.0``
-- Recommended SimGrid release: 3.24.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/releases>`_)
+- Recommended SimGrid release: 3.24.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/-/tags>`_)
 
 Changed
 ~~~~~~~
