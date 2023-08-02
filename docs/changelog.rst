@@ -24,6 +24,13 @@ Added
 - New :ref:`usage_trace_replay_profile` profile, that enables the replay of usage traces over time.
   This is especially helpful to replay applications from their power consumption traces.
 
+Fixed
+~~~~~
+- Using ``simgrid::s4u::Mailbox::put_async`` led to invalid memory management of ``simgrid::s4u::Comm`` objects.
+  This sometimes resulted in segmentation faults, especially when using SimGrid 3.34.0.
+  Batsim no longer calls ``put_async``.
+- Batsim's memory consumption increased over time due to lazy/bad ZeroMQ buffers management — cf. `issue 2 (framagit) <https://framagit.org/batsim/batsim/-/issues/2>`_.
+
 ........................................................................................................................
 
 v4.1.0
