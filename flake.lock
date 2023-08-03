@@ -31,11 +31,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1681202837,
-        "narHash": "sha256-H+Rh19JDwRtpVPAWp64F+rlEtxUWBAQW28eAi3SRSzg=",
+        "lastModified": 1689068808,
+        "narHash": "sha256-6ixXo3wt24N/melDWjq70UuHQLxGV8jZvooRanIHXw0=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "cfacdce06f30d2b68473a46042957675eebb3401",
+        "rev": "919d646de7be200f3bf08cb76ae1f09402b6f9b4",
         "type": "github"
       },
       "original": {
@@ -59,7 +59,7 @@
       "locked": {
         "lastModified": 1685006270,
         "narHash": "sha256-cJlbAF8m2PCX2iqepq3uKmKkOOF2bAjSpKMP4KXoevk=",
-        "ref": "refs/heads/master",
+        "ref": "refs/heads/main",
         "rev": "2b449c3b8d88e7ed2008fe618846d437a4fd8ee5",
         "revCount": 83,
         "type": "git",
@@ -71,6 +71,22 @@
       }
     },
     "nixpkgs": {
+      "locked": {
+        "lastModified": 1685566663,
+        "narHash": "sha256-btHN1czJ6rzteeCuE/PNrdssqYD2nIA4w48miQAFloM=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "4ecab3273592f27479a583fb6d975d4aba3486fe",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "23.05",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs-pytest": {
       "locked": {
         "lastModified": 1669833724,
         "narHash": "sha256-/HEZNyGbnQecrgJnfE8d0WC5c1xuPSD2LUpB6YXlg4c=",
@@ -96,11 +112,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1682575206,
-        "narHash": "sha256-hjoGc2gOa8IEcwDucNRoE2fryoRciPOJ7GBUShj3OY4=",
+        "lastModified": 1690987051,
+        "narHash": "sha256-8pUzVZYGvxpJEsGr/a+EYSm6q+R1l3li8Q8t2K+5P+E=",
         "owner": "oar-team",
         "repo": "nur-kapack",
-        "rev": "7fa57b4170962b5c88d077d6f625628e7763c81c",
+        "rev": "901a5b656f695f2c82d17c091a55db2318ed3f39",
         "type": "github"
       },
       "original": {
@@ -116,6 +132,7 @@
         "flake-utils": "flake-utils",
         "intervalset": "intervalset",
         "nixpkgs": "nixpkgs",
+        "nixpkgs-pytest": "nixpkgs-pytest",
         "nur-kapack": "nur-kapack"
       }
     },
