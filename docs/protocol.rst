@@ -767,7 +767,6 @@ a mapping (optional), an additional IO job (optional).
        "storage_mapping": {
          "pfs": 2
        },
-     },
      "additional_io_job": {
        "alloc": "2-3 5-6",
        "profile_name": "my_io_job",
@@ -778,8 +777,9 @@ a mapping (optional), an additional IO job (optional).
                  5e6,0  ,5e6,0  ,
                  0  ,5e6,4e6,0  ,
                  0  ,0  ,0  ,0  ]
-       }
-     }
+          }
+        }
+     },
    }
 
 .. _proto_CALL_ME_LATER:
