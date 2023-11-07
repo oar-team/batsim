@@ -9,17 +9,17 @@ This file contains the following fields in lexicographic order of the fields nam
 
 - ``batsim_version``: Similar to the output of the ``--version`` :ref:`cli` option.
 - ``consumed_joules``: The total amount of joules consumed by the machines from the submission time of the first job to the finish time of the last job.
-- ``makespan``: The time that elapses from the submission time of the first job to the finish time of the last job. It is calculated by `max(completion_time) - min(submission_time)`.
+- ``makespan``: The time that elapses from the submission time of the first job to the finish time of the last job. It is calculated by `max(finish_time) - min(submission_time)`.
 - ``max_slowdown``: The maximum slowdown observed on a job.
   Slowdown is computed for a job as its turnaround time divided by its execution time.
 - ``max_turnaround_time``: The maximum turnaround time observed on a job.
-  Turnaround time is computed for a job as its completion time minus its submission time.
+  Turnaround time is computed for a job as its finish time minus its submission time.
 - ``max_waiting_time``: The maximum waiting time observed on a job.
   Waiting time is computed for a job as its starting time minus its submission time.
 - ``mean_slowdown``: The average slowdown observed on jobs.
   Slowdown is computed for a job as its turnaround time divided by its execution time.
 - ``mean_turnaround_time``: The average turnaround time observed on jobs.
-  Turnaround time is computed for a job as its completion time minus its submission time.
+  Turnaround time is computed for a job as its finish time minus its submission time.
 - ``mean_waiting_time``: The average waiting time observed on jobs.
   Waiting time is computed for a job as its starting time minus its submission time.
 - ``nb_computing_machines``: The number of computing machines in the simulation.
