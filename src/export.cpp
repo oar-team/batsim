@@ -1066,6 +1066,7 @@ void JobsTracer::finalize()
     double mean_waiting_time = static_cast<double>(_sum_waiting_time)/_nb_jobs;
     double mean_turnaround_time = static_cast<double>(_sum_turnaround_time)/_nb_jobs;
     double mean_slowdown = static_cast<double>(_sum_slowdown)/_nb_jobs;
+    double makespan = static_cast<double>(_max_completion_time - _min_submission_time);
 
     output_map["batsim_version"] = _context->batsim_version;
     output_map["nb_jobs"] = to_string(_nb_jobs);
@@ -1075,7 +1076,7 @@ void JobsTracer::finalize()
     output_map["nb_jobs_rejected"] = to_string(_nb_jobs_rejected);
     output_map["success_rate"] = to_string(success_rate);
 
-    output_map["makespan"] = to_string(static_cast<double>(_makespan));
+    output_map["makespan"] = to_string(makespan);
     output_map["mean_waiting_time"] = to_string(mean_waiting_time);
     output_map["mean_turnaround_time"] = to_string(mean_turnaround_time);
     output_map["mean_slowdown"] = to_string(mean_slowdown);
@@ -1089,7 +1090,7 @@ void JobsTracer::finalize()
              _nb_jobs, _nb_jobs_finished, _nb_jobs_success, _nb_jobs_killed, success_rate);
     XBT_INFO("makespan=%lf, scheduling_time=%lf, mean_waiting_time=%lf, mean_turnaround_time=%lf, "
              "mean_slowdown=%lf, max_waiting_time=%lf, max_turnaround_time=%lf, max_slowdown=%lf",
-             static_cast<double>(_makespan), static_cast<double>(seconds_used_by_scheduler),
+             makespan, static_cast<double>(seconds_used_by_scheduler),
              static_cast<double>(mean_waiting_time), static_cast<double>(mean_turnaround_time), mean_slowdown,
              static_cast<double>(_max_waiting_time), static_cast<double>(_max_turnaround_time), static_cast<double>(_max_slowdown));
     XBT_INFO("mean_machines_running=%lf, max_machines_running=%lf",
@@ -1171,14 +1172,20 @@ void JobsTracer::write_job(const JobPtr job)
             long double completion_time = job->starting_time + job->runtime;
             long double turnaround_time = completion_time - job->submission_time;
             long double slowdown = turnaround_time / job->runtime;
+            long double submission_time = job->submission_time;
 
             _sum_waiting_time += waiting_time;
             _sum_turnaround_time += turnaround_time;
             _sum_slowdown += slowdown;
 
-            if (completion_time > _makespan)
+            if (completion_time > _max_completion_time)
             {
-                _makespan = completion_time;
+                _max_completion_time = completion_time;
+            }
+
+            if (submission_time < _min_submission_time)
+            {
+                _min_submission_time = submission_time;
             }
 
             if (waiting_time > _max_waiting_time)
