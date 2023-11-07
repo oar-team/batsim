@@ -339,7 +339,8 @@ private:
     int _nb_jobs_success = 0; //!< The number of successful jobs.
     int _nb_jobs_killed = 0; //!< The number of killed jobs.
     int _nb_jobs_rejected = 0; //!< The number of rejected jobs.
-    long double _makespan = 0; //!< The makespan.
+    long double _max_completion_time = 0; //!< The maximum completion time observed.
+    long double _min_submission_time = 0; //!< The minimum submission time observed.
     long double _sum_waiting_time = 0; //!< The sum of the waiting time of jobs.
     long double _sum_turnaround_time = 0; //!< The sum of the turnaround time of jobs.
     long double _sum_slowdown = 0; //!< The sum of the slowdown (AKA stretch) of jobs.
