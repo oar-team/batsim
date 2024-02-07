@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=23.05";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=23.11";
     nixpkgs-pytest.url = "github:nixos/nixpkgs?ref=22.11";
     flake-utils.url = "github:numtide/flake-utils";
     nur-kapack = {

@@ -13,11 +13,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1689863397,
-        "narHash": "sha256-XYUO1VD1yij7G+UJ6rogUk+rcHb9ZKME687f9M/ylHw=",
+        "lastModified": 1707316999,
+        "narHash": "sha256-+jGORWq0Vx9JKFfkMU2u5ZhnSD4Nc7eRDu9kBgZgJto=",
         "ref": "refs/heads/master",
-        "rev": "55ce269d126adaa1e31fe312d8edbb3617d42f09",
-        "revCount": 148,
+        "rev": "25bc5bbf039c18a8024c4ab326047ba56800376a",
+        "revCount": 153,
         "type": "git",
         "url": "https://framagit.org/batsim/batprotocol"
       },
@@ -31,11 +31,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1689068808,
-        "narHash": "sha256-6ixXo3wt24N/melDWjq70UuHQLxGV8jZvooRanIHXw0=",
+        "lastModified": 1705309234,
+        "narHash": "sha256-uNRRNRKmJyCRC/8y1RqBkqWBLM034y4qN7EprSdmgyA=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "919d646de7be200f3bf08cb76ae1f09402b6f9b4",
+        "rev": "1ef2e671c3b0c19053962c07dbda38332dcebf26",
         "type": "github"
       },
       "original": {
@@ -57,11 +57,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1685006270,
-        "narHash": "sha256-cJlbAF8m2PCX2iqepq3uKmKkOOF2bAjSpKMP4KXoevk=",
+        "lastModified": 1707321891,
+        "narHash": "sha256-eEH9zxYphfl/0PPX39ChMpguF/yuR4z4ZLOlWPwkoHA=",
         "ref": "refs/heads/main",
-        "rev": "2b449c3b8d88e7ed2008fe618846d437a4fd8ee5",
-        "revCount": 83,
+        "rev": "13d8f2d7000d4dc4e3202422658b0b5d83f83679",
+        "revCount": 84,
         "type": "git",
         "url": "https://framagit.org/batsim/intervalset"
       },
@@ -72,16 +72,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1685566663,
-        "narHash": "sha256-btHN1czJ6rzteeCuE/PNrdssqYD2nIA4w48miQAFloM=",
+        "lastModified": 1701282334,
+        "narHash": "sha256-MxCVrXY6v4QmfTwIysjjaX0XUhqBbxTWWB4HXtDYsdk=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "4ecab3273592f27479a583fb6d975d4aba3486fe",
+        "rev": "057f9aecfb71c4437d2b27d3323df7f93c010b7e",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "23.05",
+        "ref": "23.11",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -112,11 +112,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1690987051,
-        "narHash": "sha256-8pUzVZYGvxpJEsGr/a+EYSm6q+R1l3li8Q8t2K+5P+E=",
+        "lastModified": 1706535687,
+        "narHash": "sha256-kYeGZOJy4kIovDoKWpU1QzBDWzfqnHH6t3c13RTVRWc=",
         "owner": "oar-team",
         "repo": "nur-kapack",
-        "rev": "901a5b656f695f2c82d17c091a55db2318ed3f39",
+        "rev": "6e783205aa676a085bdef7219a4cec609ce88f22",
         "type": "github"
       },
       "original": {

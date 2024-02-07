@@ -1,6 +1,6 @@
 { stdenv, lib
 , cppMesonDevBase
-, meson, ninja, pkgconfig
+, meson, ninja, pkg-config
 , simgrid, intervalset, boost, rapidjson, zeromq, pugixml, batprotocol-cpp, cli11, gtest
 , doInternalTests ? true
 , debug ? false
@@ -9,7 +9,7 @@
 }:
 
 (cppMesonDevBase {
-  inherit stdenv lib meson ninja pkgconfig debug werror doCoverage;
+  inherit stdenv lib meson ninja pkg-config debug werror doCoverage;
   coverageGcnoGlob = "batsim.p/*.gcno libbatlib.a.p/*.gcno";
 }).overrideAttrs(attrs: rec {
   name = "batsim";
