@@ -259,6 +259,7 @@ void Machines::create_machines(const BatsimContext *context,
             xbt_assert(_master_machine == nullptr, "There are two master hosts...");
             machine->id = -1;
             _master_machine = machine;
+            XBT_INFO("The host named '%s' in the supplied SimGrid platform will be used as Batsim's master host", machine->name.c_str());
         }
     }
 
@@ -816,8 +817,6 @@ void create_machines(const MainArguments & main_args,
 {
     XBT_INFO("Creating the machines from platform file '%s'...", main_args.platform_filename.c_str());
     simgrid::s4u::Engine::get_instance()->load_platform(main_args.platform_filename);
-
-    XBT_INFO("Looking for master host '%s'", main_args.master_host_name.c_str());
 
     context->machines.create_machines(context,
                                       main_args.hosts_roles_map,
