@@ -244,11 +244,12 @@ def test_check_energy_consumed(test_root_dir):
         raise Exception('There are {} jobs in the workload but only {} jobs are known by the test'.format(len(jobs), len(merged)))
 
     merged['valid'] = merged.apply(check_ok, axis=1)
-    if merged['valid'].sum() != len(merged):
-        print('Some jobs are invalid!')
-        print(merged[['job_id', 'valid', 'execution_time', 'expected_execution_time', 'consumed_energy', 'expected_consumed_energy']])
-        raise Exception('The execution of some jobs did not match this test expectations.')
-    else:
-        print('All jobs are valid!')
-        print(merged[['job_id', 'valid', 'execution_time', 'expected_execution_time', 'consumed_energy', 'expected_consumed_energy']])
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        if merged['valid'].sum() != len(merged):
+            print('Some jobs are invalid!')
+            print(merged[['job_id', 'valid', 'execution_time', 'expected_execution_time', 'consumed_energy', 'expected_consumed_energy']])
+            raise Exception('The execution of some jobs did not match this test expectations.')
+        else:
+            print('All jobs are valid!')
+            print(merged[['job_id', 'valid', 'execution_time', 'expected_execution_time', 'consumed_energy', 'expected_consumed_energy']])
 
