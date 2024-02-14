@@ -84,9 +84,10 @@
         devShells = {
           external-test = pkgs.mkShell {
             buildInputs = [
-              packages-release.batsim
-              packages-release.batsim-edc-libs
+              packages-debug.batsim
+              packages-debug.batsim-edc-libs
               pkgs-pytest.python3Packages.ipython
+              pkgs-pytest.python3Packages.pandas
               pkgs-pytest.python3Packages.pytest
               pkgs-pytest.python3Packages.pytest-html
             ];
