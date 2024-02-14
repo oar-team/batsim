@@ -22,7 +22,7 @@ def test_rejecter(test_root_dir):
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}'
 
-    batcmd, outdir = prepare_instance(instance_name, test_root_dir, platform, 'rejecter', workload)
+    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'rejecter', workload)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
@@ -32,7 +32,7 @@ def test_1by1(test_root_dir):
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}'
 
-    batcmd, outdir = prepare_instance(instance_name, test_root_dir, platform, 'exec1by1', workload)
+    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'exec1by1', workload)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
@@ -42,6 +42,6 @@ def test_fcfs(test_root_dir, use_json):
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}-' + str(int(use_json))
 
-    batcmd, outdir = prepare_instance(instance_name, test_root_dir, platform, 'fcfs', workload, use_json=use_json)
+    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'fcfs', workload, use_json=use_json)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0

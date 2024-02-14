@@ -22,9 +22,11 @@ def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, wor
         '--edc-library-file', f'{EDC_DIR}/lib{edc}.so', str(int(use_json)), edc_init_filename
     ]
 
+    workload_file = None
     if workload is not None:
+        workload_file = f'{WORKLOAD_DIR}/{workload}.json'
         batsim_cmd.extend([
-            '--workload', f'{WORKLOAD_DIR}/{workload}.json'
+            '--workload', workload_file
         ])
 
     if batsim_extra_args is not None:
@@ -35,7 +37,7 @@ def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, wor
     with open(descriptor, 'w') as f:
         f.write(shlex.join(batsim_cmd) + '\n')
 
-    return batsim_cmd, output_dir
+    return batsim_cmd, output_dir, workload_file
 
 def run_batsim(batsim_cmd, output_dir, timeout=None):
     used_timeout = TEST_INSTANCE_TIMEOUT

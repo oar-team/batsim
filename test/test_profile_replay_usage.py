@@ -205,7 +205,7 @@ def test_check_energy_consumed(test_root_dir):
     instance_name = f'{MOD_NAME}-{func_name}-{wload_name}'
 
     timeout = int(os.getenv('TEST_INSTANCE_TIMEOUT', '5')) * 3
-    batcmd, outdir = prepare_instance(instance_name, test_root_dir, platform, 'fcfs', workload, batsim_extra_args=['--energy-host'])
+    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'fcfs', workload, batsim_extra_args=['--energy-host'])
     p = run_batsim(batcmd, outdir, timeout=timeout)
     assert p.returncode == 0
 
