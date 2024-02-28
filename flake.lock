@@ -112,11 +112,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1706535687,
-        "narHash": "sha256-kYeGZOJy4kIovDoKWpU1QzBDWzfqnHH6t3c13RTVRWc=",
+        "lastModified": 1708526787,
+        "narHash": "sha256-TnT9TcYXeWHckQyzGU3KhNfhXqhY2T1wvbYb2MDwTFU=",
         "owner": "oar-team",
         "repo": "nur-kapack",
-        "rev": "6e783205aa676a085bdef7219a4cec609ce88f22",
+        "rev": "4d8ca88fd8a0a2287ee5c023877f14d53d4854c1",
         "type": "github"
       },
       "original": {
