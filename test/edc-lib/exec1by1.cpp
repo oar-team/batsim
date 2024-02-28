@@ -108,7 +108,7 @@ uint8_t batsim_edc_take_decisions(
         currently_running_job = jobs->front();
         jobs->pop_front();
         auto hosts = IntervalSet(IntervalSet::ClosedInterval(0, currently_running_job->nb_hosts-1));
-        mb->add_execute_job(currently_running_job->job_id, hosts.to_string_hyphen(" ", "-"));
+        mb->add_execute_job(currently_running_job->job_id, hosts.to_string_hyphen());
     }
 
     mb->finish_message(parsed->now());

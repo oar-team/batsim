@@ -110,7 +110,7 @@ uint8_t batsim_edc_take_decisions(
         if (job->nb_hosts <= nb_available_hosts) {
             running_jobs[job->id] = *job_it;
             job->alloc = available_hosts.left(job->nb_hosts);
-            mb->add_execute_job(job->id, job->alloc.to_string_hyphen(" ", "-"));
+            mb->add_execute_job(job->id, job->alloc.to_string_hyphen());
             available_hosts -= job->alloc;
             nb_available_hosts -= job->nb_hosts;
 
