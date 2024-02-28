@@ -30,3 +30,8 @@ fcfs = shared_library('fcfs', common + ['fcfs.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep],
   install: true,
 )
+
+easy = shared_library('easy', common + ['easy.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep],
+  install: true,
+)
