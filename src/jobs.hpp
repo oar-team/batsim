@@ -229,6 +229,7 @@ struct Job
     unsigned int requested_nb_res = 0; //!< The number of resources the job is requested to be executed on
     int return_code = -1; //!< The return code of the job
     bool is_rigid = true; //!< Whether the number of allocated resources must match the number of requested resources.
+    std::string extra_data = ""; //!< User-given extra data. Not used by Batsim at all but forwarded to EDCs.
 
 public:
     /**

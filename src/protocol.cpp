@@ -94,7 +94,7 @@ std::shared_ptr<batprotocol::Job> to_job(const Job & job)
     proto_job->set_resource_number(job.requested_nb_res);
     proto_job->set_walltime(job.walltime);
     proto_job->set_profile(job.profile->name); // TODO: handle ghost jobs without profile
-    // TODO: handle extra data
+    proto_job->set_extra_data(job.extra_data);
     // TODO: handle job rigidity
 
     return proto_job;
