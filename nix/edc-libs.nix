@@ -1,6 +1,6 @@
 { stdenv, lib
 , cppMesonDevBase
-, batprotocol-cpp, intervalset
+, batprotocol-cpp, intervalset, nlohmann_json
 , meson, ninja, pkg-config
 , debug ? false
 , werror ? false
@@ -19,6 +19,7 @@
   buildInputs = [
     batprotocol-cpp
     intervalset
+    nlohmann_json
   ];
   passthru = rec {
     DEBUG_SRC_DIRS = intervalset.DEBUG_SRC_DIRS ++ batprotocol-cpp.DEBUG_SRC_DIRS ++ [ "${src}" ];

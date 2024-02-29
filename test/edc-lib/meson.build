@@ -8,6 +8,7 @@ project('batsim_edc_libs', 'cpp',
 batprotocol_cpp_dep = dependency('batprotocol-cpp')
 boost_dep = dependency('boost')
 intervalset_dep = dependency('intervalset')
+nlohmann_json_dep = dependency('nlohmann_json')
 deps = [
   batprotocol_cpp_dep
 ]
@@ -33,5 +34,10 @@ fcfs = shared_library('fcfs', common + ['fcfs.cpp'],
 
 easy = shared_library('easy', common + ['easy.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep],
+  install: true,
+)
+
+static = shared_library('static', common + ['static.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
   install: true,
 )

@@ -1,0 +1,22 @@
+{
+    "nb_res": 4,
+    "jobs": [
+        {"id":0, "subtime": 0, "walltime": 100, "res": 1, "profile": "delay10", "extra_data": "{\"desired_allocation\": \"1\"}"},
+        {"id":1, "subtime": 3, "walltime": 100, "res": 1, "profile": "delay10", "extra_data": "{\"desired_allocation\": \"2\"}"},
+        {"id":2, "subtime": 6, "walltime": 100, "res": 1, "profile": "delay10", "extra_data": "{\"desired_allocation\": \"3\"}"},
+        {"id":3, "subtime": 9, "walltime": 100, "res": 2, "profile": "delay10", "extra_data": "{\"desired_allocation\": \"1 3\"}"},
+        {"id":4, "subtime":12, "walltime": 100, "res": 1, "profile": "delay10", "extra_data": "{\"desired_allocation\": \"2\"}"},
+        {"id":5, "subtime":15, "walltime": 100, "res": 1, "profile": "delay10", "extra_data": "{\"desired_allocation\": \"3\"}"},
+        {"id":6, "subtime":18, "walltime": 100, "res": 2, "profile": "delay10", "extra_data": "{\"desired_allocation\": \"1-2\"}"},
+        {"id":7, "subtime":21, "walltime": 100, "res": 1, "profile": "delay10", "extra_data": "{\"desired_allocation\": \"2\"}"},
+        {"id":8, "subtime":24, "walltime": 100, "res": 1, "profile": "delay10", "extra_data": "{\"desired_allocation\": \"3\"}"},
+        {"id":9, "subtime":27, "walltime": 100, "res": 3, "profile": "delay10", "extra_data": "{\"desired_allocation\": \"0 2-3\"}"}
+    ],
+
+    "profiles": {
+        "delay10": {
+            "type": "delay",
+            "delay": 10
+        }
+    }
+}
