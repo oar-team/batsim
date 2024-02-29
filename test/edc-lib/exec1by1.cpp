@@ -63,6 +63,7 @@ uint8_t batsim_edc_take_decisions(
     uint8_t ** decisions,
     uint32_t * decisions_size)
 {
+    (void) what_happened_size;
     auto * parsed = deserialize_message(*mb, !format_binary, what_happened);
     mb->clear(parsed->now());
 
@@ -100,6 +101,7 @@ uint8_t batsim_edc_take_decisions(
             delete currently_running_job;
             currently_running_job = nullptr;
         } break;
+        default: break;
         }
     }
 

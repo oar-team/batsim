@@ -58,6 +58,7 @@ uint8_t batsim_edc_take_decisions(
     uint8_t ** decisions,
     uint32_t * decisions_size)
 {
+    (void) what_happened_size;
     auto * parsed = deserialize_message(*mb, !format_binary, what_happened);
     mb->clear(parsed->now());
 
@@ -80,7 +81,8 @@ uint8_t batsim_edc_take_decisions(
         case fb::Event_JobSubmittedEvent: {
             ::Job job{
                 event->event_as_JobSubmittedEvent()->job_id()->str(),
-                event->event_as_JobSubmittedEvent()->job()->resource_request()
+                event->event_as_JobSubmittedEvent()->job()->resource_request(),
+                IntervalSet::empty_interval_set()
             };
 
             if (job.nb_hosts > platform_nb_hosts)
@@ -102,22 +104,25 @@ uint8_t batsim_edc_take_decisions(
             delete job;
             running_jobs.erase(job_it);
         } break;
+        default: break;
         }
     }
 
-    for (auto job_it = job_queue.begin(); job_it != job_queue.end(); ) {
-        auto job = *job_it;
-        if (job->nb_hosts <= nb_available_hosts) {
-            running_jobs[job->id] = *job_it;
-            job->alloc = available_hosts.left(job->nb_hosts);
-            mb->add_execute_job(job->id, job->alloc.to_string_hyphen());
-            available_hosts -= job->alloc;
-            nb_available_hosts -= job->nb_hosts;
+    if (need_scheduling) {
+        for (auto job_it = job_queue.begin(); job_it != job_queue.end(); ) {
+            auto job = *job_it;
+            if (job->nb_hosts <= nb_available_hosts) {
+                running_jobs[job->id] = *job_it;
+                job->alloc = available_hosts.left(job->nb_hosts);
+                mb->add_execute_job(job->id, job->alloc.to_string_hyphen());
+                available_hosts -= job->alloc;
+                nb_available_hosts -= job->nb_hosts;
 
-            job_it = job_queue.erase(job_it);
+                job_it = job_queue.erase(job_it);
+            }
+            else
+                break;
         }
-        else
-            break;
     }
 
     mb->finish_message(parsed->now());
