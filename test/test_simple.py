@@ -61,11 +61,19 @@ def test_easy(test_root_dir, use_json):
 def compute_expected_alloc(row):
     return str(row['allocated_resources']) == str(row['expected_allocation'])
 
-def test_extra_data(test_root_dir, use_json):
+@pytest.fixture(scope="module", params=[
+    ('str', 'test_extra_data_desired_allocation'),
+    ('obj', 'test_extra_data_desired_allocation_object')
+])
+def extra_data_workload(request):
+    return request.param
+
+def test_extra_data(test_root_dir, extra_data_workload, use_json):
     platform = 'small_platform'
-    workload = 'test_extra_data_desired_allocation'
+    extra_data_type = extra_data_workload[0]
+    workload = extra_data_workload[1]
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
-    instance_name = f'{MOD_NAME}-{func_name}-' + str(int(use_json))
+    instance_name = f'{MOD_NAME}-{func_name}-{extra_data_type}' + str(int(use_json))
 
     batcmd, outdir, workload_file = prepare_instance(instance_name, test_root_dir, platform, 'static', workload, use_json=use_json, batsim_extra_args=['--mmax-workload'])
     p = run_batsim(batcmd, outdir)
@@ -80,7 +88,10 @@ def test_extra_data(test_root_dir, use_json):
     expected_allocations = list()
 
     for job in batw['jobs']:
-        extra_data = json.loads(job['extra_data'])
+        if isinstance(job['extra_data'], str):
+            extra_data = json.loads(job['extra_data'])
+        else:
+            extra_data = job['extra_data']
         job_ids.append(job['id'])
         expected_allocations.append(extra_data['desired_allocation'])
 

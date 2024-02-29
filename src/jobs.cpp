@@ -17,6 +17,8 @@
 #include <simgrid/s4u.hpp>
 
 #include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 #include "profiles.hpp"
 
@@ -406,9 +408,18 @@ JobPtr Job::from_json(const rapidjson::Value & json_desc,
 
     // read extra_data
     if (json_desc.HasMember("extra_data")) {
-        xbt_assert(json_desc["extra_data"].IsString(), "%s: job %s has a non-string 'extra_data' field",
-                   error_prefix.c_str(), j->id.to_string().c_str());
-        j->extra_data = json_desc["extra_data"].GetString();
+        if (json_desc["extra_data"].IsString())
+            j->extra_data = json_desc["extra_data"].GetString();
+        else if (json_desc["extra_data"].IsObject() || json_desc["extra_data"].IsArray()) {
+            // convert json content to string
+            StringBuffer buffer;
+            rapidjson::Writer<StringBuffer> writer(buffer);
+            json_desc["extra_data"].Accept(writer);
+            j->extra_data = std::string(buffer.GetString(), buffer.GetSize());
+        }
+        else
+            xbt_assert(false, "%s: job %s has an 'extra_data' field that is not a string nor an object",
+                       error_prefix.c_str(), j->id.to_string().c_str());
     }
 
     XBT_DEBUG("Job '%s' Loaded", j->id.to_string().c_str());
