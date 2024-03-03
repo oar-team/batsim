@@ -93,7 +93,16 @@ void ExternalDecisionComponent::init(const uint8_t *data, uint32_t data_size, ui
     switch(_type)
     {
     case EDCType::LIBRARY: {
-        _library->init(data, data_size, flags);
+        uint8_t return_code = 0u;
+        try {
+            return_code = _library->init(data, data_size, flags);
+        }
+        catch (const std::exception & e) {
+            throw std::runtime_error("Exception thrown by the EDC library init function: " + std::string(e.what()));
+        }
+        if (return_code != 0) {
+            throw std::runtime_error("Error while calling init on the EDC library: returned " + std::to_string(return_code));
+        }
     } break;
     case EDCType::PROCESS: {
         // Serialize (in binary) the initialization message (integers sent in native endianness)
@@ -177,12 +186,12 @@ void ExternalDecisionComponent::take_decisions(uint8_t *what_happened_buffer, ui
         }
         catch (const std::exception & e)
         {
-            throw std::runtime_error("Exception thrown by the external library take_decisions function: " + std::string(e.what()));
+            throw std::runtime_error("Exception thrown by the EDC library take_decisions function: " + std::string(e.what()));
         }
 
         if (return_code != 0)
         {
-            throw std::runtime_error("Error while calling take_decisions on the external library: returned " + std::to_string(return_code));
+            throw std::runtime_error("Error while calling take_decisions on the EDC library: returned " + std::to_string(return_code));
         }
     } break;
 
