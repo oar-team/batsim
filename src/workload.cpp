@@ -9,6 +9,7 @@
 #include <streambuf>
 
 #include <rapidjson/document.h>
+#include <rapidjson/error/en.h>
 
 #include <smpi/smpi.h>
 
@@ -75,7 +76,10 @@ void Workload::load_from_json(const std::string &json_filename, int &nb_machines
     // JSON document creation
     Document doc;
     doc.Parse(content.c_str());
-    xbt_assert(!doc.HasParseError(), "Invalid JSON file '%s': could not be parsed", json_filename.c_str());
+    if (doc.HasParseError()) {
+        xbt_assert(false, "Invalid JSON file '%s': could not be parsed: (offset %u): %s",
+            json_filename.c_str(), (unsigned)doc.GetErrorOffset(), GetParseError_En(doc.GetParseError()));
+    }
     xbt_assert(doc.IsObject(), "Invalid JSON file '%s': not a JSON object", json_filename.c_str());
 
     // Let's try to read the number of machines in the JSON document
