@@ -7,6 +7,12 @@ Batsim
    Feel free to :ref:`contact_us` if you have any question or remark — or if a TODO is important for you.
    Here are :ref:`contributing`.
 
+.. warning::
+
+   It is **strongly recommended** to check that Batsim behaves as you expect before using it for your experiments: many parameters can strongly influence simulation results, bugs can persist despite our efforts...
+   This is all the more important for codes in the Batsim ecosystem that are external to Batsim itself (e.g., batsched_/pybatsim_ scheduling algorithms), which are much less tested than Batsim.
+   Please do :ref:`contact_us` in case of doubt.
+
 Batsim is a scientific simulator to analyze batch schedulers.
 Batch schedulers — or Resource and Jobs Management Systems, RJMSs — are systems that manage resources in large-scale computing centers, notably by scheduling and placing jobs.
 
@@ -80,3 +86,5 @@ please cite it (`bibtex <https://hal.archives-ouvertes.fr/hal-01333471v1/bibtex>
 .. _SimGrid: https://simgrid.frama.io/
 .. _Batsim initial white paper: https://hal.archives-ouvertes.fr/hal-01333471v1
 .. _Millian Poquet's PhD thesis: https://hal.archives-ouvertes.fr/tel-01757245v2
+.. _batsched: https://framagit.org/batsim/batsched
+.. _pybatsim: https://gitlab.inria.fr/batsim/pybatsim
