@@ -264,28 +264,6 @@ void debug_print_ptask(const std::vector<double>& computation_vector,
 }
 
 /**
- * @brief Checks if the hosts allocated to a ptask can execute it
- * @param[in] machines_to_use The machines that will execute the ptask
- * @param[in] computation_vector The ptask computation vector
- */
-void check_ptask_execution_permission(
-    const std::vector<Machine *> & machines_to_use,
-    const std::vector<double> & computation_vector)
-{
-    xbt_assert(machines_to_use.size() == computation_vector.size(), "internal inconsistency");
-    for (unsigned int i = 0; i < machines_to_use.size(); ++i)
-    {
-        if (computation_vector[i] > 0)
-        {
-            auto * machine = machines_to_use[i];
-            xbt_assert((machine->permissions & Permissions::COMPUTE_FLOPS) == Permissions::COMPUTE_FLOPS,
-                "Non-null computations (%g) were assigned to a machine (id=%d, name='%s') without the COMPUTE_FLOPS permission",
-                computation_vector[i], machine->id, machine->name.c_str());
-        }
-    }
-}
-
-/**
  * @brief Execute a task that corresponds to a parallel task profile
  * @param[in,out] btask The task to execute. Progress information is stored within it.
  * @param[in] alloc_placement Where the task should be executed
@@ -306,9 +284,6 @@ int execute_parallel_task(
     std::vector<double> computation_vector;
     std::vector<double> communication_matrix;
     prepare_ptask(context, btask, alloc_placement, computation_vector, communication_matrix, hosts_to_use, machines_to_use);
-
-    check_ptask_execution_permission(machines_to_use, computation_vector);
-    // communication permissions are not checked, as all hosts but the master host can send and receive bytes as I write these lines.
 
     // Create the parallel task
     string task_name = profile_type_to_string(profile->type) + '_' + static_cast<JobPtr>(btask->parent_job)->id.to_string() +
