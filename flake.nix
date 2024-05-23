@@ -82,7 +82,7 @@
           ci-batsim-test-coverage-report = callPackage pkgs functions.batsim-coverage-report { batsim = packages-debug-cov.batsim; batsim-test = ci-batsim-edc-test-from-internal-gcda; } debug-cov-options;
         };
         devShells = {
-          external-test = pkgs.mkShell {
+          external-test = pkgs.mkShell rec {
             buildInputs = [
               packages-debug.batsim
               packages-debug.batsim-edc-libs
@@ -90,12 +90,21 @@
               pkgs-pytest.python3Packages.pandas
               pkgs-pytest.python3Packages.pytest
               pkgs-pytest.python3Packages.pytest-html
+              pkgs.gdb
+              pkgs.cgdb
             ];
+
+            DEBUG_SRC_DIRS = packages-debug.batsim.DEBUG_SRC_DIRS ++ packages-debug.batsim-edc-libs.DEBUG_SRC_DIRS;
+            GDB_DIR_ARGS = packages-debug.batsim.GDB_DIR_ARGS ++ packages-debug.batsim-edc-libs.GDB_DIR_ARGS;
 
             EDC_LD_LIBRARY_PATH = "${packages-release.batsim-edc-libs}/lib";
             shellHook = ''
               export PLATFORM_DIR=$(realpath platforms)
               export WORKLOAD_DIR=$(realpath workloads)
+
+              echo Found debug_info source paths. ${builtins.concatStringsSep ":" DEBUG_SRC_DIRS}
+              echo Run the following command to automatically load these directories to gdb.
+              echo gdb \$\{GDB_DIR_ARGS\}
             '';
           };
         };
