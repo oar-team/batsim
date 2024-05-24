@@ -12,38 +12,38 @@
   "profiles": {
     "compute-only": {
       "type": "ptask_homogeneous",
-        "cpu": 10e9,
-        "com": 0,
-        "expected_execution_time": 10
+      "cpu": 10e9,
+      "com": 0,
+      "expected_execution_time": 10
     },
 
     "network-only-2": {
       "type": "ptask_homogeneous",
-        "cpu": 0,
-        "com": 10e9,
-        "generation_strategy": "defined_amount_used_for_each_value",
-        "expected_execution_time": 10.000013
+      "cpu": 0,
+      "com": 10e9,
+      "generation_strategy": "defined_amount_used_for_each_value",
+      "expected_execution_time": 10.000013
     },
     "network-only-2-spread": {
       "type": "ptask_homogeneous",
-        "cpu": 0,
-        "com": 20e9,
-        "generation_strategy": "defined_amount_spread_uniformly",
-        "expected_execution_time": 10.000013
+      "cpu": 0,
+      "com": 20e9,
+      "generation_strategy": "defined_amount_spread_uniformly",
+      "expected_execution_time": 10.000013
     },
     "network-only-5": {
       "type": "ptask_homogeneous",
-        "cpu": 0,
-        "com": 3e9,
-        "generation_strategy": "defined_amount_used_for_each_value",
-        "expected_execution_time": 20.000013
+      "cpu": 0,
+      "com": 3e9,
+      "generation_strategy": "defined_amount_used_for_each_value",
+      "expected_execution_time": 20.000013
     },
     "network-only-5-spread": {
       "type": "ptask_homogeneous",
-        "cpu": 0,
-        "com": 6e10,
-        "generation_strategy": "defined_amount_spread_uniformly",
-        "expected_execution_time": 20.000013
+      "cpu": 0,
+      "com": 6e10,
+      "generation_strategy": "defined_amount_spread_uniformly",
+      "expected_execution_time": 20.000013
     }
   }
 }
