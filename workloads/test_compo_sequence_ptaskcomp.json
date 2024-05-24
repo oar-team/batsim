@@ -1,0 +1,149 @@
+{
+  "nb_res": 6,
+  "jobs": [
+    {"id":"seq-1-rep1-implicit-ok",       "subtime":   0, "walltime":  20,  "res": 1, "profile": "seq-1-rep1-implicit"},
+    {"id":"seq-1-rep1-explicit-ok",       "subtime":   0, "walltime":  20,  "res": 1, "profile": "seq-1-rep1-explicit"},
+    {"id":"seq-1-rep7-ok",                "subtime":   0, "walltime":  100, "res": 1, "profile": "seq-1-rep7"},
+    {"id":"seq-2-rep1-ok",                "subtime":   0, "walltime":  20,  "res": 1, "profile": "seq-2-rep1"},
+    {"id":"seq-2b-rep1-ok",               "subtime":   0, "walltime":  20,  "res": 1, "profile": "seq-2b-rep1"},
+    {"id":"seq-2-rep5-ok",                "subtime":   0, "walltime":  100, "res": 1, "profile": "seq-2-rep5"},
+    {"id":"seq-3-rep1-ok",                "subtime":   0, "walltime":  100, "res": 1, "profile": "seq-3-rep1"},
+    {"id":"seq-3-rep2-ok",                "subtime":   0, "walltime":  100, "res": 1, "profile": "seq-3-rep2"},
+    {"id":"seqrec-1-rep7-ok",             "subtime":   0, "walltime":  100, "res": 1, "profile": "seqrec-1-rep7"},
+    {"id":"seqrec2-ok",                   "subtime":   0, "walltime":  300, "res": 1, "profile": "seqrec2"},
+    {"id":"seqrec3-ok",                   "subtime":   0, "walltime": 1500, "res": 1, "profile": "seqrec3"},
+    {"id":"seqrec4-ok",                   "subtime":   0, "walltime":15000, "res": 1, "profile": "seqrec4"},
+
+    {"id":"seq-1-rep1-implicit-wr",       "subtime":   0, "walltime": 7,  "res": 1, "profile": "seq-1-rep1-implicit"},
+    {"id":"seq-1-rep1-explicit-wr",       "subtime":   0, "walltime": 7,  "res": 1, "profile": "seq-1-rep1-explicit"},
+    {"id":"seq-1-rep7-wr",                "subtime":   0, "walltime": 7,  "res": 1, "profile": "seq-1-rep7"},
+    {"id":"seq-2-rep1-wr",                "subtime":   0, "walltime": 7,  "res": 1, "profile": "seq-2-rep1"},
+    {"id":"seq-2b-rep1-wr",               "subtime":   0, "walltime": 7,  "res": 1, "profile": "seq-2b-rep1"},
+    {"id":"seq-2-rep5-wr",                "subtime":   0, "walltime": 7,  "res": 1, "profile": "seq-2-rep5"},
+    {"id":"seq-3-rep1-wr",                "subtime":   0, "walltime": 7,  "res": 1, "profile": "seq-3-rep1"},
+    {"id":"seq-3-rep2-wr",                "subtime":   0, "walltime": 7,  "res": 1, "profile": "seq-3-rep2"},
+    {"id":"seqrec-1-rep7-wt",             "subtime":   0, "walltime": 7, "res": 1, "profile": "seqrec-1-rep7"},
+    {"id":"seqrec2-wt",                   "subtime":   0, "walltime": 7, "res": 1, "profile": "seqrec2"},
+    {"id":"seqrec3-wt",                   "subtime":   0, "walltime": 7, "res": 1, "profile": "seqrec3"}
+  ],
+
+  "profiles": {
+    "10s": {
+      "type": "ptask_homogeneous",
+      "cpu": 10e9,
+      "com": 0,
+      "expected_execution_time": 10
+    },
+    "3s": {
+      "type": "ptask_homogeneous",
+      "cpu": 3e9,
+      "com": 0,
+      "expected_execution_time": 3
+    },
+    "seq-1-rep1-implicit": {
+      "type": "sequential_composition",
+      "seq": [
+        "10s"
+      ],
+      "expected_execution_time": 10
+    },
+    "seq-1-rep1-explicit": {
+      "type": "sequential_composition",
+      "repeat": 1,
+      "seq": [
+        "10s"
+      ],
+      "expected_execution_time": 10
+    },
+    "seq-1-rep7": {
+      "type": "sequential_composition",
+      "repeat": 7,
+      "seq": [
+        "10s"
+      ],
+      "expected_execution_time": 70
+    },
+    "seq-2-rep1": {
+      "type": "sequential_composition",
+      "repeat": 1,
+      "seq": [
+        "10s",
+        "3s"
+      ],
+      "expected_execution_time": 13
+    },
+    "seq-2b-rep1": {
+      "type": "sequential_composition",
+      "repeat": 1,
+      "seq": [
+        "3s",
+        "10s"
+      ],
+      "expected_execution_time": 13
+    },
+    "seq-2-rep5": {
+      "type": "sequential_composition",
+      "repeat": 5,
+      "seq": [
+        "10s",
+        "3s"
+      ],
+      "expected_execution_time": 65
+    },
+    "seq-3-rep1": {
+      "type": "sequential_composition",
+      "repeat": 1,
+      "seq": [
+        "3s",
+        "10s",
+        "3s"
+      ],
+      "expected_execution_time": 16
+    },
+    "seq-3-rep2": {
+      "type": "sequential_composition",
+      "repeat": 2,
+      "seq": [
+        "3s",
+        "10s",
+        "3s"
+      ],
+      "expected_execution_time": 32
+    },
+
+    "seqrec-1-rep7": {
+      "type": "sequential_composition",
+      "repeat": 7,
+      "seq": [
+        "seq-2b-rep1"
+      ],
+      "expected_execution_time": 91
+    },
+    "seqrec2": {
+      "type": "sequential_composition",
+      "repeat": 3,
+      "seq": [
+        "seqrec-1-rep7"
+      ],
+      "expected_execution_time": 273
+    },
+    "seqrec3": {
+      "type": "sequential_composition",
+      "repeat": 5,
+      "seq": [
+        "seqrec2"
+      ],
+      "expected_execution_time": 1365
+    },
+    "seqrec4": {
+      "type": "sequential_composition",
+      "repeat": 7,
+      "seq": [
+        "seqrec-1-rep7",
+        "seqrec2",
+        "seqrec3"
+      ],
+      "expected_execution_time": 12103
+    }
+  }
+}

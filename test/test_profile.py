@@ -54,13 +54,8 @@ def compute_job_expected_state(row):
 def compute_job_state_time_ok(row):
     return row['job_expected_state'] == row['final_state'] and row['job_expected_execution_time'] == row['execution_time']
 
-def test_ptask(test_root_dir):
-    platform = 'cluster512'
-    workload = 'test_ptasks'
-    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
-    instance_name = f'{MOD_NAME}-{func_name}'
-
-    batcmd, outdir, workload_file = prepare_instance(instance_name, test_root_dir, platform, 'exec1by1', workload)
+def run_instance_check_job_duration_and_state(test_root_dir, platform, workload, instance_name, edc):
+    batcmd, outdir, workload_file = prepare_instance(instance_name, test_root_dir, platform, edc, workload)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
@@ -95,45 +90,39 @@ def test_ptask(test_root_dir):
             print('All jobs are valid!')
             printable_df = df[['job_id', 'profile', 'requested_time', 'execution_time', 'job_expected_execution_time', 'final_state', 'job_expected_state']]
             print(printable_df)
+
+def test_ptask(test_root_dir):
+    platform = 'cluster512'
+    workload = 'test_ptasks'
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}'
+    edc = 'exec1by1'
+
+    run_instance_check_job_duration_and_state(test_root_dir, platform, workload, instance_name, edc)
 
 def test_ptask_homogeneous(test_root_dir):
     platform = 'cluster512'
     workload = 'test_homo_ptasks'
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}'
+    edc = 'exec1by1'
 
-    batcmd, outdir, workload_file = prepare_instance(instance_name, test_root_dir, platform, 'exec1by1', workload)
-    p = run_batsim(batcmd, outdir)
-    assert p.returncode == 0
+    run_instance_check_job_duration_and_state(test_root_dir, platform, workload, instance_name, edc)
 
-    batjobs_filename = f'{outdir}/batout/jobs.csv'
-    jobs = pd.read_csv(batjobs_filename)
+def test_sequential_composition_delay(test_root_dir):
+    platform = 'cluster512'
+    workload = 'test_compo_sequence_delay'
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}'
+    edc = 'exec1by1'
 
-    f = open(workload_file)
-    batw = json.load(f)
-    profile_names = list()
-    expected_execution_times = list()
+    run_instance_check_job_duration_and_state(test_root_dir, platform, workload, instance_name, edc)
 
-    for profile_name, profile in batw['profiles'].items():
-        expected_execution_time = profile['expected_execution_time']
-        profile_names.append(profile_name)
-        expected_execution_times.append(expected_execution_time)
+def test_sequential_composition_ptaskcomp(test_root_dir):
+    platform = 'cluster512'
+    workload = 'test_compo_sequence_ptaskcomp'
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}'
+    edc = 'exec1by1'
 
-    expected_df = pd.DataFrame({'profile': profile_names, 'profile_expected_execution_time': expected_execution_times})
-
-    df = jobs.merge(expected_df, on='profile', how='inner')
-    df['job_expected_execution_time'] = df[['profile_expected_execution_time', 'requested_time']].min(axis=1)
-    df['job_expected_state'] = df.apply(compute_job_expected_state, axis=1)
-    df['all_good'] = df.apply(compute_job_state_time_ok, axis=1)
-
-    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-        if not df['all_good'].all():
-            unexpected_df = df[df['all_good'] == False]
-            printable_df = unexpected_df[['job_id', 'profile', 'requested_time', 'execution_time', 'job_expected_execution_time', 'final_state', 'job_expected_state']]
-            print('Some jobs have an unexpected execution time or final state')
-            print(printable_df)
-            raise ValueError('Some jobs have an unexpected execution time or final state')
-        else:
-            print('All jobs are valid!')
-            printable_df = df[['job_id', 'profile', 'requested_time', 'execution_time', 'job_expected_execution_time', 'final_state', 'job_expected_state']]
-            print(printable_df)
+    run_instance_check_job_duration_and_state(test_root_dir, platform, workload, instance_name, edc)
