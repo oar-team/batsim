@@ -5,8 +5,9 @@ These tests check that the energy consumption of usage trace profiles are the ex
 '''
 import inspect
 import pandas as pd
+import os
 import pytest
-from helper import *
+from helper import prepare_instance, run_batsim, run_instance_check_job_duration_and_state, check_job_duration_from_job_expected_duration
 
 MOD_NAME = __name__.replace('test_', '', 1)
 
@@ -195,7 +196,7 @@ def estimate_job_from_real_trace():
 
     job_execution_time = idles['duration'].max()
     job_joules = idles['joules'].sum() + df['joules'].sum()
-    return ['60', job_execution_time, job_joules]
+    return ['j60-ok', job_execution_time, job_joules]
 
 def test_check_energy_consumed(test_root_dir):
     platform = 'small_platform_replay_usage'
@@ -205,34 +206,37 @@ def test_check_energy_consumed(test_root_dir):
     instance_name = f'{MOD_NAME}-{func_name}-{wload_name}'
 
     timeout = int(os.getenv('TEST_INSTANCE_TIMEOUT', '5')) * 3
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'fcfs', workload, batsim_extra_args=['--energy-host'])
+    batcmd, outdir, workload_file = prepare_instance(instance_name, test_root_dir, platform, 'fcfs', workload, batsim_extra_args=['--energy-host'])
     p = run_batsim(batcmd, outdir, timeout=timeout)
     assert p.returncode == 0
+
+    check_job_duration_from_job_expected_duration(workload_file, outdir)
 
     # analyze Batsim results to check their energy consumption is the expected one.
     batjobs_filename = f'{outdir}/batout/jobs.csv'
     jobs = pd.read_csv(batjobs_filename)
     jobs['job_id'] = jobs['job_id'].astype('string')
+    jobs = jobs[jobs['job_id'].str.contains("-ok")]
     jobs.sort_values(by=['job_id'], inplace=True)
 
     expected = [
-        ['0', 10, 2*joule_prediction(10, fast_widle, fast_widle, 0.0)],
+        ['j0-ok', 10, 2*joule_prediction(10, fast_widle, fast_widle, 0.0)],
 
-        ['10', 10, 2*joule_prediction(10, fast_wmin, fast_wmax, 1.0)],
-        ['11', 20, 2*joule_prediction(20, slow_wmin, slow_wmax, 1.0)],
+        ['j10-ok', 10, 2*joule_prediction(10, fast_wmin, fast_wmax, 1.0)],
+        ['j11-ok', 20, 2*joule_prediction(20, slow_wmin, slow_wmax, 1.0)],
 
-        ['20', 10, 2*joule_prediction(10, fast_wmin, fast_wmax, 0.5)],
-        ['21', 20, 2*joule_prediction(20, slow_wmin, slow_wmax, 0.5)],
+        ['j20-ok', 10, 2*joule_prediction(10, fast_wmin, fast_wmax, 0.5)],
+        ['j21-ok', 20, 2*joule_prediction(20, slow_wmin, slow_wmax, 0.5)],
 
-        ['30', 20, 2*(joule_prediction(10, fast_wmin, fast_wmax, 1.0)+joule_prediction(10, fast_wmin, fast_wmax, 0.1))],
-        ['31', 40, 2*(joule_prediction(20, slow_wmin, slow_wmax, 1.0)+joule_prediction(20, slow_wmin, slow_wmax, 0.1))],
+        ['j30-ok', 20, 2*(joule_prediction(10, fast_wmin, fast_wmax, 1.0)+joule_prediction(10, fast_wmin, fast_wmax, 0.1))],
+        ['j31-ok', 40, 2*(joule_prediction(20, slow_wmin, slow_wmax, 1.0)+joule_prediction(20, slow_wmin, slow_wmax, 0.1))],
 
-        ['40', 10, joule_prediction(10, fast_wmin, fast_wmax, 0.2)+joule_prediction(10, fast_wmin, fast_wmax, 0.6)],
-        ['41', 20, joule_prediction(20, slow_wmin, slow_wmax, 0.2)+joule_prediction(20, slow_wmin, slow_wmax, 0.6)],
+        ['j40-ok', 10, joule_prediction(10, fast_wmin, fast_wmax, 0.2)+joule_prediction(10, fast_wmin, fast_wmax, 0.6)],
+        ['j41-ok', 20, joule_prediction(20, slow_wmin, slow_wmax, 0.2)+joule_prediction(20, slow_wmin, slow_wmax, 0.6)],
 
-        ['50', 20, joule_prediction(10, fast_wmin, fast_wmax,  0.1)+joule_prediction(10, fast_widle, fast_widle, 0.0) +
+        ['j50-ok', 20, joule_prediction(10, fast_wmin, fast_wmax,  0.1)+joule_prediction(10, fast_widle, fast_widle, 0.0) +
                    joule_prediction(10, fast_wmin, fast_wmax, 0.01)+joule_prediction(10, fast_wmin, fast_wmax, 0.97)],
-        ['51', 40, joule_prediction(20, slow_wmin, slow_wmax,  0.1)+joule_prediction(20, slow_widle, slow_widle, 0.0) +
+        ['j51-ok', 40, joule_prediction(20, slow_wmin, slow_wmax,  0.1)+joule_prediction(20, slow_widle, slow_widle, 0.0) +
                    joule_prediction(20, slow_wmin, slow_wmax, 0.01)+joule_prediction(20, slow_wmin, slow_wmax, 0.97)],
 
         estimate_job_from_real_trace()

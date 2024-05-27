@@ -1,15 +1,18 @@
 {
-    "nb_res": 4,
+  "nb_res": 4,
 
-    "jobs": [
-        {"id":1, "subtime":10, "walltime": 100, "res": 2, "profile": "1"}
-    ],
+  "jobs": [
+    {"id":"1-ok",       "subtime":10, "walltime": 100, "res": 2, "profile": "trace1"},
+    {"id":"1-ok-no-wt", "subtime":10,                  "res": 2, "profile": "trace1"},
+    {"id":"1-wt",       "subtime":10, "walltime": 1,   "res": 2, "profile": "trace1"}
+  ],
 
-    "profiles": {
-        "1": {
-            "type": "trace_replay",
-            "trace_type": "smpi",
-            "trace_file": "smpi/compute_only/traces.txt"
-        }
+  "profiles": {
+    "trace1": {
+      "type": "trace_replay",
+      "trace_type": "smpi",
+      "trace_file": "smpi/compute_only/traces.txt",
+      "expected_execution_time": 10.0
     }
+  }
 }

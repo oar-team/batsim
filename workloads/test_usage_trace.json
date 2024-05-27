@@ -1,24 +1,68 @@
 {
     "nb_res": 4,
     "jobs": [
-        {"id":  0, "subtime":   0, "walltime": 100, "res": 2, "profile": "delay-10s"},
+        {"id": "j0-ok", "subtime":    0, "walltime": 100, "res": 2, "profile": "delay-10s",
+         "expected_execution_time": 10, "expected_state": "COMPLETED_SUCCESSFULLY"},
 
-        {"id": 10, "subtime": 100, "walltime": 100, "res": 2, "profile": "ut-homo-onephase-100"},
-        {"id": 11, "subtime": 101, "walltime": 100, "res": 2, "profile": "ut-homo-onephase-100"},
+        {"id": "j10-ok", "subtime": 100, "walltime": 100, "res": 2, "profile": "ut-homo-onephase-100",
+         "expected_execution_time": 10, "expected_state": "COMPLETED_SUCCESSFULLY"},
+        {"id": "j11-ok", "subtime": 101, "walltime": 100, "res": 2, "profile": "ut-homo-onephase-100",
+         "expected_execution_time": 20, "expected_state": "COMPLETED_SUCCESSFULLY"},
 
-        {"id": 20, "subtime": 200, "walltime": 100, "res": 2, "profile": "ut-homo-onephase-50"},
-        {"id": 21, "subtime": 201, "walltime": 100, "res": 2, "profile": "ut-homo-onephase-50"},
+        {"id": "j20-ok", "subtime": 200, "walltime": 100, "res": 2, "profile": "ut-homo-onephase-50",
+         "expected_execution_time": 10, "expected_state": "COMPLETED_SUCCESSFULLY"},
+        {"id": "j21-ok", "subtime": 201, "walltime": 100, "res": 2, "profile": "ut-homo-onephase-50",
+         "expected_execution_time": 20, "expected_state": "COMPLETED_SUCCESSFULLY"},
 
-        {"id": 30, "subtime": 300, "walltime": 100, "res": 2, "profile": "ut-homo-twophases-100-10"},
-        {"id": 31, "subtime": 301, "walltime": 100, "res": 2, "profile": "ut-homo-twophases-100-10"},
+        {"id": "j30-ok", "subtime": 300, "walltime": 100, "res": 2, "profile": "ut-homo-twophases-100-10",
+         "expected_execution_time": 20, "expected_state": "COMPLETED_SUCCESSFULLY"},
+        {"id": "j31-ok", "subtime": 301, "walltime": 100, "res": 2, "profile": "ut-homo-twophases-100-10",
+         "expected_execution_time": 40, "expected_state": "COMPLETED_SUCCESSFULLY"},
 
-        {"id": 40, "subtime": 400, "walltime": 100, "res": 2, "profile": "ut-hetero-onephase-20-60"},
-        {"id": 41, "subtime": 401, "walltime": 100, "res": 2, "profile": "ut-hetero-onephase-20-60"},
+        {"id": "j40-ok", "subtime": 400, "walltime": 100, "res": 2, "profile": "ut-hetero-onephase-20-60",
+         "expected_execution_time": 10, "expected_state": "COMPLETED_SUCCESSFULLY"},
+        {"id": "j41-ok", "subtime": 401, "walltime": 100, "res": 2, "profile": "ut-hetero-onephase-20-60",
+         "expected_execution_time": 20, "expected_state": "COMPLETED_SUCCESSFULLY"},
 
-        {"id": 50, "subtime": 500, "walltime": 100, "res": 2, "profile": "ut-hetero-onephase-10-twophases-1-97"},
-        {"id": 51, "subtime": 501, "walltime": 100, "res": 2, "profile": "ut-hetero-onephase-10-twophases-1-97"},
+        {"id": "j50-ok", "subtime": 500, "walltime": 100, "res": 2, "profile": "ut-hetero-onephase-10-twophases-1-97",
+         "expected_execution_time": 20, "expected_state": "COMPLETED_SUCCESSFULLY"},
+        {"id": "j51-ok", "subtime": 501, "walltime": 100, "res": 2, "profile": "ut-hetero-onephase-10-twophases-1-97",
+         "expected_execution_time": 40, "expected_state": "COMPLETED_SUCCESSFULLY"},
 
-        {"id": 60, "subtime": 1000, "walltime": 2000, "res": 4, "profile": "ut-from-real-trace"}
+        {"id": "j60-ok", "subtime": 1000, "walltime": 2000, "res": 4, "profile": "ut-from-real-trace",
+         "expected_execution_time": 1455.02, "expected_state": "COMPLETED_SUCCESSFULLY"},
+
+
+        {"id": "j0-wt", "subtime": 10000, "walltime": 1, "res": 2, "profile": "delay-10s",
+         "expected_execution_time": 1, "expected_state": "COMPLETED_WALLTIME_REACHED"},
+
+        {"id": "j10-wt", "subtime": 10100, "walltime": 1, "res": 2, "profile": "ut-homo-onephase-100",
+         "expected_execution_time": 1, "expected_state": "COMPLETED_WALLTIME_REACHED"},
+        {"id": "j11-wt", "subtime": 10101, "walltime": 1, "res": 2, "profile": "ut-homo-onephase-100",
+         "expected_execution_time": 1, "expected_state": "COMPLETED_WALLTIME_REACHED"},
+
+        {"id": "j20-wt", "subtime": 10200, "walltime": 1, "res": 2, "profile": "ut-homo-onephase-50",
+         "expected_execution_time": 1, "expected_state": "COMPLETED_WALLTIME_REACHED"},
+        {"id": "j21-wt", "subtime": 10201, "walltime": 1, "res": 2, "profile": "ut-homo-onephase-50",
+         "expected_execution_time": 1, "expected_state": "COMPLETED_WALLTIME_REACHED"},
+
+        {"id": "j30-wt", "subtime": 10300, "walltime": 1, "res": 2, "profile": "ut-homo-twophases-100-10",
+         "expected_execution_time": 1, "expected_state": "COMPLETED_WALLTIME_REACHED"},
+        {"id": "j31-wt", "subtime": 10301, "walltime": 1, "res": 2, "profile": "ut-homo-twophases-100-10",
+         "expected_execution_time": 1, "expected_state": "COMPLETED_WALLTIME_REACHED"},
+
+        {"id": "j40-wt", "subtime": 10400, "walltime": 1, "res": 2, "profile": "ut-hetero-onephase-20-60",
+         "expected_execution_time": 1, "expected_state": "COMPLETED_WALLTIME_REACHED"},
+        {"id": "j41-wt", "subtime": 10401, "walltime": 1, "res": 2, "profile": "ut-hetero-onephase-20-60",
+         "expected_execution_time": 1, "expected_state": "COMPLETED_WALLTIME_REACHED"},
+
+        {"id": "j50-wt", "subtime": 10500, "walltime": 1, "res": 2, "profile": "ut-hetero-onephase-10-twophases-1-97",
+         "expected_execution_time": 1, "expected_state": "COMPLETED_WALLTIME_REACHED"},
+        {"id": "j51-wt", "subtime": 10501, "walltime": 1, "res": 2, "profile": "ut-hetero-onephase-10-twophases-1-97",
+         "expected_execution_time": 1, "expected_state": "COMPLETED_WALLTIME_REACHED"},
+
+        {"id": "j60-wt", "subtime": 11000, "walltime": 1, "res": 4, "profile": "ut-from-real-trace",
+         "expected_execution_time": 1, "expected_state": "COMPLETED_WALLTIME_REACHED"}
     ],
 
     "profiles": {

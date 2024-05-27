@@ -606,7 +606,7 @@ const Machine * machine_from_storage_label(
     return storage_machine;
 }
 
-void smpi_trace_replay_actor(JobPtr job, ReplaySmpiProfileData * profile_data, const std::string & termination_mbox_name, int rank)
+void smpi_trace_replay_actor(JobPtr job, ReplaySmpiProfileData * profile_data, simgrid::s4u::SemaphorePtr sem_termination, std::list<unsigned int> * list_termination, int rank)
 {
     try
     {
@@ -621,10 +621,8 @@ void smpi_trace_replay_actor(JobPtr job, ReplaySmpiProfileData * profile_data, c
         XBT_INFO("Replaying rank %d of job %s (SMPI) done", rank, job->id.to_cstring());
 
         // Tell parent process that replay has finished for this rank.
-        auto mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
-        auto rank_copy = new unsigned int;
-        *rank_copy = static_cast<unsigned int>(rank);
-        mbox->put(static_cast<void*>(rank_copy), 4);
+        list_termination->push_back(rank);
+        sem_termination->release();
     }
     catch (const simgrid::NetworkFailureException & e)
     {
@@ -662,10 +660,9 @@ void usage_trace_replayer(simgrid::xbt::ReplayAction & action)
  * @brief The actor that replays a usage trace
  * @param[in] job The job whose trace is from
  * @param[in] data The profile data of the job
- * @param[in] termination_mbox_name The mailbox to use to synchronize the job termination
  * @param[in] rank The rank of the actor of the job
  */
-void usage_trace_replay_actor(JobPtr job, ReplayUsageProfileData * data, const std::string & termination_mbox_name, int rank)
+void usage_trace_replay_actor(JobPtr job, ReplayUsageProfileData * data, simgrid::s4u::SemaphorePtr sem_termination, std::list<unsigned int> * list_termination, int rank)
 {
     try
     {
@@ -680,10 +677,8 @@ void usage_trace_replay_actor(JobPtr job, ReplayUsageProfileData * data, const s
         XBT_INFO("Replaying rank %d of job %s (usage trace) done", rank, job->id.to_cstring());
 
         // Tell parent process that replay has finished for this rank.
-        auto mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
-        auto rank_copy = new unsigned int;
-        *rank_copy = static_cast<unsigned int>(rank);
-        mbox->put(static_cast<void*>(rank_copy), 4);
+        list_termination->push_back(rank);
+        sem_termination->release();
     }
     catch (const simgrid::NetworkFailureException & e)
     {
@@ -717,15 +712,15 @@ int execute_trace_replay(
     std::vector<Machine *> machines_to_use;
     hosts_from_alloc_placement(context, nb_replay_actors, allocation, hosts_to_use, machines_to_use);
 
-    // Use a mailbox so that child actors tell us when they have finished.
-    std::map<unsigned int, simgrid::s4u::ActorPtr> child_actors;
-    const std::string termination_mbox_name = simgrid::s4u::this_actor::get_name() + "_smpi_termination";
-    auto termination_mbox = simgrid::s4u::Mailbox::by_name(termination_mbox_name);
-
     xbt_assert(nb_replay_actors == hosts_to_use.size(),
-        "Cannot execute job='%s': Trace requires %d replay actors but the given allocation/placement tells to use %zu executors",
+        "Cannot execute job='%s': Trace replay requires %d replay actors but the given allocation/placement tells to use %zu executors",
         job->id.to_cstring(), nb_replay_actors, hosts_to_use.size()
     );
+
+    // A semaphore + list is used to enable child actors to tell the current actor that they have finished.
+    std::map<unsigned int, simgrid::s4u::ActorPtr> child_actors;
+    simgrid::s4u::SemaphorePtr sem_termination = simgrid::s4u::Semaphore::create(0);
+    std::list<unsigned int> list_termination;
 
     if (profile->type == ProfileType::REPLAY_USAGE)
     {
@@ -734,7 +729,7 @@ int execute_trace_replay(
             unique_hosts.insert(host);
 
         xbt_assert(unique_hosts.size() == hosts_to_use.size(),
-                   "Cannot execute job='%s': Trace requires %d replay actors that should all be placed on different SimGrid hosts, but the given allocation/placement uses %zu different hosts",
+                   "Cannot execute job='%s': Trace replay requires %d replay actors that should all be placed on different SimGrid hosts, but the given allocation/placement uses %zu different hosts",
                    job->id.to_cstring(), nb_replay_actors, unique_hosts.size());
     }
 
@@ -747,12 +742,12 @@ int execute_trace_replay(
         if (profile->type == ProfileType::REPLAY_SMPI)
         {
             auto * data = static_cast<ReplaySmpiProfileData *>(profile->data);
-            actor = simgrid::s4u::Actor::create(actor_name, host_to_use, smpi_trace_replay_actor, job, data, termination_mbox_name, rank);
+            actor = simgrid::s4u::Actor::create(actor_name, host_to_use, smpi_trace_replay_actor, job, data, sem_termination, &list_termination, rank);
         }
         else if (profile->type == ProfileType::REPLAY_USAGE)
         {
             auto * data = static_cast<ReplayUsageProfileData *>(profile->data);
-            actor = simgrid::s4u::Actor::create(actor_name, host_to_use, usage_trace_replay_actor, job, data, termination_mbox_name, rank);
+            actor = simgrid::s4u::Actor::create(actor_name, host_to_use, usage_trace_replay_actor, job, data, sem_termination, &list_termination, rank);
         }
 
         child_actors[rank] = actor;
@@ -764,44 +759,43 @@ int execute_trace_replay(
     // Wait until all child actors have finished.
     while (!child_actors.empty())
     {
-        try
+        const double time_before_get = simgrid::s4u::Engine::get_clock();
+        unsigned int finished_rank = std::numeric_limits<unsigned int>::max();
+        if (has_walltime)
         {
-            const double time_before_get = simgrid::s4u::Engine::get_clock();
-
-            unsigned int * finished_rank = nullptr;
-            if (has_walltime)
-            {
-                finished_rank = termination_mbox->get<unsigned int>(*remaining_time);
-            }
-            else
-            {
-                finished_rank = termination_mbox->get<unsigned int>();
-            }
-
-            xbt_assert(child_actors.count(*finished_rank) == 1, "Internal error: unexpected rank received (%u)", *finished_rank);
-            job->execution_actors.erase(child_actors[*finished_rank]);
-            child_actors.erase(*finished_rank);
-            delete finished_rank;
-
-            if (has_walltime)
-            {
+            if (sem_termination->acquire_timeout(*remaining_time)) {
+                // timeout reached!
                 *remaining_time = *remaining_time - (simgrid::s4u::Engine::get_clock() - time_before_get);
+
+                // Kill all remaining child actors.
+                for (auto mit : child_actors)
+                {
+                    auto child_actor = mit.second;
+                    job->execution_actors.erase(child_actor);
+                    child_actor->kill();
+                }
+                child_actors.clear();
+
+                return -1;
             }
+
+            finished_rank = list_termination.front();
+            list_termination.pop_front();
         }
-        catch (const simgrid::TimeoutException&)
+        else
         {
-            XBT_DEBUG("Timeout reached while executing SMPI profile '%s' (job's walltime reached).", job->profile->name.c_str());
+            sem_termination->acquire();
+            finished_rank = list_termination.front();
+            list_termination.pop_front();
+        }
 
-            // Kill all remaining child actors.
-            for (auto mit : child_actors)
-            {
-                auto child_actor = mit.second;
-                job->execution_actors.erase(child_actor);
-                child_actor->kill();
-            }
-            child_actors.clear();
+        xbt_assert(child_actors.count(finished_rank) == 1, "Internal error: unexpected rank received (%u)", finished_rank);
+        job->execution_actors.erase(child_actors[finished_rank]);
+        child_actors.erase(finished_rank);
 
-            return -1;
+        if (has_walltime)
+        {
+            *remaining_time = *remaining_time - (simgrid::s4u::Engine::get_clock() - time_before_get);
         }
     }
 
