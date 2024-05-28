@@ -38,86 +38,92 @@ int execute_task(
     // TODO: generate final hosts to use (from allocated hosts, profile data, placement strategy or custom mapping)
     // should be quite simple for profile_type != composition_ptask_merge
 
-    if (profile->is_parallel_task())
+    switch(profile->type)
     {
-        int return_code = execute_parallel_task(btask, alloc_placement, remaining_time, context);
-        if (return_code != 0)
+        case ProfileType::PTASK:
+        case ProfileType::PTASK_HOMOGENEOUS:
+        case ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS:
+        case ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES:
         {
-            return return_code;
-        }
-
-        return profile->return_code;
-    }
-    else if (profile->type == ProfileType::SEQUENTIAL_COMPOSITION)
-    {
-        auto * data = static_cast<SequenceProfileData *>(profile->data);
-
-        // (Sequences can be repeated several times)
-        for (unsigned int sequence_iteration = 0; sequence_iteration < data->repeat; sequence_iteration++)
-        {
-            for (unsigned int profile_index_in_sequence = 0;
-                 profile_index_in_sequence < data->sequence.size();
-                 profile_index_in_sequence++)
+            int return_code = execute_parallel_task(btask, alloc_placement, remaining_time, context);
+            if (return_code != 0)
             {
-                // Traces how the execution is going so that progress can be retrieved if needed
-                btask->current_repetition = sequence_iteration;
-                btask->current_task_index = profile_index_in_sequence;
+                return return_code;
+            }
 
-                xbt_assert(btask->sub_tasks.empty(), "internal inconsistency: there should be no current sub_tasks");
-                auto sub_profile = data->profile_sequence[profile_index_in_sequence];
-                BatTask * sub_btask = new BatTask(JobPtr(btask->parent_job), sub_profile);
-                btask->sub_tasks.push_back(sub_btask);
+            return profile->return_code;
+        }
+        case ProfileType::SEQUENTIAL_COMPOSITION:
+        {
+            auto * data = static_cast<SequenceProfileData *>(profile->data);
 
-                string task_name = "seq" + job->id.to_string() + "'" + sub_btask->profile->name + "'";
-                XBT_DEBUG("Creating sequential task '%s'", task_name.c_str());
-
-                int ret_last_profile = execute_task(sub_btask, context, execute_job_msg, remaining_time);
-
-                btask->sub_tasks.clear();
-
-                // The whole sequence fails if a subtask fails
-                if (ret_last_profile != 0)
+            for (unsigned int sequence_iteration = 0; sequence_iteration < data->repeat; sequence_iteration++)
+            {
+                for (unsigned int profile_index_in_sequence = 0;
+                    profile_index_in_sequence < data->sequence.size();
+                    profile_index_in_sequence++)
                 {
-                    return ret_last_profile;
+                    // Trace how the execution is going so that progress can be retrieved if needed
+                    btask->current_repetition = sequence_iteration;
+                    btask->current_task_index = profile_index_in_sequence;
+
+                    xbt_assert(btask->sub_tasks.empty(), "internal inconsistency: there should be no current sub_tasks");
+                    auto sub_profile = data->profile_sequence[profile_index_in_sequence];
+                    BatTask * sub_btask = new BatTask(JobPtr(btask->parent_job), sub_profile);
+                    btask->sub_tasks.push_back(sub_btask);
+
+                    string task_name = "seq" + job->id.to_string() + "'" + sub_btask->profile->name + "'";
+
+                    int ret_last_profile = execute_task(sub_btask, context, execute_job_msg, remaining_time);
+
+                    btask->sub_tasks.clear();
+
+                    // The whole sequence fails if a subtask fails
+                    if (ret_last_profile != 0)
+                    {
+                        return ret_last_profile;
+                    }
                 }
             }
+            return profile->return_code;
         }
-
-        return profile->return_code;
-    }
-    else if (profile->type == ProfileType::DELAY)
-    {
-        auto * data = static_cast<DelayProfileData *>(profile->data);
-
-        btask->delay_task_start = simgrid::s4u::Engine::get_clock();
-        btask->delay_task_required = data->delay;
-
-        if (do_delay_task(data->delay, remaining_time) == -1)
+        case ProfileType::DELAY:
         {
-            return -1;
-        }
-        return profile->return_code;
-    }
-    else if (profile->type == ProfileType::REPLAY_SMPI || profile->type == ProfileType::REPLAY_USAGE)
-    {
-        std::vector<std::string> trace_filenames;
+            auto * data = static_cast<DelayProfileData *>(profile->data);
 
-        if (profile->type == ProfileType::REPLAY_SMPI)
-        {
-            auto * data = static_cast<ReplaySmpiProfileData *>(profile->data);
-            trace_filenames = data->trace_filenames;
-        }
-        else
-        {
-            auto * data = static_cast<ReplayUsageProfileData *>(profile->data);
-            trace_filenames = data->trace_filenames;
-        }
+            btask->delay_task_start = simgrid::s4u::Engine::get_clock();
+            btask->delay_task_required = data->delay;
 
-        return execute_trace_replay(btask, alloc_placement, remaining_time, context);
+            if (do_delay_task(data->delay, remaining_time) == -1)
+            {
+                return -1;
+            }
+            return profile->return_code;
+        }
+        case ProfileType::REPLAY_SMPI:
+        case ProfileType::REPLAY_USAGE:
+        {
+            std::vector<std::string> trace_filenames;
+
+            if (profile->type == ProfileType::REPLAY_SMPI)
+            {
+                auto * data = static_cast<ReplaySmpiProfileData *>(profile->data);
+                trace_filenames = data->trace_filenames;
+            }
+            else
+            {
+                auto * data = static_cast<ReplayUsageProfileData *>(profile->data);
+                trace_filenames = data->trace_filenames;
+            }
+
+            return execute_trace_replay(btask, alloc_placement, remaining_time, context);
+        }
+        default:
+        {
+            xbt_die("Cannot execute job %s: the profile '%s' is of unknown type (%d)",
+                    job->id.to_cstring(), job->profile->name.c_str(), (int)profile->type);
+        }
     }
-    else
-        xbt_die("Cannot execute job %s: the profile '%s' is of unknown type (%d)",
-                job->id.to_cstring(), job->profile->name.c_str(), (int)profile->type);
 
     return 1;
 }
