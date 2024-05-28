@@ -79,12 +79,6 @@ struct Profile
                                const std::string & error_prefix = "Invalid JSON profile");
 
     /**
-     * @brief Returns whether a profile is a parallel task (or its derivatives)
-     * @return Whether a profile is a parallel task (or its derivatives)
-     */
-    bool is_parallel_task() const;
-
-    /**
      * @brief Returns whether a profile is rigid or not.
      * @return Whether a profile is rigid or not.
      */

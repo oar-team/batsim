@@ -647,14 +647,6 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
     return Profile::from_json(profile_name, doc, error_prefix, false);
 }
 
-bool Profile::is_parallel_task() const
-{
-    return (type == ProfileType::PTASK) ||
-           (type == ProfileType::PTASK_HOMOGENEOUS) ||
-           (type == ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS) ||
-           (type == ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES);
-}
-
 bool Profile::is_rigid() const
 {
     return (type == ProfileType::PTASK) ||
