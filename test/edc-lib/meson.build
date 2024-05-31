@@ -41,3 +41,8 @@ static = shared_library('static', common + ['static.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
   install: true,
 )
+
+killer = shared_library('killer', common + ['killer.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
+  install: true,
+)
