@@ -29,7 +29,7 @@
       owner = "batsim";
       repo = "pybatsim";
       rev = "880dd60c537d7d7a8246daaf5b2d1f7bfea3cbf4";
-      sha256 = "gSGiZBb7CN79XNb4cqpdOdGApMOPeRwdPxbASpKKRHo=";
+      sha256 = "ZKspUDkThX2MeqFqieDloAgrSh28tQ92KD3sjmDIQPU=";
     };
   })
 # set this to avoid running tests over and over
