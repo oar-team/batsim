@@ -845,12 +845,12 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
 
     if (epower != -1)
     {
-        nb_printed = snprintf(buf, buf_size, "%g,%Lg,%c,%Lg,%g\n",
+        nb_printed = snprintf(buf, buf_size, "%lf,%Lf,%c,%Lf,%lf\n",
                               date, energy, event_type, wattmin, static_cast<double>(epower));
     }
     else
     {
-        nb_printed = snprintf(buf, buf_size, "%g,%Lg,%c,%Lg,NA\n",
+        nb_printed = snprintf(buf, buf_size, "%lf,%Lf,%c,%Lf,NA\n",
                               date, energy, event_type, wattmin);
     }
     xbt_assert(nb_printed < buf_size - 1,
