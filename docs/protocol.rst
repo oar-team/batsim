@@ -757,30 +757,30 @@ a mapping (optional), an additional IO job (optional).
 
 .. code:: json
 
-   {
-     "timestamp": 10.0,
-     "type": "EXECUTE_JOB",
-     "data": {
-       "job_id": "w12!45",
-       "alloc": "2-3",
-       "mapping": {"0": "0", "1": "0", "2": "1", "3": "1"},
-       "storage_mapping": {
-         "pfs": 2
-       },
-     },
-     "additional_io_job": {
-       "alloc": "2-3 5-6",
-       "profile_name": "my_io_job",
-       "profile": {
-         "type": "parallel",
-         "cpu": 0,
-         "com": [0  ,5e6,5e6,5e6,
-                 5e6,0  ,5e6,0  ,
-                 0  ,5e6,4e6,0  ,
-                 0  ,0  ,0  ,0  ]
+  {
+    "timestamp": 10.0,
+    "type": "EXECUTE_JOB",
+    "data": {
+      "job_id": "w12!45",
+      "alloc": "2-3",
+      "mapping": {"0": "0", "1": "0", "2": "1", "3": "1"},
+      "storage_mapping": {
+        "pfs": 2
+      },
+      "additional_io_job": {
+        "alloc": "2-3 5-6",
+        "profile_name": "my_io_job",
+        "profile": {
+          "type": "parallel",
+          "cpu": 0,
+          "com": [0  ,5e6,5e6,5e6,
+                  5e6,0  ,5e6,0  ,
+                  0  ,5e6,4e6,0  ,
+                  0  ,0  ,0  ,0  ]
+         }
        }
-     }
-   }
+    }
+  }
 
 .. _proto_CALL_ME_LATER:
 
