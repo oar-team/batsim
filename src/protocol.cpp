@@ -206,7 +206,7 @@ ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * ex
     switch (execute_job->allocation()->executor_placement_type())
     {
     case ExecutorPlacement_NONE: {
-        xbt_assert("invalid ExecuteJob received: executor placement type of job's main allocation is NONE");
+        xbt_assert(false, "invalid ExecuteJob received: executor placement type of job's main allocation is NONE");
     } break;
     case ExecutorPlacement_PredefinedExecutorPlacementStrategyWrapper: {
         msg->job_allocation->use_predefined_strategy = true;
@@ -236,7 +236,7 @@ ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * ex
         switch (override->executor_placement_type())
         {
         case ExecutorPlacement_NONE: {
-            xbt_assert("invalid ExecuteJob received: executor placement type of job's main allocation is NONE");
+            xbt_assert(false, "invalid ExecuteJob received: executor placement type of job's main allocation is NONE");
         } break;
         case ExecutorPlacement_PredefinedExecutorPlacementStrategyWrapper: {
             override_alloc->use_predefined_strategy = true;
@@ -402,7 +402,7 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
             ip_message->data = static_cast<void *>(from_call_me_later(event_timestamp->event_as_CallMeLaterEvent(), context));
         } break;
         default: {
-            xbt_assert("Unhandled event type received (%s)", batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()]);
+            xbt_assert(false, "Unhandled event type received (%s)", batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()]);
         } break;
         }
     }
