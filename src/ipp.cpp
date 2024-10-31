@@ -325,8 +325,7 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SCHED_CALL_ME_LATER:
         {
-            auto * msg = static_cast<CallMeLaterMessage*>(data);
-            delete msg;
+            // These messages are forwarded to the periodic actor, which is in charge of deleting them
         } break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
         {

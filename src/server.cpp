@@ -136,7 +136,7 @@ void server_process(BatsimContext * context)
     xbt_assert(data->nb_running_jobs == 0, "Left simulation loop, but some jobs are running.");
     xbt_assert(data->nb_switching_machines == 0, "Left simulation loop, but some machines are being switched.");
     xbt_assert(data->nb_killers == 0, "Left simulation loop, but some killer processes (used to kill jobs) are running.");
-    xbt_assert(data->nb_waiters == 0, "Left simulation loop, but some waiter processes (used to manage the CALL_ME_LATER message) are running.");
+    xbt_assert(data->nb_callmelater_entities == 0, "Left simulation loop, but some entities used to manage CALL_ME_LATER messages are running.");
 
     // Consistency
     xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
@@ -566,8 +566,11 @@ void server_on_requested_call(ServerData * data,
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<RequestedCallMessage *>(task_data->data);
 
+    if (!message->is_periodic || (message->is_periodic && message->is_last_periodic_call))
+        --data->nb_callmelater_entities;
+
     data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
-    data->context->proto_msg_builder->add_requested_call(message->call_id, message->last_periodic_call);
+    data->context->proto_msg_builder->add_requested_call(message->call_id, message->is_last_periodic_call);
 }
 
 void server_on_sched_ready(ServerData * data,
@@ -869,6 +872,8 @@ void server_on_call_me_later(ServerData * data,
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<CallMeLaterMessage *>(task_data->data);
 
+    ++data->nb_callmelater_entities;
+
     if (message->is_periodic)
     {
         xbt_assert(false, "TODO: implement me");
@@ -879,10 +884,12 @@ void server_on_call_me_later(ServerData * data,
         double target_time = message->target_time;
         if (message->time_unit == batprotocol::fb::TimeUnit_Millisecond)
             target_time /= 1e3;
-        ++data->nb_waiters;
         simgrid::s4u::Actor::create(pname.c_str(),
                                     data->context->machines.master_machine()->host,
                                     oneshot_call_me_later_actor, message->call_id, target_time, data);
+        // Deallocate memory now for the non-periodic case
+        delete message;
+        task_data->data = nullptr;
     }
 }
 
@@ -1009,7 +1016,7 @@ bool is_simulation_finished(ServerData * data)
            (data->nb_completed_jobs == data->nb_submitted_jobs) && // All submitted jobs have been completed (either computed and finished or rejected)
            (data->nb_running_jobs == 0) && // No jobs are being executed
            (data->nb_switching_machines == 0) && // No machine is being switched
-           (data->nb_waiters == 0) && // No waiter process is running
+           (data->nb_callmelater_entities == 0) && // No entities related to CALL_ME_LATER are running
            (data->nb_killers == 0); // No jobs is being killed
 }
 

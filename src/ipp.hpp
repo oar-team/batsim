@@ -257,7 +257,8 @@ struct CallMeLaterMessage
 struct RequestedCallMessage
 {
     std::string call_id; //!< The identifier that will be used to send the calls
-    bool last_periodic_call = false; //!< Whether this message comes from the last call of a non-infinite periodic call
+    bool is_periodic; //!< Whether this message comes from a periodic call
+    bool is_last_periodic_call = false; //!< Whether this message comes from the last call of a non-infinite periodic call
 };
 
 /**

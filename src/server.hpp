@@ -44,7 +44,7 @@ struct ServerData
     int nb_running_jobs = 0;    //!< The number of jobs being executed
     int nb_workflow_submitters_finished = 0; //!< The number of finished workflow submitters
     int nb_switching_machines = 0;  //!< The number of machines being switched
-    int nb_waiters = 0; //!< The number of alive waiter actors for OneShot CALL_ME_LATER
+    int nb_callmelater_entities = 0; //!< The number of alive entities to handle CALL_ME_LATER (dedicated actors for OneShot, a part of the periodic actor for Periodic)
     int nb_killers = 0; //!< The number of alive killer actors
     bool sched_ready = true;    //!< Whether the scheduler can be called now
     bool sched_said_hello = false; //!< Whether the scheduler said hello

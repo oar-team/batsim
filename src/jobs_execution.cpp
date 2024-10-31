@@ -273,11 +273,10 @@ void oneshot_call_me_later_actor(std::string call_id, double target_time, Server
     {
         RequestedCallMessage * msg = new RequestedCallMessage;
         msg->call_id = call_id;
-        msg->last_periodic_call = false;
+        msg->is_periodic = false;
+        msg->is_last_periodic_call = false;
         send_message("server", IPMessageType::REQUESTED_CALL, msg);
     }
-
-    --server_data->nb_waiters;
 }
 
 bool cancel_ptasks(BatTask * btask)
