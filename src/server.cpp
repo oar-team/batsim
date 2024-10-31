@@ -51,7 +51,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_WAIT_ANSWER] = server_on_sched_wait_answer;
     handler_map[IPMessageType::WAIT_QUERY] = server_on_wait_query;
     handler_map[IPMessageType::SCHED_READY] = server_on_sched_ready;
-    handler_map[IPMessageType::WAITING_DONE] = server_on_waiting_done;
+    handler_map[IPMessageType::REQUESTED_CALL] = server_on_requested_call;
     handler_map[IPMessageType::KILLING_DONE] = server_on_killing_done;
     handler_map[IPMessageType::SUBMITTER_HELLO] = server_on_submitter_hello;
     handler_map[IPMessageType::SUBMITTER_BYE] = server_on_submitter_bye;
@@ -560,13 +560,14 @@ void server_on_pstate_modification(ServerData * data,
     }
 }
 
-void server_on_waiting_done(ServerData * data,
-                            IPMessage * task_data)
+void server_on_requested_call(ServerData * data,
+                              IPMessage * task_data)
 {
-    (void) task_data;
-    /*data->context->proto_writer->append_requested_call(simgrid::s4u::Engine::get_clock());*/
-    // TODO: implement the new call me later
-    --data->nb_waiters;
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
+    auto * message = static_cast<RequestedCallMessage *>(task_data->data);
+
+    data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
+    data->context->proto_msg_builder->add_requested_call(message->call_id, message->last_periodic_call);
 }
 
 void server_on_sched_ready(ServerData * data,
@@ -868,15 +869,18 @@ void server_on_call_me_later(ServerData * data,
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<CallMeLaterMessage *>(task_data->data);
 
-    xbt_assert(message->target_time > simgrid::s4u::Engine::get_clock(),
-               "You asked to be awaken in the past! (you ask: %f, it is: %f)",
-               message->target_time, simgrid::s4u::Engine::get_clock());
-
-    string pname = "waiter " + to_string(message->target_time);
-    simgrid::s4u::Actor::create(pname.c_str(),
-                                data->context->machines.master_machine()->host,
-                                waiter_process, message->target_time, data);
-    ++data->nb_waiters;
+    if (message->is_periodic)
+    {
+        xbt_assert(false, "TODO: implement me");
+    }
+    else
+    {
+        string pname = "oneshot_call_me_later " + message->call_id + " " + to_string(message->target_time);
+        ++data->nb_waiters;
+        simgrid::s4u::Actor::create(pname.c_str(),
+                                    data->context->machines.master_machine()->host,
+                                    oneshot_call_me_later_actor, message->call_id, message->target_time, data);
+    }
 }
 
 void server_on_execute_job(ServerData * data,

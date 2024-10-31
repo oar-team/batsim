@@ -46,3 +46,8 @@ killer = shared_library('killer', common + ['killer.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
   install: true,
 )
+
+call_later_oneshot = shared_library('call-later-oneshot', common + ['call-later-oneshot.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
+  install: true,
+)

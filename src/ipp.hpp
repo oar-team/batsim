@@ -43,7 +43,7 @@ enum class IPMessageType
     ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,WAIT_QUERY             //!< Server -> Scheduler. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,SCHED_READY            //!< Scheduler -> Server. The scheduler tells the server that the scheduler is ready (the scheduler is ready, messages can be sent to it).
-    ,WAITING_DONE           //!< Waiter -> Server. The waiter tells the server that the target time has been reached.
+    ,REQUESTED_CALL         //!< OneShot|Periodic -> Server. The target time of a requested call has been reached.
     ,KILLING_DONE           //!< Killer -> Server. The killer tells the server that all the jobs have been killed.
     ,SUBMITTER_HELLO        //!< Submitter -> Server. The submitter tells it starts submitting to the server.
     ,SUBMITTER_CALLBACK     //!< Server -> Submitter. The server sends a message to the Submitter. This message is initiated when a Job which has been submitted by the submitter has completed. The submitter must have said that it wanted to be called back when he said hello.
@@ -231,11 +231,33 @@ struct PStateModificationMessage
 };
 
 /**
+ * @brief Wrapper struct around batprotocol::fb::Periodic
+ */
+struct Periodic
+{
+    uint64_t period;
+    uint64_t offset = 0;
+    batprotocol::fb::TimeUnit time_unit = batprotocol::fb::TimeUnit_Second;
+    bool is_infinite;
+    int nb_periods;
+};
+
+/**
  * @brief The content of the CallMeLater message
  */
 struct CallMeLaterMessage
 {
-    double target_time = -1; //!< The time at which Batsim should send a message to the decision real process
+    std::string call_id; //!< The identifier that will be used to send the calls
+    bool is_periodic; //!< Whether the future call is periodic or not
+    double target_time = -1; //!< For a non-periodic call, this is the time at which Batsim should call the EDC
+    batprotocol::fb::TimeUnit time_unit = batprotocol::fb::TimeUnit_Second; //!< For a non-periodic call, this is the time unit used by target_time
+    Periodic periodic; //!< Defines all periodic information for periodic calls
+};
+
+struct RequestedCallMessage
+{
+    std::string call_id; //!< The identifier that will be used to send the calls
+    bool last_periodic_call = false; //!< Whether this message comes from the last call of a non-infinite periodic call
 };
 
 /**
@@ -318,7 +340,7 @@ struct IPMessage
      */
     ~IPMessage();
     IPMessageType type; //!< The message type
-    void * data;        //!< The message data (can be NULL if type is in [SCHED_NOP, SUBMITTER_HELLO, SUBMITTER_BYE, SUBMITTER_READY]). Otherwise, it is either a JobSubmittedMessage*, a JobCompletedMessage* or a SchedulingAllocationMessage* according to type.
+    void * data; //!< The message data. Can be NULL for message types without associated data. Otherwise, the C++ type depends on the message type.
 };
 
 /**

@@ -65,6 +65,8 @@ src_without_main = [
     'src/job_submitter.hpp',
     'src/machines.cpp',
     'src/machines.hpp',
+    'src/periodic.cpp',
+    'src/periodic.hpp',
     'src/permissions.cpp',
     'src/permissions.hpp',
     'src/pointers.hpp',

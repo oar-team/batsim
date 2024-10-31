@@ -234,8 +234,8 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_READY:
             s = "SCHED_READY";
             break;
-        case IPMessageType::WAITING_DONE:
-            s = "WAITING_DONE";
+        case IPMessageType::REQUESTED_CALL:
+            s = "REQUESTED_CALL";
             break;
         case IPMessageType::SUBMITTER_HELLO:
             s = "SUBMITTER_HELLO";
@@ -369,8 +369,10 @@ IPMessage::~IPMessage()
             auto * msg = static_cast<SwitchMessage *>(data);
             delete msg;
         } break;
-        case IPMessageType::WAITING_DONE:
+        case IPMessageType::REQUESTED_CALL:
         {
+            auto * msg = static_cast<RequestedCallMessage *>(data);
+            delete msg;
         } break;
         case IPMessageType::KILLING_DONE:
         {

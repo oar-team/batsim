@@ -310,6 +310,45 @@ EDCHelloMessage *from_edc_hello(const batprotocol::fb::EDCHelloEvent * edc_hello
     return msg;
 }
 
+CallMeLaterMessage * from_call_me_later(const batprotocol::fb::CallMeLaterEvent * call_me_later, BatsimContext * context)
+{
+    auto msg = new CallMeLaterMessage;
+
+    msg->call_id = call_me_later->call_me_later_id()->str();
+    switch(call_me_later->when_type()) {
+        case batprotocol::fb::TemporalTrigger_NONE: {
+            xbt_assert(false, "invalid CallMeLater received: temporal trigger is NONE");
+        } break;
+        case batprotocol::fb::TemporalTrigger_OneShot: {
+            msg->is_periodic = false;
+            auto * when = call_me_later->when_as_OneShot();
+            msg->target_time = when->time();
+            msg->time_unit = when->time_unit();
+        } break;
+        case batprotocol::fb::TemporalTrigger_Periodic: {
+            msg->is_periodic = true;
+            auto * when = call_me_later->when_as_Periodic();
+            msg->periodic.period = when->period();
+            msg->periodic.offset = when->offset();
+            msg->periodic.time_unit = when->time_unit();
+            switch (when->mode_type()) {
+                case batprotocol::fb::PeriodicMode_NONE: {
+                    xbt_assert(false, "invalid periodic CallMeLater received: periodic mode is NONE");
+                }
+                case batprotocol::fb::PeriodicMode_Infinite: {
+                    msg->periodic.is_infinite = true;
+                } break;
+                case batprotocol::fb::PeriodicMode_FinitePeriodNumber: {
+                    msg->periodic.is_infinite = false;
+                    msg->periodic.nb_periods = when->mode_as_FinitePeriodNumber()->nb_periods();
+                } break;
+            }
+        } break;
+    }
+
+    return msg;
+}
+
 void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp> > & messages, BatsimContext * context)
 {
     (void) buffer_size;
@@ -357,6 +396,10 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
         case Event_EDCHelloEvent: {
             ip_message->type = IPMessageType::SCHED_HELLO;
             ip_message->data = static_cast<void *>(from_edc_hello(event_timestamp->event_as_EDCHelloEvent(), context));
+        } break;
+        case Event_CallMeLaterEvent: {
+            ip_message->type = IPMessageType::SCHED_CALL_ME_LATER;
+            ip_message->data = static_cast<void *>(from_call_me_later(event_timestamp->event_as_CallMeLaterEvent(), context));
         } break;
         default: {
             xbt_assert("Unhandled event type received (%s)", batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()]);

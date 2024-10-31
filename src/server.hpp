@@ -44,8 +44,8 @@ struct ServerData
     int nb_running_jobs = 0;    //!< The number of jobs being executed
     int nb_workflow_submitters_finished = 0; //!< The number of finished workflow submitters
     int nb_switching_machines = 0;  //!< The number of machines being switched
-    int nb_waiters = 0; //!< The number of pending CALL_ME_LATER waiters
-    int nb_killers = 0; //!< The number of killers
+    int nb_waiters = 0; //!< The number of alive waiter actors for OneShot CALL_ME_LATER
+    int nb_killers = 0; //!< The number of alive killer actors
     bool sched_ready = true;    //!< Whether the scheduler can be called now
     bool sched_said_hello = false; //!< Whether the scheduler said hello
 
@@ -153,11 +153,11 @@ void server_on_pstate_modification(ServerData * data,
                                    IPMessage * task_data);
 
 /**
- * @brief Server WAITING_DONE handler
+ * @brief Server REQUESTED_CALL handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_waiting_done(ServerData * data,
+void server_on_requested_call(ServerData * data,
                             IPMessage * task_data);
 
 /**

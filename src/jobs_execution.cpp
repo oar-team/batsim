@@ -243,7 +243,7 @@ void execute_job_process(
     job->execution_actors.erase(simgrid::s4u::Actor::self());
 }
 
-void waiter_process(double target_time, const ServerData * server_data)
+void oneshot_call_me_later_actor(std::string call_id, double target_time, ServerData * server_data)
 {
     double curr_time = simgrid::s4u::Engine::get_clock();
 
@@ -267,12 +267,17 @@ void waiter_process(double target_time, const ServerData * server_data)
     if (server_data->end_of_simulation_sent ||
         server_data->end_of_simulation_ack_received)
     {
-        XBT_INFO("Simulation have finished. Thus, NOT sending WAITING_DONE to the server.");
+        XBT_INFO("Simulation have finished. Thus, NOT sending REQUESTED_CALL to the server.");
     }
     else
     {
-        send_message("server", IPMessageType::WAITING_DONE);
+        RequestedCallMessage * msg = new RequestedCallMessage;
+        msg->call_id = call_id;
+        msg->last_periodic_call = false;
+        send_message("server", IPMessageType::REQUESTED_CALL, msg);
     }
+
+    --server_data->nb_waiters;
 }
 
 bool cancel_ptasks(BatTask * btask)
