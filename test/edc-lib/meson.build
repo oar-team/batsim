@@ -51,3 +51,8 @@ call_later_oneshot = shared_library('call-later-oneshot', common + ['call-later-
   dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
   install: true,
 )
+
+call_later_periodic = shared_library('call-later-periodic', common + ['call-later-periodic.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
+  install: true,
+)

@@ -43,7 +43,8 @@ enum class IPMessageType
     ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,WAIT_QUERY             //!< Server -> Scheduler. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,SCHED_READY            //!< Scheduler -> Server. The scheduler tells the server that the scheduler is ready (the scheduler is ready, messages can be sent to it).
-    ,REQUESTED_CALL         //!< OneShot|Periodic -> Server. The target time of a requested call has been reached.
+    ,ONESHOT_REQUESTED_CALL //!< OneShot -> Server. The target time of a OneShot requested call has been reached.
+    ,PERIODIC_TRIGGER       //!< Periodic -> Server. The target time of periodic events has been reached, which has has triggered events.
     ,KILLING_DONE           //!< Killer -> Server. The killer tells the server that all the jobs have been killed.
     ,SUBMITTER_HELLO        //!< Submitter -> Server. The submitter tells it starts submitting to the server.
     ,SUBMITTER_CALLBACK     //!< Server -> Submitter. The server sends a message to the Submitter. This message is initiated when a Job which has been submitted by the submitter has completed. The submitter must have said that it wanted to be called back when he said hello.
@@ -52,6 +53,7 @@ enum class IPMessageType
     ,SWITCHED_OFF           //!< SwitcherOFF -> Server. The switcherOFF process tells the server the machine pstate has been changed.
     ,END_DYNAMIC_REGISTER     //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
     ,EVENT_OCCURRED            //!< Sumbitter -> Server. The event submitter tells the server that one or several events have occurred.
+    ,DIE                        //!< Server -> Periodic. The server asks the periodic trigger manager to stop.
 };
 
 /**
@@ -239,7 +241,7 @@ struct Periodic
     uint64_t offset = 0;
     batprotocol::fb::TimeUnit time_unit = batprotocol::fb::TimeUnit_Second;
     bool is_infinite;
-    int nb_periods;
+    unsigned int nb_periods;
 };
 
 /**
@@ -254,11 +256,21 @@ struct CallMeLaterMessage
     Periodic periodic; //!< Defines all periodic information for periodic calls
 };
 
-struct RequestedCallMessage
+struct RequestedCall
 {
     std::string call_id; //!< The identifier that will be used to send the calls
-    bool is_periodic; //!< Whether this message comes from a periodic call
     bool is_last_periodic_call = false; //!< Whether this message comes from the last call of a non-infinite periodic call
+};
+
+struct OneShotRequestedCallMessage
+{
+    RequestedCall call;
+};
+
+struct PeriodicTriggerMessage
+{
+    std::vector<RequestedCall> calls;
+    // TODO: probes
 };
 
 /**

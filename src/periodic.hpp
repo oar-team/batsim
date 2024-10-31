@@ -1,33 +1,26 @@
+/**
+ * @file periodic.hpp
+ * @brief This module is in charge of managing periodic events requested by the EDC
+ */
+
 #pragma once
 
 #include <string>
 #include <vector>
+#include <map>
 
-enum PeriodicTriggerType
-{
-  CALL_ME_LATER
-, PROBE
-};
-
-struct CallMeLaterPeriodicTrigger
-{
-  std::string id;
-};
-
-struct PeriodicTrigger
-{
-  bool is_finite;
-  int nb_remaining_triggers;
-  PeriodicTriggerType type;
-  void * data;
-};
+#include "ipp.hpp"
 
 struct TimeSlice
 {
-  std::vector<PeriodicTrigger *> triggers;
-  float duration;
+  std::vector<CallMeLaterMessage*> cml_triggers;
+  double duration;
 };
 
-void generate_static_periodic_schedule(const std::vector<PeriodicTrigger*> & triggers, std::vector<TimeSlice> & schedule);
+void generate_static_periodic_schedule(
+  const std::map<std::string, CallMeLaterMessage*> & cml_triggers,
+  std::vector<TimeSlice> & schedule,
+  uint64_t & slice_duration
+);
 
 void periodic_main_actor();

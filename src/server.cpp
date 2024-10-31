@@ -18,6 +18,7 @@
 #include "context.hpp"
 #include "ipp.hpp"
 #include "jobs_execution.hpp"
+#include "periodic.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(server, "server"); //!< Logging
 
@@ -51,7 +52,8 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_WAIT_ANSWER] = server_on_sched_wait_answer;
     handler_map[IPMessageType::WAIT_QUERY] = server_on_wait_query;
     handler_map[IPMessageType::SCHED_READY] = server_on_sched_ready;
-    handler_map[IPMessageType::REQUESTED_CALL] = server_on_requested_call;
+    handler_map[IPMessageType::ONESHOT_REQUESTED_CALL] = server_on_oneshot_requested_call;
+    handler_map[IPMessageType::PERIODIC_TRIGGER] = server_on_periodic_trigger;
     handler_map[IPMessageType::KILLING_DONE] = server_on_killing_done;
     handler_map[IPMessageType::SUBMITTER_HELLO] = server_on_submitter_hello;
     handler_map[IPMessageType::SUBMITTER_BYE] = server_on_submitter_bye;
@@ -73,6 +75,9 @@ void server_process(BatsimContext * context)
     data->submitter_counters[SubmitterType::EVENT_SUBMITTER] = event_counters;
 
     data->jobs_to_be_deleted.clear();
+
+    // Start an actor dedicated to trigger periodic events (from requested calls and probes)
+    auto periodic_actor = simgrid::s4u::Actor::create("periodic", simgrid::s4u::this_actor::get_host(), periodic_main_actor);
 
     // Simulation loop
     while (!data->end_of_simulation_ack_received)
@@ -115,6 +120,8 @@ void server_process(BatsimContext * context)
                     !data->end_of_simulation_sent)
                 {
                     XBT_INFO("The simulation seems finished.");
+                    send_message("periodic", IPMessageType::DIE, nullptr);
+
                     data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
                     data->context->proto_msg_builder->add_simulation_ends();
                     finish_message_and_call_edc(data);
@@ -560,17 +567,34 @@ void server_on_pstate_modification(ServerData * data,
     }
 }
 
-void server_on_requested_call(ServerData * data,
-                              IPMessage * task_data)
+void server_on_oneshot_requested_call(ServerData * data,
+                                      IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<RequestedCallMessage *>(task_data->data);
+    auto * message = static_cast<OneShotRequestedCallMessage *>(task_data->data);
+    auto & msg = message->call;
 
-    if (!message->is_periodic || (message->is_periodic && message->is_last_periodic_call))
-        --data->nb_callmelater_entities;
+    --data->nb_callmelater_entities;
 
     data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
-    data->context->proto_msg_builder->add_requested_call(message->call_id, message->is_last_periodic_call);
+    data->context->proto_msg_builder->add_requested_call(msg.call_id, msg.is_last_periodic_call);
+}
+
+void server_on_periodic_trigger(ServerData * data,
+                                IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
+    auto * message = static_cast<PeriodicTriggerMessage *>(task_data->data);
+
+    data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
+
+    for (auto & call : message->calls) {
+        data->context->proto_msg_builder->add_requested_call(call.call_id, call.is_last_periodic_call);
+        if (call.is_last_periodic_call)
+            --data->nb_callmelater_entities;
+    }
+
+    // TODO: probes
 }
 
 void server_on_sched_ready(ServerData * data,
@@ -876,7 +900,7 @@ void server_on_call_me_later(ServerData * data,
 
     if (message->is_periodic)
     {
-        xbt_assert(false, "TODO: implement me");
+        send_message("periodic", IPMessageType::SCHED_CALL_ME_LATER, task_data->data);
     }
     else
     {

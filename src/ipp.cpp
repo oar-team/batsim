@@ -35,7 +35,8 @@ void generic_send_message(
 
     if (detached)
     {
-        mailbox->put_async(message, message_size);
+        auto comm = mailbox->put_async(message, message_size);
+        comm.detach();
     }
     else
     {
@@ -234,8 +235,11 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_READY:
             s = "SCHED_READY";
             break;
-        case IPMessageType::REQUESTED_CALL:
-            s = "REQUESTED_CALL";
+        case IPMessageType::ONESHOT_REQUESTED_CALL:
+            s = "ONESHOT_REQUESTED_CALL";
+            break;
+        case IPMessageType::PERIODIC_TRIGGER:
+            s = "PERIODIC_TRIGGER";
             break;
         case IPMessageType::SUBMITTER_HELLO:
             s = "SUBMITTER_HELLO";
@@ -260,6 +264,9 @@ std::string ip_message_type_to_string(IPMessageType type)
             break;
         case IPMessageType::EVENT_OCCURRED:
             s = "EVENT_OCCURRED";
+            break;
+        case IPMessageType::DIE:
+            s = "DIE";
             break;
     }
 
@@ -325,7 +332,9 @@ IPMessage::~IPMessage()
         } break;
         case IPMessageType::SCHED_CALL_ME_LATER:
         {
-            // These messages are forwarded to the periodic actor, which is in charge of deleting them
+            // The lifetime of these messages depend on their periodicity.
+            // - non-periodic messages are deleted explictly by the server actor.
+            // - periodic messages are forwarded to the periodic actor, which is then responsible to deallocate them.
         } break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
         {
@@ -368,9 +377,14 @@ IPMessage::~IPMessage()
             auto * msg = static_cast<SwitchMessage *>(data);
             delete msg;
         } break;
-        case IPMessageType::REQUESTED_CALL:
+        case IPMessageType::ONESHOT_REQUESTED_CALL:
         {
-            auto * msg = static_cast<RequestedCallMessage *>(data);
+            auto * msg = static_cast<OneShotRequestedCallMessage *>(data);
+            delete msg;
+        } break;
+        case IPMessageType::PERIODIC_TRIGGER:
+        {
+            auto * msg = static_cast<PeriodicTriggerMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::KILLING_DONE:
@@ -385,6 +399,9 @@ IPMessage::~IPMessage()
         {
             auto * msg = static_cast<EventOccurredMessage *>(data);
             delete msg;
+        } break;
+        case IPMessageType::DIE:
+        {
         } break;
     }
 

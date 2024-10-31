@@ -153,12 +153,20 @@ void server_on_pstate_modification(ServerData * data,
                                    IPMessage * task_data);
 
 /**
- * @brief Server REQUESTED_CALL handler
+ * @brief Server ONESHOT_REQUESTED_CALL handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_requested_call(ServerData * data,
-                            IPMessage * task_data);
+void server_on_oneshot_requested_call(ServerData * data,
+                                      IPMessage * task_data);
+
+/**
+ * @brief Server PERIODIC_TRIGGER handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_periodic_trigger(ServerData * data,
+                                IPMessage * task_data);
 
 /**
  * @brief Server SCHED_READY handler

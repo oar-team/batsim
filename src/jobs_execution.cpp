@@ -267,15 +267,14 @@ void oneshot_call_me_later_actor(std::string call_id, double target_time, Server
     if (server_data->end_of_simulation_sent ||
         server_data->end_of_simulation_ack_received)
     {
-        XBT_INFO("Simulation have finished. Thus, NOT sending REQUESTED_CALL to the server.");
+        XBT_INFO("Simulation have finished. Thus, NOT sending ONESHOT_REQUESTED_CALL to the server.");
     }
     else
     {
-        RequestedCallMessage * msg = new RequestedCallMessage;
-        msg->call_id = call_id;
-        msg->is_periodic = false;
-        msg->is_last_periodic_call = false;
-        send_message("server", IPMessageType::REQUESTED_CALL, msg);
+        auto * msg = new OneShotRequestedCallMessage;
+        msg->call.call_id = call_id;
+        msg->call.is_last_periodic_call = false;
+        send_message("server", IPMessageType::ONESHOT_REQUESTED_CALL, msg);
     }
 }
 

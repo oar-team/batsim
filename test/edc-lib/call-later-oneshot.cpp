@@ -35,8 +35,13 @@ uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
     try {
         auto init_json = json::parse(init_string);
         issue_all_calls_at_start = init_json["issue_all_calls_at_start"];
-        if (init_json["use_ms_time_unit"])
+        std::string time_unit_str = init_json["time_unit"];
+        if (time_unit_str == "ms")
             time_unit = batprotocol::fb::TimeUnit_Millisecond;
+        else if (time_unit_str == "s")
+            time_unit = batprotocol::fb::TimeUnit_Second;
+        else
+            throw std::runtime_error("unknown time_unit received: " + time_unit_str);
         init_json["calls"].get_to(calls);
         received_calls.clear();
         for (uint64_t & call_time : calls) {
@@ -77,7 +82,7 @@ uint8_t batsim_edc_take_decisions(
         switch (event->event_type())
         {
         case fb::Event_BatsimHelloEvent: {
-            mb->add_edc_hello("rejecter", "0.1.0");
+            mb->add_edc_hello("call-later-oneshot", "0.1.0");
         } break;
         case fb::Event_SimulationBeginsEvent: {
             if (issue_all_calls_at_start) {
@@ -105,6 +110,7 @@ uint8_t batsim_edc_take_decisions(
                 if (!received) {
                     abort = true;
                     printf("SimulationEnds received while call '%s' has not been received yet...\n", id.c_str());
+                    fflush(stdout);
                 }
             }
             if (abort)
