@@ -876,10 +876,13 @@ void server_on_call_me_later(ServerData * data,
     else
     {
         string pname = "oneshot_call_me_later " + message->call_id + " " + to_string(message->target_time);
+        double target_time = message->target_time;
+        if (message->time_unit == batprotocol::fb::TimeUnit_Millisecond)
+            target_time /= 1e3;
         ++data->nb_waiters;
         simgrid::s4u::Actor::create(pname.c_str(),
                                     data->context->machines.master_machine()->host,
-                                    oneshot_call_me_later_actor, message->call_id, message->target_time, data);
+                                    oneshot_call_me_later_actor, message->call_id, target_time, data);
     }
 }
 

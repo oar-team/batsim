@@ -18,14 +18,19 @@ MOD_NAME = __name__.replace('test_', '', 1)
 def issue_all_calls_at_start(request):
     return request.param
 
-def test_call_me_later_oneshot(test_root_dir, issue_all_calls_at_start):
+@pytest.fixture(scope="module", params=[False, True])
+def use_ms_time_unit(request):
+    return request.param
+
+def test_call_me_later_oneshot(test_root_dir, issue_all_calls_at_start, use_ms_time_unit):
     platform = 'small_platform'
     workload = 'test_delays'
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
-    instance_name = f'{MOD_NAME}-{func_name}-' + str(int(issue_all_calls_at_start))
+    instance_name = f'{MOD_NAME}-{func_name}-' + str(int(issue_all_calls_at_start)) + '-' + str(int(use_ms_time_unit))
 
     edc_init_args = {
         'issue_all_calls_at_start': issue_all_calls_at_start,
+        'use_ms_time_unit': use_ms_time_unit,
         'calls': [10, 100, 1000, 10000],
     }
 

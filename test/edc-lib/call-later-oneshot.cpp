@@ -11,6 +11,7 @@ using json = nlohmann::json;
 MessageBuilder * mb = nullptr;
 bool format_binary = true; // whether flatbuffers binary or json format should be used
 bool issue_all_calls_at_start = false;
+batprotocol::fb::TimeUnit time_unit = batprotocol::fb::TimeUnit_Second;
 std::vector<uint64_t> calls;
 uint32_t next_call = 0;
 std::unordered_map<std::string, bool> received_calls;
@@ -34,6 +35,8 @@ uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
     try {
         auto init_json = json::parse(init_string);
         issue_all_calls_at_start = init_json["issue_all_calls_at_start"];
+        if (init_json["use_ms_time_unit"])
+            time_unit = batprotocol::fb::TimeUnit_Millisecond;
         init_json["calls"].get_to(calls);
         received_calls.clear();
         for (uint64_t & call_time : calls) {
@@ -80,6 +83,7 @@ uint8_t batsim_edc_take_decisions(
             if (issue_all_calls_at_start) {
                 for (const uint64_t & call_time : calls) {
                     auto when = TemporalTrigger::make_one_shot(call_time);
+                    when->set_time_unit(time_unit);
                     auto call_id = gen_call_id(call_time);
                     mb->add_call_me_later(call_id, when);
                 }
@@ -88,6 +92,7 @@ uint8_t batsim_edc_take_decisions(
                 if (!calls.empty()) {
                     auto call_time = calls.at(next_call);
                     auto when = TemporalTrigger::make_one_shot(call_time);
+                    when->set_time_unit(time_unit);
                     auto call_id = gen_call_id(call_time);
                     mb->add_call_me_later(call_id, when);
                     ++next_call;
@@ -123,6 +128,7 @@ uint8_t batsim_edc_take_decisions(
             if (!issue_all_calls_at_start && next_call < calls.size()) {
                 auto call_time = calls.at(next_call);
                 auto when = TemporalTrigger::make_one_shot(call_time);
+                when->set_time_unit(time_unit);
                 auto call_id = gen_call_id(call_time);
                 mb->add_call_me_later(call_id, when);
                 ++next_call;
