@@ -13,11 +13,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1730190926,
-        "narHash": "sha256-jBy0M9l+K/Ymigdnoy+w8Tub0msmUScecLQsqFGD7tI=",
-        "ref": "refs/heads/master",
-        "rev": "cb798c18c394637811c7ae4797d9f07d10594d23",
-        "revCount": 155,
+        "lastModified": 1730886118,
+        "narHash": "sha256-Y3M+bLWHX9Qkp0nD0n9+h4RLFROCHbG3W8qATdw+xj8=",
+        "ref": "refs/heads/main",
+        "rev": "ddf2d48086d1dabef247661976a9a80c4a6718d2",
+        "revCount": 157,
         "type": "git",
         "url": "https://framagit.org/batsim/batprotocol"
       },
@@ -31,11 +31,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1705309234,
-        "narHash": "sha256-uNRRNRKmJyCRC/8y1RqBkqWBLM034y4qN7EprSdmgyA=",
+        "lastModified": 1726560853,
+        "narHash": "sha256-X6rJYSESBVr3hBoH0WbKE5KvhPU5bloyZ2L4K60/fPQ=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "1ef2e671c3b0c19053962c07dbda38332dcebf26",
+        "rev": "c1dfcf08411b08f6b8615f7d8971a2bfa81d5e8a",
         "type": "github"
       },
       "original": {
@@ -57,11 +57,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1707321891,
-        "narHash": "sha256-eEH9zxYphfl/0PPX39ChMpguF/yuR4z4ZLOlWPwkoHA=",
+        "lastModified": 1730886261,
+        "narHash": "sha256-u09uzKIKmwZ8tXj82hirzsbUTsS69ftq9DJXW4tbU7A=",
         "ref": "refs/heads/main",
-        "rev": "13d8f2d7000d4dc4e3202422658b0b5d83f83679",
-        "revCount": 84,
+        "rev": "791d4f9850ada8b42ae5beb2c06563cbd7f71b8d",
+        "revCount": 85,
         "type": "git",
         "url": "https://framagit.org/batsim/intervalset"
       },
@@ -112,16 +112,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1708526787,
-        "narHash": "sha256-TnT9TcYXeWHckQyzGU3KhNfhXqhY2T1wvbYb2MDwTFU=",
+        "lastModified": 1718633852,
+        "narHash": "sha256-KVeKDdab2wMYMo60mEQHz8Dus4ddhxJ1HPCXzUt9ei8=",
         "owner": "oar-team",
         "repo": "nur-kapack",
-        "rev": "4d8ca88fd8a0a2287ee5c023877f14d53d4854c1",
+        "rev": "052fb35eb29228d9e4ea8afa09e9f0e390782cbd",
         "type": "github"
       },
       "original": {
         "owner": "oar-team",
-        "ref": "master",
         "repo": "nur-kapack",
         "type": "github"
       }

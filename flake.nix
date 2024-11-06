@@ -4,7 +4,7 @@
     nixpkgs-pytest.url = "github:nixos/nixpkgs?ref=22.11";
     flake-utils.url = "github:numtide/flake-utils";
     nur-kapack = {
-      url = "github:oar-team/nur-kapack/master";
+      url = "github:oar-team/nur-kapack";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
