@@ -23,7 +23,7 @@
   };
 
   outputs = { self, nixpkgs, nixpkgs-pytest, nur-kapack, intervalset, batprotocol, flake-utils }:
-    flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
+    flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
         pkgs-pytest = import nixpkgs-pytest { inherit system; };
