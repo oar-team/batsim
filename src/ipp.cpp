@@ -223,6 +223,9 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_CALL_ME_LATER:
             s = "SCHED_CALL_ME_LATER";
             break;
+        case IPMessageType::SCHED_STOP_CALL_ME_LATER:
+            s = "SCHED_STOP_CALL_ME_LATER";
+            break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
             s = "SCHED_TELL_ME_ENERGY";
             break;
@@ -335,6 +338,10 @@ IPMessage::~IPMessage()
             // The lifetime of these messages depend on their periodicity.
             // - non-periodic messages are deleted explictly by the server actor.
             // - periodic messages are forwarded to the periodic actor, which is then responsible to deallocate them.
+        } break;
+        case IPMessageType::SCHED_STOP_CALL_ME_LATER:
+        {
+            // Forwarded to the periodic actor, which is then responsible to deallocate them
         } break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
         {

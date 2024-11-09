@@ -24,6 +24,7 @@ MessageBuilder * mb = nullptr;
 bool format_binary = true; // whether flatbuffers binary or json format should be used
 batprotocol::fb::TimeUnit time_unit = batprotocol::fb::TimeUnit_Second;
 double time_unit_multiplier = 1.0;
+bool is_infinite;
 
 std::map<std::string, std::string> oneshot_to_periodic_ids; // used to start periodic calls at non-zero times
 // all of these call_id are periodic call_id
@@ -58,6 +59,7 @@ uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
     std::string init_string((const char *)data, static_cast<size_t>(size));
     try {
         auto init_json = json::parse(init_string);
+        is_infinite = init_json["is_infinite"];
         std::string time_unit_str = init_json["time_unit"];
         if (time_unit_str == "ms") {
             time_unit = batprotocol::fb::TimeUnit_Millisecond;
@@ -158,7 +160,11 @@ uint8_t batsim_edc_take_decisions(
             for (const auto & [call_id, call] : calls) {
                 if (call->init_time == 0) {
                     fprintf(stderr, "  initiating call_id=%s\n", call_id.c_str());
-                    auto when = TemporalTrigger::make_periodic_finite(call->period, call->expected_nb_calls);
+                    std::shared_ptr<TemporalTrigger> when;
+                    if (is_infinite)
+                        when = TemporalTrigger::make_periodic(call->period);
+                    else
+                        when = TemporalTrigger::make_periodic_finite(call->period, call->expected_nb_calls);
                     when->set_time_unit(time_unit);
                     mb->add_call_me_later(call_id, when);
                     alive_calls.insert(call_id);
@@ -203,7 +209,11 @@ uint8_t batsim_edc_take_decisions(
                 auto & call_id = oneshot_it->second;
                 auto & call = calls.at(call_id);
                 fprintf(stderr, "    initiating call_id=%s\n", call_id.c_str());
-                auto when = TemporalTrigger::make_periodic_finite(call->period, call->expected_nb_calls);
+                std::shared_ptr<TemporalTrigger> when;
+                if (is_infinite)
+                    when = TemporalTrigger::make_periodic(call->period);
+                else
+                    when = TemporalTrigger::make_periodic_finite(call->period, call->expected_nb_calls);
                 when->set_time_unit(time_unit);
                 mb->add_call_me_later(call_id, when);
 
@@ -222,12 +232,17 @@ uint8_t batsim_edc_take_decisions(
             auto & call = it->second;
             ++call->nb_calls;
             fprintf(stderr, "    %lu/%lu of call='%s'\n", call->nb_calls, call->expected_nb_calls, it->first.c_str());
-            bool should_be_last_periodic_call = call->nb_calls == call->expected_nb_calls;
-            if (e->last_periodic_call() != should_be_last_periodic_call) {
+
+            bool all_calls_received = call->nb_calls == call->expected_nb_calls;
+            if (is_infinite && all_calls_received) {
+                mb->add_stop_call_me_later(call->call_id);
+            }
+
+            if (!is_infinite && e->last_periodic_call() != all_calls_received) {
                 char * err_cstr;
                 asprintf(&err_cstr, "last_periodic_call inconsistency on '%s': value received is %d while expecting %d, since I received %lu/%lu calls",
                     it->first.c_str(),
-                    (int)e->last_periodic_call(), (int)should_be_last_periodic_call,
+                    (int)e->last_periodic_call(), (int)all_calls_received,
                     call->nb_calls, call->expected_nb_calls
                 );
                 std::string err(err_cstr);
@@ -245,7 +260,7 @@ uint8_t batsim_edc_take_decisions(
             call->previous_call_time = event->timestamp();
 
             // state checks
-            if (e->last_periodic_call())
+            if (all_calls_received)
                 calls_to_remove.insert(call->call_id);
             auto triggered_it = triggered_calls.find(call->call_id);
             if (triggered_it != triggered_calls.end())

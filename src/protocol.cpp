@@ -349,6 +349,14 @@ CallMeLaterMessage * from_call_me_later(const batprotocol::fb::CallMeLaterEvent 
     return msg;
 }
 
+StopCallMeLaterMessage * from_stop_call_me_later(const batprotocol::fb::StopCallMeLaterEvent * stop_call_me_later, BatsimContext * context)
+{
+    auto msg = new StopCallMeLaterMessage;
+    msg->call_id = stop_call_me_later->call_me_later_id()->str();
+
+    return msg;
+}
+
 void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp> > & messages, BatsimContext * context)
 {
     (void) buffer_size;
@@ -400,6 +408,10 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
         case Event_CallMeLaterEvent: {
             ip_message->type = IPMessageType::SCHED_CALL_ME_LATER;
             ip_message->data = static_cast<void *>(from_call_me_later(event_timestamp->event_as_CallMeLaterEvent(), context));
+        } break;
+        case Event_StopCallMeLaterEvent: {
+            ip_message->type = IPMessageType::SCHED_STOP_CALL_ME_LATER;
+            ip_message->data = static_cast<void *>(from_stop_call_me_later(event_timestamp->event_as_StopCallMeLaterEvent(), context));
         } break;
         default: {
             xbt_assert(false, "Unhandled event type received (%s)", batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()]);

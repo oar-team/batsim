@@ -23,6 +23,10 @@ def issue_all_calls_at_start(request):
 def time_unit(request):
     return request.param
 
+@pytest.fixture(scope="module", params=[False, True])
+def is_infinite(request):
+    return request.param
+
 @pytest.fixture(scope="module", params=[i for i in range(10)])
 def seed(request):
     return request.param
@@ -43,13 +47,14 @@ def test_oneshot(test_root_dir, issue_all_calls_at_start, time_unit):
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
-def test_periodic_start0(test_root_dir, time_unit):
+def test_periodic_start0(test_root_dir, time_unit, is_infinite):
     platform = 'small_platform'
     workload = 'test_delays'
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
-    instance_name = f'{MOD_NAME}-{func_name}-{time_unit}'
+    instance_name = f'{MOD_NAME}-{func_name}-{time_unit}-' + str(int(is_infinite))
 
     edc_init_args = {
+        'is_infinite': is_infinite,
         'time_unit': time_unit,
         'calls': [
             {'init': 0, 'period': 10, 'nb': 1093},
@@ -63,11 +68,11 @@ def test_periodic_start0(test_root_dir, time_unit):
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
-def test_periodic_rand(test_root_dir, seed, time_unit):
+def test_periodic_rand(test_root_dir, seed, time_unit, is_infinite):
     platform = 'small_platform'
     workload = 'test_delays'
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
-    instance_name = f'{MOD_NAME}-{func_name}-{seed}-{time_unit}'
+    instance_name = f'{MOD_NAME}-{func_name}-{seed}-{time_unit}-' + str(int(is_infinite))
 
     random.seed(seed)
     nb_periodic_calls = random.randint(2, 5)
@@ -81,6 +86,7 @@ def test_periodic_rand(test_root_dir, seed, time_unit):
         })
 
     edc_init_args = {
+        'is_infinite': is_infinite,
         'time_unit': time_unit,
         'calls': calls,
     }

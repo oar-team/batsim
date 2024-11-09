@@ -31,6 +31,7 @@ RejectJobMessage * from_reject_job(const batprotocol::fb::RejectJobEvent * rejec
 KillJobsMessage * from_kill_jobs(const batprotocol::fb::KillJobsEvent * kill_jobs, BatsimContext * context);
 EDCHelloMessage * from_edc_hello(const batprotocol::fb::EDCHelloEvent * edc_hello, BatsimContext * context);
 CallMeLaterMessage * from_call_me_later(const batprotocol::fb::CallMeLaterEvent * call_me_later, BatsimContext * context);
+StopCallMeLaterMessage * from_stop_call_me_later(const batprotocol::fb::StopCallMeLaterEvent * stop_call_me_later, BatsimContext * context);
 
 void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp> > & messages, BatsimContext * context);
 

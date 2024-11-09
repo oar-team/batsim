@@ -39,6 +39,7 @@ enum class IPMessageType
     ,SCHED_KILL_JOBS         //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (kill a job).
     ,SCHED_HELLO            //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (say hello).
     ,SCHED_CALL_ME_LATER    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to be called in the future).
+    ,SCHED_STOP_CALL_ME_LATER //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler no longer wants to be called in the future).
     ,SCHED_TELL_ME_ENERGY   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform consumed energy).
     ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,WAIT_QUERY             //!< Server -> Scheduler. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
@@ -265,6 +266,11 @@ struct RequestedCall
 struct OneShotRequestedCallMessage
 {
     RequestedCall call;
+};
+
+struct StopCallMeLaterMessage
+{
+    std::string call_id; //!< The identifier of the CALL_ME_LATER to stop
 };
 
 struct PeriodicTriggerMessage

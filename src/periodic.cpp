@@ -180,11 +180,23 @@ void periodic_main_actor()
           message->data = nullptr;
           auto it = cml_triggers.find(msg->call_id);
           xbt_assert(it == cml_triggers.end(), "received a new CallMeLater with call_id='%s' while this call_id is already in use", msg->call_id.c_str());
-          xbt_assert(msg->periodic.is_infinite == false, "only non-infinite triggers are implemented for now");
-          xbt_assert(msg->periodic.nb_periods >= 1, "invalid CallMeLater (call_id='%s'): finite but nb_periods=%u", msg->call_id.c_str(), msg->periodic.nb_periods);
+          xbt_assert(msg->periodic.is_infinite || msg->periodic.nb_periods >= 1, "invalid CallMeLater (call_id='%s'): finite but nb_periods=%u should be greater than 0", msg->call_id.c_str(), msg->periodic.nb_periods);
           set_periodic_in_ms(msg->periodic);
           cml_triggers[msg->call_id] = msg;
           need_reschedule = true;
+        } break;
+        case IPMessageType::SCHED_STOP_CALL_ME_LATER: {
+          auto msg = static_cast<StopCallMeLaterMessage*>(message->data);
+          message->data = nullptr;
+          auto it = cml_triggers.find(msg->call_id);
+          if (it == cml_triggers.end()) {
+            XBT_WARN("Received a StopCallMeLater on call_id='%s', but no such call is running", msg->call_id.c_str());
+          } else {
+            XBT_INFO("Stopping CallMeLater on call_id='%s'", msg->call_id.c_str());
+            cml_triggers.erase(msg->call_id);
+            delete msg;
+            need_reschedule = true;
+          }
         } break;
         default: {
           xbt_assert(false, "Unexpected message received: %s", ip_message_type_to_string(message->type).c_str());

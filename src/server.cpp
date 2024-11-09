@@ -48,6 +48,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_REJECT_JOB] = server_on_reject_job;
     handler_map[IPMessageType::SCHED_KILL_JOBS] = server_on_kill_jobs;
     handler_map[IPMessageType::SCHED_CALL_ME_LATER] = server_on_call_me_later;
+    handler_map[IPMessageType::SCHED_STOP_CALL_ME_LATER] = server_on_stop_call_me_later;
     handler_map[IPMessageType::SCHED_TELL_ME_ENERGY] = server_on_sched_tell_me_energy;
     handler_map[IPMessageType::SCHED_WAIT_ANSWER] = server_on_sched_wait_answer;
     handler_map[IPMessageType::WAIT_QUERY] = server_on_wait_query;
@@ -915,6 +916,13 @@ void server_on_call_me_later(ServerData * data,
         delete message;
         task_data->data = nullptr;
     }
+}
+
+void server_on_stop_call_me_later(ServerData * data,
+                                  IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
+    send_message("periodic", IPMessageType::SCHED_STOP_CALL_ME_LATER, task_data->data);
 }
 
 void server_on_execute_job(ServerData * data,
