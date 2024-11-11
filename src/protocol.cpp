@@ -131,6 +131,29 @@ batprotocol::fb::FinalJobState job_state_to_final_job_state(const JobState & sta
     }
 }
 
+Periodic from_periodic(const batprotocol::fb::Periodic * periodic)
+{
+    Periodic p;
+
+    p.period = periodic->period();
+    p.offset = periodic->offset();
+    p.time_unit = periodic->time_unit();
+    switch (periodic->mode_type()) {
+        case batprotocol::fb::PeriodicMode_NONE: {
+            xbt_assert(false, "invalid periodic received: periodic mode is NONE");
+        }
+        case batprotocol::fb::PeriodicMode_Infinite: {
+            p.is_infinite = true;
+        } break;
+        case batprotocol::fb::PeriodicMode_FinitePeriodNumber: {
+            p.is_infinite = false;
+            p.nb_periods = periodic->mode_as_FinitePeriodNumber()->nb_periods();
+        } break;
+    }
+
+    return p;
+}
+
 batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context)
 {
     using namespace batprotocol;
@@ -327,22 +350,7 @@ CallMeLaterMessage * from_call_me_later(const batprotocol::fb::CallMeLaterEvent 
         } break;
         case batprotocol::fb::TemporalTrigger_Periodic: {
             msg->is_periodic = true;
-            auto * when = call_me_later->when_as_Periodic();
-            msg->periodic.period = when->period();
-            msg->periodic.offset = when->offset();
-            msg->periodic.time_unit = when->time_unit();
-            switch (when->mode_type()) {
-                case batprotocol::fb::PeriodicMode_NONE: {
-                    xbt_assert(false, "invalid periodic CallMeLater received: periodic mode is NONE");
-                }
-                case batprotocol::fb::PeriodicMode_Infinite: {
-                    msg->periodic.is_infinite = true;
-                } break;
-                case batprotocol::fb::PeriodicMode_FinitePeriodNumber: {
-                    msg->periodic.is_infinite = false;
-                    msg->periodic.nb_periods = when->mode_as_FinitePeriodNumber()->nb_periods();
-                } break;
-            }
+            msg->periodic = from_periodic(call_me_later->when_as_Periodic());
         } break;
     }
 
@@ -353,6 +361,135 @@ StopCallMeLaterMessage * from_stop_call_me_later(const batprotocol::fb::StopCall
 {
     auto msg = new StopCallMeLaterMessage;
     msg->call_id = stop_call_me_later->call_me_later_id()->str();
+
+    return msg;
+}
+
+CreateProbeMessage * from_create_probe(const batprotocol::fb::CreateProbeEvent * create_probe, BatsimContext * context)
+{
+    auto msg = new CreateProbeMessage;
+    msg->probe_id = create_probe->probe_id()->str();
+
+    // Metrics
+    msg->metrics = create_probe->metrics();
+
+    // Resources
+    msg->resource_type = create_probe->resources_type();
+    switch (create_probe->resources_type()) {
+        case batprotocol::fb::Resources_NONE: {
+            xbt_assert(false, "invalid CreateProbe received: resource type is NONE");
+        } break;
+        case batprotocol::fb::Resources_HostResources: {
+            auto * host_resources = create_probe->resources_as_HostResources();
+            msg->hosts = IntervalSet::from_string_hyphen(host_resources->host_ids()->str());
+        } break;
+        case batprotocol::fb::Resources_LinkResources: {
+            auto * link_resources = create_probe->resources_as_LinkResources();
+            auto * links = link_resources->link_ids();
+            unsigned int nb_links = links->size();
+            msg->links.reserve(nb_links);
+            for (unsigned int i = 0; i < nb_links; ++i) {
+                msg->links.emplace_back(links->Get(i)->str());
+            }
+        } break;
+    }
+
+    // Measurement triggering policy
+    msg->measurement_triggering_policy = create_probe->measurement_triggering_policy_type();
+    switch (msg->measurement_triggering_policy) {
+        case batprotocol::fb::ProbeMeasurementTriggeringPolicy_NONE: {
+            xbt_assert(false, "invalid CreateProbe received: measurement triggering policy is NONE");
+        } break;
+        case batprotocol::fb::ProbeMeasurementTriggeringPolicy_TemporalTriggerWrapper: {
+            auto * temporal_trigger_wrapper = create_probe->measurement_triggering_policy_as_TemporalTriggerWrapper();
+            switch(temporal_trigger_wrapper->temporal_trigger_type()) {
+                case batprotocol::fb::TemporalTrigger_NONE: {
+                    xbt_assert(false, "invalid CreateProbe received: temporal trigger is NONE");
+                } break;
+                case batprotocol::fb::TemporalTrigger_OneShot: {
+                    msg->is_periodic = false;
+                    auto * temporal_trigger = temporal_trigger_wrapper->temporal_trigger_as_OneShot();
+                    msg->target_time = temporal_trigger->time();
+                    msg->time_unit = temporal_trigger->time_unit();
+                } break;
+                case batprotocol::fb::TemporalTrigger_Periodic: {
+                    msg->is_periodic = true;
+                    msg->periodic = from_periodic(temporal_trigger_wrapper->temporal_trigger_as_Periodic());
+                } break;
+            }
+        } break;
+    }
+
+    // Data accumulation strategy
+    msg->data_accumulation_strategy = create_probe->data_accumulation_strategy_type();
+    switch (create_probe->data_accumulation_strategy_type()) {
+        case batprotocol::fb::ProbeDataAccumulationStrategy_NONE: {
+            xbt_assert(false, "invalid CreateProbe received: data accumulation strategy is NONE");
+        } break;
+        case batprotocol::fb::ProbeDataAccumulationStrategy_NoProbeDataAccumulation: {
+        } break;
+        case batprotocol::fb::ProbeDataAccumulationStrategy_ProbeDataAccumulation: {
+            auto * accumulation = create_probe->data_accumulation_strategy_as_ProbeDataAccumulation();
+
+            msg->data_accumulation_reset_mode = accumulation->reset_mode_type();
+            switch (accumulation->reset_mode_type()) {
+                case batprotocol::fb::ResetMode_NONE: {
+                    xbt_assert(false, "invalid CreateProbe received: data accumulation strategy's reset mode is NONE");
+                } break;
+                case batprotocol::fb::ResetMode_NoReset: {
+                } break;
+                case batprotocol::fb::ResetMode_ProbeAccumulationReset: {
+                    msg->data_accumulation_reset_value = accumulation->reset_mode_as_ProbeAccumulationReset()->new_value();
+                } break;
+            }
+
+            msg->data_accumulation_cumulative_function = accumulation->cumulative_function();
+            msg->data_accumulation_temporal_normalization = accumulation->temporal_normalization();
+        } break;
+    }
+
+    // Resource aggregation
+    msg->resource_agregation_type = create_probe->resources_aggregation_function_type();
+    switch (create_probe->resources_aggregation_function_type()) {
+        case batprotocol::fb::ResourcesAggregationFunction_NONE: {
+            xbt_assert(false, "invalid CreateProbe received: resource aggregation function is NONE");
+        } break;
+        case batprotocol::fb::ResourcesAggregationFunction_NoResourcesAggregation: {
+        } break;
+        case batprotocol::fb::ResourcesAggregationFunction_Sum: {
+        } break;
+        case batprotocol::fb::ResourcesAggregationFunction_ArithmeticMean: {
+        } break;
+        case batprotocol::fb::ResourcesAggregationFunction_QuantileFunction: {
+            msg->quantile_threshold = create_probe->resources_aggregation_function_as_QuantileFunction()->threshold();
+        } break;
+    }
+
+    // Temporal aggregation
+    msg->temporal_aggregation_type = create_probe->temporal_aggregation_function_type();
+
+    // Emission filtering policy
+    msg->emission_filtering_policy = create_probe->emission_filtering_policy_type();
+    switch (create_probe->emission_filtering_policy_type()) {
+        case batprotocol::fb::ProbeEmissionFilteringPolicy_NONE: {
+            xbt_assert(false, "invalid CreateProbe received: emission filtering policy is NONE");
+        } break;
+        case batprotocol::fb::ProbeEmissionFilteringPolicy_NoFiltering: {
+        } break;
+        case batprotocol::fb::ProbeEmissionFilteringPolicy_ThresholdFilteringFunction: {
+            auto * filtering_function = create_probe->emission_filtering_policy_as_ThresholdFilteringFunction();
+            msg->emission_filtering_threshold_value = filtering_function->threshold();
+            msg->emission_filtering_threshold_comparator = filtering_function->operator_();
+        } break;
+    }
+
+    return msg;
+}
+
+StopProbeMessage * from_stop_probe(const batprotocol::fb::StopProbeEvent * stop_probe, BatsimContext * context)
+{
+    auto msg = new StopProbeMessage;
+    msg->probe_id = stop_probe->probe_id()->str();
 
     return msg;
 }
@@ -404,6 +541,14 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
         case Event_EDCHelloEvent: {
             ip_message->type = IPMessageType::SCHED_HELLO;
             ip_message->data = static_cast<void *>(from_edc_hello(event_timestamp->event_as_EDCHelloEvent(), context));
+        } break;
+        case Event_CreateProbeEvent: {
+            ip_message->type = IPMessageType::SCHED_CREATE_PROBE;
+            ip_message->data = static_cast<void *>(from_create_probe(event_timestamp->event_as_CreateProbeEvent(), context));
+        } break;
+        case Event_StopProbeEvent: {
+            ip_message->type = IPMessageType::SCHED_STOP_PROBE;
+            ip_message->data = static_cast<void *>(from_stop_probe(event_timestamp->event_as_StopProbeEvent(), context));
         } break;
         case Event_CallMeLaterEvent: {
             ip_message->type = IPMessageType::SCHED_CALL_ME_LATER;

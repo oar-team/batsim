@@ -226,6 +226,12 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_STOP_CALL_ME_LATER:
             s = "SCHED_STOP_CALL_ME_LATER";
             break;
+        case IPMessageType::SCHED_CREATE_PROBE:
+            s = "SCHED_CREATE_PROBE";
+            break;
+        case IPMessageType::SCHED_STOP_PROBE:
+            s = "SCHED_STOP_PROBE";
+            break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
             s = "SCHED_TELL_ME_ENERGY";
             break;
@@ -243,6 +249,9 @@ std::string ip_message_type_to_string(IPMessageType type)
             break;
         case IPMessageType::PERIODIC_TRIGGER:
             s = "PERIODIC_TRIGGER";
+            break;
+        case IPMessageType::PERIODIC_ENTITY_STOPPED:
+            s = "PERIODIC_ENTITY_STOPPED";
             break;
         case IPMessageType::SUBMITTER_HELLO:
             s = "SUBMITTER_HELLO";
@@ -343,6 +352,14 @@ IPMessage::~IPMessage()
         {
             // Forwarded to the periodic actor, which is then responsible to deallocate them
         } break;
+        case IPMessageType::SCHED_CREATE_PROBE:
+        {
+            // Forwarded to the periodic actor, which is then responsible to deallocate them
+        } break;
+        case IPMessageType::SCHED_STOP_PROBE:
+        {
+            // Forwarded to the periodic actor, which is then responsible to deallocate them
+        } break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
         {
         } break;
@@ -392,6 +409,13 @@ IPMessage::~IPMessage()
         case IPMessageType::PERIODIC_TRIGGER:
         {
             auto * msg = static_cast<PeriodicTriggerMessage *>(data);
+            for (auto * probe_data : msg->probes_data)
+                delete probe_data;
+            delete msg;
+        } break;
+        case IPMessageType::PERIODIC_ENTITY_STOPPED:
+        {
+            auto * msg = static_cast<PeriodicEntityStoppedMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::KILLING_DONE:

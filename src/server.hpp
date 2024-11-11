@@ -45,6 +45,7 @@ struct ServerData
     int nb_workflow_submitters_finished = 0; //!< The number of finished workflow submitters
     int nb_switching_machines = 0;  //!< The number of machines being switched
     int nb_callmelater_entities = 0; //!< The number of alive entities to handle CALL_ME_LATER (dedicated actors for OneShot, a part of the periodic actor for Periodic)
+    int nb_probe_entities = 0; //!< The number of alive entities to handle probes
     int nb_killers = 0; //!< The number of alive killer actors
     bool sched_ready = true;    //!< Whether the scheduler can be called now
     bool sched_said_hello = false; //!< Whether the scheduler said hello
@@ -169,6 +170,14 @@ void server_on_periodic_trigger(ServerData * data,
                                 IPMessage * task_data);
 
 /**
+ * @brief Server PERIODIC_ENTITY_STOPPED handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_periodic_entity_stopped(ServerData * data,
+                                       IPMessage * task_data);
+
+/**
  * @brief Server SCHED_READY handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
@@ -255,6 +264,22 @@ void server_on_reject_job(ServerData * data,
  */
 void server_on_kill_jobs(ServerData * data,
                          IPMessage * task_data);
+
+/**
+ * @brief Server CREATE_PROBE handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_create_probe(ServerData * data,
+                           IPMessage * task_data);
+
+/**
+ * @brief Server STOP_PROBE handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_stop_probe(ServerData * data,
+                          IPMessage * task_data);
 
 /**
  * @brief Server SCHED_CALL_ME_LATER handler

@@ -47,6 +47,8 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_HELLO] = server_on_edc_hello;
     handler_map[IPMessageType::SCHED_REJECT_JOB] = server_on_reject_job;
     handler_map[IPMessageType::SCHED_KILL_JOBS] = server_on_kill_jobs;
+    handler_map[IPMessageType::SCHED_CREATE_PROBE] = server_on_create_probe;
+    handler_map[IPMessageType::SCHED_STOP_PROBE] = server_on_stop_probe;
     handler_map[IPMessageType::SCHED_CALL_ME_LATER] = server_on_call_me_later;
     handler_map[IPMessageType::SCHED_STOP_CALL_ME_LATER] = server_on_stop_call_me_later;
     handler_map[IPMessageType::SCHED_TELL_ME_ENERGY] = server_on_sched_tell_me_energy;
@@ -55,6 +57,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_READY] = server_on_sched_ready;
     handler_map[IPMessageType::ONESHOT_REQUESTED_CALL] = server_on_oneshot_requested_call;
     handler_map[IPMessageType::PERIODIC_TRIGGER] = server_on_periodic_trigger;
+    handler_map[IPMessageType::PERIODIC_ENTITY_STOPPED] = server_on_periodic_entity_stopped;
     handler_map[IPMessageType::KILLING_DONE] = server_on_killing_done;
     handler_map[IPMessageType::SUBMITTER_HELLO] = server_on_submitter_hello;
     handler_map[IPMessageType::SUBMITTER_BYE] = server_on_submitter_bye;
@@ -78,7 +81,7 @@ void server_process(BatsimContext * context)
     data->jobs_to_be_deleted.clear();
 
     // Start an actor dedicated to trigger periodic events (from requested calls and probes)
-    auto periodic_actor = simgrid::s4u::Actor::create("periodic", simgrid::s4u::this_actor::get_host(), periodic_main_actor);
+    auto periodic_actor = simgrid::s4u::Actor::create("periodic", simgrid::s4u::this_actor::get_host(), periodic_main_actor, context);
 
     // Simulation loop
     while (!data->end_of_simulation_ack_received)
@@ -145,6 +148,7 @@ void server_process(BatsimContext * context)
     xbt_assert(data->nb_switching_machines == 0, "Left simulation loop, but some machines are being switched.");
     xbt_assert(data->nb_killers == 0, "Left simulation loop, but some killer processes (used to kill jobs) are running.");
     xbt_assert(data->nb_callmelater_entities == 0, "Left simulation loop, but some entities used to manage CALL_ME_LATER messages are running.");
+    xbt_assert(data->nb_probe_entities == 0, "Left simulation loop, but some entities used to manage probes are running.");
 
     // Consistency
     xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
@@ -595,7 +599,52 @@ void server_on_periodic_trigger(ServerData * data,
             --data->nb_callmelater_entities;
     }
 
-    // TODO: probes
+    for (auto * probe_data : message->probes_data) {
+        if (probe_data->is_last_periodic)
+            --data->nb_probe_entities;
+
+        std::shared_ptr<batprotocol::ProbeData> pdata;
+        switch (probe_data->data_type) {
+            case batprotocol::fb::ProbeData_VectorialProbeData: {
+                pdata = batprotocol::ProbeData::make_vectorial(std::make_shared<std::vector<double>>(std::move(probe_data->vectorial_data)));
+            } break;
+            case batprotocol::fb::ProbeData_AggregatedProbeData: {
+                pdata = batprotocol::ProbeData::make_aggregated(probe_data->aggregated_data);
+            } break;
+            default: {
+                xbt_assert(false, "unimplemented probe data type");
+            } break;
+        }
+
+        switch(probe_data->resource_type) {
+            case batprotocol::fb::Resources_HostResources: {
+                pdata->set_resources_as_hosts(probe_data->hosts.to_string_hyphen());
+            } break;
+            case batprotocol::fb::Resources_LinkResources: {
+                pdata->set_resources_as_links(std::make_shared<std::vector<std::string> >(std::move(probe_data->links)));
+            } break;
+            default: {
+                xbt_assert(false, "unimplemented probe resource type");
+            } break;
+        }
+
+        data->context->proto_msg_builder->add_probe_data_emitted(
+            probe_data->probe_id, probe_data->metrics, pdata,
+            probe_data->manually_triggered, probe_data->nb_emitted, probe_data->nb_triggered
+        );
+    }
+}
+
+void server_on_periodic_entity_stopped(ServerData * data,
+                                       IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
+    auto * message = static_cast<PeriodicEntityStoppedMessage *>(task_data->data);
+
+    if (message->is_probe)
+        --data->nb_probe_entities;
+    else if (message->is_call_me_later)
+        --data->nb_callmelater_entities;
 }
 
 void server_on_sched_ready(ServerData * data,
@@ -891,6 +940,25 @@ void server_on_kill_jobs(ServerData * data, IPMessage * task_data)
     ++data->nb_killers;
 }
 
+void server_on_create_probe(ServerData * data,
+                            IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
+    auto * message = static_cast<CreateProbeMessage *>(task_data->data);
+
+    ++data->nb_probe_entities;
+
+    xbt_assert(message->is_periodic, "non-periodic probes are not implemented");
+    send_message("periodic", IPMessageType::SCHED_CREATE_PROBE, task_data->data);
+}
+
+void server_on_stop_probe(ServerData * data,
+                          IPMessage * task_data)
+{
+    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
+    send_message("periodic", IPMessageType::SCHED_STOP_PROBE, task_data->data);
+}
+
 void server_on_call_me_later(ServerData * data,
                              IPMessage * task_data)
 {
@@ -1049,6 +1117,7 @@ bool is_simulation_finished(ServerData * data)
            (data->nb_running_jobs == 0) && // No jobs are being executed
            (data->nb_switching_machines == 0) && // No machine is being switched
            (data->nb_callmelater_entities == 0) && // No entities related to CALL_ME_LATER are running
+           (data->nb_probe_entities == 0) && // No entities related to probes are running
            (data->nb_killers == 0); // No jobs is being killed
 }
 

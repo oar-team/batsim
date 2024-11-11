@@ -8,8 +8,11 @@
 #include <set>
 
 #include <simgrid/s4u.hpp>
+#include <simgrid/plugins/energy.h>
 
+#include "context.hpp"
 #include "ipp.hpp"
+#include "machines.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(periodic, "periodic"); //!< Logging
 
@@ -59,6 +62,7 @@ void set_periodic_in_ms(Periodic & p) {
 
 void generate_static_periodic_schedule(
   const std::map<std::string, CallMeLaterMessage*> & cml_triggers,
+  const std::map<std::string, CreateProbeMessage*> & probes,
   std::vector<TimeSlice> & schedule,
   uint64_t & slice_duration
 ) {
@@ -77,6 +81,23 @@ void generate_static_periodic_schedule(
     auto it = triggers.find(cml->periodic.period);
     if (it == triggers.end())
       triggers[cml->periodic.period] = {trigger};
+    else
+      it->second.emplace_back(trigger);
+  }
+
+  for (const auto & [_, probe] : probes) {
+    xbt_assert(probe->periodic.offset == 0, "Probe (id='%s') has non-zero offset (%lu), which is not supported", probe->probe_id.c_str(), probe->periodic.offset);
+    xbt_assert(probe->periodic.time_unit == batprotocol::fb::TimeUnit_Millisecond, "internal inconsistency: Probe (id='%s') has non-ms time units, which should not happen here", probe->probe_id.c_str());
+
+    auto trigger = PeriodicTrigger{
+      probe->periodic,
+      PeriodicTriggerType::PROBE,
+      (void*)probe
+    };
+
+    auto it = triggers.find(probe->periodic.period);
+    if (it == triggers.end())
+      triggers[probe->periodic.period] = {trigger};
     else
       it->second.emplace_back(trigger);
   }
@@ -135,16 +156,21 @@ void generate_static_periodic_schedule(
       if (current_time % cml->periodic.period == 0)
         slice.cml_triggers.push_back(cml);
     }
+    for (const auto & [_, probe] : probes) {
+      if (current_time % probe->periodic.period == 0)
+        slice.probes.push_back(probe);
+    }
     previous_time = current_time;
   }
 }
 
-void periodic_main_actor()
+void periodic_main_actor(BatsimContext * context)
 {
   auto mbox = simgrid::s4u::Mailbox::by_name("periodic");
   bool need_reschedule = false;
   bool die_received = false;
   std::map<std::string, CallMeLaterMessage*> cml_triggers;
+  std::map<std::string, CreateProbeMessage*> probes;
 
   std::vector<TimeSlice> static_schedule;
   uint64_t slice_duration = 0;
@@ -185,6 +211,17 @@ void periodic_main_actor()
           cml_triggers[msg->call_id] = msg;
           need_reschedule = true;
         } break;
+        case IPMessageType::SCHED_CREATE_PROBE: {
+          auto msg = static_cast<CreateProbeMessage*>(message->data);
+          message->data = nullptr;
+          msg->initialized = false;
+          auto it = probes.find(msg->probe_id);
+          xbt_assert(it == probes.end(), "received a new CreateProbe with probe_id='%s' while this probe_id is already in use", msg->probe_id.c_str());
+          xbt_assert(msg->periodic.is_infinite || msg->periodic.nb_periods >= 1, "invalid CreateProbe (probe_id='%s'): finite but nb_periods=%u should be greater than 0", msg->probe_id.c_str(), msg->periodic.nb_periods);
+          set_periodic_in_ms(msg->periodic);
+          probes[msg->probe_id] = msg;
+          need_reschedule = true;
+        } break;
         case IPMessageType::SCHED_STOP_CALL_ME_LATER: {
           auto msg = static_cast<StopCallMeLaterMessage*>(message->data);
           message->data = nullptr;
@@ -193,7 +230,34 @@ void periodic_main_actor()
             XBT_WARN("Received a StopCallMeLater on call_id='%s', but no such call is running", msg->call_id.c_str());
           } else {
             XBT_INFO("Stopping CallMeLater on call_id='%s'", msg->call_id.c_str());
+
+            auto * m = new PeriodicEntityStoppedMessage;
+            m->entity_id = msg->call_id;
+            m->is_probe = false;
+            m->is_call_me_later = true;
+            send_message("server", IPMessageType::PERIODIC_ENTITY_STOPPED, static_cast<void*>(m));
+
             cml_triggers.erase(msg->call_id);
+            delete msg;
+            need_reschedule = true;
+          }
+        } break;
+        case IPMessageType::SCHED_STOP_PROBE: {
+          auto msg = static_cast<StopProbeMessage*>(message->data);
+          message->data = nullptr;
+          auto it = probes.find(msg->probe_id);
+          if (it == probes.end()) {
+            XBT_WARN("Received a StopProbe on probe_id='%s', but no such probe is running", msg->probe_id.c_str());
+          } else {
+            XBT_INFO("Stopping probe with probe_id='%s'", msg->probe_id.c_str());
+
+            auto * m = new PeriodicEntityStoppedMessage;
+            m->entity_id = msg->probe_id;
+            m->is_probe = true;
+            m->is_call_me_later = false;
+            send_message("server", IPMessageType::PERIODIC_ENTITY_STOPPED, static_cast<void*>(m));
+
+            probes.erase(msg->probe_id);
             delete msg;
             need_reschedule = true;
           }
@@ -215,6 +279,8 @@ void periodic_main_actor()
       // Populate the content of the full message that should be sent to the server
       auto * msg = new PeriodicTriggerMessage;
       auto & slice = static_schedule[current_slice_i];
+
+      // CallMeLater triggers
       for (auto * cml : slice.cml_triggers) {
         msg->calls.emplace_back(RequestedCall{
           cml->call_id,
@@ -232,11 +298,85 @@ void periodic_main_actor()
         }
       }
 
+      // Probe data
+      for (auto probe_it = slice.probes.begin(); probe_it != slice.probes.end(); ) {
+        auto * probe = *probe_it;
+        bool erased = false;
+        if (probe->initialized) {
+          xbt_assert(probe->metrics == batprotocol::fb::Metrics_Power, "only the power metrics is implemented");
+          xbt_assert(probe->resource_type == batprotocol::fb::Resources_HostResources, "only the host resource type is implemented");
+          xbt_assert(context->energy_used, "trying to probe energy on hosts but the 'host_energy' SimGrid plugin has not been enabled");
+
+          // TODO: populate the immutable fields only once, then just memcpy this for a new probe? or just put the original probe data into the message? (requires smart ptr)
+          auto * probe_data = new ProbeData;
+          probe_data->probe_id = probe->probe_id;
+          probe_data->resource_type = probe->resource_type;
+          probe_data->hosts = probe->hosts;
+          probe_data->metrics = probe->metrics;
+
+          probe_data->manually_triggered = false;
+          probe_data->nb_triggered = 0; // TODO: implement me
+          probe_data->nb_emitted = 0; // TODO: implement me
+          probe_data->is_last_periodic = !probe->periodic.is_infinite && probe->periodic.nb_periods == 1;
+
+          // TODO: populate an iterator of s4u hosts once per probe to avoid this slow traversal + host retrieval
+          probe_data->vectorial_data.resize(probe->hosts.size());
+          for (auto it = probe->hosts.elements_begin(); it != probe->hosts.elements_end(); ++it)
+          {
+              int machine_id = *it;
+              Machine * machine = context->machines[machine_id];
+              probe_data->vectorial_data.emplace_back(sg_host_get_consumed_energy(machine->host));
+          }
+
+          switch(probe->resource_agregation_type) {
+            case batprotocol::fb::ResourcesAggregationFunction_NoResourcesAggregation: {
+              probe_data->data_type = batprotocol::fb::ProbeData_VectorialProbeData;
+            } break;
+            case batprotocol::fb::ResourcesAggregationFunction_Sum:
+            case batprotocol::fb::ResourcesAggregationFunction_ArithmeticMean: {
+              probe_data->data_type = batprotocol::fb::ProbeData_AggregatedProbeData;
+              probe_data->aggregated_data = 0.0;
+              for (const auto & value : probe_data->vectorial_data)
+                probe_data->aggregated_data += value;
+              if (probe->resource_agregation_type == batprotocol::fb::ResourcesAggregationFunction_ArithmeticMean)
+                probe_data->aggregated_data /= probe->hosts.size();
+            } break;
+            default: {
+              xbt_assert(false, "unimplemented resource aggregation type");
+            } break;
+          };
+
+          msg->probes_data.emplace_back(probe_data);
+
+          if (!probe->periodic.is_infinite) {
+            --probe->periodic.nb_periods;
+            if (probe->periodic.nb_periods == 0) {
+              XBT_INFO("Periodic trigger Probe(probe_id='%s') just issued its last call!", probe->probe_id.c_str());
+              need_reschedule = true;
+              probes.erase(probe->probe_id);
+              probe_it = slice.probes.erase(probe_it);
+              delete probe;
+              erased = true;
+            }
+          }
+        }
+        if (!erased)
+          ++probe_it;
+      }
+
+      // Reset probes
+      for (auto * probe : slice.probes) {
+        probe->initialized = true;
+        xbt_assert(probe->data_accumulation_strategy == batprotocol::fb::ProbeDataAccumulationStrategy_ProbeDataAccumulation, "non-accumulative probes are not supported right now");
+        xbt_assert(probe->data_accumulation_reset_mode == batprotocol::fb::ResetMode_NoReset, "accumulative probes with reset are not implemented");
+        // TODO: implement reset
+      }
+
       send_message("server", IPMessageType::PERIODIC_TRIGGER, static_cast<void*>(msg));
     }
 
     if (need_reschedule) {
-      generate_static_periodic_schedule(cml_triggers, static_schedule, slice_duration);
+      generate_static_periodic_schedule(cml_triggers, probes, static_schedule, slice_duration);
     }
   }
 }

@@ -12,6 +12,8 @@ using json = nlohmann::json;
 struct PeriodicCall {
     std::string call_id; // periodic call_id
     std::string oneshot_call_id;
+    bool is_probe = false; // if true, issue a periodic probe instead of a periodic call me later
+    bool probe_just_created = false; // set to true for probes when they were created but no data has been received from them yet
     uint64_t init_time = 0;
     uint64_t period;
     double expected_period_s = -1;
@@ -33,16 +35,19 @@ std::map<std::string, std::set<std::string>> divisers; // contains the all the c
 std::set<std::string> alive_calls;
 double float_comp_precision = 1e-3;
 
-std::string gen_call_id(uint64_t period, uint64_t nb_periods) {
-    return std::to_string(period) + "_" + std::to_string(nb_periods);
+std::string gen_call_id(bool is_probe, uint64_t period, uint64_t nb_periods) {
+    std::string prefix = "probe_";
+    if (!is_probe)
+        prefix = "cml_";
+    return prefix + std::to_string(period) + "_" + std::to_string(nb_periods);
 }
 
-std::string gen_periodic_call_id(uint64_t period, uint64_t nb_periods) {
-    return std::string("period_") + gen_call_id(period, nb_periods);
+std::string gen_periodic_call_id(bool is_probe, uint64_t period, uint64_t nb_periods) {
+    return std::string("period_") + gen_call_id(is_probe, period, nb_periods);
 }
 
-std::string gen_oneshot_call_id(uint64_t period, uint64_t nb_periods) {
-    return std::string("oneshot_") + gen_call_id(period, nb_periods);
+std::string gen_oneshot_call_id(bool is_probe, uint64_t period, uint64_t nb_periods) {
+    return std::string("oneshot_") + gen_call_id(is_probe, period, nb_periods);
 }
 
 uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
@@ -75,15 +80,16 @@ uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
         for (auto call : init_json["calls"]) {
             auto c = new PeriodicCall{
                 "", "",
+                call["is_probe"], false,
                 call["init"],
                 call["period"],
                 (double)(call["period"]) * time_unit_multiplier,
                 call["nb"],
                 0, -1
             };
-            auto call_id = gen_periodic_call_id(call["period"], call["nb"]);
+            auto call_id = gen_periodic_call_id(call["is_probe"], call["period"], call["nb"]);
             c->call_id = call_id;
-            c->oneshot_call_id = gen_oneshot_call_id(call["period"], call["nb"]);
+            c->oneshot_call_id = gen_oneshot_call_id(call["is_probe"], call["period"], call["nb"]);
             calls[call_id] = c;
             oneshot_to_periodic_ids[c->oneshot_call_id] = c->call_id;
 
@@ -166,8 +172,16 @@ uint8_t batsim_edc_take_decisions(
                     else
                         when = TemporalTrigger::make_periodic_finite(call->period, call->expected_nb_calls);
                     when->set_time_unit(time_unit);
-                    mb->add_call_me_later(call_id, when);
-                    alive_calls.insert(call_id);
+                    if (call->is_probe) {
+                        auto cp = batprotocol::CreateProbe::make_temporal_triggerred(when);
+                        cp->set_resources_as_hosts("0");
+                        cp->enable_accumulation_no_reset();
+                        mb->add_create_probe(call_id, batprotocol::fb::Metrics_Power, cp);
+                        call->probe_just_created = true;
+                    } else {
+                        mb->add_call_me_later(call_id, when);
+                        alive_calls.insert(call_id);
+                    }
                 } else {
                     // run a one shot call, that will initiate the periodic call when triggered
                     fprintf(stderr, "  initiating oneshot call_id=%s\n", call->oneshot_call_id.c_str());
@@ -197,35 +211,51 @@ uint8_t batsim_edc_take_decisions(
             auto job_id = event->event_as_JobSubmittedEvent()->job_id()->str();
             mb->add_reject_job(job_id);
         } break;
+        case fb::Event_ProbeDataEmittedEvent:
         case fb::Event_RequestedCallEvent: {
             if (!received_call)
                 fprintf(stderr, "  time=%g, received calls!\n", event->timestamp());
             received_call = true;
 
             auto e = event->event_as_RequestedCallEvent();
-            auto oneshot_it = oneshot_to_periodic_ids.find(e->call_me_later_id()->str());
-            if (oneshot_it != oneshot_to_periodic_ids.end()) {
-                fprintf(stderr, "    got oneshot trigger %s\n", e->call_me_later_id()->c_str());
-                auto & call_id = oneshot_it->second;
-                auto & call = calls.at(call_id);
-                fprintf(stderr, "    initiating call_id=%s\n", call_id.c_str());
-                std::shared_ptr<TemporalTrigger> when;
-                if (is_infinite)
-                    when = TemporalTrigger::make_periodic(call->period);
-                else
-                    when = TemporalTrigger::make_periodic_finite(call->period, call->expected_nb_calls);
-                when->set_time_unit(time_unit);
-                mb->add_call_me_later(call_id, when);
+            auto ep = event->event_as_ProbeDataEmittedEvent();
+            std::string call_id = "unset";
+            if (e != nullptr) { // requested call, not a probe
+                call_id = e->call_me_later_id()->str();
+                auto oneshot_it = oneshot_to_periodic_ids.find(call_id);
+                if (oneshot_it != oneshot_to_periodic_ids.end()) {
+                    fprintf(stderr, "    got oneshot trigger %s\n", call_id.c_str());
+                    auto & call_id = oneshot_it->second;
+                    auto & call = calls.at(call_id);
+                    fprintf(stderr, "    initiating call_id=%s\n", call_id.c_str());
+                    std::shared_ptr<TemporalTrigger> when;
+                    if (is_infinite)
+                        when = TemporalTrigger::make_periodic(call->period);
+                    else
+                        when = TemporalTrigger::make_periodic_finite(call->period, call->expected_nb_calls);
+                    when->set_time_unit(time_unit);
+                    if (call->is_probe) {
+                        auto cp = batprotocol::CreateProbe::make_temporal_triggerred(when);
+                        cp->set_resources_as_hosts("0");
+                        cp->enable_accumulation_no_reset();
+                        mb->add_create_probe(call_id, batprotocol::fb::Metrics_Power, cp);
+                        call->probe_just_created = true;
+                    } else {
+                        mb->add_call_me_later(call_id, when);
 
-                if (alive_calls.find(call_id) != alive_calls.end())
-                    throw std::runtime_error("unexpected state: waiting to set a call alive while it is already alive, call_id=" + call_id);
-                calls_to_make_alive.insert(call_id);
+                        if (alive_calls.find(call_id) != alive_calls.end())
+                            throw std::runtime_error("unexpected state: waiting to set a call alive while it is already alive, call_id=" + call_id);
+                        calls_to_make_alive.insert(call_id);
+                    }
 
-                oneshot_to_periodic_ids.erase(oneshot_it);
-                break;
+                    oneshot_to_periodic_ids.erase(oneshot_it);
+                    break;
+                }
+            } else {
+                call_id = ep->probe_id()->str();
             }
 
-            auto it = calls.find(e->call_me_later_id()->str());
+            auto it = calls.find(call_id);
             if (it == calls.end())
                 throw std::runtime_error("unexpected call_me_later id received");
 
@@ -233,12 +263,23 @@ uint8_t batsim_edc_take_decisions(
             ++call->nb_calls;
             fprintf(stderr, "    %lu/%lu of call='%s'\n", call->nb_calls, call->expected_nb_calls, it->first.c_str());
 
-            bool all_calls_received = call->nb_calls == call->expected_nb_calls;
-            if (is_infinite && all_calls_received) {
-                mb->add_stop_call_me_later(call->call_id);
+            if (call->probe_just_created) {
+                call->probe_just_created = false;
+
+                if (alive_calls.find(call->call_id) != alive_calls.end())
+                    throw std::runtime_error("unexpected state: waiting to set a call alive while it is already alive, call_id=" + call->call_id);
+                alive_calls.insert(call->call_id);
             }
 
-            if (!is_infinite && e->last_periodic_call() != all_calls_received) {
+            bool all_calls_received = call->nb_calls == call->expected_nb_calls;
+            if (is_infinite && all_calls_received) {
+                if (call->is_probe)
+                    mb->add_stop_probe(call->call_id);
+                else
+                    mb->add_stop_call_me_later(call->call_id);
+            }
+
+            if (!is_infinite && !call->is_probe && e->last_periodic_call() != all_calls_received) {
                 char * err_cstr;
                 asprintf(&err_cstr, "last_periodic_call inconsistency on '%s': value received is %d while expecting %d, since I received %lu/%lu calls",
                     it->first.c_str(),
@@ -264,12 +305,12 @@ uint8_t batsim_edc_take_decisions(
                 calls_to_remove.insert(call->call_id);
             auto triggered_it = triggered_calls.find(call->call_id);
             if (triggered_it != triggered_calls.end())
-                throw std::runtime_error("got several triggers from the same CallMeLater in this message, call_id=" + call->call_id);
+                throw std::runtime_error("got several triggers from the same periodic entity in this message, call_id=" + call->call_id);
             triggered_calls.insert(call->call_id);
 
             auto alive_it = alive_calls.find(call->call_id);
             if (alive_it == alive_calls.end())
-                throw std::runtime_error("got a trigger from a CallMeLater that should no longer be active, call_id=" + call->call_id);
+                throw std::runtime_error("got a trigger from a periodic entity that should no longer be active, call_id=" + call->call_id);
         } break;
         default: break;
         }
@@ -290,7 +331,7 @@ uint8_t batsim_edc_take_decisions(
         }
     }
     if (abort)
-        throw std::runtime_error("CallMeLater that should have been triggered in the same message were not, aborting");
+        throw std::runtime_error("periodic entity that should have been triggered in the same message were not, aborting");
 
     // clear calls that have finished
     for (auto & call_id : calls_to_remove)

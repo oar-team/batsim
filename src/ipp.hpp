@@ -40,12 +40,15 @@ enum class IPMessageType
     ,SCHED_HELLO            //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (say hello).
     ,SCHED_CALL_ME_LATER    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to be called in the future).
     ,SCHED_STOP_CALL_ME_LATER //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler no longer wants to be called in the future).
+    ,SCHED_CREATE_PROBE     //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (create a new probe).
+    ,SCHED_STOP_PROBE       //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (stop a probe).
     ,SCHED_TELL_ME_ENERGY   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform consumed energy).
     ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,WAIT_QUERY             //!< Server -> Scheduler. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,SCHED_READY            //!< Scheduler -> Server. The scheduler tells the server that the scheduler is ready (the scheduler is ready, messages can be sent to it).
     ,ONESHOT_REQUESTED_CALL //!< OneShot -> Server. The target time of a OneShot requested call has been reached.
     ,PERIODIC_TRIGGER       //!< Periodic -> Server. The target time of periodic events has been reached, which has has triggered events.
+    ,PERIODIC_ENTITY_STOPPED//!< Periodic -> Server. A periodic entity (call me later or probe) has been stopped.
     ,KILLING_DONE           //!< Killer -> Server. The killer tells the server that all the jobs have been killed.
     ,SUBMITTER_HELLO        //!< Submitter -> Server. The submitter tells it starts submitting to the server.
     ,SUBMITTER_CALLBACK     //!< Server -> Submitter. The server sends a message to the Submitter. This message is initiated when a Job which has been submitted by the submitter has completed. The submitter must have said that it wanted to be called back when he said hello.
@@ -273,10 +276,73 @@ struct StopCallMeLaterMessage
     std::string call_id; //!< The identifier of the CALL_ME_LATER to stop
 };
 
+struct CreateProbeMessage
+{
+    std::string probe_id; //!< The identifier of the probe
+
+    batprotocol::fb::Metrics metrics; //!< The metrics that should be probed
+
+    batprotocol::fb::Resources resource_type; //!< The type of resources that should be probed
+    IntervalSet hosts; //!< The hosts to probe (only defined if resources are hosts)
+    std::vector<std::string> links; //!< The links to probe (only defined if resources are links)
+
+    batprotocol::fb::ProbeMeasurementTriggeringPolicy measurement_triggering_policy; //!< The policy to trigger measurements
+    bool is_periodic; //!< Whether the future call is periodic or not
+    double target_time = -1; //!< For a non-periodic call, this is the time at which Batsim should call the EDC
+    batprotocol::fb::TimeUnit time_unit = batprotocol::fb::TimeUnit_Second; //!< For a non-periodic call, this is the time unit used by target_time
+    Periodic periodic; //!< Defines all periodic information for periodic calls
+    bool initialized; //!< For periodic probes, whether they were already reset or not
+
+    batprotocol::fb::ProbeDataAccumulationStrategy data_accumulation_strategy; //!< How probed data should be accumulated over several triggers
+    batprotocol::fb::ResetMode data_accumulation_reset_mode; //!< If data should be accumulated, how the accumulated value should be reset at each trigger?
+    double data_accumulation_reset_value; //!< If data should be accumulated and reset, this is the value to set after reading the counter
+    batprotocol::fb::CumulativeFunction data_accumulation_cumulative_function; //!< If data should be aggregated, which function should be applied at each event?
+    bool data_accumulation_temporal_normalization;
+
+    batprotocol::fb::ResourcesAggregationFunction resource_agregation_type; //!< How data should be aggregated when several resources are probed
+    double quantile_threshold; //!< The threshold to use for the quantile function, if any
+    batprotocol::fb::TemporalAggregationFunction temporal_aggregation_type; //!< How sequential probed values should be aggregated (raw values? exponential moving average? some sliding window operation?)
+
+    batprotocol::fb::ProbeEmissionFilteringPolicy emission_filtering_policy; //!< Filters which triggered measures should be forwarded to an EDC
+    double emission_filtering_threshold_value; //!< If a threshold emission filtering policy is set, this is the threshold value
+    batprotocol::fb::BooleanComparisonOperator emission_filtering_threshold_comparator; //!< If a threshold emission filtering policy is set, this is the comparator to apply on the measured value and the threshold value
+};
+
+struct StopProbeMessage
+{
+    std::string probe_id; //!< The identifier of the probe
+};
+
+struct ProbeData {
+    std::string probe_id; //!< The identifier of the probe
+
+    batprotocol::fb::Resources resource_type; //!< The type of resources that should be probed
+    IntervalSet hosts; //!< The hosts to probe (only defined if resources are hosts)
+    std::vector<std::string> links; //!< The links to probe (only defined if resources are links)
+
+    batprotocol::fb::Metrics metrics; //!< The metrics that should be probed
+
+    batprotocol::fb::ProbeData data_type; //!< Whether the emitted data is raw vectorial data or an aggregation
+    double aggregated_data; //!< Stores the actual data when it is an aggregation over several resources
+    std::vector<double> vectorial_data; //!< Stores the actual data when it is vectorial (one value per probed resource)
+
+    bool manually_triggered; //!< Whether the probe was triggered manually (TriggerProbe event) or automatically (periodic)
+    unsigned int nb_triggered; //!< The number of times the probe has been automatically triggered by its period
+    unsigned int nb_emitted; //!< The number of times the probe has been emitted
+    bool is_last_periodic = false; //!< Whether this message comes from the last data emission of a non-infinite periodic probe
+};
+
 struct PeriodicTriggerMessage
 {
     std::vector<RequestedCall> calls;
-    // TODO: probes
+    std::vector<ProbeData*> probes_data;
+};
+
+struct PeriodicEntityStoppedMessage
+{
+    std::string entity_id;
+    bool is_probe = false;
+    bool is_call_me_later = false;
 };
 
 /**
