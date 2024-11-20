@@ -320,7 +320,7 @@ void periodic_main_actor(BatsimContext * context)
           probe_data->is_last_periodic = !probe->periodic.is_infinite && probe->periodic.nb_periods == 1;
 
           // TODO: populate an iterator of s4u hosts once per probe to avoid this slow traversal + host retrieval
-          probe_data->vectorial_data.resize(probe->hosts.size());
+          probe_data->vectorial_data.reserve(probe->hosts.size());
           for (auto it = probe->hosts.elements_begin(); it != probe->hosts.elements_end(); ++it)
           {
               int machine_id = *it;
