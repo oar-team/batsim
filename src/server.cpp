@@ -59,6 +59,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_KILL_JOB] = server_on_kill_jobs;
     handler_map[IPMessageType::SCHED_CALL_ME_LATER] = server_on_call_me_later;
     handler_map[IPMessageType::SCHED_TELL_ME_ENERGY] = server_on_sched_tell_me_energy;
+    handler_map[IPMessageType::SCHED_TELL_ME_CARBON_FOOTPRINT] = server_on_sched_tell_me_carbon_footprint;
     handler_map[IPMessageType::SCHED_SET_JOB_METADATA] = server_on_set_job_metadata;
     handler_map[IPMessageType::SCHED_WAIT_ANSWER] = server_on_sched_wait_answer;
     handler_map[IPMessageType::WAIT_QUERY] = server_on_wait_query;
@@ -435,6 +436,8 @@ void server_on_pstate_modification(ServerData * data,
     data->context->current_switches.add_switch(message->machine_ids, message->new_pstate);
     data->context->energy_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids,
                                                    message->new_pstate);
+    data->context->carbon_footprint_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids,
+                                                   message->new_pstate);                                               
 
     // Let's quickly check whether this is a switchON or a switchOFF
     // Unknown transition states will be set to -42.
@@ -569,6 +572,21 @@ void server_on_sched_tell_me_energy(ServerData * data,
                "Try --help to enable it.");
     double total_consumed_energy = static_cast<double>(data->context->machines.total_consumed_energy(data->context));
     data->context->proto_writer->append_answer_energy(total_consumed_energy, simgrid::s4u::Engine::get_clock());
+}
+
+void server_on_sched_tell_me_carbon_footprint(ServerData * data,
+                                             IPMessage * task_data)
+{
+    (void) task_data;
+
+    xbt_assert(data->context->carbon_footprint_used,
+        "Received a request about the carbon footprint of the "
+        "machines but carbon footprint simulation is not enabled. "
+        "Try --help to enable it.");
+
+    double total_carbon_footprint = static_cast<double>(data->context->machines.total_carbon_footprint(data->context));
+
+    data->context->proto_writer->append_answer_carbon_footprint(total_carbon_footprint, simgrid::s4u::Engine::get_clock());
 }
 
 void server_on_wait_query(ServerData * data,

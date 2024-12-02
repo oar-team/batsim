@@ -55,6 +55,8 @@ src_without_main = [
     'src/events.hpp',
     'src/event_submitter.cpp',
     'src/event_submitter.hpp',
+    'src/carbon_updater.hpp',
+    'src/carbon_updater.cpp',
     'src/export.cpp',
     'src/export.hpp',
     'src/ipp.cpp',

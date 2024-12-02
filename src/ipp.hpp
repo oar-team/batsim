@@ -38,6 +38,7 @@ enum class IPMessageType
     ,SCHED_KILL_JOB         //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (kill a job).
     ,SCHED_CALL_ME_LATER    //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to be called in the future).
     ,SCHED_TELL_ME_ENERGY   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform consumed energy).
+    ,SCHED_TELL_ME_CARBON_FOOTPRINT   //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (the scheduler wants to know the platform's carbon footprint).
     ,SCHED_SET_JOB_METADATA //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a SET_JOB_METADATA message).
     ,SCHED_WAIT_ANSWER      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).
     ,WAIT_QUERY             //!< Server -> Scheduler. The scheduler tells the server a scheduling event occured (a WAIT_ANSWER message).

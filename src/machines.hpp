@@ -262,6 +262,13 @@ public:
      */
     long double total_wattmin(const BatsimContext * context) const;
 
+     /**
+     * @brief Computes and returns the total carbon emissions of all the computing machines
+     * @param[in] context The Batsim context
+     * @return The total consumed carbon emissions of all the computing machines
+     */
+    long double total_carbon_footprint(const BatsimContext * context) const;    
+
     /**
      * @brief Returns the total number of machines
      * @return The total number of machines

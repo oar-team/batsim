@@ -75,6 +75,11 @@ void prepare_batsim_outputs(BatsimContext * context)
         }
     }
 
+    if(context->carbon_footprint_used){
+        context->carbon_footprint_tracer.set_context(context);
+        context->carbon_footprint_tracer.set_filename(context->export_prefix + "_carbon_footprint.csv");
+    }
+
     context->jobs_tracer.initialize(context,
                                     context->export_prefix + "_jobs.csv",
                                     context->export_prefix + "_schedule.csv");
@@ -867,6 +872,112 @@ long double EnergyConsumptionTracer::add_entry(double date, char event_type)
     return energy;
 }
 
+
+/* Part related to CarbonFootprintTracer */
+
+CarbonFootprintTracer::~CarbonFootprintTracer()
+{
+    if (_wbuf != nullptr)
+    {
+        delete _wbuf;
+        _wbuf = nullptr;
+    }
+}
+
+void CarbonFootprintTracer::set_context(BatsimContext *context)
+{
+    xbt_assert(context->carbon_footprint_used, "wrong call: carbon footprint is disabled");
+    _context = context;
+}
+
+void CarbonFootprintTracer::set_filename(const string &filename)
+{
+    xbt_assert(_wbuf == nullptr, "Double call of CarbonFootprintTracer::set_filename");
+    _wbuf = new WriteBuffer(filename);
+
+    _wbuf->append_text("time,energy(J),carbon_emission(grams per kwh),event_type,ecarbon\n");
+}
+
+void CarbonFootprintTracer::add_job_start(double date, JobIdentifier job_id)
+{
+    (void) job_id;
+    add_entry(date, 's');
+}
+
+void CarbonFootprintTracer::add_job_end(double date, JobIdentifier job_id)
+{
+    (void) job_id;
+    add_entry(date, 'e');
+}
+
+void CarbonFootprintTracer::add_pstate_change(double date, const IntervalSet & machines, int new_pstate)
+{
+    (void) machines;
+    (void) new_pstate;
+    add_entry(date, 'p');
+}
+
+void CarbonFootprintTracer::flush()
+{
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
+
+    _wbuf->flush_buffer();
+}
+
+void CarbonFootprintTracer::close_buffer()
+{
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
+
+    delete _wbuf;
+    _wbuf = nullptr;
+}
+
+long double CarbonFootprintTracer::add_entry(double date, char event_type)
+{
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
+
+    long double energy = _context->machines.total_consumed_energy(_context);
+    long double carbon_emission = _context->machines.total_carbon_footprint(_context); 
+
+    long double time_diff = static_cast<long double>(date) - _last_entry_date;
+    long double carbon_emission_diff = carbon_emission - _last_entry_carbon;
+    long double ecarbon = -1;
+
+    if (time_diff > 0)
+    {
+        ecarbon = carbon_emission_diff / time_diff;
+    }
+
+    const int buf_size = 256;
+    int nb_printed;
+    (void) nb_printed; // Avoids a warning if assertions are ignored
+    char * buf = static_cast<char*>(malloc(sizeof(char) * buf_size));
+    xbt_assert(buf != NULL, "Couldn't allocate memory");
+
+    if (ecarbon != -1)
+    {
+        nb_printed = snprintf(buf, buf_size, "%lf,%Lf,%Lf,%c,%lf\n",
+                              date, energy, carbon_emission, event_type, static_cast<double>(ecarbon));
+    }
+    else
+    {
+        nb_printed = snprintf(buf, buf_size, "%lf,%Lf,%Lf,%c,NA\n",
+                              date, energy, carbon_emission, event_type);
+    }
+    xbt_assert(nb_printed < buf_size - 1,
+               "Writing error: buffer has been completely filled, some information might "
+               "have been lost. Please increase Batsim's output temporary buffers' size");
+    xbt_assert(_wbuf != nullptr, "wrong call: _wbuf is null");
+    _wbuf->append_text(buf);
+
+    free(buf);
+
+    _last_entry_date = static_cast<long double>(date);
+    _last_entry_energy = energy;
+    _last_entry_carbon = carbon_emission;
+
+    return carbon_emission;
+}
 
 
 /* Part related to MachineStateTracer */

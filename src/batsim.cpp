@@ -36,6 +36,7 @@
 #include <simgrid/s4u.hpp>
 #include <smpi/smpi.h>
 #include <simgrid/plugins/energy.h>
+#include <simgrid/plugins/carbon_footprint.h>
 #include <simgrid/version.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
@@ -45,6 +46,7 @@
 #include "batsim.hpp"
 #include "context.hpp"
 #include "event_submitter.hpp"
+#include "carbon_updater.hpp"
 #include "events.hpp"
 #include "export.hpp"
 #include "ipp.hpp"
@@ -194,7 +196,10 @@ Most common options:
                                      Example: -r host8:master -r host1,host2:storage
   -E, --energy                       Enables the SimGrid energy plugin and
                                      outputs energy-related files.
-
+  -C, --carbon-footprint             Enables the fixed carbon footprint mode.
+  --carbon-footprint-dynamic <trace_file>  Enables the dynamic carbon footprint mode
+                                     The trace file contains carbon intensity for each host and timestamp. [default: None].
+                                     
 Execution context options:
   -s, --socket-endpoint <endpoint>   The Decision process socket endpoint
                                      Decision process [default: tcp://localhost:28000].
@@ -283,10 +288,7 @@ Other options:
 
     if (args["--simgrid-version"].asBool())
     {
-        int sg_major, sg_minor, sg_patch;
-        sg_version_get(&sg_major, &sg_minor, &sg_patch);
-
-        printf("%d.%d.%d\n", sg_major, sg_minor, sg_patch);
+        sg_version();
         return;
     }
 
@@ -437,8 +439,39 @@ Other options:
     main_args.master_host_name = args["--master-host"].asString();
     main_args.hosts_roles_map[main_args.master_host_name] = "master";
 
-    main_args.energy_used = args["--energy"].asBool();
+    main_args.energy_used = args["--energy"].asBool();   
+ 
+    if (args["--carbon-footprint"].asBool()) {
+        main_args.carbon_footprint_used = true; 
+        XBT_INFO("Carbon footprint mode: FIXED.");
+        
+    } else if (args["--carbon-footprint-dynamic"].isString()) {
+        main_args.carbon_footprint_trace_file = args["--carbon-footprint-dynamic"].asString();
 
+        if (main_args.carbon_footprint_trace_file == "None")  {
+            XBT_ERROR("The trace file must be specified when using --carbon-footprint-dynamic.");
+            error = true;
+            return;
+        } else if (!file_exists(main_args.carbon_footprint_trace_file)) {
+            XBT_ERROR("The trace file '%s' does not exist.", main_args.carbon_footprint_trace_file.c_str());
+            error = true; 
+            return;  
+        } else {
+            auto carbon_intensities = load_carbon_trace_file(main_args.carbon_footprint_trace_file);
+
+            for (const auto &entry : carbon_intensities) {
+                MainArguments::CarbonIntensityTraces desc;
+                desc.host_id = entry.first;
+                desc.intensities = entry.second;
+                main_args.carbon_intensities.push_back(desc);
+
+            }  
+            main_args.carbon_footprint_used = true;
+            XBT_INFO("Carbon footprint mode: DYNAMIC activated with trace file '%s'",
+                    main_args.carbon_footprint_trace_file.c_str());   
+
+        }   
+    }
 
     // get roles mapping
     vector<string> hosts_roles_maps = args["--add-role-to-hosts"].asStringList();
@@ -621,6 +654,7 @@ void configure_batsim_logging_output(const MainArguments & main_args)
 
     // Simgrid-related log control
     xbt_log_control_set("surf_energy.thresh:critical");
+    xbt_log_control_set("surf_carbon_footprint.thresh:critical");
 }
 
 void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext * context, int & max_nb_machines_to_use)
@@ -737,6 +771,23 @@ void start_initial_simulation_processes(const MainArguments & main_args,
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
+    // Let's run a carbon_updater process for each host
+    if (main_args.carbon_footprint_used && main_args.carbon_footprint_trace_file != "None"){
+        for (const MainArguments::CarbonIntensityTraces & desc : main_args.carbon_intensities) 
+        {
+            auto host = simgrid::s4u::Host::by_name(desc.host_id);
+            if (host) {
+                std::string actor_name = "carbon_updater_" + desc.host_id;
+                auto actor_function = carbon_updater_actor_for_host;
+                simgrid::s4u::Actor::create(actor_name.c_str(), host,
+                                            actor_function, desc.host_id, desc.intensities);
+                XBT_DEBUG("Carbon updater actor '%s' created for host '%s'.", actor_name.c_str(), desc.host_id.c_str());
+            } else {
+                XBT_INFO("Host '%s' not found in the platform. Skipping.", desc.host_id.c_str());
+            }
+        }
+    }
+
     if (!is_batexec)
     {
         XBT_DEBUG("Creating the 'server' process...");
@@ -801,6 +852,11 @@ int main(int argc, char * argv[])
     if (main_args.energy_used)
     {
         sg_host_energy_plugin_init();
+    }
+    if(main_args.carbon_footprint_used)
+    {
+        main_args.energy_used = true;
+        sg_host_carbon_footprint_plugin_init();
     }
 
     // Instantiate SimGrid
@@ -945,6 +1001,7 @@ void set_configuration(BatsimContext *context,
     context->export_prefix = main_args.export_prefix;
     context->workflow_nb_concurrent_jobs_limit = main_args.workflow_nb_concurrent_jobs_limit;
     context->energy_used = main_args.energy_used;
+    context->carbon_footprint_used = main_args.carbon_footprint_used;
     context->allow_compute_sharing = main_args.allow_compute_sharing;
     context->allow_storage_sharing = main_args.allow_storage_sharing;
     context->trace_schedule = main_args.enable_schedule_tracing;

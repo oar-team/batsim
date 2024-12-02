@@ -508,6 +508,12 @@ void execute_job_process(BatsimContext * context,
         context->energy_tracer.add_job_start(simgrid::s4u::Engine::get_clock(), job->id);
     }
 
+    if (context->carbon_footprint_used)
+    {
+        // Let's trace the carbon footprint
+        context->carbon_footprint_tracer.add_job_start(simgrid::s4u::Engine::get_clock(), job->id);
+    }
+
     // Job computation
     context->machines.update_machines_on_job_run(job, allocation->machine_ids,
                                                  context);
@@ -568,6 +574,12 @@ void execute_job_process(BatsimContext * context,
 
         // Let's trace the consumed energy
         context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
+    }
+
+    if (context->carbon_footprint_used)
+    {
+        // Let's trace the carbon footprint
+        context->carbon_footprint_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
     }
 
     if (notify_server_at_end and job->state != JobState::JOB_STATE_COMPLETED_KILLED)
@@ -712,6 +724,13 @@ void killer_process(BatsimContext * context,
                     // Let's trace the consumed energy
                     context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
                 }
+
+                if (context->carbon_footprint_used)
+                {
+                    // Let's trace the carbon footprint
+                    context->carbon_footprint_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
+                }
+
             }
             // Else the running ptask was asked to cancel by itself.
             // The job process will regularly terminate with the status JOB_STATE_COMPLETED_KILLED

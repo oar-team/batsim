@@ -27,7 +27,7 @@ build_and_test:
     - nix-shell --pure -A coverage-report ${NIX_ARGS} --command ${CI_PROJECT_DIR}/ci/list-store-paths-for-cachix.bash | cachix push batsim
     - nix-build -A coverage-report ${NIX_ARGS} && cp -rL result ./coverage_report
     # Send coverage results to codecov.io
-    - nix-shell -A codecov_push_shell --command 'codecov -f ./coverage_report/coveralls.json'
+    # - nix-shell -A codecov_push_shell --command 'codecov -f ./coverage_report/coveralls.json'
   artifacts:
     when: always
     expire_in: 8 hours

@@ -13,6 +13,7 @@
 
 #include <simgrid/host.h>
 #include <simgrid/plugins/energy.h>
+#include <simgrid/plugins/carbon_footprint.h>
 
 #include "batsim.hpp"
 #include "context.hpp"
@@ -20,8 +21,17 @@
 #include "jobs.hpp"
 #include "permissions.hpp"
 
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+#include <iostream>
+#include <filesystem>
+
 using namespace std;
 using namespace roles;
+namespace fs = std::filesystem;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(machines, "machines"); //!< Logging
 
@@ -195,7 +205,29 @@ void Machines::create_machines(const BatsimContext *context,
                     machine->pstates[on_ps] = PStateType::TRANSITION_VIRTUAL_PSTATE;
                     machine->pstates[off_ps] = PStateType::TRANSITION_VIRTUAL_PSTATE;
                 }
+
             }
+
+            if (context->carbon_footprint_used){
+                // Check if the machine has the "carbon_intensity" property
+
+                auto carbon_intensity_it = machine->properties.find("carbon_intensity");
+                if (carbon_intensity_it == machine->properties.end()) {
+                    xbt_assert(false, "Invalid platform file '%s': host '%s' doesn't have the 'carbon_intensity' property. "
+                                "This property is required when carbon footprint tracking is enabled.",
+                               context->platform_filename.c_str(), machine->name.c_str());
+                }
+                // Check if the value is a valid double
+                try {
+                    double carbon_intensity = boost::lexical_cast<double>(carbon_intensity_it->second);
+                } catch (const boost::bad_lexical_cast&) {
+                    xbt_assert(false, "Invalid platform file '%s': host '%s' has an invalid 'carbon_intensity' value (%s). "
+                              "Value must be a numeric value.",
+                              context->platform_filename.c_str(), machine->name.c_str(), 
+                              carbon_intensity_it->second.c_str());
+                }
+            }
+
 
             // Let the computation pstates be defined by those who are not sleep pstates nor virtual transition pstates
             for (int ps = 0; ps < nb_pstates; ++ps)
@@ -447,6 +479,26 @@ long double Machines::total_wattmin(const BatsimContext *context) const
 
     return total_wattmin;
 }
+
+long double Machines::total_carbon_footprint(const BatsimContext *context) const
+{
+    long double total_carbon_footprint = 0;
+
+    if (context->carbon_footprint_used)
+    {
+        for (const Machine * m : _machines)
+        {
+            total_carbon_footprint += static_cast<long double>(sg_host_get_carbon_footprint(m->host));
+        }
+    }
+    else
+    {
+        total_carbon_footprint = -1;
+    }
+
+    return total_carbon_footprint;
+}
+
 
 unsigned int Machines::nb_machines() const
 {

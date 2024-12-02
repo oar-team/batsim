@@ -12,7 +12,13 @@
 , doValgrindAnalysis ? false
 , debug ? true
 , useClang ? false
-, simgrid ? kapack.simgrid-light.override { inherit debug; }
+, simgrid ? kapack.simgrid-light.overrideAttrs(old: {
+    src = kapack.pkgs.fetchgit {
+      url = "https://github.com/saraiva03/simgrid.git";
+      rev = "0c74031fb28e770b128e42f44b63b8136c79c3bc"; 
+      sha256 = "CfFeTqPNOc6EwaHpdpXwd9BCU8GZadnNriiX7aozU18="; 
+    };
+  })
 , batsched ? kapack.batsched.overrideAttrs (old: {
     src = kapack.pkgs.fetchFromGitLab {
       domain = "framagit.org";

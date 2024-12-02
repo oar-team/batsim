@@ -83,6 +83,9 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_TELL_ME_ENERGY:
             s = "SCHED_TELL_ME_ENERGY";
             break;
+        case IPMessageType::SCHED_TELL_ME_CARBON_FOOTPRINT:
+            s = "SCHED_TELL_ME_CARBOON_FOOTPRINT";
+            break;    
         case IPMessageType::SCHED_WAIT_ANSWER:
             s = "SCHED_WAIT_ANSWER";
             break;
@@ -200,6 +203,9 @@ IPMessage::~IPMessage()
             delete msg;
         } break;
         case IPMessageType::SCHED_TELL_ME_ENERGY:
+        {
+        } break;
+        case IPMessageType::SCHED_TELL_ME_CARBON_FOOTPRINT:
         {
         } break;
         case IPMessageType::SCHED_SET_JOB_METADATA:

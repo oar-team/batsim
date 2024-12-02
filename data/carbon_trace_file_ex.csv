@@ -1,0 +1,7 @@
+host_id,timestamp,carbon_intensity
+Mercury,10,43.15
+Mercury,100,42.80
+Venus,200,54.71
+Venus,300,39.90
+Earth,120,45.00
+Earth,140,44.50

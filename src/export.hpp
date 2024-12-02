@@ -388,6 +388,92 @@ private:
 };
 
 /**
+ * @brief Traces the carbon footprint of the computation machines
+ */
+ class CarbonFootprintTracer
+ {
+ public:
+     /**
+      * @brief Constructs a CarbonFootprintTracer
+      */
+     CarbonFootprintTracer() = default;
+ 
+     /**
+      * @brief CarbonFootprintTracer cannot be copied.
+      * @param[in] other Another instance
+      */
+     CarbonFootprintTracer(const CarbonFootprintTracer & other) = delete;
+ 
+     /**
+      * @brief Destroys a CarbonFootprintTracer
+      * @details The output file is flushed and written
+      */
+     ~CarbonFootprintTracer();
+ 
+     /**
+      * @brief Sets the Batsim context
+      * @param[in] context The Batsim context
+      */
+     void set_context(BatsimContext * context);
+ 
+     /**
+      * @brief Sets the output filename of the tracer
+      * @param[in] filename The name of the output file of the tracer
+      */
+     void set_filename(const std::string & filename);
+ 
+     /**
+      * @brief Adds a job start in the tracer
+      * @param[in] date The date at which the job has been started
+      * @param[in] job_id The job unique number
+      */
+     void add_job_start(double date, JobIdentifier job_id);
+ 
+     /**
+      * @brief Adds a job end in the tracer
+      * @param[in] date The date at which the job has ended
+      * @param[in] job_id The job unique number
+      */
+     void add_job_end(double date, JobIdentifier job_id);
+ 
+     /**
+      * @brief Adds a power state change in the tracer
+      * @param[in] date The date at which the power state has been changed
+      * @param[in] machines The machines whose power state has changed
+      * @param[in] new_pstate The new power state of the machine
+      */
+     void add_pstate_change(double date, const IntervalSet & machines, int new_pstate);
+ 
+     /**
+      * @brief Forces the flushing of what happened to the output file
+      */
+     void flush();
+ 
+     /**
+      * @brief Closes the buffer and its associated output file
+      */
+     void close_buffer();
+ 
+ private:
+     /**
+      * @brief Adds a line in the output file
+      * @return The carbon footprint of the computing machines from simulation's start to the current simulation time
+      * @param[in] date The date at which the event has occurred
+      * @param[in] event_type The type of the event which occurred
+      */
+     long double add_entry(double date, char event_type);
+ 
+     long double _last_entry_date = 0; //!< The date of the last entry
+     long double _last_entry_energy = 0; //!< The energy of the last entry
+     long double _last_entry_carbon = 0; //!< The carbon footprint of the last entry
+ 
+ private:
+     BatsimContext * _context = nullptr; //!< The Batsim context
+     WriteBuffer * _wbuf = nullptr; //!< The buffer used to handle the output file
+ };
+
+
+/**
  * @brief Traces the repartition of the machine states over time
  */
 class MachineStateTracer

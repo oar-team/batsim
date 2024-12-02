@@ -1,0 +1,18 @@
+{
+    "nb_res": 1,  
+    "jobs": [
+      {
+        "id": "dellgs_app",
+        "subtime": 0,
+        "walltime": 1000,
+        "res": 1,
+        "profile": "dell_profile"
+      }
+    ],
+    "profiles": {
+      "dell_profile": {
+        "type": "usage",
+        "trace": "usage-trace/dellGS/traces.txt"
+      }
+    }
+  }

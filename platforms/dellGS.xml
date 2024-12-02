@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE platform SYSTEM "https://simgrid.org/simgrid.dtd">
+<platform version="4.1">
+    <zone id="AS0" routing="Full">
+      
+        <host id="master_host" speed="1Gf" pstate="0">
+            <prop id="wattage_per_state" value="10.0:10.0:10.0" />
+            <prop id="wattage_off" value="0.0" />
+             <prop id="carbon_intensity" value="98.348" />
+        </host>
+        
+        <!-- Intel_i5_11400H -->
+        <host id="Intel_i5_11400H" speed="4.5Gf" pstate="0" core="6">
+            <prop id="wattage_per_state" value="10.0:25.0:40.0" />
+            <prop id="wattage_off" value="1.0" />
+            <prop id="carbon_intensity" value="98.348" />
+        </host>
+
+        <!-- Link between master_host and Intel_i5_11400H -->
+        <link id="loopback" bandwidth="498MBps" latency="15us" sharing_policy="FATPIPE"/>
+        <link id="link_master_intel" bandwidth="1GBps" latency="100us"/>
+        
+        <route src="master_host" dst="master_host">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="Intel_i5_11400H" dst="Intel_i5_11400H">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="master_host" dst="Intel_i5_11400H">
+            <link_ctn id="link_master_intel"/>
+        </route>
+    </zone>
+</platform>

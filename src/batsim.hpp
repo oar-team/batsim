@@ -60,15 +60,24 @@ struct MainArguments
        std::string name;            //!< The name of the eventList
    };
 
+   struct CarbonIntensityTraces 
+   {
+       std::string host_id;                     //!< Host id
+       std::map<std::string, double> intensities;     //!< Timestamp to carbon rate mapping
+   };
+
     // Input
     std::string platform_filename;                          //!< The SimGrid platform filename
     std::list<WorkloadDescription> workload_descriptions;   //!< The workloads descriptions
     std::list<WorkflowDescription> workflow_descriptions;   //!< The workflows descriptions
     std::list<EventListDescription> eventList_descriptions; //!< The descriptions of the eventLists
-
+    std::list<CarbonIntensityTraces> carbon_intensities;       //!< The descriptions of the carbon footprint trace files
+    
     // Common
     std::string master_host_name;                           //!< The name of the SimGrid host which runs scheduler processes and not user tasks
-    bool energy_used = false;                               //!< True if and only if the SimGrid energy plugin should be used.
+    bool energy_used;                                       //!< True if and only if the SimGrid energy plugin should be used.
+    bool carbon_footprint_used = false;                     //!< True if and only if the SimGrid carbon footprint plugin should be used.
+    std::string carbon_footprint_trace_file;                //!< The path to the trace file for the carbon footprint plugin.
     std::map<std::string, std::string> hosts_roles_map;     //!< The hosts/roles mapping to be added to the hosts properties.
 
     // Execution context

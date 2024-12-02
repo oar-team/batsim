@@ -566,6 +566,28 @@ void JsonProtocolWriter::append_answer_energy(double consumed_energy,
     _events.PushBack(event, _alloc);
 }
 
+
+void JsonProtocolWriter::append_answer_carbon_footprint(double carbon_footprint,
+                                                       double date)
+{
+    /* {
+      "timestamp": 10.0,
+      "type": "ANSWER",
+      "data": {"carbon_footprint": 50.0}
+    } */
+
+    xbt_assert(date >= _last_date, "Date inconsistency");
+    _last_date = date;
+    _is_empty = false;
+
+    Value event(rapidjson::kObjectType);
+    event.AddMember("timestamp", Value().SetDouble(date), _alloc);
+    event.AddMember("type", Value().SetString("ANSWER"), _alloc);
+    event.AddMember("data", Value().SetObject().AddMember("carbon_footprint", Value().SetDouble(carbon_footprint), _alloc), _alloc);
+
+    _events.PushBack(event, _alloc);
+}
+
 void JsonProtocolWriter::append_notify(const std::string & notify_type,
                                        double date)
 {
@@ -762,11 +784,21 @@ void JsonProtocolReader::handle_query(int event_number, double timestamp, const 
 {
     (void) event_number; // Avoids a warning if assertions are ignored
     /* {
-      "timestamp": 10.0,
-      "type": "QUERY",
-      "data": {
-        "requests": {"consumed_energy": {}}
-      }
+        "timestamp": 10.0,
+        "type": "QUERY",
+        "data": {
+          "requests": {"consumed_energy": {}}
+       }
+    } 
+      
+    OR
+
+       {
+        "timestamp": 10.0,
+        "type": "QUERY",
+        "data": {
+          "requests": {"carbon_footprint": {}}
+       }
     } */
 
     xbt_assert(data_object.IsObject(), "Invalid JSON message: the 'data' value of event %d (QUERY) should be an object", event_number);
@@ -793,6 +825,10 @@ void JsonProtocolReader::handle_query(int event_number, double timestamp, const 
         {
             xbt_assert(value_object.ObjectEmpty(), "Invalid JSON message: the value of '%s' inside the 'requests' object of the 'data' object of event %d (QUERY) should be empty", key.c_str(), event_number);
             send_message_at_time(timestamp, "server", IPMessageType::SCHED_TELL_ME_ENERGY);
+        } else if (key == "carbon_footprint") 
+        {
+            xbt_assert(value_object.ObjectEmpty(), "Invalid JSON message: the value of '%s' inside the 'requests' object of the 'data' object of event %d (QUERY) should be empty", key.c_str(), event_number);
+            send_message_at_time(timestamp, "server", IPMessageType::SCHED_TELL_ME_CARBON_FOOTPRINT);
         }
         else
         {
