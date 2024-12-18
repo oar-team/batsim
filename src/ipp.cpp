@@ -193,23 +193,20 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::JOB_SUBMITTED:
             s = "JOB_SUBMITTED";
             break;
-        case IPMessageType::JOB_REGISTERED_BY_DP:
-            s = "JOB_REGISTERED_BY_DP";
+        case IPMessageType::SCHED_JOB_REGISTERED:
+            s = "SCHED_JOB_REGISTERED";
             break;
-        case IPMessageType::PROFILE_REGISTERED_BY_DP:
-            s = "PROFILE_REGISTERED_BY_DP";
+        case IPMessageType::SCHED_PROFILE_REGISTERED:
+            s = "SCHED_PROFILE_REGISTERED";
             break;
         case IPMessageType::JOB_COMPLETED:
             s = "JOB_COMPLETED";
             break;
-        case IPMessageType::PSTATE_MODIFICATION:
-            s = "PSTATE_MODIFICATION";
+        case IPMessageType::SCHED_PSTATE_MODIFICATION:
+            s = "SCHED_PSTATE_MODIFICATION";
             break;
         case IPMessageType::SCHED_EXECUTE_JOB:
             s = "SCHED_EXECUTE_JOB";
-            break;
-        case IPMessageType::SCHED_CHANGE_JOB_STATE:
-            s = "SCHED_CHANGE_JOB_STATE";
             break;
         case IPMessageType::SCHED_HELLO:
             s = "SCHED_HELLO";
@@ -231,15 +228,6 @@ std::string ip_message_type_to_string(IPMessageType type)
             break;
         case IPMessageType::SCHED_STOP_PROBE:
             s = "SCHED_STOP_PROBE";
-            break;
-        case IPMessageType::SCHED_TELL_ME_ENERGY:
-            s = "SCHED_TELL_ME_ENERGY";
-            break;
-        case IPMessageType::SCHED_WAIT_ANSWER:
-            s = "SCHED_WAIT_ANSWER";
-            break;
-        case IPMessageType::WAIT_QUERY:
-            s = "WAIT_QUERY";
             break;
         case IPMessageType::SCHED_READY:
             s = "SCHED_READY";
@@ -271,8 +259,8 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::KILLING_DONE:
             s = "KILLING_DONE";
             break;
-        case IPMessageType::END_DYNAMIC_REGISTER:
-            s = "END_DYNAMIC_REGISTER";
+        case IPMessageType::SCHED_END_DYNAMIC_REGISTRATION:
+            s = "SCHED_END_DYNAMIC_REGISTRATION";
             break;
         case IPMessageType::EVENT_OCCURRED:
             s = "EVENT_OCCURRED";
@@ -296,14 +284,14 @@ IPMessage::~IPMessage()
             auto * msg = static_cast<JobSubmittedMessage *>(data);
             delete msg;
         } break;
-        case IPMessageType::JOB_REGISTERED_BY_DP:
+        case IPMessageType::SCHED_JOB_REGISTERED:
         {
-            auto * msg = static_cast<JobRegisteredByDPMessage *>(data);
+            auto * msg = static_cast<JobRegisteredByEDCMessage *>(data);
             delete msg;
         } break;
-        case IPMessageType::PROFILE_REGISTERED_BY_DP:
+        case IPMessageType::SCHED_PROFILE_REGISTERED:
         {
-            auto * msg = static_cast<ProfileRegisteredByDPMessage *>(data);
+            auto * msg = static_cast<ProfileRegisteredByEDCMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::JOB_COMPLETED:
@@ -311,7 +299,7 @@ IPMessage::~IPMessage()
             auto * msg = static_cast<JobCompletedMessage *>(data);
             delete msg;
         } break;
-        case IPMessageType::PSTATE_MODIFICATION:
+        case IPMessageType::SCHED_PSTATE_MODIFICATION:
         {
             auto * msg = static_cast<PStateModificationMessage *>(data);
             delete msg;
@@ -321,11 +309,6 @@ IPMessage::~IPMessage()
             // As the data contained in it is needed during the job execution,
             // this data lifetime is bound to the job's lifetime.
             // In other words, data deallocation will be done when the corresponding job will be deallocated.
-        } break;
-        case IPMessageType::SCHED_CHANGE_JOB_STATE:
-        {
-            auto * msg = static_cast<ChangeJobStateMessage *>(data);
-            delete msg;
         } break;
         case IPMessageType::SCHED_HELLO:
         {
@@ -359,19 +342,6 @@ IPMessage::~IPMessage()
         case IPMessageType::SCHED_STOP_PROBE:
         {
             // Forwarded to the periodic actor, which is then responsible to deallocate them
-        } break;
-        case IPMessageType::SCHED_TELL_ME_ENERGY:
-        {
-        } break;
-        case IPMessageType::WAIT_QUERY:
-        {
-            auto * msg = static_cast<WaitQueryMessage *>(data);
-            delete msg;
-        } break;
-        case IPMessageType::SCHED_WAIT_ANSWER:
-        {
-            auto * msg = static_cast<SchedWaitAnswerMessage *>(data);
-            delete msg;
         } break;
         case IPMessageType::SCHED_READY:
         {
@@ -423,8 +393,9 @@ IPMessage::~IPMessage()
             auto * msg = static_cast<KillingDoneMessage *>(data);
             delete msg;
         } break;
-        case IPMessageType::END_DYNAMIC_REGISTER:
+        case IPMessageType::SCHED_END_DYNAMIC_REGISTRATION:
         {
+            // No data in this event
         } break;
         case IPMessageType::EVENT_OCCURRED:
         {

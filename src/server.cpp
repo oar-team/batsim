@@ -32,18 +32,17 @@ void server_process(BatsimContext * context)
 
     // Say hello to the external decision process.
     context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
-    context->proto_msg_builder->add_batsim_hello("TODO");
+    context->proto_msg_builder->add_batsim_hello("batversion");
     finish_message_and_call_edc(data);
 
     // Prepare a handler map to react to events
     std::map<IPMessageType, std::function<void(ServerData *, IPMessage *)>> handler_map;
     handler_map[IPMessageType::JOB_SUBMITTED] = server_on_job_submitted;
-    handler_map[IPMessageType::JOB_REGISTERED_BY_DP] = server_on_register_job;
-    handler_map[IPMessageType::PROFILE_REGISTERED_BY_DP] = server_on_register_profile;
+    handler_map[IPMessageType::SCHED_JOB_REGISTERED] = server_on_register_job;
+    handler_map[IPMessageType::SCHED_PROFILE_REGISTERED] = server_on_register_profile;
     handler_map[IPMessageType::JOB_COMPLETED] = server_on_job_completed;
-    handler_map[IPMessageType::PSTATE_MODIFICATION] = server_on_pstate_modification;
+    handler_map[IPMessageType::SCHED_PSTATE_MODIFICATION] = server_on_pstate_modification;
     handler_map[IPMessageType::SCHED_EXECUTE_JOB] = server_on_execute_job;
-    handler_map[IPMessageType::SCHED_CHANGE_JOB_STATE] = server_on_change_job_state;
     handler_map[IPMessageType::SCHED_HELLO] = server_on_edc_hello;
     handler_map[IPMessageType::SCHED_REJECT_JOB] = server_on_reject_job;
     handler_map[IPMessageType::SCHED_KILL_JOBS] = server_on_kill_jobs;
@@ -51,9 +50,6 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_STOP_PROBE] = server_on_stop_probe;
     handler_map[IPMessageType::SCHED_CALL_ME_LATER] = server_on_call_me_later;
     handler_map[IPMessageType::SCHED_STOP_CALL_ME_LATER] = server_on_stop_call_me_later;
-    handler_map[IPMessageType::SCHED_TELL_ME_ENERGY] = server_on_sched_tell_me_energy;
-    handler_map[IPMessageType::SCHED_WAIT_ANSWER] = server_on_sched_wait_answer;
-    handler_map[IPMessageType::WAIT_QUERY] = server_on_wait_query;
     handler_map[IPMessageType::SCHED_READY] = server_on_sched_ready;
     handler_map[IPMessageType::ONESHOT_REQUESTED_CALL] = server_on_oneshot_requested_call;
     handler_map[IPMessageType::PERIODIC_TRIGGER] = server_on_periodic_trigger;
@@ -63,7 +59,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SUBMITTER_BYE] = server_on_submitter_bye;
     handler_map[IPMessageType::SWITCHED_ON] = server_on_switched;
     handler_map[IPMessageType::SWITCHED_OFF] = server_on_switched;
-    handler_map[IPMessageType::END_DYNAMIC_REGISTER] = server_on_end_dynamic_register;
+    handler_map[IPMessageType::SCHED_END_DYNAMIC_REGISTRATION] = server_on_end_dynamic_registration;
     handler_map[IPMessageType::EVENT_OCCURRED] = server_on_event_occurred;
 
     /* Currently, there is one job submtiter per input file (workload or workflow).
@@ -372,7 +368,10 @@ void server_on_event_machine_unavailable(ServerData * data,
 {
     auto * event_data = static_cast<MachineAvailabilityEventData*>(event->data);
     IntervalSet machines = event_data->machine_ids;
-    if(machines.size() > 0)
+
+    xbt_assert(false, "External events handling is not implemented yet");
+    // TODO: handle me in batprotocol
+    /*if(machines.size() > 0)
     {
         for (auto machine_it = machines.elements_begin();
              machine_it != machines.elements_end();
@@ -389,11 +388,11 @@ void server_on_event_machine_unavailable(ServerData * data,
             machine->update_machine_state(MachineState::UNAVAILABLE);
         }
         // Notify the decision process that some machines have become unavailable
-        /*data->context->proto_writer->append_notify_resource_event("event_machine_unavailable",
+        data->context->proto_writer->append_notify_resource_event("event_machine_unavailable",
                                                                   machines,
-                                                                  simgrid::s4u::Engine::get_clock());*/
-        // TODO: handle me in batprotocol
+                                                                  simgrid::s4u::Engine::get_clock());
     }
+    */
 }
 
 void server_on_event_machine_available(ServerData * data,
@@ -401,6 +400,9 @@ void server_on_event_machine_available(ServerData * data,
 {
     auto * event_data = static_cast<MachineAvailabilityEventData*>(event->data);
     IntervalSet machines = event_data->machine_ids;
+    xbt_assert(false, "External events handling is not implemented yet");
+    // TODO: handle me in batprotocol
+    /*
     if(machines.size() > 0)
     {
         for (auto machine_it = machines.elements_begin();
@@ -424,22 +426,20 @@ void server_on_event_machine_available(ServerData * data,
             }
         }
         // Notify the decision process that some machines have become available
-        /*data->context->proto_writer->append_notify_resource_event("event_machine_available",
+        data->context->proto_writer->append_notify_resource_event("event_machine_available",
                                                                   machines,
-                                                                  simgrid::s4u::Engine::get_clock());*/
-        // TODO: handle me in batprotocol
-    }
+                                                                  simgrid::s4u::Engine::get_clock());
+    }*/
 }
 
 void server_on_event_generic(ServerData * data,
                              const Event * event)
 {
 
-    // Just forward the json object
-    auto * event_data = static_cast<GenericEventData*>(event->data);
-    /*data->context->proto_writer->append_notify_generic_event(event_data->json_desc_str,
-                                                             simgrid::s4u::Engine::get_clock());*/
+    xbt_assert(false, "External events handling is not implemented yet");
     // TODO: handle me in batprotocol
+    // Just forward the json object
+    // auto * event_data = static_cast<GenericEventData*>(event->data);
 }
 
 void server_on_event_occurred(ServerData * data,
@@ -468,14 +468,20 @@ void server_on_event_occurred(ServerData * data,
 void server_on_pstate_modification(ServerData * data,
                                    IPMessage * task_data)
 {
-    xbt_assert(data->context->energy_used,
-               "Receiving a pstate modification request, which is forbidden as "
-               "Batsim has not been launched with energy support "
-               "(cf. batsim --help).");
 
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
+
+    xbt_assert(false, "Pstate change handling is not implemented yet");
+    // TODO: handle me in batprotocol
+
+    /*
     auto * message = static_cast<PStateModificationMessage *>(task_data->data);
 
+    // This assert should not be here. One may want to change Pstates without energy support
+    // xbt_assert(data->context->energy_used,
+    //            "Receiving a pstate modification request, which is forbidden as "
+    //            "Batsim has not been launched with energy support "
+    //            "(cf. batsim --help).");
     data->context->current_switches.add_switch(message->machine_ids, message->new_pstate);
     data->context->energy_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids,
                                                    message->new_pstate);
@@ -524,9 +530,9 @@ void server_on_pstate_modification(ServerData * data,
                                                                         all_switched_machines,
                                                                         data->context))
                 {
-                    /*data->context->proto_writer->append_resource_state_changed(all_switched_machines,
+                    data->context->proto_writer->append_resource_state_changed(all_switched_machines,
                                                                                std::to_string(message->new_pstate),
-                                                                               simgrid::s4u::Engine::get_clock());*/
+                                                                               simgrid::s4u::Engine::get_clock());
                     // TODO: handle me in batprotocol
                 }
             }
@@ -569,7 +575,7 @@ void server_on_pstate_modification(ServerData * data,
     if (data->context->trace_machine_states)
     {
         data->context->machine_state_tracer.write_machine_states(simgrid::s4u::Engine::get_clock());
-    }
+    }*/
 }
 
 void server_on_oneshot_requested_call(ServerData * data,
@@ -659,51 +665,15 @@ void server_on_sched_ready(ServerData * data,
     }
 }
 
-void server_on_sched_wait_answer(ServerData * data,
-                                 IPMessage * task_data)
-{
-    (void) data;
-    auto * message = new SchedWaitAnswerMessage;
-    *message = *(static_cast<SchedWaitAnswerMessage *>(task_data->data)); // is this necessary?
-
-    //    Submitter * submitter = origin_of_wait_queries.at({message->nb_resources,message->processing_time});
-    dsend_message(message->submitter_name, IPMessageType::SCHED_WAIT_ANSWER, static_cast<void*>(message));
-    //    origin_of_wait_queries.erase({message->nb_resources,message->processing_time});
-}
-
-void server_on_sched_tell_me_energy(ServerData * data,
-                                    IPMessage * task_data)
-{
-    (void) task_data;
-    xbt_assert(data->context->energy_used,
-               "Received a request about the energy consumption of the "
-               "machines but energy simulation is not enabled. "
-               "Try --help to enable it.");
-    double total_consumed_energy = static_cast<double>(data->context->machines.total_consumed_energy(data->context));
-    //data->context->proto_writer->append_answer_energy(total_consumed_energy, simgrid::s4u::Engine::get_clock());
-    // TODO: implement probes
-}
-
-void server_on_wait_query(ServerData * data,
-                          IPMessage * task_data)
-{
-    (void) data;
-    (void) task_data;
-    //WaitQueryMessage * message = (WaitQueryMessage *) task_data->data;
-
-    //    XBT_INFO("received : %s , %s\n", to_string(message->nb_resources).c_str(), to_string(message->processing_time).c_str());
-    xbt_assert(false, "Unimplemented! TODO");
-
-    //Submitter * submitter = submitters.at(message->submitter_name);
-    //origin_of_wait_queries[{message->nb_resources,message->processing_time}] = submitter;
-}
-
 void server_on_switched(ServerData * data,
                         IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<SwitchMessage *>(task_data->data);
 
+    xbt_assert(false, "Switching ON/OFF machines handling is not implemented yet");
+    // TODO: handle me with batprotocol
+
+    /*auto * message = static_cast<SwitchMessage *>(task_data->data);
     xbt_assert(data->context->machines.exists(message->machine_id), "machine %d does not exist", message->machine_id);
     Machine * machine = data->context->machines[message->machine_id];
     (void) machine; // Avoids a warning if assertions are ignored
@@ -718,13 +688,13 @@ void server_on_switched(ServerData * data,
             data->context->machine_state_tracer.write_machine_states(simgrid::s4u::Engine::get_clock());
         }
 
-        /*data->context->proto_writer->append_resource_state_changed(all_switched_machines,
+        data->context->proto_writer->append_resource_state_changed(all_switched_machines,
                                                                    std::to_string(message->new_pstate),
-                                                                   simgrid::s4u::Engine::get_clock());*/
+                                                                   simgrid::s4u::Engine::get_clock());
         // TODO: implement me in batprotocol
     }
 
-    --data->nb_switching_machines;
+    --data->nb_switching_machines;*/
 }
 
 void server_on_killing_done(ServerData * data,
@@ -777,7 +747,7 @@ void server_on_killing_done(ServerData * data,
     --data->nb_killers;
 }
 
-void server_on_end_dynamic_register(ServerData * data,
+void server_on_end_dynamic_registration(ServerData * data,
                                   IPMessage * task_data)
 {
     (void) task_data;
@@ -789,8 +759,10 @@ void server_on_register_job(ServerData * data,
                           IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<JobRegisteredByDPMessage *>(task_data->data);
+    auto * message = static_cast<JobRegisteredByEDCMessage *>(task_data->data);
     auto job = message->job;
+
+    // TODO: check whether the job has been constructed and added in the workload/jobs lists
 
     // Let's update global states
     ++data->nb_submitted_jobs;
@@ -806,81 +778,10 @@ void server_on_register_profile(ServerData * data,
                           IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<ProfileRegisteredByDPMessage *>(task_data->data);
+    auto * message = static_cast<ProfileRegisteredByEDCMessage *>(task_data->data);
     (void) data;
     (void) message;
     // TODO: remove me?
-}
-
-void server_on_change_job_state(ServerData * data,
-                                IPMessage * task_data)
-{
-    xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<ChangeJobStateMessage *>(task_data->data);
-
-    if (!(data->context->workloads.job_is_registered(message->job_id)))
-    {
-        xbt_die("The job '%s' does not exist.", message->job_id.to_cstring());
-    }
-    auto job = data->context->workloads.job_at(message->job_id);
-
-    XBT_INFO("Change job state: Job %s to state %s",
-             job->id.to_cstring(),
-             message->job_state.c_str());
-
-    JobState new_state = job_state_from_string(message->job_state);
-
-    switch (job->state)
-    {
-    case JobState::JOB_STATE_SUBMITTED:
-        switch (new_state)
-        {
-        case JobState::JOB_STATE_RUNNING:
-            job->starting_time = static_cast<long double>(simgrid::s4u::Engine::get_clock());
-            data->nb_running_jobs++;
-            xbt_assert(data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_running_jobs > nb_submitted_jobs");
-            break;
-        case JobState::JOB_STATE_REJECTED:
-            data->nb_completed_jobs++;
-            xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_completed_jobs + nb_running_jobs > nb_submitted_jobs");
-            data->context->jobs_tracer.write_job(job);
-            data->jobs_to_be_deleted.push_back(message->job_id);
-            break;
-        default:
-            xbt_assert(false,
-                       "Invalid requested job state modification to '%s': can only be running or rejected.",
-                       job_state_to_string(new_state).c_str());
-        }
-        break;
-    case JobState::JOB_STATE_RUNNING:
-        switch (new_state)
-        {
-        case JobState::JOB_STATE_COMPLETED_SUCCESSFULLY:
-        case JobState::JOB_STATE_COMPLETED_FAILED:
-        case JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED:
-        case JobState::JOB_STATE_COMPLETED_KILLED:
-            job->runtime = static_cast<long double>(simgrid::s4u::Engine::get_clock()) - job->starting_time;
-            data->nb_running_jobs--;
-            xbt_assert(data->nb_running_jobs >= 0, "inconsistency: no jobs are running");
-            data->nb_completed_jobs++;
-            xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_completed_jobs + nb_running_jobs > nb_submitted_jobs");
-            data->context->jobs_tracer.write_job(job);
-            data->jobs_to_be_deleted.push_back(message->job_id);
-            break;
-        default:
-            xbt_assert(false,
-                       "Can only change the state of a running job to completed "
-                       "(successfully, failed, and killed). State was %s",
-                       job_state_to_string(job->state).c_str());
-        }
-        break;
-    default:
-        xbt_assert(false,
-                   "Can only change the state of a submitted or running job. State was %s",
-                   job_state_to_string(job->state).c_str());
-    }
-
-    job->state = new_state;
 }
 
 void server_on_reject_job(ServerData * data,
@@ -1015,6 +916,7 @@ void server_on_execute_job(ServerData * data,
     xbt_assert(data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_running_jobs > nb_submitted_jobs");
 
     // Check that the allocated hosts have the right permissions.
+    // TODO: these checks should be removed and left to the EDC's responsibility
     if (!data->context->allow_compute_sharing || !data->context->allow_storage_sharing)
     {
         for (auto machine_id_it = allocation->hosts.elements_begin(); machine_id_it != allocation->hosts.elements_end(); ++machine_id_it)

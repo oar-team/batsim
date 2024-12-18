@@ -526,21 +526,29 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
         using namespace batprotocol::fb;
         switch (event_timestamp->event_type())
         {
-        case Event_RejectJobEvent: {
-            ip_message->type = IPMessageType::SCHED_REJECT_JOB;
-            ip_message->data = static_cast<void *>(from_reject_job(event_timestamp->event_as_RejectJobEvent(), context));
+        case Event_EDCHelloEvent: {
+            ip_message->type = IPMessageType::SCHED_HELLO;
+            ip_message->data = static_cast<void *>(from_edc_hello(event_timestamp->event_as_EDCHelloEvent(), context));
         } break;
         case Event_ExecuteJobEvent: {
             ip_message->type = IPMessageType::SCHED_EXECUTE_JOB;
             ip_message->data = static_cast<void *>(from_execute_job(event_timestamp->event_as_ExecuteJobEvent(), context));
         } break;
+        case Event_RejectJobEvent: {
+            ip_message->type = IPMessageType::SCHED_REJECT_JOB;
+            ip_message->data = static_cast<void *>(from_reject_job(event_timestamp->event_as_RejectJobEvent(), context));
+        } break;
         case Event_KillJobsEvent: {
             ip_message->type = IPMessageType::SCHED_KILL_JOBS;
             ip_message->data = static_cast<void *>(from_kill_jobs(event_timestamp->event_as_KillJobsEvent(), context));
         } break;
-        case Event_EDCHelloEvent: {
-            ip_message->type = IPMessageType::SCHED_HELLO;
-            ip_message->data = static_cast<void *>(from_edc_hello(event_timestamp->event_as_EDCHelloEvent(), context));
+        case Event_CallMeLaterEvent: {
+            ip_message->type = IPMessageType::SCHED_CALL_ME_LATER;
+            ip_message->data = static_cast<void *>(from_call_me_later(event_timestamp->event_as_CallMeLaterEvent(), context));
+        } break;
+        case Event_StopCallMeLaterEvent: {
+            ip_message->type = IPMessageType::SCHED_STOP_CALL_ME_LATER;
+            ip_message->data = static_cast<void *>(from_stop_call_me_later(event_timestamp->event_as_StopCallMeLaterEvent(), context));
         } break;
         case Event_CreateProbeEvent: {
             ip_message->type = IPMessageType::SCHED_CREATE_PROBE;
@@ -550,13 +558,17 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
             ip_message->type = IPMessageType::SCHED_STOP_PROBE;
             ip_message->data = static_cast<void *>(from_stop_probe(event_timestamp->event_as_StopProbeEvent(), context));
         } break;
-        case Event_CallMeLaterEvent: {
-            ip_message->type = IPMessageType::SCHED_CALL_ME_LATER;
-            ip_message->data = static_cast<void *>(from_call_me_later(event_timestamp->event_as_CallMeLaterEvent(), context));
+        case Event_RegisterJobEvent: {
+            ip_message->type = IPMessageType::SCHED_JOB_REGISTERED;
+            ip_message->data = static_cast<void *>(from_register_job(event_timestamp->event_as_RegisterJobEvent(), context));
         } break;
-        case Event_StopCallMeLaterEvent: {
-            ip_message->type = IPMessageType::SCHED_STOP_CALL_ME_LATER;
-            ip_message->data = static_cast<void *>(from_stop_call_me_later(event_timestamp->event_as_StopCallMeLaterEvent(), context));
+        case Event_RegisterProfileEvent: {
+            ip_message->type = IPMessageType::SCHED_PROFILE_REGISTERED;
+            ip_message->data = static_cast<void *>(from_register_profile(event_timestamp->event_as_RegisterProfileEvent(), context));
+        } break;
+        case Event_FinishRegistrationEvent: {
+            ip_message->type = IPMessageType::SCHED_END_DYNAMIC_REGISTRATION;
+            // No data in this event
         } break;
         default: {
             xbt_assert(false, "Unhandled event type received (%s)", batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()]);

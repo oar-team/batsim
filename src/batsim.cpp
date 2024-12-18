@@ -304,7 +304,7 @@ int main(int argc, char * argv[])
     // Let's configure how Batsim should be logged
     configure_batsim_logging_output(main_args);
 
-    // Initialize the energy plugin before creating the engine
+    // Initialize the host energy plugin before creating the engine
     if (main_args.host_energy_used)
     {
         sg_host_energy_plugin_init();

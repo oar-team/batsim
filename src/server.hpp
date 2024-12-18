@@ -185,29 +185,6 @@ void server_on_periodic_entity_stopped(ServerData * data,
 void server_on_sched_ready(ServerData * data,
                            IPMessage * task_data);
 
-/**
- * @brief Server SCHED_WAIT_ANSWER handler
- * @param[in,out] data The data associated with the server_process
- * @param[in,out] task_data The data associated with the message the server received
- */
-void server_on_sched_wait_answer(ServerData * data,
-                                 IPMessage * task_data);
-
-/**
- * @brief Server SCHED_TELL_ME_ENERGY handler
- * @param[in,out] data The data associated with the server_process
- * @param[in,out] task_data The data associated with the message the server received
- */
-void server_on_sched_tell_me_energy(ServerData * data,
-                                    IPMessage * task_data);
-
-/**
- * @brief Server WAIT_QUERY handler
- * @param[in,out] data The data associated with the server_process
- * @param[in,out] task_data The data associated with the message the server received
- */
-void server_on_wait_query(ServerData * data,
-                          IPMessage * task_data);
 
 /**
  * @brief Server SWITCHED_ON/SWITCHED_OFF handler
@@ -226,15 +203,15 @@ void server_on_killing_done(ServerData * data,
                             IPMessage * task_data);
 
 /**
- * @brief Server END_DYNAMIC_REGISTER handler
+ * @brief Server SCHED_END_DYNAMIC_REGISTRATION handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_end_dynamic_register(ServerData * data,
-                                  IPMessage * task_data);
+void server_on_end_dynamic_registration(ServerData * data,
+                                        IPMessage * task_data);
 
 /**
- * @brief Server JOB_REGISTERED_BY_DP handler
+ * @brief Server SCHED_JOB_REGISTERED handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
@@ -242,7 +219,7 @@ void server_on_register_job(ServerData * data,
                           IPMessage * task_data);
 
 /**
- * @brief Server PROFILE_REGISTERED_BY_DP handler
+ * @brief Server SCHED_PROFILE_REGISTERED handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
@@ -303,14 +280,6 @@ void server_on_stop_call_me_later(ServerData * data,
  * @param[in,out] task_data The data associated with the message the server received
  */
 void server_on_execute_job(ServerData * data,
-                           IPMessage * task_data);
-
-/**
- * @brief Server SCHED_CHANGE_JOB_STATE handler
- * @param[in,out] data The data associated with the server_process
- * @param[in,out] task_data The data associated with the message the server received
- */
-void server_on_change_job_state(ServerData * data,
                            IPMessage * task_data);
 
 /**

@@ -380,6 +380,10 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
     }
     only_print_information = (nb_stopping_flags == 1);
 
+    // TODO: retrieve the configuration from file if --config is used
+
+    // TODO: write configuration to file if --gen-config is used
+
     // Workloads
     for (size_t i = 0; i < workload_files.size(); i++)
     {
