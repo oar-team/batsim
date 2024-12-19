@@ -24,13 +24,16 @@ enum class ProfileType
     ,DELAY                                     //!< a delay. Its data is of type DelayProfileData
     ,PTASK                                     //!< composed of a computation vector and a communication matrix. Its data is of type ParallelProfileData
     ,PTASK_HOMOGENEOUS                         //!< a homogeneous parallel task that executes the given amounts of computation and communication on every node. Its data is of type ParallelHomogeneousProfileData
-    ,REPLAY_SMPI                               //!< a SimGrid MPI time-independent trace. Its data is of type ReplaySmpiProfileData
-    ,REPLAY_USAGE                              //!< a usage over time trace. Its data is of type ReplayUsageProfileData
     ,SEQUENTIAL_COMPOSITION                    //!< non-atomic: it is composed of a sequence of other profiles
+    ,FORKJOIN_COMPOSITION                      //!< a profile of type Fork-Join
+    ,PTASK_MERGE_COMPOSITION
     ,PTASK_ON_STORAGE_HOMOGENEOUS              //!< Read and writes data to a PFS storage nodes. data type ParallelHomogeneousPFSProfileData
     ,PTASK_DATA_STAGING_BETWEEN_STORAGES       //!< for moving data between the pfs hosts. Its data is of type DataStagingProfileData
-    ,SCHEDULER_SEND                            //!< a profile simulating a message sent to the scheduler. Its data is of type SchedulerSendProfileData
-    ,SCHEDULER_RECV                            //!< receives a message from the scheduler and can execute a profile based on a value comparison of the message. Its data is of type SchedulerRecvProfileData
+    //,TRACE_REPLAY
+    ,REPLAY_SMPI                               //!< a SimGrid MPI time-independent trace. Its data is of type ReplaySmpiProfileData
+    ,REPLAY_USAGE                              //!< a usage over time trace. Its data is of type ReplayUsageProfileData
+    //,SCHEDULER_SEND                            //!< a profile simulating a message sent to the scheduler. Its data is of type SchedulerSendProfileData
+    //,SCHEDULER_RECV                            //!< receives a message from the scheduler and can execute a profile based on a value comparison of the message. Its data is of type SchedulerRecvProfileData
 };
 
 /**
@@ -86,7 +89,15 @@ struct Profile
 };
 
 /**
- * @brief The data associated to PARALLEL profiles
+ * @brief The data associated to DELAY profiles
+ */
+struct DelayProfileData
+{
+    double delay; //!< The time amount, in seconds, that the job is supposed to take
+};
+
+/**
+ * @brief The data associated to ParallelTask profiles
  */
 struct ParallelProfileData
 {
@@ -104,37 +115,13 @@ struct ParallelProfileData
 };
 
 /**
- * @brief The data associated to PARALLEL_HOMOGENEOUS profiles
+ * @brief The data associated to Parallel Task Homogeneous profiles
  */
 struct ParallelHomogeneousProfileData
 {
     double cpu = 0.0; //!< The computation amount on each node
     double com = 0.0; //!< The communication amount between each pair of nodes
     batprotocol::fb::HomogeneousParallelTaskGenerationStrategy strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue; //!< The strategy to populate the matrices
-};
-
-/**
- * @brief The data associated to DELAY profiles
- */
-struct DelayProfileData
-{
-    double delay; //!< The time amount, in seconds, that the job is supposed to take
-};
-
-/**
- * @brief The data associated to REPLAY_SMPI profiles
- */
-struct ReplaySmpiProfileData
-{
-    std::vector<std::string> trace_filenames; //!< all defined tracefiles
-};
-
-/**
- * @brief The data associated to REPLAY_USAGE profiles
- */
-struct ReplayUsageProfileData
-{
-    std::vector<std::string> trace_filenames; //!< all defined tracefiles
 };
 
 /**
@@ -146,6 +133,10 @@ struct SequenceProfileData
     std::vector<std::string> sequence; //!< The sequence of profile names, executed in this order
     std::vector<ProfilePtr> profile_sequence; //!< The sequence of profiles, executed in this order
 };
+
+// TODO forkjoin data
+
+// TODO parallel task merge composition
 
 /**
  * @brief The data associated to PARALLEL_HOMOGENEOUS_PFS profiles
@@ -169,25 +160,35 @@ struct DataStagingProfileData
 };
 
 /**
+ * @brief The data associated to TraceReplay profiles
+ */
+struct TraceReplayProfileData
+{
+    std::vector<std::string> trace_filenames; //!< all defined tracefiles
+};
+
+
+
+/**
  * @brief The data associated to SCHEDULER_SEND profiles
  */
-struct SchedulerSendProfileData
+/*struct SchedulerSendProfileData
 {
     rapidjson::Document message; //!< The message being sent to the scheduler
     double sleeptime; //!< The time to sleep after sending the message.
-};
+};*/
 
 /**
  * @brief The data associated to SCHEDULER_RECV profiles
  */
-struct SchedulerRecvProfileData
+/*struct SchedulerRecvProfileData
 {
     std::string regex; //!< The regex which is tested for matching
     std::string on_success; //!< The profile to execute if it matches
     std::string on_failure; //!< The profile to execute if it does not match
     std::string on_timeout; //!< The profile to execute if no message is in the buffer (i.e. the scheduler has not answered in time). Can be omitted which will result that the job will wait until its walltime is reached.
     double polltime; //!< The time to sleep between polling if on_timeout is not set.
-};
+};*/
 
 
 /**

@@ -347,7 +347,6 @@ void server_on_job_submitted(ServerData * data,
             data->origin_of_jobs[job->id] = submitter;
         }
 
-        // Let's retrieve the Job from memory (or add it into memory if it is dynamic)
         XBT_DEBUG("Job received: %s", job->id.to_cstring());
 
         XBT_DEBUG("Workloads: %s", data->context->workloads.to_string().c_str());
@@ -756,21 +755,80 @@ void server_on_end_dynamic_registration(ServerData * data,
 }
 
 void server_on_register_job(ServerData * data,
-                          IPMessage * task_data)
+                            IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<JobRegisteredByEDCMessage *>(task_data->data);
-    auto job = message->job;
+    JobPtr job = message->job;
+    JobIdentifier job_id = job->id;
 
-    // TODO: check whether the job has been constructed and added in the workload/jobs lists
+    // Retrieve the workload of the job (or create it)
+    Workload * workload;
+    if (data->context->workloads.exists(job_id.workload_name()))
+    {
+        xbt_assert(!data->context->workloads.job_is_registered(job_id),
+                   "Invalid new job registration: '%s' already exists in the workload.", job_id.to_cstring());
+        workload = data->context->workloads.at(job_id.workload_name());
+    }
+    else
+    {
+        workload = Workload::new_dynamic_workload(job_id.workload_name());
+        data->context->workloads.insert_workload(job_id.workload_name(), workload);
+        XBT_INFO("Created new dynamic workload %s", job_id.workload_name().c_str());
+    }
 
-    // Let's update global states
+    // Retrieve the Profile
+    ProfilePtr profile;
+
+    // Expecting a "workload!name" syntax in profile_id, but "name" is also allowed (in this case, only profiles from the job's workload can be used)
+    std::string & profile_id = message->profile_id;
+    auto tsplit = profile_id.find('!');
+    if (tsplit == std::string::npos)
+    {
+        // Profile_id does not contain a workload name, check if profile is in the Job's workload
+        xbt_assert(workload->profiles->exists(profile_id),
+                    "Invalid new job registration for '%s': the associated profile '%s' does not exist",
+                    job_id.to_cstring(), profile_id.c_str());
+
+        profile = workload->profiles->at(profile_id);
+    }
+    else
+    {
+        // Profile_id contains the workload name
+        std::string profile_workload_str = profile_id.substr(0, tsplit);
+        xbt_assert(data->context->workloads.exists(profile_workload_str),
+                   "Invalid new job resgistration for '%s': the profile's workload does not exist (%s)",
+                   job_id.to_cstring(), profile_workload_str.c_str());
+
+        std::string profile_name = message->profile_id.substr(tsplit+1);
+
+        xbt_assert(data->context->workloads.profile_is_registered(profile_name, profile_workload_str),
+                   "Invalid new job registration for '%s': the profile does not exist (%s).",
+                   job_id.to_cstring(), profile_id.c_str());
+
+        profile = data->context->workloads.at(profile_workload_str)->profiles->at(profile_name);
+    }
+
+    // Let's update some global and job parameters
     ++data->nb_submitted_jobs;
+
+    job->profile = profile;
+    job->workload = workload;
+    job->state = JobState::JOB_STATE_SUBMITTED;
+    job->submission_time = simgrid::s4u::Engine::get_clock();
+
+    workload->check_single_job_validity(message->job);
+    workload->jobs->add_job(message->job);
+
+    XBT_INFO("Adding dynamically registered job '%s' to workload '%s'",
+             job_id.job_name().c_str(), job_id.workload_name().c_str());
 
     if (data->context->registration_sched_ack)
     {
+        // TODO: handle the multi-EDC
+
         data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
-        data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), simgrid::s4u::Engine::get_clock());
+        data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), job->submission_time);
     }
 }
 

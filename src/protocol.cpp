@@ -10,7 +10,6 @@
 
 #include "batsim.hpp"
 #include "context.hpp"
-#include "jobs.hpp"
 
 using namespace rapidjson;
 using namespace std;
@@ -493,6 +492,146 @@ StopProbeMessage * from_stop_probe(const batprotocol::fb::StopProbeEvent * stop_
 
     return msg;
 }
+
+
+JobRegisteredByEDCMessage * from_register_job(const batprotocol::fb::RegisterJobEvent * register_job, BatsimContext * context)
+{
+    auto msg = new JobRegisteredByEDCMessage;
+
+    const batprotocol::fb::Job * proto_job = register_job->job();
+
+    msg->job = std::make_shared<Job>();
+    msg->job->id = JobIdentifier(register_job->job_id()->str());
+    msg->job->requested_nb_res = proto_job->resource_request();
+    msg->job->walltime = proto_job->walltime();
+    msg->job->extra_data = proto_job->extra_data()->str();
+    msg->job->is_rigid = proto_job->rigid();
+    msg->profile_id = proto_job->profile_id()->str();
+
+    return msg;
+}
+
+
+ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::RegisterProfileEvent * register_profile, BatsimContext * context)
+{
+    const batprotocol::fb::ProfileAndId * proto_profile = register_profile->profile();
+
+    auto msg = new ProfileRegisteredByEDCMessage;
+    ProfilePtr profile = std::make_shared<Profile>();
+    msg->profile = profile;
+    msg->profile_id = proto_profile->id()->str();
+
+    switch(proto_profile->profile_type())
+    {
+    case batprotocol::fb::Profile_DelayProfile:
+    {
+        const batprotocol::fb::DelayProfile * prof = proto_profile->profile_as_DelayProfile();
+        profile->type = ProfileType::DELAY;
+        DelayProfileData * data = new DelayProfileData;
+        data->delay = prof->delay();
+
+        profile->data = data; //static_cast<void *>(data);
+        break;
+    }
+    case batprotocol::fb::Profile_ParallelTaskProfile:
+    {
+        const batprotocol::fb::ParallelTaskProfile * prof = proto_profile->profile_as_ParallelTaskProfile();
+        profile->type = ProfileType::PTASK;
+        ParallelProfileData * data = new ParallelProfileData;
+
+        //TODO
+        break;
+    }
+    case batprotocol::fb::Profile_ParallelTaskHomogeneousProfile:
+    {
+        const batprotocol::fb::ParallelTaskHomogeneousProfile * prof = proto_profile->profile_as_ParallelTaskHomogeneousProfile();
+        profile->type = ProfileType::PTASK_HOMOGENEOUS;
+        ParallelHomogeneousProfileData * data = new ParallelHomogeneousProfileData;
+
+        data->cpu = prof->computation_amount();
+        data->com = prof->communication_amount();
+        data->strategy = prof->generation_strategy(); // The diferent strategies are handled in task_execution
+
+        profile->data = data;
+        break;
+    }
+    case batprotocol::fb::Profile_SequentialCompositionProfile:
+    {
+        const batprotocol::fb::SequentialCompositionProfile * prof = proto_profile->profile_as_SequentialCompositionProfile();
+        profile->type = ProfileType::SEQUENTIAL_COMPOSITION;
+        SequenceProfileData * data = new SequenceProfileData;
+
+        //TODO
+        break;
+    }
+    case batprotocol::fb::Profile_ForkJoinCompositionProfile:
+    {
+        const batprotocol::fb::ForkJoinCompositionProfile * prof = proto_profile->profile_as_ForkJoinCompositionProfile();
+        profile->type = ProfileType::FORKJOIN_COMPOSITION;
+        ParallelProfileData * data = new ParallelProfileData;
+
+        //TODO
+        break;
+    }
+    case batprotocol::fb::Profile_ParallelTaskMergeCompositionProfile:
+    {
+        const batprotocol::fb::ParallelTaskMergeCompositionProfile * prof = proto_profile->profile_as_ParallelTaskMergeCompositionProfile();
+        profile->type = ProfileType::PTASK_MERGE_COMPOSITION;
+        ParallelProfileData * data = new ParallelProfileData;
+
+        //TODO
+        break;
+    }
+    case batprotocol::fb::Profile_ParallelTaskOnStorageHomogeneousProfile:
+    {
+        const batprotocol::fb::ParallelTaskOnStorageHomogeneousProfile * prof = proto_profile->profile_as_ParallelTaskOnStorageHomogeneousProfile();
+        profile->type = ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS;
+        ParallelTaskOnStorageHomogeneousProfileData * data = new ParallelTaskOnStorageHomogeneousProfileData;
+        //TODO
+
+        break;
+    }
+    case batprotocol::fb::Profile_ParallelTaskDataStagingBetweenStoragesProfile:
+    {
+        const batprotocol::fb::ParallelTaskDataStagingBetweenStoragesProfile * prof = proto_profile->profile_as_ParallelTaskDataStagingBetweenStoragesProfile();
+        profile->type = ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES;
+        DataStagingProfileData * data = new DataStagingProfileData;
+
+        //TODO
+        break;
+    }
+    case batprotocol::fb::Profile_TraceReplayProfile:
+    {
+        const batprotocol::fb::TraceReplayProfile * prof = proto_profile->profile_as_TraceReplayProfile();
+        TraceReplayProfileData * data = new TraceReplayProfileData;
+
+        if (prof->trace_type() == batprotocol::fb::TraceType_SMPI)
+        {
+            profile->type = ProfileType::REPLAY_SMPI;
+
+        }
+        else if (prof->trace_type() == batprotocol::fb::TraceType_FractionalComputation)
+        {
+            profile->type = ProfileType::REPLAY_USAGE;
+        }
+        else
+        {
+            xbt_assert(false, "Unhandled TraceReplay profile (%s)", batprotocol::fb::EnumNamesTraceType()[prof->trace_type()]);
+        }
+
+        // TODO load the list of trace files given in the filename
+
+
+        profile->data = data;
+        break;
+    }
+    // TODO: Message for unhandled profiles
+    }
+
+    return msg;
+}
+
+
 
 void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp> > & messages, BatsimContext * context)
 {

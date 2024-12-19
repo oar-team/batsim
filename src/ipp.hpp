@@ -122,8 +122,8 @@ struct JobSubmittedMessage
  */
 struct JobRegisteredByEDCMessage
 {
-    JobPtr job; //!< The freshly registered job
-    //std::string job_description; //!< The job description string
+    JobPtr job; //!< The freshly registered Job
+    std::string profile_id; //!< The profile id
 };
 
 /**
@@ -131,9 +131,8 @@ struct JobRegisteredByEDCMessage
  */
 struct ProfileRegisteredByEDCMessage
 {
-    std::string workload_name; //!< The workload name
-    std::string profile_name; //!< The profile name
-    std::string profile; //!< The registered profile data
+    std::string profile_id; //!< The profile id (of the form workload!name)
+    ProfilePtr profile;     //!< The freshly registered Profile
 };
 
 /**

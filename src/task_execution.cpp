@@ -78,6 +78,7 @@ void generate_parallel_task_homogeneous(
         const int nb_non_zero_transfers = nb_res * nb_res - nb_res;
         com = data->com / nb_non_zero_transfers;
     }
+    // else the given values are used for each executor
 
     // Generate a computation vector. Either empty if no computation is requested, or of size nb_res with all identical values otherwise.
     if (cpu <= 0)
@@ -606,7 +607,7 @@ const Machine * machine_from_storage_label(
     return storage_machine;
 }
 
-void smpi_trace_replay_actor(JobPtr job, ReplaySmpiProfileData * profile_data, simgrid::s4u::SemaphorePtr sem_termination, std::list<unsigned int> * list_termination, int rank)
+void smpi_trace_replay_actor(JobPtr job, TraceReplayProfileData * profile_data, simgrid::s4u::SemaphorePtr sem_termination, std::list<unsigned int> * list_termination, int rank)
 {
     try
     {
@@ -662,7 +663,7 @@ void usage_trace_replayer(simgrid::xbt::ReplayAction & action)
  * @param[in] data The profile data of the job
  * @param[in] rank The rank of the actor of the job
  */
-void usage_trace_replay_actor(JobPtr job, ReplayUsageProfileData * data, simgrid::s4u::SemaphorePtr sem_termination, std::list<unsigned int> * list_termination, int rank)
+void usage_trace_replay_actor(JobPtr job, TraceReplayProfileData * data, simgrid::s4u::SemaphorePtr sem_termination, std::list<unsigned int> * list_termination, int rank)
 {
     try
     {
@@ -701,9 +702,9 @@ int execute_trace_replay(
     double * remaining_time,
     BatsimContext * context)
 {
-    auto * data = static_cast<ReplaySmpiProfileData *>(btask->profile->data);
     auto profile = btask->profile;
     auto job = JobPtr(btask->parent_job);
+    auto * data = static_cast<TraceReplayProfileData *>(profile->data);
 
     unsigned int nb_replay_actors = static_cast<unsigned int>(data->trace_filenames.size());
 
@@ -741,12 +742,12 @@ int execute_trace_replay(
         simgrid::s4u::ActorPtr actor = nullptr;
         if (profile->type == ProfileType::REPLAY_SMPI)
         {
-            auto * data = static_cast<ReplaySmpiProfileData *>(profile->data);
+            auto * data = static_cast<TraceReplayProfileData *>(profile->data);
             actor = simgrid::s4u::Actor::create(actor_name, host_to_use, smpi_trace_replay_actor, job, data, sem_termination, &list_termination, rank);
         }
         else if (profile->type == ProfileType::REPLAY_USAGE)
         {
-            auto * data = static_cast<ReplayUsageProfileData *>(profile->data);
+            auto * data = static_cast<TraceReplayProfileData *>(profile->data);
             actor = simgrid::s4u::Actor::create(actor_name, host_to_use, usage_trace_replay_actor, job, data, sem_termination, &list_termination, rank);
         }
 

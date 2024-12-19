@@ -103,18 +103,18 @@ int execute_task(
         case ProfileType::REPLAY_SMPI:
         case ProfileType::REPLAY_USAGE:
         {
-            std::vector<std::string> trace_filenames;
+            /*std::vector<std::string> trace_filenames;
 
             if (profile->type == ProfileType::REPLAY_SMPI)
             {
-                auto * data = static_cast<ReplaySmpiProfileData *>(profile->data);
+                auto * data = static_cast<TraceReplayProfileData *>(profile->data);
                 trace_filenames = data->trace_filenames;
             }
             else
             {
-                auto * data = static_cast<ReplayUsageProfileData *>(profile->data);
+                auto * data = static_cast<TraceReplayProfileData *>(profile->data);
                 trace_filenames = data->trace_filenames;
-            }
+            }*/
 
             return execute_trace_replay(btask, alloc_placement, remaining_time, context);
         }

@@ -186,7 +186,7 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::REPLAY_SMPI)
+    /*else if (type == ProfileType::REPLAY_SMPI)
     {
         auto * d = static_cast<ReplaySmpiProfileData *>(data);
         if (d != nullptr)
@@ -203,7 +203,7 @@ Profile::~Profile()
             delete d;
             d = nullptr;
         }
-    }
+    }*/
     else if (type == ProfileType::SEQUENTIAL_COMPOSITION)
     {
         auto * d = static_cast<SequenceProfileData *>(data);
@@ -231,7 +231,7 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::SCHEDULER_SEND)
+    /*else if (type == ProfileType::SCHEDULER_SEND)
     {
         auto * d = static_cast<SchedulerSendProfileData *>(data);
         if (d != nullptr)
@@ -248,7 +248,7 @@ Profile::~Profile()
             delete d;
             d = nullptr;
         }
-    }
+    }*/
     else
     {
         XBT_ERROR("Deletion of an unknown profile type (%d)", static_cast<int>(type));
@@ -494,7 +494,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         // TODO: check that associated jobs request 0 resources
     }
-    else if (profile_type == "send")
+    /*else if (profile_type == "send")
     {
         profile->type = ProfileType::SCHEDULER_SEND;
         SchedulerSendProfileData * data = new SchedulerSendProfileData;
@@ -566,7 +566,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
             data->polltime = 0.005;
         }
         profile->data = data;
-    }
+    }*/
     else if (profile_type == "trace_replay")
     {
         xbt_assert(json_desc.HasMember("trace_type"), "%s: profile '%s' has no 'trace_type' field", error_prefix.c_str(), profile_name.c_str());
@@ -609,16 +609,16 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         if (trace_type == "smpi")
         {
             profile->type = ProfileType::REPLAY_SMPI;
-            auto * data = new ReplaySmpiProfileData;
+            /*auto * data = new ReplaySmpiProfileData;
             data->trace_filenames = trace_filenames;
-            profile->data = data;
+            profile->data = data;*/
         }
         else if (trace_type == "usage")
         {
             profile->type = ProfileType::REPLAY_USAGE;
-            auto * data = new ReplayUsageProfileData;
+            /*auto * data = new ReplayUsageProfileData;
             data->trace_filenames = trace_filenames;
-            profile->data = data;
+            profile->data = data;*/
         }
         else
         {
@@ -669,14 +669,14 @@ std::string profile_type_to_string(const ProfileType & type)
     case ProfileType::PTASK_HOMOGENEOUS:
         str = "PTASK_HOMOGENEOUS";
         break;
-    case ProfileType::REPLAY_SMPI:
-        str = "REPLAY_SMPI";
-        break;
-    case ProfileType::REPLAY_USAGE:
-        str = "REPLAY_USAGE";
-        break;
     case ProfileType::SEQUENTIAL_COMPOSITION:
         str = "SEQUENTIAL_COMPOSITION";
+        break;
+    case ProfileType::FORKJOIN_COMPOSITION:
+        str = "FORKJOIN_COMPOSITION";
+        break;
+    case ProfileType::PTASK_MERGE_COMPOSITION:
+        str = "PTASK_MERGE_COMPOSITION";
         break;
     case ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS:
         str = "PTASK_ON_STORAGE_HOMOGENEOUS";
@@ -684,12 +684,21 @@ std::string profile_type_to_string(const ProfileType & type)
     case ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES:
         str = "PTASK_DATA_STAGING_BETWEEN_STORAGES";
         break;
-    case ProfileType::SCHEDULER_SEND:
+    /*case ProfileType::TRACE_REPLAY:
+        str = "TRACE_REPLAY";
+        break;*/
+    case ProfileType::REPLAY_SMPI:
+        str = "REPLAY_SMPI";
+        break;
+    case ProfileType::REPLAY_USAGE:
+        str = "REPLAY_USAGE";
+        break;
+    /*case ProfileType::SCHEDULER_SEND:
         str = "SCHEDULER_SEND";
         break;
     case ProfileType::SCHEDULER_RECV:
         str = "SCHEDULER_RECV";
-        break;
+        break;*/
     default:
         str = "unset";
         break;

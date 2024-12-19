@@ -113,7 +113,7 @@ void Workload::register_smpi_applications()
 
         if (job->profile->type == ProfileType::REPLAY_SMPI)
         {
-            auto * data = static_cast<ReplaySmpiProfileData *>(job->profile->data);
+            auto * data = static_cast<TraceReplayProfileData *>(job->profile->data);
 
             XBT_INFO("Registering app. instance='%s', nb_process=%lu",
                      job->id.to_cstring(), data->trace_filenames.size());
@@ -159,10 +159,8 @@ void Workload::check_validity()
 
 void Workload::check_single_job_validity(const JobPtr job)
 {
-    //TODO This is already checked during creation of the job in Job::from_json
-    xbt_assert(profiles->exists(job->profile->name),
-               "Invalid job %s: the associated profile '%s' does not exist",
-               job->id.to_cstring(), job->profile->name.c_str());
+    //TODO This check needs to be updated with the new Batprotocol and new job profiles
+    // especially with the 'rigid' parameter
 
     if (job->profile->type == ProfileType::PTASK)
     {
@@ -299,11 +297,10 @@ bool Workloads::job_is_registered(const JobIdentifier &job_id)
     return at(job_id.workload_name())->jobs->exists(job_id);
 }
 
-bool Workloads::job_profile_is_registered(const JobIdentifier &job_id)
+bool Workloads::profile_is_registered(const std::string & profile_name,
+                                      const std::string & workload_name)
 {
-    //TODO this could be improved/simplified
-    auto job = at(job_id.workload_name())->jobs->at(job_id);
-    return at(job_id.workload_name())->profiles->exists(job->profile->name);
+    return at(workload_name)->profiles->exists(profile_name);
 }
 
 std::map<std::string, Workload *> &Workloads::workloads()
