@@ -832,13 +832,38 @@ void server_on_register_job(ServerData * data,
 }
 
 void server_on_register_profile(ServerData * data,
-                          IPMessage * task_data)
+                                IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<ProfileRegisteredByEDCMessage *>(task_data->data);
-    (void) data;
-    (void) message;
-    // TODO: remove me?
+
+    // Retrieve the workload and profile names
+    auto tsplit = message->profile_id.find('!');
+    std::string workload_name = message->profile_id.substr(0, tsplit);
+    std::string profile_name = message->profile_id.substr(tsplit+1);
+
+    // Retrieve the workload or create it
+    Workload * workload;
+    if (data->context->workloads.exists(workload_name))
+    {
+        xbt_assert(!data->context->workloads.profile_is_registered(profile_name, workload_name),
+                   "Invalid new profile registration: '%s' already exists in the workload.", message->profile_id.c_str());
+        workload = data->context->workloads.at(workload_name);
+    }
+    else
+    {
+        workload = Workload::new_dynamic_workload(workload_name);
+        data->context->workloads.insert_workload(workload_name, workload);
+        XBT_INFO("Created new dynamic workload %s", workload_name.c_str());
+    }
+
+    message->profile->name = profile_name;
+
+    // Add the profile in the workload
+    workload->profiles->add_profile(profile_name, message->profile);
+    XBT_INFO("Adding dynamically registered profile '%s' to workload '%s'.",
+             profile_name.c_str(), workload_name.c_str());
+
 }
 
 void server_on_reject_job(ServerData * data,
