@@ -217,8 +217,7 @@ ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * ex
     auto * msg = new ExecuteJobMessage;
 
     // Retrieve job
-    JobIdentifier job_id(execute_job->job_id()->str());
-    msg->job = context->workloads.job_at(job_id);
+    msg->job_id = JobIdentifier(execute_job->job_id()->str());
 
     // Build main job's allocation
     msg->job_allocation = std::make_shared<AllocationPlacement>();
@@ -290,8 +289,7 @@ RejectJobMessage *from_reject_job(const batprotocol::fb::RejectJobEvent * reject
 {
     auto msg = new RejectJobMessage;
 
-    JobIdentifier job_id(reject_job->job_id()->str());
-    msg->job = context->workloads.job_at(job_id);
+    msg->job_id = JobIdentifier(reject_job->job_id()->str());
 
     return msg;
 }
@@ -299,14 +297,11 @@ RejectJobMessage *from_reject_job(const batprotocol::fb::RejectJobEvent * reject
 KillJobsMessage *from_kill_jobs(const batprotocol::fb::KillJobsEvent * kill_jobs, BatsimContext * context)
 {
     auto msg = new KillJobsMessage;
-
-    msg->job_ids.reserve(kill_jobs->job_ids()->size());
-    msg->jobs.reserve(kill_jobs->job_ids()->size());
-    for (unsigned int i = 0; i < kill_jobs->job_ids()->size(); ++i)
+    auto * jobs_list = kill_jobs->job_ids();
+    msg->job_ids.reserve(jobs_list->size());
+    for (unsigned int i = 0; i < jobs_list->size(); ++i)
     {
-        JobIdentifier job_id(kill_jobs->job_ids()->Get(i)->str());
-        msg->job_ids.push_back(job_id.to_string());
-        msg->jobs.push_back(context->workloads.job_at(job_id));
+        msg->job_ids.push_back(JobIdentifier(jobs_list->Get(i)->str()));
     }
 
     return msg;

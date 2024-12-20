@@ -312,13 +312,14 @@ void killer_process(
     message->kill_jobs_message = kill_jobs_msg;
     message->acknowledge_kill_on_protocol = acknowledge_kill_on_protocol;
 
-    for (auto job : kill_jobs_msg->jobs)
+    for (auto job_id : kill_jobs_msg->job_ids)
     {
+        auto job = context->workloads.job_at(job_id);
         xbt_assert(! (job->state == JobState::JOB_STATE_REJECTED ||
                       job->state == JobState::JOB_STATE_SUBMITTED ||
                       job->state == JobState::JOB_STATE_NOT_SUBMITTED),
             "Invalid kill: job %s has not been started (state='%s'",
-            job->id.to_cstring(), job_state_to_string(job->state).c_str()
+            job_id.to_cstring(), job_state_to_string(job->state).c_str()
         );
 
         if (job->state == JobState::JOB_STATE_RUNNING)
@@ -330,7 +331,7 @@ void killer_process(
             auto kill_progress = protocol::battask_to_kill_progress(task);
 
             // Store job progress in the message.
-            message->jobs_progress[job->id.to_string()] = kill_progress;
+            message->jobs_progress[job_id.to_string()] = kill_progress;
 
             // Try to cancel the parallel task executors if they exist
             bool cancelled_ptask = cancel_ptasks(job->task);
@@ -354,11 +355,11 @@ void killer_process(
                 context->machines.update_machines_on_job_end(job, job->execution_request->job_allocation->hosts, context);
                 job->runtime = static_cast<long double>(simgrid::s4u::Engine::get_clock()) - job->starting_time;
 
-                xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%Lg)!", job->id.to_cstring(), job->runtime);
+                xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%Lg)!", job_id.to_cstring(), job->runtime);
                 if (job->runtime == 0)
                 {
                     XBT_WARN("Killed job '%s' has a null runtime. Putting epsilon instead.",
-                             job->id.to_cstring());
+                             job_id.to_cstring());
                     job->runtime = 1e-5l;
                 }
 
@@ -372,7 +373,7 @@ void killer_process(
                     job->consumed_energy = job->consumed_energy - consumed_energy_before;
 
                     // Trace the consumed energy
-                    context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
+                    context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job_id);
                 }
             }
             // Else the running ptask was asked to cancel by itself.

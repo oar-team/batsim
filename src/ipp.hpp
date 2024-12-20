@@ -148,7 +148,7 @@ struct JobCompletedMessage
  */
 struct RejectJobMessage
 {
-    JobPtr job; //!< The Job to reject
+    JobIdentifier job_id; //!< The Job to reject
 };
 
 /**
@@ -167,7 +167,7 @@ struct AllocationPlacement
  */
 struct ExecuteJobMessage
 {
-    JobPtr job; //!< The Job to execute
+    JobIdentifier job_id; //!< The job to execute
     std::shared_ptr<AllocationPlacement> job_allocation; //!< The main allocation/placement for the job.
     std::map<std::string, std::shared_ptr<AllocationPlacement> > profile_allocation_override; //!< Optional overrides for the allocation/placement of each profile within the job.
     std::map<std::string, int> storage_mapping; //!< Mapping from label given in the profile and machine id
@@ -178,8 +178,7 @@ struct ExecuteJobMessage
  */
 struct KillJobsMessage
 {
-    std::vector<JobPtr> jobs; //!< The jobs to kill. Some jobs can be removed from this vector to avoid double kills.
-    std::vector<std::string> job_ids; //!< IDs of the jobs to kill. This is kept separated from jobs as job_ids will be used to ACK the kills even if all jobs have not been killed (some may have finished in the meantime).
+    std::vector<JobIdentifier> job_ids; //!< The IDs of the jobs to kill
 };
 
 /**

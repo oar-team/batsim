@@ -706,10 +706,9 @@ void server_on_killing_done(ServerData * data,
     vector<string> job_ids_str;
     job_ids_str.reserve(message->kill_jobs_message->job_ids.size());
 
-    for (auto & job_id_str : message->kill_jobs_message->job_ids)
+    for (auto & job_id : message->kill_jobs_message->job_ids)
     {
-        JobIdentifier job_id(job_id_str);
-        job_ids_str.push_back(job_id_str);
+        job_ids_str.push_back(job_id.to_string());
 
         const auto job = data->context->workloads.job_at(job_id);
         if (job->state == JobState::JOB_STATE_COMPLETED_KILLED)
@@ -719,7 +718,7 @@ void server_on_killing_done(ServerData * data,
             data->nb_completed_jobs++;
             xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_completed_jobs + nb_running_jobs > nb_submitted_jobs");
 
-            really_killed_job_ids_str.push_back(job_id_str);
+            really_killed_job_ids_str.push_back(job_id.to_string());
 
             // Also add a job complete message for the jobs that have really been killed
             data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
@@ -847,7 +846,7 @@ void server_on_reject_job(ServerData * data,
 {
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<RejectJobMessage *>(task_data->data);
-    auto job = message->job;
+    auto job = data->context->workloads.job_at(message->job_id);
 
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
         "Invalid job rejection received: job '%s' has state='%s' which is not SUBMITTED.",
@@ -860,7 +859,7 @@ void server_on_reject_job(ServerData * data,
     XBT_INFO("Job '%s' has been rejected", job->id.to_cstring());
 
     data->context->jobs_tracer.write_job(job);
-    data->jobs_to_be_deleted.push_back(message->job->id);
+    data->jobs_to_be_deleted.push_back(message->job_id);
 }
 
 void server_on_kill_jobs(ServerData * data, IPMessage * task_data)
@@ -869,9 +868,9 @@ void server_on_kill_jobs(ServerData * data, IPMessage * task_data)
     auto * message = static_cast<KillJobsMessage *>(task_data->data);
 
     // Traverse jobs and discard those whose kill has already been requested (to avoid double kill of jobs).
-    for (auto job_it = message->jobs.begin(); job_it != message->jobs.end() ; )
+    for (auto job_id_it = message->job_ids.begin(); job_id_it != message->job_ids.end() ; )
     {
-        JobPtr job = *job_it;
+        JobPtr job = data->context->workloads.job_at(*job_id_it);
 
         if (!job->kill_requested)
         {
@@ -884,12 +883,12 @@ void server_on_kill_jobs(ServerData * data, IPMessage * task_data)
             // Mark that the job kill has been requested
             job->kill_requested = true;
 
-            ++job_it;
+            ++job_id_it;
         }
         else
         {
             // Erase the current job from the vector and continue iterating over it.
-            job_it = message->jobs.erase(job_it);
+            job_id_it = message->job_ids.erase(job_id_it);
         }
     }
 
@@ -961,7 +960,7 @@ void server_on_execute_job(ServerData * data,
     std::shared_ptr<ExecuteJobMessage> message(static_cast<ExecuteJobMessage *>(task_data->data));
     task_data->data = nullptr;
     auto allocation = message->job_allocation;
-    auto job = message->job;
+    auto job = data->context->workloads.job_at(message->job_id);
     job->execution_request = message;
 
     xbt_assert(job->state == JobState::JOB_STATE_SUBMITTED,
