@@ -28,6 +28,16 @@ def test_rejecter(test_root_dir):
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
+def test_platform_checker(test_root_dir):
+    platform = 'cluster_energy_128'
+    workload = 'test_delays'
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}'
+
+    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'platform-check', workload, batsim_extra_args=['--energy-host'])
+    p = run_batsim(batcmd, outdir)
+    assert p.returncode == 0
+
 def test_1by1(test_root_dir):
     platform = 'small_platform'
     workload = 'test_delays'

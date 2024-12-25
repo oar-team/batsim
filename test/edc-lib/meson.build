@@ -61,3 +61,8 @@ probe_energy = shared_library('probe-energy', common + ['probe-energy.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
   install: true,
 )
+
+platform_check = shared_library('platform-check', common + ['platform-check.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
+  install: true,
+)
