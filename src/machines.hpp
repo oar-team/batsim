@@ -346,6 +346,6 @@ long double consumed_energy_on_machines(BatsimContext * context,
  * @brief Sorts the given vector of machines by ascending name (lexicographically speaking)
  * @param[in,out] machines_vect The vector of machines to sort
  */
-void sort_machines_by_ascending_name(std::vector<Machine *> machines_vect);
+void sort_machines_by_ascending_name(std::vector<Machine *> & machines_vect);
 
 

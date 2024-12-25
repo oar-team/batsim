@@ -801,7 +801,7 @@ bool machine_comparator_name(const Machine *m1, const Machine *m2)
     return cmp_ret <= 0;
 }
 
-void sort_machines_by_ascending_name(std::vector<Machine *> machines_vect)
+void sort_machines_by_ascending_name(std::vector<Machine *> & machines_vect)
 {
     std::sort(machines_vect.begin(), machines_vect.end(), machine_comparator_name);
 
