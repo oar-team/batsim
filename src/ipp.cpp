@@ -166,6 +166,18 @@ IPMessage * receive_message(const std::string & reception_mailbox)
     return message;
 }
 
+
+
+/**
+ * @brief Clear the mailbox
+ * @param[in] reception_mailbox The mailbox name
+ */
+void clear_mailbox(const std::string & reception_mailbox)
+{
+    auto mailbox = simgrid::s4u::Mailbox::by_name(reception_mailbox);
+    mailbox->clear();
+}
+
 /**
  * @brief Check if the mailbox is empty
  * @param[in] reception_mailbox The mailbox name
@@ -261,6 +273,9 @@ std::string ip_message_type_to_string(IPMessageType type)
             break;
         case IPMessageType::SCHED_END_DYNAMIC_REGISTRATION:
             s = "SCHED_END_DYNAMIC_REGISTRATION";
+            break;
+        case IPMessageType::SCHED_FORCE_SIMULATION_STOP:
+            s = "SCHED_FORCE_SIMULATION_STOP";
             break;
         case IPMessageType::EVENT_OCCURRED:
             s = "EVENT_OCCURRED";
@@ -394,6 +409,10 @@ IPMessage::~IPMessage()
             delete msg;
         } break;
         case IPMessageType::SCHED_END_DYNAMIC_REGISTRATION:
+        {
+            // No data in this event
+        } break;
+        case IPMessageType::SCHED_FORCE_SIMULATION_STOP:
         {
             // No data in this event
         } break;

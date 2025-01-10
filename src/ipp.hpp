@@ -41,6 +41,7 @@ enum class IPMessageType
     // EDC-related
     ,SCHED_HELLO              //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (say hello).
     ,SCHED_READY              //!< Scheduler -> Server. The scheduler tells the server that the scheduler is ready (the scheduler is ready, messages can be sent to it).
+    ,SCHED_FORCE_SIMULATION_STOP //!< Scheduler -> Server. The scheduler asks the server to forcefully stop the simulation (equivalent to red emergency stop button).
     ,SCHED_EXECUTE_JOB        //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (execute a job).
     ,SCHED_REJECT_JOB         //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (reject a job).
     ,SCHED_KILL_JOBS          //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (kill a job).
@@ -408,6 +409,7 @@ void dsend_message(const char * destination_mailbox, IPMessageType type, void * 
 
 IPMessage * receive_message(const std::string & reception_mailbox);
 
+void clear_mailbox(const std::string & reception_mailbox);
 bool mailbox_empty(const std::string & reception_mailbox);
 
 std::string ip_message_type_to_string(IPMessageType type);

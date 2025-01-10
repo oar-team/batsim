@@ -704,6 +704,11 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
             ip_message->type = IPMessageType::SCHED_END_DYNAMIC_REGISTRATION;
             // No data in this event
         } break;
+        case Event_ForceSimulationStopEvent: {
+            ip_message->type = IPMessageType::SCHED_FORCE_SIMULATION_STOP;
+            // No data in this event
+            break;
+        }
         default: {
             xbt_assert(false, "Unhandled event type received (%s)", batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()]);
         } break;

@@ -60,6 +60,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SWITCHED_ON] = server_on_switched;
     handler_map[IPMessageType::SWITCHED_OFF] = server_on_switched;
     handler_map[IPMessageType::SCHED_END_DYNAMIC_REGISTRATION] = server_on_end_dynamic_registration;
+    handler_map[IPMessageType::SCHED_FORCE_SIMULATION_STOP] = server_on_force_simulation_stop;
     handler_map[IPMessageType::EVENT_OCCURRED] = server_on_event_occurred;
 
     /* Currently, there is one job submtiter per input file (workload or workflow).
@@ -99,10 +100,16 @@ void server_process(BatsimContext * context)
 
         // Let's send a message to the scheduler if needed
         if (data->sched_ready &&                     // The scheduler must be ready
-            !data->end_of_simulation_ack_received && // The simulation must NOT be finished
-            mailbox_empty("server")                  // The server mailbox must be empty
-            )
+                 !data->end_of_simulation_ack_received && // The simulation must NOT be finished
+                 mailbox_empty("server")                  // The server mailbox must be empty
+                )
         {
+            if (data->simulation_stop_asked)
+            {
+                // To trigger the SIMULATION_ENDS event
+                data->context->proto_msg_builder->clear(simgrid::s4u::Engine::get_clock());
+            }
+
             if (context->proto_msg_builder->has_events()) // There is something to send to the scheduler
             {
                 finish_message_and_call_edc(data);
@@ -138,16 +145,21 @@ void server_process(BatsimContext * context)
     xbt_assert(data->end_of_simulation_sent, "Left simulation loop, but the SIMULATION_ENDS message has not been sent to the scheduler.");
     xbt_assert(data->end_of_simulation_ack_received, "Left simulation loop, but the decision process did not ACK the SIMULATION_ENDS message.");
 
-    // Are there still pending actions in Batsim?
-    xbt_assert(data->sched_ready, "Left simulation loop, but a call to the decision process is ongoing.");
-    xbt_assert(data->nb_running_jobs == 0, "Left simulation loop, but some jobs are running.");
-    xbt_assert(data->nb_switching_machines == 0, "Left simulation loop, but some machines are being switched.");
-    xbt_assert(data->nb_killers == 0, "Left simulation loop, but some killer processes (used to kill jobs) are running.");
-    xbt_assert(data->nb_callmelater_entities == 0, "Left simulation loop, but some entities used to manage CALL_ME_LATER messages are running.");
-    xbt_assert(data->nb_probe_entities == 0, "Left simulation loop, but some entities used to manage probes are running.");
+    // Bypass normal end of simulation checks
+    if (!data->simulation_stop_asked)
+    {
+        // Are there still pending actions in Batsim?
+        xbt_assert(data->sched_ready, "Left simulation loop, but a call to the decision process is ongoing.");
+        xbt_assert(data->nb_running_jobs == 0, "Left simulation loop, but some jobs are running.");
+        xbt_assert(data->nb_switching_machines == 0, "Left simulation loop, but some machines are being switched.");
+        //xbt_assert(data->nb_killers == 0, "Left simulation loop, but some killer processes (used to kill jobs) are running.");
+        xbt_assert(data->killer_actors.empty(), "Left simulation loop, but some killer processes (used to kill jobs) are running.");
+        xbt_assert(data->nb_callmelater_entities == 0, "Left simulation loop, but some entities used to manage CALL_ME_LATER messages are running.");
+        xbt_assert(data->nb_probe_entities == 0, "Left simulation loop, but some entities used to manage probes are running.");
 
-    // Consistency
-    xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
+        // Consistency
+        xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
+    }
 
     delete data;
 }
@@ -210,7 +222,7 @@ void finish_message_and_call_edc(ServerData * data)
 
     // inject decisions from another actor, so the server can receive them
     data->sched_ready = false;
-    simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
+    data->sched_req_rep_actor = simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
         edc_decisions_injector, messages, now
     );
 }
@@ -264,6 +276,8 @@ void server_on_submitter_bye(ServerData * data,
 
     if (submitter_type == SubmitterType::EVENT_SUBMITTER)
     {
+        data->context->event_submitter_actors.erase(message->submitter_name);
+
         if(data->submitter_counters[submitter_type].nb_submitters_finished == data->submitter_counters[submitter_type].expected_nb_submitters)
         {
             data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
@@ -272,6 +286,8 @@ void server_on_submitter_bye(ServerData * data,
     }
     else if (submitter_type == SubmitterType::JOB_SUBMITTER)
     {
+        data->context->job_submitter_actors.erase(message->submitter_name);
+
         if(data->submitter_counters[submitter_type].nb_submitters_finished == data->submitter_counters[submitter_type].expected_nb_submitters)
         {
             data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
@@ -742,15 +758,74 @@ void server_on_killing_done(ServerData * data,
         data->context->proto_msg_builder->add_jobs_killed(job_ids_str, message->jobs_progress);
     }
 
-    --data->nb_killers;
+    data->killer_actors.erase(message->kill_jobs_message);
 }
 
 void server_on_end_dynamic_registration(ServerData * data,
-                                  IPMessage * task_data)
+                                        IPMessage * task_data)
 {
     (void) task_data;
 
     data->context->registration_sched_finished = true;
+}
+
+void server_on_force_simulation_stop(ServerData * data,
+                                     IPMessage * task_data)
+{
+    (void) task_data;
+
+    XBT_DEBUG("Handling force simulation stop");
+    data->simulation_stop_asked = true;
+
+    // Everything for the simulation to forcefully stop without deadlock
+
+    // Kill all SimGrid actors
+
+    // Static workloads and workflows submitters
+    for (auto it : data->context->job_submitter_actors)
+    {
+        it.second->kill();
+    }
+    data->context->job_submitter_actors.clear();
+
+    // Static external events submitters
+    for (auto it : data->context->event_submitter_actors)
+    {
+        it.second->kill();
+    }
+    data->context->event_submitter_actors.clear();
+
+    // Killer_processes
+    for (auto it : data->killer_actors)
+    {
+        it.second->kill();
+    }
+    data->killer_actors.clear();
+
+    // Running job actors
+    for (Machine * machine : data->context->machines.machines())
+    {
+        for (JobPtr job : machine->jobs_being_computed)
+        {
+            for (simgrid::s4u::ActorPtr actor : job->execution_actors)
+            {
+                actor->kill();
+            }
+            job->execution_actors.clear();
+        }
+    }
+
+    // TODO: once switching ON/OFF of machines is implemented need to kill the created actors here as well
+
+    // Kill the scheduler REQ-REP actor
+    data->sched_req_rep_actor->kill();
+
+    // Clear the server mailbox (no need to handle next scheduling events)
+    clear_mailbox("server");
+    data->sched_ready = true;
+
+    // Clear the events to send to the EDC
+    data->context->proto_msg_builder->clear(simgrid::s4u::Engine::get_clock());
 }
 
 void server_on_register_job(ServerData * data,
@@ -917,10 +992,12 @@ void server_on_kill_jobs(ServerData * data, IPMessage * task_data)
         }
     }
 
-    simgrid::s4u::Actor::create("killer_process", simgrid::s4u::this_actor::get_host(), killer_process,
+
+    simgrid::s4u::ActorPtr kill_actor = simgrid::s4u::Actor::create("killer_process", simgrid::s4u::this_actor::get_host(), killer_process,
         data->context, message, JobState::JOB_STATE_COMPLETED_KILLED, true
     );
-    ++data->nb_killers;
+    // Store the killer actor
+    data->killer_actors[message] = kill_actor;
 }
 
 void server_on_create_probe(ServerData * data,
@@ -963,6 +1040,7 @@ void server_on_call_me_later(ServerData * data,
         simgrid::s4u::Actor::create(pname.c_str(),
                                     data->context->machines.master_machine()->host,
                                     oneshot_call_me_later_actor, message->call_id, target_time, data);
+
         // Deallocate memory now for the non-periodic case
         delete message;
         task_data->data = nullptr;
@@ -1094,6 +1172,12 @@ void server_on_execute_job(ServerData * data,
 
 bool is_simulation_finished(ServerData * data)
 {
+    // Big bypass that won't work anymore with multiple EDC
+    if (data->simulation_stop_asked)
+    {
+        return true;
+    }
+
     return (data->submitter_counters[SubmitterType::JOB_SUBMITTER].nb_submitters_finished == data->submitter_counters[SubmitterType::JOB_SUBMITTER].expected_nb_submitters) &&
            (data->submitter_counters[SubmitterType::EVENT_SUBMITTER].nb_submitters_finished == data->submitter_counters[SubmitterType::EVENT_SUBMITTER].expected_nb_submitters) &&
            (!data->context->registration_sched_enabled || data->context->registration_sched_finished) && // Dynamic submissions are disabled or finished
@@ -1102,7 +1186,7 @@ bool is_simulation_finished(ServerData * data)
            (data->nb_switching_machines == 0) && // No machine is being switched
            (data->nb_callmelater_entities == 0) && // No entities related to CALL_ME_LATER are running
            (data->nb_probe_entities == 0) && // No entities related to probes are running
-           (data->nb_killers == 0); // No jobs is being killed
+           (data->killer_actors.empty()); // No jobs are being killed
 }
 
 void server_on_edc_hello(ServerData *data, IPMessage *task_data)

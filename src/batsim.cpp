@@ -196,6 +196,8 @@ void start_initial_simulation_processes(const MainArguments & main_args,
 {
     const Machine * master_machine = context->machines.master_machine();
 
+    context->job_submitter_actors.reserve(main_args.workload_descriptions.size() + main_args.workflow_descriptions.size());
+
     // Let's run a static_job_submitter process for each workload
     for (const MainArguments::WorkloadDescription & desc : main_args.workload_descriptions)
     {
@@ -208,10 +210,11 @@ void start_initial_simulation_processes(const MainArguments & main_args,
             actor_function = batexec_job_launcher_process;
         }
 
-        simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     actor_function,
                                     context, desc.name);
+        context->job_submitter_actors.emplace(submitter_instance_name, submitter_actor);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
@@ -220,24 +223,27 @@ void start_initial_simulation_processes(const MainArguments & main_args,
     {
         XBT_DEBUG("Creating a workflow_submitter process...");
         string submitter_instance_name = "workflow_submitter_" + desc.name;
-        simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     workflow_submitter_process,
                                     context, desc.name);
+        context->job_submitter_actors.emplace(submitter_instance_name, submitter_actor);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
     // Let's run a static_event_submitter process for each list of event
+    context->event_submitter_actors.reserve(main_args.eventList_descriptions.size());
     for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
     {
         string submitter_instance_name = "event_submitter_" + desc.name;
 
         XBT_DEBUG("Creating an event_submitter process...");
         auto actor_function = static_event_submitter_process;
-        simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     actor_function,
                                     context, desc.name);
+        context->event_submitter_actors.emplace(submitter_instance_name, submitter_actor);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 

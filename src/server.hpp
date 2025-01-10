@@ -8,6 +8,8 @@
 #include <string>
 #include <map>
 
+#include <simgrid/s4u.hpp>
+
 #include "ipp.hpp"
 
 struct BatsimContext;
@@ -46,10 +48,10 @@ struct ServerData
     int nb_switching_machines = 0;  //!< The number of machines being switched
     int nb_callmelater_entities = 0; //!< The number of alive entities to handle CALL_ME_LATER (dedicated actors for OneShot, a part of the periodic actor for Periodic)
     int nb_probe_entities = 0; //!< The number of alive entities to handle probes
-    int nb_killers = 0; //!< The number of alive killer actors
     bool sched_ready = true;    //!< Whether the scheduler can be called now
     bool sched_said_hello = false; //!< Whether the scheduler said hello
 
+    bool simulation_stop_asked = false;  //!< Whether a FORCE_SIMULATION_STOP event has been received
     bool end_of_simulation_sent = false; //!< Whether the SIMULATION_ENDS event has been sent to the scheduler
     bool end_of_simulation_ack_received = false; //!< Whether the SIMULATION_ENDS acknowledgement (empty message) has been received
 
@@ -57,6 +59,9 @@ struct ServerData
     std::unordered_map<SubmitterType, SubmitterCounters> submitter_counters; //!< A map of counters for Job, Event and Workflow Submitters
     std::map<JobIdentifier, Submitter*> origin_of_jobs; //!< Stores whether a Submitter must be notified on job completion
     std::vector<JobIdentifier> jobs_to_be_deleted; //!< Stores the job_ids to be deleted after sending a message
+    std::unordered_map<KillJobsMessage *, simgrid::s4u::ActorPtr> killer_actors; //!< Stores the SimGrid killer_process actors
+    simgrid::s4u::ActorPtr sched_req_rep_actor; //!< Stores the SimGrid sched-req-rep actor (edc_decisions_injector)
+
 };
 
 /**
@@ -209,6 +214,14 @@ void server_on_killing_done(ServerData * data,
  */
 void server_on_end_dynamic_registration(ServerData * data,
                                         IPMessage * task_data);
+
+/**
+ * @brief Server SCHED_FORCE_SIMULATION_STOP handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_force_simulation_stop(ServerData * data,
+                                     IPMessage * task_data);
 
 /**
  * @brief Server SCHED_JOB_REGISTERED handler
