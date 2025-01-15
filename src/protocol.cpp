@@ -642,9 +642,9 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
     }
     case batprotocol::fb::Profile_ParallelTaskProfile:
     {
-        const batprotocol::fb::ParallelTaskProfile * prof = proto_profile->profile_as_ParallelTaskProfile();
-        profile->type = ProfileType::PTASK;
-        ParallelProfileData * data = new ParallelProfileData;
+        // const batprotocol::fb::ParallelTaskProfile * prof = proto_profile->profile_as_ParallelTaskProfile();
+        // profile->type = ProfileType::PTASK;
+        // ParallelProfileData * data = new ParallelProfileData;
 
         //TODO
         break;
@@ -664,53 +664,55 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
     }
     case batprotocol::fb::Profile_SequentialCompositionProfile:
     {
-        const batprotocol::fb::SequentialCompositionProfile * prof = proto_profile->profile_as_SequentialCompositionProfile();
-        profile->type = ProfileType::SEQUENTIAL_COMPOSITION;
-        SequenceProfileData * data = new SequenceProfileData;
+        // const batprotocol::fb::SequentialCompositionProfile * prof = proto_profile->profile_as_SequentialCompositionProfile();
+        // profile->type = ProfileType::SEQUENTIAL_COMPOSITION;
+        // SequenceProfileData * data = new SequenceProfileData;
 
         //TODO
         break;
     }
     case batprotocol::fb::Profile_ForkJoinCompositionProfile:
     {
-        const batprotocol::fb::ForkJoinCompositionProfile * prof = proto_profile->profile_as_ForkJoinCompositionProfile();
-        profile->type = ProfileType::FORKJOIN_COMPOSITION;
-        ParallelProfileData * data = new ParallelProfileData;
+        // const batprotocol::fb::ForkJoinCompositionProfile * prof = proto_profile->profile_as_ForkJoinCompositionProfile();
+        // profile->type = ProfileType::FORKJOIN_COMPOSITION;
+        // ParallelProfileData * data = new ParallelProfileData;
 
         //TODO
         break;
     }
     case batprotocol::fb::Profile_ParallelTaskMergeCompositionProfile:
     {
-        const batprotocol::fb::ParallelTaskMergeCompositionProfile * prof = proto_profile->profile_as_ParallelTaskMergeCompositionProfile();
-        profile->type = ProfileType::PTASK_MERGE_COMPOSITION;
-        ParallelProfileData * data = new ParallelProfileData;
+        // const batprotocol::fb::ParallelTaskMergeCompositionProfile * prof = proto_profile->profile_as_ParallelTaskMergeCompositionProfile();
+        // profile->type = ProfileType::PTASK_MERGE_COMPOSITION;
+        // ParallelProfileData * data = new ParallelProfileData;
 
         //TODO
         break;
     }
     case batprotocol::fb::Profile_ParallelTaskOnStorageHomogeneousProfile:
     {
-        const batprotocol::fb::ParallelTaskOnStorageHomogeneousProfile * prof = proto_profile->profile_as_ParallelTaskOnStorageHomogeneousProfile();
-        profile->type = ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS;
-        ParallelTaskOnStorageHomogeneousProfileData * data = new ParallelTaskOnStorageHomogeneousProfileData;
+        // const batprotocol::fb::ParallelTaskOnStorageHomogeneousProfile * prof = proto_profile->profile_as_ParallelTaskOnStorageHomogeneousProfile();
+        // profile->type = ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS;
+        // ParallelTaskOnStorageHomogeneousProfileData * data = new ParallelTaskOnStorageHomogeneousProfileData;
         //TODO
 
         break;
     }
     case batprotocol::fb::Profile_ParallelTaskDataStagingBetweenStoragesProfile:
     {
-        const batprotocol::fb::ParallelTaskDataStagingBetweenStoragesProfile * prof = proto_profile->profile_as_ParallelTaskDataStagingBetweenStoragesProfile();
-        profile->type = ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES;
-        DataStagingProfileData * data = new DataStagingProfileData;
+        // const batprotocol::fb::ParallelTaskDataStagingBetweenStoragesProfile * prof = proto_profile->profile_as_ParallelTaskDataStagingBetweenStoragesProfile();
+        // profile->type = ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES;
+        // DataStagingProfileData * data = new DataStagingProfileData;
 
         //TODO
         break;
     }
     case batprotocol::fb::Profile_TraceReplayProfile:
     {
-        const batprotocol::fb::TraceReplayProfile * prof = proto_profile->profile_as_TraceReplayProfile();
+        xbt_die("Profile registration of type Trace Replay is not implemented yet");
+        /*const batprotocol::fb::TraceReplayProfile * prof = proto_profile->profile_as_TraceReplayProfile();
         TraceReplayProfileData * data = new TraceReplayProfileData;
+        data->filename = prof->filename();
 
         if (prof->trace_type() == batprotocol::fb::TraceType_SMPI)
         {
@@ -729,7 +731,7 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
         // TODO load the list of trace files given in the filename
 
 
-        profile->data = data;
+        profile->data = data;*/
         break;
     }
     // TODO: Message for unhandled profiles

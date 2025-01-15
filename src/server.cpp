@@ -145,14 +145,13 @@ void server_process(BatsimContext * context)
     xbt_assert(data->end_of_simulation_sent, "Left simulation loop, but the SIMULATION_ENDS message has not been sent to the scheduler.");
     xbt_assert(data->end_of_simulation_ack_received, "Left simulation loop, but the decision process did not ACK the SIMULATION_ENDS message.");
 
-    // Bypass normal end of simulation checks
+    // Bypass checks for normal end of simulation
     if (!data->simulation_stop_asked)
     {
         // Are there still pending actions in Batsim?
         xbt_assert(data->sched_ready, "Left simulation loop, but a call to the decision process is ongoing.");
         xbt_assert(data->nb_running_jobs == 0, "Left simulation loop, but some jobs are running.");
         xbt_assert(data->nb_switching_machines == 0, "Left simulation loop, but some machines are being switched.");
-        //xbt_assert(data->nb_killers == 0, "Left simulation loop, but some killer processes (used to kill jobs) are running.");
         xbt_assert(data->killer_actors.empty(), "Left simulation loop, but some killer processes (used to kill jobs) are running.");
         xbt_assert(data->nb_callmelater_entities == 0, "Left simulation loop, but some entities used to manage CALL_ME_LATER messages are running.");
         xbt_assert(data->nb_probe_entities == 0, "Left simulation loop, but some entities used to manage probes are running.");
@@ -352,7 +351,8 @@ void server_on_job_submitted(ServerData * data,
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<JobSubmittedMessage *>(task_data->data);
 
-    xbt_assert(data->submitters.count(message->submitter_name) == 1, "inconsistency: expected 1 submitter with name '%s', , got %lu", message->submitter_name.c_str(), data->submitters.count(message->submitter_name));
+    //TODO: this shoulbe be checked during initialisation of Batsim and its submitters, not here
+    //xbt_assert(data->submitters.count(message->submitter_name) == 1, "inconsistency: expected 1 submitter with name '%s', , got %lu", message->submitter_name.c_str(), data->submitters.count(message->submitter_name));
 
     ServerData::Submitter * submitter = data->submitters.at(message->submitter_name);
     for (JobPtr & job : message->jobs)
@@ -744,7 +744,7 @@ void server_on_killing_done(ServerData * data,
 
             really_killed_job_ids_str.push_back(job_id.to_string());
 
-            // Also add a job complete message for the jobs that have really been killed
+            // Also add a job completed message for the jobs that have really been killed
             data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
             data->context->proto_msg_builder->add_job_completed(
                 job->id.to_string(),
@@ -1095,7 +1095,7 @@ void server_on_execute_job(ServerData * data,
 
     // Check that the allocated hosts have the right permissions.
     // TODO: these checks should be removed and left to the EDC's responsibility
-    if (!data->context->allow_compute_sharing || !data->context->allow_storage_sharing)
+    /*if (!data->context->allow_compute_sharing || !data->context->allow_storage_sharing)
     {
         for (auto machine_id_it = allocation->hosts.elements_begin(); machine_id_it != allocation->hosts.elements_end(); ++machine_id_it)
         {
@@ -1124,7 +1124,7 @@ void server_on_execute_job(ServerData * data,
                            machine->jobs_being_computed_as_string().c_str());
             }
         }
-    }
+    }*/
 
     // Check that every machine can compute the job
     for (auto machine_id_it = allocation->hosts.elements_begin(); machine_id_it != allocation->hosts.elements_end(); ++machine_id_it)

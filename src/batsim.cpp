@@ -461,5 +461,5 @@ void set_configuration(BatsimContext *context,
     // Let's write the json object holding configuration information to send to the scheduler
     // **************************************************************************************
     context->config_json.SetObject();
-    auto & alloc = context->config_json.GetAllocator();
+    //auto & alloc = context->config_json.GetAllocator();
 }

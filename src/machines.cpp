@@ -710,7 +710,7 @@ std::shared_ptr<std::vector<double> > Machine::pstate_speeds() const
 {
     std::shared_ptr<std::vector<double> > speeds(new std::vector<double>);
     speeds->reserve(host->get_pstate_count());
-    for (int i = 0; i < host->get_pstate_count(); ++i)
+    for (long unsigned int i = 0; i < host->get_pstate_count(); ++i)
     {
         speeds->push_back(host->get_pstate_speed(i));
     }
