@@ -1,7 +1,6 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=branch-off-24.11";
-    nixpkgs-pytest.url = "github:nixos/nixpkgs?ref=22.11";
     flake-utils.url = "github:numtide/flake-utils";
     nur-kapack = {
       url = "github:oar-team/nur-kapack";
@@ -22,11 +21,10 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-pytest, nur-kapack, intervalset, batprotocol, flake-utils }:
+  outputs = { self, nixpkgs, nur-kapack, intervalset, batprotocol, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        pkgs-pytest = import nixpkgs-pytest { inherit system; };
         kapack = nur-kapack.packages.${system};
         simgrid-base = kapack.simgrid;
         release-options = {
@@ -48,9 +46,9 @@
         };
         base-defs = {
           cppMesonDevBase = nur-kapack.lib.${system}.cppMesonDevBase;
-          pytest = pkgs-pytest.python3Packages.pytest;
-          pytest-html = pkgs-pytest.python3Packages.pytest-html;
-          pandas = pkgs-pytest.python3Packages.pandas;
+          pytest = pkgs.python3Packages.pytest;
+          pytest-html = pkgs.python3Packages.pytest-html;
+          pandas = pkgs.python3Packages.pandas;
         };
         callPackage = mergedPkgs: deriv-func: attrset: options: pkgs.lib.callPackageWith(mergedPkgs // options) deriv-func attrset;
       in rec {
@@ -86,10 +84,10 @@
             buildInputs = [
               packages-debug.batsim
               packages-debug.batsim-edc-libs
-              pkgs-pytest.python3Packages.ipython
-              pkgs-pytest.python3Packages.pandas
-              pkgs-pytest.python3Packages.pytest
-              pkgs-pytest.python3Packages.pytest-html
+              pkgs.python3Packages.ipython
+              pkgs.python3Packages.pandas
+              pkgs.python3Packages.pytest
+              pkgs.python3Packages.pytest-html
               pkgs.gdb
               pkgs.cgdb
             ];
