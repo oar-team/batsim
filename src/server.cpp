@@ -373,7 +373,15 @@ void server_on_job_submitted(ServerData * data,
         XBT_INFO("Job %s SUBMITTED. %d jobs submitted so far", job->id.to_cstring(), data->nb_submitted_jobs);
 
         data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
-        data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), simgrid::s4u::Engine::get_clock());
+        if (data->context->forward_profiles_on_job_submission)
+        {
+            const std::string profile_id = job->profile->workload->name + '!' + job->profile->name;
+            data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), simgrid::s4u::Engine::get_clock(), profile_id, protocol::to_profile(*(job->profile)));
+        }
+        else
+        {
+            data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), simgrid::s4u::Engine::get_clock());
+        }
     }
 }
 
@@ -755,7 +763,7 @@ void server_on_killing_done(ServerData * data,
                  boost::algorithm::join(job_ids_str, ",").c_str(),
                  boost::algorithm::join(really_killed_job_ids_str, ",").c_str());
 
-        data->context->proto_msg_builder->add_jobs_killed(job_ids_str, message->jobs_progress);
+        data->context->proto_msg_builder->add_jobs_killed(job_ids_str, message->jobs_progress, message->profiles);
     }
 
     data->killer_actors.erase(message->kill_jobs_message);
@@ -902,7 +910,16 @@ void server_on_register_job(ServerData * data,
         // TODO: handle the multi-EDC
 
         data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
-        data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), job->submission_time);
+
+        if (data->context->forward_profiles_on_job_submission)
+        {
+            const std::string profile_id = job->profile->workload->name + '!' + job->profile->name;
+            data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), job->submission_time, profile_id, protocol::to_profile(*(job->profile)));
+        }
+        else
+        {
+            data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), job->submission_time);
+        }
     }
 }
 
@@ -933,6 +950,7 @@ void server_on_register_profile(ServerData * data,
     }
 
     message->profile->name = profile_name;
+    message->profile->workload = workload;
 
     // Add the profile in the workload
     workload->profiles->add_profile(profile_name, message->profile);
@@ -1201,13 +1219,14 @@ void server_on_edc_hello(ServerData *data, IPMessage *task_data)
 
     // TODO: set tunable behavior per EDC, not for all of them
     data->context->registration_sched_enabled = message->requested_simulation_features.dynamic_registration;
-    data->context->garbage_collect_profiles = !(message->requested_simulation_features.dynamic_registration && message->requested_simulation_features.profile_reuse);
     data->context->registration_sched_ack = message->requested_simulation_features.acknowledge_dynamic_jobs;
+    data->context->garbage_collect_profiles = !(message->requested_simulation_features.dynamic_registration && message->requested_simulation_features.profile_reuse);
+    data->context->forward_profiles_on_simulation_begins = message->requested_simulation_features.forward_profiles_on_simulation_begins;
+    data->context->forward_profiles_on_job_submission= message->requested_simulation_features.forward_profiles_on_job_submission;
+    data->context->forward_profiles_on_jobs_killed = message->requested_simulation_features.forward_profiles_on_jobs_killed;
+    //data->context->forward_unknown_external_events = message->requested_simulation_features.forward_unknown_external_events;
 
     // TODO: implement these features
-    xbt_assert(!message->requested_simulation_features.forward_profiles_on_job_submission, "Forwarding profiles on job submission is unimplemented");
-    xbt_assert(!message->requested_simulation_features.forward_profiles_on_jobs_killed, "Forwarding profiles on jobs killed is unimplemented");
-    xbt_assert(!message->requested_simulation_features.forward_profiles_on_simulation_begins, "Forwarding profiles simulation begins is unimplemented");
     xbt_assert(!message->requested_simulation_features.forward_unknown_external_events, "Forwarding unknown external events is unimplemented");
 
     auto simulation_begins = protocol::to_simulation_begins(data->context);

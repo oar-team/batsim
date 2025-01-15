@@ -57,10 +57,10 @@ int execute_task(
         {
             auto * data = static_cast<SequenceProfileData *>(profile->data);
 
-            for (unsigned int sequence_iteration = 0; sequence_iteration < data->repeat; sequence_iteration++)
+            for (unsigned int sequence_iteration = 0; sequence_iteration < data->repetition_count; sequence_iteration++)
             {
                 for (unsigned int profile_index_in_sequence = 0;
-                    profile_index_in_sequence < data->sequence.size();
+                    profile_index_in_sequence < data->sequence_names.size();
                     profile_index_in_sequence++)
                 {
                     // Trace how the execution is going so that progress can be retrieved if needed
@@ -318,7 +318,7 @@ void killer_process(
         xbt_assert(! (job->state == JobState::JOB_STATE_REJECTED ||
                       job->state == JobState::JOB_STATE_SUBMITTED ||
                       job->state == JobState::JOB_STATE_NOT_SUBMITTED),
-            "Invalid kill: job %s has not been started (state='%s'",
+            "Invalid kill: job %s has not been started yet (state='%s')",
             job_id.to_cstring(), job_state_to_string(job->state).c_str()
         );
 
@@ -327,11 +327,16 @@ void killer_process(
             auto task = job->task;
             xbt_assert(task != nullptr, "Internal error");
 
-            // Compute and store the kill progress of this job.
+            // Compute and store the kill progress of this job in the message
             auto kill_progress = protocol::battask_to_kill_progress(task);
-
-            // Store job progress in the message.
             message->jobs_progress[job_id.to_string()] = kill_progress;
+
+            // Store the job profile if required
+            if (context->forward_profiles_on_jobs_killed)
+            {
+                const std::string profile_id = job->profile->workload->name + '!' + job->profile->name;
+                message->profiles[profile_id] = protocol::to_profile(*(job->profile));
+            }
 
             // Try to cancel the parallel task executors if they exist
             bool cancelled_ptask = cancel_ptasks(job->task);

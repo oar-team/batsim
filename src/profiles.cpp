@@ -14,6 +14,8 @@
 #include <xbt/asserts.h>
 
 #include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 using namespace std;
 using namespace rapidjson;
@@ -46,11 +48,13 @@ void Profiles::load_from_json(const Document &doc, const string & filename)
                    "string key", error_prefix.c_str());
         string profile_name = key.GetString();
 
-        auto profile = Profile::from_json(profile_name, value, error_prefix, true, filename);
+        auto profile = Profile::from_json(profile_name, value, _workload, error_prefix, true, filename);
         xbt_assert(!exists(string(key.GetString())), "%s: duplication of profile name '%s'",
                    error_prefix.c_str(), key.GetString());
+
         _profiles[string(key.GetString())] = profile;
     }
+
 }
 
 ProfilePtr Profiles::operator[](const std::string &profile_name)
@@ -93,6 +97,7 @@ void Profiles::add_profile(const std::string & profile_name,
                profile_name.c_str());
 
     _profiles[profile_name] = profile;
+    profile->workload = _workload;
 }
 
 void Profiles::remove_profile(const std::string & profile_name)
@@ -129,6 +134,12 @@ void Profiles::remove_unreferenced_profiles()
             mit.second = nullptr;
         }
     }
+}
+
+
+void Profiles::set_workload(Workload *workload)
+{
+    _workload = workload;
 }
 
 const std::unordered_map<std::string, ProfilePtr> Profiles::profiles() const
@@ -257,15 +268,17 @@ Profile::~Profile()
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
 ProfilePtr Profile::from_json(const std::string & profile_name,
-                            const rapidjson::Value & json_desc,
-                            const std::string & error_prefix,
-                            bool is_from_a_file,
-                            const std::string & json_filename)
+                              const rapidjson::Value & json_desc,
+                              Workload * workload,
+                              const std::string & error_prefix,
+                              bool is_from_a_file,
+                              const std::string & json_filename)
 {
     (void) error_prefix; // Avoids a warning if assertions are ignored
 
     auto profile = std::make_shared<Profile>();
     profile->name = profile_name;
+    profile->workload = workload;
 
     xbt_assert(json_desc.IsObject(), "%s: profile '%s' value must be an object",
                error_prefix.c_str(), profile_name.c_str());
@@ -400,10 +413,10 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
                    error_prefix.c_str(), profile_name.c_str(), json_desc["repeat"].GetInt());
             repeat = static_cast<unsigned int>(json_desc["repeat"].GetInt());
         }
-        data->repeat = repeat;
+        data->repetition_count = repeat;
 
-        xbt_assert(data->repeat > 0, "%s: profile '%s' has a non-strictly-positive 'repeat' field (%d)",
-                   error_prefix.c_str(), profile_name.c_str(), data->repeat);
+        xbt_assert(data->repetition_count > 0, "%s: profile '%s' has a non-strictly-positive 'repeat' field (%d)",
+                   error_prefix.c_str(), profile_name.c_str(), data->repetition_count);
 
         xbt_assert(json_desc.HasMember("seq"), "%s: profile '%s' has no 'seq' field",
                    error_prefix.c_str(), profile_name.c_str());
@@ -412,10 +425,10 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         const Value & seq = json_desc["seq"];
         xbt_assert(seq.Size() > 0, "%s: profile '%s' has an invalid array 'seq': its size must be "
                    "strictly positive", error_prefix.c_str(), profile_name.c_str());
-        data->sequence.reserve(seq.Size());
+        data->sequence_names.reserve(seq.Size());
         for (unsigned int i = 0; i < seq.Size(); ++i)
         {
-            data->sequence.push_back(string(seq[i].GetString()));
+            data->sequence_names.push_back(string(seq[i].GetString()));
         }
 
         profile->data = data;
@@ -631,20 +644,37 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
                 profile_name.c_str(), profile_type.c_str());
     }
 
+    // read extra_data
+    if (json_desc.HasMember("extra_data")) {
+        if (json_desc["extra_data"].IsString())
+            profile->extra_data = json_desc["extra_data"].GetString();
+        else if (json_desc["extra_data"].IsObject() || json_desc["extra_data"].IsArray()) {
+            // convert json content to string
+            StringBuffer buffer;
+            rapidjson::Writer<StringBuffer> writer(buffer);
+            json_desc["extra_data"].Accept(writer);
+            profile->extra_data = std::string(buffer.GetString(), buffer.GetSize());
+        }
+        else
+            xbt_assert(false, "%s: profile %s has an 'extra_data' field that is not a string nor an object",
+                       error_prefix.c_str(), profile->name.c_str());
+    }
+
     return profile;
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
 ProfilePtr Profile::from_json(const std::string & profile_name,
-                            const std::string & json_str,
-                            const std::string & error_prefix)
+                              const std::string & json_str,
+                              Workload * workload,
+                              const std::string & error_prefix)
 {
     Document doc;
     doc.Parse(json_str.c_str());
     xbt_assert(!doc.HasParseError(), "%s: Cannot be parsed. Content (between '##'):\n#%s#",
                error_prefix.c_str(), json_str.c_str());
 
-    return Profile::from_json(profile_name, doc, error_prefix, false);
+    return Profile::from_json(profile_name, doc, workload, error_prefix, false);
 }
 
 bool Profile::is_rigid() const

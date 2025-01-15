@@ -33,6 +33,7 @@ Workload *Workload::new_static_workload(const string & workload_name,
 
     workload->jobs->set_profiles(workload->profiles);
     workload->jobs->set_workload(workload);
+    workload->profiles->set_workload(workload);
     workload->name = workload_name;
     workload->file = workload_file;
 
@@ -134,15 +135,15 @@ void Workload::check_validity()
         if (profile->type == ProfileType::SEQUENTIAL_COMPOSITION)
         {
             auto * data = static_cast<SequenceProfileData *>(profile->data);
-            data->profile_sequence.reserve(data->sequence.size());
-            for (const auto & prof : data->sequence)
+            data->profile_sequence.reserve(data->sequence_names.size());
+            for (const auto & profile_name : data->sequence_names)
             {
-                (void) prof; // Avoids a warning if assertions are ignored
-                xbt_assert(profiles->exists(prof),
+                (void) profile_name; // Avoids a warning if assertions are ignored
+                xbt_assert(profiles->exists(profile_name),
                            "Invalid composed profile '%s': the used profile '%s' does not exist",
-                           mit.first.c_str(), prof.c_str());
+                           mit.first.c_str(), profile_name.c_str());
                 // Adds one to the refcounting for the profile 'prof'
-                data->profile_sequence.push_back(profiles->at(prof));
+                data->profile_sequence.push_back(profiles->at(profile_name));
             }
         }
     }

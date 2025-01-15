@@ -124,7 +124,7 @@ struct JobSubmittedMessage
 struct JobRegisteredByEDCMessage
 {
     JobPtr job; //!< The freshly registered Job
-    std::string profile_id; //!< The profile id
+    std::string profile_id; //!< The profile id, preferably of the form workload!name
 };
 
 /**
@@ -343,6 +343,7 @@ struct KillingDoneMessage
     KillJobsMessage * kill_jobs_message = nullptr; //!< The KillJobsMessage that initiated the kills
     std::map<std::string, std::shared_ptr<batprotocol::KillProgress>> jobs_progress; //!< Stores the progress of the jobs that have really been killed
     bool acknowledge_kill_on_protocol = false; //!< Whether to send a JOB_KILLED event to acknowledge the kills
+    std::unordered_map<std::string, std::shared_ptr<batprotocol::Profile>> profiles; //!< Stores the profiles of the killed jobs. Only used if forward_profiles_on_jobs_killed is set
 
     ~KillingDoneMessage();
 };

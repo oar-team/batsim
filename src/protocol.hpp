@@ -22,6 +22,7 @@ namespace protocol
 
 std::shared_ptr<batprotocol::KillProgress> battask_to_kill_progress(const BatTask * task);
 std::shared_ptr<batprotocol::Job> to_job(const Job & job);
+std::shared_ptr<batprotocol::Profile> to_profile(const Profile & profile);
 
 batprotocol::fb::FinalJobState job_state_to_final_job_state(const JobState & state);
 batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context);

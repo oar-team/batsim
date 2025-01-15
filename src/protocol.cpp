@@ -99,6 +99,100 @@ std::shared_ptr<batprotocol::Job> to_job(const Job & job)
     return proto_job;
 }
 
+
+
+std::shared_ptr<batprotocol::Profile> to_profile(const Profile & profile)
+{
+    std::shared_ptr<batprotocol::Profile> p;
+    switch(profile.type)
+    {
+    case ProfileType::DELAY:
+    {
+        auto * data = static_cast<DelayProfileData*>(profile.data);
+        p = batprotocol::Profile::make_delay(data->delay);
+        break;
+    }
+    case ProfileType::PTASK:
+    {
+        auto * data = static_cast<ParallelProfileData*>(profile.data);
+
+        const std::shared_ptr<std::vector<double>> cpu_vector = make_shared<vector<double>>(vector<double>());
+        cpu_vector->reserve(data->nb_res);
+        cpu_vector->assign(data->cpu, data->cpu+data->nb_res);
+
+        const std::shared_ptr<std::vector<double>> comm_vector = make_shared<vector<double>>(vector<double>());
+        comm_vector->reserve(data->nb_res*data->nb_res);
+        comm_vector->assign(data->com, data->com+data->nb_res*data->nb_res);
+
+        p = batprotocol::Profile::make_parallel_task(cpu_vector, comm_vector);
+        break;
+    }
+    case ProfileType::PTASK_HOMOGENEOUS:
+    {
+        auto * data = static_cast<ParallelHomogeneousProfileData*>(profile.data);
+        p = batprotocol::Profile::make_parallel_task_homogeneous(data->strategy, data->cpu, data->com);
+        break;
+    }
+    case ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS:
+    {
+        auto * data = static_cast<ParallelTaskOnStorageHomogeneousProfileData*>(profile.data);
+        p = batprotocol::Profile::make_parallel_task_on_storage_homogeneous(data->storage_label,
+                                                                            data->strategy,
+                                                                            data->bytes_to_read, data->bytes_to_write);
+        break;
+    }
+    case ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES:
+    {
+        auto * data = static_cast<DataStagingProfileData*>(profile.data);
+        p = batprotocol::Profile::make_parallel_task_data_staging_between_storages(data->nb_bytes,
+                                                                                   data->from_storage_label,
+                                                                                   data->to_storage_label);
+        break;
+    }
+    case ProfileType::PTASK_MERGE_COMPOSITION:
+    {
+        auto * data = static_cast<ParallelTaskMergeCompositionProfileData*>(profile.data);
+        const std::shared_ptr<std::vector<std::string>> sub_profiles = make_shared<vector<std::string>>(data->sequence_names);
+        p = batprotocol::Profile::make_parallel_task_merge_composition(sub_profiles);
+        break;
+    }
+    case ProfileType::SEQUENTIAL_COMPOSITION:
+    {
+        auto * data = static_cast<SequenceProfileData*>(profile.data);
+        const std::shared_ptr<std::vector<std::string>> sub_profiles = make_shared<vector<std::string>>(data->sequence_names);
+        p = batprotocol::Profile::make_sequential_composition(sub_profiles, data->repetition_count);
+        break;
+    }
+    case ProfileType::FORKJOIN_COMPOSITION:
+    {
+        auto * data = static_cast<ForkJoinCompositionProfileData*>(profile.data);
+        const std::shared_ptr<std::vector<std::string>> sub_profiles = make_shared<vector<std::string>>(data->sequence_names);
+        p = batprotocol::Profile::make_forkjoin_composition(sub_profiles);
+        break;
+    }
+    case ProfileType::REPLAY_SMPI:
+    {
+        auto * data = static_cast<TraceReplayProfileData*>(profile.data);
+        p = batprotocol::Profile::make_trace_replay_smpi(data->filename);
+        break;
+    }
+    case ProfileType::REPLAY_USAGE:
+    {
+        auto * data = static_cast<TraceReplayProfileData*>(profile.data);
+        p = batprotocol::Profile::make_trace_replay_fractional_computation(data->filename);
+        break;
+    }
+    }
+
+    if (!profile.extra_data.empty())
+    {
+        p->set_extra_data(profile.extra_data);
+    }
+
+    return p;
+}
+
+
 /**
  * @brief Returns a batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
  * @param[in] state The Batsim JobState
@@ -202,7 +296,16 @@ batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context
 
         begins.add_workload(workload_name, workload->file);
 
-        // TODO: add profiles if requested by the user
+        // Add profiles if requested by the EDC
+        if (context->forward_profiles_on_simulation_begins)
+        {
+            for (const auto & kv : workload->profiles->profiles())
+            {
+                auto profile_name = workload_name + '!' + kv.first;
+                std::shared_ptr<batprotocol::Profile> proto_profile = to_profile(*kv.second);
+                begins.add_profile(profile_name, proto_profile);
+            }
+        }
     }
 
     // Misc.
@@ -499,7 +602,11 @@ JobRegisteredByEDCMessage * from_register_job(const batprotocol::fb::RegisterJob
     msg->job->id = JobIdentifier(register_job->job_id()->str());
     msg->job->requested_nb_res = proto_job->resource_request();
     msg->job->walltime = proto_job->walltime();
-    msg->job->extra_data = proto_job->extra_data()->str();
+
+    if (proto_job->extra_data() != nullptr)
+    {
+        msg->job->extra_data = proto_job->extra_data()->str();
+    }
     msg->job->is_rigid = proto_job->rigid();
     msg->profile_id = proto_job->profile_id()->str();
 
@@ -515,6 +622,11 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
     ProfilePtr profile = std::make_shared<Profile>();
     msg->profile = profile;
     msg->profile_id = proto_profile->id()->str();
+
+    if (proto_profile->extra_data() != nullptr)
+    {
+        msg->profile->extra_data = proto_profile->extra_data()->str();
+    }
 
     switch(proto_profile->profile_type())
     {

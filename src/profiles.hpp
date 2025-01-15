@@ -15,6 +15,8 @@
 
 #include "pointers.hpp"
 
+class Workload;
+
 /**
  * @brief Enumerates the different types of profiles
  */
@@ -51,7 +53,9 @@ struct Profile
     ProfileType type; //!< The type of the profile
     void * data; //!< The associated data
     std::string name; //!< the profile unique name
+    Workload * workload = nullptr; //!< The workload the profile belongs to
     int return_code = 0;  //!< The return code of this profile's execution (SUCCESS == 0)
+    std::string extra_data = ""; //!< User-given extra data. Not used by Batsim at all but forwarded to EDCs.
 
     /**
      * @brief Creates a new-allocated Profile from a JSON description
@@ -64,10 +68,11 @@ struct Profile
      * @pre The JSON description is valid
      */
     static ProfilePtr from_json(const std::string & profile_name,
-                               const rapidjson::Value & json_desc,
-                               const std::string & error_prefix = "Invalid JSON profile",
-                               bool is_from_a_file = true,
-                               const std::string & json_filename = "unset");
+                                const rapidjson::Value & json_desc,
+                                Workload * workload,
+                                const std::string & error_prefix = "Invalid JSON profile",
+                                bool is_from_a_file = true,
+                                const std::string & json_filename = "unset");
 
     /**
      * @brief Creates a new-allocated Profile from a JSON description
@@ -78,8 +83,9 @@ struct Profile
      * @pre The JSON description is valid
      */
     static ProfilePtr from_json(const std::string & profile_name,
-                               const std::string & json_str,
-                               const std::string & error_prefix = "Invalid JSON profile");
+                                const std::string & json_str,
+                                Workload * workload,
+                                const std::string & error_prefix = "Invalid JSON profile");
 
     /**
      * @brief Returns whether a profile is rigid or not.
@@ -129,14 +135,29 @@ struct ParallelHomogeneousProfileData
  */
 struct SequenceProfileData
 {
-    unsigned int repeat;  //!< The number of times the sequence must be repeated
-    std::vector<std::string> sequence; //!< The sequence of profile names, executed in this order
+    unsigned int repetition_count;  //!< The number of times the sequence must be repeated
+    std::vector<std::string> sequence_names; //!< The sequence of profile names, executed in this order
     std::vector<ProfilePtr> profile_sequence; //!< The sequence of profiles, executed in this order
 };
 
-// TODO forkjoin data
+/**
+ * @brief The data associated to ForkJoinComposition profiles
+ */
+struct ForkJoinCompositionProfileData
+{
+    std::vector<std::string> sequence_names; //!< The sequence of profile names, executed in this order
+    std::vector<ProfilePtr> profile_sequence; //!< The sequence of profiles, executed in this order
+};
 
-// TODO parallel task merge composition
+/**
+ * @brief The data associated to ForkJoinComposition profiles
+ */
+struct ParallelTaskMergeCompositionProfileData
+{
+    std::vector<std::string> sequence_names; //!< The sequence of profile names, executed in this order
+    std::vector<ProfilePtr> profile_sequence; //!< The sequence of profiles, executed in this order
+};
+
 
 /**
  * @brief The data associated to PARALLEL_HOMOGENEOUS_PFS profiles
@@ -164,6 +185,7 @@ struct DataStagingProfileData
  */
 struct TraceReplayProfileData
 {
+    std::string filename; //!< The filename where to find all trace files
     std::vector<std::string> trace_filenames; //!< all defined tracefiles
 };
 
@@ -278,6 +300,9 @@ public:
      */
     void remove_unreferenced_profiles();
 
+
+    void set_workload(Workload *workload);
+
     /**
      * @brief Returns a copy of the internal std::map used in the Profiles
      * @return A copy of the internal std::map used in the Profiles
@@ -292,6 +317,7 @@ public:
 
 private:
     std::unordered_map<std::string, ProfilePtr> _profiles; //!< Stores all the profiles, indexed by their names. Value can be nullptr, meaning that the profile is no longer in memory but existed in the past.
+    Workload * _workload = nullptr; //!< The Workload the profiles belong to
 };
 
 /**

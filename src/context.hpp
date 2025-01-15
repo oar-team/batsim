@@ -58,7 +58,9 @@ struct BatsimContext
     CurrentSwitches current_switches;               //!< The current switches
 
     rapidjson::Document config_json;                //!< The configuration information sent to the scheduler
-    bool submission_forward_profiles;               //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
+    bool forward_profiles_on_simulation_begins;     //!< Stores whether the profiles information of jobs should be sent to the scheduler during SIMULATION_BEGINS event
+    bool forward_profiles_on_job_submission;        //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
+    bool forward_profiles_on_jobs_killed;           //!< Stores whether the profile information of killed jobs should be send to the scheduler
     bool registration_sched_enabled;                //!< Stores whether the scheduler will be able to register jobs and profiles during the simulation
     bool registration_sched_finished = false;       //!< Stores whether the scheduler has finished submitting jobs.
     bool registration_sched_ack;                    //!< Stores whether Batsim will acknowledge dynamic job submission (emit JOB_SUBMITTED events)
