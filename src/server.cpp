@@ -324,8 +324,8 @@ void server_on_job_completed(ServerData * data,
     xbt_assert(data->nb_completed_jobs + data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_completed_jobs + nb_running_jobs > nb_submitted_jobs");
     auto job = message->job;
 
-    XBT_INFO("Job %s has COMPLETED. %d jobs completed so far",
-             job->id.to_cstring(), data->nb_completed_jobs);
+    XBT_INFO("Job %s has COMPLETED with return code %d. %d jobs completed so far",
+             job->id.to_cstring(), job->return_code, data->nb_completed_jobs);
 
     data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
     data->context->proto_msg_builder->add_job_completed(
@@ -376,11 +376,11 @@ void server_on_job_submitted(ServerData * data,
         if (data->context->forward_profiles_on_job_submission)
         {
             const std::string profile_id = job->profile->workload->name + '!' + job->profile->name;
-            data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), simgrid::s4u::Engine::get_clock(), profile_id, protocol::to_profile(*(job->profile)));
+            data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), job->submission_time, profile_id, protocol::to_profile(*(job->profile)));
         }
         else
         {
-            data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), simgrid::s4u::Engine::get_clock());
+            data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), job->submission_time);
         }
     }
 }

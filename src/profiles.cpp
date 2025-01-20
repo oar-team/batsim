@@ -289,12 +289,10 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
     string profile_type = json_desc["type"].GetString();
 
-    int return_code = 0;
     if (json_desc.HasMember("ret"))
     {
-        return_code = json_desc["ret"].GetInt();
+        profile->return_code = json_desc["ret"].GetInt();;
     }
-    profile->return_code = return_code;
 
     if (profile_type == "delay")
     {
