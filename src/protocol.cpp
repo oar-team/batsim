@@ -182,6 +182,8 @@ std::shared_ptr<batprotocol::Profile> to_profile(const Profile & profile)
         p = batprotocol::Profile::make_trace_replay_fractional_computation(data->filename);
         break;
     }
+    default:
+        xbt_die("Invalid profile type");
     }
 
     if (!profile.extra_data.empty())
@@ -637,16 +639,48 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
         DelayProfileData * data = new DelayProfileData;
         data->delay = prof->delay();
 
-        profile->data = data; //static_cast<void *>(data);
+        xbt_assert(data->delay > 0, "Invalid registration of profile '%s': non-strictly-positive 'delay' field (%g)",
+                   msg->profile_id.c_str(), data->delay);
+
+        profile->data = data;
         break;
     }
     case batprotocol::fb::Profile_ParallelTaskProfile:
     {
-        // const batprotocol::fb::ParallelTaskProfile * prof = proto_profile->profile_as_ParallelTaskProfile();
-        // profile->type = ProfileType::PTASK;
-        // ParallelProfileData * data = new ParallelProfileData;
+        const batprotocol::fb::ParallelTaskProfile * prof = proto_profile->profile_as_ParallelTaskProfile();
+        profile->type = ProfileType::PTASK;
+        ParallelProfileData * data = new ParallelProfileData;
 
-        //TODO
+        auto * cpu_vector = prof->computation_vector();
+        unsigned int nb_res = cpu_vector->size();
+
+        data->nb_res = nb_res;
+        data->cpu = new double[nb_res];
+        for (unsigned int i = 0; i < nb_res; ++i)
+        {
+            data->cpu[i] = cpu_vector->Get(i);
+
+            xbt_assert(data->cpu[i] >= 0, "Invalid registration of profile '%s': elements of 'computation_vector' must be non-negative (%g)",
+                       msg->profile_id.c_str(), data->cpu[i]);
+        }
+
+        unsigned int com_size = nb_res * nb_res;
+        auto * com_vector = prof->communication_matrix();
+
+        xbt_assert(com_size == com_vector->size(),
+                   "Invalid registration of profile '%s': incoherent communication_matrix of size %d, expected size is %d",
+                   msg->profile_id.c_str(), com_vector->size(), com_size);
+
+        data->com = new double[com_size];
+        for (unsigned int i = 0; i < com_size; ++i)
+        {
+            data->com[i] = com_vector->Get(i);
+
+            xbt_assert(data->com[i] >= 0, "Invalid registration of profile '%s': elements of 'communication_matrix' must be non-negative (%g)",
+                       msg->profile_id.c_str(), data->com[i]);
+        }
+
+        profile->data = data;
         break;
     }
     case batprotocol::fb::Profile_ParallelTaskHomogeneousProfile:
@@ -659,16 +693,31 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
         data->com = prof->communication_amount();
         data->strategy = prof->generation_strategy(); // The diferent strategies are handled in task_execution
 
+        xbt_assert(data->cpu >= 0, "Invalid registration of profile '%s': 'computation_amount' must be non-negative (%g)",
+                   msg->profile_id.c_str(), data->cpu);
+        xbt_assert(data->com >= 0, "Invalid registration of profile '%s': 'communication_amount' must be non-negative (%g)",
+                   msg->profile_id.c_str(), data->com);
+
         profile->data = data;
         break;
     }
     case batprotocol::fb::Profile_SequentialCompositionProfile:
     {
-        // const batprotocol::fb::SequentialCompositionProfile * prof = proto_profile->profile_as_SequentialCompositionProfile();
-        // profile->type = ProfileType::SEQUENTIAL_COMPOSITION;
-        // SequenceProfileData * data = new SequenceProfileData;
+        const batprotocol::fb::SequentialCompositionProfile * prof = proto_profile->profile_as_SequentialCompositionProfile();
+        profile->type = ProfileType::SEQUENTIAL_COMPOSITION;
+        SequenceProfileData * data = new SequenceProfileData;
 
-        //TODO
+        data->repetition_count = prof->repetition_count();
+
+        auto * ids_vector = prof->profile_ids();
+        data->sequence_names.reserve(ids_vector->size());
+
+        for (unsigned int i = 0; i < ids_vector->size(); ++i)
+        {
+            data->sequence_names.push_back(ids_vector->Get(i)->str());
+        }
+
+        profile->data = data;
         break;
     }
     case batprotocol::fb::Profile_ForkJoinCompositionProfile:
@@ -677,7 +726,10 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
         // profile->type = ProfileType::FORKJOIN_COMPOSITION;
         // ParallelProfileData * data = new ParallelProfileData;
 
+        xbt_die("Handling of profile ForkJoin Composition is not implemented yet");
+
         //TODO
+        //profile->data = data;
         break;
     }
     case batprotocol::fb::Profile_ParallelTaskMergeCompositionProfile:
@@ -686,25 +738,45 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
         // profile->type = ProfileType::PTASK_MERGE_COMPOSITION;
         // ParallelProfileData * data = new ParallelProfileData;
 
+        xbt_die("Handling of profile Parallel Task Merge Composition is not implemented yet");
+
         //TODO
+        // profile->data = data;
         break;
     }
     case batprotocol::fb::Profile_ParallelTaskOnStorageHomogeneousProfile:
     {
-        // const batprotocol::fb::ParallelTaskOnStorageHomogeneousProfile * prof = proto_profile->profile_as_ParallelTaskOnStorageHomogeneousProfile();
-        // profile->type = ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS;
-        // ParallelTaskOnStorageHomogeneousProfileData * data = new ParallelTaskOnStorageHomogeneousProfileData;
-        //TODO
+        const batprotocol::fb::ParallelTaskOnStorageHomogeneousProfile * prof = proto_profile->profile_as_ParallelTaskOnStorageHomogeneousProfile();
+        profile->type = ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS;
+        ParallelTaskOnStorageHomogeneousProfileData * data = new ParallelTaskOnStorageHomogeneousProfileData;
 
+        data->bytes_to_read = prof->bytes_to_read();
+        data->bytes_to_write = prof->bytes_to_write();
+
+        xbt_assert(data->bytes_to_read >= 0,
+                   "Invalid registration of profile '%s': non-positive 'bytes_to_read' (%g)",
+                   msg->profile_id.c_str(), data->bytes_to_read);
+        xbt_assert(data->bytes_to_write >= 0,
+                   "Invalid registration of profile '%s': non-positive 'bytes_to_write' (%g)",
+                   msg->profile_id.c_str(), data->bytes_to_write);
+
+        data->storage_label = prof->storage_name()->str();
+        data->strategy = prof->generation_strategy(); // The diferent strategies are handled in task_execution
+
+        profile->data = data;
         break;
     }
     case batprotocol::fb::Profile_ParallelTaskDataStagingBetweenStoragesProfile:
     {
-        // const batprotocol::fb::ParallelTaskDataStagingBetweenStoragesProfile * prof = proto_profile->profile_as_ParallelTaskDataStagingBetweenStoragesProfile();
-        // profile->type = ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES;
-        // DataStagingProfileData * data = new DataStagingProfileData;
+        const batprotocol::fb::ParallelTaskDataStagingBetweenStoragesProfile * prof = proto_profile->profile_as_ParallelTaskDataStagingBetweenStoragesProfile();
+        profile->type = ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES;
+        DataStagingProfileData * data = new DataStagingProfileData;
 
-        //TODO
+        data->nb_bytes = prof->bytes_to_transfer();
+        data->from_storage_label = prof->emitter_storage_name()->str();
+        data->to_storage_label = prof->receiver_storage_name()->str();
+
+        profile->data = data;
         break;
     }
     case batprotocol::fb::Profile_TraceReplayProfile:
@@ -734,7 +806,8 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
         profile->data = data;*/
         break;
     }
-    // TODO: Message for unhandled profiles
+    default:
+        xbt_die("Unhandled registration of profile type %s", batprotocol::fb::EnumNameProfile(proto_profile->profile_type()));
     }
 
     return msg;

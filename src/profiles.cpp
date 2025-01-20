@@ -409,14 +409,11 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         {
             xbt_assert(json_desc["repeat"].IsInt(), "%s: profile '%s' has a non-integral 'repeat' field",
                    error_prefix.c_str(), profile_name.c_str());
-            xbt_assert(json_desc["repeat"].GetInt() >= 0, "%s: profile '%s' has a negative 'repeat' field (%d)",
+            xbt_assert(json_desc["repeat"].GetInt() > 0, "%s: profile '%s' has a non-strinctly-positive 'repeat' field (%d)",
                    error_prefix.c_str(), profile_name.c_str(), json_desc["repeat"].GetInt());
             repeat = static_cast<unsigned int>(json_desc["repeat"].GetInt());
         }
         data->repetition_count = repeat;
-
-        xbt_assert(data->repetition_count > 0, "%s: profile '%s' has a non-strictly-positive 'repeat' field (%d)",
-                   error_prefix.c_str(), profile_name.c_str(), data->repetition_count);
 
         xbt_assert(json_desc.HasMember("seq"), "%s: profile '%s' has no 'seq' field",
                    error_prefix.c_str(), profile_name.c_str());
@@ -473,7 +470,21 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
             data->storage_label = json_desc[key.c_str()].GetString();
         }
 
-        // TODO: strategy
+        auto strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue;
+        if (json_desc.HasMember("generation_strategy"))
+        {
+            xbt_assert(json_desc["generation_strategy"].IsString(), "%s: profile '%s' has a non-string 'generation_strategy' field",
+                       error_prefix.c_str(), profile_name.c_str());
+
+            std::string strategy_str = json_desc["generation_strategy"].GetString();
+            if (strategy_str == "defined_amount_used_for_each_value")
+                strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue;
+            else if (strategy_str == "defined_amount_spread_uniformly")
+                strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsSpreadUniformly;
+        }
+        data->strategy = strategy;
+
+
         profile->data = data;
     }
     else if (profile_type == "ptask_data_staging_between_storages")
@@ -507,79 +518,14 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         // TODO: check that associated jobs request 0 resources
     }
-    /*else if (profile_type == "send")
+    else if (profile_type == "forkjoin_composition")
     {
-        profile->type = ProfileType::SCHEDULER_SEND;
-        SchedulerSendProfileData * data = new SchedulerSendProfileData;
-
-        xbt_assert(json_desc.HasMember("msg"), "%s: profile '%s' has no 'msg' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["msg"].IsObject(), "%s: profile '%s' field 'msg' is no object",
-                   error_prefix.c_str(), profile_name.c_str());
-
-        data->message.CopyFrom(json_desc["msg"], data->message.GetAllocator());
-
-        if (json_desc.HasMember("sleeptime"))
-        {
-            xbt_assert(json_desc["sleeptime"].IsNumber(),
-                       "%s: profile '%s' has a non-number 'sleeptime' field",
-                       error_prefix.c_str(), profile_name.c_str());
-            data->sleeptime = json_desc["sleeptime"].GetDouble();
-            xbt_assert(data->sleeptime > 0,
-                       "%s: profile '%s' has a non-positive 'sleeptime' field (%g)",
-                       error_prefix.c_str(), profile_name.c_str(), data->sleeptime);
-        }
-        else
-        {
-            data->sleeptime = 0.0000001;
-        }
-        profile->data = data;
+        xbt_die("Handling of profile ForkJoin Composition not implemented yet");
     }
-    else if (profile_type == "recv")
+    else if (profile_type == "ptask_merge_composition")
     {
-        profile->type = ProfileType::SCHEDULER_RECV;
-        SchedulerRecvProfileData * data = new SchedulerRecvProfileData;
-
-        data->regex = string(".*");
-        if (json_desc.HasMember("regex"))
-        {
-            data->regex = json_desc["regex"].GetString();
-        }
-
-        data->on_success = string("");
-        if (json_desc.HasMember("success"))
-        {
-            data->on_success = json_desc["success"].GetString();
-        }
-
-        data->on_failure = string("");
-        if (json_desc.HasMember("failure"))
-        {
-            data->on_failure = json_desc["failure"].GetString();
-        }
-
-        data->on_timeout = string("");
-        if (json_desc.HasMember("timeout"))
-        {
-            data->on_timeout = json_desc["timeout"].GetString();
-        }
-
-        if (json_desc.HasMember("polltime"))
-        {
-            xbt_assert(json_desc["polltime"].IsNumber(),
-                       "%s: profile '%s' has a non-number 'polltime' field",
-                       error_prefix.c_str(), profile_name.c_str());
-            data->polltime = json_desc["polltime"].GetDouble();
-            xbt_assert(data->polltime > 0,
-                       "%s: profile '%s' has a non-positive 'polltime' field (%g)",
-                       error_prefix.c_str(), profile_name.c_str(), data->polltime);
-        }
-        else
-        {
-            data->polltime = 0.005;
-        }
-        profile->data = data;
-    }*/
+        xbt_die("Handling of profile Parallel Task Merge Composition not implemented yet");
+    }
     else if (profile_type == "trace_replay")
     {
         xbt_assert(json_desc.HasMember("trace_type"), "%s: profile '%s' has no 'trace_type' field", error_prefix.c_str(), profile_name.c_str());

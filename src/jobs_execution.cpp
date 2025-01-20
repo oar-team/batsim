@@ -100,6 +100,16 @@ int execute_task(
             }
             return profile->return_code;
         }
+        case ProfileType::FORKJOIN_COMPOSITION:
+        {
+            xbt_die("Execution of ForkJoin Composition profiles is not implemented yet");
+            //TODO implement me
+        }
+        case ProfileType::PTASK_MERGE_COMPOSITION:
+        {
+            xbt_die("Execution of Parallel Task Merge Composition profiles is not implemented yet");
+            //TODO implement me
+        }
         case ProfileType::REPLAY_SMPI:
         case ProfileType::REPLAY_USAGE:
         {
