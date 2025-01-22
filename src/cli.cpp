@@ -12,6 +12,9 @@
 
 #include <CLI/CLI.hpp>
 
+#include <filesystem>
+#include <fstream>
+
 using namespace std;
 
 /**
@@ -380,9 +383,25 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
     }
     only_print_information = (nb_stopping_flags == 1);
 
-    // TODO: retrieve the configuration from file if --config is used
+    // write configuration to file if --gen-config is used
+    if (!output_configuration_file.empty())
+    {
+        if (file_exists(output_configuration_file))
+        {
+            fprintf(stderr, "WARNING in command line parsing: writing configuration to already existing file '%s'.", output_configuration_file.c_str());
+        }
 
-    // TODO: write configuration to file if --gen-config is used
+        // Check if INI format is required
+        if (std::filesystem::path(output_configuration_file).extension() == ".ini")
+        {
+            app.config_formatter(std::make_shared<CLI::ConfigINI>());
+        }
+
+        //std::string output_configuration_str = app.config_to_str();
+        std::ofstream ofstream(output_configuration_file);
+        ofstream << app.config_to_str();
+        ofstream.close();
+    }
 
     // Workloads
     for (size_t i = 0; i < workload_files.size(); i++)
