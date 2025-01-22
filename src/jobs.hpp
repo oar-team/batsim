@@ -210,7 +210,6 @@ struct Job
     JobIdentifier id; //!< The job unique identifier
     BatTask * task = nullptr; //!< The root task be executed by this job (profile instantiation).
     std::set<simgrid::s4u::ActorPtr> execution_actors; //!< The actors involved in running the job
-    std::deque<std::string> incoming_message_buffer; //!< The buffer for incoming messages from the scheduler.
 
     // Execution information, as sent by the decision component
     std::shared_ptr<ExecuteJobMessage> execution_request; //!< The execution request as sent by the decision component via an EXECUTE_JOB event.

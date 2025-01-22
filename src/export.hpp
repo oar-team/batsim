@@ -278,7 +278,7 @@ public:
      * @brief Sets the output filename of the tracer
      * @param filename The name of the output file of the tracer
      */
-    void setFilename(const std::string & filename);
+    void set_filename(const std::string & filename);
 
     /**
      * @brief Adds a power state change in the tracer

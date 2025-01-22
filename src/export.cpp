@@ -78,7 +78,7 @@ void prepare_batsim_outputs(BatsimContext * context)
         context->energy_tracer.set_filename(export_prefix_path.string() + "consumed_energy.csv");
 
         // Power state tracing
-        context->pstate_tracer.setFilename(export_prefix_path.string() + "pstate_changes.csv");
+        context->pstate_tracer.set_filename(export_prefix_path.string() + "pstate_changes.csv");
 
         std::map<int, IntervalSet> pstate_to_machine_set;
         for (const Machine * machine : context->machines.machines())
@@ -731,9 +731,9 @@ PStateChangeTracer::PStateChangeTracer()
     xbt_assert(_temporary_buffer != NULL, "Couldn't allocate memory");
 }
 
-void PStateChangeTracer::setFilename(const string &filename)
+void PStateChangeTracer::set_filename(const string &filename)
 {
-    xbt_assert(_wbuf == nullptr, "Double call of PStateChangeTracer::setFilename");
+    xbt_assert(_wbuf == nullptr, "Double call of PStateChangeTracer::set_filename");
     _wbuf = new WriteBuffer(filename);
 
     _wbuf->append_text("time,machine_id,new_pstate\n");

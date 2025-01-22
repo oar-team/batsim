@@ -27,7 +27,7 @@ static std::string read_whole_file_as_string(const std::string & filename)
     std::ifstream f(filename);
     if (!f.is_open())
     {
-        throw std::runtime_error("cannot read scheduler configuration file '" + filename + "'");
+        throw std::runtime_error("cannot read file '" + filename + "'");
     }
 
     return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());

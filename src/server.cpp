@@ -1229,6 +1229,18 @@ void server_on_edc_hello(ServerData *data, IPMessage *task_data)
     // TODO: implement these features
     xbt_assert(!message->requested_simulation_features.forward_unknown_external_events, "Forwarding unknown external events is unimplemented");
 
+    if (data->context->registration_sched_enabled)
+    {
+        XBT_WARN("Dynamic registration of jobs is ENABLED. The EDC MUST send a FinishRegistrationEvent to let Batsim end the simulation.");
+    }
+    else
+    {
+        if (data->context->registration_sched_ack)
+        {
+            XBT_WARN("Acknowledgement of dynamic jobs is enabled but dynamic registation is diabled.");
+        }
+    }
+
     auto simulation_begins = protocol::to_simulation_begins(data->context);
     data->context->proto_msg_builder->add_simulation_begins(simulation_begins);
 }
