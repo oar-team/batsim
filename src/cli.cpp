@@ -367,6 +367,19 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         return;
     }
 
+    // Should the simulation be run?
+    int nb_stopping_flags = static_cast<int>(main_args.dump_execution_context) +
+        static_cast<int>(main_args.print_batsim_version) +
+        static_cast<int>(main_args.print_batsim_commit) +
+        static_cast<int>(main_args.print_simgrid_version) +
+        static_cast<int>(main_args.print_simgrid_commit);
+    if (nb_stopping_flags > 1)
+    {
+        fprintf(stderr, "%sOnly one of the flags that print information and exit should be set.\n", error_prefix);
+        error = true;
+    }
+    only_print_information = (nb_stopping_flags == 1);
+
     // Workloads
     for (size_t i = 0; i < workload_files.size(); i++)
     {
@@ -440,7 +453,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
     }
 
     // Platform
-    if (main_args.platform_filename == "")
+    if (!only_print_information && main_args.platform_filename == "")
     {
         fprintf(stderr, "%sThe SimGrid platform has not been set.\n", error_prefix);
         error = true;
@@ -468,39 +481,41 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
 
     // EDCs
     const auto nb_edc = edc_lib_files.size() + edc_lib_strings.size() + edc_socket_files.size() + edc_socket_strings.size();
-    if (nb_edc == 0)
-    {
-        fprintf(stderr, "%sAt least one external decision component (EDC) should be set.\n", error_prefix);
-        error = true;
-    }
-    else if (nb_edc > 1)
-    {
-        fprintf(stderr, "%sUsing several external decision components (EDCs) in a single simulation is not implemented.\n", error_prefix);
-        error = true;
-    }
-    else if(edc_socket_strings.size() > 0)
-    {
-        main_args.edc_socket_endpoint = std::get<0>(edc_socket_strings[0]);
-        main_args.edc_json_format = std::get<1>(edc_socket_strings[0]);
-        main_args.edc_init_buffer = std::get<2>(edc_socket_strings[0]);
-    }
-    else if(edc_socket_files.size() > 0)
-    {
-        main_args.edc_socket_endpoint = std::get<0>(edc_socket_files[0]);
-        main_args.edc_json_format = std::get<1>(edc_socket_files[0]);
-        main_args.edc_init_buffer = read_whole_file_as_string(std::get<2>(edc_socket_files[0]));
-    }
-    else if (edc_lib_strings.size() > 0)
-    {
-        main_args.edc_library_path = std::get<0>(edc_lib_strings[0]);
-        main_args.edc_json_format = std::get<1>(edc_lib_strings[0]);
-        main_args.edc_init_buffer = std::get<2>(edc_lib_strings[0]);
-    }
-    else if (edc_lib_files.size() > 0)
-    {
-        main_args.edc_library_path = std::get<0>(edc_lib_files[0]);
-        main_args.edc_json_format = std::get<1>(edc_lib_files[0]);
-        main_args.edc_init_buffer = read_whole_file_as_string(std::get<2>(edc_lib_files[0]));
+    if (!only_print_information) {
+        if (nb_edc == 0)
+        {
+            fprintf(stderr, "%sAt least one external decision component (EDC) should be set.\n", error_prefix);
+            error = true;
+        }
+        else if (nb_edc > 1)
+        {
+            fprintf(stderr, "%sUsing several external decision components (EDCs) in a single simulation is not implemented.\n", error_prefix);
+            error = true;
+        }
+        else if(edc_socket_strings.size() > 0)
+        {
+            main_args.edc_socket_endpoint = std::get<0>(edc_socket_strings[0]);
+            main_args.edc_json_format = std::get<1>(edc_socket_strings[0]);
+            main_args.edc_init_buffer = std::get<2>(edc_socket_strings[0]);
+        }
+        else if(edc_socket_files.size() > 0)
+        {
+            main_args.edc_socket_endpoint = std::get<0>(edc_socket_files[0]);
+            main_args.edc_json_format = std::get<1>(edc_socket_files[0]);
+            main_args.edc_init_buffer = read_whole_file_as_string(std::get<2>(edc_socket_files[0]));
+        }
+        else if (edc_lib_strings.size() > 0)
+        {
+            main_args.edc_library_path = std::get<0>(edc_lib_strings[0]);
+            main_args.edc_json_format = std::get<1>(edc_lib_strings[0]);
+            main_args.edc_init_buffer = std::get<2>(edc_lib_strings[0]);
+        }
+        else if (edc_lib_files.size() > 0)
+        {
+            main_args.edc_library_path = std::get<0>(edc_lib_files[0]);
+            main_args.edc_json_format = std::get<1>(edc_lib_files[0]);
+            main_args.edc_init_buffer = read_whole_file_as_string(std::get<2>(edc_lib_files[0]));
+        }
     }
 
     // Verbosity
@@ -514,19 +529,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         main_args.raw_argv.push_back(std::string(argv[i]));
     }
 
-    // Should the simulation be run?
-    int nb_stopping_flags = static_cast<int>(main_args.dump_execution_context) +
-        static_cast<int>(main_args.print_batsim_version) +
-        static_cast<int>(main_args.print_batsim_commit) +
-        static_cast<int>(main_args.print_simgrid_version) +
-        static_cast<int>(main_args.print_simgrid_commit);
-    if (nb_stopping_flags > 1)
-    {
-        fprintf(stderr, "%sOnly one of the flags that print information and exit should be set.\n", error_prefix);
-        error = true;
-    }
     run_simulation = !error && (nb_stopping_flags == 0);
-    only_print_information = (nb_stopping_flags == 1);
 
     if (!error)
     {
