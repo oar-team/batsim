@@ -18,3 +18,10 @@ def test_cli_no_arg():
     assert p.returncode != 0, f'batsim should not return 0 {case_desc}'
     assert p.stdout == '', f'batsim should not output anything on stdout {case_desc}'
     assert p.stderr != '', f'batsim should output something on stderr {case_desc}'
+
+def test_cli_version():
+    p = subprocess.run(['batsim', '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=3, encoding='utf-8')
+    case_desc = 'when launched with --version'
+    assert p.returncode == 0, f'batsim should return 0 {case_desc}'
+    assert p.stderr == '', f'batsim should not output anything on stderr {case_desc}'
+    assert p.stdout != '', f'batsim should output something on stdout {case_desc}'
