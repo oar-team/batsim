@@ -66,3 +66,8 @@ platform_check = shared_library('platform-check', common + ['platform-check.cpp'
   dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
   install: true,
 )
+
+force_simu_stop = shared_library('force_simu_stop', common + ['force_simu_stop.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep],
+  install: true,
+)

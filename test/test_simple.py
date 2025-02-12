@@ -68,6 +68,16 @@ def test_easy(test_root_dir, use_json):
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
+def test_force_simu_stop(test_root_dir, use_json):
+    platform = "small_platform"
+    workload = "test_delays"
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}-' + str(int(use_json))
+
+    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'force_simu_stop', workload, use_json=use_json)
+    p = run_batsim(batcmd, outdir)
+    assert p.returncode == 0
+
 def compute_expected_alloc(row):
     return str(row['allocated_resources']) == str(row['expected_allocation'])
 
