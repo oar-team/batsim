@@ -405,6 +405,11 @@ int main(int argc, char * argv[])
         start_initial_simulation_processes(main_args, &context, true);
     }
 
+    // Create callback if SimGrid is deadlocked
+    bool simgrid_deadlocked = false;
+    auto cb = [&simgrid_deadlocked](){simgrid_deadlocked = true;};
+    engine.on_deadlock_cb(cb);
+
     // Simulation main loop, handled by s4u
     engine.run();
 
@@ -416,6 +421,13 @@ int main(int argc, char * argv[])
 
     delete context.proto_msg_builder;
     context.proto_msg_builder = nullptr;
+
+
+    if (simgrid_deadlocked)
+    {
+        XBT_INFO("The simulation could NOT finish because a deadlock was detected in SimGrid.");
+        return 1;
+    }
 
     // If SMPI had been used, it should be finalized
     if (context.smpi_used)
