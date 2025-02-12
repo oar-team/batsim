@@ -42,7 +42,7 @@ TEST(buffered_outputting, pstate_writer)
 {
     const char * filename = "/tmp/test_pstate";
     PStateChangeTracer * tracer = new PStateChangeTracer;
-    tracer->setFilename(filename);
+    tracer->set_filename(filename);
 
     IntervalSet range;
 

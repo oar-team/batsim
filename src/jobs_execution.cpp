@@ -72,8 +72,6 @@ int execute_task(
                     BatTask * sub_btask = new BatTask(JobPtr(btask->parent_job), sub_profile);
                     btask->sub_tasks.push_back(sub_btask);
 
-                    string task_name = "seq" + job->id.to_string() + "'" + sub_btask->profile->name + "'";
-
                     int ret_last_profile = execute_task(sub_btask, context, execute_job_msg, remaining_time);
 
                     btask->sub_tasks.clear();

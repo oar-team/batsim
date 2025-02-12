@@ -85,7 +85,7 @@ void server_process(BatsimContext * context)
     {
         // Wait and receive a message from a node or the request-reply process...
         IPMessage * message = receive_message("server");
-        XBT_DEBUG("Server received a message of type %s:",
+        XBT_DEBUG("Server received a message of type %s.",
                  ip_message_type_to_string(message->type).c_str());
 
         // Handle the message
