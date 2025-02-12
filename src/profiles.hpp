@@ -185,7 +185,7 @@ struct DataStagingProfileData
  */
 struct TraceReplayProfileData
 {
-    std::string filename; //!< The filename where to find all trace files
+    std::string filename; //!< The filename where to find all trace files (used in profile forwarding to EDC)
     std::vector<std::string> trace_filenames; //!< all defined tracefiles
 };
 

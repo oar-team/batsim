@@ -560,22 +560,20 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
             trace_filenames.push_back(rank_trace_path.string());
         }
 
-        string filenames = boost::algorithm::join(trace_filenames, ", ");
-        XBT_INFO("Filenames of profile '%s': [%s]", profile_name.c_str(), filenames.c_str());
+        XBT_INFO("Filenames of profile '%s': [%s]", profile_name.c_str(), boost::algorithm::join(trace_filenames, ", ").c_str());
+
+        auto * data = new TraceReplayProfileData;
+        data->filename = trace_filename;
+        data->trace_filenames = trace_filenames;
+        profile->data = data;
 
         if (trace_type == "smpi")
         {
             profile->type = ProfileType::REPLAY_SMPI;
-            /*auto * data = new ReplaySmpiProfileData;
-            data->trace_filenames = trace_filenames;
-            profile->data = data;*/
         }
         else if (trace_type == "usage")
         {
             profile->type = ProfileType::REPLAY_USAGE;
-            /*auto * data = new ReplayUsageProfileData;
-            data->trace_filenames = trace_filenames;
-            profile->data = data;*/
         }
         else
         {
