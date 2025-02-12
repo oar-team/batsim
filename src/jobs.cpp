@@ -226,10 +226,12 @@ void Jobs::delete_job(const JobIdentifier & job_id, const bool & garbage_collect
                job_id.to_cstring());
 
     std::string profile_name = _jobs[job_id]->profile->name;
+    Workload * profile_workload = _jobs[job_id]->profile->workload;
     _jobs.erase(job_id);
+
     if (garbage_collect_profiles)
     {
-        _workload->profiles->remove_profile(profile_name);
+        profile_workload->profiles->remove_profile(profile_name);
     }
 }
 

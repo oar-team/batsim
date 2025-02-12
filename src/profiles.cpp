@@ -17,6 +17,8 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
+#include "workload.hpp"
+
 using namespace std;
 using namespace rapidjson;
 namespace fs = std::filesystem;
@@ -169,7 +171,7 @@ ParallelProfileData::~ParallelProfileData()
 
 Profile::~Profile()
 {
-    XBT_INFO("Profile '%s' is being deleted.", name.c_str());
+    XBT_INFO("Profile '%s' is being deleted (workload %s).", name.c_str(), workload->name.c_str());
     if (type == ProfileType::DELAY)
     {
         auto * d = static_cast<DelayProfileData *>(data);
@@ -197,9 +199,9 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    /*else if (type == ProfileType::REPLAY_SMPI)
+    else if (type == ProfileType::REPLAY_SMPI)
     {
-        auto * d = static_cast<ReplaySmpiProfileData *>(data);
+        auto * d = static_cast<TraceReplayProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -208,13 +210,13 @@ Profile::~Profile()
     }
     else if (type == ProfileType::REPLAY_USAGE)
     {
-        auto * d = static_cast<ReplayUsageProfileData *>(data);
+        auto * d = static_cast<TraceReplayProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
             d = nullptr;
         }
-    }*/
+    }
     else if (type == ProfileType::SEQUENTIAL_COMPOSITION)
     {
         auto * d = static_cast<SequenceProfileData *>(data);

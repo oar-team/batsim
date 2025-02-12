@@ -71,3 +71,8 @@ force_simu_stop = shared_library('force_simu_stop', common + ['force_simu_stop.c
   dependencies: deps + [boost_dep, intervalset_dep],
   install: true,
 )
+
+dyn_register = shared_library('dyn_register', common + ['dyn_register.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep],
+  install: true,
+)
