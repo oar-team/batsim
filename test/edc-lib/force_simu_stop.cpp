@@ -65,6 +65,7 @@ uint8_t batsim_edc_take_decisions(
     mb->clear(parsed->now());
 
     bool need_scheduling = false;
+    double decision_time = parsed->now();
     auto nb_events = parsed->events()->size();
     for (unsigned int i = 0; i < nb_events; ++i)
     {
@@ -116,7 +117,8 @@ uint8_t batsim_edc_take_decisions(
                 mb->add_kill_jobs({last_running_job->id});
             }
 
-            mb->set_current_time(parsed->now() + 1);
+            decision_time+=1;
+            mb->set_current_time(decision_time);
             mb->add_force_simulation_stop();
         } break;
         default: break;
@@ -142,7 +144,7 @@ uint8_t batsim_edc_take_decisions(
         }
     }
 
-    mb->finish_message(parsed->now());
+    mb->finish_message(decision_time);
     serialize_message(*mb, !format_binary, const_cast<const uint8_t **>(decisions), decisions_size);
     return 0;
 }
