@@ -236,7 +236,7 @@ void periodic_main_actor(BatsimContext * context)
             m->entity_id = msg->call_id;
             m->is_probe = false;
             m->is_call_me_later = true;
-            send_message("server", IPMessageType::PERIODIC_ENTITY_STOPPED, static_cast<void*>(m));
+            dsend_message("server", IPMessageType::PERIODIC_ENTITY_STOPPED, static_cast<void*>(m));
 
             cml_triggers.erase(msg->call_id);
             delete msg;
@@ -256,7 +256,7 @@ void periodic_main_actor(BatsimContext * context)
             m->entity_id = msg->probe_id;
             m->is_probe = true;
             m->is_call_me_later = false;
-            send_message("server", IPMessageType::PERIODIC_ENTITY_STOPPED, static_cast<void*>(m));
+            dsend_message("server", IPMessageType::PERIODIC_ENTITY_STOPPED, static_cast<void*>(m));
 
             probes.erase(msg->probe_id);
             delete msg;
