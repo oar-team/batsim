@@ -71,15 +71,12 @@ void prepare_batsim_outputs(BatsimContext * context)
         context->machine_state_tracer.set_filename(export_prefix_path.string() + "machine_states.csv");
     }
 
-    if (context->energy_used)
+    if (context->trace_pstate_changes)
     {
-        // Energy consumption tracing
-        context->energy_tracer.set_context(context);
-        context->energy_tracer.set_filename(export_prefix_path.string() + "consumed_energy.csv");
-
         // Power state tracing
         context->pstate_tracer.set_filename(export_prefix_path.string() + "pstate_changes.csv");
 
+        // Trace the initial Pstate values
         std::map<int, IntervalSet> pstate_to_machine_set;
         for (const Machine * machine : context->machines.machines())
         {
@@ -106,6 +103,13 @@ void prepare_batsim_outputs(BatsimContext * context)
         }
     }
 
+    if (context->energy_used)
+    {
+        // Energy consumption tracing
+        context->energy_tracer.set_context(context);
+        context->energy_tracer.set_filename(export_prefix_path.string() + "consumed_energy.csv");
+    }
+
     context->jobs_tracer.initialize(context,
                                     export_prefix_path.string() + "jobs.csv",
                                     export_prefix_path.string() + "schedule.csv");
@@ -128,14 +132,17 @@ void finalize_batsim_outputs(BatsimContext * context)
         context->machine_state_tracer.close_buffer();
     }
 
+    if (context->trace_pstate_changes)
+    {
+        context->pstate_tracer.flush();
+        context->pstate_tracer.close_buffer();
+    }
+
     // Energy-related output
     if (context->energy_used)
     {
         context->energy_tracer.flush();
-        context->pstate_tracer.flush();
-
         context->energy_tracer.close_buffer();
-        context->pstate_tracer.close_buffer();
     }
 
     // Finalize both jobs and schedule output files

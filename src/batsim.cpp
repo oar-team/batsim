@@ -466,6 +466,7 @@ void set_configuration(BatsimContext *context,
     context->allow_storage_sharing = false;
     context->trace_schedule = main_args.enable_schedule_tracing;
     context->trace_machine_states = main_args.enable_machine_state_tracing;
+    context->trace_pstate_changes = main_args.enable_pstate_change_tracing;
     context->simulation_start_time = chrono::high_resolution_clock::now();
     context->terminate_with_last_workflow = main_args.terminate_with_last_workflow;
 

@@ -41,7 +41,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_JOB_REGISTERED] = server_on_register_job;
     handler_map[IPMessageType::SCHED_PROFILE_REGISTERED] = server_on_register_profile;
     handler_map[IPMessageType::JOB_COMPLETED] = server_on_job_completed;
-    handler_map[IPMessageType::SCHED_PSTATE_MODIFICATION] = server_on_pstate_modification;
+    handler_map[IPMessageType::SCHED_CHANGE_HOST_PSTATE] = server_on_pstate_modification;
     handler_map[IPMessageType::SCHED_EXECUTE_JOB] = server_on_execute_job;
     handler_map[IPMessageType::SCHED_HELLO] = server_on_edc_hello;
     handler_map[IPMessageType::SCHED_REJECT_JOB] = server_on_reject_job;
@@ -494,20 +494,37 @@ void server_on_pstate_modification(ServerData * data,
 
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
 
-    xbt_assert(false, "Pstate change handling is not implemented yet");
-    // TODO: handle me in batprotocol
+    auto * message = static_cast<ChangeHostPStateMessage *>(task_data->data);
 
-    /*
-    auto * message = static_cast<PStateModificationMessage *>(task_data->data);
+    if (data->context->energy_used)
+    {
+        data->context->energy_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids,
+                                                       message->new_pstate);
+    }
 
-    // This assert should not be here. One may want to change Pstates without energy support
-    // xbt_assert(data->context->energy_used,
-    //            "Receiving a pstate modification request, which is forbidden as "
-    //            "Batsim has not been launched with energy support "
-    //            "(cf. batsim --help).");
-    data->context->current_switches.add_switch(message->machine_ids, message->new_pstate);
-    data->context->energy_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids,
-                                                   message->new_pstate);
+    if (data->context->trace_pstate_changes)
+    {
+        data->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids, message->new_pstate);
+    }
+
+    for (auto machine_it = message->machine_ids.elements_begin();
+         machine_it != message->machine_ids.elements_end();
+         ++machine_it)
+    {
+        const int machine_id = *machine_it;
+        Machine * machine = data->context->machines[machine_id];
+        unsigned long curr_pstate = machine->host->get_pstate();
+
+        XBT_INFO("Switching machine %d ('%s') pstate : %lu -> %lu.", machine->id,
+                 machine->name.c_str(), curr_pstate, message->new_pstate);
+        machine->host->set_pstate(message->new_pstate);
+        xbt_assert(machine->host->get_pstate() == message->new_pstate, "pstate inconsistency: the desired pstate has not been set");
+    }
+
+    data->context->proto_msg_builder->add_host_pstate_changed(message->machine_ids.to_string_hyphen(), message->new_pstate);
+
+    // TODO: UPDATE the switch ON/OFF mecanism
+    /*data->context->current_switches.add_switch(message->machine_ids, message->new_pstate);
 
     // Let's quickly check whether this is a switchON or a switchOFF
     // Unknown transition states will be set to -42.
@@ -521,7 +538,6 @@ void server_on_pstate_modification(ServerData * data,
     {
         transition_state = -2; // means we are switching to a SLEEP_PSTATE
     }
-
 
     // The pstate is set to an invalid one to know the machines are in transition.
     data->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids,
@@ -571,7 +587,7 @@ void server_on_pstate_modification(ServerData * data,
             }
             else
             {
-                XBT_ERROR("Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %d -> %d",
+                XBT_ERROR("Switching from a computation pstate to an invalid pstate on machine %d ('%s') : %d -> %d",
                           machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
             }
         }
@@ -598,7 +614,9 @@ void server_on_pstate_modification(ServerData * data,
     if (data->context->trace_machine_states)
     {
         data->context->machine_state_tracer.write_machine_states(simgrid::s4u::Engine::get_clock());
-    }*/
+    }
+    */
+
 }
 
 void server_on_oneshot_requested_call(ServerData * data,

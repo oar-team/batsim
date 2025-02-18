@@ -84,6 +84,7 @@ struct BatsimContext
     bool allow_storage_sharing;                     //!< Stores whether sharing (using the same machine to run different jobs concurrently) should be allowed on storage machines
     bool trace_schedule;                            //!< Stores whether the resulting schedule should be outputted
     bool trace_machine_states;                      //!< Stores whether the machines states should be outputted
+    bool trace_pstate_changes;                      //!< Stores whether the machine pstate changes should be outputted
     std::string platform_filename;                  //!< The name of the platform file
     std::string export_prefix;                      //!< The output export prefix
     int workflow_nb_concurrent_jobs_limit;          //!< Limits the number of concurrent jobs for workflows

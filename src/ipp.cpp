@@ -214,8 +214,8 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::JOB_COMPLETED:
             s = "JOB_COMPLETED";
             break;
-        case IPMessageType::SCHED_PSTATE_MODIFICATION:
-            s = "SCHED_PSTATE_MODIFICATION";
+        case IPMessageType::SCHED_CHANGE_HOST_PSTATE:
+            s = "SCHED_CHANGE_HOST_PSTATE";
             break;
         case IPMessageType::SCHED_EXECUTE_JOB:
             s = "SCHED_EXECUTE_JOB";
@@ -314,9 +314,9 @@ IPMessage::~IPMessage()
             auto * msg = static_cast<JobCompletedMessage *>(data);
             delete msg;
         } break;
-        case IPMessageType::SCHED_PSTATE_MODIFICATION:
+        case IPMessageType::SCHED_CHANGE_HOST_PSTATE:
         {
-            auto * msg = static_cast<PStateModificationMessage *>(data);
+            auto * msg = static_cast<ChangeHostPStateMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_EXECUTE_JOB:

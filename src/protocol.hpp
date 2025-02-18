@@ -40,6 +40,8 @@ StopProbeMessage * from_stop_probe(const batprotocol::fb::StopProbeEvent * stop_
 JobRegisteredByEDCMessage * from_register_job(const batprotocol::fb::RegisterJobEvent * register_job, BatsimContext * context);
 ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::RegisterProfileEvent * register_profile, BatsimContext * context);
 
+ChangeHostPStateMessage * from_change_host_pstate(const batprotocol::fb::ChangeHostPStateEvent * change_host_pstate, BatsimContext * context);
+
 void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp> > & messages, BatsimContext * context);
 
 } // end of namespace protocol

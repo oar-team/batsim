@@ -52,7 +52,7 @@ enum class IPMessageType
     ,SCHED_JOB_REGISTERED     //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to register a job
     ,SCHED_PROFILE_REGISTERED //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to register a profile
     ,SCHED_END_DYNAMIC_REGISTRATION //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
-    ,SCHED_PSTATE_MODIFICATION      //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (modify the state of some resources).
+    ,SCHED_CHANGE_HOST_PSTATE       //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (modify the state of some resources).
 
     // Periodic-related
     ,ONESHOT_REQUESTED_CALL //!< OneShot -> Server. The target time of a OneShot requested call has been reached.
@@ -211,10 +211,10 @@ struct EDCHelloMessage
 /**
  * @brief The content of the PstateModification message
  */
-struct PStateModificationMessage
+struct ChangeHostPStateMessage
 {
     IntervalSet machine_ids; //!< The IDs of the machines on which the pstate should be changed
-    int new_pstate = -1; //!< The power state into which the machines should be put
+    unsigned long new_pstate = -1; //!< The power state into which the machines should be put
 };
 
 /**

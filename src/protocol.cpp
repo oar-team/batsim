@@ -814,6 +814,15 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
 }
 
 
+ChangeHostPStateMessage * from_change_host_pstate(const batprotocol::fb::ChangeHostPStateEvent * change_host_pstate, BatsimContext * context) {
+    auto msg = new ChangeHostPStateMessage;
+
+    msg->machine_ids = IntervalSet::from_string_hyphen(change_host_pstate->host_ids()->str());
+    msg->new_pstate = change_host_pstate->pstate();
+
+    return msg;
+}
+
 
 void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp> > & messages, BatsimContext * context)
 {
@@ -894,6 +903,11 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
         case Event_ForceSimulationStopEvent: {
             ip_message->type = IPMessageType::SCHED_FORCE_SIMULATION_STOP;
             // No data in this event
+            break;
+        }
+        case Event_ChangeHostPStateEvent: {
+            ip_message->type = IPMessageType::SCHED_CHANGE_HOST_PSTATE;
+            ip_message->data = static_cast<void *>(from_change_host_pstate(event_timestamp->event_as_ChangeHostPStateEvent(), context));
             break;
         }
         default: {
