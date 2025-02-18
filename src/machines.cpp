@@ -84,7 +84,12 @@ void Machines::create_machines(const BatsimContext *context,
         }
 
         // set the permissions using the role
-        machine->permissions = permissions_from_role(machine->properties["role"]);
+        std::string role_str = "";
+        if (machine->properties.find("role") != machine->properties.end())
+        {
+            role_str = machine->properties["role"];
+        }
+        machine->permissions = permissions_from_role(role_str);
 
         int nb_pstates = machine->host->get_pstate_count();
 
