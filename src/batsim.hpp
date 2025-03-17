@@ -37,12 +37,9 @@ void load_eventLists(const MainArguments & main_args, BatsimContext * context);
  * @brief Starts the SimGrid processes that should be executed at the beginning of the simulation
  * @param[in] main_args Batsim arguments
  * @param[in] context The BatsimContext
- * @param[in] is_batexec If set to true, only workloads are handled, the server is not launched
- *            and simpler workload submitters are used
  */
 void start_initial_simulation_processes(const MainArguments & main_args,
-                                        BatsimContext * context,
-                                        bool is_batexec = false);
+                                        BatsimContext * context);
 
 /**
  * @brief Sets the simulation configuration

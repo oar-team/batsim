@@ -61,7 +61,6 @@ std::string MainArguments::generate_execution_context_json() const
     // Generate the content to dump
     object.AddMember("socket_endpoint", Value().SetString(this->edc_socket_endpoint.c_str(), alloc), alloc);
     object.AddMember("export_prefix", Value().SetString(this->export_prefix.c_str(), alloc), alloc);
-    object.AddMember("external_scheduler", Value().SetBool(this->program_type == ProgramType::BATSIM), alloc);
 
     // Dump the object to a string
     StringBuffer buffer;
@@ -191,8 +190,7 @@ void load_eventLists(const MainArguments & main_args, BatsimContext * context)
 }
 
 void start_initial_simulation_processes(const MainArguments & main_args,
-                                        BatsimContext * context,
-                                        bool is_batexec)
+                                        BatsimContext * context)
 {
     const Machine * master_machine = context->machines.master_machine();
 
@@ -204,15 +202,9 @@ void start_initial_simulation_processes(const MainArguments & main_args,
         string submitter_instance_name = "workload_submitter_" + desc.name;
 
         XBT_DEBUG("Creating a workload_submitter process...");
-        auto actor_function = static_job_submitter_process;
-        if (is_batexec)
-        {
-            actor_function = batexec_job_launcher_process;
-        }
-
         simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
                                     master_machine->host,
-                                    actor_function,
+                                    static_job_submitter_process,
                                     context, desc.name);
         context->job_submitter_actors.emplace(submitter_instance_name, submitter_actor);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
@@ -247,13 +239,10 @@ void start_initial_simulation_processes(const MainArguments & main_args,
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
-    if (!is_batexec)
-    {
-        XBT_DEBUG("Creating the 'server' process...");
-        simgrid::s4u::Actor::create("server", master_machine->host,
-                                    server_process, context);
-        XBT_INFO("The process 'server' has been created.");
-    }
+    XBT_DEBUG("Creating the 'server' process...");
+    simgrid::s4u::Actor::create("server", master_machine->host,
+                                server_process, context);
+    XBT_INFO("The process 'server' has been created.");
 }
 
 /**
@@ -368,42 +357,35 @@ int main(int argc, char * argv[])
     // Prepare Batsim's outputs
     prepare_batsim_outputs(&context);
 
-    if (main_args.program_type == ProgramType::BATSIM)
+    context.edc_json_format = main_args.edc_json_format;
+    if (!main_args.edc_socket_endpoint.empty())
     {
-        context.edc_json_format = main_args.edc_json_format;
-        if (!main_args.edc_socket_endpoint.empty())
-        {
-            // Create a ZeroMQ context
-            context.zmq_context = zmq_ctx_new();
+        // Create a ZeroMQ context
+        context.zmq_context = zmq_ctx_new();
 
-            // Create and connect the socket
-            context.edc = ExternalDecisionComponent::new_process(context.zmq_context, main_args.edc_socket_endpoint);
-        }
-        else
-        {
-            // Load the external library
-            context.edc = ExternalDecisionComponent::new_library(main_args.edc_library_path, main_args.edc_library_load_method);
-        }
-
-        // Generate initialization flags
-        uint8_t flags = 0;
-        if (main_args.edc_json_format)
-            flags |= 0x2;
-        else
-            flags |= 0x1;
-        context.edc->init((const uint8_t*)main_args.edc_init_buffer.data(), main_args.edc_init_buffer.size(), flags);
-
-        // Create the protocol message manager
-        context.proto_msg_builder = new batprotocol::MessageBuilder(true);
-
-        // Let's execute the initial processes
-        start_initial_simulation_processes(main_args, &context);
+        // Create and connect the socket
+        context.edc = ExternalDecisionComponent::new_process(context.zmq_context, main_args.edc_socket_endpoint);
     }
-    else if (main_args.program_type == ProgramType::BATEXEC)
+    else
     {
-        // Let's execute the initial processes
-        start_initial_simulation_processes(main_args, &context, true);
+        // Load the external library
+        context.edc = ExternalDecisionComponent::new_library(main_args.edc_library_path, main_args.edc_library_load_method);
     }
+
+    // Generate initialization flags
+    uint8_t flags = 0;
+    if (main_args.edc_json_format)
+        flags |= 0x2;
+    else
+        flags |= 0x1;
+    context.edc->init((const uint8_t*)main_args.edc_init_buffer.data(), main_args.edc_init_buffer.size(), flags);
+
+    // Create the protocol message manager
+    context.proto_msg_builder = new batprotocol::MessageBuilder(true);
+
+    // Let's execute the initial processes
+    start_initial_simulation_processes(main_args, &context);
+
 
     // Create callback if SimGrid is deadlocked
     bool simgrid_deadlocked = false;
@@ -464,7 +446,6 @@ void set_configuration(BatsimContext *context,
     context->energy_used = main_args.host_energy_used;
     context->allow_compute_sharing = false;
     context->allow_storage_sharing = false;
-    context->trace_schedule = main_args.enable_schedule_tracing;
     context->trace_machine_states = main_args.enable_machine_state_tracing;
     context->trace_pstate_changes = main_args.enable_pstate_change_tracing;
     context->simulation_start_time = chrono::high_resolution_clock::now();

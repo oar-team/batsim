@@ -199,19 +199,11 @@ void execute_job_process(
     {
         XBT_INFO("Job '%s' had been killed (walltime %Lg reached)", job->id.to_cstring(), job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
-        if (context->trace_schedule)
-        {
-            context->paje_tracer.add_job_kill(job->id, execution_request->job_allocation->hosts, simgrid::s4u::Engine::get_clock(), true);
-        }
     }
     else if (job->return_code == -2)
     {
         XBT_INFO("Job '%s' has been killed by the scheduler", job->id.to_cstring());
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
-        if (context->trace_schedule)
-        {
-            context->paje_tracer.add_job_kill(job->id, execution_request->job_allocation->hosts, simgrid::s4u::Engine::get_clock(), true);
-        }
     }
     else
     {

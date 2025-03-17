@@ -209,14 +209,6 @@ void Machines::create_machines(const BatsimContext *context,
             }
         }
 
-        /* Guard related to the famous OBFH (https://github.com/oar-team/batsim/issues/21), which may not occur anymore.
-        if (context->registration_sched_enabled)
-        {
-            bool contains_sleep_pstates = (machine->properties.count("sleep_pstates") == 1);
-            xbt_assert(!contains_sleep_pstates,
-                       "Using dynamic job submissions AND plaforms with energy information "
-                       "is currently forbidden (https://github.com/oar-team/batsim/issues/21).");
-        }*/
 
         // Machines that may compute flops must have a positive computing speed
         if ((machine->permissions & Permissions::COMPUTE_FLOPS) == Permissions::COMPUTE_FLOPS)
@@ -483,16 +475,6 @@ void Machines::update_machines_on_job_run(const JobPtr job,
         }
 
         machine->jobs_being_computed.insert(job);
-
-        if (previous_top_job == nullptr || previous_top_job != *machine->jobs_being_computed.begin())
-        {
-            if (_tracer != nullptr)
-            {
-                _tracer->set_machine_as_computing_job(machine->id,
-                                                      (*machine->jobs_being_computed.begin())->id,
-                                                      simgrid::s4u::Engine::get_clock());
-            }
-        }
     }
 
     if (context->trace_machine_states)
@@ -517,38 +499,12 @@ void Machines::update_machines_on_job_end(const JobPtr job,
         size_t ret = machine->jobs_being_computed.erase(job);
         (void) ret; // Avoids a warning if assertions are ignored
         xbt_assert(ret == 1, "could not erase job '%s' from jobs being computed of machine %d", job->id.to_cstring(), machine_id);
-
-        if (machine->jobs_being_computed.empty())
-        {
-            if (machine->state != MachineState::UNAVAILABLE)
-            {
-                machine->update_machine_state(MachineState::IDLE);
-                if (_tracer != nullptr)
-                {
-                    _tracer->set_machine_idle(machine->id, simgrid::s4u::Engine::get_clock());
-                }
-            }
-        }
-        else if (*machine->jobs_being_computed.begin() != previous_top_job)
-        {
-            if (_tracer != nullptr)
-            {
-                _tracer->set_machine_as_computing_job(machine->id,
-                                                      (*machine->jobs_being_computed.begin())->id,
-                                                      simgrid::s4u::Engine::get_clock());
-            }
-        }
     }
 
     if (context->trace_machine_states)
     {
         context->machine_state_tracer.write_machine_states(simgrid::s4u::Engine::get_clock());
     }
-}
-
-void Machines::set_tracer(PajeTracer *tracer)
-{
-    _tracer = tracer;
 }
 
 string machine_state_to_string(MachineState state)

@@ -50,7 +50,6 @@ struct BatsimContext
     std::map<std::string, EventList*> event_lists;  //!< The map of EventLists
     std::unordered_map<std::string, simgrid::s4u::ActorPtr> job_submitter_actors; //!< The list of static_job_submitter SimGrid actors (accounts for workloads and workflows)
     std::unordered_map<std::string, simgrid::s4u::ActorPtr> event_submitter_actors; //!< The list of static_event_submitter SimGrid actors
-    PajeTracer paje_tracer;                         //!< The PajeTracer
     PStateChangeTracer pstate_tracer;               //!< The PStateChangeTracer
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
     MachineStateTracer machine_state_tracer;        //!< The MachineStateTracer

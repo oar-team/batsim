@@ -24,11 +24,3 @@ void static_job_submitter_process(BatsimContext * context,
  */
 void workflow_submitter_process(BatsimContext * context,
                                 std::string workflow_name);
-
-/**
- * @brief Execute jobs sequentially without server and scheduler
- * @param[in] context The BatsimContext
- * @param[in] workload_name The name of the workload attached to the submitter
- */
-void batexec_job_launcher_process(BatsimContext * context,
-                                  std::string workload_name);

@@ -50,7 +50,7 @@ void Profiles::load_from_json(const Document &doc, const string & filename)
                    "string key", error_prefix.c_str());
         string profile_name = key.GetString();
 
-        auto profile = Profile::from_json(profile_name, value, _workload, error_prefix, true, filename);
+        auto profile = Profile::from_json(profile_name, value, _workload, error_prefix, filename);
         xbt_assert(!exists(string(key.GetString())), "%s: duplication of profile name '%s'",
                    error_prefix.c_str(), key.GetString());
 
@@ -244,24 +244,6 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    /*else if (type == ProfileType::SCHEDULER_SEND)
-    {
-        auto * d = static_cast<SchedulerSendProfileData *>(data);
-        if (d != nullptr)
-        {
-            delete d;
-            d = nullptr;
-        }
-    }
-    else if (type == ProfileType::SCHEDULER_RECV)
-    {
-        auto * d = static_cast<SchedulerRecvProfileData *>(data);
-        if (d != nullptr)
-        {
-            delete d;
-            d = nullptr;
-        }
-    }*/
     else
     {
         XBT_ERROR("Deletion of an unknown profile type (%d)", static_cast<int>(type));
@@ -273,7 +255,6 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
                               const rapidjson::Value & json_desc,
                               Workload * workload,
                               const std::string & error_prefix,
-                              bool is_from_a_file,
                               const std::string & json_filename)
 {
     (void) error_prefix; // Avoids a warning if assertions are ignored
@@ -409,7 +390,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         {
             xbt_assert(json_desc["repeat"].IsInt(), "%s: profile '%s' has a non-integral 'repeat' field",
                    error_prefix.c_str(), profile_name.c_str());
-            xbt_assert(json_desc["repeat"].GetInt() > 0, "%s: profile '%s' has a non-strinctly-positive 'repeat' field (%d)",
+            xbt_assert(json_desc["repeat"].GetInt() > 0, "%s: profile '%s' has a non-strictly-positive 'repeat' field (%d)",
                    error_prefix.c_str(), profile_name.c_str(), json_desc["repeat"].GetInt());
             repeat = static_cast<unsigned int>(json_desc["repeat"].GetInt());
         }
@@ -515,8 +496,6 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         data->to_storage_label = json_desc["to"].GetString();
 
         profile->data = data;
-
-        // TODO: check that associated jobs request 0 resources
     }
     else if (profile_type == "forkjoin_composition")
     {
@@ -536,9 +515,6 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         xbt_assert(json_desc.HasMember("trace_file"), "%s: profile '%s' has no 'trace_file' field", error_prefix.c_str(), profile_name.c_str());
         xbt_assert(json_desc["trace_file"].IsString(), "%s: profile '%s' has a non-string 'trace_file' field", error_prefix.c_str(), profile_name.c_str());
         const string trace_filename = json_desc["trace_file"].GetString();
-
-        xbt_assert(is_from_a_file, "Trying to create a trace_replay profile from another source than a file workload, which is not implemented at the moment.");
-        (void) is_from_a_file; // Avoids a warning if assertions are ignored
 
         fs::path base_dir = json_filename;
         base_dir = base_dir.parent_path();
@@ -618,7 +594,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
     xbt_assert(!doc.HasParseError(), "%s: Cannot be parsed. Content (between '##'):\n#%s#",
                error_prefix.c_str(), json_str.c_str());
 
-    return Profile::from_json(profile_name, doc, workload, error_prefix, false);
+    return Profile::from_json(profile_name, doc, workload, error_prefix);
 }
 
 bool Profile::is_rigid() const
@@ -658,21 +634,12 @@ std::string profile_type_to_string(const ProfileType & type)
     case ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES:
         str = "PTASK_DATA_STAGING_BETWEEN_STORAGES";
         break;
-    /*case ProfileType::TRACE_REPLAY:
-        str = "TRACE_REPLAY";
-        break;*/
     case ProfileType::REPLAY_SMPI:
         str = "REPLAY_SMPI";
         break;
     case ProfileType::REPLAY_USAGE:
         str = "REPLAY_USAGE";
         break;
-    /*case ProfileType::SCHEDULER_SEND:
-        str = "SCHEDULER_SEND";
-        break;
-    case ProfileType::SCHEDULER_RECV:
-        str = "SCHEDULER_RECV";
-        break;*/
     default:
         str = "unset";
         break;

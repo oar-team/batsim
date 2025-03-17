@@ -327,38 +327,3 @@ static string wait_for_job_completion(string submitter_name)
     // TODO: memory cleanup
     return notification_data->job_id.to_string();
 }
-
-
-void batexec_job_launcher_process(BatsimContext * context,
-                                  std::string workload_name)
-{
-    // TODO? or this should be completely removed?
-/*    Workload * workload = context->workloads.at(workload_name);
-
-    auto & jobs = workload->jobs->jobs();
-    for (auto & mit : jobs)
-    {
-        auto job = mit.second;
-
-        unsigned int nb_res = job->requested_nb_res;
-
-        SchedulingAllocation * alloc = new SchedulingAllocation;
-
-        alloc->job = job;
-        alloc->hosts.clear();
-        alloc->hosts.reserve(nb_res);
-        alloc->machine_ids.clear();
-
-        for (int i = 0; i < static_cast<int>(nb_res); ++i)
-        {
-            alloc->machine_ids.insert(i);
-            alloc->hosts.push_back(context->machines[i]->host);
-        }
-
-        string pname = "job" + job->id.to_string();
-        auto actor = simgrid::s4u::Actor::create(pname.c_str(),
-                                                 context->machines[alloc->machine_ids.first_element()]->host,
-                                                 execute_job_process, context, alloc, false);
-        job->execution_actors.insert(actor);
-    }*/
-}

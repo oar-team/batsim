@@ -71,7 +71,6 @@ struct Profile
                                 const rapidjson::Value & json_desc,
                                 Workload * workload,
                                 const std::string & error_prefix = "Invalid JSON profile",
-                                bool is_from_a_file = true,
                                 const std::string & json_filename = "unset");
 
     /**
@@ -131,7 +130,7 @@ struct ParallelHomogeneousProfileData
 };
 
 /**
- * @brief The data associated to SEQUENCE profiles
+ * @brief The data associated to Sequence profiles
  */
 struct SequenceProfileData
 {
@@ -145,17 +144,17 @@ struct SequenceProfileData
  */
 struct ForkJoinCompositionProfileData
 {
-    std::vector<std::string> sequence_names; //!< The sequence of profile names, executed in this order
-    std::vector<ProfilePtr> profile_sequence; //!< The sequence of profiles, executed in this order
+    // TODO
+    std::vector<std::string> profile_names; //!< The profile names
 };
 
 /**
- * @brief The data associated to ForkJoinComposition profiles
+ * @brief The data associated to ParallelTaskMergeComposition profiles
  */
 struct ParallelTaskMergeCompositionProfileData
 {
-    std::vector<std::string> sequence_names; //!< The sequence of profile names, executed in this order
-    std::vector<ProfilePtr> profile_sequence; //!< The sequence of profiles, executed in this order
+    //TODO
+    std::vector<std::string> profile_names; //!< The profile names
 };
 
 
@@ -188,29 +187,6 @@ struct TraceReplayProfileData
     std::string filename; //!< The filename where to find all trace files (used in profile forwarding to EDC)
     std::vector<std::string> trace_filenames; //!< all defined tracefiles
 };
-
-
-
-/**
- * @brief The data associated to SCHEDULER_SEND profiles
- */
-/*struct SchedulerSendProfileData
-{
-    rapidjson::Document message; //!< The message being sent to the scheduler
-    double sleeptime; //!< The time to sleep after sending the message.
-};*/
-
-/**
- * @brief The data associated to SCHEDULER_RECV profiles
- */
-/*struct SchedulerRecvProfileData
-{
-    std::string regex; //!< The regex which is tested for matching
-    std::string on_success; //!< The profile to execute if it matches
-    std::string on_failure; //!< The profile to execute if it does not match
-    std::string on_timeout; //!< The profile to execute if no message is in the buffer (i.e. the scheduler has not answered in time). Can be omitted which will result that the job will wait until its walltime is reached.
-    double polltime; //!< The time to sleep between polling if on_timeout is not set.
-};*/
 
 
 /**

@@ -22,7 +22,6 @@ struct BatsimContext;
 struct Job;
 class Machines;
 struct MainArguments;
-class PajeTracer;
 
 /**
  * @brief Enumerates the different states of a Machine
@@ -192,12 +191,6 @@ public:
                                     BatsimContext *context);
 
     /**
-     * @brief Sets the PajeTracer
-     * @param[in] tracer The PajeTracer
-     */
-    void set_tracer(PajeTracer * tracer);
-
-    /**
      * @brief Accesses a Machine thanks to its unique number
      * @param[in] machineID The unique machine number
      * @return The machine whose machine number is given
@@ -313,7 +306,6 @@ private:
     std::vector<Machine *> _storage_nodes;  //!< The vector of storage machines
     std::vector<Machine *> _compute_nodes;  //!< The vector of computing machines
     Machine * _master_machine = nullptr;    //!< The master machine
-    PajeTracer * _tracer = nullptr;         //!< The PajeTracer
     std::map<MachineState, int> _nb_machines_in_each_state; //!< Counts how many machines are in each state
 };
 

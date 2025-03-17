@@ -161,7 +161,6 @@ void Workload::check_validity()
 void Workload::check_single_job_validity(const JobPtr job)
 {
     //TODO This check needs to be updated with the new Batprotocol and new job profiles
-    // especially with the 'rigid' parameter
 
     if (job->profile->type == ProfileType::PTASK)
     {

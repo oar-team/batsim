@@ -92,9 +92,8 @@ std::shared_ptr<batprotocol::Job> to_job(const Job & job)
     auto proto_job = batprotocol::Job::make();
     proto_job->set_resource_number(job.requested_nb_res);
     proto_job->set_walltime(job.walltime);
-    proto_job->set_profile(job.profile->name); // TODO: handle ghost jobs without profile
+    proto_job->set_profile(job.profile->name);
     proto_job->set_extra_data(job.extra_data);
-    // TODO: handle job rigidity
 
     return proto_job;
 }
@@ -152,7 +151,7 @@ std::shared_ptr<batprotocol::Profile> to_profile(const Profile & profile)
     case ProfileType::PTASK_MERGE_COMPOSITION:
     {
         auto * data = static_cast<ParallelTaskMergeCompositionProfileData*>(profile.data);
-        const std::shared_ptr<std::vector<std::string>> sub_profiles = make_shared<vector<std::string>>(data->sequence_names);
+        const std::shared_ptr<std::vector<std::string>> sub_profiles = make_shared<vector<std::string>>(data->profile_names);
         p = batprotocol::Profile::make_parallel_task_merge_composition(sub_profiles);
         break;
     }
@@ -166,7 +165,7 @@ std::shared_ptr<batprotocol::Profile> to_profile(const Profile & profile)
     case ProfileType::FORKJOIN_COMPOSITION:
     {
         auto * data = static_cast<ForkJoinCompositionProfileData*>(profile.data);
-        const std::shared_ptr<std::vector<std::string>> sub_profiles = make_shared<vector<std::string>>(data->sequence_names);
+        const std::shared_ptr<std::vector<std::string>> sub_profiles = make_shared<vector<std::string>>(data->profile_names);
         p = batprotocol::Profile::make_forkjoin_composition(sub_profiles);
         break;
     }
@@ -609,7 +608,6 @@ JobRegisteredByEDCMessage * from_register_job(const batprotocol::fb::RegisterJob
     {
         msg->job->extra_data = proto_job->extra_data()->str();
     }
-    msg->job->is_rigid = proto_job->rigid();
     msg->profile_id = proto_job->profile_id()->str();
 
     return msg;

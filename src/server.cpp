@@ -32,7 +32,7 @@ void server_process(BatsimContext * context)
 
     // Say hello to the external decision process.
     context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
-    context->proto_msg_builder->add_batsim_hello("batversion");
+    context->proto_msg_builder->add_batsim_hello("TODO");
     finish_message_and_call_edc(data);
 
     // Prepare a handler map to react to events
@@ -350,9 +350,6 @@ void server_on_job_submitted(ServerData * data,
 
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<JobSubmittedMessage *>(task_data->data);
-
-    //TODO: this shoulbe be checked during initialisation of Batsim and its submitters, not here
-    //xbt_assert(data->submitters.count(message->submitter_name) == 1, "inconsistency: expected 1 submitter with name '%s', , got %lu", message->submitter_name.c_str(), data->submitters.count(message->submitter_name));
 
     ServerData::Submitter * submitter = data->submitters.at(message->submitter_name);
     for (JobPtr & job : message->jobs)
@@ -1111,39 +1108,6 @@ void server_on_execute_job(ServerData * data,
     data->nb_running_jobs++;
     xbt_assert(data->nb_running_jobs <= data->nb_submitted_jobs, "inconsistency: nb_running_jobs > nb_submitted_jobs");
 
-    // Check that the allocated hosts have the right permissions.
-    // TODO: these checks should be removed and left to the EDC's responsibility
-    /*if (!data->context->allow_compute_sharing || !data->context->allow_storage_sharing)
-    {
-        for (auto machine_id_it = allocation->hosts.elements_begin(); machine_id_it != allocation->hosts.elements_end(); ++machine_id_it)
-        {
-            int machine_id = *machine_id_it;
-            const Machine * machine = data->context->machines[machine_id];
-            if (machine->has_role(roles::Permissions::COMPUTE_NODE) && !data->context->allow_compute_sharing)
-            {
-                (void) machine; // Avoids a warning if assertions are ignored
-                xbt_assert(machine->jobs_being_computed.empty(),
-                           "Job '%s': Invalid allocation ('%s'): machine %d (hostname='%s') is currently computing jobs (these ones:"
-                           " {%s}) whereas time-sharing on compute machines is disabled (rerun with --help to display the available options).",
-                           job->id.to_cstring(),
-                           allocation->hosts.to_string_hyphen().c_str(),
-                           machine->id, machine->name.c_str(),
-                           machine->jobs_being_computed_as_string().c_str());
-            }
-            if (machine->has_role(roles::Permissions::STORAGE) && !data->context->allow_storage_sharing)
-            {
-                (void) machine; // Avoids a warning if assertions are ignored
-                xbt_assert(machine->jobs_being_computed.empty(),
-                           "Job '%s': Invalid allocation ('%s'): machine %d (hostname='%s') is currently computing jobs (these ones:"
-                           " {%s}) whereas time-sharing on storage machines is disabled (rerun with --help to display the available options).",
-                           job->id.to_cstring(),
-                           allocation->hosts.to_string_hyphen().c_str(),
-                           machine->id, machine->name.c_str(),
-                           machine->jobs_being_computed_as_string().c_str());
-            }
-        }
-    }*/
-
     // Check that every machine can compute the job
     for (auto machine_id_it = allocation->hosts.elements_begin(); machine_id_it != allocation->hosts.elements_end(); ++machine_id_it)
     {
@@ -1171,32 +1135,6 @@ void server_on_execute_job(ServerData * data,
                    machine->id, machine->name.c_str(), ps);
         }
     }
-
-    /*
-    if (job->is_rigid)
-    {
-        // TODO: adapt to core requests
-        if (allocation->use_predefined_strategy)
-        {
-            xbt_assert(static_cast<unsigned int>(allocation->hosts.size()) == job->requested_nb_res,
-                       "Job '%s' allocation ('%s') is invalid. The job is rigid and thus requires exactly %d machines but %u were given. "
-                       "Using a different number of machines than the one requested is prevented by default. "
-                       "If you meant to use multiple executors per machine, please specify a custom execution mapping "
-                       "specifying which allocated machine each executor should use.",
-                       job->id.to_cstring(),
-                       allocation->hosts.to_string_hyphen().c_str(),
-                       job->requested_nb_res, allocation->hosts.size());
-        }
-        else
-        {
-            xbt_assert(static_cast<unsigned int>(allocation->hosts.size()) == job->requested_nb_res,
-                       "Job '%s' allocation ('%s') is invalid. The decision process set a custom mapping for this job, "
-                       "but the custom mapping size (%zu) does not match the job requested number of machines (%d).",
-                       job->id.to_cstring(),
-                       allocation->hosts.to_string_hyphen().c_str(),
-                       allocation->mapping.size(), job->requested_nb_res);
-        }
-    }*/
 
     string pname = "job_" + job->id.to_string();
     auto actor = simgrid::s4u::Actor::create(pname.c_str(),
