@@ -127,35 +127,42 @@ void Workload::register_smpi_applications()
 
 void Workload::check_validity()
 {
-    // Let's check that every SEQUENCE-typed profile points to existing profiles
+    // Let's check that every Composition-typed profile points to existing profiles
     // And update the refcounting of these profiles
     for (auto mit : profiles->profiles())
     {
-        auto profile = mit.second;
-        if (profile->type == ProfileType::SEQUENTIAL_COMPOSITION)
-        {
-            auto * data = static_cast<SequenceProfileData *>(profile->data);
-            data->profile_sequence.reserve(data->sequence_names.size());
-            for (const auto & profile_name : data->sequence_names)
-            {
-                (void) profile_name; // Avoids a warning if assertions are ignored
-                xbt_assert(profiles->exists(profile_name),
-                           "Invalid composed profile '%s': the used profile '%s' does not exist",
-                           mit.first.c_str(), profile_name.c_str());
-                // Adds one to the refcounting for the profile 'prof'
-                data->profile_sequence.push_back(profiles->at(profile_name));
-            }
-        }
+        check_single_profile_validity(mit.second);
     }
 
-    // TODO : check that there are no circular calls between composed profiles...
-    // TODO: compute the constraint of the profile number of resources, to check if it matches the jobs that use it
 
     // Let's check the profile validity of each job
     for (const auto & mit : jobs->jobs())
     {
         check_single_job_validity(mit.second);
     }
+}
+
+void Workload::check_single_profile_validity(const ProfilePtr profile)
+{
+    // Check that every composition profile points to existing profiles
+    // And update the refcounting of these profiles
+    if (profile->type == ProfileType::SEQUENTIAL_COMPOSITION)
+    {
+        auto * data = static_cast<SequenceProfileData *>(profile->data);
+        data->profile_sequence.reserve(data->sequence_names.size());
+        for (const auto & sub_profile_name : data->sequence_names)
+        {
+            xbt_assert(profiles->exists(sub_profile_name),
+                       "Invalid composed profile '%s': the used profile '%s' does not exist",
+                       profile->name.c_str(), sub_profile_name.c_str());
+            // Adds one to the refcounting for the profile 'prof'
+            data->profile_sequence.push_back(profiles->at(sub_profile_name));
+        }
+    }
+
+    // TODO : check that there are no circular calls between composed profiles...
+    // TODO: compute the constraint of the profile number of resources, to check if it matches the jobs that use it
+
 }
 
 void Workload::check_single_job_validity(const JobPtr job)

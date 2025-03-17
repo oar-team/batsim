@@ -967,6 +967,9 @@ void server_on_register_profile(ServerData * data,
     message->profile->name = profile_name;
     message->profile->workload = workload;
 
+    // check profile validity. For composition profiles, check that the subprofiles already exist and fill the appropriate vector of Profiles
+    workload->check_single_profile_validity(message->profile);
+
     // Add the profile in the workload
     workload->profiles->add_profile(profile_name, message->profile);
     XBT_INFO("Adding dynamically registered profile '%s' to workload '%s'.",

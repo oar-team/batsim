@@ -78,6 +78,12 @@ public:
     void check_validity();
 
     /**
+     * @brief Checks whether a single profile is valid and update refcounting of sub-profiles is necessary
+     * @param[in] profile The profile to examine
+     */
+    void check_single_profile_validity(const ProfilePtr profile);
+
+    /**
      * @brief Checks whether a single job is valid
      * @param[in] job The job to examine
      */

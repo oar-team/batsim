@@ -1,8 +1,10 @@
 #include "protocol.hpp"
 
 #include <regex>
+#include <filesystem>
 
-#include <boost/algorithm/string/join.hpp>
+//#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <xbt.h>
 
@@ -13,6 +15,7 @@
 
 using namespace rapidjson;
 using namespace std;
+namespace fs = std::filesystem;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(protocol, "protocol"); //!< Logging
 
@@ -779,10 +782,39 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
     }
     case batprotocol::fb::Profile_TraceReplayProfile:
     {
-        xbt_die("Profile registration of type Trace Replay is not implemented yet");
-        /*const batprotocol::fb::TraceReplayProfile * prof = proto_profile->profile_as_TraceReplayProfile();
+        const batprotocol::fb::TraceReplayProfile * prof = proto_profile->profile_as_TraceReplayProfile();
         TraceReplayProfileData * data = new TraceReplayProfileData;
-        data->filename = prof->filename();
+        data->filename = prof->filename()->str();
+
+        // load the list of trace files given in the filename
+        fs::path base_dir = data->filename;
+        base_dir = base_dir.parent_path();
+        XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
+        xbt_assert(fs::exists(base_dir) && fs::is_directory(base_dir),
+                   "Invalid registration of profile '%s': directory '%s' does not exist or is not a directory",
+                   msg->profile_id.c_str(), base_dir.string().c_str());
+
+        fs::path trace_path = base_dir.string() + "/" + data->filename;
+        xbt_assert(fs::exists(trace_path) && fs::is_regular_file(trace_path),
+                   "Invalid registration of profile '%s': invalid 'trace_file' field ('%s') which leads to a non-existent file ('%s')",
+                   msg->profile_id.c_str(), data->filename.c_str(), trace_path.string().c_str());
+
+        ifstream trace_file(trace_path.string());
+        xbt_assert(trace_file.is_open(), "Cannot open file '%s'", trace_path.string().c_str());
+
+        std::vector<std::string> trace_filenames;
+        string line;
+        while (std::getline(trace_file, line))
+        {
+            boost::trim_right(line);
+            fs::path rank_trace_path = trace_path.parent_path().string() + "/" + line;
+            trace_filenames.push_back(rank_trace_path.string());
+        }
+
+        XBT_INFO("Filenames of profile '%s': [%s]", profile->name.c_str(), boost::algorithm::join(trace_filenames, ", ").c_str());
+
+        data->trace_filenames = trace_filenames;
+        profile->data = data;
 
         if (prof->trace_type() == batprotocol::fb::TraceType_SMPI)
         {
@@ -798,10 +830,6 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
             xbt_assert(false, "Unhandled TraceReplay profile (%s)", batprotocol::fb::EnumNamesTraceType()[prof->trace_type()]);
         }
 
-        // TODO load the list of trace files given in the filename
-
-
-        profile->data = data;*/
         break;
     }
     default:
