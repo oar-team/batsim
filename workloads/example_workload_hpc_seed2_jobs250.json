@@ -1761,98 +1761,98 @@
             "delay": 113.8,
             "np": 16,
             "runtime": 113.8,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "ft.C.4": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH ft.C.4",
             "delay": 138.16,
             "np": 4,
             "runtime": 138.16,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "ft.C.8": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH ft.C.8",
             "delay": 170.8,
             "np": 8,
             "runtime": 170.8,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "ft.D.128": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH ft.D.128",
             "delay": 411.35,
             "np": 128,
             "runtime": 411.35,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "ft.D.16": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH ft.D.16",
             "delay": 113.94,
             "np": 16,
             "runtime": 113.94,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "ft.D.32": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH ft.D.32",
             "delay": 1446.03,
             "np": 32,
             "runtime": 1446.03,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "ft.D.4": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH ft.D.4",
             "delay": 137.25,
             "np": 4,
             "runtime": 137.25,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "ft.D.8": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH ft.D.8",
             "delay": 172.94,
             "np": 8,
             "runtime": 172.94,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "ft.E.128": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH ft.E.128",
             "delay": 405.83,
             "np": 128,
             "runtime": 405.83,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "ft.E.32": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH ft.E.32",
             "delay": 1440.49,
             "np": 32,
             "runtime": 1440.49,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "is.D.32": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH is.D.32",
             "delay": 135.1,
             "np": 32,
             "runtime": 135.1,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "is.D.64": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH is.D.64",
             "delay": 78.66,
             "np": 64,
             "runtime": 78.66,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "lu.B.4": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH lu.B.4",
             "delay": 88.58,
             "np": 4,
             "runtime": 88.58,
-            "type": "delay"
+            "type": "DelayProfile"
         },
         "lu.C.16": {
             "command": "mpirun --mca btl_tcp_if_exclude ib0,ib1,lo,eth2,eth1 --mca btl self,sm,tcp -hostfile \\$OAR_NODEFILE --path $PATH lu.C.16",
             "delay": 104.88,
             "np": 16,
             "runtime": 104.88,
-            "type": "delay"
+            "type": "DelayProfile"
         }
     }
 }

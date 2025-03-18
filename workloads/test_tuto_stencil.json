@@ -17,13 +17,13 @@
 
   "profiles": {
     "initial_load": {
-      "type": "ptask_on_storage_homogeneous",
+      "type": "ParallelTaskOnStorageHomogeneousProfile",
       "bytes_to_read": 67108864,
       "bytes_to_write": 0,
       "storage": "pfs"
     },
     "100_iterations": {
-      "type": "ptask",
+      "type": "ParallelTaskProfile",
       "cpu": [   1e9,    1e9,    1e9,    1e9],
       "com": [     0, 819200, 819200,      0,
               819200,      0,      0, 819200,
@@ -31,18 +31,18 @@
                    0, 819200, 819200,      0]
     },
     "checkpoint": {
-      "type": "ptask_on_storage_homogeneous",
+      "type": "ParallelTaskOnStorageHomogeneousProfile",
       "bytes_to_read": 0,
       "bytes_to_write": 67108864,
       "storage": "pfs"
     },
     "iterations_and_checkpoints": {
-      "type": "composed",
+      "type": "SequentialCompositionProfile",
       "repeat": 10,
       "seq": ["100_iterations", "checkpoint"]
     },
     "imaginary_stencil": {
-      "type": "composed",
+      "type": "SequentialCompositionProfile",
       "repeat": 1,
       "seq": ["initial_load", "iterations_and_checkpoints"]
     }

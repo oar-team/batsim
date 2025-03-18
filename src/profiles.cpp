@@ -276,7 +276,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         profile->return_code = json_desc["ret"].GetInt();;
     }
 
-    if (profile_type == "delay")
+    if (profile_type == "DelayProfile")
     {
         profile->type = ProfileType::DELAY;
         DelayProfileData * data = new DelayProfileData;
@@ -292,7 +292,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "ptask")
+    else if (profile_type == "ParallelTaskProfile")
     {
         profile->type = ProfileType::PTASK;
         ParallelProfileData * data = new ParallelProfileData;
@@ -342,7 +342,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "ptask_homogeneous")
+    else if (profile_type == "ParallelTaskHomogeneousProfile")
     {
         profile->type = ProfileType::PTASK_HOMOGENEOUS;
         ParallelHomogeneousProfileData * data = new ParallelHomogeneousProfileData;
@@ -370,16 +370,16 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
                 error_prefix.c_str(), profile_name.c_str());
 
             std::string strategy_str = json_desc["generation_strategy"].GetString();
-            if (strategy_str == "defined_amount_used_for_each_value")
+            if (strategy_str == "DefinedAmountsUsedForEachValue")
                 strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue;
-            else if (strategy_str == "defined_amount_spread_uniformly")
+            else if (strategy_str == "DefinedAmountsSpreadUniformly")
                 strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsSpreadUniformly;
         }
         data->strategy = strategy;
 
         profile->data = data;
     }
-    else if (profile_type == "sequential_composition")
+    else if (profile_type == "SequentialCompositionProfile")
     {
         profile->type = ProfileType::SEQUENTIAL_COMPOSITION;
         SequenceProfileData * data = new SequenceProfileData;
@@ -416,7 +416,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "ptask_on_storage_homogeneous")
+    else if (profile_type == "ParallelTaskOnStorageHomogeneousProfile")
     {
         profile->type = ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS;
         ParallelTaskOnStorageHomogeneousProfileData * data = new ParallelTaskOnStorageHomogeneousProfileData;
@@ -463,9 +463,9 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
                        error_prefix.c_str(), profile_name.c_str());
 
             std::string strategy_str = json_desc["generation_strategy"].GetString();
-            if (strategy_str == "defined_amount_used_for_each_value")
+            if (strategy_str == "DefinedAmountsUsedForEachValue")
                 strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue;
-            else if (strategy_str == "defined_amount_spread_uniformly")
+            else if (strategy_str == "DefinedAmountsSpreadUniformly")
                 strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsSpreadUniformly;
         }
         data->strategy = strategy;
@@ -473,7 +473,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "ptask_data_staging_between_storages")
+    else if (profile_type == "ParallelTaskDataStagingBetweenStoragesProfile")
     {
         profile->type = ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES;
         DataStagingProfileData * data = new DataStagingProfileData;
@@ -502,24 +502,24 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "forkjoin_composition")
+    else if (profile_type == "ForkJoinCompositionProfile")
     {
         xbt_die("Handling of profile ForkJoin Composition not implemented yet");
     }
-    else if (profile_type == "ptask_merge_composition")
+    else if (profile_type == "ParallelTaskMergeCompositionProfile")
     {
         xbt_die("Handling of profile Parallel Task Merge Composition not implemented yet");
     }
-    else if (profile_type == "trace_replay")
+    else if (profile_type == "TraceReplayProfile")
     {
         xbt_assert(json_desc.HasMember("trace_type"), "%s: profile '%s' has no 'trace_type' field", error_prefix.c_str(), profile_name.c_str());
         xbt_assert(json_desc["trace_type"].IsString(), "%s: profile '%s' has a non-string 'trace_type' field", error_prefix.c_str(), profile_name.c_str());
         const string trace_type = json_desc["trace_type"].GetString();
 
         // retrieve trace filenames
-        xbt_assert(json_desc.HasMember("trace_file"), "%s: profile '%s' has no 'trace_file' field", error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["trace_file"].IsString(), "%s: profile '%s' has a non-string 'trace_file' field", error_prefix.c_str(), profile_name.c_str());
-        const string trace_filename = json_desc["trace_file"].GetString();
+        xbt_assert(json_desc.HasMember("filename"), "%s: profile '%s' has no 'filename' field", error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["filename"].IsString(), "%s: profile '%s' has a non-string 'filename' field", error_prefix.c_str(), profile_name.c_str());
+        const string trace_filename = json_desc["filename"].GetString();
 
         fs::path base_dir = json_filename;
         base_dir = base_dir.parent_path();
@@ -550,11 +550,11 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         data->trace_filenames = trace_filenames;
         profile->data = data;
 
-        if (trace_type == "smpi")
+        if (trace_type == "SMPI")
         {
             profile->type = ProfileType::REPLAY_SMPI;
         }
-        else if (trace_type == "usage")
+        else if (trace_type == "FractionalComputation")
         {
             profile->type = ProfileType::REPLAY_USAGE;
         }

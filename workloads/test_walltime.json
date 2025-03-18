@@ -50,7 +50,7 @@
 
     "profiles": {
         "delay_10s": {
-            "type": "delay",
+            "type": "DelayProfile",
             "delay": 10
         },
         "compute_only_10s":{

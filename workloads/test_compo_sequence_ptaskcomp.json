@@ -29,26 +29,26 @@
 
   "profiles": {
     "10s": {
-      "type": "ptask_homogeneous",
+      "type": "ParallelTaskHomogeneousProfile",
       "cpu": 10e9,
       "com": 0,
       "expected_execution_time": 10
     },
     "3s": {
-      "type": "ptask_homogeneous",
+      "type": "ParallelTaskHomogeneousProfile",
       "cpu": 3e9,
       "com": 0,
       "expected_execution_time": 3
     },
     "seq-1-rep1-implicit": {
-      "type": "sequential_composition",
+      "type": "SequentialCompositionProfile",
       "seq": [
         "10s"
       ],
       "expected_execution_time": 10
     },
     "seq-1-rep1-explicit": {
-      "type": "sequential_composition",
+      "type": "SequentialCompositionProfile",
       "repeat": 1,
       "seq": [
         "10s"
@@ -56,7 +56,7 @@
       "expected_execution_time": 10
     },
     "seq-1-rep7": {
-      "type": "sequential_composition",
+      "type": "SequentialCompositionProfile",
       "repeat": 7,
       "seq": [
         "10s"
@@ -64,7 +64,7 @@
       "expected_execution_time": 70
     },
     "seq-2-rep1": {
-      "type": "sequential_composition",
+      "type": "SequentialCompositionProfile",
       "repeat": 1,
       "seq": [
         "10s",
@@ -73,7 +73,7 @@
       "expected_execution_time": 13
     },
     "seq-2b-rep1": {
-      "type": "sequential_composition",
+      "type": "SequentialCompositionProfile",
       "repeat": 1,
       "seq": [
         "3s",
@@ -82,7 +82,7 @@
       "expected_execution_time": 13
     },
     "seq-2-rep5": {
-      "type": "sequential_composition",
+      "type": "SequentialCompositionProfile",
       "repeat": 5,
       "seq": [
         "10s",
@@ -91,7 +91,7 @@
       "expected_execution_time": 65
     },
     "seq-3-rep1": {
-      "type": "sequential_composition",
+      "type": "SequentialCompositionProfile",
       "repeat": 1,
       "seq": [
         "3s",
@@ -101,7 +101,7 @@
       "expected_execution_time": 16
     },
     "seq-3-rep2": {
-      "type": "sequential_composition",
+      "type": "SequentialCompositionProfile",
       "repeat": 2,
       "seq": [
         "3s",
@@ -112,7 +112,7 @@
     },
 
     "seqrec-1-rep7": {
-      "type": "sequential_composition",
+      "type": "SequentialCompositionProfile",
       "repeat": 7,
       "seq": [
         "seq-2b-rep1"
@@ -120,7 +120,7 @@
       "expected_execution_time": 91
     },
     "seqrec2": {
-      "type": "sequential_composition",
+      "type": "SequentialCompositionProfile",
       "repeat": 3,
       "seq": [
         "seqrec-1-rep7"
@@ -128,7 +128,7 @@
       "expected_execution_time": 273
     },
     "seqrec3": {
-      "type": "sequential_composition",
+      "type": "SequentialCompositionProfile",
       "repeat": 5,
       "seq": [
         "seqrec2"
@@ -136,7 +136,7 @@
       "expected_execution_time": 1365
     },
     "seqrec4": {
-      "type": "sequential_composition",
+      "type": "SequentialCompositionProfile",
       "repeat": 7,
       "seq": [
         "seqrec-1-rep7",

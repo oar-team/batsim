@@ -6,8 +6,8 @@
 
     "profiles": {
         "hg_10": {
-            "type": "ptask_homogeneous",
-            "generation_strategy": "defined_amount_spread_uniformly",
+            "type": "ParallelTaskHomogeneousProfile",
+            "generation_strategy": "DefinedAmountsSpreadUniformly",
             "cpu": 4e9,
             "com": 0
         }

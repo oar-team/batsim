@@ -25,7 +25,7 @@
 
     "profiles": {
         "1": {
-            "type": "ptask",
+            "type": "ParallelTaskProfile",
             "cpu": [5e6,5e6,5e6,5e6],
             "com": [5e6,5e6,5e6,5e6,
                     5e6,5e6,5e6,5e6,
@@ -33,17 +33,17 @@
                     5e6,5e6,5e6,5e6]
         },
         "2": {
-            "type": "ptask_homogeneous",
+            "type": "ParallelTaskHomogeneousProfile",
             "cpu": 10e6,
             "com": 1e6
         },
         "3": {
-            "type": "composed",
+            "type": "SequentialCompositionProfile",
             "repeat" : 4,
             "seq": ["1","2","1"]
         },
         "4": {
-            "type": "delay",
+            "type": "DelayProfile",
             "delay": 20.20
         }
     }
