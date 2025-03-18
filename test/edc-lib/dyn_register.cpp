@@ -92,12 +92,12 @@ void do_registration_ok(std::string first_profile_id)
     auto j1 = batprotocol::Job::make();
     j1->set_resource_number(2);
     j1->set_walltime(5);
-    j1->set_profile("w0!"+first_profile_id);
+    j1->set_profile(first_profile_id);
     mb->add_register_job("dyn!j1", j1);
 
     if (!ack_job_registration)
     {
-        add_new_job("dyn!j1", "w0!"+first_profile_id, 2);
+        add_new_job("dyn!j1", first_profile_id, 2);
     }
 
     // Register profile in new workload, register job in static workload
@@ -110,17 +110,17 @@ void do_registration_ok(std::string first_profile_id)
 
     auto j2 = batprotocol::Job::make();
     j2->set_resource_number(4);
-    j2->set_profile("dyn!profile2");
+    j2->set_profile(prof2);
     mb->add_register_job("w0!j2", j2);
 
     if (!ack_job_registration)
     {
-        add_new_job("w0!j2", "dyn!profile2", 4);
+        add_new_job("w0!j2", prof2, 4);
     }
 
     // Register same profile name in new workload (should work)
     auto p3 = batprotocol::Profile::make_delay(5);
-    mb->add_register_profile("dyn!"+first_profile_id, p3);
+    mb->add_register_profile("dyn!delay10", p3);
 
     mb->add_reject_job(first_job->id);
 }
@@ -226,7 +226,7 @@ uint8_t batsim_edc_take_decisions(
         {
             // Register same profile name in static workload (should NOT work)
             auto prof = batprotocol::Profile::make_delay(5);
-            mb->add_register_profile("w0!"+first_profile_id, prof);
+            mb->add_register_profile(first_profile_id, prof);
 
         }
         else if ((init_string == "profile_reuse_fail") or (init_string == "profile_reuse_ok"))
@@ -235,7 +235,7 @@ uint8_t batsim_edc_take_decisions(
             auto j1 = batprotocol::Job::make();
             j1->set_resource_number(2);
             j1->set_walltime(5);
-            j1->set_profile("w0!"+first_profile_id);
+            j1->set_profile(first_profile_id);
             mb->add_register_job("dyn!j1", j1);
         }
         else

@@ -48,15 +48,14 @@ void Profiles::load_from_json(const Document &doc, const string & filename)
 
         xbt_assert(key.IsString(), "%s: all children of the 'profiles' object must have a "
                    "string key", error_prefix.c_str());
-        string profile_name = key.GetString();
+        string profile_name = _workload->name + "!" + key.GetString(); // Unique profile name
 
         auto profile = Profile::from_json(profile_name, value, _workload, error_prefix, filename);
         xbt_assert(!exists(string(key.GetString())), "%s: duplication of profile name '%s'",
                    error_prefix.c_str(), key.GetString());
 
-        _profiles[string(key.GetString())] = profile;
+        _profiles[profile_name] = profile;
     }
-
 }
 
 ProfilePtr Profiles::operator[](const std::string &profile_name)
@@ -260,7 +259,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
     (void) error_prefix; // Avoids a warning if assertions are ignored
 
     auto profile = std::make_shared<Profile>();
-    profile->name = profile_name;
+    profile->name = profile_name; // Must be of the form "workload!profile_name"
     profile->workload = workload;
 
     xbt_assert(json_desc.IsObject(), "%s: profile '%s' value must be an object",
@@ -406,7 +405,13 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         data->sequence_names.reserve(seq.Size());
         for (unsigned int i = 0; i < seq.Size(); ++i)
         {
-            data->sequence_names.push_back(string(seq[i].GetString()));
+            std::string sub_profile_name = seq[i].GetString();
+            if (sub_profile_name.find(workload->name) == std::string::npos)
+            {
+                // the workload name is not present in the profile name
+                sub_profile_name = workload->name + "!" + sub_profile_name;
+            }
+            data->sequence_names.push_back(sub_profile_name);
         }
 
         profile->data = data;

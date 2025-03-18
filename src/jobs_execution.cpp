@@ -334,8 +334,7 @@ void killer_process(
             // Store the job profile if required
             if (context->forward_profiles_on_jobs_killed)
             {
-                const std::string profile_id = job->profile->workload->name + '!' + job->profile->name;
-                message->profiles[profile_id] = protocol::to_profile(*(job->profile));
+                message->profiles[job->profile->name] = protocol::to_profile(*(job->profile));
             }
 
             // Try to cancel the parallel task executors if they exist

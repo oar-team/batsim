@@ -305,9 +305,8 @@ batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context
         {
             for (const auto & kv : workload->profiles->profiles())
             {
-                auto profile_name = workload_name + '!' + kv.first;
                 std::shared_ptr<batprotocol::Profile> proto_profile = to_profile(*kv.second);
-                begins.add_profile(profile_name, proto_profile);
+                begins.add_profile(kv.first, proto_profile);
             }
         }
     }
@@ -786,15 +785,7 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
         TraceReplayProfileData * data = new TraceReplayProfileData;
         data->filename = prof->filename()->str();
 
-        // load the list of trace files given in the filename
-        fs::path base_dir = data->filename;
-        base_dir = base_dir.parent_path();
-        XBT_INFO("base_dir = '%s'", base_dir.string().c_str());
-        xbt_assert(fs::exists(base_dir) && fs::is_directory(base_dir),
-                   "Invalid registration of profile '%s': directory '%s' does not exist or is not a directory",
-                   msg->profile_id.c_str(), base_dir.string().c_str());
-
-        fs::path trace_path = base_dir.string() + "/" + data->filename;
+        fs::path trace_path(data->filename);
         xbt_assert(fs::exists(trace_path) && fs::is_regular_file(trace_path),
                    "Invalid registration of profile '%s': invalid 'trace_file' field ('%s') which leads to a non-existent file ('%s')",
                    msg->profile_id.c_str(), data->filename.c_str(), trace_path.string().c_str());
@@ -802,6 +793,7 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
         ifstream trace_file(trace_path.string());
         xbt_assert(trace_file.is_open(), "Cannot open file '%s'", trace_path.string().c_str());
 
+        // load the list of trace files given in the filenam
         std::vector<std::string> trace_filenames;
         string line;
         while (std::getline(trace_file, line))
@@ -811,7 +803,7 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
             trace_filenames.push_back(rank_trace_path.string());
         }
 
-        XBT_INFO("Filenames of profile '%s': [%s]", profile->name.c_str(), boost::algorithm::join(trace_filenames, ", ").c_str());
+        XBT_DEBUG("Filenames of profile '%s': [%s]", profile->name.c_str(), boost::algorithm::join(trace_filenames, ", ").c_str());
 
         data->trace_filenames = trace_filenames;
         profile->data = data;

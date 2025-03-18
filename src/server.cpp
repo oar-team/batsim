@@ -372,8 +372,7 @@ void server_on_job_submitted(ServerData * data,
         data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
         if (data->context->forward_profiles_on_job_submission)
         {
-            const std::string profile_id = job->profile->workload->name + '!' + job->profile->name;
-            data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), job->submission_time, profile_id, protocol::to_profile(*(job->profile)));
+            data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), job->submission_time, job->profile->name, protocol::to_profile(*(job->profile)));
         }
         else
         {
@@ -878,32 +877,32 @@ void server_on_register_job(ServerData * data,
     ProfilePtr profile;
 
     // Expecting a "workload!name" syntax in profile_id, but "name" is also allowed (in this case, only profiles from the job's workload can be used)
-    std::string & profile_id = message->profile_id;
-    auto tsplit = profile_id.find('!');
+    auto tsplit = message->profile_id.find('!');
     if (tsplit == std::string::npos)
     {
-        // Profile_id does not contain a workload name, check if profile is in the Job's workload
-        xbt_assert(workload->profiles->exists(profile_id),
-                    "Invalid new job registration for '%s': the associated profile '%s' does not exist",
-                    job_id.to_cstring(), profile_id.c_str());
+        // Profile_id does not contain a workload name, add the job's workload to it
+        std::string profile_name = workload->name + "!" + message->profile_id;
 
-        profile = workload->profiles->at(profile_id);
+        // check if profile is in the Job's workload
+        xbt_assert(workload->profiles->exists(profile_name),
+                    "Invalid new job registration for '%s': the associated profile '%s' does not exist",
+                    job_id.to_cstring(), profile_name.c_str());
+
+        profile = workload->profiles->at(profile_name);
     }
     else
     {
         // Profile_id contains the workload name
-        std::string profile_workload_str = profile_id.substr(0, tsplit);
+        std::string profile_workload_str = message->profile_id.substr(0, tsplit);
         xbt_assert(data->context->workloads.exists(profile_workload_str),
                    "Invalid new job resgistration for '%s': the profile's workload does not exist (%s)",
                    job_id.to_cstring(), profile_workload_str.c_str());
 
-        std::string profile_name = message->profile_id.substr(tsplit+1);
-
-        xbt_assert(data->context->workloads.profile_is_registered(profile_name, profile_workload_str),
+        xbt_assert(data->context->workloads.profile_is_registered(message->profile_id, profile_workload_str),
                    "Invalid new job registration for '%s': the profile does not exist (%s).",
-                   job_id.to_cstring(), profile_id.c_str());
+                   job_id.to_cstring(), message->profile_id.c_str());
 
-        profile = data->context->workloads.at(profile_workload_str)->profiles->at(profile_name);
+        profile = data->context->workloads.at(profile_workload_str)->profiles->at(message->profile_id);
     }
 
     // Let's update some global and job parameters
@@ -928,8 +927,7 @@ void server_on_register_job(ServerData * data,
 
         if (data->context->forward_profiles_on_job_submission)
         {
-            const std::string profile_id = job->profile->workload->name + '!' + job->profile->name;
-            data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), job->submission_time, profile_id, protocol::to_profile(*(job->profile)));
+            data->context->proto_msg_builder->add_job_submitted(job->id.to_string(), protocol::to_job(*job), job->submission_time, job->profile->name, protocol::to_profile(*(job->profile)));
         }
         else
         {
@@ -947,7 +945,7 @@ void server_on_register_profile(ServerData * data,
     // Retrieve the workload and profile names
     auto tsplit = message->profile_id.find('!');
     std::string workload_name = message->profile_id.substr(0, tsplit);
-    std::string profile_name = message->profile_id.substr(tsplit+1);
+    std::string profile_name = message->profile_id;
 
     // Retrieve the workload or create it
     Workload * workload;
