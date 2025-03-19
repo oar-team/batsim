@@ -1,1 +1,1 @@
-{"type": "some_generic_event", "timestamp": 123}
+{"type": "generic", "timestamp": 5.3, "data": "some data"}

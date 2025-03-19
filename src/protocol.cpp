@@ -197,6 +197,20 @@ std::shared_ptr<batprotocol::Profile> to_profile(const Profile & profile)
 }
 
 
+std::shared_ptr<batprotocol::ExternalEvent> to_external_event(const ExternalEvent & external_event)
+{
+    std::shared_ptr<batprotocol::ExternalEvent> e;
+    switch(external_event.type)
+    {
+    case ExternalEventType::GENERIC:
+    default: // Treat Unknow event types as generic. TODO change this?
+        GenericEventData * event_data = static_cast<GenericEventData*>(external_event.data);
+        e = batprotocol::ExternalEvent::make_generic_event(event_data->json_desc_str);
+    }
+    return e;
+}
+
+
 /**
  * @brief Returns a batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
  * @param[in] state The Batsim JobState

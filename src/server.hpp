@@ -34,7 +34,7 @@ struct ServerData
      */
     struct SubmitterCounters
     {
-        unsigned int expected_nb_submitters = static_cast<unsigned int>(-1); //!< The expected number of submitters
+        unsigned int expected_nb_submitters = 0; //!< The expected number of submitters
         unsigned int nb_submitters = 0; //!< The number of submitters
         unsigned int nb_submitters_finished = 0; //!< The number of finished submitters
     };
@@ -117,37 +117,12 @@ void server_on_job_submitted(ServerData * data,
                              IPMessage * task_data);
 
 /**
- * @brief Internal Server handler for machine_unavailable external event
- * @param[in,out] data The data associated with the server_process
- * @param[in] event The Event involved
- */
-void server_on_event_machine_unavailable(ServerData * data,
-                                     const Event * event);
-
-/**
- * @brief Internal Server handler for machine_available external event
- * @param[in,out] data The data associated with the server_process
- * @param[in] event The Event involved
- */
-void server_on_event_machine_available(ServerData * data,
-                                     const Event * event);
-
-
-/**
- * @brief Server handler for Event of type EVENT_GENERIC
- * @param[in,out] data The data associated with the server_process
- * @param event The event that occurred
- */
-void server_on_event_generic(ServerData * data,
-                             const Event * event);
-
-/**
- * @brief Server EVENT_OCCURRED handler
+ * @brief Server EXTERNAL_EVENTS_OCCURRED handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_event_occurred(ServerData * data,
-                              IPMessage * task_data);
+void server_on_external_events_occurred(ServerData * data,
+                                        IPMessage * task_data);
 
 
 /**

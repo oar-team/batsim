@@ -32,8 +32,8 @@
 
 #include "batsim.hpp"
 #include "context.hpp"
-#include "event_submitter.hpp"
-#include "events.hpp"
+#include "external_event_submitter.hpp"
+#include "external_events.hpp"
 #include "export.hpp"
 #include "ipp.hpp"
 #include "job_submitter.hpp"
@@ -75,8 +75,8 @@ void configure_batsim_logging_output(const MainArguments & main_args)
     vector<string> log_categories_to_set = {
         "batsim",
         "edc",
-        "events",
-        "event_submitter",
+        "external_events",
+        "external_event_submitter",
         "export",
         "ipp",
         "jobs",
@@ -178,14 +178,14 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
     }
 }
 
-void load_eventLists(const MainArguments & main_args, BatsimContext * context)
+void load_external_event_lists(const MainArguments & main_args, BatsimContext * context)
 {
-    for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
+    for (const MainArguments::ExternalEventListDescription & desc : main_args.externalEventList_descriptions)
     {
-        XBT_INFO("Event list '%s' corresponds to events file '%s'.", desc.name.c_str(), desc.filename.c_str());
-        auto events = new EventList(desc.name, true);
-        events->load_from_json(desc.filename, false);
-        context->event_lists[desc.name] = events;
+        XBT_INFO("External event list '%s' corresponds to external_events file '%s'.", desc.name.c_str(), desc.filename.c_str());
+        auto events = new ExternalEventList(desc.name, true);
+        events->load_from_json(desc.filename);
+        context->external_event_lists[desc.name] = events;
     }
 }
 
@@ -224,18 +224,18 @@ void start_initial_simulation_processes(const MainArguments & main_args,
     }
 
     // Let's run a static_event_submitter process for each list of event
-    context->event_submitter_actors.reserve(main_args.eventList_descriptions.size());
-    for (const MainArguments::EventListDescription & desc : main_args.eventList_descriptions)
+    context->external_event_submitter_actors.reserve(main_args.externalEventList_descriptions.size());
+    for (const MainArguments::ExternalEventListDescription & desc : main_args.externalEventList_descriptions)
     {
         string submitter_instance_name = "event_submitter_" + desc.name;
 
-        XBT_DEBUG("Creating an event_submitter process...");
-        auto actor_function = static_event_submitter_process;
+        XBT_DEBUG("Creating an external_event_submitter process...");
+        auto actor_function = static_external_event_submitter_process;
         simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     actor_function,
                                     context, desc.name);
-        context->event_submitter_actors.emplace(submitter_instance_name, submitter_actor);
+        context->external_event_submitter_actors.emplace(submitter_instance_name, submitter_actor);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
@@ -332,7 +332,7 @@ int main(int argc, char * argv[])
     load_workloads_and_workflows(main_args, &context, max_nb_machines_to_use);
 
     // Let's load the eventLists
-    load_eventLists(main_args, &context);
+    load_external_event_lists(main_args, &context);
 
     // initialyse Ptask L07 model
     engine.set_config("host/model:ptask_L07");

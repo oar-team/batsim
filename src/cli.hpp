@@ -75,9 +75,9 @@ struct MainArguments
     };
 
    /**
-    * @brief Stores the command-line description of an eventList
+    * @brief Stores the command-line description of an ExternalEventList
     */
-   struct EventListDescription
+   struct ExternalEventListDescription
    {
        std::string filename;        //!< The filename of the eventList
        std::string name;            //!< The name of the eventList
@@ -87,7 +87,7 @@ struct MainArguments
     std::string platform_filename;                          //!< The SimGrid platform filename
     std::list<WorkloadDescription> workload_descriptions;   //!< The workloads descriptions
     std::list<WorkflowDescription> workflow_descriptions;   //!< The workflows descriptions
-    std::list<EventListDescription> eventList_descriptions; //!< The descriptions of the eventLists
+    std::list<ExternalEventListDescription> externalEventList_descriptions; //!< The descriptions of the externalEventLists
 
     // Common
     std::string master_host_name = "master_host";           //!< The name of the SimGrid host which runs scheduler processes and not user tasks

@@ -61,7 +61,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SWITCHED_OFF] = server_on_switched;
     handler_map[IPMessageType::SCHED_END_DYNAMIC_REGISTRATION] = server_on_end_dynamic_registration;
     handler_map[IPMessageType::SCHED_FORCE_SIMULATION_STOP] = server_on_force_simulation_stop;
-    handler_map[IPMessageType::EVENT_OCCURRED] = server_on_event_occurred;
+    handler_map[IPMessageType::EXTERNAL_EVENTS_OCCURRED] = server_on_external_events_occurred;
 
     /* Currently, there is one job submtiter per input file (workload or workflow).
        As workflows use an inner workload, calling nb_static_workloads() should
@@ -71,9 +71,9 @@ void server_process(BatsimContext * context)
     job_counters.expected_nb_submitters = context->workloads.nb_static_workloads();
     data->submitter_counters[SubmitterType::JOB_SUBMITTER] = job_counters;
 
-    ServerData::SubmitterCounters event_counters;
-    event_counters.expected_nb_submitters = static_cast<unsigned int>(context->event_lists.size());
-    data->submitter_counters[SubmitterType::EVENT_SUBMITTER] = event_counters;
+    ServerData::SubmitterCounters external_event_counters;
+    external_event_counters.expected_nb_submitters = static_cast<unsigned int>(context->external_event_lists.size());
+    data->submitter_counters[SubmitterType::EXTERNAL_EVENT_SUBMITTER] = external_event_counters;
 
     data->jobs_to_be_deleted.clear();
 
@@ -273,9 +273,9 @@ void server_on_submitter_bye(ServerData * data,
               submitter_type_to_string(submitter_type).c_str(),
               data->submitter_counters[submitter_type].nb_submitters);
 
-    if (submitter_type == SubmitterType::EVENT_SUBMITTER)
+    if (submitter_type == SubmitterType::EXTERNAL_EVENT_SUBMITTER)
     {
-        data->context->event_submitter_actors.erase(message->submitter_name);
+        data->context->external_event_submitter_actors.erase(message->submitter_name);
 
         if(data->submitter_counters[submitter_type].nb_submitters_finished == data->submitter_counters[submitter_type].expected_nb_submitters)
         {
@@ -382,105 +382,15 @@ void server_on_job_submitted(ServerData * data,
 }
 
 
-void server_on_event_machine_unavailable(ServerData * data,
-                                         const Event * event)
-{
-    auto * event_data = static_cast<MachineAvailabilityEventData*>(event->data);
-    IntervalSet machines = event_data->machine_ids;
-
-    xbt_assert(false, "External events handling is not implemented yet");
-    // TODO: handle me in batprotocol
-    /*if(machines.size() > 0)
-    {
-        for (auto machine_it = machines.elements_begin();
-             machine_it != machines.elements_end();
-             ++machine_it)
-        {
-            const int machine_id = *machine_it;
-            Machine * machine = data->context->machines[machine_id];
-
-            xbt_assert(machine->state != MachineState::UNAVAILABLE,
-                       "The making of machine %d ('%s') unavailable was requested but "
-                       "this machine was already in UNAVAILABLE state.",
-                       machine->id, machine->name.c_str());
-
-            machine->update_machine_state(MachineState::UNAVAILABLE);
-        }
-        // Notify the decision process that some machines have become unavailable
-        data->context->proto_writer->append_notify_resource_event("event_machine_unavailable",
-                                                                  machines,
-                                                                  simgrid::s4u::Engine::get_clock());
-    }
-    */
-}
-
-void server_on_event_machine_available(ServerData * data,
-                                       const Event * event)
-{
-    auto * event_data = static_cast<MachineAvailabilityEventData*>(event->data);
-    IntervalSet machines = event_data->machine_ids;
-    xbt_assert(false, "External events handling is not implemented yet");
-    // TODO: handle me in batprotocol
-    /*
-    if(machines.size() > 0)
-    {
-        for (auto machine_it = machines.elements_begin();
-             machine_it != machines.elements_end();
-             ++machine_it)
-        {
-            Machine * machine = data->context->machines[*machine_it];
-
-            xbt_assert(machine->state == MachineState::UNAVAILABLE,
-                       "The making of machine %d ('%s') available was requested but "
-                       "this machine was not in UNAVAILABLE state (current state: %s).",
-                       machine->id, machine->name.c_str(), machine_state_to_string(machine->state).c_str());
-
-            if (machine->jobs_being_computed.empty())
-            {
-                machine->update_machine_state(MachineState::IDLE);
-            }
-            else
-            {
-                machine->update_machine_state(MachineState::COMPUTING);
-            }
-        }
-        // Notify the decision process that some machines have become available
-        data->context->proto_writer->append_notify_resource_event("event_machine_available",
-                                                                  machines,
-                                                                  simgrid::s4u::Engine::get_clock());
-    }*/
-}
-
-void server_on_event_generic(ServerData * data,
-                             const Event * event)
-{
-
-    xbt_assert(false, "External events handling is not implemented yet");
-    // TODO: handle me in batprotocol
-    // Just forward the json object
-    // auto * event_data = static_cast<GenericEventData*>(event->data);
-}
-
-void server_on_event_occurred(ServerData * data,
+void server_on_external_events_occurred(ServerData * data,
                               IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
-    auto * message = static_cast<EventOccurredMessage *>(task_data->data);
+    auto * message = static_cast<ExternalEventsOccurredMessage *>(task_data->data);
 
-    for (const Event * event : message->occurred_events)
+    for (const ExternalEvent * event : message->occurred_events)
     {
-        switch(event->type)
-        {
-        case EventType::EVENT_MACHINE_AVAILABLE:
-            server_on_event_machine_available(data, event);
-            break;
-        case EventType::EVENT_MACHINE_UNAVAILABLE:
-            server_on_event_machine_unavailable(data, event);
-            break;
-        case EventType::EVENT_GENERIC:
-            server_on_event_generic(data, event);
-            break;
-        }
+        data->context->proto_msg_builder->add_external_event_occurred(protocol::to_external_event(*event));
     }
 }
 
@@ -1154,7 +1064,7 @@ bool is_simulation_finished(ServerData * data)
     }
 
     return (data->submitter_counters[SubmitterType::JOB_SUBMITTER].nb_submitters_finished == data->submitter_counters[SubmitterType::JOB_SUBMITTER].expected_nb_submitters) &&
-           (data->submitter_counters[SubmitterType::EVENT_SUBMITTER].nb_submitters_finished == data->submitter_counters[SubmitterType::EVENT_SUBMITTER].expected_nb_submitters) &&
+           (data->submitter_counters[SubmitterType::EXTERNAL_EVENT_SUBMITTER].nb_submitters_finished == data->submitter_counters[SubmitterType::EXTERNAL_EVENT_SUBMITTER].expected_nb_submitters) &&
            (!data->context->registration_sched_enabled || data->context->registration_sched_finished) && // Dynamic submissions are disabled or finished
            (data->nb_completed_jobs == data->nb_submitted_jobs) && // All submitted jobs have been completed (either computed and finished or rejected)
            (data->nb_running_jobs == 0) && // No jobs are being executed
@@ -1181,10 +1091,6 @@ void server_on_edc_hello(ServerData *data, IPMessage *task_data)
     data->context->forward_profiles_on_simulation_begins = message->requested_simulation_features.forward_profiles_on_simulation_begins;
     data->context->forward_profiles_on_job_submission= message->requested_simulation_features.forward_profiles_on_job_submission;
     data->context->forward_profiles_on_jobs_killed = message->requested_simulation_features.forward_profiles_on_jobs_killed;
-    //data->context->forward_unknown_external_events = message->requested_simulation_features.forward_unknown_external_events;
-
-    // TODO: implement these features
-    xbt_assert(!message->requested_simulation_features.forward_unknown_external_events, "Forwarding unknown external events is unimplemented");
 
     if (data->context->registration_sched_enabled)
     {

@@ -18,7 +18,7 @@
 
 #include "pointers.hpp"
 #include "jobs.hpp"
-#include "events.hpp"
+#include "external_events.hpp"
 
 struct BatsimContext;
 struct ServerData;
@@ -31,7 +31,7 @@ enum class IPMessageType
     SUBMITTER_HELLO         //!< Submitter -> Server. The submitter tells it starts submitting to the server.
     ,SUBMITTER_CALLBACK     //!< Server -> Submitter. The server sends a message to the Submitter. This message is initiated when a Job which has been submitted by the submitter has completed. The submitter must have said that it wanted to be called back when he said hello.
     ,SUBMITTER_BYE          //!< Submitter -> Server. The submitter tells it stops submitting to the server.
-    ,EVENT_OCCURRED         //!< Sumbitter -> Server. The event submitter tells the server that one or several events have occurred.
+    ,EXTERNAL_EVENTS_OCCURRED//!< Sumbitter -> Server. The external event submitter tells the server that one or several external events have occurred.
     ,JOB_SUBMITTED          //!< Submitter -> Server. The submitter tells the server that one or several new jobs have been submitted.
     ,JOB_COMPLETED          //!< Launcher -> Server. The job launcher tells the server a job has been completed.
     ,KILLING_DONE           //!< Killer -> Server. The killer tells the server that all the jobs have been killed.
@@ -67,7 +67,7 @@ enum class IPMessageType
 enum class SubmitterType
 {
      JOB_SUBMITTER              //!< A Job submitter
-    ,EVENT_SUBMITTER            //!< An Event submitter
+    ,EXTERNAL_EVENT_SUBMITTER   //!< An ExternalEvent submitter
 };
 
 /// @cond DOXYGEN_SHOULD_SKIP_THIS
@@ -351,10 +351,10 @@ struct KillingDoneMessage
 /**
  * @brief The content of the EventOccurred message
  */
-struct EventOccurredMessage
+struct ExternalEventsOccurredMessage
 {
     std::string submitter_name;          //!< The name of the submitter which submitted the events.
-    std::vector<const Event *> occurred_events; //!< The list of Event that occurred
+    std::vector<const ExternalEvent *> occurred_events; //!< The list of Event that occurred
 };
 
 /**

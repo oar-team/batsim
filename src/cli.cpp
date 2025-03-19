@@ -198,7 +198,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         ->option_text("(<file> <start-time>)...");
 
     std::vector<std::string> external_events_files;
-    app.add_option("--events", external_events_files, "A file containing external events to inject in the simulation")
+    app.add_option("--ee,--external-events", external_events_files, "A file containing external events to inject in the simulation")
         ->group(input_group_name)
         ->option_text("<file>...")
         ->check(CLI::ExistingFile);
@@ -468,11 +468,11 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
     {
         const string & events_file = external_events_files[i];
 
-        MainArguments::EventListDescription desc;
+        MainArguments::ExternalEventListDescription desc;
         desc.filename = absolute_filename(events_file);
         desc.name = string("e") + to_string(i);
 
-        main_args.eventList_descriptions.push_back(desc);
+        main_args.externalEventList_descriptions.push_back(desc);
     }
 
     // Platform

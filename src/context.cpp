@@ -2,7 +2,7 @@
 
 BatsimContext::~BatsimContext()
 {
-    for (auto it : event_lists)
+    for (auto it : external_event_lists)
     {
         delete it.second;
     }

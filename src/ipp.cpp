@@ -277,8 +277,8 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_FORCE_SIMULATION_STOP:
             s = "SCHED_FORCE_SIMULATION_STOP";
             break;
-        case IPMessageType::EVENT_OCCURRED:
-            s = "EVENT_OCCURRED";
+        case IPMessageType::EXTERNAL_EVENTS_OCCURRED:
+            s = "EXTERNAL_EVENTS_OCCURRED";
             break;
         case IPMessageType::DIE:
             s = "DIE";
@@ -416,9 +416,9 @@ IPMessage::~IPMessage()
         {
             // No data in this event
         } break;
-        case IPMessageType::EVENT_OCCURRED:
+        case IPMessageType::EXTERNAL_EVENTS_OCCURRED:
         {
-            auto * msg = static_cast<EventOccurredMessage *>(data);
+            auto * msg = static_cast<ExternalEventsOccurredMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::DIE:
@@ -447,7 +447,7 @@ std::string submitter_type_to_string(SubmitterType type)
     // the switch, a compilation warning should help avoiding this bug.
     switch(type)
     {
-        case SubmitterType::EVENT_SUBMITTER:
+        case SubmitterType::EXTERNAL_EVENT_SUBMITTER:
             s = "Event";
             break;
         case SubmitterType::JOB_SUBMITTER:

@@ -15,7 +15,7 @@
 #include <batprotocol.hpp>
 
 #include "edc.hpp"
-#include "events.hpp"
+#include "external_events.hpp"
 #include "export.hpp"
 #include "jobs.hpp"
 #include "machines.hpp"
@@ -47,9 +47,9 @@ struct BatsimContext
     Machines machines;                              //!< The machines
     Workloads workloads;                            //!< The workloads
     Workflows workflows;                            //!< The workflows
-    std::map<std::string, EventList*> event_lists;  //!< The map of EventLists
-    std::unordered_map<std::string, simgrid::s4u::ActorPtr> job_submitter_actors; //!< The list of static_job_submitter SimGrid actors (accounts for workloads and workflows)
-    std::unordered_map<std::string, simgrid::s4u::ActorPtr> event_submitter_actors; //!< The list of static_event_submitter SimGrid actors
+    std::map<std::string, ExternalEventList*> external_event_lists;                 //!< The map of EventLists
+    std::unordered_map<std::string, simgrid::s4u::ActorPtr> job_submitter_actors;   //!< The list of static_job_submitter SimGrid actors (accounts for workloads and workflows)
+    std::unordered_map<std::string, simgrid::s4u::ActorPtr> external_event_submitter_actors; //!< The list of static_external_event_submitter SimGrid actors
     PStateChangeTracer pstate_tracer;               //!< The PStateChangeTracer
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
     MachineStateTracer machine_state_tracer;        //!< The MachineStateTracer

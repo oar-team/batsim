@@ -27,11 +27,11 @@ void configure_batsim_logging_output(const MainArguments & main_args);
 void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext * context, int & max_nb_machines_to_use);
 
 /**
- * @brief Loads the eventLists defined in Batsim arguments
+ * @brief Loads the externalEventLists defined in Batsim arguments
  * @param[in] main_args Batsim arguments
  * @param[in,out] context The BatsimContext
  */
-void load_eventLists(const MainArguments & main_args, BatsimContext * context);
+void load_external_event_lists(const MainArguments & main_args, BatsimContext * context);
 
 /**
  * @brief Starts the SimGrid processes that should be executed at the beginning of the simulation
