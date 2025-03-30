@@ -275,7 +275,7 @@ void server_on_submitter_bye(ServerData * data,
 
     if (submitter_type == SubmitterType::EXTERNAL_EVENT_SUBMITTER)
     {
-        data->context->event_submitter_actors.erase(message->submitter_name);
+        data->context->external_event_submitter_actors.erase(message->submitter_name);
 
         if(data->submitter_counters[submitter_type].nb_submitters_finished == data->submitter_counters[submitter_type].expected_nb_submitters)
         {
@@ -721,11 +721,11 @@ void server_on_force_simulation_stop(ServerData * data,
     data->context->job_submitter_actors.clear();
 
     // Static external events submitters
-    for (auto it : data->context->event_submitter_actors)
+    for (auto it : data->context->external_event_submitter_actors)
     {
         it.second->kill();
     }
-    data->context->event_submitter_actors.clear();
+    data->context->external_event_submitter_actors.clear();
 
     // Killer_processes
     for (auto it : data->killer_actors)

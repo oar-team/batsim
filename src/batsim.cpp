@@ -224,7 +224,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
     }
 
     // Let's run a static_event_submitter process for each list of event
-    context->event_submitter_actors.reserve(main_args.externalEventList_descriptions.size());
+    context->external_event_submitter_actors.reserve(main_args.externalEventList_descriptions.size());
     for (const MainArguments::ExternalEventListDescription & desc : main_args.externalEventList_descriptions)
     {
         string submitter_instance_name = "event_submitter_" + desc.name;
@@ -235,7 +235,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
                                     master_machine->host,
                                     actor_function,
                                     context, desc.name);
-        context->event_submitter_actors.emplace(submitter_instance_name, submitter_actor);
+        context->external_event_submitter_actors.emplace(submitter_instance_name, submitter_actor);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
     }
 
