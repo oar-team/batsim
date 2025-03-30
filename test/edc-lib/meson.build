@@ -22,6 +22,11 @@ rejecter = shared_library('rejecter', common + ['rejecter.cpp'],
   install: true,
 )
 
+do_nothing = shared_library('do-nothing', common + ['do-nothing.cpp'],
+  dependencies: deps,
+  install: true,
+)
+
 exec1by1 = shared_library('exec1by1', common + ['exec1by1.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep],
   install: true,
