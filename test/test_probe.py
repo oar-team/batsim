@@ -35,6 +35,6 @@ def test_energy(test_root_dir, behavior, inter_stop_probe_delay):
     }
 
     batargs = ["--energy-host"]
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'probe-energy', workload, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True), batsim_extra_args=batargs)
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'probe-energy', workload, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True), batsim_extra_args=batargs)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0

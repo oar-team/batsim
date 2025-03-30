@@ -99,6 +99,7 @@
             shellHook = ''
               export PLATFORM_DIR=$(realpath platforms)
               export WORKLOAD_DIR=$(realpath workloads)
+              export EXTERNAL_EVENTS_DIR=$(realpath events)
 
               echo Found debug_info source paths. ${builtins.concatStringsSep ":" DEBUG_SRC_DIRS}
               echo Run the following command to automatically load these directories to gdb.

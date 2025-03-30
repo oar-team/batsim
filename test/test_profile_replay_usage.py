@@ -206,7 +206,7 @@ def test_check_energy_consumed(test_root_dir):
     instance_name = f'{MOD_NAME}-{func_name}-{wload_name}'
 
     timeout = int(os.getenv('TEST_INSTANCE_TIMEOUT', '5')) * 3
-    batcmd, outdir, workload_file = prepare_instance(instance_name, test_root_dir, platform, 'fcfs', workload, batsim_extra_args=['--energy-host'])
+    batcmd, outdir, workload_file, _ = prepare_instance(instance_name, test_root_dir, platform, 'fcfs', workload, batsim_extra_args=['--energy-host'])
     p = run_batsim(batcmd, outdir, timeout=timeout)
     assert p.returncode == 0
 
@@ -256,4 +256,3 @@ def test_check_energy_consumed(test_root_dir):
         else:
             print('All jobs are valid!')
             print(merged[['job_id', 'valid', 'execution_time', 'expected_execution_time', 'consumed_energy', 'expected_consumed_energy']])
-

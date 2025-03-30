@@ -35,6 +35,6 @@ def test_afterd(test_root_dir, kill_delay, workload):
         'kill_delay': kill_delay,
     }
 
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'killer', workload, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True))
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'killer', workload, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True))
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0

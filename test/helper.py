@@ -7,9 +7,10 @@ import pandas as pd
 TEST_INSTANCE_TIMEOUT = int(os.getenv('TEST_INSTANCE_TIMEOUT', '5'))
 PLATFORM_DIR = os.environ['PLATFORM_DIR']
 WORKLOAD_DIR = os.environ['WORKLOAD_DIR']
+EXTERNAL_EVENTS_DIR = os.environ['EXTERNAL_EVENTS_DIR']
 EDC_DIR = os.environ['EDC_LD_LIBRARY_PATH']
 
-def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, workload: str=None, edc_init_content: str='', use_json: bool=False, batsim_extra_args: list[str]=None):
+def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, workload: str=None, external_event_files: [str]=None, edc_init_content: str='', use_json: bool=False, batsim_extra_args: list[str]=None):
     output_dir = f'{test_root_dir}/{name}'
     os.makedirs(output_dir, exist_ok=True)
 
@@ -31,6 +32,17 @@ def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, wor
             '--workload', workload_file
         ])
 
+    ee_files = []
+    if external_event_files is not None:
+        for file in external_event_files:
+            event_file = f'{EXTERNAL_EVENTS_DIR}/{file}.txt'
+            ee_files.append(event_file)
+
+        for ee_file in ee_files:
+            batsim_cmd.extend([
+                '--external-events', ee_file
+            ])
+
     if batsim_extra_args is not None:
         batsim_cmd += batsim_extra_args
 
@@ -39,7 +51,7 @@ def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, wor
     with open(descriptor, 'w') as f:
         f.write(shlex.join(batsim_cmd) + '\n')
 
-    return batsim_cmd, output_dir, workload_file
+    return batsim_cmd, output_dir, workload_file, ee_files
 
 def run_batsim(batsim_cmd, output_dir, timeout=None):
     used_timeout = TEST_INSTANCE_TIMEOUT
@@ -132,7 +144,7 @@ def check_job_duration_from_job_expected_duration(workload_file, outdir):
             print(printable_df)
 
 def run_instance_check_job_duration_and_state(test_root_dir, platform, workload, instance_name, edc, batsim_timeout=None):
-    batcmd, outdir, workload_file = prepare_instance(instance_name, test_root_dir, platform, edc, workload)
+    batcmd, outdir, workload_file, _ = prepare_instance(instance_name, test_root_dir, platform, edc, workload)
     p = run_batsim(batcmd, outdir, timeout=batsim_timeout)
     assert p.returncode == 0
 

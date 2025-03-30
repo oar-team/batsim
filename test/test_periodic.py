@@ -47,7 +47,7 @@ def test_cml_oneshot(test_root_dir, issue_all_calls_at_start, time_unit):
         'calls': [10, 100, 1000, 10000],
     }
 
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'call-later-oneshot', workload, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True))
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'call-later-oneshot', workload, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True))
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
@@ -69,7 +69,7 @@ def test_start0(test_root_dir, time_unit, is_infinite, is_probe):
     }
 
     batargs = ["--energy-host"]
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'periodic', workload, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True), batsim_extra_args=batargs)
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'periodic', workload, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True), batsim_extra_args=batargs)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
@@ -98,6 +98,6 @@ def test_rand(test_root_dir, seed, time_unit, is_infinite):
     }
 
     batargs = ["--energy-host"]
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'periodic', workload, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True), batsim_extra_args=batargs)
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'periodic', workload, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True), batsim_extra_args=batargs)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
