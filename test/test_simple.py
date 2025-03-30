@@ -74,7 +74,7 @@ def test_force_simu_stop(test_root_dir, use_json):
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}-' + str(int(use_json))
 
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'force_simu_stop', workload, use_json=use_json)
+    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'force-simu-stop', workload, use_json=use_json)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 

@@ -32,6 +32,6 @@ def test_dyn_register(test_root_dir, parameters):
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}-{init_option_str}'
 
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'dyn_register', workload, edc_init_content=init_option_str)
+    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'dyn-register', workload, edc_init_content=init_option_str)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == expected_ret_code

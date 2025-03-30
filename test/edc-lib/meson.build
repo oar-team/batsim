@@ -67,12 +67,12 @@ platform_check = shared_library('platform-check', common + ['platform-check.cpp'
   install: true,
 )
 
-force_simu_stop = shared_library('force_simu_stop', common + ['force_simu_stop.cpp'],
+force_simu_stop = shared_library('force-simu-stop', common + ['force-simu-stop.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep],
   install: true,
 )
 
-dyn_register = shared_library('dyn_register', common + ['dyn_register.cpp'],
+dyn_register = shared_library('dyn-register', common + ['dyn-register.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep],
   install: true,
 )
