@@ -45,8 +45,10 @@ void generate_parallel_task(
     communication_amount.resize(nb_executors*nb_executors, 0);
 
     // Retrieve the matrices from the profile
-    memcpy(computation_amount.data(), data->cpu, sizeof(double) * nb_executors);
-    memcpy(communication_amount.data(), data->com, sizeof(double) * nb_executors * nb_executors);
+    if (data->cpu != nullptr)
+        memcpy(computation_amount.data(), data->cpu, sizeof(double) * nb_executors);
+    if (data->com != nullptr)
+        memcpy(communication_amount.data(), data->com, sizeof(double) * nb_executors * nb_executors);
 }
 
 /**

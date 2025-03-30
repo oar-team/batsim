@@ -666,32 +666,41 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
         ParallelProfileData * data = new ParallelProfileData;
 
         auto * cpu_vector = prof->computation_vector();
-        unsigned int nb_res = cpu_vector->size();
+        auto * com_vector = prof->communication_matrix();
+        unsigned int nb_res = 0;
 
+        if (cpu_vector != nullptr && com_vector != nullptr) {
+            xbt_assert(com_vector->size() == cpu_vector->size() * cpu_vector->size(), "Invalid registration of profile '%s': inconsistent computation and communication vector sizes (%u, %u)", msg->profile_id.c_str(), cpu_vector->size(), com_vector->size());
+            nb_res = cpu_vector->size();
+        } else if (com_vector != nullptr) {
+            nb_res = sqrt(com_vector->size());
+            xbt_assert(nb_res * nb_res == com_vector->size(), "Invalid registration of profile '%s': communication-only parallel task has an invalid number of communications (%u): not the square of an integer", msg->profile_id.c_str(), com_vector->size());
+        } else {
+            nb_res = cpu_vector->size();
+        }
         data->nb_res = nb_res;
-        data->cpu = new double[nb_res];
-        for (unsigned int i = 0; i < nb_res; ++i)
-        {
-            data->cpu[i] = cpu_vector->Get(i);
 
-            xbt_assert(data->cpu[i] >= 0, "Invalid registration of profile '%s': elements of 'computation_vector' must be non-negative (%g)",
-                       msg->profile_id.c_str(), data->cpu[i]);
+        if (cpu_vector != nullptr) {
+            data->cpu = new double[nb_res];
+            for (unsigned int i = 0; i < nb_res; ++i)
+            {
+                data->cpu[i] = cpu_vector->Get(i);
+
+                xbt_assert(data->cpu[i] >= 0, "Invalid registration of profile '%s': elements of 'computation_vector' must be non-negative (%g)",
+                        msg->profile_id.c_str(), data->cpu[i]);
+            }
         }
 
-        unsigned int com_size = nb_res * nb_res;
-        auto * com_vector = prof->communication_matrix();
+        if (com_vector != nullptr) {
+            unsigned int com_size = nb_res * nb_res;
+            data->com = new double[com_size];
+            for (unsigned int i = 0; i < com_size; ++i)
+            {
+                data->com[i] = com_vector->Get(i);
 
-        xbt_assert(com_size == com_vector->size(),
-                   "Invalid registration of profile '%s': incoherent communication_matrix of size %d, expected size is %d",
-                   msg->profile_id.c_str(), com_vector->size(), com_size);
-
-        data->com = new double[com_size];
-        for (unsigned int i = 0; i < com_size; ++i)
-        {
-            data->com[i] = com_vector->Get(i);
-
-            xbt_assert(data->com[i] >= 0, "Invalid registration of profile '%s': elements of 'communication_matrix' must be non-negative (%g)",
-                       msg->profile_id.c_str(), data->com[i]);
+                xbt_assert(data->com[i] >= 0, "Invalid registration of profile '%s': elements of 'communication_matrix' must be non-negative (%g)",
+                        msg->profile_id.c_str(), data->com[i]);
+            }
         }
 
         profile->data = data;
