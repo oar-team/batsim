@@ -1,1 +1,6 @@
-{"type": "generic", "timestamp": 5.3, "data": "some data"}
+{"type": "generic", "timestamp":  0.0, "data": "some data 0.0"}
+{"type": "generic", "timestamp": 10.0, "data": "some data 10.0"}
+{"type": "generic", "timestamp": 20.0, "data": "some data 20.0"}
+{"type": "generic", "timestamp": 30.0, "data": "some data 30.0"}
+{"type": "generic", "timestamp": 40.0, "data": "some data 40.0"}
+{"type": "generic", "timestamp": 50.0, "data": "some data 50.0"}

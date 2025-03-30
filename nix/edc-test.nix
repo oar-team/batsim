@@ -52,6 +52,7 @@ stdenv.mkDerivation rec {
   EDC_LD_LIBRARY_PATH = "${batsim-edc-libs}/lib";
   PLATFORM_DIR = "${src}/platforms";
   WORKLOAD_DIR = "${src}/workloads";
+  EXTERNAL_EVENTS_DIR = "${src}/events";
 
   pytestArgs = "--html=./report/pytest_report.html --junit-xml=./report/pytest_report.xml";
   preBuild = lib.optionalString doCoverage ''

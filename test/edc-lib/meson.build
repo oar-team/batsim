@@ -81,3 +81,8 @@ dyn_register = shared_library('dyn-register', common + ['dyn-register.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep],
   install: true,
 )
+
+external_event_check = shared_library('external-event-check', common + ['external-event-check.cpp'],
+  dependencies: deps + [nlohmann_json_dep],
+  install: true,
+)
