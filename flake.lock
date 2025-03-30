@@ -13,11 +13,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1736945191,
-        "narHash": "sha256-uQFBsIlOdGg/X3QGgr3CzgkT7XY45WSVlwi9PD4mhY0=",
+        "lastModified": 1743332224,
+        "narHash": "sha256-MjR/xKshqsTeiN3/qwE2UljcoG2rayiliI0Y7b5Tf5w=",
         "ref": "refs/heads/main",
-        "rev": "b2fd2de16e92c8a83e4bdf4c95ee5435b43a5bb5",
-        "revCount": 162,
+        "rev": "521678807f24b871952b1d62729a62ee75c7ed4d",
+        "revCount": 175,
         "type": "git",
         "url": "https://framagit.org/batsim/batprotocol"
       },
