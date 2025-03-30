@@ -84,163 +84,146 @@ void Machines::create_machines(const BatsimContext *context,
         }
 
         // set the permissions using the role
-        machine->permissions = permissions_from_role(machine->properties["role"]);
-
-        if (context->energy_used)
+        std::string role_str = "";
+        if (machine->properties.find("role") != machine->properties.end())
         {
-            int nb_pstates = machine->host->get_pstate_count();
+            role_str = machine->properties["role"];
+        }
+        machine->permissions = permissions_from_role(role_str);
 
-            auto property_it = machine->properties.find("sleep_pstates");
+        int nb_pstates = machine->host->get_pstate_count();
 
-            // Let the sleep_pstates property be traversed in order to find the sleep and virtual transition pstates
-            if (property_it != machine->properties.end())
+        auto property_it = machine->properties.find("sleep_pstates");
+
+        // Let the sleep_pstates property be traversed in order to find the sleep and virtual transition pstates
+        if (property_it != machine->properties.end())
+        {
+            string sleep_states_str = property_it->second;
+
+            vector<string> sleep_pstate_triplets;
+            boost::split(sleep_pstate_triplets, sleep_states_str, boost::is_any_of(","), boost::token_compress_on);
+
+            for (const string & triplet : sleep_pstate_triplets)
             {
-                string sleep_states_str = property_it->second;
+                vector<string> pstates;
+                boost::split(pstates, triplet, boost::is_any_of(":"), boost::token_compress_on);
+                xbt_assert(pstates.size() == 3, "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
+                           " each comma-separated part must be composed of three pstates of three colon-separated pstates, whereas"
+                           " '%s' is not valid. Each comma-separated part represents one sleep pstate sleep_ps and its virtual pstates"
+                           " on_ps and off_ps used to simulate the switch ON and switch OFF mechanisms."
+                           " Example of a valid comma-separated part: 0:1:3, where sleep_ps=0, on_ps=1 and off_ps=3",
+                           context->platform_filename.c_str(), machine->name.c_str(), triplet.c_str());
 
-                vector<string> sleep_pstate_triplets;
-                boost::split(sleep_pstate_triplets, sleep_states_str, boost::is_any_of(","), boost::token_compress_on);
-
-                for (const string & triplet : sleep_pstate_triplets)
+                int sleep_ps, on_ps, off_ps;
+                bool conversion_succeeded = true;
+                (void) conversion_succeeded; // Avoids a warning if assertions are ignored
+                try
                 {
-                    vector<string> pstates;
-                    boost::split(pstates, triplet, boost::is_any_of(":"), boost::token_compress_on);
-                    xbt_assert(pstates.size() == 3, "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
-                               " each comma-separated part must be composed of three pstates of three colon-separated pstates, whereas"
-                               " '%s' is not valid. Each comma-separated part represents one sleep pstate sleep_ps and its virtual pstates"
-                               " on_ps and off_ps used to simulate the switch ON and switch OFF mechanisms."
-                               " Example of a valid comma-separated part: 0:1:3, where sleep_ps=0, on_ps=1 and off_ps=3",
-                               context->platform_filename.c_str(), machine->name.c_str(), triplet.c_str());
+                    boost::trim(pstates[0]);
+                    boost::trim(pstates[1]);
+                    boost::trim(pstates[2]);
 
-                    int sleep_ps, on_ps, off_ps;
-                    bool conversion_succeeded = true;
-                    (void) conversion_succeeded; // Avoids a warning if assertions are ignored
-                    try
-                    {
-                        boost::trim(pstates[0]);
-                        boost::trim(pstates[1]);
-                        boost::trim(pstates[2]);
-
-                        sleep_ps = static_cast<int>(boost::lexical_cast<unsigned int>(pstates[0]));
-                        off_ps = static_cast<int>(boost::lexical_cast<unsigned int>(pstates[1]));
-                        on_ps = static_cast<int>(boost::lexical_cast<unsigned int>(pstates[2]));
-                    }
-                    catch(boost::bad_lexical_cast &)
-                    {
-                        conversion_succeeded = false;
-                    }
-
-                    xbt_assert(conversion_succeeded, "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
-                               " the pstates of the comma-separated sleep pstate '%s' are invalid: impossible to convert the pstates to"
-                               " unsigned integers", context->platform_filename.c_str(), machine->name.c_str(), triplet.c_str());
-
-                    xbt_assert(sleep_ps >= 0 && sleep_ps < nb_pstates, "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
-                               " the pstates of the comma-separated sleep pstate '%s' are invalid: the pstate %d does not exist",
-                               context->platform_filename.c_str(), machine->name.c_str(), triplet.c_str(), sleep_ps);
-                    xbt_assert(on_ps >= 0 && on_ps < nb_pstates, "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
-                               " the pstates of the comma-separated sleep pstate '%s' are invalid: the pstate %d does not exist",
-                               context->platform_filename.c_str(), machine->name.c_str(), triplet.c_str(), on_ps);
-                    xbt_assert(off_ps >= 0 && off_ps < nb_pstates, "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
-                               " the pstates of the comma-separated sleep pstate '%s' are invalid: the sleep pstate %d does not exist",
-                               context->platform_filename.c_str(), machine->name.c_str(), triplet.c_str(), off_ps);
-
-                    if (machine->has_pstate(sleep_ps))
-                    {
-                        if (machine->pstates[sleep_ps] == PStateType::SLEEP_PSTATE)
-                        {
-                            XBT_ERROR("Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
-                                      " the pstate %d is defined several times, which is forbidden.",
-                                      context->platform_filename.c_str(), machine->name.c_str(), sleep_ps);
-                        }
-                        else if (machine->pstates[sleep_ps] == PStateType::TRANSITION_VIRTUAL_PSTATE)
-                        {
-                            XBT_ERROR("Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
-                                      " the pstate %d is defined as a sleep pstate and as a virtual transition pstate."
-                                      " A pstate can either be a computation one, a sleeping one or a virtual transition one, but combinations are forbidden.",
-                                      context->platform_filename.c_str(), machine->name.c_str(), sleep_ps);
-                        }
-                        else
-                        {
-                            XBT_ERROR("Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
-                                      " the pstate %d is defined as a sleep pstate and as another type of pstate."
-                                      " A pstate can either be a computation one, a sleeping one or a virtual transition one, but combinations are forbidden.",
-                                      context->platform_filename.c_str(), machine->name.c_str(), sleep_ps);
-                        }
-                    }
-
-                    if (machine->has_pstate(on_ps))
-                    {
-                        xbt_assert(machine->pstates[on_ps] == PStateType::TRANSITION_VIRTUAL_PSTATE,
-                                   "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
-                                   " a pstate can either be a computation one, a sleeping one or a virtual transition one, but combinations are forbidden."
-                                   " Pstate %d is defined as a virtual transition pstate but also as another type of pstate.",
-                                   context->platform_filename.c_str(), machine->name.c_str(), on_ps);
-                    }
-
-                    if (machine->has_pstate(off_ps))
-                    {
-                        xbt_assert(machine->pstates[off_ps] == PStateType::TRANSITION_VIRTUAL_PSTATE,
-                                   "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
-                                   " a pstate can either be a computation one, a sleeping one or a virtual transition one, but combinations are forbidden."
-                                   " Pstate %d is defined as a virtual transition pstate but also as another type of pstate.",
-                                   context->platform_filename.c_str(), machine->name.c_str(), off_ps);
-                    }
-
-                    SleepPState * sleep_pstate = new SleepPState;
-                    sleep_pstate->sleep_pstate = sleep_ps;
-                    sleep_pstate->switch_on_virtual_pstate = on_ps;
-                    sleep_pstate->switch_off_virtual_pstate = off_ps;
-
-                    machine->sleep_pstates[sleep_ps] = sleep_pstate;
-                    machine->pstates[sleep_ps] = PStateType::SLEEP_PSTATE;
-                    machine->pstates[on_ps] = PStateType::TRANSITION_VIRTUAL_PSTATE;
-                    machine->pstates[off_ps] = PStateType::TRANSITION_VIRTUAL_PSTATE;
+                    sleep_ps = static_cast<int>(boost::lexical_cast<unsigned int>(pstates[0]));
+                    off_ps = static_cast<int>(boost::lexical_cast<unsigned int>(pstates[1]));
+                    on_ps = static_cast<int>(boost::lexical_cast<unsigned int>(pstates[2]));
                 }
-            }
-
-            // Let the computation pstates be defined by those who are not sleep pstates nor virtual transition pstates
-            for (int ps = 0; ps < nb_pstates; ++ps)
-            {
-                if (!machine->has_pstate(ps))
+                catch(boost::bad_lexical_cast &)
                 {
-                    // TODO: check that the pstate computational power is not null
-                    machine->pstates[ps] = PStateType::COMPUTATION_PSTATE;
+                    conversion_succeeded = false;
                 }
+
+                xbt_assert(conversion_succeeded, "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
+                           " the pstates of the comma-separated sleep pstate '%s' are invalid: impossible to convert the pstates to"
+                           " unsigned integers", context->platform_filename.c_str(), machine->name.c_str(), triplet.c_str());
+
+                xbt_assert(sleep_ps >= 0 && sleep_ps < nb_pstates, "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
+                           " the pstates of the comma-separated sleep pstate '%s' are invalid: the pstate %d does not exist",
+                           context->platform_filename.c_str(), machine->name.c_str(), triplet.c_str(), sleep_ps);
+                xbt_assert(on_ps >= 0 && on_ps < nb_pstates, "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
+                           " the pstates of the comma-separated sleep pstate '%s' are invalid: the pstate %d does not exist",
+                           context->platform_filename.c_str(), machine->name.c_str(), triplet.c_str(), on_ps);
+                xbt_assert(off_ps >= 0 && off_ps < nb_pstates, "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
+                           " the pstates of the comma-separated sleep pstate '%s' are invalid: the sleep pstate %d does not exist",
+                           context->platform_filename.c_str(), machine->name.c_str(), triplet.c_str(), off_ps);
+
+                if (machine->has_pstate(sleep_ps))
+                {
+                    if (machine->pstates[sleep_ps] == PStateType::SLEEP_PSTATE)
+                    {
+                        XBT_ERROR("Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
+                                  " the pstate %d is defined several times, which is forbidden.",
+                                  context->platform_filename.c_str(), machine->name.c_str(), sleep_ps);
+                    }
+                    else if (machine->pstates[sleep_ps] == PStateType::TRANSITION_VIRTUAL_PSTATE)
+                    {
+                        XBT_ERROR("Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
+                                  " the pstate %d is defined as a sleep pstate and as a virtual transition pstate."
+                                  " A pstate can either be a computation one, a sleeping one or a virtual transition one, but combinations are forbidden.",
+                                  context->platform_filename.c_str(), machine->name.c_str(), sleep_ps);
+                    }
+                    else
+                    {
+                        XBT_ERROR("Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
+                                  " the pstate %d is defined as a sleep pstate and as another type of pstate."
+                                  " A pstate can either be a computation one, a sleeping one or a virtual transition one, but combinations are forbidden.",
+                                  context->platform_filename.c_str(), machine->name.c_str(), sleep_ps);
+                    }
+                }
+
+                if (machine->has_pstate(on_ps))
+                {
+                    xbt_assert(machine->pstates[on_ps] == PStateType::TRANSITION_VIRTUAL_PSTATE,
+                               "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
+                               " a pstate can either be a computation one, a sleeping one or a virtual transition one, but combinations are forbidden."
+                               " Pstate %d is defined as a virtual transition pstate but also as another type of pstate.",
+                               context->platform_filename.c_str(), machine->name.c_str(), on_ps);
+                }
+
+                if (machine->has_pstate(off_ps))
+                {
+                    xbt_assert(machine->pstates[off_ps] == PStateType::TRANSITION_VIRTUAL_PSTATE,
+                               "Invalid platform file '%s': host '%s' has an invalid 'sleep_pstates' property:"
+                               " a pstate can either be a computation one, a sleeping one or a virtual transition one, but combinations are forbidden."
+                               " Pstate %d is defined as a virtual transition pstate but also as another type of pstate.",
+                               context->platform_filename.c_str(), machine->name.c_str(), off_ps);
+                }
+
+                SleepPState * sleep_pstate = new SleepPState;
+                sleep_pstate->sleep_pstate = sleep_ps;
+                sleep_pstate->switch_on_virtual_pstate = on_ps;
+                sleep_pstate->switch_off_virtual_pstate = off_ps;
+
+                machine->sleep_pstates[sleep_ps] = sleep_pstate;
+                machine->pstates[sleep_ps] = PStateType::SLEEP_PSTATE;
+                machine->pstates[on_ps] = PStateType::TRANSITION_VIRTUAL_PSTATE;
+                machine->pstates[off_ps] = PStateType::TRANSITION_VIRTUAL_PSTATE;
             }
         }
 
-        /* Guard related to the famous OBFH (https://github.com/oar-team/batsim/issues/21), which may not occur anymore.
-        if (context->registration_sched_enabled)
+        // Let the computation pstates be defined by those who are not sleep pstates nor virtual transition pstates
+        for (int ps = 0; ps < nb_pstates; ++ps)
         {
-            bool contains_sleep_pstates = (machine->properties.count("sleep_pstates") == 1);
-            xbt_assert(!contains_sleep_pstates,
-                       "Using dynamic job submissions AND plaforms with energy information "
-                       "is currently forbidden (https://github.com/oar-team/batsim/issues/21).");
-        }*/
+            if (!machine->has_pstate(ps))
+            {
+                machine->pstates[ps] = PStateType::COMPUTATION_PSTATE;
+            }
+        }
+
 
         // Machines that may compute flops must have a positive computing speed
         if ((machine->permissions & Permissions::COMPUTE_FLOPS) == Permissions::COMPUTE_FLOPS)
         {
-            if (context->energy_used)
+            // Check all computing pstates
+            for (auto mit : machine->pstates)
             {
-                // Check all computing pstates
-                for (auto mit : machine->pstates)
+                int pstate_id = mit.first;
+                PStateType & pstate_type = mit.second;
+                if (pstate_type == PStateType::COMPUTATION_PSTATE)
                 {
-                    int pstate_id = mit.first;
-                    PStateType & pstate_type = mit.second;
-                    if (pstate_type == PStateType::COMPUTATION_PSTATE)
-                    {
-                        xbt_assert(machine->host->get_pstate_speed(pstate_id) > 0,
-                                   "Invalid platform file '%s': host '%s' has an invalid (non-positive computing speed) computing pstate %d.",
-                                   context->platform_filename.c_str(), machine->name.c_str(), pstate_id);
-                    }
+                    xbt_assert(machine->host->get_pstate_speed(pstate_id) > 0,
+                               "Invalid platform file '%s': host '%s' has an invalid (non-positive computing speed) computing pstate %d.",
+                               context->platform_filename.c_str(), machine->name.c_str(), pstate_id);
                 }
-            }
-            else
-            {
-                // Only one state to check in this case.
-                xbt_assert(sg_host_get_speed(machine->host) > 0,
-                           "Invalid platform file '%s': host '%s' is a compute node but has an invalid (non-positive) computing speed.",
-                           context->platform_filename.c_str(), machine->name.c_str());
             }
         }
 
@@ -492,16 +475,6 @@ void Machines::update_machines_on_job_run(const JobPtr job,
         }
 
         machine->jobs_being_computed.insert(job);
-
-        if (previous_top_job == nullptr || previous_top_job != *machine->jobs_being_computed.begin())
-        {
-            if (_tracer != nullptr)
-            {
-                _tracer->set_machine_as_computing_job(machine->id,
-                                                      (*machine->jobs_being_computed.begin())->id,
-                                                      simgrid::s4u::Engine::get_clock());
-            }
-        }
     }
 
     if (context->trace_machine_states)
@@ -526,38 +499,12 @@ void Machines::update_machines_on_job_end(const JobPtr job,
         size_t ret = machine->jobs_being_computed.erase(job);
         (void) ret; // Avoids a warning if assertions are ignored
         xbt_assert(ret == 1, "could not erase job '%s' from jobs being computed of machine %d", job->id.to_cstring(), machine_id);
-
-        if (machine->jobs_being_computed.empty())
-        {
-            if (machine->state != MachineState::UNAVAILABLE)
-            {
-                machine->update_machine_state(MachineState::IDLE);
-                if (_tracer != nullptr)
-                {
-                    _tracer->set_machine_idle(machine->id, simgrid::s4u::Engine::get_clock());
-                }
-            }
-        }
-        else if (*machine->jobs_being_computed.begin() != previous_top_job)
-        {
-            if (_tracer != nullptr)
-            {
-                _tracer->set_machine_as_computing_job(machine->id,
-                                                      (*machine->jobs_being_computed.begin())->id,
-                                                      simgrid::s4u::Engine::get_clock());
-            }
-        }
     }
 
     if (context->trace_machine_states)
     {
         context->machine_state_tracer.write_machine_states(simgrid::s4u::Engine::get_clock());
     }
-}
-
-void Machines::set_tracer(PajeTracer *tracer)
-{
-    _tracer = tracer;
 }
 
 string machine_state_to_string(MachineState state)
@@ -710,7 +657,7 @@ std::shared_ptr<std::vector<double> > Machine::pstate_speeds() const
 {
     std::shared_ptr<std::vector<double> > speeds(new std::vector<double>);
     speeds->reserve(host->get_pstate_count());
-    for (int i = 0; i < host->get_pstate_count(); ++i)
+    for (long unsigned int i = 0; i < host->get_pstate_count(); ++i)
     {
         speeds->push_back(host->get_pstate_speed(i));
     }

@@ -14,6 +14,10 @@
 #include <xbt/asserts.h>
 
 #include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
+#include "workload.hpp"
 
 using namespace std;
 using namespace rapidjson;
@@ -44,12 +48,13 @@ void Profiles::load_from_json(const Document &doc, const string & filename)
 
         xbt_assert(key.IsString(), "%s: all children of the 'profiles' object must have a "
                    "string key", error_prefix.c_str());
-        string profile_name = key.GetString();
+        string profile_name = _workload->name + "!" + key.GetString(); // Unique profile name
 
-        auto profile = Profile::from_json(profile_name, value, error_prefix, true, filename);
+        auto profile = Profile::from_json(profile_name, value, _workload, error_prefix, filename);
         xbt_assert(!exists(string(key.GetString())), "%s: duplication of profile name '%s'",
                    error_prefix.c_str(), key.GetString());
-        _profiles[string(key.GetString())] = profile;
+
+        _profiles[profile_name] = profile;
     }
 }
 
@@ -93,6 +98,7 @@ void Profiles::add_profile(const std::string & profile_name,
                profile_name.c_str());
 
     _profiles[profile_name] = profile;
+    profile->workload = _workload;
 }
 
 void Profiles::remove_profile(const std::string & profile_name)
@@ -131,6 +137,12 @@ void Profiles::remove_unreferenced_profiles()
     }
 }
 
+
+void Profiles::set_workload(Workload *workload)
+{
+    _workload = workload;
+}
+
 const std::unordered_map<std::string, ProfilePtr> Profiles::profiles() const
 {
     return _profiles;
@@ -158,7 +170,7 @@ ParallelProfileData::~ParallelProfileData()
 
 Profile::~Profile()
 {
-    XBT_INFO("Profile '%s' is being deleted.", name.c_str());
+    XBT_INFO("Profile '%s' is being deleted (workload %s).", name.c_str(), workload->name.c_str());
     if (type == ProfileType::DELAY)
     {
         auto * d = static_cast<DelayProfileData *>(data);
@@ -188,7 +200,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::REPLAY_SMPI)
     {
-        auto * d = static_cast<ReplaySmpiProfileData *>(data);
+        auto * d = static_cast<TraceReplayProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -197,7 +209,7 @@ Profile::~Profile()
     }
     else if (type == ProfileType::REPLAY_USAGE)
     {
-        auto * d = static_cast<ReplayUsageProfileData *>(data);
+        auto * d = static_cast<TraceReplayProfileData *>(data);
         if (d != nullptr)
         {
             delete d;
@@ -231,24 +243,6 @@ Profile::~Profile()
             d = nullptr;
         }
     }
-    else if (type == ProfileType::SCHEDULER_SEND)
-    {
-        auto * d = static_cast<SchedulerSendProfileData *>(data);
-        if (d != nullptr)
-        {
-            delete d;
-            d = nullptr;
-        }
-    }
-    else if (type == ProfileType::SCHEDULER_RECV)
-    {
-        auto * d = static_cast<SchedulerRecvProfileData *>(data);
-        if (d != nullptr)
-        {
-            delete d;
-            d = nullptr;
-        }
-    }
     else
     {
         XBT_ERROR("Deletion of an unknown profile type (%d)", static_cast<int>(type));
@@ -257,15 +251,16 @@ Profile::~Profile()
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
 ProfilePtr Profile::from_json(const std::string & profile_name,
-                            const rapidjson::Value & json_desc,
-                            const std::string & error_prefix,
-                            bool is_from_a_file,
-                            const std::string & json_filename)
+                              const rapidjson::Value & json_desc,
+                              Workload * workload,
+                              const std::string & error_prefix,
+                              const std::string & json_filename)
 {
     (void) error_prefix; // Avoids a warning if assertions are ignored
 
     auto profile = std::make_shared<Profile>();
-    profile->name = profile_name;
+    profile->name = profile_name; // Must be of the form "workload!profile_name"
+    profile->workload = workload;
 
     xbt_assert(json_desc.IsObject(), "%s: profile '%s' value must be an object",
                error_prefix.c_str(), profile_name.c_str());
@@ -276,14 +271,12 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
     string profile_type = json_desc["type"].GetString();
 
-    int return_code = 0;
     if (json_desc.HasMember("ret"))
     {
-        return_code = json_desc["ret"].GetInt();
+        profile->return_code = json_desc["ret"].GetInt();;
     }
-    profile->return_code = return_code;
 
-    if (profile_type == "delay")
+    if (profile_type == "DelayProfile")
     {
         profile->type = ProfileType::DELAY;
         DelayProfileData * data = new DelayProfileData;
@@ -299,7 +292,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "ptask")
+    else if (profile_type == "ParallelTaskProfile")
     {
         profile->type = ProfileType::PTASK;
         ParallelProfileData * data = new ParallelProfileData;
@@ -349,7 +342,7 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
 
         profile->data = data;
     }
-    else if (profile_type == "ptask_homogeneous")
+    else if (profile_type == "ParallelTaskHomogeneousProfile")
     {
         profile->type = ProfileType::PTASK_HOMOGENEOUS;
         ParallelHomogeneousProfileData * data = new ParallelHomogeneousProfileData;
@@ -377,16 +370,16 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
                 error_prefix.c_str(), profile_name.c_str());
 
             std::string strategy_str = json_desc["generation_strategy"].GetString();
-            if (strategy_str == "defined_amount_used_for_each_value")
+            if (strategy_str == "DefinedAmountsUsedForEachValue")
                 strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue;
-            else if (strategy_str == "defined_amount_spread_uniformly")
+            else if (strategy_str == "DefinedAmountsSpreadUniformly")
                 strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsSpreadUniformly;
         }
         data->strategy = strategy;
 
         profile->data = data;
     }
-    else if (profile_type == "sequential_composition")
+    else if (profile_type == "SequentialCompositionProfile")
     {
         profile->type = ProfileType::SEQUENTIAL_COMPOSITION;
         SequenceProfileData * data = new SequenceProfileData;
@@ -396,14 +389,11 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         {
             xbt_assert(json_desc["repeat"].IsInt(), "%s: profile '%s' has a non-integral 'repeat' field",
                    error_prefix.c_str(), profile_name.c_str());
-            xbt_assert(json_desc["repeat"].GetInt() >= 0, "%s: profile '%s' has a negative 'repeat' field (%d)",
+            xbt_assert(json_desc["repeat"].GetInt() > 0, "%s: profile '%s' has a non-strictly-positive 'repeat' field (%d)",
                    error_prefix.c_str(), profile_name.c_str(), json_desc["repeat"].GetInt());
             repeat = static_cast<unsigned int>(json_desc["repeat"].GetInt());
         }
-        data->repeat = repeat;
-
-        xbt_assert(data->repeat > 0, "%s: profile '%s' has a non-strictly-positive 'repeat' field (%d)",
-                   error_prefix.c_str(), profile_name.c_str(), data->repeat);
+        data->repetition_count = repeat;
 
         xbt_assert(json_desc.HasMember("seq"), "%s: profile '%s' has no 'seq' field",
                    error_prefix.c_str(), profile_name.c_str());
@@ -412,15 +402,21 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         const Value & seq = json_desc["seq"];
         xbt_assert(seq.Size() > 0, "%s: profile '%s' has an invalid array 'seq': its size must be "
                    "strictly positive", error_prefix.c_str(), profile_name.c_str());
-        data->sequence.reserve(seq.Size());
+        data->sequence_names.reserve(seq.Size());
         for (unsigned int i = 0; i < seq.Size(); ++i)
         {
-            data->sequence.push_back(string(seq[i].GetString()));
+            std::string sub_profile_name = seq[i].GetString();
+            if (sub_profile_name.find(workload->name) == std::string::npos)
+            {
+                // the workload name is not present in the profile name
+                sub_profile_name = workload->name + "!" + sub_profile_name;
+            }
+            data->sequence_names.push_back(sub_profile_name);
         }
 
         profile->data = data;
     }
-    else if (profile_type == "ptask_on_storage_homogeneous")
+    else if (profile_type == "ParallelTaskOnStorageHomogeneousProfile")
     {
         profile->type = ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS;
         ParallelTaskOnStorageHomogeneousProfileData * data = new ParallelTaskOnStorageHomogeneousProfileData;
@@ -460,10 +456,24 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
             data->storage_label = json_desc[key.c_str()].GetString();
         }
 
-        // TODO: strategy
+        auto strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue;
+        if (json_desc.HasMember("generation_strategy"))
+        {
+            xbt_assert(json_desc["generation_strategy"].IsString(), "%s: profile '%s' has a non-string 'generation_strategy' field",
+                       error_prefix.c_str(), profile_name.c_str());
+
+            std::string strategy_str = json_desc["generation_strategy"].GetString();
+            if (strategy_str == "DefinedAmountsUsedForEachValue")
+                strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsUsedForEachValue;
+            else if (strategy_str == "DefinedAmountsSpreadUniformly")
+                strategy = batprotocol::fb::HomogeneousParallelTaskGenerationStrategy_DefinedAmountsSpreadUniformly;
+        }
+        data->strategy = strategy;
+
+
         profile->data = data;
     }
-    else if (profile_type == "ptask_data_staging_between_storages")
+    else if (profile_type == "ParallelTaskDataStagingBetweenStoragesProfile")
     {
         profile->type = ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES;
         DataStagingProfileData * data = new DataStagingProfileData;
@@ -491,95 +501,25 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         data->to_storage_label = json_desc["to"].GetString();
 
         profile->data = data;
-
-        // TODO: check that associated jobs request 0 resources
     }
-    else if (profile_type == "send")
+    else if (profile_type == "ForkJoinCompositionProfile")
     {
-        profile->type = ProfileType::SCHEDULER_SEND;
-        SchedulerSendProfileData * data = new SchedulerSendProfileData;
-
-        xbt_assert(json_desc.HasMember("msg"), "%s: profile '%s' has no 'msg' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["msg"].IsObject(), "%s: profile '%s' field 'msg' is no object",
-                   error_prefix.c_str(), profile_name.c_str());
-
-        data->message.CopyFrom(json_desc["msg"], data->message.GetAllocator());
-
-        if (json_desc.HasMember("sleeptime"))
-        {
-            xbt_assert(json_desc["sleeptime"].IsNumber(),
-                       "%s: profile '%s' has a non-number 'sleeptime' field",
-                       error_prefix.c_str(), profile_name.c_str());
-            data->sleeptime = json_desc["sleeptime"].GetDouble();
-            xbt_assert(data->sleeptime > 0,
-                       "%s: profile '%s' has a non-positive 'sleeptime' field (%g)",
-                       error_prefix.c_str(), profile_name.c_str(), data->sleeptime);
-        }
-        else
-        {
-            data->sleeptime = 0.0000001;
-        }
-        profile->data = data;
+        xbt_die("Handling of profile ForkJoin Composition not implemented yet");
     }
-    else if (profile_type == "recv")
+    else if (profile_type == "ParallelTaskMergeCompositionProfile")
     {
-        profile->type = ProfileType::SCHEDULER_RECV;
-        SchedulerRecvProfileData * data = new SchedulerRecvProfileData;
-
-        data->regex = string(".*");
-        if (json_desc.HasMember("regex"))
-        {
-            data->regex = json_desc["regex"].GetString();
-        }
-
-        data->on_success = string("");
-        if (json_desc.HasMember("success"))
-        {
-            data->on_success = json_desc["success"].GetString();
-        }
-
-        data->on_failure = string("");
-        if (json_desc.HasMember("failure"))
-        {
-            data->on_failure = json_desc["failure"].GetString();
-        }
-
-        data->on_timeout = string("");
-        if (json_desc.HasMember("timeout"))
-        {
-            data->on_timeout = json_desc["timeout"].GetString();
-        }
-
-        if (json_desc.HasMember("polltime"))
-        {
-            xbt_assert(json_desc["polltime"].IsNumber(),
-                       "%s: profile '%s' has a non-number 'polltime' field",
-                       error_prefix.c_str(), profile_name.c_str());
-            data->polltime = json_desc["polltime"].GetDouble();
-            xbt_assert(data->polltime > 0,
-                       "%s: profile '%s' has a non-positive 'polltime' field (%g)",
-                       error_prefix.c_str(), profile_name.c_str(), data->polltime);
-        }
-        else
-        {
-            data->polltime = 0.005;
-        }
-        profile->data = data;
+        xbt_die("Handling of profile Parallel Task Merge Composition not implemented yet");
     }
-    else if (profile_type == "trace_replay")
+    else if (profile_type == "TraceReplayProfile")
     {
         xbt_assert(json_desc.HasMember("trace_type"), "%s: profile '%s' has no 'trace_type' field", error_prefix.c_str(), profile_name.c_str());
         xbt_assert(json_desc["trace_type"].IsString(), "%s: profile '%s' has a non-string 'trace_type' field", error_prefix.c_str(), profile_name.c_str());
         const string trace_type = json_desc["trace_type"].GetString();
 
         // retrieve trace filenames
-        xbt_assert(json_desc.HasMember("trace_file"), "%s: profile '%s' has no 'trace_file' field", error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc["trace_file"].IsString(), "%s: profile '%s' has a non-string 'trace_file' field", error_prefix.c_str(), profile_name.c_str());
-        const string trace_filename = json_desc["trace_file"].GetString();
-
-        xbt_assert(is_from_a_file, "Trying to create a trace_replay profile from another source than a file workload, which is not implemented at the moment.");
-        (void) is_from_a_file; // Avoids a warning if assertions are ignored
+        xbt_assert(json_desc.HasMember("filename"), "%s: profile '%s' has no 'filename' field", error_prefix.c_str(), profile_name.c_str());
+        xbt_assert(json_desc["filename"].IsString(), "%s: profile '%s' has a non-string 'filename' field", error_prefix.c_str(), profile_name.c_str());
+        const string trace_filename = json_desc["filename"].GetString();
 
         fs::path base_dir = json_filename;
         base_dir = base_dir.parent_path();
@@ -603,22 +543,20 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
             trace_filenames.push_back(rank_trace_path.string());
         }
 
-        string filenames = boost::algorithm::join(trace_filenames, ", ");
-        XBT_INFO("Filenames of profile '%s': [%s]", profile_name.c_str(), filenames.c_str());
+        XBT_INFO("Filenames of profile '%s': [%s]", profile_name.c_str(), boost::algorithm::join(trace_filenames, ", ").c_str());
 
-        if (trace_type == "smpi")
+        auto * data = new TraceReplayProfileData;
+        data->filename = trace_filename;
+        data->trace_filenames = trace_filenames;
+        profile->data = data;
+
+        if (trace_type == "SMPI")
         {
             profile->type = ProfileType::REPLAY_SMPI;
-            auto * data = new ReplaySmpiProfileData;
-            data->trace_filenames = trace_filenames;
-            profile->data = data;
         }
-        else if (trace_type == "usage")
+        else if (trace_type == "FractionalComputation")
         {
             profile->type = ProfileType::REPLAY_USAGE;
-            auto * data = new ReplayUsageProfileData;
-            data->trace_filenames = trace_filenames;
-            profile->data = data;
         }
         else
         {
@@ -631,20 +569,37 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
                 profile_name.c_str(), profile_type.c_str());
     }
 
+    // read extra_data
+    if (json_desc.HasMember("extra_data")) {
+        if (json_desc["extra_data"].IsString())
+            profile->extra_data = json_desc["extra_data"].GetString();
+        else if (json_desc["extra_data"].IsObject() || json_desc["extra_data"].IsArray()) {
+            // convert json content to string
+            StringBuffer buffer;
+            rapidjson::Writer<StringBuffer> writer(buffer);
+            json_desc["extra_data"].Accept(writer);
+            profile->extra_data = std::string(buffer.GetString(), buffer.GetSize());
+        }
+        else
+            xbt_assert(false, "%s: profile %s has an 'extra_data' field that is not a string nor an object",
+                       error_prefix.c_str(), profile->name.c_str());
+    }
+
     return profile;
 }
 
 // Do NOT remove namespaces in the arguments (to avoid doxygen warnings)
 ProfilePtr Profile::from_json(const std::string & profile_name,
-                            const std::string & json_str,
-                            const std::string & error_prefix)
+                              const std::string & json_str,
+                              Workload * workload,
+                              const std::string & error_prefix)
 {
     Document doc;
     doc.Parse(json_str.c_str());
     xbt_assert(!doc.HasParseError(), "%s: Cannot be parsed. Content (between '##'):\n#%s#",
                error_prefix.c_str(), json_str.c_str());
 
-    return Profile::from_json(profile_name, doc, error_prefix, false);
+    return Profile::from_json(profile_name, doc, workload, error_prefix);
 }
 
 bool Profile::is_rigid() const
@@ -669,14 +624,14 @@ std::string profile_type_to_string(const ProfileType & type)
     case ProfileType::PTASK_HOMOGENEOUS:
         str = "PTASK_HOMOGENEOUS";
         break;
-    case ProfileType::REPLAY_SMPI:
-        str = "REPLAY_SMPI";
-        break;
-    case ProfileType::REPLAY_USAGE:
-        str = "REPLAY_USAGE";
-        break;
     case ProfileType::SEQUENTIAL_COMPOSITION:
         str = "SEQUENTIAL_COMPOSITION";
+        break;
+    case ProfileType::FORKJOIN_COMPOSITION:
+        str = "FORKJOIN_COMPOSITION";
+        break;
+    case ProfileType::PTASK_MERGE_COMPOSITION:
+        str = "PTASK_MERGE_COMPOSITION";
         break;
     case ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS:
         str = "PTASK_ON_STORAGE_HOMOGENEOUS";
@@ -684,11 +639,11 @@ std::string profile_type_to_string(const ProfileType & type)
     case ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES:
         str = "PTASK_DATA_STAGING_BETWEEN_STORAGES";
         break;
-    case ProfileType::SCHEDULER_SEND:
-        str = "SCHEDULER_SEND";
+    case ProfileType::REPLAY_SMPI:
+        str = "REPLAY_SMPI";
         break;
-    case ProfileType::SCHEDULER_RECV:
-        str = "SCHEDULER_RECV";
+    case ProfileType::REPLAY_USAGE:
+        str = "REPLAY_USAGE";
         break;
     default:
         str = "unset";

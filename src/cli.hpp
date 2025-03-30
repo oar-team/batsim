@@ -31,15 +31,6 @@ enum class VerbosityLevel
 };
 
 /**
- * @brief Batsim program type
- */
-enum class ProgramType
-{
-    BATSIM      //!< Classical Batsim executable
-    ,BATEXEC    //!< Batexec: Simpler execution, without external scheduler
-};
-
-/**
  * @brief The internal method used to load external decision components
  */
 enum class EdcLibraryLoadMethod
@@ -84,9 +75,9 @@ struct MainArguments
     };
 
    /**
-    * @brief Stores the command-line description of an eventList
+    * @brief Stores the command-line description of an ExternalEventList
     */
-   struct EventListDescription
+   struct ExternalEventListDescription
    {
        std::string filename;        //!< The filename of the eventList
        std::string name;            //!< The name of the eventList
@@ -96,7 +87,7 @@ struct MainArguments
     std::string platform_filename;                          //!< The SimGrid platform filename
     std::list<WorkloadDescription> workload_descriptions;   //!< The workloads descriptions
     std::list<WorkflowDescription> workflow_descriptions;   //!< The workflows descriptions
-    std::list<EventListDescription> eventList_descriptions; //!< The descriptions of the eventLists
+    std::list<ExternalEventListDescription> externalEventList_descriptions; //!< The descriptions of the externalEventLists
 
     // Common
     std::string master_host_name = "master_host";           //!< The name of the SimGrid host which runs scheduler processes and not user tasks
@@ -111,7 +102,6 @@ struct MainArguments
 
     // Output
     std::string export_prefix = "out/";                     //!< The filename prefix used to export simulation information
-    bool enable_schedule_tracing = false;                   //!< If set to true, the schedule is exported to a Pajé trace file
     bool enable_machine_state_tracing = false;              //!< If set to true, this option enables the tracing of the machine states into a CSV time series.
     bool enable_pstate_change_tracing = false;              //!< If set to true, this option enables the tracing of SimGrid hosts power state changes into a CSV time series.
 
@@ -140,7 +130,6 @@ struct MainArguments
     std::vector<std::string> simgrid_config;                //!< The list of configuration options to pass to SimGrid.
     std::vector<std::string> simgrid_logging;               //!< The list of simulation logging options to pass to SimGrid.
     EdcLibraryLoadMethod edc_library_load_method = EdcLibraryLoadMethod::DLOPEN; //!< How external decision components should be loaded in memory.
-    ProgramType program_type = ProgramType::BATSIM;         //!< The program type (Batsim or Batexec at the moment)
 
 public:
     /**

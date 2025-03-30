@@ -78,6 +78,12 @@ public:
     void check_validity();
 
     /**
+     * @brief Checks whether a single profile is valid and update refcounting of sub-profiles is necessary
+     * @param[in] profile The profile to examine
+     */
+    void check_single_profile_validity(const ProfilePtr profile);
+
+    /**
      * @brief Checks whether a single job is valid
      * @param[in] job The job to examine
      */
@@ -198,18 +204,18 @@ public:
     /**
      * @brief Checks whether a job is registered in the associated workload
      * @param[in] job_id The JobIdentifier
-     * @return True if the given is registered in the associated workload, false otherwise
+     * @return True if the given job is registered in the associated workload, false otherwise
      */
     bool job_is_registered(const JobIdentifier & job_id);
 
     /**
-     * @brief Checks whether a job profile is registered in the workload it
-     * is attached to
-     * @param[in] job_id The JobIdentifier
-     * @return True if the given is registered in the associated workload, false otherwise
+     * @brief Checks whether a profile is registered in the given workload
+     * @param[in] profile_name
+     * @param[in] workload_name
+     * @return True if the given profile is registered in the given workload, false otherwise
      */
-    bool job_profile_is_registered(const JobIdentifier & job_id);
-
+    bool profile_is_registered(const std::string & profile_name,
+                               const std::string & workload_name);
 
     /**
      * @brief Inserts a new Workload into a Workloads

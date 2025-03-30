@@ -8,6 +8,8 @@
 #include <string>
 #include <map>
 
+#include <simgrid/s4u.hpp>
+
 #include "ipp.hpp"
 
 struct BatsimContext;
@@ -32,7 +34,7 @@ struct ServerData
      */
     struct SubmitterCounters
     {
-        unsigned int expected_nb_submitters = static_cast<unsigned int>(-1); //!< The expected number of submitters
+        unsigned int expected_nb_submitters = 0; //!< The expected number of submitters
         unsigned int nb_submitters = 0; //!< The number of submitters
         unsigned int nb_submitters_finished = 0; //!< The number of finished submitters
     };
@@ -46,10 +48,10 @@ struct ServerData
     int nb_switching_machines = 0;  //!< The number of machines being switched
     int nb_callmelater_entities = 0; //!< The number of alive entities to handle CALL_ME_LATER (dedicated actors for OneShot, a part of the periodic actor for Periodic)
     int nb_probe_entities = 0; //!< The number of alive entities to handle probes
-    int nb_killers = 0; //!< The number of alive killer actors
     bool sched_ready = true;    //!< Whether the scheduler can be called now
     bool sched_said_hello = false; //!< Whether the scheduler said hello
 
+    bool simulation_stop_asked = false;  //!< Whether a FORCE_SIMULATION_STOP event has been received
     bool end_of_simulation_sent = false; //!< Whether the SIMULATION_ENDS event has been sent to the scheduler
     bool end_of_simulation_ack_received = false; //!< Whether the SIMULATION_ENDS acknowledgement (empty message) has been received
 
@@ -57,6 +59,9 @@ struct ServerData
     std::unordered_map<SubmitterType, SubmitterCounters> submitter_counters; //!< A map of counters for Job, Event and Workflow Submitters
     std::map<JobIdentifier, Submitter*> origin_of_jobs; //!< Stores whether a Submitter must be notified on job completion
     std::vector<JobIdentifier> jobs_to_be_deleted; //!< Stores the job_ids to be deleted after sending a message
+    std::unordered_map<KillJobsMessage *, simgrid::s4u::ActorPtr> killer_actors; //!< Stores the SimGrid killer_process actors
+    simgrid::s4u::ActorPtr sched_req_rep_actor; //!< Stores the SimGrid sched-req-rep actor (edc_decisions_injector)
+
 };
 
 /**
@@ -112,37 +117,12 @@ void server_on_job_submitted(ServerData * data,
                              IPMessage * task_data);
 
 /**
- * @brief Internal Server handler for machine_unavailable external event
- * @param[in,out] data The data associated with the server_process
- * @param[in] event The Event involved
- */
-void server_on_event_machine_unavailable(ServerData * data,
-                                     const Event * event);
-
-/**
- * @brief Internal Server handler for machine_available external event
- * @param[in,out] data The data associated with the server_process
- * @param[in] event The Event involved
- */
-void server_on_event_machine_available(ServerData * data,
-                                     const Event * event);
-
-
-/**
- * @brief Server handler for Event of type EVENT_GENERIC
- * @param[in,out] data The data associated with the server_process
- * @param event The event that occurred
- */
-void server_on_event_generic(ServerData * data,
-                             const Event * event);
-
-/**
- * @brief Server EVENT_OCCURRED handler
+ * @brief Server EXTERNAL_EVENTS_OCCURRED handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_event_occurred(ServerData * data,
-                              IPMessage * task_data);
+void server_on_external_events_occurred(ServerData * data,
+                                        IPMessage * task_data);
 
 
 /**
@@ -185,29 +165,6 @@ void server_on_periodic_entity_stopped(ServerData * data,
 void server_on_sched_ready(ServerData * data,
                            IPMessage * task_data);
 
-/**
- * @brief Server SCHED_WAIT_ANSWER handler
- * @param[in,out] data The data associated with the server_process
- * @param[in,out] task_data The data associated with the message the server received
- */
-void server_on_sched_wait_answer(ServerData * data,
-                                 IPMessage * task_data);
-
-/**
- * @brief Server SCHED_TELL_ME_ENERGY handler
- * @param[in,out] data The data associated with the server_process
- * @param[in,out] task_data The data associated with the message the server received
- */
-void server_on_sched_tell_me_energy(ServerData * data,
-                                    IPMessage * task_data);
-
-/**
- * @brief Server WAIT_QUERY handler
- * @param[in,out] data The data associated with the server_process
- * @param[in,out] task_data The data associated with the message the server received
- */
-void server_on_wait_query(ServerData * data,
-                          IPMessage * task_data);
 
 /**
  * @brief Server SWITCHED_ON/SWITCHED_OFF handler
@@ -226,15 +183,23 @@ void server_on_killing_done(ServerData * data,
                             IPMessage * task_data);
 
 /**
- * @brief Server END_DYNAMIC_REGISTER handler
+ * @brief Server SCHED_END_DYNAMIC_REGISTRATION handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_end_dynamic_register(ServerData * data,
-                                  IPMessage * task_data);
+void server_on_end_dynamic_registration(ServerData * data,
+                                        IPMessage * task_data);
 
 /**
- * @brief Server JOB_REGISTERED_BY_DP handler
+ * @brief Server SCHED_FORCE_SIMULATION_STOP handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_force_simulation_stop(ServerData * data,
+                                     IPMessage * task_data);
+
+/**
+ * @brief Server SCHED_JOB_REGISTERED handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
@@ -242,7 +207,7 @@ void server_on_register_job(ServerData * data,
                           IPMessage * task_data);
 
 /**
- * @brief Server PROFILE_REGISTERED_BY_DP handler
+ * @brief Server SCHED_PROFILE_REGISTERED handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
@@ -303,14 +268,6 @@ void server_on_stop_call_me_later(ServerData * data,
  * @param[in,out] task_data The data associated with the message the server received
  */
 void server_on_execute_job(ServerData * data,
-                           IPMessage * task_data);
-
-/**
- * @brief Server SCHED_CHANGE_JOB_STATE handler
- * @param[in,out] data The data associated with the server_process
- * @param[in,out] task_data The data associated with the message the server received
- */
-void server_on_change_job_state(ServerData * data,
                            IPMessage * task_data);
 
 /**

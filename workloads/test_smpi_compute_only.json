@@ -9,9 +9,9 @@
 
   "profiles": {
     "trace1": {
-      "type": "trace_replay",
-      "trace_type": "smpi",
-      "trace_file": "smpi/compute_only/traces.txt",
+      "type": "TraceReplayProfile",
+      "trace_type": "SMPI",
+      "filename": "smpi/compute_only/traces.txt",
       "expected_execution_time": 10.0
     }
   }

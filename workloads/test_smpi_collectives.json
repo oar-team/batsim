@@ -7,9 +7,9 @@
   ],
   "profiles": {
     "trace1": {
-      "type": "trace_replay",
-      "trace_type": "smpi",
-      "trace_file": "smpi/collectives/traces.txt",
+      "type": "TraceReplayProfile",
+      "trace_type": "SMPI",
+      "filename": "smpi/collectives/traces.txt",
       "expected_execution_time": 3.147549
     }
   }

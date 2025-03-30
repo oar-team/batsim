@@ -15,7 +15,7 @@
 
     "profiles": {
         "ptask_prof": {
-            "type": "ptask_homogeneous",
+            "type": "ParallelTaskHomogeneousProfile",
             "cpu": 1e9,
             "com": 0
         }

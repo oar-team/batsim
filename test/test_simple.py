@@ -24,7 +24,7 @@ def test_rejecter(test_root_dir):
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}'
 
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'rejecter', workload)
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'rejecter', workload)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
@@ -34,7 +34,7 @@ def test_platform_checker(test_root_dir):
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}'
 
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'platform-check', workload, batsim_extra_args=['--energy-host'])
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'platform-check', workload, batsim_extra_args=['--energy-host'])
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
@@ -44,7 +44,7 @@ def test_1by1(test_root_dir):
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}'
 
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'exec1by1', workload)
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'exec1by1', workload)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
@@ -54,7 +54,7 @@ def test_fcfs(test_root_dir, use_json):
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}-' + str(int(use_json))
 
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'fcfs', workload, use_json=use_json)
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'fcfs', workload, use_json=use_json)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
@@ -64,7 +64,37 @@ def test_easy(test_root_dir, use_json):
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}-' + str(int(use_json))
 
-    batcmd, outdir, _ = prepare_instance(instance_name, test_root_dir, platform, 'easy', workload, use_json=use_json, batsim_extra_args=['--mmax-workload'])
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'easy', workload, use_json=use_json, batsim_extra_args=['--mmax-workload'])
+    p = run_batsim(batcmd, outdir)
+    assert p.returncode == 0
+
+def test_do_nothing_deadlock(test_root_dir, use_json):
+    platform = 'small_platform'
+    workload = 'test_delays'
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}-' + str(int(use_json))
+
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'do-nothing', workload, use_json=use_json)
+    p = subprocess.run(batcmd, stderr=subprocess.PIPE, timeout=3, encoding='utf-8')
+    assert p.returncode != 0, f'batsim returned 0 while a SimGrid deadlock was expected'
+    assert 'The simulation could NOT finish because a deadlock was detected in SimGrid' in p.stderr, f'batsim did not give deadlock-related message on stderr while a SimGrid deadlock was expected'
+
+def test_do_nothing_no_deadlock(test_root_dir, use_json):
+    platform = 'small_platform'
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}-' + str(int(use_json))
+
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'do-nothing', use_json=use_json)
+    p = run_batsim(batcmd, outdir)
+    assert p.returncode == 0
+
+def test_force_simu_stop(test_root_dir, use_json):
+    platform = "small_platform"
+    workload = "test_delays"
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}-' + str(int(use_json))
+
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'force-simu-stop', workload, use_json=use_json)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 
@@ -85,7 +115,7 @@ def test_extra_data(test_root_dir, extra_data_workload, use_json):
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}-{extra_data_type}' + str(int(use_json))
 
-    batcmd, outdir, workload_file = prepare_instance(instance_name, test_root_dir, platform, 'static', workload, use_json=use_json, batsim_extra_args=['--mmax-workload'])
+    batcmd, outdir, workload_file, _ = prepare_instance(instance_name, test_root_dir, platform, 'static', workload, use_json=use_json, batsim_extra_args=['--mmax-workload'])
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0
 

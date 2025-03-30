@@ -30,7 +30,7 @@
 
     "profiles": {
         "10s": {
-            "type": "delay",
+            "type": "DelayProfile",
             "delay": 10
         }
     }

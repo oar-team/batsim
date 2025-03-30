@@ -1,8 +1,10 @@
 #include "protocol.hpp"
 
 #include <regex>
+#include <filesystem>
 
-#include <boost/algorithm/string/join.hpp>
+//#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <xbt.h>
 
@@ -10,10 +12,10 @@
 
 #include "batsim.hpp"
 #include "context.hpp"
-#include "jobs.hpp"
 
 using namespace rapidjson;
 using namespace std;
+namespace fs = std::filesystem;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(protocol, "protocol"); //!< Logging
 
@@ -93,12 +95,121 @@ std::shared_ptr<batprotocol::Job> to_job(const Job & job)
     auto proto_job = batprotocol::Job::make();
     proto_job->set_resource_number(job.requested_nb_res);
     proto_job->set_walltime(job.walltime);
-    proto_job->set_profile(job.profile->name); // TODO: handle ghost jobs without profile
+    proto_job->set_profile(job.profile->name);
     proto_job->set_extra_data(job.extra_data);
-    // TODO: handle job rigidity
 
     return proto_job;
 }
+
+
+
+std::shared_ptr<batprotocol::Profile> to_profile(const Profile & profile)
+{
+    std::shared_ptr<batprotocol::Profile> p;
+    switch(profile.type)
+    {
+    case ProfileType::DELAY:
+    {
+        auto * data = static_cast<DelayProfileData*>(profile.data);
+        p = batprotocol::Profile::make_delay(data->delay);
+        break;
+    }
+    case ProfileType::PTASK:
+    {
+        auto * data = static_cast<ParallelProfileData*>(profile.data);
+
+        const std::shared_ptr<std::vector<double>> cpu_vector = make_shared<vector<double>>(vector<double>());
+        cpu_vector->reserve(data->nb_res);
+        cpu_vector->assign(data->cpu, data->cpu+data->nb_res);
+
+        const std::shared_ptr<std::vector<double>> comm_vector = make_shared<vector<double>>(vector<double>());
+        comm_vector->reserve(data->nb_res*data->nb_res);
+        comm_vector->assign(data->com, data->com+data->nb_res*data->nb_res);
+
+        p = batprotocol::Profile::make_parallel_task(cpu_vector, comm_vector);
+        break;
+    }
+    case ProfileType::PTASK_HOMOGENEOUS:
+    {
+        auto * data = static_cast<ParallelHomogeneousProfileData*>(profile.data);
+        p = batprotocol::Profile::make_parallel_task_homogeneous(data->strategy, data->cpu, data->com);
+        break;
+    }
+    case ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS:
+    {
+        auto * data = static_cast<ParallelTaskOnStorageHomogeneousProfileData*>(profile.data);
+        p = batprotocol::Profile::make_parallel_task_on_storage_homogeneous(data->storage_label,
+                                                                            data->strategy,
+                                                                            data->bytes_to_read, data->bytes_to_write);
+        break;
+    }
+    case ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES:
+    {
+        auto * data = static_cast<DataStagingProfileData*>(profile.data);
+        p = batprotocol::Profile::make_parallel_task_data_staging_between_storages(data->nb_bytes,
+                                                                                   data->from_storage_label,
+                                                                                   data->to_storage_label);
+        break;
+    }
+    case ProfileType::PTASK_MERGE_COMPOSITION:
+    {
+        auto * data = static_cast<ParallelTaskMergeCompositionProfileData*>(profile.data);
+        const std::shared_ptr<std::vector<std::string>> sub_profiles = make_shared<vector<std::string>>(data->profile_names);
+        p = batprotocol::Profile::make_parallel_task_merge_composition(sub_profiles);
+        break;
+    }
+    case ProfileType::SEQUENTIAL_COMPOSITION:
+    {
+        auto * data = static_cast<SequenceProfileData*>(profile.data);
+        const std::shared_ptr<std::vector<std::string>> sub_profiles = make_shared<vector<std::string>>(data->sequence_names);
+        p = batprotocol::Profile::make_sequential_composition(sub_profiles, data->repetition_count);
+        break;
+    }
+    case ProfileType::FORKJOIN_COMPOSITION:
+    {
+        auto * data = static_cast<ForkJoinCompositionProfileData*>(profile.data);
+        const std::shared_ptr<std::vector<std::string>> sub_profiles = make_shared<vector<std::string>>(data->profile_names);
+        p = batprotocol::Profile::make_forkjoin_composition(sub_profiles);
+        break;
+    }
+    case ProfileType::REPLAY_SMPI:
+    {
+        auto * data = static_cast<TraceReplayProfileData*>(profile.data);
+        p = batprotocol::Profile::make_trace_replay_smpi(data->filename);
+        break;
+    }
+    case ProfileType::REPLAY_USAGE:
+    {
+        auto * data = static_cast<TraceReplayProfileData*>(profile.data);
+        p = batprotocol::Profile::make_trace_replay_fractional_computation(data->filename);
+        break;
+    }
+    default:
+        xbt_die("Invalid profile type");
+    }
+
+    if (!profile.extra_data.empty())
+    {
+        p->set_extra_data(profile.extra_data);
+    }
+
+    return p;
+}
+
+
+std::shared_ptr<batprotocol::ExternalEvent> to_external_event(const ExternalEvent & external_event)
+{
+    std::shared_ptr<batprotocol::ExternalEvent> e;
+    switch(external_event.type)
+    {
+    case ExternalEventType::GENERIC:
+    default: // Treat Unknow event types as generic. TODO change this?
+        GenericEventData * event_data = static_cast<GenericEventData*>(external_event.data);
+        e = batprotocol::ExternalEvent::make_generic_event(event_data->json_desc_str);
+    }
+    return e;
+}
+
 
 /**
  * @brief Returns a batprotocol::fb::FinalJobState corresponding to a given Batsim JobState
@@ -203,7 +314,15 @@ batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context
 
         begins.add_workload(workload_name, workload->file);
 
-        // TODO: add profiles if requested by the user
+        // Add profiles if requested by the EDC
+        if (context->forward_profiles_on_simulation_begins)
+        {
+            for (const auto & kv : workload->profiles->profiles())
+            {
+                std::shared_ptr<batprotocol::Profile> proto_profile = to_profile(*kv.second);
+                begins.add_profile(kv.first, proto_profile);
+            }
+        }
     }
 
     // Misc.
@@ -218,8 +337,7 @@ ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * ex
     auto * msg = new ExecuteJobMessage;
 
     // Retrieve job
-    JobIdentifier job_id(execute_job->job_id()->str());
-    msg->job = context->workloads.job_at(job_id);
+    msg->job_id = JobIdentifier(execute_job->job_id()->str());
 
     // Build main job's allocation
     msg->job_allocation = std::make_shared<AllocationPlacement>();
@@ -291,8 +409,7 @@ RejectJobMessage *from_reject_job(const batprotocol::fb::RejectJobEvent * reject
 {
     auto msg = new RejectJobMessage;
 
-    JobIdentifier job_id(reject_job->job_id()->str());
-    msg->job = context->workloads.job_at(job_id);
+    msg->job_id = JobIdentifier(reject_job->job_id()->str());
 
     return msg;
 }
@@ -300,14 +417,11 @@ RejectJobMessage *from_reject_job(const batprotocol::fb::RejectJobEvent * reject
 KillJobsMessage *from_kill_jobs(const batprotocol::fb::KillJobsEvent * kill_jobs, BatsimContext * context)
 {
     auto msg = new KillJobsMessage;
-
-    msg->job_ids.reserve(kill_jobs->job_ids()->size());
-    msg->jobs.reserve(kill_jobs->job_ids()->size());
-    for (unsigned int i = 0; i < kill_jobs->job_ids()->size(); ++i)
+    auto * jobs_list = kill_jobs->job_ids();
+    msg->job_ids.reserve(jobs_list->size());
+    for (unsigned int i = 0; i < jobs_list->size(); ++i)
     {
-        JobIdentifier job_id(kill_jobs->job_ids()->Get(i)->str());
-        msg->job_ids.push_back(job_id.to_string());
-        msg->jobs.push_back(context->workloads.job_at(job_id));
+        msg->job_ids.push_back(JobIdentifier(jobs_list->Get(i)->str()));
     }
 
     return msg;
@@ -494,6 +608,263 @@ StopProbeMessage * from_stop_probe(const batprotocol::fb::StopProbeEvent * stop_
     return msg;
 }
 
+
+JobRegisteredByEDCMessage * from_register_job(const batprotocol::fb::RegisterJobEvent * register_job, BatsimContext * context)
+{
+    auto msg = new JobRegisteredByEDCMessage;
+
+    const batprotocol::fb::Job * proto_job = register_job->job();
+
+    msg->job = std::make_shared<Job>();
+    msg->job->id = JobIdentifier(register_job->job_id()->str());
+    msg->job->requested_nb_res = proto_job->resource_request();
+    msg->job->walltime = proto_job->walltime();
+
+    if (proto_job->extra_data() != nullptr)
+    {
+        msg->job->extra_data = proto_job->extra_data()->str();
+    }
+    msg->profile_id = proto_job->profile_id()->str();
+
+    return msg;
+}
+
+
+ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::RegisterProfileEvent * register_profile, BatsimContext * context)
+{
+    const batprotocol::fb::ProfileAndId * proto_profile = register_profile->profile();
+
+    auto msg = new ProfileRegisteredByEDCMessage;
+    ProfilePtr profile = std::make_shared<Profile>();
+    msg->profile = profile;
+    msg->profile_id = proto_profile->id()->str();
+
+    if (proto_profile->extra_data() != nullptr)
+    {
+        msg->profile->extra_data = proto_profile->extra_data()->str();
+    }
+
+    switch(proto_profile->profile_type())
+    {
+    case batprotocol::fb::Profile_DelayProfile:
+    {
+        const batprotocol::fb::DelayProfile * prof = proto_profile->profile_as_DelayProfile();
+        profile->type = ProfileType::DELAY;
+        DelayProfileData * data = new DelayProfileData;
+        data->delay = prof->delay();
+
+        xbt_assert(data->delay > 0, "Invalid registration of profile '%s': non-strictly-positive 'delay' field (%g)",
+                   msg->profile_id.c_str(), data->delay);
+
+        profile->data = data;
+        break;
+    }
+    case batprotocol::fb::Profile_ParallelTaskProfile:
+    {
+        const batprotocol::fb::ParallelTaskProfile * prof = proto_profile->profile_as_ParallelTaskProfile();
+        profile->type = ProfileType::PTASK;
+        ParallelProfileData * data = new ParallelProfileData;
+
+        auto * cpu_vector = prof->computation_vector();
+        auto * com_vector = prof->communication_matrix();
+        unsigned int nb_res = 0;
+
+        if (cpu_vector != nullptr && com_vector != nullptr) {
+            xbt_assert(com_vector->size() == cpu_vector->size() * cpu_vector->size(), "Invalid registration of profile '%s': inconsistent computation and communication vector sizes (%u, %u)", msg->profile_id.c_str(), cpu_vector->size(), com_vector->size());
+            nb_res = cpu_vector->size();
+        } else if (com_vector != nullptr) {
+            nb_res = sqrt(com_vector->size());
+            xbt_assert(nb_res * nb_res == com_vector->size(), "Invalid registration of profile '%s': communication-only parallel task has an invalid number of communications (%u): not the square of an integer", msg->profile_id.c_str(), com_vector->size());
+        } else {
+            nb_res = cpu_vector->size();
+        }
+        data->nb_res = nb_res;
+
+        if (cpu_vector != nullptr) {
+            data->cpu = new double[nb_res];
+            for (unsigned int i = 0; i < nb_res; ++i)
+            {
+                data->cpu[i] = cpu_vector->Get(i);
+
+                xbt_assert(data->cpu[i] >= 0, "Invalid registration of profile '%s': elements of 'computation_vector' must be non-negative (%g)",
+                        msg->profile_id.c_str(), data->cpu[i]);
+            }
+        }
+
+        if (com_vector != nullptr) {
+            unsigned int com_size = nb_res * nb_res;
+            data->com = new double[com_size];
+            for (unsigned int i = 0; i < com_size; ++i)
+            {
+                data->com[i] = com_vector->Get(i);
+
+                xbt_assert(data->com[i] >= 0, "Invalid registration of profile '%s': elements of 'communication_matrix' must be non-negative (%g)",
+                        msg->profile_id.c_str(), data->com[i]);
+            }
+        }
+
+        profile->data = data;
+        break;
+    }
+    case batprotocol::fb::Profile_ParallelTaskHomogeneousProfile:
+    {
+        const batprotocol::fb::ParallelTaskHomogeneousProfile * prof = proto_profile->profile_as_ParallelTaskHomogeneousProfile();
+        profile->type = ProfileType::PTASK_HOMOGENEOUS;
+        ParallelHomogeneousProfileData * data = new ParallelHomogeneousProfileData;
+
+        data->cpu = prof->computation_amount();
+        data->com = prof->communication_amount();
+        data->strategy = prof->generation_strategy(); // The diferent strategies are handled in task_execution
+
+        xbt_assert(data->cpu >= 0, "Invalid registration of profile '%s': 'computation_amount' must be non-negative (%g)",
+                   msg->profile_id.c_str(), data->cpu);
+        xbt_assert(data->com >= 0, "Invalid registration of profile '%s': 'communication_amount' must be non-negative (%g)",
+                   msg->profile_id.c_str(), data->com);
+
+        profile->data = data;
+        break;
+    }
+    case batprotocol::fb::Profile_SequentialCompositionProfile:
+    {
+        const batprotocol::fb::SequentialCompositionProfile * prof = proto_profile->profile_as_SequentialCompositionProfile();
+        profile->type = ProfileType::SEQUENTIAL_COMPOSITION;
+        SequenceProfileData * data = new SequenceProfileData;
+
+        data->repetition_count = prof->repetition_count();
+
+        auto * ids_vector = prof->profile_ids();
+        data->sequence_names.reserve(ids_vector->size());
+
+        for (unsigned int i = 0; i < ids_vector->size(); ++i)
+        {
+            data->sequence_names.push_back(ids_vector->Get(i)->str());
+        }
+
+        profile->data = data;
+        break;
+    }
+    case batprotocol::fb::Profile_ForkJoinCompositionProfile:
+    {
+        // const batprotocol::fb::ForkJoinCompositionProfile * prof = proto_profile->profile_as_ForkJoinCompositionProfile();
+        // profile->type = ProfileType::FORKJOIN_COMPOSITION;
+        // ParallelProfileData * data = new ParallelProfileData;
+
+        xbt_die("Handling of profile ForkJoin Composition is not implemented yet");
+
+        //TODO
+        //profile->data = data;
+        break;
+    }
+    case batprotocol::fb::Profile_ParallelTaskMergeCompositionProfile:
+    {
+        // const batprotocol::fb::ParallelTaskMergeCompositionProfile * prof = proto_profile->profile_as_ParallelTaskMergeCompositionProfile();
+        // profile->type = ProfileType::PTASK_MERGE_COMPOSITION;
+        // ParallelProfileData * data = new ParallelProfileData;
+
+        xbt_die("Handling of profile Parallel Task Merge Composition is not implemented yet");
+
+        //TODO
+        // profile->data = data;
+        break;
+    }
+    case batprotocol::fb::Profile_ParallelTaskOnStorageHomogeneousProfile:
+    {
+        const batprotocol::fb::ParallelTaskOnStorageHomogeneousProfile * prof = proto_profile->profile_as_ParallelTaskOnStorageHomogeneousProfile();
+        profile->type = ProfileType::PTASK_ON_STORAGE_HOMOGENEOUS;
+        ParallelTaskOnStorageHomogeneousProfileData * data = new ParallelTaskOnStorageHomogeneousProfileData;
+
+        data->bytes_to_read = prof->bytes_to_read();
+        data->bytes_to_write = prof->bytes_to_write();
+
+        xbt_assert(data->bytes_to_read >= 0,
+                   "Invalid registration of profile '%s': non-positive 'bytes_to_read' (%g)",
+                   msg->profile_id.c_str(), data->bytes_to_read);
+        xbt_assert(data->bytes_to_write >= 0,
+                   "Invalid registration of profile '%s': non-positive 'bytes_to_write' (%g)",
+                   msg->profile_id.c_str(), data->bytes_to_write);
+
+        data->storage_label = prof->storage_name()->str();
+        data->strategy = prof->generation_strategy(); // The diferent strategies are handled in task_execution
+
+        profile->data = data;
+        break;
+    }
+    case batprotocol::fb::Profile_ParallelTaskDataStagingBetweenStoragesProfile:
+    {
+        const batprotocol::fb::ParallelTaskDataStagingBetweenStoragesProfile * prof = proto_profile->profile_as_ParallelTaskDataStagingBetweenStoragesProfile();
+        profile->type = ProfileType::PTASK_DATA_STAGING_BETWEEN_STORAGES;
+        DataStagingProfileData * data = new DataStagingProfileData;
+
+        data->nb_bytes = prof->bytes_to_transfer();
+        data->from_storage_label = prof->emitter_storage_name()->str();
+        data->to_storage_label = prof->receiver_storage_name()->str();
+
+        profile->data = data;
+        break;
+    }
+    case batprotocol::fb::Profile_TraceReplayProfile:
+    {
+        const batprotocol::fb::TraceReplayProfile * prof = proto_profile->profile_as_TraceReplayProfile();
+        TraceReplayProfileData * data = new TraceReplayProfileData;
+        data->filename = prof->filename()->str();
+
+        fs::path trace_path(data->filename);
+        xbt_assert(fs::exists(trace_path) && fs::is_regular_file(trace_path),
+                   "Invalid registration of profile '%s': invalid 'trace_file' field ('%s') which leads to a non-existent file ('%s')",
+                   msg->profile_id.c_str(), data->filename.c_str(), trace_path.string().c_str());
+
+        ifstream trace_file(trace_path.string());
+        xbt_assert(trace_file.is_open(), "Cannot open file '%s'", trace_path.string().c_str());
+
+        // load the list of trace files given in the filenam
+        std::vector<std::string> trace_filenames;
+        string line;
+        while (std::getline(trace_file, line))
+        {
+            boost::trim_right(line);
+            fs::path rank_trace_path = trace_path.parent_path().string() + "/" + line;
+            trace_filenames.push_back(rank_trace_path.string());
+        }
+
+        XBT_DEBUG("Filenames of profile '%s': [%s]", profile->name.c_str(), boost::algorithm::join(trace_filenames, ", ").c_str());
+
+        data->trace_filenames = trace_filenames;
+        profile->data = data;
+
+        if (prof->trace_type() == batprotocol::fb::TraceType_SMPI)
+        {
+            profile->type = ProfileType::REPLAY_SMPI;
+
+        }
+        else if (prof->trace_type() == batprotocol::fb::TraceType_FractionalComputation)
+        {
+            profile->type = ProfileType::REPLAY_USAGE;
+        }
+        else
+        {
+            xbt_assert(false, "Unhandled TraceReplay profile (%s)", batprotocol::fb::EnumNamesTraceType()[prof->trace_type()]);
+        }
+
+        break;
+    }
+    default:
+        xbt_die("Unhandled registration of profile type %s", batprotocol::fb::EnumNameProfile(proto_profile->profile_type()));
+    }
+
+    return msg;
+}
+
+
+ChangeHostPStateMessage * from_change_host_pstate(const batprotocol::fb::ChangeHostPStateEvent * change_host_pstate, BatsimContext * context) {
+    auto msg = new ChangeHostPStateMessage;
+
+    msg->machine_ids = IntervalSet::from_string_hyphen(change_host_pstate->host_ids()->str());
+    msg->new_pstate = change_host_pstate->pstate();
+
+    return msg;
+}
+
+
 void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp> > & messages, BatsimContext * context)
 {
     (void) buffer_size;
@@ -526,29 +897,21 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
         using namespace batprotocol::fb;
         switch (event_timestamp->event_type())
         {
-        case Event_RejectJobEvent: {
-            ip_message->type = IPMessageType::SCHED_REJECT_JOB;
-            ip_message->data = static_cast<void *>(from_reject_job(event_timestamp->event_as_RejectJobEvent(), context));
+        case Event_EDCHelloEvent: {
+            ip_message->type = IPMessageType::SCHED_HELLO;
+            ip_message->data = static_cast<void *>(from_edc_hello(event_timestamp->event_as_EDCHelloEvent(), context));
         } break;
         case Event_ExecuteJobEvent: {
             ip_message->type = IPMessageType::SCHED_EXECUTE_JOB;
             ip_message->data = static_cast<void *>(from_execute_job(event_timestamp->event_as_ExecuteJobEvent(), context));
         } break;
+        case Event_RejectJobEvent: {
+            ip_message->type = IPMessageType::SCHED_REJECT_JOB;
+            ip_message->data = static_cast<void *>(from_reject_job(event_timestamp->event_as_RejectJobEvent(), context));
+        } break;
         case Event_KillJobsEvent: {
             ip_message->type = IPMessageType::SCHED_KILL_JOBS;
             ip_message->data = static_cast<void *>(from_kill_jobs(event_timestamp->event_as_KillJobsEvent(), context));
-        } break;
-        case Event_EDCHelloEvent: {
-            ip_message->type = IPMessageType::SCHED_HELLO;
-            ip_message->data = static_cast<void *>(from_edc_hello(event_timestamp->event_as_EDCHelloEvent(), context));
-        } break;
-        case Event_CreateProbeEvent: {
-            ip_message->type = IPMessageType::SCHED_CREATE_PROBE;
-            ip_message->data = static_cast<void *>(from_create_probe(event_timestamp->event_as_CreateProbeEvent(), context));
-        } break;
-        case Event_StopProbeEvent: {
-            ip_message->type = IPMessageType::SCHED_STOP_PROBE;
-            ip_message->data = static_cast<void *>(from_stop_probe(event_timestamp->event_as_StopProbeEvent(), context));
         } break;
         case Event_CallMeLaterEvent: {
             ip_message->type = IPMessageType::SCHED_CALL_ME_LATER;
@@ -558,6 +921,36 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
             ip_message->type = IPMessageType::SCHED_STOP_CALL_ME_LATER;
             ip_message->data = static_cast<void *>(from_stop_call_me_later(event_timestamp->event_as_StopCallMeLaterEvent(), context));
         } break;
+        case Event_CreateProbeEvent: {
+            ip_message->type = IPMessageType::SCHED_CREATE_PROBE;
+            ip_message->data = static_cast<void *>(from_create_probe(event_timestamp->event_as_CreateProbeEvent(), context));
+        } break;
+        case Event_StopProbeEvent: {
+            ip_message->type = IPMessageType::SCHED_STOP_PROBE;
+            ip_message->data = static_cast<void *>(from_stop_probe(event_timestamp->event_as_StopProbeEvent(), context));
+        } break;
+        case Event_RegisterJobEvent: {
+            ip_message->type = IPMessageType::SCHED_JOB_REGISTERED;
+            ip_message->data = static_cast<void *>(from_register_job(event_timestamp->event_as_RegisterJobEvent(), context));
+        } break;
+        case Event_RegisterProfileEvent: {
+            ip_message->type = IPMessageType::SCHED_PROFILE_REGISTERED;
+            ip_message->data = static_cast<void *>(from_register_profile(event_timestamp->event_as_RegisterProfileEvent(), context));
+        } break;
+        case Event_FinishRegistrationEvent: {
+            ip_message->type = IPMessageType::SCHED_END_DYNAMIC_REGISTRATION;
+            // No data in this event
+        } break;
+        case Event_ForceSimulationStopEvent: {
+            ip_message->type = IPMessageType::SCHED_FORCE_SIMULATION_STOP;
+            // No data in this event
+            break;
+        }
+        case Event_ChangeHostPStateEvent: {
+            ip_message->type = IPMessageType::SCHED_CHANGE_HOST_PSTATE;
+            ip_message->data = static_cast<void *>(from_change_host_pstate(event_timestamp->event_as_ChangeHostPStateEvent(), context));
+            break;
+        }
         default: {
             xbt_assert(false, "Unhandled event type received (%s)", batprotocol::fb::EnumNamesEvent()[event_timestamp->event_type()]);
         } break;

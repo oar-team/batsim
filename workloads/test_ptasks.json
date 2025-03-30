@@ -26,7 +26,7 @@
 
   "profiles": {
     "compute-only-1": {
-      "type": "ptask",
+      "type": "ParallelTaskProfile",
         "cpu": [10e9,   0,   0,   0],
         "com": [   0,   0,   0,   0,
                    0,   0,   0,   0,
@@ -35,7 +35,7 @@
         "expected_execution_time": 10
     },
     "compute-only-4": {
-      "type": "ptask",
+      "type": "ParallelTaskProfile",
         "cpu": [10e9,10e9,10e9,10e9],
         "com": [   0,   0,   0,   0,
                    0,   0,   0,   0,
@@ -44,7 +44,7 @@
         "expected_execution_time": 10
     },
     "compute-only-4-hg": {
-      "type": "ptask",
+      "type": "ParallelTaskProfile",
         "cpu": [10e9,10e8,10e7,10e6],
         "com": [   0,   0,   0,   0,
                    0,   0,   0,   0,
@@ -54,7 +54,7 @@
     },
 
     "network-only-1-transfer": {
-      "type": "ptask",
+      "type": "ParallelTaskProfile",
         "cpu": [    0,    0,    0,    0],
         "com": [    0, 10e9,    0,    0,
                     0,    0,    0,    0,
@@ -63,7 +63,7 @@
         "expected_execution_time": 10.000013
     },
     "network-only-3-transfer": {
-      "type": "ptask",
+      "type": "ParallelTaskProfile",
         "cpu": [    0,    0,    0,    0],
         "com": [    0, 10e9,    0,    0,
                     0,    0, 10e9,    0,
@@ -72,7 +72,7 @@
         "expected_execution_time": 10.000013
     },
     "network-only-6-transfer": {
-      "type": "ptask",
+      "type": "ParallelTaskProfile",
         "cpu": [    0,    0,    0,    0,    0,    0],
         "com": [    0,  5e9,    0,    0,    0,    0,
                     0,    0,  5e9,    0,    0,    0,
@@ -83,7 +83,7 @@
         "expected_execution_time": 10.000013
     },
     "network-only-9-transfer-hg": {
-      "type": "ptask",
+      "type": "ParallelTaskProfile",
         "cpu": [    0,    0,    0,    0,    0,    0],
         "com": [    0,  5e9,    0,    0,    0,    0,
                     0,    0,  5e9,    0,    0,    0,
@@ -95,7 +95,7 @@
     },
 
     "compute-network-cpubound": {
-      "type": "ptask",
+      "type": "ParallelTaskProfile",
         "cpu": [ 5e9,   0,   0,   0],
         "com": [   0, 2e9,   0,   0,
                    0,   0,   0,   0,
@@ -104,7 +104,7 @@
         "expected_execution_time": 5.000013
     },
     "compute-network-netbound": {
-      "type": "ptask",
+      "type": "ParallelTaskProfile",
         "cpu": [ 3e9,   0,   0,   0],
         "com": [   0, 4e9,   0,   0,
                    0,   0,   0,   0,
@@ -113,7 +113,7 @@
         "expected_execution_time": 4.000013
     },
     "compute-network-eqbound": {
-      "type": "ptask",
+      "type": "ParallelTaskProfile",
         "cpu": [ 7e9,   0,   0,   0],
         "com": [   0, 7e9,   0,   0,
                    0,   0,   0,   0,

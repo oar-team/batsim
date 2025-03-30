@@ -14,7 +14,7 @@
 
     "profiles": {
         "simple": {
-            "type": "ptask",
+            "type": "ParallelTaskProfile",
             "cpu": [5e6,  0,  0,  0],
             "com": [5e6,  0,  0,  0,
                     5e6,5e6,  0,  0,
@@ -22,32 +22,32 @@
                     5e6,5e6,5e6,  0]
         },
         "homogeneous": {
-            "type": "ptask_homogeneous",
+            "type": "ParallelTaskHomogeneousProfile",
             "cpu": 10e6,
             "com": 1e6
         },
         "homogeneous_no_cpu": {
-            "type": "ptask_homogeneous",
+            "type": "ParallelTaskHomogeneousProfile",
             "cpu": 0,
             "com": 1e6
         },
         "homogeneous_no_com": {
-            "type": "ptask_homogeneous",
+            "type": "ParallelTaskHomogeneousProfile",
             "cpu": 2e5,
             "com": 0
         },
         "sequence": {
-            "type": "sequential_composition",
+            "type": "SequentialCompositionProfile",
             "repeat" : 4,
             "seq": ["simple","homogeneous","simple"]
         },
         "delay": {
-            "type": "delay",
+            "type": "DelayProfile",
             "delay": 20.20
         },
         "homogeneous_total": {
-            "type": "ptask_homogeneous",
-            "generation_strategy": "defined_amount_spread_uniformly",
+            "type": "ParallelTaskHomogeneousProfile",
+            "generation_strategy": "DefinedAmountsSpreadUniformly",
             "cpu": 10e6,
             "com": 1e6
         }

@@ -16,10 +16,10 @@
 
     "profiles": {
         "1": {
-            "type": "trace_replay",
-            "trace_type": "smpi",
+            "type": "TraceReplayProfile",
+            "trace_type": "SMPI",
             "mpi_size": 2,
-            "trace_file": "smpi/mixed_comm_comp/traces.txt"
+            "filename": "smpi/mixed_comm_comp/traces.txt"
         }
     }
 }

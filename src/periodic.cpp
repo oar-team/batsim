@@ -67,6 +67,7 @@ void generate_static_periodic_schedule(
   uint64_t & slice_duration
 ) {
   // check that all periods have offset=0 and are expressed in the same unit (milliseconds)
+  // TODO: at some point we want to have offsets working and useful. For the moment the values are forced to be 0
   std::map<uint64_t, std::vector<PeriodicTrigger>> triggers;
   for (const auto & [_, cml] : cml_triggers) {
     xbt_assert(cml->periodic.offset == 0, "CallMeLater (id='%s') has non-zero offset (%lu), which is not supported", cml->call_id.c_str(), cml->periodic.offset);
@@ -235,7 +236,7 @@ void periodic_main_actor(BatsimContext * context)
             m->entity_id = msg->call_id;
             m->is_probe = false;
             m->is_call_me_later = true;
-            send_message("server", IPMessageType::PERIODIC_ENTITY_STOPPED, static_cast<void*>(m));
+            dsend_message("server", IPMessageType::PERIODIC_ENTITY_STOPPED, static_cast<void*>(m));
 
             cml_triggers.erase(msg->call_id);
             delete msg;
@@ -255,7 +256,7 @@ void periodic_main_actor(BatsimContext * context)
             m->entity_id = msg->probe_id;
             m->is_probe = true;
             m->is_call_me_later = false;
-            send_message("server", IPMessageType::PERIODIC_ENTITY_STOPPED, static_cast<void*>(m));
+            dsend_message("server", IPMessageType::PERIODIC_ENTITY_STOPPED, static_cast<void*>(m));
 
             probes.erase(msg->probe_id);
             delete msg;

@@ -149,7 +149,6 @@ void static_job_submitter_process(BatsimContext * context,
 
 static string submit_workflow_task_as_job(BatsimContext *context, string workflow_name, string submitter_name, Task *task);
 static string wait_for_job_completion(string submitter_name);
-static std::tuple<int,double,double> wait_for_query_answer(string submitter_name);
 
 /* Ugly Global */
 static std::map<std::string, int> task_id_counters;
@@ -310,19 +309,6 @@ static string submit_workflow_task_as_job(BatsimContext *context, string workflo
     msg->jobs = std::vector<JobPtr>({job});
     send_message("server", IPMessageType::JOB_SUBMITTED, static_cast<void*>(msg));
 
-    // HOWTO Test Wait Query
-    // WaitQueryMessage * message = new WaitQueryMessage;
-    // message->submitter_name = submitter_name;
-    // message->nb_resources = task->num_procs;
-    // message->processing_time = walltime;
-    // send_message("server", IPMessageType::WAIT_QUERY, (void*)message);
-
-    // HOWTO Test Answer
-    // std::tuple<int,double,double> answer;
-    // answer = wait_for_query_answer(submitter_name);
-    // XBT_INFO("Got my answer : %f", std::get<2>(answer));
-    (void)wait_for_query_answer; // Horrible hack to silence "unused" warning.
-
     // Return a key
     return job_id.to_string();
 }
@@ -340,54 +326,4 @@ static string wait_for_job_completion(string submitter_name)
 
     // TODO: memory cleanup
     return notification_data->job_id.to_string();
-}
-
-/**
- * @brief TODO
- * @param submitter_name TODO
- * @return TODO
- */
-static std::tuple<int,double,double> wait_for_query_answer(string submitter_name)
-{
-    IPMessage * message = receive_message(submitter_name);
-    auto * res = static_cast<SchedWaitAnswerMessage *>(message->data);
-
-    XBT_INFO("Returning : %d  %f  %f", res->nb_resources, res->processing_time, res->expected_time);
-
-    // TODO: memory cleanup
-    return std::tuple<int, double, double>(res->nb_resources, res->processing_time, res->expected_time);
-}
-
-
-void batexec_job_launcher_process(BatsimContext * context,
-                                  std::string workload_name)
-{
-/*    Workload * workload = context->workloads.at(workload_name);
-
-    auto & jobs = workload->jobs->jobs();
-    for (auto & mit : jobs)
-    {
-        auto job = mit.second;
-
-        unsigned int nb_res = job->requested_nb_res;
-
-        SchedulingAllocation * alloc = new SchedulingAllocation;
-
-        alloc->job = job;
-        alloc->hosts.clear();
-        alloc->hosts.reserve(nb_res);
-        alloc->machine_ids.clear();
-
-        for (int i = 0; i < static_cast<int>(nb_res); ++i)
-        {
-            alloc->machine_ids.insert(i);
-            alloc->hosts.push_back(context->machines[i]->host);
-        }
-
-        string pname = "job" + job->id.to_string();
-        auto actor = simgrid::s4u::Actor::create(pname.c_str(),
-                                                 context->machines[alloc->machine_ids.first_element()]->host,
-                                                 execute_job_process, context, alloc, false);
-        job->execution_actors.insert(actor);
-    }*/
 }

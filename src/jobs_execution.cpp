@@ -57,10 +57,10 @@ int execute_task(
         {
             auto * data = static_cast<SequenceProfileData *>(profile->data);
 
-            for (unsigned int sequence_iteration = 0; sequence_iteration < data->repeat; sequence_iteration++)
+            for (unsigned int sequence_iteration = 0; sequence_iteration < data->repetition_count; sequence_iteration++)
             {
                 for (unsigned int profile_index_in_sequence = 0;
-                    profile_index_in_sequence < data->sequence.size();
+                    profile_index_in_sequence < data->sequence_names.size();
                     profile_index_in_sequence++)
                 {
                     // Trace how the execution is going so that progress can be retrieved if needed
@@ -71,8 +71,6 @@ int execute_task(
                     auto sub_profile = data->profile_sequence[profile_index_in_sequence];
                     BatTask * sub_btask = new BatTask(JobPtr(btask->parent_job), sub_profile);
                     btask->sub_tasks.push_back(sub_btask);
-
-                    string task_name = "seq" + job->id.to_string() + "'" + sub_btask->profile->name + "'";
 
                     int ret_last_profile = execute_task(sub_btask, context, execute_job_msg, remaining_time);
 
@@ -100,21 +98,31 @@ int execute_task(
             }
             return profile->return_code;
         }
+        case ProfileType::FORKJOIN_COMPOSITION:
+        {
+            xbt_die("Execution of ForkJoin Composition profiles is not implemented yet");
+            //TODO implement me
+        }
+        case ProfileType::PTASK_MERGE_COMPOSITION:
+        {
+            xbt_die("Execution of Parallel Task Merge Composition profiles is not implemented yet");
+            //TODO implement me
+        }
         case ProfileType::REPLAY_SMPI:
         case ProfileType::REPLAY_USAGE:
         {
-            std::vector<std::string> trace_filenames;
+            /*std::vector<std::string> trace_filenames;
 
             if (profile->type == ProfileType::REPLAY_SMPI)
             {
-                auto * data = static_cast<ReplaySmpiProfileData *>(profile->data);
+                auto * data = static_cast<TraceReplayProfileData *>(profile->data);
                 trace_filenames = data->trace_filenames;
             }
             else
             {
-                auto * data = static_cast<ReplayUsageProfileData *>(profile->data);
+                auto * data = static_cast<TraceReplayProfileData *>(profile->data);
                 trace_filenames = data->trace_filenames;
-            }
+            }*/
 
             return execute_trace_replay(btask, alloc_placement, remaining_time, context);
         }
@@ -191,19 +199,11 @@ void execute_job_process(
     {
         XBT_INFO("Job '%s' had been killed (walltime %Lg reached)", job->id.to_cstring(), job->walltime);
         job->state = JobState::JOB_STATE_COMPLETED_WALLTIME_REACHED;
-        if (context->trace_schedule)
-        {
-            context->paje_tracer.add_job_kill(job->id, execution_request->job_allocation->hosts, simgrid::s4u::Engine::get_clock(), true);
-        }
     }
     else if (job->return_code == -2)
     {
         XBT_INFO("Job '%s' has been killed by the scheduler", job->id.to_cstring());
         job->state = JobState::JOB_STATE_COMPLETED_KILLED;
-        if (context->trace_schedule)
-        {
-            context->paje_tracer.add_job_kill(job->id, execution_request->job_allocation->hosts, simgrid::s4u::Engine::get_clock(), true);
-        }
     }
     else
     {
@@ -312,13 +312,14 @@ void killer_process(
     message->kill_jobs_message = kill_jobs_msg;
     message->acknowledge_kill_on_protocol = acknowledge_kill_on_protocol;
 
-    for (auto job : kill_jobs_msg->jobs)
+    for (auto job_id : kill_jobs_msg->job_ids)
     {
+        auto job = context->workloads.job_at(job_id);
         xbt_assert(! (job->state == JobState::JOB_STATE_REJECTED ||
                       job->state == JobState::JOB_STATE_SUBMITTED ||
                       job->state == JobState::JOB_STATE_NOT_SUBMITTED),
-            "Invalid kill: job %s has not been started (state='%s'",
-            job->id.to_cstring(), job_state_to_string(job->state).c_str()
+            "Invalid kill: job %s has not been started yet (state='%s')",
+            job_id.to_cstring(), job_state_to_string(job->state).c_str()
         );
 
         if (job->state == JobState::JOB_STATE_RUNNING)
@@ -326,11 +327,15 @@ void killer_process(
             auto task = job->task;
             xbt_assert(task != nullptr, "Internal error");
 
-            // Compute and store the kill progress of this job.
+            // Compute and store the kill progress of this job in the message
             auto kill_progress = protocol::battask_to_kill_progress(task);
+            message->jobs_progress[job_id.to_string()] = kill_progress;
 
-            // Store job progress in the message.
-            message->jobs_progress[job->id.to_string()] = kill_progress;
+            // Store the job profile if required
+            if (context->forward_profiles_on_jobs_killed)
+            {
+                message->profiles[job->profile->name] = protocol::to_profile(*(job->profile));
+            }
 
             // Try to cancel the parallel task executors if they exist
             bool cancelled_ptask = cancel_ptasks(job->task);
@@ -354,11 +359,11 @@ void killer_process(
                 context->machines.update_machines_on_job_end(job, job->execution_request->job_allocation->hosts, context);
                 job->runtime = static_cast<long double>(simgrid::s4u::Engine::get_clock()) - job->starting_time;
 
-                xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%Lg)!", job->id.to_cstring(), job->runtime);
+                xbt_assert(job->runtime >= 0, "Negative runtime of killed job '%s' (%Lg)!", job_id.to_cstring(), job->runtime);
                 if (job->runtime == 0)
                 {
                     XBT_WARN("Killed job '%s' has a null runtime. Putting epsilon instead.",
-                             job->id.to_cstring());
+                             job_id.to_cstring());
                     job->runtime = 1e-5l;
                 }
 
@@ -372,7 +377,7 @@ void killer_process(
                     job->consumed_energy = job->consumed_energy - consumed_energy_before;
 
                     // Trace the consumed energy
-                    context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job->id);
+                    context->energy_tracer.add_job_end(simgrid::s4u::Engine::get_clock(), job_id);
                 }
             }
             // Else the running ptask was asked to cancel by itself.

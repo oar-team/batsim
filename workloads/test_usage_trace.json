@@ -67,38 +67,38 @@
 
     "profiles": {
         "delay-10s": {
-            "type": "delay",
+            "type": "DelayProfile",
             "delay": 10
         },
         "ut-hetero-onephase-20-60": {
-            "type": "trace_replay",
-            "trace_type": "usage",
-            "trace_file": "usage-trace/hetero-onephase-20-60/traces.txt"
+            "type": "TraceReplayProfile",
+            "trace_type": "FractionalComputation",
+            "filename": "usage-trace/hetero-onephase-20-60/traces.txt"
         },
         "ut-hetero-onephase-10-twophases-1-97": {
-            "type": "trace_replay",
-            "trace_type": "usage",
-            "trace_file": "usage-trace/hetero-onephase-10-twophases-1-97/traces.txt"
+            "type": "TraceReplayProfile",
+            "trace_type": "FractionalComputation",
+            "filename": "usage-trace/hetero-onephase-10-twophases-1-97/traces.txt"
         },
         "ut-homo-onephase-100": {
-            "type": "trace_replay",
-            "trace_type": "usage",
-            "trace_file": "usage-trace/homo-onephase-100/traces.txt"
+            "type": "TraceReplayProfile",
+            "trace_type": "FractionalComputation",
+            "filename": "usage-trace/homo-onephase-100/traces.txt"
         },
         "ut-homo-onephase-50": {
-            "type": "trace_replay",
-            "trace_type": "usage",
-            "trace_file": "usage-trace/homo-onephase-50/traces.txt"
+            "type": "TraceReplayProfile",
+            "trace_type": "FractionalComputation",
+            "filename": "usage-trace/homo-onephase-50/traces.txt"
         },
         "ut-homo-twophases-100-10": {
-            "type": "trace_replay",
-            "trace_type": "usage",
-            "trace_file": "usage-trace/homo-twophases-100-10/traces.txt"
+            "type": "TraceReplayProfile",
+            "trace_type": "FractionalComputation",
+            "filename": "usage-trace/homo-twophases-100-10/traces.txt"
         },
         "ut-from-real-trace": {
-            "type": "trace_replay",
-            "trace_type": "usage",
-            "trace_file": "usage-trace/from-real-trace/3858728.txt"
+            "type": "TraceReplayProfile",
+            "trace_type": "FractionalComputation",
+            "filename": "usage-trace/from-real-trace/3858728.txt"
         }
     }
 }

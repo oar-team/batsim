@@ -15,7 +15,7 @@
 #include <batprotocol.hpp>
 
 #include "edc.hpp"
-#include "events.hpp"
+#include "external_events.hpp"
 #include "export.hpp"
 #include "jobs.hpp"
 #include "machines.hpp"
@@ -47,8 +47,9 @@ struct BatsimContext
     Machines machines;                              //!< The machines
     Workloads workloads;                            //!< The workloads
     Workflows workflows;                            //!< The workflows
-    std::map<std::string, EventList*> event_lists;  //!< The map of EventLists
-    PajeTracer paje_tracer;                         //!< The PajeTracer
+    std::map<std::string, ExternalEventList*> external_event_lists;                 //!< The map of EventLists
+    std::unordered_map<std::string, simgrid::s4u::ActorPtr> job_submitter_actors;   //!< The list of static_job_submitter SimGrid actors (accounts for workloads and workflows)
+    std::unordered_map<std::string, simgrid::s4u::ActorPtr> external_event_submitter_actors; //!< The list of static_external_event_submitter SimGrid actors
     PStateChangeTracer pstate_tracer;               //!< The PStateChangeTracer
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
     MachineStateTracer machine_state_tracer;        //!< The MachineStateTracer
@@ -56,7 +57,9 @@ struct BatsimContext
     CurrentSwitches current_switches;               //!< The current switches
 
     rapidjson::Document config_json;                //!< The configuration information sent to the scheduler
-    bool submission_forward_profiles;               //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
+    bool forward_profiles_on_simulation_begins;     //!< Stores whether the profiles information of jobs should be sent to the scheduler during SIMULATION_BEGINS event
+    bool forward_profiles_on_job_submission;        //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
+    bool forward_profiles_on_jobs_killed;           //!< Stores whether the profile information of killed jobs should be send to the scheduler
     bool registration_sched_enabled;                //!< Stores whether the scheduler will be able to register jobs and profiles during the simulation
     bool registration_sched_finished = false;       //!< Stores whether the scheduler has finished submitting jobs.
     bool registration_sched_ack;                    //!< Stores whether Batsim will acknowledge dynamic job submission (emit JOB_SUBMITTED events)
@@ -80,6 +83,7 @@ struct BatsimContext
     bool allow_storage_sharing;                     //!< Stores whether sharing (using the same machine to run different jobs concurrently) should be allowed on storage machines
     bool trace_schedule;                            //!< Stores whether the resulting schedule should be outputted
     bool trace_machine_states;                      //!< Stores whether the machines states should be outputted
+    bool trace_pstate_changes;                      //!< Stores whether the machine pstate changes should be outputted
     std::string platform_filename;                  //!< The name of the platform file
     std::string export_prefix;                      //!< The output export prefix
     int workflow_nb_concurrent_jobs_limit;          //!< Limits the number of concurrent jobs for workflows

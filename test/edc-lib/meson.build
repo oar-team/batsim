@@ -22,6 +22,11 @@ rejecter = shared_library('rejecter', common + ['rejecter.cpp'],
   install: true,
 )
 
+do_nothing = shared_library('do-nothing', common + ['do-nothing.cpp'],
+  dependencies: deps,
+  install: true,
+)
+
 exec1by1 = shared_library('exec1by1', common + ['exec1by1.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep],
   install: true,
@@ -63,6 +68,26 @@ probe_energy = shared_library('probe-energy', common + ['probe-energy.cpp'],
 )
 
 platform_check = shared_library('platform-check', common + ['platform-check.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
+  install: true,
+)
+
+force_simu_stop = shared_library('force-simu-stop', common + ['force-simu-stop.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep],
+  install: true,
+)
+
+dyn_register = shared_library('dyn-register', common + ['dyn-register.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep],
+  install: true,
+)
+
+external_event_check = shared_library('external-event-check', common + ['external-event-check.cpp'],
+  dependencies: deps + [nlohmann_json_dep],
+  install: true,
+)
+
+exec1by1_dvfs_dyn = shared_library('exec1by1-dvfs-dyn', common + ['exec1by1-dvfs-dyn.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
   install: true,
 )

@@ -24,15 +24,6 @@ void killer_process(
 );
 
 /**
- * @brief The process in charge of executing a rank of a SMPI profile
- * @param[in] job The job associated with this profile execution
- * @param[in] profile_data The data associated with the executed profile
- * @param[in] termination_mbox_name The name of the mailbox onto which this function writes to signal its termination.
- * @param[in] rank The rank whose replay is to be simulated
- */
-void replay_smpi_trace(JobPtr job, ReplaySmpiProfileData * profile_data, const std::string & termination_mbox_name, int rank);
-
-/**
  * @brief Simulates a delay profile (sleeps until finished or walltime)
  * @param[in] sleeptime The time to sleep
  * @param[in,out] remaining_time The remaining amount of time before walltime

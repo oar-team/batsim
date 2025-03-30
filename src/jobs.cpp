@@ -226,10 +226,12 @@ void Jobs::delete_job(const JobIdentifier & job_id, const bool & garbage_collect
                job_id.to_cstring());
 
     std::string profile_name = _jobs[job_id]->profile->name;
+    Workload * profile_workload = _jobs[job_id]->profile->workload;
     _jobs.erase(job_id);
+
     if (garbage_collect_profiles)
     {
-        _workload->profiles->remove_profile(profile_name);
+        profile_workload->profiles->remove_profile(profile_name);
     }
 }
 
@@ -400,8 +402,13 @@ JobPtr Job::from_json(const rapidjson::Value & json_desc,
     xbt_assert(json_desc["profile"].IsString(), "%s: job %s has a non-string 'profile' field",
                error_prefix.c_str(), j->id.to_string().c_str());
 
-    // TODO raise exception when the profile does not exist.
     std::string profile_name = json_desc["profile"].GetString();
+    if (profile_name.find(workload->name) == std::string::npos)
+    {
+        // the workload name is not present in the profile name
+        profile_name = workload->name + "!" + profile_name;
+    }
+
     xbt_assert(workload->profiles->exists(profile_name), "%s: the profile %s for job %s does not exist",
                error_prefix.c_str(), profile_name.c_str(), j->id.to_string().c_str());
     j->profile = workload->profiles->at(profile_name);

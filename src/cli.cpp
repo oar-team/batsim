@@ -12,6 +12,9 @@
 
 #include <CLI/CLI.hpp>
 
+#include <filesystem>
+#include <fstream>
+
 using namespace std;
 
 /**
@@ -24,7 +27,7 @@ static std::string read_whole_file_as_string(const std::string & filename)
     std::ifstream f(filename);
     if (!f.is_open())
     {
-        throw std::runtime_error("cannot read scheduler configuration file '" + filename + "'");
+        throw std::runtime_error("cannot read file '" + filename + "'");
     }
 
     return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
@@ -195,7 +198,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         ->option_text("(<file> <start-time>)...");
 
     std::vector<std::string> external_events_files;
-    app.add_option("--events", external_events_files, "A file containing external events to inject in the simulation")
+    app.add_option("--ee,--external-events", external_events_files, "A file containing external events to inject in the simulation")
         ->group(input_group_name)
         ->option_text("<file>...")
         ->check(CLI::ExistingFile);
@@ -380,6 +383,26 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
     }
     only_print_information = (nb_stopping_flags == 1);
 
+    // write configuration to file if --gen-config is used
+    if (!output_configuration_file.empty())
+    {
+        if (file_exists(output_configuration_file))
+        {
+            fprintf(stderr, "WARNING in command line parsing: writing configuration to already existing file '%s'.", output_configuration_file.c_str());
+        }
+
+        // Check if INI format is required
+        if (std::filesystem::path(output_configuration_file).extension() == ".ini")
+        {
+            app.config_formatter(std::make_shared<CLI::ConfigINI>());
+        }
+
+        //std::string output_configuration_str = app.config_to_str();
+        std::ofstream ofstream(output_configuration_file);
+        ofstream << app.config_to_str();
+        ofstream.close();
+    }
+
     // Workloads
     for (size_t i = 0; i < workload_files.size(); i++)
     {
@@ -445,11 +468,11 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
     {
         const string & events_file = external_events_files[i];
 
-        MainArguments::EventListDescription desc;
+        MainArguments::ExternalEventListDescription desc;
         desc.filename = absolute_filename(events_file);
         desc.name = string("e") + to_string(i);
 
-        main_args.eventList_descriptions.push_back(desc);
+        main_args.externalEventList_descriptions.push_back(desc);
     }
 
     // Platform
