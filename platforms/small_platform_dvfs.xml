@@ -1,0 +1,69 @@
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+<platform version="4.1">
+ <zone id="AS0" routing="Full">
+   <host id="master_host" speed="100.0Mf"/>
+   <host id="a" core="1" pstate="0" speed="100.0f,50.0f">
+     <prop id="wattage_per_state" value="50.0:100:200.0,50.0:80:120"/>
+     <prop id="wattage_off" value="5.0"/>
+   </host>
+   <host id="b" core="1" pstate="0" speed="100.0f,50.0f">
+     <prop id="wattage_per_state" value="50.0:100:200.0,50.0:80:120"/>
+     <prop id="wattage_off" value="5.0"/>
+   </host>
+   <host id="c" core="1" pstate="0" speed="50.0f,25.0f">
+     <prop id="wattage_per_state" value="50.0:90.0:150.0,50.0:70:110"/>
+     <prop id="wattage_off" value="5.0"/>
+   </host>
+   <host id="d" core="1" pstate="0" speed="50.0f,25.0f">
+     <prop id="wattage_per_state" value="50.0:90.0:150.0,50.0:70:110"/>
+     <prop id="wattage_off" value="5.0"/>
+   </host>
+   <link id="6" bandwidth="41.279125MBps" latency="59.904us"/>
+   <link id="3" bandwidth="34.285625MBps" latency="514.433us"/>
+   <link id="7" bandwidth="11.618875MBps" latency="189.98us"/>
+   <link id="9" bandwidth="7.20975MBps" latency="1.461517ms"/>
+   <link id="2" bandwidth="118.6825MBps" latency="136.931us"/>
+   <link id="8" bandwidth="8.158MBps" latency="270.544us"/>
+   <link id="1" bandwidth="34.285625MBps" latency="514.433us"/>
+   <link id="4" bandwidth="10.099625MBps" latency="479.78us"/>
+   <link id="0" bandwidth="41.279125MBps" latency="59.904us"/>
+   <link id="5" bandwidth="27.94625MBps" latency="278.066us"/>
+   <link id="loopback" bandwidth="498MBps" latency="15us" sharing_policy="FATPIPE"/>
+   <route src="master_host" dst="master_host"><link_ctn id="loopback"/></route>
+   <route src="a" dst="a"><link_ctn id="loopback"/></route>
+   <route src="b" dst="b"><link_ctn id="loopback"/></route>
+   <route src="c" dst="c"><link_ctn id="loopback"/></route>
+   <route src="d" dst="d"><link_ctn id="loopback"/></route>
+   <route src="master_host" dst="a">
+     <link_ctn id="9"/>
+   </route>
+   <route src="master_host" dst="b">
+     <link_ctn id="4"/><link_ctn id="3"/><link_ctn id="2"/><link_ctn id="0"/><link_ctn id="1"/><link_ctn id="8"/>
+   </route>
+   <route src="master_host" dst="c">
+     <link_ctn id="4"/><link_ctn id="3"/><link_ctn id="5"/>
+   </route>
+   <route src="master_host" dst="d">
+     <link_ctn id="4"/><link_ctn id="3"/><link_ctn id="2"/><link_ctn id="0"/><link_ctn id="1"/><link_ctn id="6"/><link_ctn id="7"/>
+   </route>
+   <route src="a" dst="b">
+     <link_ctn id="9"/><link_ctn id="4"/><link_ctn id="3"/><link_ctn id="2"/><link_ctn id="0"/><link_ctn id="1"/><link_ctn id="8"/>
+   </route>
+   <route src="a" dst="c">
+     <link_ctn id="9"/><link_ctn id="4"/><link_ctn id="3"/><link_ctn id="5"/>
+   </route>
+   <route src="a" dst="d">
+     <link_ctn id="9"/><link_ctn id="4"/><link_ctn id="3"/><link_ctn id="2"/><link_ctn id="0"/><link_ctn id="1"/><link_ctn id="6"/><link_ctn id="7"/>
+   </route>
+   <route src="b" dst="c">
+     <link_ctn id="8"/><link_ctn id="1"/><link_ctn id="0"/><link_ctn id="2"/><link_ctn id="5"/>
+   </route>
+   <route src="b" dst="d">
+     <link_ctn id="8"/><link_ctn id="6"/><link_ctn id="7"/>
+   </route>
+   <route src="c" dst="d">
+     <link_ctn id="5"/><link_ctn id="2"/><link_ctn id="0"/><link_ctn id="1"/><link_ctn id="6"/><link_ctn id="7"/>
+   </route>
+ </zone>
+ </platform>

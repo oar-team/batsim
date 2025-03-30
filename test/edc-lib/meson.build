@@ -86,3 +86,8 @@ external_event_check = shared_library('external-event-check', common + ['externa
   dependencies: deps + [nlohmann_json_dep],
   install: true,
 )
+
+exec1by1_dvfs_dyn = shared_library('exec1by1-dvfs-dyn', common + ['exec1by1-dvfs-dyn.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
+  install: true,
+)
