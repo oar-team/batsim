@@ -79,6 +79,15 @@ def test_do_nothing_deadlock(test_root_dir, use_json):
     assert p.returncode != 0, f'batsim returned 0 while a SimGrid deadlock was expected'
     assert 'The simulation could NOT finish because a deadlock was detected in SimGrid' in p.stderr, f'batsim did not give deadlock-related message on stderr while a SimGrid deadlock was expected'
 
+def test_do_nothing_no_deadlock(test_root_dir, use_json):
+    platform = 'small_platform'
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}-' + str(int(use_json))
+
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'do-nothing', use_json=use_json)
+    p = run_batsim(batcmd, outdir)
+    assert p.returncode == 0
+
 def test_force_simu_stop(test_root_dir, use_json):
     platform = "small_platform"
     workload = "test_delays"
