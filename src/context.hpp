@@ -49,7 +49,7 @@ struct BatsimContext
     Workflows workflows;                            //!< The workflows
     std::map<std::string, ExternalEventList*> external_event_lists;                 //!< The map of EventLists
     std::unordered_map<std::string, simgrid::s4u::ActorPtr> job_submitter_actors;   //!< The list of static_job_submitter SimGrid actors (accounts for workloads and workflows)
-    std::unordered_map<std::string, simgrid::s4u::ActorPtr> external_event_submitter_actors; //!< The list of static_external_event_submitter SimGrid actors
+    std::unordered_map<std::string, simgrid::s4u::ActorPtr> event_submitter_actors; //!< The list of static_external_event_submitter SimGrid actors
     PStateChangeTracer pstate_tracer;               //!< The PStateChangeTracer
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
     MachineStateTracer machine_state_tracer;        //!< The MachineStateTracer

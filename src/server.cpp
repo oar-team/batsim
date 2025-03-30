@@ -275,7 +275,7 @@ void server_on_submitter_bye(ServerData * data,
 
     if (submitter_type == SubmitterType::EXTERNAL_EVENT_SUBMITTER)
     {
-        data->context->external_event_submitter_actors.erase(message->submitter_name);
+        data->context->event_submitter_actors.erase(message->submitter_name);
 
         if(data->submitter_counters[submitter_type].nb_submitters_finished == data->submitter_counters[submitter_type].expected_nb_submitters)
         {
