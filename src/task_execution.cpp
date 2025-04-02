@@ -21,11 +21,13 @@ using namespace roles;
  *        parallel task profile. Also set the prefix name of the task.
  * @param[out] computation_amount the computation matrix to be simulated by the parallel task
  * @param[out] communication_amount the communication matrix to be simulated by the parallel task
+ * @param[out] utilization the max CPU utilization to be simulated (as a decimal between 0 and 1)
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  */
 void generate_parallel_task(std::vector<double>& computation_amount,
                             std::vector<double>& communication_amount,
+                            double& utilization,
                             unsigned int nb_res,
                             void * profile_data)
 {
@@ -42,6 +44,7 @@ void generate_parallel_task(std::vector<double>& computation_amount,
     // Retrieve the matrices from the profile
     memcpy(computation_amount.data(), data->cpu, sizeof(double) * nb_res);
     memcpy(communication_amount.data(), data->com, sizeof(double) * nb_res * nb_res);
+    utilization = data->util;
 }
 
 /**
@@ -49,11 +52,13 @@ void generate_parallel_task(std::vector<double>& computation_amount,
  *        parallel homogeneous task profile. Also set the prefix name of the task.
  * @param[out] computation_amount the computation matrix to be simulated by the parallel task
  * @param[out] communication_amount the communication matrix to be simulated by the parallel task
+ * @param[out] utilization the max CPU utilization to be simulated (as a decimal between 0 and 1)
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  */
 void generate_parallel_homogeneous(std::vector<double>& computation_amount,
                                    std::vector<double>& communication_amount,
+                                   double& utilization,
                                    unsigned int nb_res,
                                    void * profile_data)
 {
@@ -61,6 +66,7 @@ void generate_parallel_homogeneous(std::vector<double>& computation_amount,
 
     double cpu = data->cpu;
     double com = data->com;
+    utilization = data->util;
 
     // Prepare buffers
     computation_amount.reserve(nb_res);
@@ -100,6 +106,7 @@ void generate_parallel_homogeneous(std::vector<double>& computation_amount,
  *
  * @param[out] computation_amount the computation matrix to be simulated by the parallel task
  * @param[out] communication_amount the communication matrix to be simulated by the parallel task
+ * @param[out] utilization the max CPU utilization to be simulated (as a decimal between 0 and 1)
  * @param[in] nb_res the number of resources the task have to run on
  * @param[in] profile_data the profile data
  *
@@ -109,6 +116,7 @@ void generate_parallel_homogeneous(std::vector<double>& computation_amount,
  */
 void generate_parallel_homogeneous_total_amount(std::vector<double>& computation_amount,
                                                 std::vector<double>& communication_amount,
+                                                double& utilization,
                                                 unsigned int nb_res,
                                                 void * profile_data)
 {
@@ -147,6 +155,8 @@ void generate_parallel_homogeneous_total_amount(std::vector<double>& computation
             }
         }
     }
+
+    utilization = data->util;
 }
 
 /**
@@ -155,6 +165,7 @@ void generate_parallel_homogeneous_total_amount(std::vector<double>& computation
  *
  * @param[out] computation_amount the computation matrix to be simulated by the parallel task
  * @param[out] communication_amount the communication matrix to be simulated by the parallel task
+ * @param[out] utilization the max CPU utilization to be simulated (as a decimal between 0 and 1)
  * @param[in,out] hosts_to_use the list of host to be used by the task
  * @param[in] storage_mapping mapping from label given in the profile and machine id
  * @param[in] profile_data the profile data
@@ -165,6 +176,7 @@ void generate_parallel_homogeneous_total_amount(std::vector<double>& computation
  */
 void generate_parallel_homogeneous_with_pfs(std::vector<double>& computation_amount,
                                             std::vector<double>& communication_amount,
+                                            double& utilization,
                                             std::vector<simgrid::s4u::Host*> & hosts_to_use,
                                             const std::map<std::string, int> * storage_mapping,
                                             void * profile_data,
@@ -243,6 +255,8 @@ void generate_parallel_homogeneous_with_pfs(std::vector<double>& computation_amo
             }
         }
     }
+
+    utilization = 1.0;
 }
 
 /**
@@ -253,6 +267,7 @@ void generate_parallel_homogeneous_with_pfs(std::vector<double>& computation_amo
  * name of the task.
  * @param[out] computation_amount the computation matrix to be simulated by the parallel task
  * @param[out] communication_amount the communication matrix to be simulated by the parallel task
+ * @param[out] utilization the max CPU utilization to be simulated (as a decimal between 0 and 1)
  * @param[in,out] hosts_to_use the list of host to be used by the task
  * @param[in] storage_mapping mapping from label given in the profile and machine id
  * @param[in] profile_data the profile data
@@ -260,6 +275,7 @@ void generate_parallel_homogeneous_with_pfs(std::vector<double>& computation_amo
  */
 void generate_data_staging_task(std::vector<double>&  computation_amount,
                                 std::vector<double>& communication_amount,
+                                double& utilization,
                                 std::vector<simgrid::s4u::Host*> & hosts_to_use,
                                 const std::map<std::string, int> * storage_mapping,
                                 void * profile_data,
@@ -330,12 +346,15 @@ void generate_data_staging_task(std::vector<double>&  computation_amount,
             }
         }
     }
+
+    utilization = 1.0;
 }
 
 /**
  * @brief Debug print of a parallel task (via XBT_DEBUG)
  * @param[in] computation_vector The ptask computation vector
  * @param[in] communication_matrix The ptask communication matrix
+ * @param[in] utilization the max CPU utilization d
  * @param[in] nb_res The number of hosts involved in the parallel task
  * @param[in] alloc The resource ids allocated for the parallel task
  * @param[in] mapping The mapping between executor id and resource id, if any
@@ -374,6 +393,7 @@ void debug_print_ptask(const std::vector<double>& computation_vector,
  * @brief
  * @param[out] computation_vector The computation vector to be simulated by the parallel task
  * @param[out] communication_matrix The communication matrix to be simulated by the parallel task
+ * @param[out] utilization the max CPU utilization to be simulated (as a decimal between 0 and 1)
  * @param[in,out] hosts_to_use The list of host to be used by the task
  * @param[in] profile The profile to be converted to a compute/comm matrix
  * @param[in] storage_mapping The storage mapping
@@ -381,6 +401,7 @@ void debug_print_ptask(const std::vector<double>& computation_vector,
  */
 void generate_matrices_from_profile(std::vector<double>& computation_vector,
                                     std::vector<double>& communication_matrix,
+                                    double& utilization,
                                     std::vector<simgrid::s4u::Host*> & hosts_to_use,
                                     ProfilePtr profile,
                                     const std::map<std::string, int> * storage_mapping,
@@ -396,24 +417,28 @@ void generate_matrices_from_profile(std::vector<double>& computation_vector,
     case ProfileType::PARALLEL:
         generate_parallel_task(computation_vector,
                                    communication_matrix,
+                                   utilization,
                                    nb_res,
                                    profile->data);
         break;
     case ProfileType::PARALLEL_HOMOGENEOUS:
         generate_parallel_homogeneous(computation_vector,
                                           communication_matrix,
+                                          utilization,
                                           nb_res,
                                           profile->data);
         break;
     case ProfileType::PARALLEL_HOMOGENEOUS_TOTAL_AMOUNT:
         generate_parallel_homogeneous_total_amount(computation_vector,
                                                        communication_matrix,
+                                                       utilization,
                                                        nb_res,
                                                        profile->data);
         break;
     case ProfileType::PARALLEL_HOMOGENEOUS_PFS:
         generate_parallel_homogeneous_with_pfs(computation_vector,
                                                    communication_matrix,
+                                                   utilization,
                                                    hosts_to_use,
                                                    storage_mapping,
                                                    profile->data,
@@ -422,6 +447,7 @@ void generate_matrices_from_profile(std::vector<double>& computation_vector,
     case ProfileType::DATA_STAGING:
         generate_data_staging_task(computation_vector,
                                         communication_matrix,
+                                        utilization,
                                         hosts_to_use,
                                         storage_mapping,
                                         profile->data,
@@ -462,6 +488,60 @@ void check_ptask_execution_permission(const IntervalSet & alloc,
     }
 }
 
+/**
+ * @brief
+ * @param[in, out] computation_vector The computation vector to be simulated by the parallel task
+ * @param[in, out] communication_matrix The communication matrix to be simulated by the parallel task
+ * @param[in,out] hosts_to_use The list of host to be used by the task
+ */
+void replicate_for_cores(std::vector<double>& computation_vector,
+                         std::vector<double>& communication_matrix,
+                         std::vector<simgrid::s4u::Host*> & hosts_to_use,
+                         double usage)
+{
+    // compute how many cores should be used depending on usage and on which host is used
+    const double nb_cores = simgrid::s4u::this_actor::get_host()->get_core_count();
+    const int nb_cores_to_use = std::max(round(usage * nb_cores), 1.0); // use at least 1 core, otherwise using flops is impossible
+    const int nb_hosts = hosts_to_use.size();
+
+    std::vector<simgrid::s4u::Host*> hosts_copy(hosts_to_use);
+    std::vector<double> computation_copy(computation_vector);
+    std::vector<double> communication_copy(communication_matrix);
+    hosts_to_use.reserve(nb_cores_to_use * nb_hosts);
+    computation_vector.reserve(nb_cores_to_use * nb_hosts);
+
+    for (int i = 0; i < nb_cores_to_use - 1; ++i) {
+        for (auto host : hosts_copy) {
+            hosts_to_use.push_back(host);
+        }
+    }
+
+    for (int i = 0; i < nb_cores_to_use - 1; ++i) {
+        for (auto computation : computation_copy) {
+            computation_vector.push_back(computation);
+        }
+    }
+
+    if(!communication_matrix.empty()) {
+        communication_matrix.clear();
+        communication_matrix.reserve(nb_cores_to_use * nb_hosts * nb_cores_to_use * nb_cores);
+        for(int row = 0; row < nb_hosts; row++) {
+            for(int col = 0; col < nb_hosts; col++) {
+                communication_matrix.push_back(communication_copy[(row * nb_hosts) + col]);
+            }
+            for(int col = nb_hosts; col < (nb_cores_to_use - 1) * nb_hosts; col++) {
+                communication_matrix.push_back(0);
+            }
+        }
+
+        for(int row = nb_hosts; row < (nb_cores_to_use - 1) * nb_hosts; row++) {
+            for(int col = 0; col < nb_cores_to_use * nb_hosts; col++) {
+                communication_matrix.push_back(0);
+            }
+        }
+    }
+}
+
 int execute_parallel_task(BatTask * btask,
                      const SchedulingAllocation* allocation,
                      double * remaining_time,
@@ -472,6 +552,7 @@ int execute_parallel_task(BatTask * btask,
 
     std::vector<double> computation_vector;
     std::vector<double> communication_matrix;
+    double utilization;
 
     string task_name = profile_type_to_string(profile->type) + '_' + static_cast<JobPtr>(btask->parent_job)->id.to_string() +
                        "_" + btask->profile->name;
@@ -480,6 +561,7 @@ int execute_parallel_task(BatTask * btask,
 
     generate_matrices_from_profile(computation_vector,
                                   communication_matrix,
+                                  utilization,
                                   hosts_to_use,
                                   profile,
                                   & allocation->storage_mapping,
@@ -500,6 +582,7 @@ int execute_parallel_task(BatTask * btask,
         std::vector<simgrid::s4u::Host*> io_hosts = allocation->io_hosts;
         generate_matrices_from_profile(io_computation_vector,
                                       io_communication_matrix,
+                                      utilization,
                                       io_hosts,
                                       io_profile,
                                       nullptr,
@@ -639,6 +722,10 @@ int execute_parallel_task(BatTask * btask,
 
     simgrid::s4u::ExecPtr ptask = simgrid::s4u::this_actor::exec_init(hosts_to_use, computation_vector, communication_matrix);
     ptask->set_name(task_name.c_str());
+
+    // double flops = ptask->get_host()->get_speed() * utilization;
+    // XBT_DEBUG("Setting utilization of '%s' on %zu resources to %g", task_name.c_str(), hosts_to_use.size(), flops);
+    // ptask->set_bound(flops); // Set bound can only be set per task not per host
 
     // Keep track of the task to get information on kill
     btask->ptask = ptask;
