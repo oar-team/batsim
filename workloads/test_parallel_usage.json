@@ -1,0 +1,37 @@
+{
+    "nb_res": 4,
+    "jobs": [
+        {"id":1, "subtime":0, "walltime": 100, "res": 4, "profile": "low"},
+        {"id":2, "subtime":0, "walltime": 100, "res": 4, "profile": "high"},
+
+        {"id":3, "subtime":0, "walltime": 100, "res": 4, "profile": "comm_bound_low"},
+        {"id":4, "subtime":0, "walltime": 100, "res": 4, "profile": "comm_bound_high"}
+    ],
+
+    "profiles": {
+        "low": {
+            "type": "parallel_homogeneous",
+            "cpu": 1e9,
+            "com": 1e5,
+            "util": 0.1
+        },
+        "high": {
+            "type": "parallel_homogeneous",
+            "cpu": 1e9,
+            "com": 1e5,
+            "util": 1.0
+        },
+        "comm_bound_low": {
+            "type": "parallel_homogeneous",
+            "cpu": 0,
+            "com": 1e5,
+            "util": 0.1
+        },
+        "comm_bound_high": {
+            "type": "parallel_homogeneous",
+            "cpu": 0,
+            "com": 1e5,
+            "util": 1.0
+        }
+    }
+}

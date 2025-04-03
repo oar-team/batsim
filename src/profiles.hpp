@@ -102,6 +102,7 @@ struct ParallelProfileData
     unsigned int nb_res;    //!< The number of resources
     double * cpu = nullptr; //!< The computation vector
     double * com = nullptr; //!< The communication matrix
+    double util; //!< The cpu utilization on each node
 };
 
 /**
@@ -111,6 +112,7 @@ struct ParallelHomogeneousProfileData
 {
     double cpu; //!< The computation amount on each node
     double com; //!< The communication amount between each pair of nodes
+    double util; //!< The cpu utilization on each node
 };
 
 /**
@@ -120,6 +122,7 @@ struct ParallelHomogeneousTotalAmountProfileData
 {
     double cpu; //!< The computation amount to spread over the nodes
     double com; //!< The communication amount to spread over each pair of nodes
+    double util; //!< The cpu utilization on each node
 };
 /**
  * @brief The data associated to DELAY profiles
