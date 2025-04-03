@@ -11,7 +11,12 @@ unique:
   script:
     # build and run stuff
     - nix build .#ci-batsim-internal-test -o result-int
+    - cp -rL --no-preserve=all result-int ./internal_test_report
+    - cat ./internal_test_report/test_report.json
+
     - nix build .#ci-batsim-edc-test-from-internal-gcda -o result-ext
+    - cp -rL --no-preserve=all result-ext ./external_test_report
+
     - nix build .#ci-batsim-test-coverage-report -o result-cov
     - cp -rL --no-preserve=all result-cov ./coverage_report
     - cat result-cov/file-summary.txt
@@ -23,4 +28,6 @@ unique:
     when: always
     expire_in: 8 hours
     paths:
+      - /builds/batsim/batsim/internal_test_report
+      - /builds/batsim/batsim/external_test_report
       - /builds/batsim/batsim/coverage_report

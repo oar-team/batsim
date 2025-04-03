@@ -19,3 +19,6 @@ dump.rdb
 result
 .tags*
 tags
+result-*
+internal_test_report
+external_test_report
