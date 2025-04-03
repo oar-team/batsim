@@ -19,7 +19,7 @@ stdenv.mkDerivation rec {
     export GCOV_PREFIX=$(realpath gcda)
     export GCOV_PREFIX_STRIP=${batsim.GCOV_PREFIX_STRIP}
   '' + ''
-    batsim-func-tests --gtest_output="xml:./test_report.xml"
+    batsim-func-tests --gtest_output="json:./test_report.json"
   '';
   installPhase = ''
     mkdir -p $out
