@@ -504,6 +504,8 @@ void replicate_for_cores(std::vector<double>& computation_vector,
     const int nb_cores_to_use = std::max(round(usage * nb_cores), 1.0); // use at least 1 core, otherwise using flops is impossible
     const int nb_hosts = hosts_to_use.size();
 
+    XBT_DEBUG("Replicating computation to use %d cores per machine", nb_cores_to_use);
+
     std::vector<simgrid::s4u::Host*> hosts_copy(hosts_to_use);
     std::vector<double> computation_copy(computation_vector);
     std::vector<double> communication_copy(communication_matrix);
@@ -524,17 +526,17 @@ void replicate_for_cores(std::vector<double>& computation_vector,
 
     if(!communication_matrix.empty()) {
         communication_matrix.clear();
-        communication_matrix.reserve(nb_cores_to_use * nb_hosts * nb_cores_to_use * nb_cores);
+        communication_matrix.reserve(nb_cores_to_use * nb_hosts * nb_cores_to_use * nb_hosts);
         for(int row = 0; row < nb_hosts; row++) {
             for(int col = 0; col < nb_hosts; col++) {
                 communication_matrix.push_back(communication_copy[(row * nb_hosts) + col]);
             }
-            for(int col = nb_hosts; col < (nb_cores_to_use - 1) * nb_hosts; col++) {
+            for(int col = nb_hosts; col < nb_cores_to_use* nb_hosts; col++) {
                 communication_matrix.push_back(0);
             }
         }
 
-        for(int row = nb_hosts; row < (nb_cores_to_use - 1) * nb_hosts; row++) {
+        for(int row = nb_hosts; row < nb_cores_to_use * nb_hosts; row++) {
             for(int col = 0; col < nb_cores_to_use * nb_hosts; col++) {
                 communication_matrix.push_back(0);
             }
@@ -719,7 +721,7 @@ int execute_parallel_task(BatTask * btask,
 
     // Create the parallel task
     XBT_DEBUG("Creating parallel task '%s' on %zu resources", task_name.c_str(), hosts_to_use.size());
-
+    replicate_for_cores(computation_vector, communication_matrix, hosts_to_use, utilization);
     simgrid::s4u::ExecPtr ptask = simgrid::s4u::this_actor::exec_init(hosts_to_use, computation_vector, communication_matrix);
     ptask->set_name(task_name.c_str());
 

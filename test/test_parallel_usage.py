@@ -44,6 +44,27 @@ def usage_trace(platform, workload, algorithm):
     ret = run_robin(robin_filename)
     if ret.returncode != 0: raise Exception(f'Bad robin return code ({ret.returncode})')
 
+    batjobs_filename = f'{output_dir}/batres_jobs.csv'
+    jobs = pd.read_csv(batjobs_filename)
+    jobs['job_id'] = jobs['job_id'].astype('string')
+    jobs.sort_values(by=['job_id'], inplace=True)
+
+    expected = [
+        ['1', 10, 4 * joule_prediction(10, wmin, wmax, 0.1)],
+        ['2', 10, 4 * joule_prediction(10, wmin, wmax, 0.1)],
+
+        ['3', 0.086, 4 * joule_prediction(10, wmin, wmax, 0)],
+        ['4', 0.086, 4 * joule_prediction(10, wmin, wmax, 0)]
+    ]
+    expected_df = pd.DataFrame(expected, columns = ['job_id', 'expected_execution_time', 'expected_consumed_energy'])
+
+    merged = pd.merge(jobs, expected_df)
+    assert(len(merged) != len(jobs), "The number of jobs completed does not match the expected amount.")
+
+    merged['valid'] = merged.apply(check_ok, axis=1)
+    print(merged[["job_id", "valid", "execution_time", "expected_execution_time", "consumed_energy", "expected_consumed_energy"]])
+    assert(merged['valid'].sum() != len(merged), 'The execution of some jobs did not match this test expectations.')
+    
 
 def test_usage_trace(energy_small_platform, parallel_usage_workload, fcfs_algorithm):
     usage_trace(energy_small_platform, parallel_usage_workload, fcfs_algorithm)
