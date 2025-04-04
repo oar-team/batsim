@@ -23,7 +23,7 @@ rejecter = shared_library('rejecter', common + ['rejecter.cpp'],
 )
 
 do_nothing = shared_library('do-nothing', common + ['do-nothing.cpp'],
-  dependencies: deps,
+  dependencies: deps + [nlohmann_json_dep],
   install: true,
 )
 

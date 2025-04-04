@@ -158,6 +158,9 @@ void server_process(BatsimContext * context)
 
         // Consistency
         xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
+
+        // Did the EDC replied to Batsim's hello?
+        xbt_assert(data->sched_said_hello, "Left simulation loop, but Batsim has never received an answer to its Hello message. Please fix your EDC so that it sends a EDCHello back to Batsim.");
     }
 
     delete data;
