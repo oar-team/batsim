@@ -312,7 +312,7 @@ batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context
         const auto & workload_name = kv.first;
         const auto * workload = kv.second;
 
-        begins.add_workload(workload_name, workload->file);
+        begins.add_workload(workload_name, workload->filename);
 
         // Add profiles if requested by the EDC
         if (context->forward_profiles_on_simulation_begins)

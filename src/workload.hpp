@@ -103,7 +103,7 @@ public:
 
 public:
     std::string name; //!< The Workload name
-    std::string file = ""; //!< The Workload file if it exists
+    std::string filename = ""; //!< The Workload file if it exists
     Jobs * jobs = nullptr; //!< The Jobs of the Workload
     Profiles * profiles = nullptr; //!< The Profiles associated to the Jobs of the Workload
     bool _is_static = false; //!< Whether the workload is dynamic or not
