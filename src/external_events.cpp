@@ -109,6 +109,12 @@ ExternalEvent * ExternalEvent::from_json(const std::string & json_str,
     return ExternalEvent::from_json(doc, error_prefix);
 }
 
+void ExternalEvent::set_id(const std::string & id)
+{
+    this->id = id;
+}
+
+
 bool event_comparator_timestamp_number(const ExternalEvent * a, const ExternalEvent * b)
 {
     if (a->timestamp == b->timestamp)
@@ -121,7 +127,7 @@ bool event_comparator_timestamp_number(const ExternalEvent * a, const ExternalEv
 
 // Events-related functions
 ExternalEventList::ExternalEventList(const string &name, const bool is_static) :
-    _name(name),
+    name(name),
     _is_static(is_static)
 {
 }
@@ -137,7 +143,9 @@ ExternalEventList::~ExternalEventList()
 void ExternalEventList::load_from_json(const std::string & json_filename)
 {
     XBT_INFO("Loading JSON events from '%s' ...", json_filename.c_str());
-    _file = json_filename;
+    filename = json_filename;
+
+    int next_id = 0;
 
     std::ifstream ifile(json_filename.c_str());
     xbt_assert(ifile.is_open(), "Cannot read file '%s'", json_filename.c_str());
@@ -151,7 +159,9 @@ void ExternalEventList::load_from_json(const std::string & json_filename)
             xbt_assert(!doc.HasParseError() and doc.IsObject(), "Invalid JSON event file %s, an event could not be parsed.", json_filename.c_str());
 
             ExternalEvent * event = ExternalEvent::from_json(doc);
+            event->set_id(name+"!"+std::to_string(next_id));
             add_event(event);
+            next_id++;
         }
     }
     sort(_events.begin(), _events.end(), event_comparator_timestamp_number);

@@ -393,7 +393,7 @@ void server_on_external_events_occurred(ServerData * data,
 
     for (const ExternalEvent * event : message->occurred_events)
     {
-        data->context->proto_msg_builder->add_external_event_occurred(protocol::to_external_event(*event));
+        data->context->proto_msg_builder->add_external_event_occurred(event->id, protocol::to_external_event(*event));
     }
 }
 

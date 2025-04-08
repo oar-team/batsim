@@ -325,6 +325,12 @@ batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context
         }
     }
 
+    // External Events
+    for (const auto & kv : context->external_event_lists)
+    {
+        begins.add_external_event_list(kv.first, kv.second->filename);
+    }
+
     // Misc.
     begins.set_batsim_execution_context(context->main_args->generate_execution_context_json());
     begins.set_batsim_arguments(std::make_shared<std::vector<std::string> >(context->main_args->raw_argv));

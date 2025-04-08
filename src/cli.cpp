@@ -470,7 +470,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
 
         MainArguments::ExternalEventListDescription desc;
         desc.filename = absolute_filename(events_file);
-        desc.name = string("e") + to_string(i);
+        desc.name = string("ee") + to_string(i);
 
         main_args.externalEventList_descriptions.push_back(desc);
     }

@@ -51,7 +51,8 @@ struct ExternalEvent
     ExternalEvent() = default;
     ~ExternalEvent();
 
-    ExternalEventType type;             //!< The type of the ExternalEvent
+    std::string id;             //!< The ExternalEvent unique identifier
+    ExternalEventType type;     //!< The type of the ExternalEvent
     long double timestamp = -1; //!< The occurring time of the ExternalEvent
     void * data = nullptr;      //!< The ExternalEvent data
 
@@ -74,6 +75,8 @@ public:
     static ExternalEvent * from_json(const std::string & json_str,
                              const std::string & error_prefix = "Invalid JSON event");
 
+
+    void set_id(const std::string & id);
 };
 
 /**
@@ -132,9 +135,11 @@ public:
      */
     bool is_static() const;
 
+public:
+    std::string name;              //!< The name of the event list
+    std::string filename = "";     //!< The filename of the event list, if any
+
 private:
     std::vector<ExternalEvent*> _events;    //!< The list of events (should be sorted in non-decreasing timestamp)
-    std::string _name;              //!< The name of the event list
-    std::string _file = "";         //!< The filename of the event list, if any
     bool _is_static;                //!< Whether the EventList is dynamic
 };
