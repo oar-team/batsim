@@ -27,7 +27,7 @@ let
           text = ''
             experimental-features = nix-command flakes
             substituters = https://cache.nixos.org https://batsim.cachix.org https://capack.cachix.org
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= batsim.cachix.org-1:IQ/4c8P/yzhxQwp6t58LatLcvHz0qMolEHJQz9w9pxc= capack.cachix.org-1:38D+QFk3JXvMYJuhSaZ+3Nm/Qh+bZJdCrdu4pkIh5BU=
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= batsim.cachix.org-1:zO3Z03P62i9HM4gRRgycYeV7mYtIwEoLv+XpAr1Nu7I= capack.cachix.org-1:38D+QFk3JXvMYJuhSaZ+3Nm/Qh+bZJdCrdu4pkIh5BU=
           '';
         })
       ];
