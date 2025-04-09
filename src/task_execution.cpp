@@ -745,12 +745,12 @@ int execute_trace_replay(
         if (profile->type == ProfileType::REPLAY_SMPI)
         {
             auto * data = static_cast<TraceReplayProfileData *>(profile->data);
-            actor = simgrid::s4u::Actor::create(actor_name, host_to_use, smpi_trace_replay_actor, job, data, sem_termination, &list_termination, rank);
+            actor = simgrid::s4u::Engine::get_instance()->add_actor(actor_name, host_to_use, smpi_trace_replay_actor, job, data, sem_termination, &list_termination, rank);
         }
         else if (profile->type == ProfileType::REPLAY_USAGE)
         {
             auto * data = static_cast<TraceReplayProfileData *>(profile->data);
-            actor = simgrid::s4u::Actor::create(actor_name, host_to_use, usage_trace_replay_actor, job, data, sem_termination, &list_termination, rank);
+            actor = simgrid::s4u::Engine::get_instance()->add_actor(actor_name, host_to_use, usage_trace_replay_actor, job, data, sem_termination, &list_termination, rank);
         }
 
         child_actors[rank] = actor;

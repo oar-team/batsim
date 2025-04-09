@@ -202,7 +202,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
         string submitter_instance_name = "workload_submitter_" + desc.name;
 
         XBT_DEBUG("Creating a workload_submitter process...");
-        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Engine::get_instance()->add_actor(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     static_job_submitter_process,
                                     context, desc.name);
@@ -215,7 +215,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
     {
         XBT_DEBUG("Creating a workflow_submitter process...");
         string submitter_instance_name = "workflow_submitter_" + desc.name;
-        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Engine::get_instance()->add_actor(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     workflow_submitter_process,
                                     context, desc.name);
@@ -231,7 +231,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
 
         XBT_DEBUG("Creating an external_event_submitter process...");
         auto actor_function = static_external_event_submitter_process;
-        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Engine::get_instance()->add_actor(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     actor_function,
                                     context, desc.name);
@@ -240,7 +240,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
     }
 
     XBT_DEBUG("Creating the 'server' process...");
-    simgrid::s4u::Actor::create("server", master_machine->host,
+    simgrid::s4u::Engine::get_instance()->add_actor("server", master_machine->host,
                                 server_process, context);
     XBT_INFO("The process 'server' has been created.");
 }

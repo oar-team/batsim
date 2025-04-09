@@ -78,7 +78,7 @@ void server_process(BatsimContext * context)
     data->jobs_to_be_deleted.clear();
 
     // Start an actor dedicated to trigger periodic events (from requested calls and probes)
-    auto periodic_actor = simgrid::s4u::Actor::create("periodic", simgrid::s4u::this_actor::get_host(), periodic_main_actor, context);
+    auto periodic_actor = simgrid::s4u::Engine::get_instance()->add_actor("periodic", simgrid::s4u::this_actor::get_host(), periodic_main_actor, context);
 
     // Simulation loop
     while (!data->end_of_simulation_ack_received)
@@ -224,7 +224,7 @@ void finish_message_and_call_edc(ServerData * data)
 
     // inject decisions from another actor, so the server can receive them
     data->sched_ready = false;
-    data->sched_req_rep_actor = simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
+    data->sched_req_rep_actor = simgrid::s4u::Engine::get_instance()->add_actor("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
         edc_decisions_injector, messages, now
     );
 }
@@ -940,7 +940,7 @@ void server_on_kill_jobs(ServerData * data, IPMessage * task_data)
     }
 
 
-    simgrid::s4u::ActorPtr kill_actor = simgrid::s4u::Actor::create("killer_process", simgrid::s4u::this_actor::get_host(), killer_process,
+    simgrid::s4u::ActorPtr kill_actor = simgrid::s4u::Engine::get_instance()->add_actor("killer_process", simgrid::s4u::this_actor::get_host(), killer_process,
         data->context, message, JobState::JOB_STATE_COMPLETED_KILLED, true
     );
     // Store the killer actor
@@ -984,7 +984,7 @@ void server_on_call_me_later(ServerData * data,
         double target_time = message->target_time;
         if (message->time_unit == batprotocol::fb::TimeUnit_Millisecond)
             target_time /= 1e3;
-        simgrid::s4u::Actor::create(pname.c_str(),
+        simgrid::s4u::Engine::get_instance()->add_actor(pname.c_str(),
                                     data->context->machines.master_machine()->host,
                                     oneshot_call_me_later_actor, message->call_id, target_time, data);
 
@@ -1051,7 +1051,7 @@ void server_on_execute_job(ServerData * data,
     }
 
     string pname = "job_" + job->id.to_string();
-    auto actor = simgrid::s4u::Actor::create(pname.c_str(),
+    auto actor = simgrid::s4u::Engine::get_instance()->add_actor(pname.c_str(),
         data->context->machines[allocation->hosts.first_element()]->host,
         execute_job_process, data->context, job, true
     );
