@@ -160,7 +160,7 @@ void server_process(BatsimContext * context)
         xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
 
         // Did the EDC replied to Batsim's hello?
-        xbt_assert(data->sched_said_hello, "Left simulation loop, but Batsim has never received an answer to its Hello message. Please fix your EDC so that it sends a EDCHello back to Batsim.");
+        xbt_assert(data->sched_said_hello, "Left simulation loop, but Batsim has never received an answer to its Hello message. Please fix your EDC so that it sends an EDCHello back to Batsim.");
     }
 
     delete data;
@@ -1103,7 +1103,7 @@ void server_on_edc_hello(ServerData *data, IPMessage *task_data)
     {
         if (data->context->registration_sched_ack)
         {
-            XBT_WARN("Acknowledgement of dynamic jobs is enabled but dynamic registation is diabled.");
+            XBT_WARN("Acknowledgement of dynamic jobs is enabled but dynamic registation is disabled.");
         }
     }
 

@@ -106,7 +106,7 @@ def test_no_hello(test_root_dir, use_json):
 
     with open(f'{outdir}/batsim.stderr', 'r') as errfile:
         l = errfile.read()
-        assert 'Please fix your EDC so that it sends a EDCHello back to Batsim' in l, f"batsim did not give a message on stderr about the EDC not saying hello, while the EDC did not answered Batsim's Hello"
+        assert 'Please fix your EDC so that it sends an EDCHello back to Batsim' in l, f"batsim did not give a message on stderr about the EDC not saying hello, while the EDC did not answered Batsim's Hello"
 
 def test_force_simu_stop(test_root_dir, use_json):
     platform = "small_platform"
