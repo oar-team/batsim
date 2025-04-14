@@ -78,6 +78,20 @@
           ci-batsim-internal-test-coverage-report = callPackage pkgs functions.batsim-coverage-report { batsim = packages-debug-cov.batsim; batsim-test = packages-debug-cov.batsim-internal-test; } debug-cov-options;
           ci-batsim-edc-test-coverage-report = callPackage pkgs functions.batsim-coverage-report { batsim = packages-debug-cov.batsim; batsim-test = packages-debug-cov.batsim-edc-test; } debug-cov-options;
           ci-batsim-test-coverage-report = callPackage pkgs functions.batsim-coverage-report { batsim = packages-debug-cov.batsim; batsim-test = ci-batsim-edc-test-from-internal-gcda; } debug-cov-options;
+
+          # wip: should be minimized and split into convenient layers
+          batsim-docker = pkgs.dockerTools.buildImage {
+            name = "oarteam/batsim";
+            tag =  if (self ? shortRev) then self.shortRev else self.dirtyShortRev;
+            copyToRoot = pkgs.buildEnv {
+              name = "image-root";
+              pathsToLink = [ "/bin" ];
+              paths = [ packages-release.batsim ];
+            };
+            config = {
+              Cmd = [ "/bin/batsim" ];
+            };
+          };
         };
         devShells = {
           external-test = pkgs.mkShell rec {
