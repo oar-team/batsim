@@ -60,7 +60,7 @@ struct ServerData
     std::map<JobIdentifier, Submitter*> origin_of_jobs; //!< Stores whether a Submitter must be notified on job completion
     std::vector<JobIdentifier> jobs_to_be_deleted; //!< Stores the job_ids to be deleted after sending a message
     std::unordered_map<KillJobsMessage *, simgrid::s4u::ActorPtr> killer_actors; //!< Stores the SimGrid killer_process actors
-    simgrid::s4u::ActorPtr sched_req_rep_actor; //!< Stores the SimGrid sched-req-rep actor (edc_decisions_injector)
+    simgrid::s4u::ActorPtr sched_req_rep_actor = nullptr; //!< Stores the SimGrid sched-req-rep actor (edc_decisions_injector)
 
 };
 

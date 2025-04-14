@@ -30,10 +30,32 @@ void server_process(BatsimContext * context)
     data->context = context;
     data->sched_ready = true;
 
-    // Say hello to the external decision process.
-    context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
-    context->proto_msg_builder->add_batsim_hello("TODO");
-    finish_message_and_call_edc(data);
+    // Init the EDC and retreive its answer
+    uint32_t flags;
+    uint8_t * hello_buffer;
+    uint32_t hello_buffer_size;
+    context->edc->init((const uint8_t*)context->edc_init_str.data(), context->edc_init_str.size(),
+                      &flags,
+                      &hello_buffer, &hello_buffer_size
+    );
+
+    context->edc_json_format = ((flags & BATSIM_EDC_FORMAT_JSON) != 0);
+
+    if (context->edc_json_format)
+    {
+        XBT_INFO("Received '%s'", (char *) hello_buffer);
+    }
+
+    // Parse EDCHello message and store it in an inter-actor message list
+    double now = -1;
+    std::shared_ptr<std::vector<IPMessageWithTimestamp> > messages(new std::vector<IPMessageWithTimestamp>());
+    protocol::parse_batprotocol_message(hello_buffer, hello_buffer_size, now, messages, context);
+
+    // inject the EDCHello event from another actor, so the server can receive it
+    data->sched_req_rep_actor = simgrid::s4u::Engine::get_instance()->add_actor("EDC Hello injector", simgrid::s4u::this_actor::get_host(),
+        edc_decisions_injector, messages, now
+    );
+
 
     // Prepare a handler map to react to events
     std::map<IPMessageType, std::function<void(ServerData *, IPMessage *)>> handler_map;

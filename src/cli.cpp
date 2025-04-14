@@ -83,8 +83,8 @@ public:
     {
         std::stringstream out;
         out << "Usage examples:\n";
-        out << "      " << (name.empty() ? "" : " ") << name << " -p ./platform.xml -w ./workload.json -l /path/to/fcfs.so 0 ''\n";
-        out << "      " << (name.empty() ? "" : " ") << name << " -p ./platform.xml -W ./workflow.dax -S 'tcp://localhost:28000' 1 ./edc-conf-file.dhall\n";
+        out << "      " << (name.empty() ? "" : " ") << name << " -p ./platform.xml -w ./workload.json -l /path/to/fcfs.so ''\n";
+        out << "      " << (name.empty() ? "" : " ") << name << " -p ./platform.xml -W ./workflow.dax -S 'tcp://localhost:28000' ./edc-conf-file.dhall\n";
 
         return out.str();
     }
@@ -225,28 +225,28 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
 
     // External decision components
     const std::string edc_group_name = "External decision component (EDC) options";
-    std::vector<std::tuple<std::string, bool, std::string> > edc_lib_strings;
+    std::vector<std::tuple<std::string, std::string> > edc_lib_strings;
     app.add_option("-l,--edc-library-str", edc_lib_strings, "")
         ->group(edc_group_name)
-        ->option_text("(<lib-path> <json-format-bool> <init-str>)...")
-        ->description("Add an EDC as a library loaded by Batsim and called through a C API\n<lib-path> is the path of the library to load\n<json-format-bool> sets format of batprotocol messages (0->binary, 1->JSON)\nContent of <init-str> string is the EDC initialization buffer");
+        ->option_text("(<lib-path> <init-str>)...")
+        ->description("Add an EDC as a library loaded by Batsim and called through a C API\n<lib-path> is the path of the library to load\nContent of <init-str> string is the EDC initialization buffer");
 
-    std::vector<std::tuple<std::string, bool, std::string> > edc_lib_files;
+    std::vector<std::tuple<std::string, std::string> > edc_lib_files;
     app.add_option("-L,--edc-library-file", edc_lib_files, "")
         ->group(edc_group_name)
-        ->option_text("(<lib-path> <json-format-bool> <init-file>)...")
+        ->option_text("(<lib-path> <init-file>)...")
         ->description("Same as --edc-library-str but content of <init-file> file is the EDC initialization buffer");
 
-    std::vector<std::tuple<std::string, bool, std::string> > edc_socket_strings;
+    std::vector<std::tuple<std::string, std::string> > edc_socket_strings;
     app.add_option("-s,--edc-socket-str", edc_socket_strings, "")
         ->group(edc_group_name)
-        ->option_text("(<socket-endpoint> <json-format-bool> <init-str>)...")
+        ->option_text("(<socket-endpoint> <init-str>)...")
         ->description("Same as --edc-library-str but the EDC is a process called through RPC via ZeroMQ\nBatsim does not run the process, this should be done by the user\nExample <socket-endpoint> value: 'tcp://localhost:28000'");
 
-    std::vector<std::tuple<std::string, bool, std::string> > edc_socket_files;
+    std::vector<std::tuple<std::string, std::string> > edc_socket_files;
     app.add_option("-S,--edc-socket-file", edc_socket_files, "")
         ->group(edc_group_name)
-        ->option_text("(<socket-endpoint> <json-format-bool> <init-file>)...")
+        ->option_text("(<socket-endpoint> <init-file>)...")
         ->description("Same as --edc-library-file but the EDC is added as a process called through RPC via ZeroMQ");
 
     std::map<std::string, EdcLibraryLoadMethod> ellm_map{{"dlmopen", EdcLibraryLoadMethod::DLMOPEN}, {"dlopen", EdcLibraryLoadMethod::DLOPEN}};
@@ -518,26 +518,22 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         else if(edc_socket_strings.size() > 0)
         {
             main_args.edc_socket_endpoint = std::get<0>(edc_socket_strings[0]);
-            main_args.edc_json_format = std::get<1>(edc_socket_strings[0]);
-            main_args.edc_init_buffer = std::get<2>(edc_socket_strings[0]);
+            main_args.edc_init_str = std::get<1>(edc_socket_strings[0]);
         }
         else if(edc_socket_files.size() > 0)
         {
             main_args.edc_socket_endpoint = std::get<0>(edc_socket_files[0]);
-            main_args.edc_json_format = std::get<1>(edc_socket_files[0]);
-            main_args.edc_init_buffer = read_whole_file_as_string(std::get<2>(edc_socket_files[0]));
+            main_args.edc_init_str = read_whole_file_as_string(std::get<1>(edc_socket_files[0]));
         }
         else if (edc_lib_strings.size() > 0)
         {
             main_args.edc_library_path = std::get<0>(edc_lib_strings[0]);
-            main_args.edc_json_format = std::get<1>(edc_lib_strings[0]);
-            main_args.edc_init_buffer = std::get<2>(edc_lib_strings[0]);
+            main_args.edc_init_str = std::get<1>(edc_lib_strings[0]);
         }
         else if (edc_lib_files.size() > 0)
         {
             main_args.edc_library_path = std::get<0>(edc_lib_files[0]);
-            main_args.edc_json_format = std::get<1>(edc_lib_files[0]);
-            main_args.edc_init_buffer = read_whole_file_as_string(std::get<2>(edc_lib_files[0]));
+            main_args.edc_init_str = read_whole_file_as_string(std::get<1>(edc_lib_files[0]));
         }
     }
 

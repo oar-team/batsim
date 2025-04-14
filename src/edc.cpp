@@ -50,7 +50,7 @@ ExternalDecisionComponent *ExternalDecisionComponent::new_library(
 
     xbt_assert(edc->_library->lib_handle != NULL, "dynamic loader failed while loading external decision component library: %s", dlerror());
 
-    edc->_library->init = (uint8_t (*)(const uint8_t*, uint32_t, uint32_t)) load_lib_symbol(edc->_library->lib_handle, "batsim_edc_init");
+    edc->_library->init = (uint8_t (*)(const uint8_t*, uint32_t, uint32_t*, uint8_t**, uint32_t*)) load_lib_symbol(edc->_library->lib_handle, "batsim_edc_init");
     edc->_library->deinit = (uint8_t (*)()) load_lib_symbol(edc->_library->lib_handle, "batsim_edc_deinit");
     edc->_library->take_decisions = (uint8_t (*)(const uint8_t*, uint32_t, uint8_t**, uint32_t*)) load_lib_symbol(edc->_library->lib_handle, "batsim_edc_take_decisions");
 
@@ -88,14 +88,14 @@ ExternalDecisionComponent *ExternalDecisionComponent::new_process(void *zmq_cont
  * @param[in] data_size The initialization data size
  * @param[in] flags The initialization flags
  */
-void ExternalDecisionComponent::init(const uint8_t *data, uint32_t data_size, uint32_t flags)
+void ExternalDecisionComponent::init(const uint8_t *data, uint32_t data_size, uint32_t * serialization_flag, uint8_t **hello_buffer, uint32_t *hello_buffer_size)
 {
     switch(_type)
     {
     case EDCType::LIBRARY: {
         uint8_t return_code = 0u;
         try {
-            return_code = _library->init(data, data_size, flags);
+            return_code = _library->init(data, data_size, serialization_flag, hello_buffer, hello_buffer_size);
         }
         catch (const std::exception & e) {
             throw std::runtime_error("Exception thrown by the EDC library init function: " + std::string(e.what()));
@@ -106,15 +106,14 @@ void ExternalDecisionComponent::init(const uint8_t *data, uint32_t data_size, ui
     } break;
     case EDCType::PROCESS: {
         // Serialize (in binary) the initialization message (integers sent in native endianness)
-        // Format: flags(uint32), data_size(uint32), data(data_size octets)
-        size_t msg_size = sizeof(uint32_t) + sizeof(uint32_t) + data_size * sizeof(uint8_t);
+        // Format: data_size(uint32), data(data_size octets)
+        size_t msg_size = sizeof(uint32_t) + data_size * sizeof(uint8_t);
         zmq_msg_t msg;
         int rc = zmq_msg_init_size(&msg, msg_size);
         xbt_assert(rc == 0, "Cannot initialize ZeroMQ message");
 
         // Fill the message
         uint8_t * buffer_ptr = static_cast<uint8_t *>(zmq_msg_data(&msg));
-        memcpy(buffer_ptr, &flags, sizeof(uint32_t)); buffer_ptr += sizeof(uint32_t);
         memcpy(buffer_ptr, &data_size, sizeof(uint32_t)); buffer_ptr += sizeof(uint32_t);
         if (data_size > 0)
         {
@@ -128,14 +127,23 @@ void ExternalDecisionComponent::init(const uint8_t *data, uint32_t data_size, ui
             throw std::runtime_error(std::string("Cannot send initialization message on socket (errno=") + strerror(errno) + ")");
         }
 
-        // Wait & read the reply (that should be empty) on the socket
+        // Wait & read the reply on the socket
+        // format: serialization_flag(uint32), serialized EDCHello event
         zmq_msg_t msg2;
         zmq_msg_init(&msg2);
         if (zmq_msg_recv(&msg2, _process->zmq_socket, 0) == -1)
             throw std::runtime_error(std::string("Cannot read message on socket (errno=") + strerror(errno) + ")");
 
-        if (zmq_msg_size(&msg2) > 0)
-            throw std::runtime_error(std::string("Non-empty ZeroMQ message received as acknowledgement of initialization message"));
+        uint8_t * buffer = (uint8_t *)zmq_msg_data(&msg2);
+        uint32_t buffer_size = zmq_msg_size(&msg2);
+
+        // Get serialization_flag
+        *serialization_flag = *((uint32_t*)buffer);
+
+        // Get hello_buffer (the remainder of msg)
+        *hello_buffer = buffer+4;
+        *hello_buffer_size = buffer_size-4;
+
     } break;
     }
 }

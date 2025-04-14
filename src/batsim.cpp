@@ -357,7 +357,6 @@ int main(int argc, char * argv[])
     // Prepare Batsim's outputs
     prepare_batsim_outputs(&context);
 
-    context.edc_json_format = main_args.edc_json_format;
     if (!main_args.edc_socket_endpoint.empty())
     {
         // Create a ZeroMQ context
@@ -372,13 +371,7 @@ int main(int argc, char * argv[])
         context.edc = ExternalDecisionComponent::new_library(main_args.edc_library_path, main_args.edc_library_load_method);
     }
 
-    // Generate initialization flags
-    uint8_t flags = 0;
-    if (main_args.edc_json_format)
-        flags |= 0x2;
-    else
-        flags |= 0x1;
-    context.edc->init((const uint8_t*)main_args.edc_init_buffer.data(), main_args.edc_init_buffer.size(), flags);
+    context.edc_init_str = main_args.edc_init_str;
 
     // Create the protocol message manager
     context.proto_msg_builder = new batprotocol::MessageBuilder(true);

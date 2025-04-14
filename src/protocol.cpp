@@ -334,6 +334,7 @@ batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context
     // Misc.
     begins.set_batsim_execution_context(context->main_args->generate_execution_context_json());
     begins.set_batsim_arguments(std::make_shared<std::vector<std::string> >(context->main_args->raw_argv));
+    begins.set_batsim_info(STR(BATSIM_VERSION), "");
 
     return begins;
 }
