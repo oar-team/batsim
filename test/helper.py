@@ -3,6 +3,7 @@ import os
 import shlex
 import subprocess
 import pandas as pd
+import json
 
 TEST_INSTANCE_TIMEOUT = int(os.getenv('TEST_INSTANCE_TIMEOUT', '5'))
 PLATFORM_DIR = os.environ['PLATFORM_DIR']
@@ -10,19 +11,23 @@ WORKLOAD_DIR = os.environ['WORKLOAD_DIR']
 EXTERNAL_EVENTS_DIR = os.environ['EXTERNAL_EVENTS_DIR']
 EDC_DIR = os.environ['EDC_LD_LIBRARY_PATH']
 
-def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, workload: str=None, external_event_files: [str]=None, edc_init_content: str='', use_json: bool=False, batsim_extra_args: list[str]=None):
+def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, workload: str=None, external_event_files: [str]=None, edc_init_content: dict=dict(), use_json: None|bool=None, batsim_extra_args: list[str]=None):
     output_dir = f'{test_root_dir}/{name}'
     os.makedirs(output_dir, exist_ok=True)
 
+    if use_json is not None:
+        edc_init_content["format_json"] = use_json
+
     edc_init_filename = f'{output_dir}/edc-init'
     with open(edc_init_filename, 'w') as f:
-        f.write(edc_init_content)
+        edc_init_str = json.dumps(edc_init_content, allow_nan=False, sort_keys=True)
+        f.write(edc_init_str)
 
     batsim_cmd = [
         'batsim',
         '--export', f'{output_dir}/batout/',
         '--platform', f'{PLATFORM_DIR}/{platform}.xml',
-        '--edc-library-file', f'{EDC_DIR}/lib{edc}.so', str(int(use_json)), edc_init_filename
+        '--edc-library-file', f'{EDC_DIR}/lib{edc}.so', edc_init_filename
     ]
 
     workload_file = None

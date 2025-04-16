@@ -75,9 +75,12 @@ def test_do_nothing_deadlock(test_root_dir, use_json):
     instance_name = f'{MOD_NAME}-{func_name}-' + str(int(use_json))
 
     batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'do-nothing', workload, use_json=use_json)
-    p = subprocess.run(batcmd, stderr=subprocess.PIPE, timeout=3, encoding='utf-8')
+    p = run_batsim(batcmd, outdir)
     assert p.returncode != 0, f'batsim returned 0 while a SimGrid deadlock was expected'
-    assert 'The simulation could NOT finish because a deadlock was detected in SimGrid' in p.stderr, f'batsim did not give deadlock-related message on stderr while a SimGrid deadlock was expected'
+
+    with open(f'{outdir}/batsim.stderr', 'r') as errfile:
+        l = errfile.read()
+        assert 'The simulation could NOT finish because a deadlock was detected in SimGrid' in l, f'batsim did not give deadlock-related message on stderr while a SimGrid deadlock was expected'
 
 def test_do_nothing_no_deadlock(test_root_dir, use_json):
     platform = 'small_platform'
@@ -97,10 +100,13 @@ def test_no_hello(test_root_dir, use_json):
         'handle_hello': False,
     }
 
-    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'do-nothing', use_json=use_json, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True))
-    p = subprocess.run(batcmd, stderr=subprocess.PIPE, timeout=3, encoding='utf-8')
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'do-nothing', use_json=use_json, edc_init_content=edc_init_args)
+    p = run_batsim(batcmd, outdir)
     assert p.returncode != 0, f'batsim returned 0 while the EDC did not say hello'
-    assert 'Please fix your EDC so that it sends a EDCHello back to Batsim' in p.stderr, f"batsim did not give a message on stderr about the EDC not saying hello, while the EDC did not answered Batsim's hello"
+
+    with open(f'{outdir}/batsim.stderr', 'r') as errfile:
+        l = errfile.read()
+        assert 'Please fix your EDC so that it sends an EDCHello back to Batsim' in l, f"batsim did not give a message on stderr about the EDC not saying hello, while the EDC did not answered Batsim's Hello"
 
 def test_force_simu_stop(test_root_dir, use_json):
     platform = "small_platform"

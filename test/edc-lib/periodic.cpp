@@ -50,18 +50,9 @@ std::string gen_oneshot_call_id(bool is_probe, uint64_t period, uint64_t nb_peri
     return std::string("oneshot_") + gen_call_id(is_probe, period, nb_periods);
 }
 
-uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
+uint8_t batsim_edc_init(const uint8_t *init_data, uint32_t init_size, uint32_t *flags, uint8_t **reply_data, uint32_t *reply_size)
 {
-    format_binary = ((flags & BATSIM_EDC_FORMAT_BINARY) != 0);
-    if ((flags & (BATSIM_EDC_FORMAT_BINARY | BATSIM_EDC_FORMAT_JSON)) != flags)
-    {
-        printf("Unknown flags used, cannot initialize myself.\n");
-        return 1;
-    }
-
-    mb = new MessageBuilder(!format_binary);
-
-    std::string init_string((const char *)data, static_cast<size_t>(size));
+    std::string init_string((const char *)init_data, static_cast<size_t>(init_size));
     try {
         auto init_json = json::parse(init_string);
         is_infinite = init_json["is_infinite"];
@@ -124,6 +115,13 @@ uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
         throw std::runtime_error("scheduler called with bad init string: " + std::string(e.what()));
     }
 
+    mb = new MessageBuilder(!format_binary);
+    *flags = format_binary ? BATSIM_EDC_FORMAT_BINARY : BATSIM_EDC_FORMAT_JSON;
+
+    mb->add_edc_hello("call-later-periodic", "0.1.0");
+    mb->finish_message(0.0);
+    serialize_message(*mb, !format_binary, const_cast<const uint8_t **>(reply_data), reply_size);
+
     return 0;
 }
 
@@ -159,9 +157,6 @@ uint8_t batsim_edc_take_decisions(
         auto event = (*parsed->events())[i];
         switch (event->event_type())
         {
-        case fb::Event_BatsimHelloEvent: {
-            mb->add_edc_hello("call-later-periodic", "0.1.0");
-        } break;
         case fb::Event_SimulationBeginsEvent: {
             for (const auto & [call_id, call] : calls) {
                 if (call->init_time == 0) {
@@ -281,11 +276,12 @@ uint8_t batsim_edc_take_decisions(
 
             if (!is_infinite && !call->is_probe && e->last_periodic_call() != all_calls_received) {
                 char * err_cstr;
-                asprintf(&err_cstr, "last_periodic_call inconsistency on '%s': value received is %d while expecting %d, since I received %lu/%lu calls",
+                int ret = asprintf(&err_cstr, "last_periodic_call inconsistency on '%s': value received is %d while expecting %d, since I received %lu/%lu calls",
                     it->first.c_str(),
                     (int)e->last_periodic_call(), (int)all_calls_received,
                     call->nb_calls, call->expected_nb_calls
                 );
+                (void) ret; // avoids warning
                 std::string err(err_cstr);
                 free(err_cstr);
                 throw std::runtime_error(err);

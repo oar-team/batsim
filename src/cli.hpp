@@ -97,8 +97,7 @@ struct MainArguments
     // Execution context
     std::string edc_socket_endpoint;                        //!< The External Decision Component process socket endpoint. Empty if unset.
     std::string edc_library_path;                           //!< The External Decision Component library path. Empty if unset.
-    std::string edc_init_buffer;                            //!< The External Decision Component initializtion buffer. Can be empty.
-    bool edc_json_format = false;                           //!< If true, messages to communicate with EDCs should be sent as JSON strings.
+    std::string edc_init_str;                               //!< The External Decision Component initializtion string. Can be empty.
 
     // Output
     std::string export_prefix = "out/";                     //!< The filename prefix used to export simulation information

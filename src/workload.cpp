@@ -35,7 +35,7 @@ Workload *Workload::new_static_workload(const string & workload_name,
     workload->jobs->set_workload(workload);
     workload->profiles->set_workload(workload);
     workload->name = workload_name;
-    workload->file = workload_file;
+    workload->filename = workload_file;
 
     workload->_is_static = true;
     return workload;

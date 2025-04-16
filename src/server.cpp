@@ -30,10 +30,33 @@ void server_process(BatsimContext * context)
     data->context = context;
     data->sched_ready = true;
 
-    // Say hello to the external decision process.
-    context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
-    context->proto_msg_builder->add_batsim_hello("TODO");
-    finish_message_and_call_edc(data);
+    // Init the EDC and retreive its answer
+    uint32_t flags;
+    uint8_t * hello_buffer;
+    uint32_t hello_buffer_size;
+    context->edc->init((const uint8_t*)context->edc_init_str.data(), context->edc_init_str.size(),
+                      &flags,
+                      &hello_buffer, &hello_buffer_size
+    );
+
+    context->edc_json_format = ((flags & BATSIM_EDC_FORMAT_JSON) != 0);
+
+    if (context->edc_json_format)
+    {
+        XBT_INFO("Received '%s'", (char *) hello_buffer);
+    }
+
+    // Parse EDCHello message and store it in an inter-actor message list
+    double now = -1;
+    std::shared_ptr<std::vector<IPMessageWithTimestamp> > messages(new std::vector<IPMessageWithTimestamp>());
+    protocol::parse_batprotocol_message(hello_buffer, hello_buffer_size, now, messages, context);
+
+    // inject the EDCHello event from another actor, so the server can receive it
+    data->sched_ready = false;
+    data->sched_req_rep_actor = simgrid::s4u::Engine::get_instance()->add_actor("EDC Hello injector", simgrid::s4u::this_actor::get_host(),
+        edc_decisions_injector, messages, now
+    );
+
 
     // Prepare a handler map to react to events
     std::map<IPMessageType, std::function<void(ServerData *, IPMessage *)>> handler_map;
@@ -78,7 +101,7 @@ void server_process(BatsimContext * context)
     data->jobs_to_be_deleted.clear();
 
     // Start an actor dedicated to trigger periodic events (from requested calls and probes)
-    auto periodic_actor = simgrid::s4u::Actor::create("periodic", simgrid::s4u::this_actor::get_host(), periodic_main_actor, context);
+    auto periodic_actor = simgrid::s4u::Engine::get_instance()->add_actor("periodic", simgrid::s4u::this_actor::get_host(), periodic_main_actor, context);
 
     // Simulation loop
     while (!data->end_of_simulation_ack_received)
@@ -160,7 +183,7 @@ void server_process(BatsimContext * context)
         xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
 
         // Did the EDC replied to Batsim's hello?
-        xbt_assert(data->sched_said_hello, "Left simulation loop, but Batsim has never received an answer to its Hello message. Please fix your EDC so that it sends a EDCHello back to Batsim.");
+        xbt_assert(data->sched_said_hello, "Left simulation loop, but Batsim has never received an answer to its Hello message. Please fix your EDC so that it sends an EDCHello back to Batsim.");
     }
 
     delete data;
@@ -224,7 +247,7 @@ void finish_message_and_call_edc(ServerData * data)
 
     // inject decisions from another actor, so the server can receive them
     data->sched_ready = false;
-    data->sched_req_rep_actor = simgrid::s4u::Actor::create("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
+    data->sched_req_rep_actor = simgrid::s4u::Engine::get_instance()->add_actor("Scheduler REQ-REP", simgrid::s4u::this_actor::get_host(),
         edc_decisions_injector, messages, now
     );
 }
@@ -393,7 +416,7 @@ void server_on_external_events_occurred(ServerData * data,
 
     for (const ExternalEvent * event : message->occurred_events)
     {
-        data->context->proto_msg_builder->add_external_event_occurred(protocol::to_external_event(*event));
+        data->context->proto_msg_builder->add_external_event_occurred(event->id, protocol::to_external_event(*event));
     }
 }
 
@@ -940,7 +963,7 @@ void server_on_kill_jobs(ServerData * data, IPMessage * task_data)
     }
 
 
-    simgrid::s4u::ActorPtr kill_actor = simgrid::s4u::Actor::create("killer_process", simgrid::s4u::this_actor::get_host(), killer_process,
+    simgrid::s4u::ActorPtr kill_actor = simgrid::s4u::Engine::get_instance()->add_actor("killer_process", simgrid::s4u::this_actor::get_host(), killer_process,
         data->context, message, JobState::JOB_STATE_COMPLETED_KILLED, true
     );
     // Store the killer actor
@@ -984,7 +1007,7 @@ void server_on_call_me_later(ServerData * data,
         double target_time = message->target_time;
         if (message->time_unit == batprotocol::fb::TimeUnit_Millisecond)
             target_time /= 1e3;
-        simgrid::s4u::Actor::create(pname.c_str(),
+        simgrid::s4u::Engine::get_instance()->add_actor(pname.c_str(),
                                     data->context->machines.master_machine()->host,
                                     oneshot_call_me_later_actor, message->call_id, target_time, data);
 
@@ -1051,7 +1074,7 @@ void server_on_execute_job(ServerData * data,
     }
 
     string pname = "job_" + job->id.to_string();
-    auto actor = simgrid::s4u::Actor::create(pname.c_str(),
+    auto actor = simgrid::s4u::Engine::get_instance()->add_actor(pname.c_str(),
         data->context->machines[allocation->hosts.first_element()]->host,
         execute_job_process, data->context, job, true
     );
@@ -1103,7 +1126,7 @@ void server_on_edc_hello(ServerData *data, IPMessage *task_data)
     {
         if (data->context->registration_sched_ack)
         {
-            XBT_WARN("Acknowledgement of dynamic jobs is enabled but dynamic registation is diabled.");
+            XBT_WARN("Acknowledgement of dynamic jobs is enabled but dynamic registation is disabled.");
         }
     }
 

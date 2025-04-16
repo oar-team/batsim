@@ -4,7 +4,6 @@
 These tests run batsim with various dynamic registration of job/profile scenarios.
 '''
 import inspect
-import json
 import os
 import subprocess
 import pytest
@@ -27,11 +26,13 @@ def parameters(request):
 def test_dyn_register(test_root_dir, parameters):
     init_option_str, expected_ret_code = parameters
 
+    edc_init_args = {"option": init_option_str}
+
     platform = 'small_platform'
     workload = 'test_one_delay_job'
     func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
     instance_name = f'{MOD_NAME}-{func_name}-{init_option_str}'
 
-    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'dyn-register', workload, edc_init_content=init_option_str)
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'dyn-register', workload, edc_init_content=edc_init_args)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == expected_ret_code

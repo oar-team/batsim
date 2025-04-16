@@ -202,7 +202,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
         string submitter_instance_name = "workload_submitter_" + desc.name;
 
         XBT_DEBUG("Creating a workload_submitter process...");
-        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Engine::get_instance()->add_actor(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     static_job_submitter_process,
                                     context, desc.name);
@@ -215,7 +215,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
     {
         XBT_DEBUG("Creating a workflow_submitter process...");
         string submitter_instance_name = "workflow_submitter_" + desc.name;
-        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Engine::get_instance()->add_actor(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     workflow_submitter_process,
                                     context, desc.name);
@@ -231,7 +231,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
 
         XBT_DEBUG("Creating an external_event_submitter process...");
         auto actor_function = static_external_event_submitter_process;
-        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Actor::create(submitter_instance_name.c_str(),
+        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Engine::get_instance()->add_actor(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     actor_function,
                                     context, desc.name);
@@ -240,7 +240,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
     }
 
     XBT_DEBUG("Creating the 'server' process...");
-    simgrid::s4u::Actor::create("server", master_machine->host,
+    simgrid::s4u::Engine::get_instance()->add_actor("server", master_machine->host,
                                 server_process, context);
     XBT_INFO("The process 'server' has been created.");
 }
@@ -357,7 +357,6 @@ int main(int argc, char * argv[])
     // Prepare Batsim's outputs
     prepare_batsim_outputs(&context);
 
-    context.edc_json_format = main_args.edc_json_format;
     if (!main_args.edc_socket_endpoint.empty())
     {
         // Create a ZeroMQ context
@@ -372,13 +371,7 @@ int main(int argc, char * argv[])
         context.edc = ExternalDecisionComponent::new_library(main_args.edc_library_path, main_args.edc_library_load_method);
     }
 
-    // Generate initialization flags
-    uint8_t flags = 0;
-    if (main_args.edc_json_format)
-        flags |= 0x2;
-    else
-        flags |= 0x1;
-    context.edc->init((const uint8_t*)main_args.edc_init_buffer.data(), main_args.edc_init_buffer.size(), flags);
+    context.edc_init_str = main_args.edc_init_str;
 
     // Create the protocol message manager
     context.proto_msg_builder = new batprotocol::MessageBuilder(true);

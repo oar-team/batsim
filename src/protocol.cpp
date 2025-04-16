@@ -312,7 +312,7 @@ batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context
         const auto & workload_name = kv.first;
         const auto * workload = kv.second;
 
-        begins.add_workload(workload_name, workload->file);
+        begins.add_workload(workload_name, workload->filename);
 
         // Add profiles if requested by the EDC
         if (context->forward_profiles_on_simulation_begins)
@@ -325,9 +325,16 @@ batprotocol::SimulationBegins to_simulation_begins(const BatsimContext * context
         }
     }
 
+    // External Events
+    for (const auto & kv : context->external_event_lists)
+    {
+        begins.add_external_event_list(kv.first, kv.second->filename);
+    }
+
     // Misc.
     begins.set_batsim_execution_context(context->main_args->generate_execution_context_json());
     begins.set_batsim_arguments(std::make_shared<std::vector<std::string> >(context->main_args->raw_argv));
+    begins.set_batsim_info(STR(BATSIM_VERSION), "");
 
     return begins;
 }
@@ -365,41 +372,47 @@ ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * ex
     }
 
     // Build override allocations for profiles
-    for (unsigned int i = 0; i < execute_job->profile_allocation_override()->size(); ++i)
+    if (execute_job->profile_allocation_override() != nullptr)
     {
-        auto override_alloc = std::make_shared<::AllocationPlacement>();
-        auto override = execute_job->profile_allocation_override()->Get(i);
-        auto profile_name = override->profile_id()->str();
-        msg->profile_allocation_override[profile_name] = override_alloc;
-
-        override_alloc->hosts = IntervalSet::from_string_hyphen(override->host_allocation()->str());
-
-        switch (override->executor_placement_type())
+        for (unsigned int i = 0; i < execute_job->profile_allocation_override()->size(); ++i)
         {
-        case ExecutorPlacement_NONE: {
-            xbt_assert(false, "invalid ExecuteJob received: executor placement type of job's main allocation is NONE");
-        } break;
-        case ExecutorPlacement_PredefinedExecutorPlacementStrategyWrapper: {
-            override_alloc->use_predefined_strategy = true;
-            override_alloc->predefined_strategy = execute_job->allocation()->executor_placement_as_PredefinedExecutorPlacementStrategyWrapper()->strategy();
-        } break;
-        case ExecutorPlacement_CustomExecutorToHostMapping: {
-            override_alloc->use_predefined_strategy = false;
-            auto custom_mapping = execute_job->allocation()->executor_placement_as_CustomExecutorToHostMapping()->mapping();
-            override_alloc->custom_mapping.reserve(custom_mapping->size());
-            for (unsigned int i = 0; i < custom_mapping->size(); ++i)
+            auto override_alloc = std::make_shared<::AllocationPlacement>();
+            auto override = execute_job->profile_allocation_override()->Get(i);
+            auto profile_name = override->profile_id()->str();
+            msg->profile_allocation_override[profile_name] = override_alloc;
+
+            override_alloc->hosts = IntervalSet::from_string_hyphen(override->host_allocation()->str());
+
+            switch (override->executor_placement_type())
             {
-                override_alloc->custom_mapping[i] = custom_mapping->Get(i);
+            case ExecutorPlacement_NONE: {
+                xbt_assert(false, "invalid ExecuteJob received: executor placement type of job's main allocation is NONE");
+            } break;
+            case ExecutorPlacement_PredefinedExecutorPlacementStrategyWrapper: {
+                override_alloc->use_predefined_strategy = true;
+                override_alloc->predefined_strategy = execute_job->allocation()->executor_placement_as_PredefinedExecutorPlacementStrategyWrapper()->strategy();
+            } break;
+            case ExecutorPlacement_CustomExecutorToHostMapping: {
+                override_alloc->use_predefined_strategy = false;
+                auto custom_mapping = execute_job->allocation()->executor_placement_as_CustomExecutorToHostMapping()->mapping();
+                override_alloc->custom_mapping.reserve(custom_mapping->size());
+                for (unsigned int i = 0; i < custom_mapping->size(); ++i)
+                {
+                    override_alloc->custom_mapping[i] = custom_mapping->Get(i);
+                }
+            } break;
             }
-        } break;
         }
     }
 
     // Storage overrides
-    for (unsigned int i = 0; i < execute_job->storage_placement()->size(); ++i)
+    if (execute_job->storage_placement() != nullptr)
     {
-        auto storage_placement = execute_job->storage_placement()->Get(i);
-        msg->storage_mapping[storage_placement->storage_name()->str()] = storage_placement->host_id();
+        for (unsigned int i = 0; i < execute_job->storage_placement()->size(); ++i)
+        {
+            auto storage_placement = execute_job->storage_placement()->Get(i);
+            msg->storage_mapping[storage_placement->storage_name()->str()] = storage_placement->host_id();
+        }
     }
 
     return msg;

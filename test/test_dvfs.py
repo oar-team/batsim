@@ -4,7 +4,6 @@
 These tests run batsim with an EDC that submit and execute random (profile, job) on random dvfs states on a known platform, and checks their runtimes.
 '''
 import inspect
-import json
 import os
 import subprocess
 import pytest
@@ -27,6 +26,6 @@ def test_dvfs(test_root_dir, random_seed):
         "nb_jobs_to_submit": 10,
     }
 
-    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'exec1by1-dvfs-dyn', edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True))
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'exec1by1-dvfs-dyn', edc_init_content=edc_init_args)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0

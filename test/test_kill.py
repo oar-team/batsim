@@ -4,7 +4,6 @@
 These tests kill jobs in various ways to make sure that Batsim supports it.
 '''
 import inspect
-import json
 import os
 import subprocess
 import pytest
@@ -35,6 +34,6 @@ def test_afterd(test_root_dir, kill_delay, workload):
         'kill_delay': kill_delay,
     }
 
-    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'killer', workload, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True))
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'killer', workload, edc_init_content=edc_init_args)
     p = run_batsim(batcmd, outdir)
     assert p.returncode == 0

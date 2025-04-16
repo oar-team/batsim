@@ -38,7 +38,8 @@ typedef std::chrono::time_point<std::chrono::high_resolution_clock> my_timestamp
 struct BatsimContext
 {
     void * zmq_context = nullptr;                   //!< The Zero MQ context
-    ExternalDecisionComponent * edc = nullptr;      //!> The External Decision Component
+    ExternalDecisionComponent * edc = nullptr;      //!< The External Decision Component
+    std::string edc_init_str;                       //!< The External Decision Component initialization string
     bool edc_json_format = false;                   //!< Whether JSON format or flatbuffers's binary format should be used to communicate with EDCs.
 
     batprotocol::MessageBuilder * proto_msg_builder = nullptr; //!< The batprotocol message builder
