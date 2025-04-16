@@ -58,7 +58,8 @@ public:
     static ExternalDecisionComponent * new_process(void * zmq_context, const std::string & connection_endpoint);
     ~ExternalDecisionComponent();
 
-    void init(const uint8_t *data, uint32_t data_size, uint32_t * serialization_flag, uint8_t ** hello_buffer, uint32_t * hello_buffer_size);
+    void init(const uint8_t *init_data, uint32_t init_size, uint32_t *flags, uint8_t **reply_data, uint32_t *reply_size);
+
     void take_decisions(uint8_t * what_happened_buffer, uint32_t what_happened_buffer_size, uint8_t ** decisions_buffer, uint32_t * decisions_buffer_size);
 
 private:

@@ -23,9 +23,9 @@ SchedJob * currently_running_job = nullptr;
 uint32_t platform_nb_hosts = 0;
 double kill_delay = 0;
 
-uint8_t batsim_edc_init(const uint8_t *data, uint32_t data_size, uint32_t * serialization_flag, uint8_t **hello_buffer, uint32_t *hello_buffer_size)
+uint8_t batsim_edc_init(const uint8_t *init_data, uint32_t init_size, uint32_t *flags, uint8_t **reply_data, uint32_t *reply_size)
 {
-    std::string init_string((const char *)data, static_cast<size_t>(data_size));
+    std::string init_string((const char *)init_data, static_cast<size_t>(init_size));
     try {
         auto init_json = json::parse(init_string);
 
@@ -40,20 +40,12 @@ uint8_t batsim_edc_init(const uint8_t *data, uint32_t data_size, uint32_t * seri
     }
 
     mb = new MessageBuilder(!format_binary);
+    *flags = format_binary ? BATSIM_EDC_FORMAT_BINARY : BATSIM_EDC_FORMAT_JSON;
     jobs = new std::list<SchedJob*>();
 
     mb->add_edc_hello("killer", "0.1.0");
     mb->finish_message(0.0);
-    serialize_message(*mb, !format_binary, const_cast<const uint8_t **>(hello_buffer), hello_buffer_size);
-
-    if (format_binary)
-    {
-        *serialization_flag = (*serialization_flag) | BATSIM_EDC_FORMAT_BINARY;
-    }
-    else
-    {
-        *serialization_flag = (*serialization_flag) | BATSIM_EDC_FORMAT_JSON;
-    }
+    serialize_message(*mb, !format_binary, const_cast<const uint8_t **>(reply_data), reply_size);
 
     return 0;
 }

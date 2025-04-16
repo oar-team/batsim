@@ -39,11 +39,9 @@ std::vector<Host> hosts;
 
 const double EPSILON = 1e-2;
 
-uint8_t batsim_edc_init(const uint8_t *data, uint32_t data_size, uint32_t * serialization_flag, uint8_t **hello_buffer, uint32_t *hello_buffer_size)
+uint8_t batsim_edc_init(const uint8_t *init_data, uint32_t init_size, uint32_t *flags, uint8_t **reply_data, uint32_t *reply_size)
 {
-    mb = new MessageBuilder(!format_binary);
-
-    std::string init_string((const char *)data, static_cast<size_t>(data_size));
+    std::string init_string((const char *)init_data, static_cast<size_t>(init_size));
     try {
         auto init_json = json::parse(init_string);
 
@@ -58,11 +56,12 @@ uint8_t batsim_edc_init(const uint8_t *data, uint32_t data_size, uint32_t * seri
         throw std::runtime_error("scheduler called with bad init string: " + std::string(e.what()));
     }
 
+    mb = new MessageBuilder(!format_binary);
+    *flags = format_binary ? BATSIM_EDC_FORMAT_BINARY : BATSIM_EDC_FORMAT_JSON;
+
     mb->add_edc_hello("exec1by1-dvfs-dyn", "0.1.0");
     mb->finish_message(0.0);
-    serialize_message(*mb, !format_binary, const_cast<const uint8_t **>(hello_buffer), hello_buffer_size);
-
-    *serialization_flag = (*serialization_flag) | BATSIM_EDC_FORMAT_BINARY;
+    serialize_message(*mb, !format_binary, const_cast<const uint8_t **>(reply_data), reply_size);
 
     return 0;
 }
