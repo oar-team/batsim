@@ -6,10 +6,12 @@
 
 #include <batprotocol.hpp>
 #include <intervalset.hpp>
+#include <nlohmann/json.hpp>
 
 #include "batsim_edc.h"
 
 using namespace batprotocol;
+using json = nlohmann::json;
 
 struct Job
 {
@@ -28,20 +30,33 @@ std::list<::Job*> job_queue;
 std::unordered_map<std::string, ::Job*> running_jobs;
 ::Job * last_running_job = nullptr;
 
-uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
+uint8_t batsim_edc_init(const uint8_t *data, uint32_t data_size, uint32_t * serialization_flag, uint8_t **hello_buffer, uint32_t *hello_buffer_size)
 {
-    format_binary = ((flags & BATSIM_EDC_FORMAT_BINARY) != 0);
-    if ((flags & (BATSIM_EDC_FORMAT_BINARY | BATSIM_EDC_FORMAT_JSON)) != flags)
-    {
-        printf("Unknown flags used, cannot initialize myself.\n");
-        return 1;
+    std::string init_string((const char *)data, static_cast<size_t>(data_size));
+    try {
+        auto init_json = json::parse(init_string);
+
+        if (init_json.contains("format_json"))
+        {
+            format_binary = !(init_json["format_json"]);
+        }
+    } catch (const json::exception & e) {
+        throw std::runtime_error("scheduler called with bad init string: " + std::string(e.what()));
     }
 
     mb = new MessageBuilder(!format_binary);
+    mb->add_edc_hello("simulation_stopper", "0.1.0");
+    mb->finish_message(0.0);
+    serialize_message(*mb, !format_binary, const_cast<const uint8_t **>(hello_buffer), hello_buffer_size);
 
-    // ignore initialization data
-    (void) data;
-    (void) size;
+    if (format_binary)
+    {
+        *serialization_flag = (*serialization_flag) | BATSIM_EDC_FORMAT_BINARY;
+    }
+    else
+    {
+        *serialization_flag = (*serialization_flag) | BATSIM_EDC_FORMAT_JSON;
+    }
 
     return 0;
 }
@@ -72,9 +87,6 @@ uint8_t batsim_edc_take_decisions(
         auto event = (*parsed->events())[i];
         switch (event->event_type())
         {
-        case fb::Event_BatsimHelloEvent: {
-            mb->add_edc_hello("simulation_stopper", "0.1.0");
-        } break;
         case fb::Event_SimulationBeginsEvent: {
             auto simu_begins = event->event_as_SimulationBeginsEvent();
             platform_nb_hosts = simu_begins->computation_host_number();

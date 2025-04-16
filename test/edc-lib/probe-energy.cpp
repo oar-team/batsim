@@ -35,19 +35,12 @@ std::string behavior = "unset";
 double all_hosts_energy = 0.0;
 std::vector<double> host_energy;
 
-uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
+uint8_t batsim_edc_init(const uint8_t *data, uint32_t data_size, uint32_t * serialization_flag, uint8_t **hello_buffer, uint32_t *hello_buffer_size)
 {
-    format_binary = ((flags & BATSIM_EDC_FORMAT_BINARY) != 0);
-    if ((flags & (BATSIM_EDC_FORMAT_BINARY | BATSIM_EDC_FORMAT_JSON)) != flags)
-    {
-        printf("Unknown flags used, cannot initialize myself.\n");
-        return 1;
-    }
-
     mb = new MessageBuilder(!format_binary);
     jobs = new std::list<SchedJob*>();
 
-    std::string init_string((const char *)data, static_cast<size_t>(size));
+    std::string init_string((const char *)data, static_cast<size_t>(data_size));
     try {
         auto init_json = json::parse(init_string);
         behavior = init_json["behavior"];
@@ -55,6 +48,12 @@ uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
     } catch (const json::exception & e) {
         throw std::runtime_error("scheduler called with bad init string: " + std::string(e.what()));
     }
+
+    mb->add_edc_hello("probe-energy", "0.1.0");
+    mb->finish_message(0.0);
+    serialize_message(*mb, !format_binary, const_cast<const uint8_t **>(hello_buffer), hello_buffer_size);
+
+    *serialization_flag = (*serialization_flag) | BATSIM_EDC_FORMAT_BINARY;
 
     return 0;
 }
@@ -97,9 +96,6 @@ uint8_t batsim_edc_take_decisions(
         printf("probe-energy received event type='%s'\n", batprotocol::fb::EnumNamesEvent()[event->event_type()]);
         switch (event->event_type())
         {
-        case fb::Event_BatsimHelloEvent: {
-            mb->add_edc_hello("probe-energy", "0.1.0");
-        } break;
         case fb::Event_SimulationBeginsEvent: {
             auto simu_begins = event->event_as_SimulationBeginsEvent();
             platform_nb_hosts = simu_begins->computation_host_number();
@@ -156,12 +152,13 @@ uint8_t batsim_edc_take_decisions(
                         (host_energy_diff - epsilon > per_host_maximum_energy_increase)
                     )) {
                         char * err_cstr;
-                        asprintf(&err_cstr, "probe 'hosts-vec' sent an invalid vectorial data: "
+                        int ret = asprintf(&err_cstr, "probe 'hosts-vec' sent an invalid vectorial data: "
                             "host %u's energy increased by %.6f while it should be in the [%.6f, %.6f] range (tested with epsilon=%.6f)",
                             i, host_energy_diff,
                             per_host_minimum_energy_increase, per_host_maximum_energy_increase,
                             epsilon
                         );
+                        (void) ret; // avoids warning
                         std::string err(err_cstr);
                         free(err_cstr);
                         throw std::runtime_error(err);
@@ -188,10 +185,11 @@ uint8_t batsim_edc_take_decisions(
             double total_energy_diff = all_hosts_energy - my_sum_energy;
             if (fabs(total_energy_diff) > epsilon) {
                 char * err_cstr;
-                asprintf(&err_cstr, "inconsistent energy state: the aggregated probe last value is %.6f, while the sum the vectorial probe last value is %.6f (tested with epsilon=%.6f)",
+                int ret = asprintf(&err_cstr, "inconsistent energy state: the aggregated probe last value is %.6f, while the sum the vectorial probe last value is %.6f (tested with epsilon=%.6f)",
                     all_hosts_energy, my_sum_energy,
                     epsilon
                 );
+                (void) ret; // avoids warning
                 std::string err(err_cstr);
                 free(err_cstr);
                 throw std::runtime_error(err);

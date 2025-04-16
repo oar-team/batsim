@@ -52,6 +52,7 @@ void server_process(BatsimContext * context)
     protocol::parse_batprotocol_message(hello_buffer, hello_buffer_size, now, messages, context);
 
     // inject the EDCHello event from another actor, so the server can receive it
+    data->sched_ready = false;
     data->sched_req_rep_actor = simgrid::s4u::Engine::get_instance()->add_actor("EDC Hello injector", simgrid::s4u::this_actor::get_host(),
         edc_decisions_injector, messages, now
     );

@@ -8,20 +8,18 @@ using namespace batprotocol;
 MessageBuilder * mb = nullptr;
 bool format_binary = true; // whether flatbuffers binary or json format should be used
 
-uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
+uint8_t batsim_edc_init(const uint8_t *data, uint32_t data_size, uint32_t * serialization_flag, uint8_t **hello_buffer, uint32_t *hello_buffer_size)
 {
-    format_binary = ((flags & BATSIM_EDC_FORMAT_BINARY) != 0);
-    if ((flags & (BATSIM_EDC_FORMAT_BINARY | BATSIM_EDC_FORMAT_JSON)) != flags)
-    {
-        printf("Unknown flags used, cannot initialize myself.\n");
-        return 1;
-    }
-
     mb = new MessageBuilder(!format_binary);
+    mb->add_edc_hello("rejecter", "0.1.0");
+    mb->finish_message(0.0);
+    serialize_message(*mb, !format_binary, const_cast<const uint8_t **>(hello_buffer), hello_buffer_size);
+
+    *serialization_flag = (*serialization_flag) | BATSIM_EDC_FORMAT_BINARY;
 
     // ignore initialization data
     (void) data;
-    (void) size;
+    (void) data_size;
 
     return 0;
 }
@@ -50,9 +48,6 @@ uint8_t batsim_edc_take_decisions(
         auto event = (*parsed->events())[i];
         switch (event->event_type())
         {
-        case fb::Event_BatsimHelloEvent: {
-            mb->add_edc_hello("rejecter", "0.1.0");
-        } break;
         case fb::Event_JobSubmittedEvent: {
             auto job_id = event->event_as_JobSubmittedEvent()->job_id()->str();
             mb->add_reject_job(job_id);

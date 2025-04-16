@@ -7,9 +7,12 @@
 #include <batprotocol.hpp>
 #include <intervalset.hpp>
 
+#include <nlohmann/json.hpp>
+
 #include "batsim_edc.h"
 
 using namespace batprotocol;
+using json = nlohmann::json;
 
 struct InternalJob
 {
@@ -36,24 +39,43 @@ std::string init_string;
 bool ack_job_registration = true;
 bool do_once = true;
 
-uint8_t batsim_edc_init(const uint8_t * data, uint32_t size, uint32_t flags)
+uint8_t batsim_edc_init(const uint8_t *data, uint32_t data_size, uint32_t * serialization_flag, uint8_t **hello_buffer, uint32_t *hello_buffer_size)
 {
-    format_binary = ((flags & BATSIM_EDC_FORMAT_BINARY) != 0);
-    if ((flags & (BATSIM_EDC_FORMAT_BINARY | BATSIM_EDC_FORMAT_JSON)) != flags)
-    {
-        printf("Unknown flags used, cannot initialize myself.\n");
-        return 1;
-    }
-
-    mb = new MessageBuilder(!format_binary);
-
     // Retrieve the dynamic registrations to perform
-    init_string = std::string((const char *)data, static_cast<size_t>(size));
+    try {
+        //std::string init_string((const char *)data, static_cast<size_t>(data_size));
+        auto init_json = json::parse(std::string((const char *)data, static_cast<size_t>(data_size)));
+        init_string = init_json["option"];
+    } catch (const json::exception & e) {
+        throw std::runtime_error("scheduler called with bad init string: " + std::string(e.what()));
+    }
 
     if (init_string == "noack_jobs_ok")
     {
         ack_job_registration = false;
     }
+
+    mb = new MessageBuilder(!format_binary);
+
+    // Set simulation feature request
+    EDCHelloOptions options = EDCHelloOptions();
+    options.request_dynamic_registration();
+
+    if (ack_job_registration)
+    {
+        options.request_acknowledge_dynamic_jobs();
+    }
+
+    if (init_string == "profile_reuse_ok")
+    {
+        options.request_profile_reuse();
+    }
+
+    mb->add_edc_hello("dynamic_register", "0.1.0", "nocommit", options);
+    mb->finish_message(0.0);
+    serialize_message(*mb, !format_binary, const_cast<const uint8_t **>(hello_buffer), hello_buffer_size);
+
+    *serialization_flag = (*serialization_flag) | BATSIM_EDC_FORMAT_BINARY;
 
     return 0;
 }
@@ -142,23 +164,6 @@ uint8_t batsim_edc_take_decisions(
         auto event = (*parsed->events())[i];
         switch (event->event_type())
         {
-        case fb::Event_BatsimHelloEvent: {
-            EDCHelloOptions options = EDCHelloOptions();
-
-            options.request_dynamic_registration();
-
-            if (ack_job_registration)
-            {
-                options.request_acknowledge_dynamic_jobs();
-            }
-
-            if (init_string == "profile_reuse_ok")
-            {
-                options.request_profile_reuse();
-            }
-
-            mb->add_edc_hello("dynamic_register", "0.1.0", "nocommit", options);
-        } break;
         case fb::Event_SimulationBeginsEvent: {
             auto simu_begins = event->event_as_SimulationBeginsEvent();
             platform_nb_hosts = simu_begins->computation_host_number();

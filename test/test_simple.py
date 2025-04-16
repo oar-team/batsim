@@ -100,7 +100,7 @@ def test_no_hello(test_root_dir, use_json):
         'handle_hello': False,
     }
 
-    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'do-nothing', use_json=use_json, edc_init_content=json.dumps(edc_init_args, allow_nan=False, sort_keys=True))
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'do-nothing', use_json=use_json, edc_init_content=edc_init_args)
     p = run_batsim(batcmd, outdir)
     assert p.returncode != 0, f'batsim returned 0 while the EDC did not say hello'
 
