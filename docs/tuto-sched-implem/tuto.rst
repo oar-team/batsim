@@ -21,13 +21,31 @@ as it defines the following.
 - The events the algorithm can react to.
 - The actions that the algorithm can take.
 
-Add your algorithm in a project already compatible with Batsim
---------------------------------------------------------------
+Interfacing with Batsim
+-----------------------
 
-This is the easiest way to implement your algorithm.
-Several projects gather collections of scheduling algorithms and implement the
-Batsim :ref:`protocol` to communicate with the Batsim simulator.
+There are two ways to implement an External Decision Component (EDC) and connect to Batsim:
+- *EDC as a library*: provide a C/C++ library dynamically loaded by Batsim's process using the `-l` or `-L` :ref:`cli` option.
+- *EDC as a process*: execute a dedicated process that communicates with Batsim's process via a socket, using the `-s` or `-S` :ref:`cli` option.
 
+
+EDC as a library
+----------------
+
+Examples of EDC as libraries are found in `test/edc-lib/`.
+An EDC as a library must define the three following functions:
+- `uint8_t batsim_edc_init(const uint8_t *init_data, uint32_t init_size, uint32_t *flags, uint8_t **reply_data, uint32_t *reply_size);`
+- `uint8_t batsim_edc_deinit();`
+- `uint8_t batsim_edc_take_decisions(const uint8_t *what_happened, uint32_t what_happened_size, uint8_t **decisions, uint32_t *decisions_size);`
+
+
+EDC as a process
+----------------
+
+Several projects provide an API in different programming languages and implement the Batsim :ref:`protocol` to communicate with Batsim's process.
+
+.. todo::
+    Update me. Pybatsim is probably the only maintained API aligned with the new batprotocol.
 
 +----------------+----------+----------------------------------------------------------------------+----------------------------------------------------------+
 | Project        | Language | Pros                                                                 | Cons                                                     |

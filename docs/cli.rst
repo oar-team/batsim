@@ -5,59 +5,57 @@ Command-line Interface
 
 All usages and options of the command-line interface can be shown by executing ``batsim --help``.
 We present some examples that shows how you can use and combine the different options of Batsim's CLI.
-All examples suppose that you are locate in the root folder of Batim.
+All examples suppose that you are located in the root folder of Batsim.
 
-Note that we do not give examples of the scheduler command, as it depends on the
-:ref:`scheduling implementation<tuto_sched_implem>` you use.
+Note that we do not give examples of the External Decision Component (EDC) command, in the case you are using an EDC as a process, as it depends on the :ref:`EDC implementation<tuto_sched_implem>` you use.
 
 
 First run
 ---------
 
-A simple simulation with a small platform and only one computation job workload as input is done on the Batsim side with the command:
+A single process simulation with a small platform and only one computation job workload as input, using a FCFS dynamic library, is done with the command:
 
 .. code:: bash
 
-    batsim -p platforms/small_platform.xml -w workloads/test_one_computation_job.json
+    batsim -p platforms/small_platform.xml -w workloads/test_one_computation_job.json \
+    -l /path/to/fcfs.so ''
+
+When using EDC libraries, you can specify to use `dlmopen` as the load method instead of the default `dlopen` with the option `edc-library-load-method dlmopen`.
 
 
+The same simulation, using an external decision component as a process with its initialisation file, is done with the command:
 
-Using dynamic jobs
+.. code:: bash
+
+    batsim -p platforms/small_platform.xml -w workloads/test_one_computation_job.json -S 'tcp://localhost:28000' /path/to/EDC_init_file
+
+
+Configuration file
 ------------------
 
-If you want to enable :ref:`dynamic_job_registration` and profiles by your scheduler during the simulation
-and you want Batsim to acknowledge registered jobs, you can run:
+All Command-line options may be read from a configuration file in TOML or INI format.
+
+To generate a configuration file containing all command-line options of a batsim call add the following option: `--gen-config config_file.toml`
+
+Then you can simply run your simulation with the command:
 
 .. code:: bash
 
-    batsim -p platforms/small_platform.xml -w workloads/test_one_computation_job.json \
-        --enable-dynamic-jobs --acknowledge-dynamic-jobs
+    batsim -c config_file.toml
 
-
-
-Using Redis
------------
-
-If you want to use :ref:`Redis<redis>` during your simulation and specify its hostname, you can run:
-
-.. code:: bash
-
-    batsim -p platforms/small_platform.xml -w workloads/test_one_computation_job.json \
-        --enable-redis --redis-hostname 123.246.0.4
 
 
 
 Using external events
 ---------------------
 
-If you want to include :ref:`input_EVENTS` in your simulation with an input file containing external events know by Batsim
-and an input file containing generic events that you defined you can run:
+If you want to include :ref:`input_EVENTS` in your simulation with an input file containing external events that you defined you can run:
 
 .. code:: bash
 
     batsim -p platforms/small_platform.xml -w workloads/test_one_computation_job.json \
-        --events events/test_events_4hosts.txt \
-        --events events/my_generic_events.txt --forward-unknown-events
+        -l /path/to/fcfs.so '' \
+        --ee events/my_generic_events.txt
 
 
 
@@ -69,24 +67,21 @@ Finally, if you want to simulate
     - a long workload and a worklaod for energy testing at the same time,
     - on the ``energy_platform.xml``,
     - making host ``Mars`` a ``storage`` resource,
-    - enabling sharing of the compute resources,
-    - with redis enabled on the specified port ``6789``,
     - with energy support
     - an extra simgrid logging option to set the level of the energy pluggin as critical,
     - specifying a folder in the prefix of the output files,
-    - specifying the socket endpoint to communicate with the scheduler,
-    - batsim logging on debug level,
+    - with a process EDC and a specific initialisation string,
+    - and batsim logging on debug level,
 
 you can run:
 
 .. code:: bash
 
-    batsim -p platforms/energy_platform.xml -w workloads/test_long_workload.json \
+    batsim -w workloads/test_long_workload.json \
         -w workloads/test_energy_minimal_load100.json \
+        -p platforms/energy_platform.xml \
         --add-role-to-hosts Mars:storage \
-        --enable-compute-sharing \
-        --enable-redis --redis-port 6789 \
         -E --sg-log surf_energy.thresh:critical \
         --export simu_outputs/ \
-        --socket-endpoint ipc://foobar \
+        -s "ipc://foobar" '{"init_option1": "foo", "init_option2": 23}' \
         -v debug
