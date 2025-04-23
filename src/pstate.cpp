@@ -31,15 +31,13 @@ void switch_on_machine_process(BatsimContext *context, int machine_id, int new_p
     XBT_INFO("Switching machine %d ('%s') ON. Passing in virtual pstate %d to do so", machine->id,
              machine->name.c_str(), on_ps);
     machine->host->set_pstate(on_ps);
-    //args->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), machine->id, on_ps);
 
-    XBT_INFO("Computing 1 flop to simulate time & energy cost of switch ON");
+    XBT_DEBUG("Computing 1 flop to simulate time & energy cost of switch ON");
     simgrid::s4u::this_actor::execute(1);
 
-    XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to computing pstate %d",
+    XBT_DEBUG("1 flop has been computed. Switching machine %d ('%s') to computing pstate %d",
              machine->id, machine->name.c_str(), new_pstate);
     machine->host->set_pstate(new_pstate);
-    //args->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), machine->id, pstate);
 
     machine->update_machine_state(MachineState::IDLE);
 
@@ -65,15 +63,13 @@ void switch_off_machine_process(BatsimContext * context, int machine_id, int new
     XBT_INFO("Switching machine %d ('%s') OFF. Passing in virtual pstate %d to do so", machine->id,
              machine->name.c_str(), off_ps);
     machine->host->set_pstate(off_ps);
-    //args->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), machine->id, off_ps);
 
-    XBT_INFO("Computing 1 flop to simulate time & energy cost of switch OFF");
+    XBT_DEBUG("Computing 1 flop to simulate time & energy cost of switch OFF");
     simgrid::s4u::this_actor::execute(1);
 
-    XBT_INFO("1 flop has been computed. Switching machine %d ('%s') to sleeping pstate %d",
+    XBT_DEBUG("1 flop has been computed. Switching machine %d ('%s') to sleeping pstate %d",
              machine->id, machine->name.c_str(), new_pstate);
     machine->host->set_pstate(new_pstate);
-    //args->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), machine->id, pstate);
 
     machine->update_machine_state(MachineState::SLEEPING);
 
@@ -131,8 +127,11 @@ bool CurrentSwitches::mark_switch_as_done(int machine_id,
                 all_machines = s->all_machines;
                 if (context->energy_used)
                 {
-                    context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), s->all_machines, s->target_pstate);
                     context->energy_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), s->all_machines, s->target_pstate);
+                }
+                if(context->trace_pstate_changes)
+                {
+                    context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), s->all_machines, s->target_pstate);
                 }
 
                 delete s;

@@ -878,6 +878,16 @@ ChangeHostPStateMessage * from_change_host_pstate(const batprotocol::fb::ChangeH
 }
 
 
+TurnOnOffHostMessage * from_turn_onoff_host(const batprotocol::fb::TurnOnOffHostEvent * turn_onoff_host, BatsimContext * context) {
+    auto msg = new TurnOnOffHostMessage;
+
+    msg->machine_ids = IntervalSet::from_string_hyphen(turn_onoff_host->host_ids()->str());
+    msg->new_state = turn_onoff_host->state();
+
+    return msg;
+}
+
+
 void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp> > & messages, BatsimContext * context)
 {
     (void) buffer_size;
@@ -962,6 +972,11 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
         case Event_ChangeHostPStateEvent: {
             ip_message->type = IPMessageType::SCHED_CHANGE_HOST_PSTATE;
             ip_message->data = static_cast<void *>(from_change_host_pstate(event_timestamp->event_as_ChangeHostPStateEvent(), context));
+            break;
+        }
+        case Event_TurnOnOffHostEvent: {
+            ip_message->type = IPMessageType::SCHED_TURN_ONOFF_HOST;
+            ip_message->data = static_cast<void *>(from_turn_onoff_host(event_timestamp->event_as_TurnOnOffHostEvent(), context));
             break;
         }
         default: {

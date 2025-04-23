@@ -217,6 +217,9 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::SCHED_CHANGE_HOST_PSTATE:
             s = "SCHED_CHANGE_HOST_PSTATE";
             break;
+        case IPMessageType::SCHED_TURN_ONOFF_HOST:
+            s = "SCHED_TURN_ONOFF_HOST";
+            break;
         case IPMessageType::SCHED_EXECUTE_JOB:
             s = "SCHED_EXECUTE_JOB";
             break;
@@ -317,6 +320,11 @@ IPMessage::~IPMessage()
         case IPMessageType::SCHED_CHANGE_HOST_PSTATE:
         {
             auto * msg = static_cast<ChangeHostPStateMessage *>(data);
+            delete msg;
+        } break;
+        case IPMessageType::SCHED_TURN_ONOFF_HOST:
+        {
+            auto * msg = static_cast<TurnOnOffHostMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_EXECUTE_JOB:

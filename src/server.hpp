@@ -60,6 +60,7 @@ struct ServerData
     std::map<JobIdentifier, Submitter*> origin_of_jobs; //!< Stores whether a Submitter must be notified on job completion
     std::vector<JobIdentifier> jobs_to_be_deleted; //!< Stores the job_ids to be deleted after sending a message
     std::unordered_map<KillJobsMessage *, simgrid::s4u::ActorPtr> killer_actors; //!< Stores the SimGrid killer_process actors
+    std::unordered_map<int, simgrid::s4u::ActorPtr> switcher_actors; //!< Stores the SimGrid switch_on and switch_off actors (index by machine_id)
     simgrid::s4u::ActorPtr sched_req_rep_actor = nullptr; //!< Stores the SimGrid sched-req-rep actor (edc_decisions_injector)
 
 };
@@ -126,12 +127,20 @@ void server_on_external_events_occurred(ServerData * data,
 
 
 /**
- * @brief Server PSTATE_MODIFICATION handler
+ * @brief Server CHANGE_HOST_PSTATE handler
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
 void server_on_pstate_modification(ServerData * data,
                                    IPMessage * task_data);
+
+/**
+ * @brief Server TURN_ONOFF_HOST handler
+ * @param[in,out] data The data associated with the server_process
+ * @param[in,out] task_data The data associated with the message the server received
+ */
+void server_on_turn_onoff_host(ServerData * data,
+                               IPMessage * task_data);
 
 /**
  * @brief Server ONESHOT_REQUESTED_CALL handler
