@@ -242,8 +242,8 @@ void edc_decisions_injector(std::shared_ptr<std::vector<IPMessageWithTimestamp> 
 {
     for (const auto & message : *messages.get())
     {
-        send_message_at_time("server", message.message, message.timestamp, false);
+        send_message_at_time("server", message.message, message.timestamp);
     }
 
-    send_message_at_time("server", IPMessageType::SCHED_READY, nullptr, now, false);
+    send_message_at_time("server", IPMessageType::SCHED_READY, nullptr, now);
 }

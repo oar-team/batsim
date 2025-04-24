@@ -390,33 +390,35 @@ struct IPMessageWithTimestamp
     double timestamp = -1; //!< The timestamp
 };
 
-void generic_send_message(
+void send_message(
+    const std::string & destination_mailbox,
+    IPMessage * message
+);
+
+void send_message(
     const std::string & destination_mailbox,
     IPMessageType type,
-    void * data,
-    bool detached
+    void * data
 );
 
 void send_message_at_time(
     const std::string & destination_mailbox,
     IPMessage * message,
-    double when,
-    bool detached = false
+    double when
 );
 
 void send_message_at_time(
     const std::string & destination_mailbox,
     IPMessageType type,
     void * data,
-    double when,
-    bool detached = false
+    double when
 );
 
-void send_message(const std::string & destination_mailbox, IPMessageType type, void * data = nullptr);
-void send_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
-
-void dsend_message(const std::string & destination_mailbox, IPMessageType type, void * data = nullptr);
-void dsend_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
+void dsend_message(
+    const std::string & destination_mailbox,
+    IPMessageType type,
+    void * data
+);
 
 IPMessage * receive_message(const std::string & reception_mailbox);
 

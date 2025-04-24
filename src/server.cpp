@@ -340,7 +340,7 @@ void server_on_job_completed(ServerData * data,
         msg->job_id = message->job->id;
 
         ServerData::Submitter * submitter = data->origin_of_jobs.at(message->job->id);
-        dsend_message(submitter->mailbox, IPMessageType::SUBMITTER_CALLBACK, static_cast<void*>(msg));
+        send_message(submitter->mailbox, IPMessageType::SUBMITTER_CALLBACK, static_cast<void*>(msg));
 
         data->origin_of_jobs.erase(message->job->id);
     }
