@@ -1062,8 +1062,6 @@ void server_on_execute_job(ServerData * data,
                    machine->id, machine->name.c_str(),
                    machine_state_to_string(machine->state).c_str());
 
-        if (data->context->energy_used)
-        {
         // Check that every machine is in a computation pstate
         int ps = machine->host->get_pstate();
         (void) ps; // Avoids a warning if assertions are ignored
@@ -1073,7 +1071,6 @@ void server_on_execute_job(ServerData * data,
                    job->id.to_cstring(),
                    allocation->hosts.to_string_hyphen().c_str(),
                    machine->id, machine->name.c_str(), ps);
-        }
     }
 
     string pname = "job_" + job->id.to_string();
