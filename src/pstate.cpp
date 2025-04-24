@@ -14,7 +14,7 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(pstate, "pstate"); //!< Logging
 
-void switch_on_machine_process(BatsimContext *context, int machine_id, int new_pstate)
+void switch_on_machine_process(BatsimContext *context, int machine_id, unsigned long new_pstate)
 {
     xbt_assert(context->machines.exists(machine_id), "machine %d does not exist", machine_id);
     Machine * machine = context->machines[machine_id];
@@ -22,20 +22,20 @@ void switch_on_machine_process(BatsimContext *context, int machine_id, int new_p
     xbt_assert(machine->host == simgrid::s4u::this_actor::get_host(), "host inconsistency: actor executed with wrong machine arg (%d)", machine_id);
     xbt_assert(machine->state == MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING, "machine %d is not TRANSITING_FROM_SLEEPING_TO_COMPUTING", machine_id);
     xbt_assert(machine->jobs_being_computed.empty(), "jobs are running on machine %d", machine_id);
-    xbt_assert(machine->has_pstate(new_pstate), "machine %d has no pstate %d", machine_id, new_pstate);
-    xbt_assert(machine->pstates[new_pstate] == PStateType::COMPUTATION_PSTATE, "pstate %d of machine %d is not a computation pstate", new_pstate, machine_id);
+    xbt_assert(machine->has_pstate(new_pstate), "machine %d has no pstate %lu", machine_id, new_pstate);
+    xbt_assert(machine->pstates[new_pstate] == PStateType::COMPUTATION_PSTATE, "pstate %lu of machine %d is not a computation pstate", new_pstate, machine_id);
 
-    int current_pstate = machine->host->get_pstate();
-    int on_ps = machine->sleep_pstates[current_pstate]->switch_on_virtual_pstate;
+    unsigned long current_pstate = machine->host->get_pstate();
+    unsigned long on_ps = machine->sleep_pstates[current_pstate]->switch_on_virtual_pstate;
 
-    XBT_INFO("Switching machine %d ('%s') ON. Passing in virtual pstate %d to do so", machine->id,
+    XBT_INFO("Switching machine %d ('%s') ON. Passing in virtual pstate %lu to do so", machine->id,
              machine->name.c_str(), on_ps);
     machine->host->set_pstate(on_ps);
 
     XBT_DEBUG("Computing 1 flop to simulate time & energy cost of switch ON");
     simgrid::s4u::this_actor::execute(1);
 
-    XBT_DEBUG("1 flop has been computed. Switching machine %d ('%s') to computing pstate %d",
+    XBT_DEBUG("1 flop has been computed. Switching machine %d ('%s') to computing pstate %lu",
              machine->id, machine->name.c_str(), new_pstate);
     machine->host->set_pstate(new_pstate);
 
@@ -47,7 +47,7 @@ void switch_on_machine_process(BatsimContext *context, int machine_id, int new_p
     send_message("server", IPMessageType::SWITCHED_ON, static_cast<void*>(msg));
 }
 
-void switch_off_machine_process(BatsimContext * context, int machine_id, int new_pstate)
+void switch_off_machine_process(BatsimContext * context, int machine_id, unsigned long new_pstate)
 {
     xbt_assert(context->machines.exists(machine_id), "machine %d does not exist", machine_id);
     Machine * machine = context->machines[machine_id];
@@ -55,19 +55,19 @@ void switch_off_machine_process(BatsimContext * context, int machine_id, int new
     xbt_assert(machine->host == simgrid::s4u::this_actor::get_host(), "host inconsistency: actor executed with wrong machine arg (%d)", machine_id);
     xbt_assert(machine->state == MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING, "machine %d is not TRANSITING_FROM_COMPUTING_TO_SLEEPING", machine_id);
     xbt_assert(machine->jobs_being_computed.empty(), "jobs are running on machine %d", machine_id);
-    xbt_assert(machine->has_pstate(new_pstate), "machine %d has no pstate %d", machine_id, new_pstate);
-    xbt_assert(machine->pstates[new_pstate] == PStateType::SLEEP_PSTATE, "pstate %d of machine %d is not a computation pstate", new_pstate, machine_id);
+    xbt_assert(machine->has_pstate(new_pstate), "machine %d has no pstate %lu", machine_id, new_pstate);
+    xbt_assert(machine->pstates[new_pstate] == PStateType::SLEEP_PSTATE, "pstate %lu of machine %d is not a computation pstate", new_pstate, machine_id);
 
-    int off_ps = machine->sleep_pstates[new_pstate]->switch_off_virtual_pstate;
+    unsigned long off_ps = machine->sleep_pstates[new_pstate]->switch_off_virtual_pstate;
 
-    XBT_INFO("Switching machine %d ('%s') OFF. Passing in virtual pstate %d to do so", machine->id,
+    XBT_INFO("Switching machine %d ('%s') OFF. Passing in virtual pstate %lu to do so", machine->id,
              machine->name.c_str(), off_ps);
     machine->host->set_pstate(off_ps);
 
     XBT_DEBUG("Computing 1 flop to simulate time & energy cost of switch OFF");
     simgrid::s4u::this_actor::execute(1);
 
-    XBT_DEBUG("1 flop has been computed. Switching machine %d ('%s') to sleeping pstate %d",
+    XBT_DEBUG("1 flop has been computed. Switching machine %d ('%s') to sleeping pstate %lu",
              machine->id, machine->name.c_str(), new_pstate);
     machine->host->set_pstate(new_pstate);
 
@@ -79,7 +79,7 @@ void switch_off_machine_process(BatsimContext * context, int machine_id, int new
     send_message("server", IPMessageType::SWITCHED_OFF, static_cast<void*>(msg));
 }
 
-void CurrentSwitches::add_switch(const IntervalSet &machines, int target_pstate)
+void CurrentSwitches::add_switch(const IntervalSet &machines, unsigned long target_pstate)
 {
     Switch * s = new Switch;
     s->all_machines = machines;
@@ -98,7 +98,7 @@ void CurrentSwitches::add_switch(const IntervalSet &machines, int target_pstate)
 }
 
 bool CurrentSwitches::mark_switch_as_done(int machine_id,
-                                          int target_pstate,
+                                          unsigned long target_pstate,
                                           IntervalSet & all_machines,
                                           BatsimContext * context)
 {
@@ -144,6 +144,6 @@ bool CurrentSwitches::mark_switch_as_done(int machine_id,
         }
     }
 
-    xbt_assert(false, "Invalid CurrentSwitches::mark_switch_as_done call: machine %d was not switching to pstate %d", machine_id, target_pstate);
+    xbt_assert(false, "Invalid CurrentSwitches::mark_switch_as_done call: machine %d was not switching to pstate %lu", machine_id, target_pstate);
     return false;
 }

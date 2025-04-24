@@ -29,9 +29,9 @@ enum class PStateType
  */
 struct SleepPState
 {
-    int sleep_pstate;               //!< The unique number of the sleep power state
-    int switch_on_virtual_pstate;   //!< The unique number of the power state used in the transition from a computation power state to sleep_pstate
-    int switch_off_virtual_pstate;  //!< The unique number of the power state used in the transition from sleep_pstate to a computation power state
+    unsigned long sleep_pstate;               //!< The unique number of the sleep power state
+    unsigned long switch_on_virtual_pstate;   //!< The unique number of the power state used in the transition from a computation power state to sleep_pstate
+    unsigned long switch_off_virtual_pstate;  //!< The unique number of the power state used in the transition from sleep_pstate to a computation power state
 };
 
 /**
@@ -46,7 +46,7 @@ public:
      */
     struct Switch
     {
-        int target_pstate;                  //!< The power state the machines must switch to
+        unsigned long target_pstate;                  //!< The power state the machines must switch to
         IntervalSet all_machines;          //!< The machines considered by this state switch
         IntervalSet switching_machines;    //!< The machines which are still switching to target_pstate
     };
@@ -68,7 +68,7 @@ public:
      * @param[in] machines The machines associated with the power state switch
      * @param[in] target_pstate The power states into which the machines should be put
      */
-    void add_switch(const IntervalSet & machines, int target_pstate);
+    void add_switch(const IntervalSet & machines, unsigned long target_pstate);
 
     /**
      * @brief Marks that one machine switched its power state
@@ -79,12 +79,12 @@ public:
      * @return true if the machine was the last remaining one of the switch, false otherwise
      */
     bool mark_switch_as_done(int machine_id,
-                             int target_pstate,
+                             unsigned long target_pstate,
                              IntervalSet & all_machines,
                              BatsimContext * context);
 
 private:
-    std::map<int, std::list<Switch *>> _switches; //!< Contains all current switches
+    std::map<unsigned long, std::list<Switch *>> _switches; //!< Contains all current switches
 };
 
 /**
@@ -93,7 +93,7 @@ private:
  * @param[in] machine_id The unique number of the machine whose power state should be switched
  * @param[in] new_pstate The power state into which the machine should be put
  */
-void switch_on_machine_process(BatsimContext *context, int machine_id, int new_pstate);
+void switch_on_machine_process(BatsimContext *context, int machine_id, unsigned long new_pstate);
 
 /**
  * @brief Process used to switch OFF a machine (transition from a computation power state to a sleep one)
@@ -101,5 +101,5 @@ void switch_on_machine_process(BatsimContext *context, int machine_id, int new_p
  * @param[in] machine_id The unique number of the machine whose power state should be switched
  * @param[in] new_pstate The power state into which the machine should be put
  */
-void switch_off_machine_process(BatsimContext *context, int machine_id, int new_pstate);
+void switch_off_machine_process(BatsimContext *context, int machine_id, unsigned long new_pstate);
 

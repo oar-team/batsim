@@ -233,7 +233,7 @@ struct TurnOnOffHostMessage
 struct SwitchMessage
 {
     int machine_id = -1; //!< The unique number of the machine which should be switched ON/OFF
-    int new_pstate = -1; //!< The power state the machine should be put into
+    unsigned long new_pstate = -1; //!< The power state the machine should be put into
 };
 
 /**

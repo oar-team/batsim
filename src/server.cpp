@@ -497,13 +497,13 @@ void server_on_turn_onoff_host(ServerData * data,
     {
         const int machine_id = *machine_it;
         Machine * machine = data->context->machines[machine_id];
-        int curr_pstate = machine->host->get_pstate();
+        unsigned long curr_pstate = machine->host->get_pstate();
 
         if (machine->pstates[curr_pstate] == PStateType::COMPUTATION_PSTATE)
         {
             if (machine->pstates[message->new_state] == PStateType::COMPUTATION_PSTATE)
             {
-                xbt_die("Invalid turning ON/OFF of host %d ('%s'): Asked to turn ON a host already in a computing pstate (current: %d target: %lu)",
+                xbt_die("Invalid turning ON/OFF of host %d ('%s'): Asked to turn ON a host already in a computing pstate (current: %lu target: %lu)",
                         machine->id, machine->name.c_str(), curr_pstate, message->new_state);
             }
             else if (machine->pstates[message->new_state] == PStateType::SLEEP_PSTATE)
@@ -519,14 +519,14 @@ void server_on_turn_onoff_host(ServerData * data,
             }
             else
             {
-                XBT_ERROR("Invalid turning ON/OFF of host %d ('%s'): Switching from a computation pstate to an invalid pstate: %d -> %lu",
+                XBT_ERROR("Invalid turning ON/OFF of host %d ('%s'): Switching from a computation pstate to an invalid pstate: %lu -> %lu",
                           machine->id, machine->name.c_str(), curr_pstate, message->new_state);
             }
         }
         else if (machine->pstates[curr_pstate] == PStateType::SLEEP_PSTATE)
         {
             xbt_assert(machine->pstates[message->new_state] == PStateType::COMPUTATION_PSTATE,
-                    "Invalid turning ON/OFF of host %d ('%s'): Asked to turn OFF a host already in a sleep pstate (current: %d target: %lu)",
+                    "Invalid turning ON/OFF of host %d ('%s'): Asked to turn OFF a host already in a sleep pstate (current: %lu target: %lu)",
                     machine->id, machine->name.c_str(), curr_pstate, message->new_state);
 
             machine->update_machine_state(MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING);
@@ -540,7 +540,7 @@ void server_on_turn_onoff_host(ServerData * data,
         }
         else
         {
-            XBT_ERROR("Machine %d ('%s') has an invalid pstate : %d", machine->id, machine->name.c_str(), curr_pstate);
+            XBT_ERROR("Machine %d ('%s') has an invalid pstate : %lu", machine->id, machine->name.c_str(), curr_pstate);
         }
     }
 
