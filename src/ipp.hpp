@@ -52,8 +52,8 @@ enum class IPMessageType
     ,SCHED_JOB_REGISTERED     //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to register a job
     ,SCHED_PROFILE_REGISTERED //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to register a profile
     ,SCHED_END_DYNAMIC_REGISTRATION //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
-    ,SCHED_CHANGE_HOST_PSTATE       //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (modify the state of some resources).
-    ,SCHED_TURN_ONOFF_HOST          //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (modify the state of some resources).
+    ,SCHED_CHANGE_HOSTS_PSTATE       //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (change the pstate of hosts instantaneously).
+    ,SCHED_TURN_ONOFF_HOSTS          //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (put some hosts into a sleep state, or get them out of it).
 
     // Periodic-related
     ,ONESHOT_REQUESTED_CALL //!< OneShot -> Server. The target time of a OneShot requested call has been reached.
@@ -212,7 +212,7 @@ struct EDCHelloMessage
 /**
  * @brief The content of the ChangeHostPState message
  */
-struct ChangeHostPStateMessage
+struct ChangeHostsPStateMessage
 {
     IntervalSet machine_ids; //!< The IDs of the machines on which the pstate should be changed
     unsigned long new_pstate = -1; //!< The power state into which the machines should be put
@@ -221,7 +221,7 @@ struct ChangeHostPStateMessage
 /**
  * @brief The content of the TurnOnOffHost message
  */
-struct TurnOnOffHostMessage
+struct TurnOnOffHostsMessage
 {
     IntervalSet machine_ids; //!< The IDs of the machines on which the pstate should be changed
     unsigned long new_state = -1; //!< The (virtual) power state into which the machines should be put

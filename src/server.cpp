@@ -64,8 +64,8 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_JOB_REGISTERED] = server_on_register_job;
     handler_map[IPMessageType::SCHED_PROFILE_REGISTERED] = server_on_register_profile;
     handler_map[IPMessageType::JOB_COMPLETED] = server_on_job_completed;
-    handler_map[IPMessageType::SCHED_CHANGE_HOST_PSTATE] = server_on_pstate_modification;
-    handler_map[IPMessageType::SCHED_TURN_ONOFF_HOST] = server_on_turn_onoff_host;
+    handler_map[IPMessageType::SCHED_CHANGE_HOSTS_PSTATE] = server_on_change_hosts_pstate;
+    handler_map[IPMessageType::SCHED_TURN_ONOFF_HOSTS] = server_on_turn_onoff_hosts;
     handler_map[IPMessageType::SCHED_EXECUTE_JOB] = server_on_execute_job;
     handler_map[IPMessageType::SCHED_HELLO] = server_on_edc_hello;
     handler_map[IPMessageType::SCHED_REJECT_JOB] = server_on_reject_job;
@@ -421,13 +421,13 @@ void server_on_external_events_occurred(ServerData * data,
     }
 }
 
-void server_on_pstate_modification(ServerData * data,
+void server_on_change_hosts_pstate(ServerData * data,
                                    IPMessage * task_data)
 {
 
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
 
-    auto * message = static_cast<ChangeHostPStateMessage *>(task_data->data);
+    auto * message = static_cast<ChangeHostsPStateMessage *>(task_data->data);
 
     if (data->context->energy_used)
     {
@@ -454,16 +454,16 @@ void server_on_pstate_modification(ServerData * data,
         xbt_assert(machine->host->get_pstate() == message->new_pstate, "pstate inconsistency: the desired pstate has not been set");
     }
 
-    data->context->proto_msg_builder->add_host_pstate_changed(message->machine_ids.to_string_hyphen(), message->new_pstate);
+    data->context->proto_msg_builder->add_hosts_pstate_changed(message->machine_ids.to_string_hyphen(), message->new_pstate);
 }
 
 
-void server_on_turn_onoff_host(ServerData * data,
-                               IPMessage * task_data)
+void server_on_turn_onoff_hosts(ServerData * data,
+                                IPMessage * task_data)
 {
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
 
-    auto * message = static_cast<TurnOnOffHostMessage *>(task_data->data);
+    auto * message = static_cast<TurnOnOffHostsMessage *>(task_data->data);
 
     data->context->current_switches.add_switch(message->machine_ids, message->new_state);
 
@@ -573,7 +573,7 @@ void server_on_switched(ServerData * data,
         }
 
         // All switches have finished, notify the EDC
-        data->context->proto_msg_builder->add_host_turned_onoff(all_switched_machines.to_string_hyphen(), message->new_pstate);
+        data->context->proto_msg_builder->add_hosts_turned_onoff(all_switched_machines.to_string_hyphen(), message->new_pstate);
     }
 
     data->switcher_actors.erase(message->machine_id);

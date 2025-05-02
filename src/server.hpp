@@ -131,7 +131,7 @@ void server_on_external_events_occurred(ServerData * data,
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_pstate_modification(ServerData * data,
+void server_on_change_hosts_pstate(ServerData * data,
                                    IPMessage * task_data);
 
 /**
@@ -139,8 +139,8 @@ void server_on_pstate_modification(ServerData * data,
  * @param[in,out] data The data associated with the server_process
  * @param[in,out] task_data The data associated with the message the server received
  */
-void server_on_turn_onoff_host(ServerData * data,
-                               IPMessage * task_data);
+void server_on_turn_onoff_hosts(ServerData * data,
+                                IPMessage * task_data);
 
 /**
  * @brief Server ONESHOT_REQUESTED_CALL handler

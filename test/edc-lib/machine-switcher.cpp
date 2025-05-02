@@ -109,7 +109,7 @@ uint8_t batsim_edc_take_decisions(
             if (do_job_execute_fail)
             {
                 // Turn off machines before job starts
-                mb->add_turn_onoff_host(available_hosts.to_string_hyphen(), 1);
+                mb->add_turn_onoff_hosts(available_hosts.to_string_hyphen(), 1);
                 time_now += 1.0;
                 mb->set_current_time(time_now);
             }
@@ -122,7 +122,7 @@ uint8_t batsim_edc_take_decisions(
                 // Turn off machines after job starts
                 time_now += 1.0;
                 mb->set_current_time(time_now);
-                mb->add_turn_onoff_host(available_hosts.to_string_hyphen(), 1);
+                mb->add_turn_onoff_hosts(available_hosts.to_string_hyphen(), 1);
             }
 
         } break;
@@ -132,26 +132,26 @@ uint8_t batsim_edc_take_decisions(
             if (e->call_me_later_id()->str() == "call_at_50")
             {
                 // Ask to turn ON the hosts (pstate 0)
-                mb->add_turn_onoff_host(available_hosts.to_string_hyphen(), 0);
+                mb->add_turn_onoff_hosts(available_hosts.to_string_hyphen(), 0);
             }
         } break;
         case fb::Event_JobCompletedEvent: {
             // Ask to turn OFF the hosts (pstate 1)
-            mb->add_turn_onoff_host(available_hosts.to_string_hyphen(), 1);
+            mb->add_turn_onoff_hosts(available_hosts.to_string_hyphen(), 1);
         } break;
-        case fb::Event_HostTurnedOnOffEvent: {
-            auto e = event->event_as_HostTurnedOnOffEvent();
+        case fb::Event_HostsTurnedOnOffEvent: {
+            auto e = event->event_as_HostsTurnedOnOffEvent();
 
             if ((do_turn_on_fail) and (e->state() == 0))
             {
                 // Ask again to turn ON already ON hosts
-                mb->add_turn_onoff_host(available_hosts.to_string_hyphen(), 0);
+                mb->add_turn_onoff_hosts(available_hosts.to_string_hyphen(), 0);
             }
 
             if ((do_turn_off_fail) and (e->state() == 1))
             {
                 // Ask again to turn OFF already OFF hosts
-                mb->add_turn_onoff_host(available_hosts.to_string_hyphen(), 1);
+                mb->add_turn_onoff_hosts(available_hosts.to_string_hyphen(), 1);
             }
         } break;
         default: break;

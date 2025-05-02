@@ -189,11 +189,11 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::JOB_COMPLETED:
             s = "JOB_COMPLETED";
             break;
-        case IPMessageType::SCHED_CHANGE_HOST_PSTATE:
-            s = "SCHED_CHANGE_HOST_PSTATE";
+        case IPMessageType::SCHED_CHANGE_HOSTS_PSTATE:
+            s = "SCHED_CHANGE_HOSTS_PSTATE";
             break;
-        case IPMessageType::SCHED_TURN_ONOFF_HOST:
-            s = "SCHED_TURN_ONOFF_HOST";
+        case IPMessageType::SCHED_TURN_ONOFF_HOSTS:
+            s = "SCHED_TURN_ONOFF_HOSTS";
             break;
         case IPMessageType::SCHED_EXECUTE_JOB:
             s = "SCHED_EXECUTE_JOB";
@@ -292,14 +292,14 @@ IPMessage::~IPMessage()
             auto * msg = static_cast<JobCompletedMessage *>(data);
             delete msg;
         } break;
-        case IPMessageType::SCHED_CHANGE_HOST_PSTATE:
+        case IPMessageType::SCHED_CHANGE_HOSTS_PSTATE:
         {
-            auto * msg = static_cast<ChangeHostPStateMessage *>(data);
+            auto * msg = static_cast<ChangeHostsPStateMessage *>(data);
             delete msg;
         } break;
-        case IPMessageType::SCHED_TURN_ONOFF_HOST:
+        case IPMessageType::SCHED_TURN_ONOFF_HOSTS:
         {
-            auto * msg = static_cast<TurnOnOffHostMessage *>(data);
+            auto * msg = static_cast<TurnOnOffHostsMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_EXECUTE_JOB:
