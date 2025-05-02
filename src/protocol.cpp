@@ -868,11 +868,21 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
 }
 
 
-ChangeHostPStateMessage * from_change_host_pstate(const batprotocol::fb::ChangeHostPStateEvent * change_host_pstate, BatsimContext * context) {
-    auto msg = new ChangeHostPStateMessage;
+ChangeHostsPStateMessage * from_change_hosts_pstate(const batprotocol::fb::ChangeHostsPStateEvent * change_hosts_pstate, BatsimContext * context) {
+    auto msg = new ChangeHostsPStateMessage;
 
-    msg->machine_ids = IntervalSet::from_string_hyphen(change_host_pstate->host_ids()->str());
-    msg->new_pstate = change_host_pstate->pstate();
+    msg->machine_ids = IntervalSet::from_string_hyphen(change_hosts_pstate->host_ids()->str());
+    msg->new_pstate = change_hosts_pstate->pstate();
+
+    return msg;
+}
+
+
+TurnOnOffHostsMessage * from_turn_onoff_hosts(const batprotocol::fb::TurnOnOffHostsEvent * turn_onoff_hosts, BatsimContext * context) {
+    auto msg = new TurnOnOffHostsMessage;
+
+    msg->machine_ids = IntervalSet::from_string_hyphen(turn_onoff_hosts->host_ids()->str());
+    msg->new_state = turn_onoff_hosts->state();
 
     return msg;
 }
@@ -959,9 +969,14 @@ void parse_batprotocol_message(const uint8_t * buffer, uint32_t buffer_size, dou
             // No data in this event
             break;
         }
-        case Event_ChangeHostPStateEvent: {
-            ip_message->type = IPMessageType::SCHED_CHANGE_HOST_PSTATE;
-            ip_message->data = static_cast<void *>(from_change_host_pstate(event_timestamp->event_as_ChangeHostPStateEvent(), context));
+        case Event_ChangeHostsPStateEvent: {
+            ip_message->type = IPMessageType::SCHED_CHANGE_HOSTS_PSTATE;
+            ip_message->data = static_cast<void *>(from_change_hosts_pstate(event_timestamp->event_as_ChangeHostsPStateEvent(), context));
+            break;
+        }
+        case Event_TurnOnOffHostsEvent: {
+            ip_message->type = IPMessageType::SCHED_TURN_ONOFF_HOSTS;
+            ip_message->data = static_cast<void *>(from_turn_onoff_hosts(event_timestamp->event_as_TurnOnOffHostsEvent(), context));
             break;
         }
         default: {

@@ -12,40 +12,43 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(ipp, "ipp"); //!< Logging
 /**
  * @brief Sends a message from the given process to the given mailbox
  * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of the message to send
- * @param[in] data The data associated with the message
- * @param[in] detached Whether the send should be detached (put or put_async)
+ * @param[in] message The message to send
  */
-void generic_send_message(
+void send_message(
     const std::string & destination_mailbox,
-    IPMessageType type,
-    void * data,
-    bool detached)
+    IPMessage * message)
 {
-    IPMessage * message = new IPMessage;
-    message->type = type;
-    message->data = data;
-
     auto mailbox = simgrid::s4u::Mailbox::by_name(destination_mailbox);
     const uint64_t message_size = 1;
 
     XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p",
               simgrid::s4u::this_actor::get_cname(), destination_mailbox.c_str(),
-              ip_message_type_to_string(type).c_str(), data);
+              ip_message_type_to_string(message->type).c_str(), message->data);
 
-    if (detached)
-    {
-        auto comm = mailbox->put_async(message, message_size);
-        comm.detach();
-    }
-    else
-    {
-        mailbox->put(message, message_size);
-    }
+    mailbox->put(message, message_size);
 
     XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p done",
               simgrid::s4u::this_actor::get_cname(), destination_mailbox.c_str(),
-              ip_message_type_to_string(type).c_str(), data);
+              ip_message_type_to_string(message->type).c_str(), message->data);
+}
+
+
+/**
+ * @brief Sends a message from the given process to the given mailbox
+ * @param[in] destination_mailbox The destination mailbox
+ * @param[in] type The type of the message to send
+ * @param[in] data The data associated with the message
+ */
+void send_message(
+    const std::string & destination_mailbox,
+    IPMessageType type,
+    void * data)
+{
+    IPMessage * message = new IPMessage;
+    message->type = type;
+    message->data = data;
+
+    send_message(destination_mailbox, message);
 }
 
 /**
@@ -58,8 +61,7 @@ void generic_send_message(
 void send_message_at_time(
     const std::string & destination_mailbox,
     IPMessage * message,
-    double when,
-    bool detached)
+    double when)
 {
     // Wait until "when" time point is reached, if needed
     double current_time = simgrid::s4u::Engine::get_clock();
@@ -68,18 +70,7 @@ void send_message_at_time(
         simgrid::s4u::this_actor::sleep_for(when - current_time);
     }
 
-    // Actually send the message
-    auto mailbox = simgrid::s4u::Mailbox::by_name(destination_mailbox);
-    const uint64_t message_size = 1;
-
-    if (detached)
-    {
-        mailbox->put_async(message, message_size);
-    }
-    else
-    {
-        mailbox->put(message, message_size);
-    }
+    send_message(destination_mailbox, message);
 }
 
 /**
@@ -94,8 +85,7 @@ void send_message_at_time(
     const std::string & destination_mailbox,
     IPMessageType type,
     void * data,
-    double when,
-    bool detached)
+    double when)
 {
     // Wait until "when" time point is reached, if needed
     double current_time = simgrid::s4u::Engine::get_clock();
@@ -104,54 +94,39 @@ void send_message_at_time(
         simgrid::s4u::this_actor::sleep_for(when - current_time);
     }
 
-    // Actually send the message
-    generic_send_message(destination_mailbox, type, data, detached);
+    IPMessage * message = new IPMessage;
+    message->type = type;
+    message->data = data;
+    send_message(destination_mailbox, message);
 }
+
 
 /**
  * @brief Sends a message from the given process to the given mailbox
  * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of message to send
- * @param[in] data The data associated to the message
+ * @param[in] message The message to send
  */
-void send_message(const std::string & destination_mailbox, IPMessageType type, void * data)
+void dsend_message(
+    const std::string & destination_mailbox,
+    IPMessageType type,
+    void * data)
 {
-    generic_send_message(destination_mailbox, type, data, false);
-}
+    IPMessage * message = new IPMessage;
+    message->type = type;
+    message->data = data;
 
-/**
- * @brief Sends a message from the given process to the given mailbox
- * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of message to send
- * @param[in] data The data associated to the message
- */
-void send_message(const char *destination_mailbox, IPMessageType type, void *data)
-{
-    const string str = destination_mailbox;
-    send_message(str, type, data);
-}
+    auto mailbox = simgrid::s4u::Mailbox::by_name(destination_mailbox);
+    const uint64_t message_size = 1;
 
-/**
- * @brief Sends a message from the given process to the given mailbox
- * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of message to send
- * @param[in] data The data associated to the message
- */
-void dsend_message(const std::string & destination_mailbox, IPMessageType type, void * data)
-{
-    generic_send_message(destination_mailbox, type, data, true);
-}
+    XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p",
+              simgrid::s4u::this_actor::get_cname(), destination_mailbox.c_str(),
+              ip_message_type_to_string(message->type).c_str(), message->data);
 
-/**
- * @brief Sends a message from the given process to the given mailbox
- * @param[in] destination_mailbox The destination mailbox
- * @param[in] type The type of message to send
- * @param[in] data The data associated to the message
- */
-void dsend_message(const char *destination_mailbox, IPMessageType type, void *data)
-{
-    const string str = destination_mailbox;
-    dsend_message(str, type, data);
+    mailbox->put_async(message, message_size);
+
+    XBT_DEBUG("message from '%s' to '%s' of type '%s' with data %p done",
+              simgrid::s4u::this_actor::get_cname(), destination_mailbox.c_str(),
+              ip_message_type_to_string(message->type).c_str(), message->data);
 }
 
 /**
@@ -214,8 +189,11 @@ std::string ip_message_type_to_string(IPMessageType type)
         case IPMessageType::JOB_COMPLETED:
             s = "JOB_COMPLETED";
             break;
-        case IPMessageType::SCHED_CHANGE_HOST_PSTATE:
-            s = "SCHED_CHANGE_HOST_PSTATE";
+        case IPMessageType::SCHED_CHANGE_HOSTS_PSTATE:
+            s = "SCHED_CHANGE_HOSTS_PSTATE";
+            break;
+        case IPMessageType::SCHED_TURN_ONOFF_HOSTS:
+            s = "SCHED_TURN_ONOFF_HOSTS";
             break;
         case IPMessageType::SCHED_EXECUTE_JOB:
             s = "SCHED_EXECUTE_JOB";
@@ -314,9 +292,14 @@ IPMessage::~IPMessage()
             auto * msg = static_cast<JobCompletedMessage *>(data);
             delete msg;
         } break;
-        case IPMessageType::SCHED_CHANGE_HOST_PSTATE:
+        case IPMessageType::SCHED_CHANGE_HOSTS_PSTATE:
         {
-            auto * msg = static_cast<ChangeHostPStateMessage *>(data);
+            auto * msg = static_cast<ChangeHostsPStateMessage *>(data);
+            delete msg;
+        } break;
+        case IPMessageType::SCHED_TURN_ONOFF_HOSTS:
+        {
+            auto * msg = static_cast<TurnOnOffHostsMessage *>(data);
             delete msg;
         } break;
         case IPMessageType::SCHED_EXECUTE_JOB:

@@ -125,7 +125,7 @@ uint8_t batsim_edc_take_decisions(
             BAT_ENFORCE(std::abs(runtime - job.expected_runtime) < EPSILON, "job '%s' just finished but had an unexpected runtime (expected=%g, got=%g)", job.job_id.c_str(), job.expected_runtime, runtime);
             register_job_profile = nb_submitted_jobs < nb_jobs_to_submit;
         } break;
-        case fb::Event_HostPStateChangedEvent: {
+        case fb::Event_HostsPStateChangedEvent: {
             ++nb_pstate_switches_done;
             if (nb_pstate_switches_done >= job.nb_hosts)
                 execute_job = true;
@@ -168,7 +168,7 @@ uint8_t batsim_edc_take_decisions(
         job.alloc = IntervalSet(IntervalSet::ClosedInterval(0, job.nb_hosts-1));
 
         for (unsigned int i = 0; i < job.nb_hosts; ++i) {
-            mb->add_change_host_pstate(std::to_string(job.alloc[i]), job.dvfs_states[i]);
+            mb->add_change_hosts_pstate(std::to_string(job.alloc[i]), job.dvfs_states[i]);
         }
     }
 

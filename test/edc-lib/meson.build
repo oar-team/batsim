@@ -91,3 +91,8 @@ exec1by1_dvfs_dyn = shared_library('exec1by1-dvfs-dyn', common + ['exec1by1-dvfs
   dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
   install: true,
 )
+
+machine_switcher = shared_library('machine-switcher', common + ['machine-switcher.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
+  install: true,
+)

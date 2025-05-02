@@ -52,7 +52,8 @@ enum class IPMessageType
     ,SCHED_JOB_REGISTERED     //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to register a job
     ,SCHED_PROFILE_REGISTERED //!< Scheduler -> Server. The scheduler tells the server that the decision process wants to register a profile
     ,SCHED_END_DYNAMIC_REGISTRATION //!< Scheduler -> Server. The scheduler tells the server that dynamic job submissions are finished.
-    ,SCHED_CHANGE_HOST_PSTATE       //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (modify the state of some resources).
+    ,SCHED_CHANGE_HOSTS_PSTATE       //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (change the pstate of hosts instantaneously).
+    ,SCHED_TURN_ONOFF_HOSTS          //!< Scheduler -> Server. The scheduler tells the server a scheduling event occured (put some hosts into a sleep state, or get them out of it).
 
     // Periodic-related
     ,ONESHOT_REQUESTED_CALL //!< OneShot -> Server. The target time of a OneShot requested call has been reached.
@@ -209,12 +210,30 @@ struct EDCHelloMessage
 };
 
 /**
- * @brief The content of the PstateModification message
+ * @brief The content of the ChangeHostPState message
  */
-struct ChangeHostPStateMessage
+struct ChangeHostsPStateMessage
 {
     IntervalSet machine_ids; //!< The IDs of the machines on which the pstate should be changed
     unsigned long new_pstate = -1; //!< The power state into which the machines should be put
+};
+
+/**
+ * @brief The content of the TurnOnOffHost message
+ */
+struct TurnOnOffHostsMessage
+{
+    IntervalSet machine_ids; //!< The IDs of the machines on which the pstate should be changed
+    unsigned long new_state = -1; //!< The (virtual) power state into which the machines should be put
+};
+
+/**
+ * @brief The content of the SwitchON/SwitchOFF message
+ */
+struct SwitchMessage
+{
+    int machine_id = -1; //!< The unique number of the machine which should be switched ON/OFF
+    unsigned long new_pstate = -1; //!< The power state the machine should be put into
 };
 
 /**
@@ -327,15 +346,6 @@ struct PeriodicEntityStoppedMessage
 };
 
 /**
- * @brief The content of the SwitchON/SwitchOFF message
- */
-struct SwitchMessage
-{
-    int machine_id = -1; //!< The unique number of the machine which should be switched ON
-    int new_pstate = -1; //!< The power state the machine should be put into
-};
-
-/**
  * @brief The content of the KillingDone message
  */
 struct KillingDoneMessage
@@ -380,33 +390,35 @@ struct IPMessageWithTimestamp
     double timestamp = -1; //!< The timestamp
 };
 
-void generic_send_message(
+void send_message(
+    const std::string & destination_mailbox,
+    IPMessage * message
+);
+
+void send_message(
     const std::string & destination_mailbox,
     IPMessageType type,
-    void * data,
-    bool detached
+    void * data
 );
 
 void send_message_at_time(
     const std::string & destination_mailbox,
     IPMessage * message,
-    double when,
-    bool detached = false
+    double when
 );
 
 void send_message_at_time(
     const std::string & destination_mailbox,
     IPMessageType type,
     void * data,
-    double when,
-    bool detached = false
+    double when
 );
 
-void send_message(const std::string & destination_mailbox, IPMessageType type, void * data = nullptr);
-void send_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
-
-void dsend_message(const std::string & destination_mailbox, IPMessageType type, void * data = nullptr);
-void dsend_message(const char * destination_mailbox, IPMessageType type, void * data = nullptr);
+void dsend_message(
+    const std::string & destination_mailbox,
+    IPMessageType type,
+    void * data
+);
 
 IPMessage * receive_message(const std::string & reception_mailbox);
 
