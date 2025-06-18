@@ -51,12 +51,18 @@ void server_process(BatsimContext * context)
     std::shared_ptr<std::vector<IPMessageWithTimestamp> > messages(new std::vector<IPMessageWithTimestamp>());
     protocol::parse_batprotocol_message(hello_buffer, hello_buffer_size, now, messages, context);
 
-    // inject the EDCHello event from another actor, so the server can receive it
-    data->sched_ready = false;
-    data->sched_req_rep_actor = simgrid::s4u::Engine::get_instance()->add_actor("EDC Hello injector", simgrid::s4u::this_actor::get_host(),
-        edc_decisions_injector, messages, now
-    );
+    // There must be one event in the message and it must be EDCHello
+    if (messages->size() == 1)
+    {
+        IPMessage * message = (messages->at(0)).message;
+        if (message->type == IPMessageType::SCHED_HELLO)
+        {
+            server_on_edc_hello(data, message);
+        }
+    }
 
+    // Did the EDC replied to Batsim's hello?
+    xbt_assert(data->sched_said_hello, "Batsim did not receive an answer to its Hello message. Please fix your EDC so that it sends an EDCHello back to Batsim.");
 
     // Prepare a handler map to react to events
     std::map<IPMessageType, std::function<void(ServerData *, IPMessage *)>> handler_map;
@@ -106,26 +112,11 @@ void server_process(BatsimContext * context)
     // Simulation loop
     while (!data->end_of_simulation_ack_received)
     {
-        // Wait and receive a message from a node or the request-reply process...
-        IPMessage * message = receive_message("server");
-        XBT_DEBUG("Server received a message of type %s.",
-                 ip_message_type_to_string(message->type).c_str());
-
-        // Handle the message
-        xbt_assert(handler_map.count(message->type) == 1,
-                   "The server does not know how to handle message type %s.",
-                   ip_message_type_to_string(message->type).c_str());
-        auto handler_function = handler_map[message->type];
-        handler_function(data, message);
-
-        // Delete the message
-        delete message;
-
         // Let's send a message to the scheduler if needed
         if (data->sched_ready &&                     // The scheduler must be ready
-                 !data->end_of_simulation_ack_received && // The simulation must NOT be finished
-                 mailbox_empty("server")                  // The server mailbox must be empty
-                )
+            !data->end_of_simulation_ack_received && // The simulation must NOT be finished
+            mailbox_empty("server")                  // The server mailbox must be empty
+            )
         {
             if (data->simulation_stop_asked)
             {
@@ -160,6 +151,21 @@ void server_process(BatsimContext * context)
             }
         }
 
+        XBT_INFO("Server waiting to receive message");
+        // Wait and receive a message from a node or the request-reply process...
+        IPMessage * message = receive_message("server");
+        XBT_DEBUG("Server received a message of type %s.",
+                 ip_message_type_to_string(message->type).c_str());
+
+        // Handle the message
+        xbt_assert(handler_map.count(message->type) == 1,
+                   "The server does not know how to handle message type %s.",
+                   ip_message_type_to_string(message->type).c_str());
+        auto handler_function = handler_map[message->type];
+        handler_function(data, message);
+
+        // Delete the message
+        delete message;
     } // end of while
 
     XBT_INFO("Simulation is finished!");
@@ -181,9 +187,6 @@ void server_process(BatsimContext * context)
 
         // Consistency
         xbt_assert(data->nb_completed_jobs == data->nb_submitted_jobs, "All submitted jobs have not been completed (either executed and finished, or rejected).");
-
-        // Did the EDC replied to Batsim's hello?
-        xbt_assert(data->sched_said_hello, "Left simulation loop, but Batsim has never received an answer to its Hello message. Please fix your EDC so that it sends an EDCHello back to Batsim.");
     }
 
     delete data;
