@@ -99,7 +99,6 @@ struct SubmitterByeMessage
 {
     std::string submitter_name;     //!< The name of the submitter.
     SubmitterType submitter_type;   //!< The type of the submitter.
-    bool is_workflow_submitter;     //!< Stores whether the finished submitter was a Workflow submitter
 };
 
 /**

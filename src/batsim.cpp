@@ -45,7 +45,6 @@
 #include "server.hpp"
 #include "task_execution.hpp"
 #include "workload.hpp"
-#include "workflow.hpp"
 
 using namespace std;
 
@@ -88,7 +87,6 @@ void configure_batsim_logging_output(const MainArguments & main_args)
         "pstate",
         "server",
         "task_execution",
-        "workflow",
         "workload"
     };
     string log_threshold_to_set = "critical";
@@ -123,7 +121,7 @@ void configure_batsim_logging_output(const MainArguments & main_args)
     xbt_log_control_set("surf_energy.thresh:critical");
 }
 
-void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext * context, int & max_nb_machines_to_use)
+void load_workloads(const MainArguments & main_args, BatsimContext * context, int & max_nb_machines_to_use)
 {
     int max_nb_machines_in_workloads = -1;
 
@@ -138,23 +136,6 @@ void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext
         max_nb_machines_in_workloads = std::max(max_nb_machines_in_workloads, nb_machines_in_workload);
 
         context->workloads.insert_workload(desc.name, workload);
-    }
-
-    // Create the workflows
-    for (const MainArguments::WorkflowDescription & desc : main_args.workflow_descriptions)
-    {
-        XBT_INFO("Workflow '%s' corresponds to workflow file '%s'.", desc.name.c_str(), desc.filename.c_str());
-        Workload * workload = Workload::new_static_workload(desc.workload_name, desc.filename);
-        workload->jobs = new Jobs;
-        workload->profiles = new Profiles;
-        workload->jobs->set_workload(workload);
-        workload->jobs->set_profiles(workload->profiles);
-        context->workloads.insert_workload(desc.workload_name, workload);
-
-        Workflow * workflow = new Workflow(desc.name);
-        workflow->start_time = desc.start_time;
-        workflow->load_from_xml(desc.filename);
-        context->workflows.insert_workflow(desc.name, workflow);
     }
 
     // Let's compute how the number of machines to use should be limited
@@ -194,7 +175,7 @@ void start_initial_simulation_processes(const MainArguments & main_args,
 {
     const Machine * master_machine = context->machines.master_machine();
 
-    context->job_submitter_actors.reserve(main_args.workload_descriptions.size() + main_args.workflow_descriptions.size());
+    context->job_submitter_actors.reserve(main_args.workload_descriptions.size());
 
     // Let's run a static_job_submitter process for each workload
     for (const MainArguments::WorkloadDescription & desc : main_args.workload_descriptions)
@@ -205,19 +186,6 @@ void start_initial_simulation_processes(const MainArguments & main_args,
         simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Engine::get_instance()->add_actor(submitter_instance_name.c_str(),
                                     master_machine->host,
                                     static_job_submitter_process,
-                                    context, desc.name);
-        context->job_submitter_actors.emplace(submitter_instance_name, submitter_actor);
-        XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
-    }
-
-    // Let's run a workflow_submitter process for each workflow
-    for (const MainArguments::WorkflowDescription & desc : main_args.workflow_descriptions)
-    {
-        XBT_DEBUG("Creating a workflow_submitter process...");
-        string submitter_instance_name = "workflow_submitter_" + desc.name;
-        simgrid::s4u::ActorPtr submitter_actor = simgrid::s4u::Engine::get_instance()->add_actor(submitter_instance_name.c_str(),
-                                    master_machine->host,
-                                    workflow_submitter_process,
                                     context, desc.name);
         context->job_submitter_actors.emplace(submitter_instance_name, submitter_actor);
         XBT_INFO("The process '%s' has been created.", submitter_instance_name.c_str());
@@ -327,9 +295,9 @@ int main(int argc, char * argv[])
     context.batsim_version = STR(BATSIM_VERSION);
     XBT_INFO("Batsim version: %s", context.batsim_version.c_str());
 
-    // Let's load the workloads and workflows
+    // Let's load the workloads
     int max_nb_machines_to_use = -1;
-    load_workloads_and_workflows(main_args, &context, max_nb_machines_to_use);
+    load_workloads(main_args, &context, max_nb_machines_to_use);
 
     // Let's load the eventLists
     load_external_event_lists(main_args, &context);
@@ -435,14 +403,12 @@ void set_configuration(BatsimContext *context,
 
     context->platform_filename = main_args.platform_filename;
     context->export_prefix = main_args.export_prefix;
-    context->workflow_nb_concurrent_jobs_limit = main_args.workflow_nb_concurrent_jobs_limit;
     context->energy_used = main_args.host_energy_used;
     context->allow_compute_sharing = false;
     context->allow_storage_sharing = false;
     context->trace_machine_states = main_args.enable_machine_state_tracing;
     context->trace_pstate_changes = main_args.enable_pstate_change_tracing;
     context->simulation_start_time = chrono::high_resolution_clock::now();
-    context->terminate_with_last_workflow = main_args.terminate_with_last_workflow;
 
     // **************************************************************************************
     // Let's write the json object holding configuration information to send to the scheduler

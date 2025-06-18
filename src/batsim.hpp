@@ -24,7 +24,7 @@ void configure_batsim_logging_output(const MainArguments & main_args);
  * @param[out] max_nb_machines_to_use The maximum number of machines that should be used in the simulation.
  *             This number is computed from Batsim arguments but depends on Workloads content. -1 means no limitation.
  */
-void load_workloads_and_workflows(const MainArguments & main_args, BatsimContext * context, int & max_nb_machines_to_use);
+void load_workloads(const MainArguments & main_args, BatsimContext * context, int & max_nb_machines_to_use);
 
 /**
  * @brief Loads the externalEventLists defined in Batsim arguments

@@ -63,17 +63,6 @@ struct MainArguments
         std::string name;       //!< The name of the workload
     };
 
-    /**
-     * @brief Stores the command-line description of a workflow
-     */
-    struct WorkflowDescription
-    {
-        std::string filename;       //!< The name of the workflow file
-        std::string name;           //!< The name of the workflow
-        std::string workload_name;  //!< The name of the workload associated with the workflow
-        double start_time;          //!< The moment in time at which the workflow should be started
-    };
-
    /**
     * @brief Stores the command-line description of an ExternalEventList
     */
@@ -86,7 +75,6 @@ struct MainArguments
     // Input
     std::string platform_filename;                          //!< The SimGrid platform filename
     std::list<WorkloadDescription> workload_descriptions;   //!< The workloads descriptions
-    std::list<WorkflowDescription> workflow_descriptions;   //!< The workflows descriptions
     std::list<ExternalEventListDescription> externalEventList_descriptions; //!< The descriptions of the externalEventLists
 
     // Common
@@ -110,10 +98,6 @@ struct MainArguments
 
     // Verbosity
     VerbosityLevel verbosity = VerbosityLevel::INFORMATION; //!< Sets the Batsim verbosity
-
-    // Workflow
-    unsigned int workflow_nb_concurrent_jobs_limit = 0;     //!< Limits the number of concurrent jobs for workflows
-    bool terminate_with_last_workflow = false;              //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
     // Raw argv
     std::vector<std::string> raw_argv;                      //!< The strings the Batsim process received as argv.

@@ -22,7 +22,6 @@
 #include "profiles.hpp"
 #include "protocol.hpp"
 #include "pstate.hpp"
-#include "workflow.hpp"
 #include "workload.hpp"
 
 class ExternalDecisionComponent;
@@ -47,9 +46,8 @@ struct BatsimContext
 
     Machines machines;                              //!< The machines
     Workloads workloads;                            //!< The workloads
-    Workflows workflows;                            //!< The workflows
     std::map<std::string, ExternalEventList*> external_event_lists;                 //!< The map of EventLists
-    std::unordered_map<std::string, simgrid::s4u::ActorPtr> job_submitter_actors;   //!< The list of static_job_submitter SimGrid actors (accounts for workloads and workflows)
+    std::unordered_map<std::string, simgrid::s4u::ActorPtr> job_submitter_actors;   //!< The list of static_job_submitter SimGrid actors (accounts for workloads)
     std::unordered_map<std::string, simgrid::s4u::ActorPtr> external_event_submitter_actors; //!< The list of static_external_event_submitter SimGrid actors
     PStateChangeTracer pstate_tracer;               //!< The PStateChangeTracer
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
@@ -65,8 +63,6 @@ struct BatsimContext
     bool registration_sched_finished = false;       //!< Stores whether the scheduler has finished submitting jobs.
     bool registration_sched_ack;                    //!< Stores whether Batsim will acknowledge dynamic job submission (emit JOB_SUBMITTED events)
     bool garbage_collect_profiles = true;           //!< Stores whether Batsim will garbage collect the Profiles.
-
-    bool terminate_with_last_workflow;              //!< If true, allows to ignore the jobs submitted after the last workflow termination
 
     long double energy_first_job_submission = -1;   //!< The amount of consumed energy (J) when the first job is submitted
     long double energy_last_job_completion = -1;    //!< The amount of consumed energy (J) when the last job is completed
@@ -87,7 +83,6 @@ struct BatsimContext
     bool trace_pstate_changes;                      //!< Stores whether the machine pstate changes should be outputted
     std::string platform_filename;                  //!< The name of the platform file
     std::string export_prefix;                      //!< The output export prefix
-    int workflow_nb_concurrent_jobs_limit;          //!< Limits the number of concurrent jobs for workflows
 
     std::string batsim_version;                     //!< The Batsim version (got from the BATSIM_VERSION variable that is usually set by the build system)
 

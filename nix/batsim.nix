@@ -1,7 +1,7 @@
 { stdenv, lib
 , cppMesonDevBase
 , meson, ninja, pkg-config
-, simgrid, intervalset, boost, rapidjson, zeromq, pugixml, batprotocol-cpp, cli11, gtest
+, simgrid, intervalset, boost, rapidjson, zeromq, batprotocol-cpp, cli11, gtest
 , doInternalTests ? true
 , debug ? false
 , werror ? false
@@ -34,7 +34,6 @@
     intervalset
     rapidjson
     zeromq
-    pugixml
     batprotocol-cpp
     cli11
   ];

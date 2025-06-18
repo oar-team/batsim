@@ -22,7 +22,6 @@ simgrid_dep = dependency('simgrid')
 boost_dep = dependency('boost')
 rapidjson_dep = dependency('RapidJSON')
 libzmq_dep = dependency('libzmq')
-pugixml_dep = dependency('pugixml')
 intervalset_dep = dependency('intervalset')
 batprotocol_cpp_dep = dependency('batprotocol-cpp')
 cli11_dep = dependency('CLI11')
@@ -33,7 +32,6 @@ batsim_deps = [
     boost_dep,
     rapidjson_dep,
     libzmq_dep,
-    pugixml_dep,
     intervalset_dep,
     batprotocol_cpp_dep,
     cli11_dep,
@@ -80,8 +78,6 @@ src_without_main = [
     'src/server.hpp',
     'src/task_execution.cpp',
     'src/task_execution.hpp',
-    'src/workflow.cpp',
-    'src/workflow.hpp',
     'src/workload.cpp',
     'src/workload.hpp'
 ]

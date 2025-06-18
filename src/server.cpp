@@ -87,9 +87,8 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::SCHED_FORCE_SIMULATION_STOP] = server_on_force_simulation_stop;
     handler_map[IPMessageType::EXTERNAL_EVENTS_OCCURRED] = server_on_external_events_occurred;
 
-    /* Currently, there is one job submtiter per input file (workload or workflow).
-       As workflows use an inner workload, calling nb_static_workloads() should
-       be enough. The dynamic job submitter (from the decision process) is not part
+    /* Currently, there is one job submtiter per workload input file.
+       The dynamic job submitter (from the decision process) is not part
        of this count as it can finish then restart... */
     ServerData::SubmitterCounters job_counters;
     job_counters.expected_nb_submitters = context->workloads.nb_static_workloads();
@@ -319,11 +318,6 @@ void server_on_submitter_bye(ServerData * data,
             data->context->proto_msg_builder->set_current_time(simgrid::s4u::Engine::get_clock());
             data->context->proto_msg_builder->add_all_static_jobs_have_been_submitted();
         }
-
-        if (message->is_workflow_submitter)
-        {
-            data->nb_workflow_submitters_finished++;
-        }
     }
 }
 
@@ -367,14 +361,6 @@ void server_on_job_completed(ServerData * data,
 void server_on_job_submitted(ServerData * data,
                              IPMessage * task_data)
 {
-    // Ignore all submissions if -k was specified and all workflows have completed
-    if ((data->context->workflows.size() != 0) && (data->context->terminate_with_last_workflow) &&
-        (data->nb_workflow_submitters_finished == data->context->workflows.size()))
-    {
-        XBT_INFO("Ignoring Job due to -k command-line option");
-        return;
-    }
-
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<JobSubmittedMessage *>(task_data->data);
 
@@ -737,7 +723,7 @@ void server_on_force_simulation_stop(ServerData * data,
 
     // Kill all SimGrid actors
 
-    // Static workloads and workflows submitters
+    // Static workloads submitters
     for (auto it : data->context->job_submitter_actors)
     {
         it.second->kill();

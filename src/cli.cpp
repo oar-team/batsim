@@ -84,7 +84,7 @@ public:
         std::stringstream out;
         out << "Usage examples:\n";
         out << "      " << (name.empty() ? "" : " ") << name << " -p ./platform.xml -w ./workload.json -l /path/to/fcfs.so ''\n";
-        out << "      " << (name.empty() ? "" : " ") << name << " -p ./platform.xml -W ./workflow.dax -S 'tcp://localhost:28000' ./edc-conf-file.dhall\n";
+        out << "      " << (name.empty() ? "" : " ") << name << " -p ./platform.xml -w ./workload.json -S 'tcp://localhost:28000' ./edc-conf-file.dhall\n";
 
         return out.str();
     }
@@ -185,17 +185,6 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         ->group(input_group_name)
         ->option_text("<file>...")
         ->check(CLI::ExistingFile);
-
-    std::vector<std::string> workflow_files;
-    app.add_option("-W,--workflow", workflow_files, "A workflow XML file to simulate — cf. https://pegasus.isi.edu/documentation/development/schemas.html")
-        ->group(input_group_name)
-        ->option_text("<file>...")
-        ->check(CLI::ExistingFile);
-
-    std::vector<std::tuple<std::string, double> > cut_workflow_files;
-    app.add_option("--WS,--workflow-start", cut_workflow_files, "Same as --workflow, but the workflow starts at <start-time> instead of 0")
-        ->group(input_group_name)
-        ->option_text("(<file> <start-time>)...");
 
     std::vector<std::string> external_events_files;
     app.add_option("--ee,--external-events", external_events_files, "A file containing external events to inject in the simulation")
@@ -309,15 +298,6 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         ->group(verbosity_group_name)
         ->option_text("<cat.key:value>");
 
-    // Workflow
-    const std::string workflow_group_name = "Workflow options";
-    app.add_option("--workflow-jobs-limit", main_args.workflow_nb_concurrent_jobs_limit, "Limit the number of concurrent jobs for workflows. 0 (default) means no limit")
-        ->group(workflow_group_name)
-        ->option_text("<nb>");
-
-    app.add_flag("--skip-jobs-after-workflows", main_args.terminate_with_last_workflow, "Skip workload job submissions after all workflows have completed")
-        ->group(workflow_group_name);
-
     // Configuration file
     const std::string config_group_name = "Configuration file options";
     app.set_config("-c,--config", "", "Read Batsim CLI options from configuration <file> as TOML/INI format")
@@ -413,54 +393,6 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         desc.name = string("w") + to_string(i);
 
         main_args.workload_descriptions.push_back(desc);
-    }
-
-    // Workflows (with default start time)
-    for (size_t i = 0; i < workflow_files.size(); i++)
-    {
-        const string & workflow_file = workflow_files[i];
-
-        MainArguments::WorkflowDescription desc;
-        desc.filename = absolute_filename(workflow_file);
-        desc.name = string("wf") + to_string(i);
-        desc.workload_name = desc.name;
-        desc.start_time = 0;
-
-        main_args.workflow_descriptions.push_back(desc);
-    }
-
-    // Workflows (with user-given start time)
-    for (unsigned int i = 0; i < cut_workflow_files.size(); ++i)
-    {
-        const string & cut_workflow_file = std::get<0>(cut_workflow_files[i]);
-        const double & cut_workflow_start_time = std::get<1>(cut_workflow_files[i]);
-
-        MainArguments::WorkflowDescription desc;
-        desc.filename = absolute_filename(cut_workflow_file);
-        desc.name = string("wfc") + to_string(i);
-        desc.workload_name = desc.name;
-        desc.start_time = cut_workflow_start_time;
-
-        bool local_error = false;
-        if (!file_exists(cut_workflow_file))
-        {
-            fprintf(stderr, "%s--workflow-start <file> '%s' cannot be read.\n", error_prefix, cut_workflow_file.c_str());
-            local_error = true;
-        }
-        if (desc.start_time < 0)
-        {
-            fprintf(stderr, "%s--workflow-start <start_time> should be positive, but %g was given.\n", error_prefix, desc.start_time);
-            local_error = true;
-        }
-
-        if (local_error)
-        {
-            error = true;
-        }
-        else
-        {
-            main_args.workflow_descriptions.push_back(desc);
-        }
     }
 
     // External events

@@ -38,7 +38,7 @@ private:
 public:
     /**
      * @brief Builds an empty static Workload (via dynamic allocation)
-     * @details Static workloads correspond to Batsim input files (workloads or workflows)
+     * @details Static workloads correspond to Batsim input files (workloads)
      * @param[in] workload_name The workload name
      * @param[in] workload_file The workload file name
      * @return The newly created workload
@@ -96,7 +96,7 @@ public:
     std::string to_string();
 
     /**
-     * @brief Returns whether the workload is static (corresponding to a Batsim input workload/workflow) or not
+     * @brief Returns whether the workload is static (corresponding to a Batsim input workload) or not
      * @return Whether the workload is static or not
      */
     bool is_static() const;
@@ -172,7 +172,7 @@ public:
 
     /**
      * @brief Returns the number of static workloads
-     * @details Static workloads are those corresponding to Batsim input files (input workloads or workflows)
+     * @details Static workloads are those corresponding to Batsim input files (input workloads)
      * @return The number of static workloads
      */
     unsigned int nb_static_workloads() const;

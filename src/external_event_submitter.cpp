@@ -80,7 +80,6 @@ void static_external_event_submitter_process(BatsimContext * context,
     }
 
     SubmitterByeMessage * bye_msg = new SubmitterByeMessage;
-    bye_msg->is_workflow_submitter = false;
     bye_msg->submitter_type = SubmitterType::EXTERNAL_EVENT_SUBMITTER;
     bye_msg->submitter_name = submitter_name;
     send_message("server", IPMessageType::SUBMITTER_BYE, static_cast<void*>(bye_msg));
