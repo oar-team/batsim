@@ -363,7 +363,7 @@ ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * ex
     case ExecutorPlacement_CustomExecutorToHostMapping: {
         msg->job_allocation->use_predefined_strategy = false;
         auto custom_mapping = execute_job->allocation()->executor_placement_as_CustomExecutorToHostMapping()->mapping();
-        msg->job_allocation->custom_mapping.reserve(custom_mapping->size());
+        msg->job_allocation->custom_mapping.resize(custom_mapping->size());
         for (unsigned int i = 0; i < custom_mapping->size(); ++i)
         {
             msg->job_allocation->custom_mapping[i] = custom_mapping->Get(i);
@@ -395,7 +395,7 @@ ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * ex
             case ExecutorPlacement_CustomExecutorToHostMapping: {
                 override_alloc->use_predefined_strategy = false;
                 auto custom_mapping = execute_job->allocation()->executor_placement_as_CustomExecutorToHostMapping()->mapping();
-                override_alloc->custom_mapping.reserve(custom_mapping->size());
+                override_alloc->custom_mapping.resize(custom_mapping->size());
                 for (unsigned int i = 0; i < custom_mapping->size(); ++i)
                 {
                     override_alloc->custom_mapping[i] = custom_mapping->Get(i);
@@ -431,10 +431,10 @@ KillJobsMessage *from_kill_jobs(const batprotocol::fb::KillJobsEvent * kill_jobs
 {
     auto msg = new KillJobsMessage;
     auto * jobs_list = kill_jobs->job_ids();
-    msg->job_ids.reserve(jobs_list->size());
+    msg->job_ids.resize(jobs_list->size());
     for (unsigned int i = 0; i < jobs_list->size(); ++i)
     {
-        msg->job_ids.push_back(JobIdentifier(jobs_list->Get(i)->str()));
+        msg->job_ids[i] = JobIdentifier(jobs_list->Get(i)->str());
     }
 
     return msg;
@@ -746,11 +746,11 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
         data->repetition_count = prof->repetition_count();
 
         auto * ids_vector = prof->profile_ids();
-        data->sequence_names.reserve(ids_vector->size());
+        data->sequence_names.resize(ids_vector->size());
 
         for (unsigned int i = 0; i < ids_vector->size(); ++i)
         {
-            data->sequence_names.push_back(ids_vector->Get(i)->str());
+            data->sequence_names[i] = ids_vector->Get(i)->str();
         }
 
         profile->data = data;
