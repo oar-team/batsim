@@ -96,3 +96,8 @@ machine_switcher = shared_library('machine-switcher', common + ['machine-switche
   dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
   install: true,
 )
+
+exec1by1_custom_mapping = shared_library('exec1by1-custom-mapping', common + ['exec1by1-custom-mapping.cpp'],
+  dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
+  install: true,
+)
