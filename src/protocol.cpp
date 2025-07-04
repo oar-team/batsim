@@ -390,11 +390,11 @@ ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * ex
             } break;
             case ExecutorPlacement_PredefinedExecutorPlacementStrategyWrapper: {
                 override_alloc->use_predefined_strategy = true;
-                override_alloc->predefined_strategy = execute_job->allocation()->executor_placement_as_PredefinedExecutorPlacementStrategyWrapper()->strategy();
+                override_alloc->predefined_strategy = override->executor_placement_as_PredefinedExecutorPlacementStrategyWrapper()->strategy();
             } break;
             case ExecutorPlacement_CustomExecutorToHostMapping: {
                 override_alloc->use_predefined_strategy = false;
-                auto custom_mapping = execute_job->allocation()->executor_placement_as_CustomExecutorToHostMapping()->mapping();
+                auto custom_mapping = override->executor_placement_as_CustomExecutorToHostMapping()->mapping();
                 override_alloc->custom_mapping.resize(custom_mapping->size());
                 for (unsigned int i = 0; i < custom_mapping->size(); ++i)
                 {
