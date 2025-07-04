@@ -151,7 +151,6 @@ void server_process(BatsimContext * context)
             }
         }
 
-        XBT_INFO("Server waiting to receive message");
         // Wait and receive a message from a node or the request-reply process...
         IPMessage * message = receive_message("server");
         XBT_DEBUG("Server received a message of type %s.",

@@ -468,12 +468,6 @@ void Machines::update_machines_on_job_run(const JobPtr job,
         Machine * machine = _machines[static_cast<size_t>(machine_id)];
         machine->update_machine_state(MachineState::COMPUTING);
 
-        JobPtr previous_top_job = nullptr;
-        if (!machine->jobs_being_computed.empty())
-        {
-            previous_top_job = *machine->jobs_being_computed.begin();
-        }
-
         machine->jobs_being_computed.insert(job);
     }
 
@@ -493,7 +487,6 @@ void Machines::update_machines_on_job_end(const JobPtr job,
         Machine * machine = _machines[static_cast<size_t>(machine_id)];
 
         xbt_assert(!machine->jobs_being_computed.empty(), "inconsistency: marking machine %d on job '%s' end, while no job is being computed on the machine", machine_id, job->id.to_cstring());
-        const auto previous_top_job = *machine->jobs_being_computed.begin();
 
         // Let's erase jobID in the jobs_being_computed data structure
         size_t ret = machine->jobs_being_computed.erase(job);
