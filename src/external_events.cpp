@@ -53,7 +53,7 @@ ExternalEventType event_type_from_string(const std::string & type_str)
     }
     else
     {
-        xbt_assert(false, "Unknown event type: %s", type_str.c_str());
+        xbt_assert(false, "Unknown external event type: %s", type_str.c_str());
     }
     return type;
 }
@@ -63,20 +63,20 @@ ExternalEventType event_type_from_string(const std::string & type_str)
 ExternalEvent * ExternalEvent::from_json(rapidjson::Value & json_desc,
                                          const std::string & error_prefix)
 {
-    xbt_assert(json_desc.IsObject(), "%s: one event is not an object", error_prefix.c_str());
+    xbt_assert(json_desc.IsObject(), "%s: one external event is not an object", error_prefix.c_str());
 
-    xbt_assert(json_desc.HasMember("type"), "%s: one event has no 'type' field", error_prefix.c_str());
-    xbt_assert(json_desc["type"].IsString(), "%s: one event type field is not valid, it should be a string.", error_prefix.c_str());
+    xbt_assert(json_desc.HasMember("type"), "%s: one external event has no 'type' field", error_prefix.c_str());
+    xbt_assert(json_desc["type"].IsString(), "%s: one external event type field is not valid, it should be a string.", error_prefix.c_str());
 
-    xbt_assert(json_desc.HasMember("timestamp"), "%s: one event has no 'timestamp' field", error_prefix.c_str());
-    xbt_assert(json_desc["timestamp"].IsNumber(), "%s: one event timestamp field is not valid, it should be a number.", error_prefix.c_str());
+    xbt_assert(json_desc.HasMember("timestamp"), "%s: one external event has no 'timestamp' field", error_prefix.c_str());
+    xbt_assert(json_desc["timestamp"].IsNumber(), "%s: one external event timestamp field is not valid, it should be a number.", error_prefix.c_str());
 
     ExternalEvent * event = new ExternalEvent;
 
     event->type = event_type_from_string(json_desc["type"].GetString());
 
     event->timestamp = static_cast<long double>(json_desc["timestamp"].GetDouble());
-    xbt_assert(event->timestamp >= 0, "%s: one event has a non-positive timestamp.", error_prefix.c_str());
+    xbt_assert(event->timestamp >= 0, "%s: one external event has a non-positive timestamp.", error_prefix.c_str());
 
     if (event->type == ExternalEventType::GENERIC)
     {
@@ -92,7 +92,7 @@ ExternalEvent * ExternalEvent::from_json(rapidjson::Value & json_desc,
     }
     else
     {
-        xbt_die("%s: one event has an unknown event type.", error_prefix.c_str());
+        xbt_die("%s: one external event has an unknown type.", error_prefix.c_str());
     }
 
     return event;
@@ -142,7 +142,7 @@ ExternalEventList::~ExternalEventList()
 
 void ExternalEventList::load_from_json(const std::string & json_filename)
 {
-    XBT_INFO("Loading JSON events from '%s' ...", json_filename.c_str());
+    XBT_INFO("Loading JSON external events from '%s' ...", json_filename.c_str());
     filename = json_filename;
 
     int next_id = 0;
@@ -156,7 +156,7 @@ void ExternalEventList::load_from_json(const std::string & json_filename)
         {
             Document doc;
             doc.Parse(line.c_str());
-            xbt_assert(!doc.HasParseError() and doc.IsObject(), "Invalid JSON event file %s, an event could not be parsed.", json_filename.c_str());
+            xbt_assert(!doc.HasParseError() and doc.IsObject(), "Invalid JSON external events file %s, an external event could not be parsed.", json_filename.c_str());
 
             ExternalEvent * event = ExternalEvent::from_json(doc);
             event->set_id(name+"!"+std::to_string(next_id));
@@ -166,7 +166,7 @@ void ExternalEventList::load_from_json(const std::string & json_filename)
     }
     sort(_events.begin(), _events.end(), event_comparator_timestamp_number);
 
-    XBT_INFO("JSON events sucessfully parsed. Read %lu events.", _events.size());
+    XBT_INFO("JSON external events sucessfully parsed. Read %lu external events.", _events.size());
     ifile.close();
 }
 
