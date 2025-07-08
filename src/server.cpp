@@ -507,7 +507,7 @@ void server_on_turn_onoff_hosts(ServerData * data,
             }
             else
             {
-                XBT_ERROR("Invalid turning ON/OFF of host %d ('%s'): Switching from a computation pstate to an invalid pstate: %lu -> %lu",
+                xbt_die("Invalid turning ON/OFF of host %d ('%s'): Switching from a computation pstate to an invalid pstate: %lu -> %lu",
                           machine->id, machine->name.c_str(), curr_pstate, message->new_state);
             }
         }
@@ -528,7 +528,7 @@ void server_on_turn_onoff_hosts(ServerData * data,
         }
         else
         {
-            XBT_ERROR("Machine %d ('%s') has an invalid pstate : %lu", machine->id, machine->name.c_str(), curr_pstate);
+            xbt_die("Machine %d ('%s') has an invalid pstate : %lu", machine->id, machine->name.c_str(), curr_pstate);
         }
     }
 
