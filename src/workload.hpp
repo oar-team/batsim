@@ -73,17 +73,6 @@ public:
     void register_smpi_applications();
 
     /**
-     * @brief Checks whether a Workload is valid
-     */
-    void check_validity();
-
-    /**
-     * @brief Checks whether a single profile is valid and update refcounting of sub-profiles is necessary
-     * @param[in] profile The profile to examine
-     */
-    void check_single_profile_validity(const ProfilePtr profile);
-
-    /**
      * @brief Checks whether a single job is valid
      * @param[in] job The job to examine
      */
@@ -216,6 +205,18 @@ public:
      */
     bool profile_is_registered(const std::string & profile_name,
                                const std::string & workload_name);
+
+    /**
+     * @brief Checks whether a single profile is valid and update refcounting of sub-profiles is necessary
+     * @param[in] profile The profile to examine
+     */
+    void check_single_profile_validity(const ProfilePtr profile);
+
+
+    /**
+     * @brief Checks whether all Workloads are valid
+     */
+    void check_validity();
 
     /**
      * @brief Inserts a new Workload into a Workloads

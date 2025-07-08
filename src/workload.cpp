@@ -11,6 +11,8 @@
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 
+#include <boost/algorithm/string.hpp>
+
 #include <smpi/smpi.h>
 
 #include "context.hpp"
@@ -96,12 +98,6 @@ void Workload::load_from_json(const std::string &json_filename, int &nb_machines
 
     XBT_INFO("JSON workload parsed sucessfully. Read %d jobs and %d profiles.",
              jobs->nb_jobs(), profiles->nb_profiles());
-    XBT_INFO("Checking workload validity...");
-    check_validity();
-    XBT_INFO("Workload seems to be valid.");
-
-    XBT_INFO("Removing unreferenced profiles from memory...");
-    profiles->remove_unreferenced_profiles();
 }
 
 void Workload::register_smpi_applications()
@@ -125,45 +121,6 @@ void Workload::register_smpi_applications()
     XBT_INFO("SMPI applications of workload '%s' have been registered.", name.c_str());
 }
 
-void Workload::check_validity()
-{
-    // Let's check that every Composition-typed profile points to existing profiles
-    // And update the refcounting of these profiles
-    for (auto mit : profiles->profiles())
-    {
-        check_single_profile_validity(mit.second);
-    }
-
-
-    // Let's check the profile validity of each job
-    for (const auto & mit : jobs->jobs())
-    {
-        check_single_job_validity(mit.second);
-    }
-}
-
-void Workload::check_single_profile_validity(const ProfilePtr profile)
-{
-    // Check that every composition profile points to existing profiles
-    // And update the refcounting of these profiles
-    if (profile->type == ProfileType::SEQUENTIAL_COMPOSITION)
-    {
-        auto * data = static_cast<SequenceProfileData *>(profile->data);
-        data->profile_sequence.reserve(data->sequence_names.size());
-        for (const auto & sub_profile_name : data->sequence_names)
-        {
-            xbt_assert(profiles->exists(sub_profile_name),
-                       "Invalid composed profile '%s': the used profile '%s' does not exist",
-                       profile->name.c_str(), sub_profile_name.c_str());
-            // Adds one to the refcounting for the profile 'prof'
-            data->profile_sequence.push_back(profiles->at(sub_profile_name));
-        }
-    }
-
-    // TODO : check that there are no circular calls between composed profiles...
-    // TODO: compute the constraint of the profile number of resources, to check if it matches the jobs that use it
-
-}
 
 void Workload::check_single_job_validity(const JobPtr job)
 {
@@ -308,6 +265,65 @@ bool Workloads::profile_is_registered(const std::string & profile_name,
                                       const std::string & workload_name)
 {
     return at(workload_name)->profiles->exists(profile_name);
+}
+
+void Workloads::check_single_profile_validity(const ProfilePtr profile)
+{
+    // Check that every composition profile points to existing profiles
+    // And update the refcounting of these profiles
+    // TODO: do the same for other composition profiles
+    if (profile->type == ProfileType::SEQUENTIAL_COMPOSITION)
+    {
+        auto * data = static_cast<SequenceProfileData *>(profile->data);
+        data->profile_sequence.reserve(data->sequence_names.size());
+        for (const auto & sub_profile_name : data->sequence_names)
+        {
+            // Retrieve workload name from sub_profile_name
+            vector<string> name_parts;
+            boost::split(name_parts, sub_profile_name,
+                         boost::is_any_of("!"), boost::token_compress_on);
+            std::string workload_name = name_parts[0];
+
+            xbt_assert(profile_is_registered(sub_profile_name, workload_name),
+                       "Invalid composed profile '%s': the used profile '%s' does not exist",
+                       profile->name.c_str(), sub_profile_name.c_str());
+            // Adds one to the refcounting for the profile 'prof'
+            data->profile_sequence.push_back(at(workload_name)->profiles->at(sub_profile_name));
+        }
+    }
+
+    // TODO : check that there are no circular calls between composed profiles...
+    // TODO: compute the constraint of the profile number of resources, to check if it matches the jobs that use it
+
+}
+
+
+void Workloads::check_validity()
+{
+    // Check validity of each workload
+    for (auto wl_mit : _workloads)
+    {
+        Workload * wl = wl_mit.second;
+        XBT_INFO("Checking workload %s validity...", wl_mit.first.c_str());
+
+        // Let's check that every Composition-typed profile points to existing profiles
+        // And update the refcounting of these profiles
+        for (auto mit : wl->profiles->profiles())
+        {
+            check_single_profile_validity(mit.second);
+        }
+
+        // Let's check the validity of each job
+        for (const auto & mit : wl->jobs->jobs())
+        {
+            wl->check_single_job_validity(mit.second);
+        }
+        XBT_INFO("Workload seems to be valid.");
+
+        XBT_INFO("Removing unreferenced profiles from memory...");
+        wl->profiles->remove_unreferenced_profiles();
+    }
+
 }
 
 std::map<std::string, Workload *> &Workloads::workloads()

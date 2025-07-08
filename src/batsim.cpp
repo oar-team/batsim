@@ -138,6 +138,9 @@ void load_workloads(const MainArguments & main_args, BatsimContext * context, in
         context->workloads.insert_workload(desc.name, workload);
     }
 
+    // Check workloads validity
+    context->workloads.check_validity();
+
     // Let's compute how the number of machines to use should be limited
     max_nb_machines_to_use = -1;
     if ((main_args.limit_machines_count_by_workload) && (main_args.limit_machines_count > 0))
