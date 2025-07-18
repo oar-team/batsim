@@ -11,7 +11,7 @@ WORKLOAD_DIR = os.environ['WORKLOAD_DIR']
 EXTERNAL_EVENTS_DIR = os.environ['EXTERNAL_EVENTS_DIR']
 EDC_DIR = os.environ['EDC_LD_LIBRARY_PATH']
 
-def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, workload: str=None, external_event_files: [str]=None, edc_init_content: dict=dict(), use_json: None|bool=None, batsim_extra_args: list[str]=None):
+def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, workload: str=None, external_event_files: [str]=None, edc_init_content: dict=dict(), use_json: None|bool=None, batsim_extra_args: list[str]=None, edc_is_lib: bool=True):
     output_dir = f'{test_root_dir}/{name}'
     os.makedirs(output_dir, exist_ok=True)
 
@@ -27,8 +27,15 @@ def prepare_instance(name: str, test_root_dir: str, platform: str, edc: str, wor
         'batsim',
         '--export', f'{output_dir}/batout/',
         '--platform', f'{PLATFORM_DIR}/{platform}.xml',
-        '--edc-library-file', f'{EDC_DIR}/lib{edc}.so', edc_init_filename
     ]
+    if edc_is_lib:
+        batsim_cmd += [
+            '--edc-library-file', f'{EDC_DIR}/lib{edc}.so', edc_init_filename
+        ]
+    else:
+        batsim_cmd += [
+            '--edc-socket-file', f'ipc://{os.path.abspath(output_dir)}/sock', edc_init_filename
+        ]
 
     workload_file = None
     if workload is not None:

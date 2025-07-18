@@ -9,6 +9,8 @@ batprotocol_cpp_dep = dependency('batprotocol-cpp')
 boost_dep = dependency('boost')
 intervalset_dep = dependency('intervalset')
 nlohmann_json_dep = dependency('nlohmann_json')
+libzmq_dep = dependency('libzmq')
+cli11_dep = dependency('CLI11')
 deps = [
   batprotocol_cpp_dep
 ]
@@ -89,6 +91,11 @@ external_event_check = shared_library('external-event-check', common + ['externa
 
 exec1by1_dvfs_dyn = shared_library('exec1by1-dvfs-dyn', common + ['exec1by1-dvfs-dyn.cpp'],
   dependencies: deps + [boost_dep, intervalset_dep, nlohmann_json_dep],
+  install: true,
+)
+
+process = executable('process-edc', common + ['process-edc.cpp'],
+  dependencies: deps + [libzmq_dep, cli11_dep, boost_dep, intervalset_dep],
   install: true,
 )
 
