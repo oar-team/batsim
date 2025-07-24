@@ -25,6 +25,70 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(export, "export"); //!< Logging
 
+/**
+ * @brief Get the peak memory usage of the current process from /proc/self/status
+ * @return (VmPeak, VmHWM). First value is about the peak number of pages in the process address space, second value on the peak number of pages really used in memory.
+ */
+static std::pair<std::uint64_t, std::uint64_t> get_memory_usage_kb() {
+    std::ifstream status_file("/proc/self/status");
+    std::uint64_t vm_peak = 0;
+    std::uint64_t vm_hwm = 0;
+
+    if (!status_file.is_open()) {
+        return {vm_peak, vm_hwm};
+    }
+
+    std::string line;
+    while (std::getline(status_file, line)) {
+        if (line.rfind("VmPeak:", 0) == 0) {
+            std::istringstream iss(line);
+            std::string key, unit;
+            std::uint64_t value;
+            if (iss >> key >> value >> unit) {
+                vm_peak = value;
+            }
+        } else if (line.rfind("VmHWM:", 0) == 0) {
+            std::istringstream iss(line);
+            std::string key, unit;
+            std::uint64_t value;
+            if (iss >> key >> value >> unit) {
+                vm_hwm = value;
+            }
+        }
+    }
+
+    return {vm_peak, vm_hwm};
+}
+
+static void write_real_execution_info(BatsimContext * context)
+{
+    BAT_ENFORCE(context->real_execution_info_file.is_open(), "Bad call to write_real_execution_info: output file is not open");
+    std::map<string, string> output_map;
+
+    // peak memory usage
+    auto [vm_peak, vm_hwm] = get_memory_usage_kb();
+    output_map["memory_VmPeak_kB"] = std::to_string(vm_peak);
+    output_map["memory_VmHWM_kB"] = std::to_string(vm_hwm);
+
+    // execution time
+    long double seconds_spent_in_edc = context->microseconds_used_by_scheduler / 1e6l;
+    output_map["time_in_edc_seconds"] = to_string(static_cast<double>(seconds_spent_in_edc));
+
+    chrono::duration<long double> diff = context->simulation_end_time - context->simulation_start_time;
+    long double seconds_spent_in_the_whole_simulation = diff.count();
+    output_map["time_in_simu_seconds"] = to_string(static_cast<double>(seconds_spent_in_the_whole_simulation));
+
+    // prepare writing to the file
+    vector<string> values;
+    for (const auto & mit : output_map) {
+        values.push_back("  \""s + mit.first + "\": "s + mit.second);
+    }
+
+    // write to the file
+    auto & f = context->real_execution_info_file;
+    f << "{\n" << boost::algorithm::join(values, ",\n") << "\n}\n";
+    f.close();
+}
 
 void prepare_batsim_outputs(BatsimContext * context)
 {
@@ -57,6 +121,10 @@ void prepare_batsim_outputs(BatsimContext * context)
             xbt_die("Filesystem error while creating export directory '%s'. %s", export_dir.c_str(), e.what());
         }
     }
+
+    const std::string real_execution_info_filename = export_prefix_path.string() + "real_exec_info.json";
+    context->real_execution_info_file.open(real_execution_info_filename, std::ofstream::out | std::ofstream::trunc);
+    BAT_ENFORCE(context->real_execution_info_file.is_open(), "Could not open output file at path '%s'", real_execution_info_filename.c_str());
 
     if (context->trace_machine_states)
     {
@@ -132,8 +200,11 @@ void finalize_batsim_outputs(BatsimContext * context)
         context->energy_tracer.close_buffer();
     }
 
-    // Finalize both jobs and schedule output files
+    // Finalize the jobs output file
     context->jobs_tracer.finalize();
+
+    // Write information on the real execution
+    write_real_execution_info(context);
 }
 
 
@@ -522,14 +593,6 @@ void JobsTracer::finalize()
     xbt_assert(f.is_open(), "Cannot write file '%s'", _schedule_filename.c_str());
     map<string, string> output_map;
 
-    long double seconds_used_by_scheduler = _context->microseconds_used_by_scheduler / 1e6l;
-    output_map["scheduling_time"] = to_string(static_cast<double>(seconds_used_by_scheduler));
-
-    // Let's compute the simulation time
-    chrono::duration<long double> diff = _context->simulation_end_time - _context->simulation_start_time;
-    long double seconds_used_by_the_whole_simulation = diff.count();
-    output_map["simulation_time"] = to_string(static_cast<double>(seconds_used_by_the_whole_simulation));
-
     double sum_time_running = 0;
     double max_time_running = 0;
     for (auto const & entry : _machines_utilization)
@@ -568,9 +631,9 @@ void JobsTracer::finalize()
 
     XBT_INFO("jobs=%d, finished=%d, success=%d, killed=%d, success_rate=%lf",
              _nb_jobs, _nb_jobs_finished, _nb_jobs_success, _nb_jobs_killed, success_rate);
-    XBT_INFO("makespan=%lf, scheduling_time=%lf, mean_waiting_time=%lf, mean_turnaround_time=%lf, "
+    XBT_INFO("makespan=%lf, mean_waiting_time=%lf, mean_turnaround_time=%lf, "
              "mean_slowdown=%lf, max_waiting_time=%lf, max_turnaround_time=%lf, max_slowdown=%lf",
-             static_cast<double>(_makespan), static_cast<double>(seconds_used_by_scheduler),
+             static_cast<double>(_makespan),
              static_cast<double>(mean_waiting_time), static_cast<double>(mean_turnaround_time), mean_slowdown,
              static_cast<double>(_max_waiting_time), static_cast<double>(_max_turnaround_time), static_cast<double>(_max_slowdown));
     XBT_INFO("mean_machines_running=%lf, max_machines_running=%lf",

@@ -6,6 +6,7 @@
 #pragma once
 
 #include <chrono>
+#include <fstream>
 #include <vector>
 
 #include <zmq.h>
@@ -52,6 +53,7 @@ struct BatsimContext
     PStateChangeTracer pstate_tracer;               //!< The PStateChangeTracer
     EnergyConsumptionTracer energy_tracer;          //!< The EnergyConsumptionTracer
     MachineStateTracer machine_state_tracer;        //!< The MachineStateTracer
+    std::ofstream real_execution_info_file;         //!< The file into which information related to the real execution (real time measurements, real memory usage...) are written
     JobsTracer jobs_tracer;                         //!< The JobsTracer
     CurrentSwitches current_switches;               //!< The current switches
 
