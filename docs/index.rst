@@ -56,7 +56,7 @@ please cite it (`bibtex <https://hal.archives-ouvertes.fr/hal-01333471v1/bibtex>
 
    Platform <input-platform.rst>
    Workload <input-workload.rst>
-   Events <input-events.rst>
+   External Events <input-external-events.rst>
 
 .. toctree::
    :maxdepth: 1

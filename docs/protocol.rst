@@ -70,7 +70,6 @@ Here is the list of the simulation features that may be requested:
 - ``forward_profiles_on_job_submission``: If set to ``true`` Batsim will include profiles information in ``JobSubmittedEvent``.
 - ``forward_profiles_on_jobs_killed``: If set to ``true`` Batsim will include profile information in ``JobsKilledEvent``.
 - ``forward_profiles_on_simulation_begins``: If set to ``true`` Batsim will include profile information in ``SimulationBeginsEvent``.
-- ``forward_unknown_external_events``: If set to ``true`` :ref:`External Events<input_EVENTS>` unknown to Batsim will be sent to this EDC.
 
 
 Message composition
