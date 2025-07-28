@@ -193,7 +193,6 @@ struct EDCRequestedSimulationFeatures
     bool forward_profiles_on_job_submission = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
     bool forward_profiles_on_jobs_killed = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
     bool forward_profiles_on_simulation_begins = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
-    bool forward_unknown_external_events = false; //!< cf. batprotocol::fb::EDCRequestedSimulationFeatures
 };
 
 /**

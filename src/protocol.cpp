@@ -455,7 +455,6 @@ EDCHelloMessage *from_edc_hello(const batprotocol::fb::EDCHelloEvent * edc_hello
     msg->requested_simulation_features.forward_profiles_on_job_submission = edc_hello->requested_simulation_features()->forward_profiles_on_job_submission();
     msg->requested_simulation_features.forward_profiles_on_jobs_killed = edc_hello->requested_simulation_features()->forward_profiles_on_jobs_killed();
     msg->requested_simulation_features.forward_profiles_on_simulation_begins = edc_hello->requested_simulation_features()->forward_profiles_on_simulation_begins();
-    msg->requested_simulation_features.forward_unknown_external_events = edc_hello->requested_simulation_features()->forward_unknown_external_events();
 
     return msg;
 }

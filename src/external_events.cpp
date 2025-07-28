@@ -83,11 +83,6 @@ ExternalEvent * ExternalEvent::from_json(rapidjson::Value & json_desc,
         //TODO: Handle unknown external event as Generic by default
         GenericEventData * data = new GenericEventData;
         data->json_desc_str = json_desc["data"].GetString();
-        // rapidjson::StringBuffer buffer;
-        // rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        // json_desc.Accept(writer);
-
-        // data->json_desc_str = std::string(buffer.GetString(), buffer.GetSize());
         event->data = static_cast<void*>(data);
     }
     else
