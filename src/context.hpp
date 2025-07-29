@@ -57,7 +57,6 @@ struct BatsimContext
     JobsTracer jobs_tracer;                         //!< The JobsTracer
     CurrentSwitches current_switches;               //!< The current switches
 
-    rapidjson::Document config_json;                //!< The configuration information sent to the scheduler
     bool forward_profiles_on_simulation_begins;     //!< Stores whether the profiles information of jobs should be sent to the scheduler during SIMULATION_BEGINS event
     bool forward_profiles_on_job_submission;        //!< Stores whether the profile information of submitted jobs should be sent to the scheduler
     bool forward_profiles_on_jobs_killed;           //!< Stores whether the profile information of killed jobs should be send to the scheduler
@@ -78,8 +77,6 @@ struct BatsimContext
 
     bool energy_used;                               //!< Stores whether the energy part of Batsim should be used
     bool smpi_used;                                 //!< Stores whether SMPI should be used
-    bool allow_compute_sharing;                     //!< Stores whether sharing (using the same machine to run different jobs concurrently) should be allowed on compute machines
-    bool allow_storage_sharing;                     //!< Stores whether sharing (using the same machine to run different jobs concurrently) should be allowed on storage machines
     bool trace_schedule;                            //!< Stores whether the resulting schedule should be outputted
     bool trace_machine_states;                      //!< Stores whether the machines states should be outputted
     bool trace_pstate_changes;                      //!< Stores whether the machine pstate changes should be outputted

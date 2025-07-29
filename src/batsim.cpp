@@ -390,15 +390,6 @@ int main(int argc, char * argv[])
 void set_configuration(BatsimContext *context,
                        MainArguments & main_args)
 {
-    using namespace rapidjson;
-
-    // ********************************************************
-    // Let's load default values from the default configuration
-    // ********************************************************
-    Document default_config_doc;
-    xbt_assert(!default_config_doc.HasParseError(),
-               "Invalid default configuration file : could not be parsed.");
-
     // *************************************
     // Let's update the BatsimContext values
     // *************************************
@@ -407,15 +398,7 @@ void set_configuration(BatsimContext *context,
     context->platform_filename = main_args.platform_filename;
     context->export_prefix = main_args.export_prefix;
     context->energy_used = main_args.host_energy_used;
-    context->allow_compute_sharing = false;
-    context->allow_storage_sharing = false;
     context->trace_machine_states = main_args.enable_machine_state_tracing;
     context->trace_pstate_changes = main_args.enable_pstate_change_tracing;
     context->simulation_start_time = chrono::high_resolution_clock::now();
-
-    // **************************************************************************************
-    // Let's write the json object holding configuration information to send to the scheduler
-    // **************************************************************************************
-    context->config_json.SetObject();
-    //auto & alloc = context->config_json.GetAllocator();
 }

@@ -436,7 +436,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
 
     // EDCs
     const auto nb_edc = edc_lib_files.size() + edc_lib_strings.size() + edc_socket_files.size() + edc_socket_strings.size();
-    if (!only_print_information) {
+    if (!only_print_information || main_args.dump_execution_context) {
         if (nb_edc == 0)
         {
             fprintf(stderr, "%sAt least one external decision component (EDC) should be set.\n", error_prefix);
