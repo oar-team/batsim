@@ -27,7 +27,8 @@ The same simulation, using an external decision component as a process with its 
 
 .. code:: bash
 
-    batsim -p platforms/small_platform.xml -w workloads/test_one_computation_job.json -S 'tcp://localhost:28000' /path/to/EDC_init_file
+    batsim -p platforms/small_platform.xml -w workloads/test_one_computation_job.json \
+    -S 'tcp://localhost:28000' /path/to/EDC_init_file
 
 
 Configuration file

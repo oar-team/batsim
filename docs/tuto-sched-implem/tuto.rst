@@ -16,7 +16,7 @@ Gaining insight on the Batsim protocol
 
 The Batsim :ref:`protocol` defines the interactions between Batsim and the scheduling algorithm.
 **Reading the protocol description is strongly recommended**,
-as it defines the following.
+as it defines the following:
 
 - The events the algorithm can react to.
 - The actions that the algorithm can take.

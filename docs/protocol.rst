@@ -3,7 +3,6 @@
 Protocol
 ========
 
-
 A Batsim simulation consists in two main parts:
 
 - Batsim itself, in charge of simulating what happens on the platform.
@@ -48,7 +47,7 @@ The second part contains a protocol message which must be formatted using the fo
 This protocol message must contain only one event: ``EDCHelloEvent``.
 
 The ``EDCHelloEvent`` contains multiple informations on the EDC, such as its name, version and the version of the batprotocol it uses, and a set of requested simulation features.
-See `EDCHelloEvent` and `Simulation features`_ for more details.
+See ``EDCHelloEvent`` and `Simulation features`_ for more details.
 
 .. note::
     When using EDC as a library the messages exchanged with Batsim are not sent/received, but transmitted via the library API.
@@ -56,6 +55,7 @@ See `EDCHelloEvent` and `Simulation features`_ for more details.
     The string of initialization data can be retrieved from the parameters ``init_data`` and ``init_size``.
     The EDC must fill the parameters ``flags`` with the flags, and must fill the ``reply_data`` and ``reply_size`` parameters with the protocol message containing the ``EDCHelloEvent`` correctly formatted.
 
+.. _simulation_features:
 
 Simulation features
 -------------------
@@ -111,7 +111,7 @@ Table of Events
 Details on every events can be found in the `Batprotocol API`_.
 
 .. todo::
-    Put a link for each event to the Batprotocol doc
+    Put a link for each event to the Batprotocol documentation
 
 Events from Batsim to the External Decision Component:
 
@@ -157,7 +157,39 @@ Events from the External Decision Component to Batsim:
 * TurnOnOffHostsEvent
 
 
+.. _dynamic_job_registration:
+
+Dynamic registration of jobs and profiles
+-----------------------------------------
+
+Jobs are in most cases given as Batsim inputs, which are submitted by Batsim (the EDC knows about them via ``JobSubmittedEvent`` events of the batprotocol).
+
+However, jobs can also be submitted from the EDC (via registration events) throughout the simulation.
+For this purpose:
+
+- Dynamic jobs registration **must** be enabled (see `Simulation features`_).
+- The EDC **must** tell Batsim when it has finished registering dynamic jobs (via a ``FinishRegistrationEvent``).
+  Otherwise, Batsim will wait for new simulation events forever, causing either a SimGrid deadlock or an infinite loop at the end of the simulation.
+- The EDC **must** make sure that Batsim has enough information to avoid SimGrid deadlocks during the simulation.
+  If at some simulation time all Batsim workloads inputs have been executed and nothing is happening on the platform, this might lead to a SimGrid deadlock.
+  If the EDC knows that it will register a dynamic job in the future, it should ask Batsim to call it at this timestamp via a ``CallMeLaterEvent``.
+
+The protocol behavior of dynamic registrations is customizable (see `Simulation features`_).
+Batsim might or might not send acknowledgments when jobs have been registered.
+
+An example of dynamic jobs and profiles registration can be found in the ``dyn-register`` `EDC library`_ of Batsim's tests.
+
+The following figure outlines how a dynamic job registration should be done
+
+.. image:: img/proto/dynamic_job_submission.png
+   :width: 75 %
+   :alt: Dynamic job submission
+
+.. todo::
+
+    Update the dyn-register EDC library link to the master branch
+
 .. _ZeroMQ request-reply pattern: https://zguide.zeromq.org/docs/chapter1/#Ask-and-Ye-Shall-Receive
 .. _Flatbuffer: https://flatbuffers.dev/
 .. _Batprotocol API: https://framagit.org/batsim/batprotocol/-/blob/main/docs/api.rst?ref_type=heads
-
+.. _EDC library: https://framagit.org/batsim/batsim/-/blob/batprotocol/test/edc-lib/dyn-register.cpp
