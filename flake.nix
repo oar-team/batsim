@@ -120,6 +120,10 @@
               echo gdb \$\{GDB_DIR_ARGS\}
             '';
           };
+
+          docs-shell = pkgs.mkShell rec {
+            buildInputs = with pkgs.python3Packages; [ sphinx sphinx_rtd_theme ];
+          };
         };
       }
     );
