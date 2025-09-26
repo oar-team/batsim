@@ -173,7 +173,7 @@ void prepare_batsim_outputs(BatsimContext * context)
 
     context->jobs_tracer.initialize(context,
                                     export_prefix_path.string() + "jobs.csv",
-                                    export_prefix_path.string() + "schedule.csv");
+                                    export_prefix_path.string() + "schedule.json");
 }
 
 void finalize_batsim_outputs(BatsimContext * context)
@@ -611,7 +611,7 @@ void JobsTracer::finalize()
     double mean_turnaround_time = static_cast<double>(_sum_turnaround_time)/_nb_jobs;
     double mean_slowdown = static_cast<double>(_sum_slowdown)/_nb_jobs;
 
-    output_map["batsim_version"] = _context->batsim_version;
+    output_map["batsim_version"] = "\""s + _context->batsim_version + "\""s;
     output_map["nb_jobs"] = to_string(_nb_jobs);
     output_map["nb_jobs_finished"] = to_string(_nb_jobs_finished);
     output_map["nb_jobs_success"] = to_string(_nb_jobs_success);
@@ -670,16 +670,12 @@ void JobsTracer::finalize()
         output_map["time_" + machine_state_to_string(state)] = to_string(static_cast<double>(time_spent_in_each_state[state]));
     }
 
-    // Let's write the output map into the file
-    vector<string> keys, values;
+    vector<string> values;
     for (const auto & mit : output_map)
     {
-        keys.push_back(mit.first);
-        values.push_back(mit.second);
+        values.push_back("  \""s + mit.first + "\": "s + mit.second);
     }
-
-    f << boost::algorithm::join(keys, ",") << "\n";
-    f << boost::algorithm::join(values, ",") << "\n";
+    f << "{\n" << boost::algorithm::join(values, ",\n") << "\n}\n";
 
     f.close();
 }
