@@ -11,4 +11,7 @@ Documentation TODOs
 -------------------
 .. todolist::
 
+.. todo::
+    Probes documentation
+
 .. _internal issues: https://gitlab.inria.fr/batsim/batsim/issues

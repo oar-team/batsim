@@ -13,14 +13,14 @@ Starting with version `v1.0.0`_, Batsim adheres to `Semantic Versioning`_ and it
 
 ........................................................................................................................
 
-Unreleased
-----------
+v5.0.0
+------
 
 - `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...HEAD>`_
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
 
-Architectural changes
-~~~~~~~~~~~~~~~~~~~~~
+Architectural and protocol changes (**big breaks**)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - The Decision Process concept (a system process external to Batsim that takes decisions) has been replaced with the External Decision Component concept.
   In short, this is a generalization that enables the use of either external decision processes (as before) or external decision libraries that must respect a given C API.
@@ -35,11 +35,7 @@ Architectural changes
   The definition of the protocol, as well as helper de/serialization libraries around it, are now packaged in the batprotocol_ git repository.
   Helper libraries are partly generated from a protocol description file, which will help in making sure they remain compatible with each other (without forcing all implementation to support all features).
   This separation should help maintainability, as protocol updates can be kept consistent among several implementations much more easily than before.
-- Probes have been introduced.
 
-.. todo::
-
-  talk about probes. flag --trace-probe-data
 
 Command-line interface changes (**breaks CLI** unless stated explicitly)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -71,12 +67,35 @@ Output file changes (**breaks**)
 - Batsim no longer generates Pajé traces, and the ``--disable-schedule-tracing`` command-line option has been removed.
 - As said on command-line interface changes, the generation of many output files has been disabled by default CLI options.
 
+
+Other notable changes
+~~~~~~~~~~~~~~~~~~~~~
+
+- Batsim now uses Simgrid 4.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/-/releases>`_)
+- (**break**) Batsim now consistently uses the complete identifiers of jobs and profiles in the related protocol events (of the form ``job_id!workload_name`` or ``profile_name!workload_name``).
+- (**break**) External events support has been simplified. For now only the external events of type ``generic`` are supported.
+- Changing the Pstate of a host or turning ON/OFF a host is now possible without enabling Simgrid's host energy plugin.
+
+
+Added
+~~~~~
+
+- Probes have been introduced but with limited support. One can only create periodic probes related to Simgrid's host/link energy plugins.
+
+.. todo::
+
+  talk about probes. flag --trace-probe-data
+
+
+
 Removed (**breaks**)
 ~~~~~~~~~~~~~~~~~~~~
 
 - Redis is no longer supported to carry meta-information about simulation events.
   All related CLI arguments no longer exist: ``--enable-redis``, ``--redis-hostname``, ``--redis-port``, ``--redis-prefix``.
   All related execution context keys no longer exist: ``redis_enabled``, ``redis_hostname``, ``redis_port``, ``redis_prefix``.
+- Machine permission checks have been removed (related to the ``compute-sharing` and ``storage-sharing`` options). It is now the user/EDC's responsibility to make sure a job is not executed on a "storage only" host.
+- Workflows are no longer supported and ``pugixml`` has been removed from the list of dependencies.
 
 ........................................................................................................................
 
@@ -86,7 +105,7 @@ v4.0.0
 - `Commits since v3.1.0 <https://github.com/oar-team/batsim/compare/v3.1.0...v4.0.0>`_
 - Release date: 2020-07-29
 - ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -i batsim-4.0.0``
-- Recommended SimGrid release: 3.25.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/releases>`_)
+- Recommended SimGrid release: 3.25.0 (see `SimGrid's framagit releases <https://framagit.org/simgrid/simgrid/-/releases>`_)
 
 Changed (**breaks some schedulers**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
