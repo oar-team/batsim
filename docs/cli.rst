@@ -70,7 +70,7 @@ Finally, if you want to simulate
     - making host ``Mars`` a ``storage`` resource,
     - with energy support
     - an extra simgrid logging option to set the level of the energy pluggin as critical,
-    - specifying a folder in the prefix of the output files,
+    - specifying a folder in the prefix of the output files (by default the prefix is `out/`),
     - with a process EDC and a specific initialisation string,
     - and batsim logging on debug level,
 

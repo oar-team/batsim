@@ -11,7 +11,7 @@ You can give a look at `this evalys visualization example <https://github.com/oa
 Energy consumption trace
 ------------------------
 
-This file is written as Batsim's export prefix + ``_consumed_energy.csv``.
+This file is written as Batsim's export prefix + ``consumed_energy.csv`` (the prefix is `out/` by default, see :ref:`cli`).
 This is a time series that contains the energy consumption of the platform
 (as defined as the sum of all the computing hosts of the platform) from time 0 to the current time.
 It contains the following fields in this order.

@@ -3,7 +3,7 @@
 Jobs
 ====
 
-The main Batsim output file is exported as *prefix* + ``_jobs.csv`` (see :ref:`cli`).
+The main Batsim output file is exported as *prefix* + ``jobs.csv`` (the prefix is `out/` by default, see :ref:`cli`).
 
 This file is formatted as CSV_ (with a header) and give information about jobs.
 There is one line per job.
@@ -30,8 +30,8 @@ This file has the following fields in this order.
   Equals to :math:`starting\_time - submission\_time`.
 - ``turnaround_time``, the time the job spend in the system. Equals to :math:`finish\_time - submission\_time`.
 - ``stretch``: equals to :math:`turnaround\_time / execution\_time`.
-- ``consumed_energy``, the total amount of energy (in joules) consumed by the ``allocated_resources`` during the execution of the job. Warning: no energy sharing or allocation is done in case there is more than one job running on a machine.
 - ``allocated_resources``, the resources onto which the job has been allocated (see :ref:`interval_set_string_representation`).
+- ``consumed_energy``, the total amount of energy (in joules) consumed by the ``allocated_resources`` during the execution of the job. This value is -1 if the energy plugin of Simgrid is not enabled (see :ref:`cli`). Warning: no energy sharing or allocation is done in case there is more than one job running on a machine.
 - ``metadata``, user-specified metadata about the job (empty string by default).
 
 Please note that many fields can have empty values for jobs that have been rejected.

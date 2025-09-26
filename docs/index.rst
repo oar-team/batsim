@@ -60,6 +60,7 @@ please cite it (`bibtex <https://hal.archives-ouvertes.fr/hal-01333471v1/bibtex>
    :maxdepth: 1
    :caption: Simulation outputs
 
+   Real execution information <output-real-exec-info.rst>
    Schedule-centric <output-schedule.rst>
    Job-centric <output-jobs.rst>
    Energy-related <output-energy.rst>
