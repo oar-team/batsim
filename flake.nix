@@ -31,15 +31,15 @@
           debug = false;
           doCoverage = false;
           simgrid = simgrid-base.override { debug = false; };
-          batprotocol-cpp = batprotocol.packages-release.${system}.batprotocol-cpp;
-          intervalset = intervalset.packages-release.${system}.intervalset;
+          batprotocol-cpp = batprotocol.packages.${system}.batprotocol-cpp;
+          intervalset = intervalset.packages.${system}.intervalset;
         };
         debug-options = {
           debug = true;
           doCoverage = false;
           simgrid = simgrid-base.override { debug = true; };
-          batprotocol-cpp = batprotocol.packages-debug.${system}.batprotocol-cpp;
-          intervalset = intervalset.packages-debug.${system}.intervalset;
+          batprotocol-cpp = batprotocol.packages.${system}.batprotocol-cpp-debug;
+          intervalset = intervalset.packages.${system}.intervalset-debug;
         };
         debug-cov-options = debug-options // {
           doCoverage = true;

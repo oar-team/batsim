@@ -13,11 +13,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1745584399,
-        "narHash": "sha256-YatWbDbLK9RvAtxxSUTvnAkWr8QPCEaZCaf8ZNAlUFE=",
+        "lastModified": 1758899068,
+        "narHash": "sha256-WwonDFSOTwTOk0FmBhVf0oiKQy9TECMicJbMv7gZrrM=",
         "ref": "refs/heads/main",
-        "rev": "e3deca2cbea431bae247940227eb8cd313f14479",
-        "revCount": 183,
+        "rev": "ab8a45da69a022396790e2731001958417b501ba",
+        "revCount": 190,
         "type": "git",
         "url": "https://framagit.org/batsim/batprotocol"
       },
@@ -57,11 +57,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1736945570,
-        "narHash": "sha256-EUzxaiecWZhABDVRDjETK1u/PXeOsC2DSvCme3xT9xA=",
+        "lastModified": 1749995543,
+        "narHash": "sha256-9GBGFuj0WxUI2+ZJp32IPCbYPvHg1S9KEfpKUfhO24w=",
         "ref": "refs/heads/main",
-        "rev": "dba94acc842348cad53aa5a566d73927606216a9",
-        "revCount": 86,
+        "rev": "8d13ab31eb1a05d566ba795dbd1e8b6d6b3bf238",
+        "revCount": 87,
         "type": "git",
         "url": "https://framagit.org/batsim/intervalset"
       },
@@ -96,11 +96,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1747726228,
-        "narHash": "sha256-2HBQhvMRypAj/6+Wu8j9GJm1HVvFqHeM4/hHJkz5hCM=",
+        "lastModified": 1756999780,
+        "narHash": "sha256-4/vC9w+eexK12RCv8uHMjRbyUtWZJyL2sDC1bdzjhyE=",
         "owner": "oar-team",
         "repo": "nur-kapack",
-        "rev": "a63383492540952a9f0cf5149676f2a4d45e257d",
+        "rev": "ba4f24ec8ded2ab933481112898319cdfcccee97",
         "type": "github"
       },
       "original": {
