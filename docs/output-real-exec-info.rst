@@ -3,7 +3,7 @@
 Real Execution Information
 ==========================
 
-Aggregated information about the schedule is exported as *prefix* + ``real_exec_info.json`` (the prefix is `out/` by default, see :ref:`cli`).
+Aggregated information about the real execution is exported as *prefix* + ``real_exec_info.json`` (the prefix is `out/` by default, see :ref:`cli`).
 The file is formatted as a JSON object of a single depth which contains the following fields in lexicographic order of the fields name.
 
 - ``memory_VmHWM_kB``: The peak number of pages really used in memory (read from `/proc/self/status`).

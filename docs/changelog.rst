@@ -66,6 +66,8 @@ Output file changes (**breaks**)
   Batsim now recursively creates the export directory if needed.
 - Batsim no longer generates Pajé traces, and the ``--disable-schedule-tracing`` command-line option has been removed.
 - As said on command-line interface changes, the generation of many output files has been disabled by default CLI options.
+- The `schedule` output file is now formatted as a JSON object instead of a CSV file.
+- A new `real_exec_info` output file (also JSON) is generated, aggregating information on the real execution time and memory usage.
 
 
 Other notable changes
