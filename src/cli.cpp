@@ -377,7 +377,6 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
             app.config_formatter(std::make_shared<CLI::ConfigINI>());
         }
 
-        //std::string output_configuration_str = app.config_to_str();
         std::ofstream ofstream(output_configuration_file);
         ofstream << app.config_to_str();
         ofstream.close();

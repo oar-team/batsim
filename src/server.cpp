@@ -94,8 +94,7 @@ void server_process(BatsimContext * context)
     handler_map[IPMessageType::EXTERNAL_EVENTS_OCCURRED] = server_on_external_events_occurred;
 
     /* Currently, there is one job submtiter per workload input file.
-       The dynamic job submitter (from the decision process) is not part
-       of this count as it can finish then restart... */
+       The dynamic job submitter (from the decision process) is not part of this count. */
     ServerData::SubmitterCounters job_counters;
     job_counters.expected_nb_submitters = context->workloads.nb_static_workloads();
     data->submitter_counters[SubmitterType::JOB_SUBMITTER] = job_counters;
