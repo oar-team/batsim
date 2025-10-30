@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'batsim'
-copyright = '2015-2021, The Batsim Team'
+copyright = '2015-2025, The Batsim Team'
 author = 'The Batsim Team'
 
 # The short X.Y version
