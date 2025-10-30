@@ -108,53 +108,147 @@ The behavior of specific events of this protocol depends on the requested `Simul
 Table of Events
 ---------------
 
-Details on every events can be found in the `Batprotocol API`_.
+Here is the list of all events described in the batprotocol.
+More details on each event can be found in the `Batprotocol API`_, in particular the list of attributes of each event.
 
-.. todo::
-    Put a link for each event to the Batprotocol documentation
+From Batsim to the External Decision Component:
 
-Events from Batsim to the External Decision Component:
+- `SimulationBeginsEvent <SimulationBeginsEvent_>`_
+- `SimulationEndsEvent <SimulationEndsEvent_>`_
+- `SimulationErrorEvent <SimulationErrorEvent_>`_
+..
+- `JobSubmittedEvent <JobSubmittedEvent_>`_
+- `JobCompletedEvent <JobCompletedEvent_>`_
+- `JobsKilledEvent <JobsKilledEvent_>`_
+..
+- `RequestedCallEvent <RequestedCallEvent_>`_
+- `AllStaticJobsHaveBeenSubmittedEvent <AllStaticJobsHaveBeenSubmittedEvent_>`_
+- `AllStaticExternalEventsHaveBeenInjectedEvent <AllStaticExternalEventsHaveBeenInjectedEvent_>`_
+- `ExternalEventOccurredEvent <ExternalEventOccurredEvent_>`_
+..
+- `HostsPStateChangedEvent <HostsPStateChangedEvent_>`_
+- `HostsTurnedOnOffEvent <HostsTurnedOnOffEvent_>`_
 
-* SimulationBeginsEvent
-* SimulationEndsEvent
-* SimulationErrorEvent
-..
-* JobSubmittedEvent
-* JobCompletedEvent
-* JobsKilledEvent
-..
-* RequestedCallEvent
-* AllStaticJobsHaveBeenSubmittedEvent
-* AllStaticExternalEventsHaveBeenInjectedEvent
-* ExternalEventOccurredEvent
-..
-* HostsPStateChangedEvent
-* HostsTurnedOnOffEvent
+From the External Decision Component to Batsim:
 
-Events from the External Decision Component to Batsim:
+- `EDCHelloEvent <EDCHelloEvent_>`_
+- `ForceSimulationStopEvent <ForceSimulationStopEvent_>`_
+..
+- `ExecuteJobEvent <ExecuteJobEvent_>`_
+- `RejectJobEvent <RejectJobEvent_>`_
+- `KillJobsEvent <KillJobsEvent_>`_
+..
+- `RegisterProfileEvent <RegisterProfileEvent_>`_
+- `RegisterJobEvent <RegisterJobEvent_>`_
+- `FinishRegistrationEvent <FinishRegistrationEvent_>`_
+..
+- `CallMeLaterEvent <CallMeLaterEvent_>`_
+- `StopCallMeLaterEvent <StopCallMeLaterEvent_>`_
+..
+- `CreateProbeEvent <CreateProbeEvent_>`_
+- `StopProbeEvent <StopProbeEvent_>`_
+- `TriggerProbeEvent <TriggerProbeEvent_>`_
+- `ResetProbeEvent <ResetProbeEvent_>`_
+- `ProbeDataEmittedEvent <ProbeDataEmittedEvent_>`_
+..
+- `ChangeHostsPStateEvent <ChangeHostsPStateEvent_>`_
+- `TurnOnOffHostsEvent <TurnOnOffHostsEvent_>`_
 
-* EDCHelloEvent
-* ForceSimulationStopEvent
-..
-* ExecuteJobEvent
-* RejectJobEvent
-* KillJobsEvent
-..
-* RegisterProfileEvent
-* RegisterJobEvent
-* FinishRegistrationEvent
-..
-* CallMeLaterEvent
-* StopCallMeLaterEvent
-..
-* CreateProbeEvent
-* StopProbeEvent
-* TriggerProbeEvent
-* ResetProbeEvent
-* ProbeDataEmittedEvent
-..
-* ChangeHostsPStateEvent
-* TurnOnOffHostsEvent
+
+Events from Batsim to the External Decision Component
+-----------------------------------------------------
+
+`SimulationBeginsEvent <link_SimuBegins_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`SimulationEndsEvent <link_SimuEnds_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`SimulationErrorEvent <link_SimuError_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`JobSubmittedEvent <link_JobSub_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`JobCompletedEvent <link_JobComp_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`JobsKilledEvent <link_JobsKilled_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`RequestedCallEvent <link_ReqCall_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`AllStaticJobsHaveBeenSubmittedEvent <link_AllJobs_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`AllStaticExternalEventsHaveBeenInjectedEvent <link_AllEvents_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`ExternalEventOccurredEvent <link_ExtEvent_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`HostsPStateChangedEvent <link_HostPS_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`HostsTurnedOnOffEvent <link_HostTurned_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Events from the External Decision Component to Batsim
+-----------------------------------------------------
+
+`EDCHelloEvent <link_EDCHello_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`ForceSimulationStopEvent <link_ForceStop_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`ExecuteJobEvent <link_ExecJob_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`RejectJobEvent <link_RejJob_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`KillJobsEvent <link_KillJob_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`RegisterProfileEvent <link_RegisProf_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`RegisterJobEvent <link_RegisJob_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`FinishRegistrationEvent <link_FinishReg_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`CallMeLaterEvent <link_CallMe_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`StopCallMeLaterEvent <link_StopCall_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`CreateProbeEvent <link_CreatePr_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`StopProbeEvent <link_StopPr_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`TriggerProbeEvent <link_TriggerPr_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`ResetProbeEvent <link_ResetPr_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`ProbeDataEmittedEvent <linkDataPr_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`ChangeHostsPStateEvent <link_ChangeHost_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`TurnOnOffHostsEvent <link_TrunHost_>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 
 .. _dynamic_job_registration:
@@ -193,3 +287,33 @@ The following figure outlines how a dynamic job registration should be done
 .. _Flatbuffer: https://flatbuffers.dev/
 .. _Batprotocol API: https://batprotocol.readthedocs.io/en/latest/api.html
 .. _EDC library: https://framagit.org/batsim/batsim/-/blob/batprotocol/test/edc-lib/dyn-register.cpp
+
+.. _link_SimuBegins: https://batprotocol.readthedocs.io/en/latest/api.html#simulation-begins
+.. _link_SimuEnds: https://batprotocol.readthedocs.io/en/latest/api.html#simulation-end
+.. _link_SimuError: https://batprotocol.readthedocs.io/en/latest/api.html#simulation-error
+.. _link_JobSub: https://batprotocol.readthedocs.io/en/latest/api.html#job-submitted
+.. _link_JobComp: https://batprotocol.readthedocs.io/en/latest/api.html#job-completed
+.. _link_JobsKilled: https://batprotocol.readthedocs.io/en/latest/api.html#jobs-killed
+.. _link_ReqCall: https://batprotocol.readthedocs.io/en/latest/api.html#requested-call
+.. _link_AllJobs: https://batprotocol.readthedocs.io/en/latest/api.html#all-static-jobs-have-been-submitted
+.. _link_AllEvents: https://batprotocol.readthedocs.io/en/latest/api.html#all-static-external-events-have-been-injected
+.. _link_ExtEvent: https://batprotocol.readthedocs.io/en/latest/api.html#external-event-occurred
+.. _link_HostPS: https://batprotocol.readthedocs.io/en/latest/api.html#hosts-pstate-changed
+.. _link_HostTurned: https://batprotocol.readthedocs.io/en/latest/api.html#hosts-turned-on-off
+.. _link_EDCHello: https://batprotocol.readthedocs.io/en/latest/api.html#external-decision-component-hello
+.. _link_ForceStop: https://batprotocol.readthedocs.io/en/latest/api.html#force-simulation-stop
+.. _link_ExecJob: https://batprotocol.readthedocs.io/en/latest/api.html#execute-jobs
+.. _link_RejJob: https://batprotocol.readthedocs.io/en/latest/api.html#reject-jobs
+.. _link_KillJob: https://batprotocol.readthedocs.io/en/latest/api.html#kill-jobs
+.. _link_RegisProf: https://batprotocol.readthedocs.io/en/latest/api.html#register-profile
+.. _link_RegisJob: https://batprotocol.readthedocs.io/en/latest/api.html#register-job
+.. _link_FinishReg: https://batprotocol.readthedocs.io/en/latest/api.html#finish-registration
+.. _link_CallMe: https://batprotocol.readthedocs.io/en/latest/api.html#call-me-later
+.. _link_StopCall: https://batprotocol.readthedocs.io/en/latest/api.html#stop-call-me-later
+.. _link_CreatePr: https://batprotocol.readthedocs.io/en/latest/api.html#create-probe
+.. _link_StopPr: https://batprotocol.readthedocs.io/en/latest/api.html#stop-probe
+.. _link_TriggerPr: https://batprotocol.readthedocs.io/en/latest/api.html#trigger-probe
+.. _link_ResetPr: https://batprotocol.readthedocs.io/en/latest/api.html#reset-probe
+.. _linkDataPr: https://batprotocol.readthedocs.io/en/latest/api.html#probe-data-emitted
+.. _link_ChangeHost: https://batprotocol.readthedocs.io/en/latest/api.html#change-hosts-pstate
+.. _link_TrunHost: https://batprotocol.readthedocs.io/en/latest/api.html#turn-on-off-hosts
