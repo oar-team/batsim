@@ -1,5 +1,5 @@
 project('batsim', 'cpp',
-    version: '4.2.0',
+    version: '4.2.1',
     license: 'LGPL-3.0',
     default_options: ['cpp_std=c++17'],
     meson_version: '>=0.40.0'

@@ -19,7 +19,7 @@ It can be used for many scenarios:
 
 Please refer to `Batsim's documentation`_ for more.
 
-.. _Batsim's documentation: https://batsim.readthedocs.io/en/latest/
+.. _Batsim's documentation: https://batsim.readthedocs.io/en/v4.2.1/index.html
 
 .. |chat| image:: https://img.shields.io/badge/chat-on%20mattermost-blue.svg
     :alt: chat
@@ -42,15 +42,15 @@ Please refer to `Batsim's documentation`_ for more.
     :target: https://www.gnu.org/licenses/lgpl-3.0.en.html
 
 
-.. |last-release| image:: https://img.shields.io/badge/release-v4.2.0-blue.svg
+.. |last-release| image:: https://img.shields.io/badge/release-v4.2.1-blue.svg
     :alt: last release
     :scale: 100%
-    :target: https://github.com/oar-team/batsim/releases/tag/v4.2.0
+    :target: https://github.com/oar-team/batsim/releases/tag/v4.2.1
 
-.. |distance-from-previous-release| image:: https://img.shields.io/github/commits-since/oar-team/batsim/v4.2.0.svg
+.. |distance-from-previous-release| image:: https://img.shields.io/github/commits-since/oar-team/batsim/v4.2.1.svg
     :alt: distance from previous release
     :scale: 100%
-    :target: https://github.com/oar-team/batsim/compare/v4.2.0...HEAD
+    :target: https://github.com/oar-team/batsim/compare/v4.2.1...HEAD
 
 .. |pipeline-status| image:: https://framagit.org/batsim/batsim/badges/master/pipeline.svg
     :alt: pipeline status
@@ -66,7 +66,7 @@ Please refer to `Batsim's documentation`_ for more.
 .. |doc| image:: https://img.shields.io/badge/doc-on%20readthedocs-blue.svg
     :alt: doc
     :scale: 100%
-    :target: https://batsim.readthedocs.io/en/latest/index.html
+    :target: https://batsim.readthedocs.io/en/v4.2.1/index.html
 
 .. |changelog| image:: https://img.shields.io/badge/doc-changelog-blue.svg
     :alt: changelog
