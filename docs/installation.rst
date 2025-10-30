@@ -18,7 +18,7 @@ If you already have a working Nix installation, you can skip `Installing Nix`_ a
 
 .. note::
 
-    Most package have at least two versions in kapack_, named ``PACKAGE`` and ``PACKAGE-master``. ``PACKAGE`` stands for the latest release of the package, while the ``-master`` version is the latest unstable commit from the main git branch.
+    Most packages have at least two versions in kapack_, named ``PACKAGE`` and ``PACKAGE-master``. ``PACKAGE`` stands for the latest release of the package, while the ``-master`` version is the latest unstable commit from the main git branch.
 
 .. note::
 
@@ -69,7 +69,10 @@ Defining a software environment from which your simulations run is quite straigh
 
     <script id="asciicast-414663" src="https://asciinema.org/a/414663.js" async></script>
 
-For example, the following file defines an en environment from which you can execute batsim and a scheduler implementation. It uses the last release of our tools.
+For example, the following file defines an environment from which you can execute batsim and a scheduler implementation. It uses the last release of our tools.
+
+.. todo::
+    Update the tutorial following the introduction of the batprotocol, external decision components and the new version of Batsim.
 
 .. literalinclude:: ./tuto-first-simulation/tuto-env.nix
   :caption: :download:`tuto-env.nix <./tuto-first-simulation/tuto-env.nix>`
@@ -93,6 +96,11 @@ This can be used as a base to start an experiment using Batsim, as you will prob
 Installing Batsim in your system via Nix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This can be done with ``nix-env --install``.
+
+.. todo::
+    With the introduction of flakes for the packaging of Batsim (and its ecosystem), the package name to install via nix must be prefixed with `packages.<archi>.` where `<archi>` depends on the architecture you want: `x86_64-linux`, `aarch64-darwin`, `aarch64-linux` or `x86_64-darwin`.
+
+    The correct links to the repositories needs to be updated.
 
 .. code:: bash
 

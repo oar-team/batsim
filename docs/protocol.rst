@@ -191,5 +191,5 @@ The following figure outlines how a dynamic job registration should be done
 
 .. _ZeroMQ request-reply pattern: https://zguide.zeromq.org/docs/chapter1/#Ask-and-Ye-Shall-Receive
 .. _Flatbuffer: https://flatbuffers.dev/
-.. _Batprotocol API: https://framagit.org/batsim/batprotocol/-/blob/main/docs/api.rst?ref_type=heads
+.. _Batprotocol API: https://batprotocol.readthedocs.io/en/latest/api.html
 .. _EDC library: https://framagit.org/batsim/batsim/-/blob/batprotocol/test/edc-lib/dyn-register.cpp

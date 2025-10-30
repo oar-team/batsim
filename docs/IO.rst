@@ -69,7 +69,7 @@ Full example
 ~~~~~~~~~~~~
 
 .. todo::
-   Add more detailed to the example:
+   Add more details to the example:
 
    - the platform file
    - the full workload file
