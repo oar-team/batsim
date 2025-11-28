@@ -3,6 +3,7 @@
 #include <list>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <batprotocol.hpp>
 #include <intervalset.hpp>
@@ -143,6 +144,22 @@ void do_registration_ok(std::string first_profile_id)
     mb->add_register_profile("dyn!delay10", p3);
 
     mb->add_reject_job(first_job->id);
+
+    // Register various profiles
+    auto cpu_vector = std::make_shared<std::vector<double>>(std::vector<double>(4, 100));
+    auto com_vector = std::make_shared<std::vector<double>>(std::vector<double>(16, 50));
+    auto p4 = batprotocol::Profile::make_parallel_task(cpu_vector, com_vector);
+    std::string prof4 = "dyn!simple_ptask";
+    mb->add_register_profile(prof4, p4);
+
+    auto p5 = batprotocol::Profile::make_parallel_task(nullptr, com_vector);
+    std::string prof5 = "dyn!simple_ptask_nocpu";
+    mb->add_register_profile(prof5, p5);
+
+    auto p6 = batprotocol::Profile::make_parallel_task(cpu_vector, nullptr);
+    std::string prof6 = "dyn!simple_ptask_nocom";
+    mb->add_register_profile(prof6, p6);
+
 }
 
 uint8_t batsim_edc_take_decisions(

@@ -20,6 +20,17 @@ MOD_NAME = __name__.replace('test_', '', 1)
 def smpi_workload_timeoutscale(request):
     return request.param
 
+
+def test_various_profiles(test_root_dir):
+    platform = 'cluster512'
+    workload = 'test_various_profile_types'
+    func_name = inspect.currentframe().f_code.co_name.replace('test_', '', 1)
+    instance_name = f'{MOD_NAME}-{func_name}'
+
+    batcmd, outdir, _, _ = prepare_instance(instance_name, test_root_dir, platform, 'exec1by1', workload)
+    p = run_batsim(batcmd, outdir)
+    assert p.returncode == 0
+
 def test_delay(test_root_dir):
     platform = 'cluster512'
     workload = 'test_delays'
