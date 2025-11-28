@@ -296,48 +296,62 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
     {
         profile->type = ProfileType::PTASK;
         ParallelProfileData * data = new ParallelProfileData;
+        data->nb_res = 0;
 
-        // basic checks
-        xbt_assert(json_desc.HasMember("cpu"), "%s: profile '%s' has no 'cpu' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(json_desc.HasMember("com"), "%s: profile '%s' has no 'com' field",
-                   error_prefix.c_str(), profile_name.c_str());
-
-        // get and check CPU vector
-        const Value & cpu = json_desc["cpu"];
-        xbt_assert(cpu.IsArray(), "%s: profile '%s' has a non-array 'cpu' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(cpu.Size() > 0, "%s: profile '%s' has an invalid-sized array 'cpu' (size=%d): "
-                   "must be strictly positive",
-                   error_prefix.c_str(), profile_name.c_str(), cpu.Size());
-
-        data->nb_res = cpu.Size();
-        data->cpu = new double[data->nb_res];
-        for (unsigned int i = 0; i < cpu.Size(); ++i)
+        if (json_desc.HasMember("cpu"))
         {
-            xbt_assert(cpu[i].IsNumber(), "%s: profile '%s' computation array is invalid: all "
-                       "elements must be numbers", error_prefix.c_str(), profile_name.c_str());
-            data->cpu[i] = cpu[i].GetDouble();
-            xbt_assert(data->cpu[i] >= 0, "%s: profile '%s' computation array is invalid: all "
-                       "elements must be non-negative", error_prefix.c_str(), profile_name.c_str());
+            // get and check CPU vector
+            const Value & cpu = json_desc["cpu"];
+            xbt_assert(cpu.IsArray(), "%s: profile '%s' has a non-array 'cpu' field",
+                       error_prefix.c_str(), profile_name.c_str());
+            xbt_assert(cpu.Size() > 0, "%s: profile '%s' has an invalid-sized array 'cpu' (size=%d): "
+                                       "must be strictly positive",
+                       error_prefix.c_str(), profile_name.c_str(), cpu.Size());
+
+            data->nb_res = cpu.Size();
+            data->cpu = new double[data->nb_res];
+            for (unsigned int i = 0; i < cpu.Size(); ++i)
+            {
+                xbt_assert(cpu[i].IsNumber(), "%s: profile '%s' computation array is invalid: all "
+                                              "elements must be numbers", error_prefix.c_str(), profile_name.c_str());
+                data->cpu[i] = cpu[i].GetDouble();
+                xbt_assert(data->cpu[i] >= 0, "%s: profile '%s' computation array is invalid: all "
+                                              "elements must be positive", error_prefix.c_str(), profile_name.c_str());
+            }
         }
 
-        // get and check Comm vector
-        const Value & com = json_desc["com"];
-        xbt_assert(com.IsArray(), "%s: profile '%s' has a non-array 'com' field",
-                   error_prefix.c_str(), profile_name.c_str());
-        xbt_assert(com.Size() == data->nb_res * data->nb_res, "%s: profile '%s' is incoherent: "
-                   "com array has size %d whereas the required array size is %d",
-                   error_prefix.c_str(), profile_name.c_str(), com.Size(), data->nb_res * data->nb_res);
-
-        data->com = new double[data->nb_res * data->nb_res];
-        for (unsigned int i = 0; i < com.Size(); ++i)
+        if (json_desc.HasMember("com"))
         {
-            xbt_assert(com[i].IsNumber(), "%s: profile '%s' communication array is invalid: all "
-                       "elements must be numbers", error_prefix.c_str(), profile_name.c_str());
-            data->com[i] = com[i].GetDouble();
-            xbt_assert(data->com[i] >= 0, "%s: profile '%s' communication array is invalid: all "
-                       "elements must be non-negative", error_prefix.c_str(), profile_name.c_str());
+            // get and check Comm vector
+            const Value & com = json_desc["com"];
+            xbt_assert(com.IsArray(), "%s: profile '%s' has a non-array 'com' field",
+                       error_prefix.c_str(), profile_name.c_str());
+
+            if (data->nb_res != 0)
+            {
+                // There is a cpu vector
+                xbt_assert(com.Size() == data->nb_res * data->nb_res, "%s: profile '%s' is incoherent: "
+                                                                      "com array has size %d whereas the required array size is %d",
+                           error_prefix.c_str(), profile_name.c_str(), com.Size(), data->nb_res * data->nb_res);
+            }
+            else
+            {
+                data->nb_res = sqrt(com.Size());
+                xbt_assert(data->nb_res * data->nb_res == com.Size(), "%s: profile '%s' is incoherent: "
+                                                                      "communication-only parallel task has an invalid number of communications (%u): "
+                                                                      "not the square of an integer",
+                           error_prefix.c_str(), profile_name.c_str(), com.Size());
+            }
+
+            data->com = new double[data->nb_res * data->nb_res];
+            for (unsigned int i = 0; i < com.Size(); ++i)
+            {
+                xbt_assert(com[i].IsNumber(), "%s: profile '%s' communication array is invalid: all "
+                                              "elements must be numbers", error_prefix.c_str(), profile_name.c_str());
+                data->com[i] = com[i].GetDouble();
+                xbt_assert(data->com[i] >= 0, "%s: profile '%s' communication array is invalid: all "
+                                              "elements must be positive", error_prefix.c_str(), profile_name.c_str());
+            }
         }
 
         profile->data = data;

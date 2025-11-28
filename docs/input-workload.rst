@@ -49,7 +49,7 @@ Some optional fields are used by Batsim:
 
 - ``walltime``: By default, jobs have no execution time limit. Setting a value (float, in seconds) to the ``walltime`` field makes Batsim automatically stop a job that exceeds its walltime. In constrast to ``subtime``, this value is **relative** to the start of the job.
 
-**Users can define an ``extra_data`` field (string).**
+**Users can define an** ``extra_data`` **field (string).**
 
 .. note::
 
@@ -126,6 +126,10 @@ This profile type defines a set of computations and communications whose executi
 - ``cpu``: An array defining the amount of floating-point operations that should be computed on each allocated machine.
 - ``com``: An array defining the amount of bytes that should be transferred between allocated machines. This is in fact a matrix where host in row sends to host in column. When row equals column, the communication is done through the machine loopback interface (if defined in the :ref:`input_platform`).
 
+.. note::
+
+    The ``cpu`` and/or ``com`` fields can be omitted.
+    This can be used to represent a communication-only or computation-only parallel task.
 
 Here is an example of a parallel task that can be used by any job requesting 4 machines.
 
@@ -163,6 +167,11 @@ This profile type is a convenient way to generate an homogeneous `Parallel task`
 
 - ``cpu``: The amount of floating-point operations that should be computed on each machine.
 - ``com``: The amount of bytes to send and receive between each pair of distinct machines. The loopback communication of each machine is set to 0.
+
+.. note::
+
+    The ``cpu`` or ``com`` values can be 0.
+    This can be used to represent a communication-only or computation-only parallel task.
 
 Additionally, a third parameter ``generation_strategy`` can be specified with two possible values:
 

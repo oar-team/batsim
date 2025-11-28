@@ -118,13 +118,21 @@ std::shared_ptr<batprotocol::Profile> to_profile(const Profile & profile)
     {
         auto * data = static_cast<ParallelProfileData*>(profile.data);
 
-        const std::shared_ptr<std::vector<double>> cpu_vector = make_shared<vector<double>>(vector<double>());
-        cpu_vector->reserve(data->nb_res);
-        cpu_vector->assign(data->cpu, data->cpu+data->nb_res);
+        std::shared_ptr<std::vector<double>> cpu_vector = nullptr;
+        if (data->cpu != nullptr)
+        {
+            cpu_vector = make_shared<vector<double>>(vector<double>());
+            cpu_vector->reserve(data->nb_res);
+            cpu_vector->assign(data->cpu, data->cpu+data->nb_res);
+        }
 
-        const std::shared_ptr<std::vector<double>> comm_vector = make_shared<vector<double>>(vector<double>());
-        comm_vector->reserve(data->nb_res*data->nb_res);
-        comm_vector->assign(data->com, data->com+data->nb_res*data->nb_res);
+        std::shared_ptr<std::vector<double>> comm_vector = nullptr;
+        if (data->com != nullptr)
+        {
+            comm_vector = make_shared<vector<double>>(vector<double>());
+            comm_vector->reserve(data->nb_res*data->nb_res);
+            comm_vector->assign(data->com, data->com+data->nb_res*data->nb_res);
+        }
 
         p = batprotocol::Profile::make_parallel_task(cpu_vector, comm_vector);
         break;
@@ -687,9 +695,11 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
         } else if (com_vector != nullptr) {
             nb_res = sqrt(com_vector->size());
             xbt_assert(nb_res * nb_res == com_vector->size(), "Invalid registration of profile '%s': communication-only parallel task has an invalid number of communications (%u): not the square of an integer", msg->profile_id.c_str(), com_vector->size());
-        } else {
+        } else if (cpu_vector != nullptr) {
             nb_res = cpu_vector->size();
         }
+        // Else no cpu and no com, nb_res is 0
+
         data->nb_res = nb_res;
 
         if (cpu_vector != nullptr) {
@@ -698,7 +708,7 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
             {
                 data->cpu[i] = cpu_vector->Get(i);
 
-                xbt_assert(data->cpu[i] >= 0, "Invalid registration of profile '%s': elements of 'computation_vector' must be non-negative (%g)",
+                xbt_assert(data->cpu[i] >= 0, "Invalid registration of profile '%s': elements of 'computation_vector' must be positive (%g)",
                         msg->profile_id.c_str(), data->cpu[i]);
             }
         }
@@ -710,7 +720,7 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
             {
                 data->com[i] = com_vector->Get(i);
 
-                xbt_assert(data->com[i] >= 0, "Invalid registration of profile '%s': elements of 'communication_matrix' must be non-negative (%g)",
+                xbt_assert(data->com[i] >= 0, "Invalid registration of profile '%s': elements of 'communication_matrix' must be positive (%g)",
                         msg->profile_id.c_str(), data->com[i]);
             }
         }
@@ -728,9 +738,9 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
         data->com = prof->communication_amount();
         data->strategy = prof->generation_strategy(); // The diferent strategies are handled in task_execution
 
-        xbt_assert(data->cpu >= 0, "Invalid registration of profile '%s': 'computation_amount' must be non-negative (%g)",
+        xbt_assert(data->cpu >= 0, "Invalid registration of profile '%s': 'computation_amount' must be positive (%g)",
                    msg->profile_id.c_str(), data->cpu);
-        xbt_assert(data->com >= 0, "Invalid registration of profile '%s': 'communication_amount' must be non-negative (%g)",
+        xbt_assert(data->com >= 0, "Invalid registration of profile '%s': 'communication_amount' must be positive (%g)",
                    msg->profile_id.c_str(), data->com);
 
         profile->data = data;
