@@ -28,6 +28,6 @@ unique:
     when: always
     expire_in: 8 hours
     paths:
-      - /builds/batsim/batsim/internal_test_report
-      - /builds/batsim/batsim/external_test_report
-      - /builds/batsim/batsim/coverage_report
+      - ./internal_test_report
+      - ./external_test_report
+      - ./coverage_report
