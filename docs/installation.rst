@@ -9,16 +9,11 @@ We recommend `Using Nix`_, but you may prefer `Using Batsim from a Docker contai
 
 Using Nix
 ---------
-Batsim and its ecosystem are packaged in the kapack_ repository.
-These packages use the Nix_ package manager.
+Batsim and its ecosystem are packaged using the Nix_ package manager.
 We recommend to use Nix as its purity property allows to fully define all the software dependencies of our tools — as well as the versions of each software.
 This property is great to produce controlled software environments, as showcased in :ref:`tuto_reproducible_experiment`.
 
 If you already have a working Nix installation, you can skip `Installing Nix`_ and directly go for `Using Batsim from a well-defined Nix environment`_ or `Installing Batsim in your system via Nix`_.
-
-.. note::
-
-    Most packages have at least two versions in kapack_, named ``PACKAGE`` and ``PACKAGE-master``. ``PACKAGE`` stands for the latest release of the package, while the ``-master`` version is the latest unstable commit from the main git branch.
 
 .. note::
 
@@ -38,11 +33,11 @@ Installing Nix
     This is unlikely but the procedure to install Nix_ may be outdated.
     Please refer to `Nix installation documentation`_ for up-to-date installation material.
 
-Installing Nix is pretty straightforward.
+Installing Nix is pretty straightforward (multi-user installation).
 
 .. code:: bash
 
-    curl -L https://nixos.org/nix/install | sh
+    sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
 
 **Follow the instructions displayed at the end of the script.**
 You usually need to ``source`` a file to access the Nix commands.
@@ -57,10 +52,47 @@ You usually need to ``source`` a file to access the Nix commands.
 
       sudo echo 1 > /proc/sys/kernel/unprivileged_userns_clone
 
+Installing Batsim in your system via Nix
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This can be done with ``nix-env --install`` (legacy nix) or ``nix profile install`` (experimental nix with flakes).
+With the introduction of flakes for the packaging of Batsim (and its ecosystem), the package name to install via (legacy) nix must be prefixed with `packages.<archi>.` where `<archi>` depends on the architecture you want: `x86_64-linux`, `aarch64-darwin`, `aarch64-linux` or `x86_64-darwin`.
+For example:
+
+.. code:: bash
+
+    nix-env -f https://gricad-gitlab.univ-grenoble-alpes.fr/kairns/batsim/-/archive/master/batsim-master.tar.gz?ref_type=heads -iA packages.x86_64-linux.batsim
+
+With the newer version of nix using flakes you can install Batsim in your profile with:
+
+.. code:: bash
+
+    nix profile install git+https://gricad-gitlab.univ-grenoble-alpes.fr/kairns/batsim\?ref=master#batsim
+
+
+Other packages from the Batsim ecosystem can be installed with similar commands:
+
+.. todo::
+
+    Update the commands to use flakes instead of kapack
+
+.. code:: bash
+
+    # For example pybatsim
+    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA pybatsim
+
+    # Or interactive visualization tools.
+    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA evalys
+
+
 .. _using_batsim_from_well_defined_nix_env:
 
 Using Batsim from a well-defined Nix environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. todo::
+    This part is out of date since the major changes made in Batsim for the version 5.
+    With the introduction of flakes for the packaging of Batsim and its ecosystem, the following nix environment files must be updated to primarily use flakes instead of `kapack`_.
+
 
 Defining a software environment from which your simulations run is quite straightforward with Nix.
 **This is the recommended way to use Batsim.**
@@ -70,9 +102,6 @@ Defining a software environment from which your simulations run is quite straigh
     <script id="asciicast-414663" src="https://asciinema.org/a/414663.js" async></script>
 
 For example, the following file defines an environment from which you can execute batsim and a scheduler implementation. It uses the last release of our tools.
-
-.. todo::
-    Update the tutorial following the introduction of the batprotocol, external decision components and the new version of Batsim.
 
 .. literalinclude:: ./tuto-first-simulation/tuto-env.nix
   :caption: :download:`tuto-env.nix <./tuto-first-simulation/tuto-env.nix>`
@@ -93,30 +122,6 @@ This can be used as a base to start an experiment using Batsim, as you will prob
   :caption: :download:`tuto-env-pinned.nix <./tuto-first-simulation/tuto-env-pinned.nix>`
   :language: nix
 
-Installing Batsim in your system via Nix
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This can be done with ``nix-env --install``.
-
-.. todo::
-    With the introduction of flakes for the packaging of Batsim (and its ecosystem), the package name to install via nix must be prefixed with `packages.<archi>.` where `<archi>` depends on the architecture you want: `x86_64-linux`, `aarch64-darwin`, `aarch64-linux` or `x86_64-darwin`.
-
-    The correct links to the repositories needs to be updated.
-
-.. code:: bash
-
-    # Install the Batsim simulator.
-    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim
-
-    # Other packages from the Batsim ecosystem can also be installed this way.
-    # For example schedulers.
-    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsched
-    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA pybatsim
-
-    # Or interactive visualization tools.
-    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA evalys
-
-    # Or experiment management tools...
-    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batexpe
 
 Using Batsim from a Docker container
 ------------------------------------
@@ -161,18 +166,18 @@ Batsim can be built with the Meson_ (+ Ninja_) build system.
 
     - Decent clang/gcc (real C++17 support).
     - Decent boost.
-    - Recent SimGrid.
+    - Recent SimGrid (at least v4.0).
+    - batprotocol-cpp.
     - ZeroMQ.
-    - Redox (`our fork <https://github.com/mpoquet/redox/tree/install-pkg-config-file>`_ has pkg-config support) and its dependencies (hiredis, libev).
+    - Intervalset.
     - RapidJSON.
-    - Pugixml.
-    - Docopt.cpp.
+    - CLI11.
 
     **Make sure you install versions of these packages with pkg-config support!**
     The two build systems we use rely on `pkg-config`_ to find dependencies.
 
     **The dependency list above may be outdated!**
-    Please refer to `Batsim packages definition`_ in kapack_ for up-to-date information --- in case of doubt, :ref:`contact_us`.
+    Please refer to the dependencies in `meson.build` for up-to-date information --- in case of doubt, :ref:`contact_us`.
 
 .. code:: bash
 
@@ -187,11 +192,10 @@ Batsim can be built with the Meson_ (+ Ninja_) build system.
 
 .. _kapack: https://github.com/oar-team/nur-kapack/
 .. _Nix: https://nixos.org/nix/
-.. _Nix installation documentation: https://nixos.org/nix/
+.. _Nix installation documentation: https://nixos.org/download/#download-nix
 .. _Meson: https://mesonbuild.com/
 .. _Ninja: https://ninja-build.org/
 .. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
-.. _Batsim packages definition: https://github.com/oar-team/nur-kapack/tree/master/pkgs/batsim
 .. _kapack's main file: https://github.com/oar-team/nur-kapack/blob/master/default.nix
 .. _Singularity: https://en.wikipedia.org/wiki/Singularity_(software)
 .. _oarteam/batsim: https://hub.docker.com/r/oarteam/batsim
