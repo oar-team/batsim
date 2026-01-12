@@ -21,7 +21,7 @@
         {"id":18, "subtime":0, "walltime": 18, "res": 1, "profile": "delay_10s"},
         {"id":19, "subtime":0, "walltime": 19, "res": 1, "profile": "delay_10s"},
         {"id":20, "subtime":0, "walltime": 20, "res": 1, "profile": "delay_10s"},
-        {"id":21, "subtime":0, "walltime": -1, "res": 1, "profile": "delay_10s"},
+        {"id":21, "subtime":0, "res": 1, "profile": "delay_10s"},
         {"id":22, "subtime":10, "res": 1, "profile": "delay_10s"},
 
         {"id":1001, "subtime":0, "walltime":  1, "res": 1, "profile": "compute_only_10s"},
@@ -44,7 +44,7 @@
         {"id":1018, "subtime":0, "walltime": 18, "res": 1, "profile": "compute_only_10s"},
         {"id":1019, "subtime":0, "walltime": 19, "res": 1, "profile": "compute_only_10s"},
         {"id":1020, "subtime":0, "walltime": 20, "res": 1, "profile": "compute_only_10s"},
-        {"id":1021, "subtime":0, "walltime": -1, "res": 1, "profile": "compute_only_10s"},
+        {"id":1021, "subtime":0, "res": 1, "profile": "compute_only_10s"},
         {"id":1022, "subtime":10, "res": 1, "profile": "compute_only_10s"}
     ],
 

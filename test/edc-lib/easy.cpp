@@ -90,10 +90,15 @@ uint8_t batsim_edc_take_decisions(
             available_hosts = IntervalSet::ClosedInterval(0, platform_nb_hosts - 1);
         } break;
         case fb::Event_JobSubmittedEvent: {
+            double walltime = -1;
+            if (event->event_as_JobSubmittedEvent()->job()->walltime())
+            {
+                walltime = event->event_as_JobSubmittedEvent()->job()->walltime().value();
+            }
             ::Job job{
                 event->event_as_JobSubmittedEvent()->job_id()->str(),
                 event->event_as_JobSubmittedEvent()->job()->resource_request(),
-                event->event_as_JobSubmittedEvent()->job()->walltime(),
+                walltime,
                 IntervalSet::empty_interval_set(),
                 -1
             };
