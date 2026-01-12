@@ -381,11 +381,11 @@ JobPtr Job::from_json(const rapidjson::Value & json_desc,
         xbt_assert(json_desc["walltime"].IsNumber(), "%s: job %s has a non-number 'walltime' field",
                    error_prefix.c_str(), j->id.to_string().c_str());
         j->walltime = static_cast<long double>(json_desc["walltime"].GetDouble());
+        xbt_assert(j->walltime > 0,
+                   "%s: job '%s' has an invalid walltime value (%Lg). It should either be strictly positive "
+                   "(the walltime is set) or the field must be absent (no walltime).",
+                   error_prefix.c_str(), j->id.to_string().c_str(), j->walltime);
     }
-    xbt_assert(j->walltime == -1 || j->walltime > 0,
-               "%s: job '%s' has an invalid walltime (%Lg). It should either be -1 (no walltime) "
-               "or a strictly positive number.",
-               error_prefix.c_str(), j->id.to_string().c_str(), j->walltime);
 
     // Get number of requested resources
     xbt_assert(json_desc.HasMember("res"), "%s: job %s has no 'res' field",

@@ -47,7 +47,7 @@ Jobs must have the following fields:
 
 Some optional fields are used by Batsim:
 
-- ``walltime``: By default, jobs have no execution time limit. Setting a value (float, in seconds) to the ``walltime`` field makes Batsim automatically stop a job that exceeds its walltime. In constrast to ``subtime``, this value is **relative** to the start of the job.
+- ``walltime``: By default, jobs have no execution time limit. Setting a value (strictly positive float, in seconds) to the ``walltime`` field makes Batsim automatically stop a job that exceeds its walltime. In constrast to ``subtime``, this value is **relative** to the start of the job.
 
 **Users can define an** ``extra_data`` **field (string).**
 

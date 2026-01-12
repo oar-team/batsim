@@ -94,7 +94,11 @@ std::shared_ptr<batprotocol::Job> to_job(const Job & job)
 {
     auto proto_job = batprotocol::Job::make();
     proto_job->set_resource_number(job.requested_nb_res);
-    proto_job->set_walltime(job.walltime);
+    // If the walltime is not set (value -1) it should not be set in the batprotocol
+    if (job.walltime > 0)
+    {
+        proto_job->set_walltime(job.walltime);
+    }
     proto_job->set_profile(job.profile->name);
     proto_job->set_extra_data(job.extra_data);
 
@@ -638,7 +642,16 @@ JobRegisteredByEDCMessage * from_register_job(const batprotocol::fb::RegisterJob
     msg->job = std::make_shared<Job>();
     msg->job->id = JobIdentifier(register_job->job_id()->str());
     msg->job->requested_nb_res = proto_job->resource_request();
-    msg->job->walltime = proto_job->walltime();
+
+    if (proto_job->walltime() != flatbuffers::nullopt)
+    {
+        msg->job->walltime = proto_job->walltime().value();
+    }
+    else
+    {
+        // The value -1 internal to Batsim means there is no walltime.
+        msg->job->walltime = -1;
+    }
 
     if (proto_job->extra_data() != nullptr)
     {
