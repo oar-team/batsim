@@ -259,6 +259,7 @@ This profile type defines a list of other profiles that should be executed in se
       "seq": ["prof1","prof2","prof1"]
     }
 
+.. _smpi_trace_replay_profile:
 
 SMPI trace replay
 ^^^^^^^^^^^^^^^^^
@@ -295,22 +296,44 @@ Such traces allow to see the fine-grained behavior of MPI applications.
       "filename": "smpi/compute_only/traces.txt"
     }
 
+.. _usage_trace_replay_profile:
 
 Fractional Computation trace replay
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. todo::
+Profiles of this type correspond to the replay of usage traces over time.
 
-    Document this profile type
+**Parameters:**
 
-As a full example, refer to the trace in :file:`workloads/usage-trace/hetero-onephase-20-60/` and to the :file:`workloads/test_usage_trace.json`.
+- ``filename``: The file name of the main trace file (string).
+- ``trace_type``: This value must be ``FractionalComputation`` for a usage trace replay.
+
+.. warning::
+
+    The filename must be relative to the Batsim workload file in which the profile is defined.
+
+    As a full example, refer to the trace in :file:`workloads/usage-trace/hetero-onephase-20-60/` and to the :file:`workloads/test_usage_trace.json`.
+
+.. warning::
+
+  **This profile requires SimGrid host to have many cores for precision.**
+  This profile shares the same warnings as :ref:`smpi_trace_replay_profile`.
+
+Each trace file contains a sequence of :math:`(usage, flops)` tuples.
+:math:`flops` are executed in sequence on the target host,
+using a :math:`usage \in [0,1]` fraction of the host computing load.
+
+The usage replay is based on SimGrid cores on the target host.
+For example, if one wants to execute 10 flops with usage=0.1 on a 100-core
+host, this will be simulated as a single computation-only parallel task of
+size=10, where each executor executes 10 flops.
 
 .. code:: json
 
     {
       "type": "TraceReplayProfile",
       "trace_type": "FractionalComputation",
-      "filename": "usage-trace/hetero-onephase-20-60/traces.txt"
+      "trace": "usage-trace/from-real-trace/3858728.txt"
     }
 
 .. _OAR: https://oar.imag.fr/start
