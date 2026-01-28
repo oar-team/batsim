@@ -80,7 +80,7 @@ Some optional fields are used by Batsim:
 
 Other fields may be required by Batsim depending of the profile type, see `Profile types overview`_ more for details.
 
-**Users can define an ``extra_data`` field (string).**
+**Users can define an** ``extra_data`` **field (string).**
 
 .. note::
 
