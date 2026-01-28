@@ -82,6 +82,7 @@ Other notable changes
 - (**break**) Batsim now consistently uses the complete identifiers of jobs and profiles in the related protocol events (of the form ``job_id!workload_name`` or ``profile_name!workload_name``).
 - (**break**) External events support has been simplified. For now only the external events of type ``generic`` are supported.
 - Changing the Pstate of a host or turning ON/OFF a host is now possible without enabling Simgrid's host energy plugin.
+- Batsim's tutorials were not yet updated for this new version.
 
 
 Added

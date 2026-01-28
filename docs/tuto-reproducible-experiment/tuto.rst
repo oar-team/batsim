@@ -3,6 +3,12 @@
 Doing a reproducible experiment
 ===============================
 
+.. todo::
+
+  This tutorial uses old versions of Batsim and scheduler, it has not been updated for Batsim's new version (v5.0).
+  It should still (mostly) work with appropriate changes in the command line used. Please do not hesitate to :ref:`contact_us` if you have any difficulties with this.
+
+
 This tutorial shows how to execute a Batsim simulation in a fully reproducible software environment thanks to the Nix_ package manager.
 Two schedulers are used here, to show how to use a specific version of batsched_ and pybatsim_.
 

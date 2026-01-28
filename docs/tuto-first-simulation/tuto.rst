@@ -3,6 +3,12 @@
 Running your first simulation
 =============================
 
+.. todo::
+
+  This tutorial uses old versions of Batsim and scheduler, it has not been updated for Batsim's new version (v5.0).
+  It should still (mostly) work with appropriate changes in the command line used. Please do not hesitate to :ref:`contact_us` if you have any difficulties with running your first simulation with Batsim.
+
+
 Prerequisites
 -------------
 This tutorial assumes that you have installed Batsim, batsched_ (a set of schedulers for Batsim) and robin_ (an experiment manager for Batsim).

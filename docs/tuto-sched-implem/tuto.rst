@@ -47,7 +47,7 @@ EDC as a process
 Several projects provide an API in different programming languages and implement the Batsim :ref:`protocol` to communicate with Batsim's process.
 
 .. todo::
-    Update me. Pybatsim is probably the only maintained API aligned with the new batprotocol.
+    Update me. Pybatsim is probably the only maintained API aligned with the new batprotocol and Batsim v5.0.
 
 +----------------+----------+----------------------------------------------------------------------+----------------------------------------------------------+
 | Project        | Language | Pros                                                                 | Cons                                                     |
