@@ -60,14 +60,13 @@ For example:
 
 .. code:: bash
 
-    nix-env -f https://gricad-gitlab.univ-grenoble-alpes.fr/kairns/batsim/-/archive/master/batsim-master.tar.gz?ref_type=heads -iA packages.x86_64-linux.batsim
+    nix-env -f https://framagit.org/batsim/batsim/-/archive/main/batsim-main.tar.gz?ref_type=heads -iA packages.x86_64-linux.batsim
 
 With the newer version of nix using flakes you can install Batsim in your profile with:
 
 .. code:: bash
 
-    nix profile install git+https://gricad-gitlab.univ-grenoble-alpes.fr/kairns/batsim\?ref=master#batsim
-
+    nix profile add git+https://framagit.org/batsim/batsim\?ref=main#batsim
 
 Other packages from the Batsim ecosystem can be installed with similar commands:
 
