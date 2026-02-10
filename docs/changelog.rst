@@ -17,7 +17,7 @@ v5.0.0
 ------
 
 - `Commits since v4.0.0 <https://github.com/oar-team/batsim/compare/v4.0.0...HEAD>`_
-- ``nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA batsim-master``
+- ``nix-env -f https://framagit.org/batsim/batsim/-/archive/main/batsim-main.tar.gz?ref_type=heads -iA packages.x86_64-linux.batsim``
 
 .. note::
 

@@ -26,6 +26,11 @@ Please refer to `Batsim's documentation`_ for more.
     :scale: 100%
     :target: https://framateam.org/signup_user_complete/?id=5xb995hph3d79yj738pokxrnuh
 
+.. |doc| image:: https://img.shields.io/badge/doc-on%20readthedocs-blue.svg
+    :alt: doc
+    :scale: 100%
+    :target: https://batsim.readthedocs.io/en/latest/index.html
+
 .. |external-issues| image:: https://img.shields.io/badge/external%20issues-github-orange.svg
     :alt: external issues
     :scale: 100%
@@ -41,16 +46,15 @@ Please refer to `Batsim's documentation`_ for more.
     :scale: 100%
     :target: https://www.gnu.org/licenses/lgpl-3.0.en.html
 
-
-.. |last-release| image:: https://img.shields.io/badge/release-v4.0.0-blue.svg
+.. |last-release| image:: https://img.shields.io/badge/release-v5.0.0-rc1-blue.svg
     :alt: last release
     :scale: 100%
-    :target: https://github.com/oar-team/batsim/releases/tag/v4.0.0
+    :target: https://github.com/oar-team/batsim/releases/tag/v5.0.0-rc1
 
-.. |distance-from-previous-release| image:: https://img.shields.io/github/commits-since/oar-team/batsim/v4.0.0.svg
+.. |distance-from-previous-release| image:: https://img.shields.io/github/commits-since/oar-team/batsim/v5.0.0-rc1.svg
     :alt: distance from previous release
     :scale: 100%
-    :target: https://github.com/oar-team/batsim/compare/v4.0.0...HEAD
+    :target: https://github.com/oar-team/batsim/compare/v5.0.0-rc1...HEAD
 
 .. |pipeline-status| image:: https://framagit.org/batsim/batsim/badges/master/pipeline.svg
     :alt: pipeline status
@@ -61,23 +65,6 @@ Please refer to `Batsim's documentation`_ for more.
     :alt: coverage status
     :scale: 100%
     :target: https://codecov.io/gh/oar-team/batsim
-
-
-.. |doc| image:: https://img.shields.io/badge/doc-on%20readthedocs-blue.svg
-    :alt: doc
-    :scale: 100%
-    :target: https://batsim.readthedocs.io/en/latest/index.html
-
-.. |changelog| image:: https://img.shields.io/badge/doc-changelog-blue.svg
-    :alt: changelog
-    :scale: 100%
-    :target: https://batsim.readthedocs.io/en/latest/changelog.html
-
-.. |protocol| image:: https://img.shields.io/badge/doc-protocol-blue.svg
-    :alt: protocol
-    :scale: 100%
-    :target: https://batsim.readthedocs.io/en/latest/protocol.html
-
 
 .. |docker-status| image:: https://travis-ci.org/oar-team/batsim.svg?branch=master
     :alt: Docker build status
