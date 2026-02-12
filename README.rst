@@ -7,6 +7,15 @@ Batsim
 
 |docker-status| |docker-size|
 
+------------
+
+**Warning**
+    This master branch has been terminated with the release v4.2.1.
+    
+    The development of Batsim from v5.0.0 onwards is now on the `main` branch.
+
+------------
+
 Batsim is an infrastructure simulator that enables the study of resource management techniques.
 
 It can be used for many scenarios:
