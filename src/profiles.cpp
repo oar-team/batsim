@@ -374,6 +374,17 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
                        "elements must be non-negative", error_prefix.c_str(), profile_name.c_str());
         }
 
+        // get and check util. Default to full utilization if not exists
+        if (json_desc.HasMember("util")) {
+            xbt_assert(json_desc["util"].IsNumber(), "%s: profile '%s' has a non-number 'util' field", 
+                       error_prefix.c_str(), profile_name.c_str());
+            data->util = json_desc["util"].GetDouble();
+            xbt_assert(data->util > 0.0 && data->util <= 1.0 , "%s: profile '%s' has an invalid 'util' field (%g)",
+                       error_prefix.c_str(), profile_name.c_str(), data->util);
+        } else {
+            data->util = 1.0;
+        }
+
         profile->data = data;
     }
     else if (profile_type == "parallel_homogeneous")
@@ -404,6 +415,16 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         xbt_assert(data->com >= 0, "%s: profile '%s' has a non-positive 'com' field (%g)",
                    error_prefix.c_str(), profile_name.c_str(), data->com);
 
+        if (json_desc.HasMember("util")) {
+            xbt_assert(json_desc["util"].IsNumber(), "%s: profile '%s' has a non-number 'util' field", 
+                        error_prefix.c_str(), profile_name.c_str());
+            data->util = json_desc["util"].GetDouble();
+            xbt_assert(data->util > 0.0 && data->util <= 1.0 , "%s: profile '%s' has an invalid 'util' field (%g)",
+                        error_prefix.c_str(), profile_name.c_str(), data->util);
+        } else {
+            data->util = 1.0;
+        }   
+
         profile->data = data;
     }
     else if (profile_type == "parallel_homogeneous_total")
@@ -433,6 +454,16 @@ ProfilePtr Profile::from_json(const std::string & profile_name,
         data->com = json_desc["com"].GetDouble();
         xbt_assert(data->com >= 0, "%s: profile '%s' has a non-positive 'com' field (%g)",
                    error_prefix.c_str(), profile_name.c_str(), data->com);
+
+        if (json_desc.HasMember("util")) {
+            xbt_assert(json_desc["util"].IsNumber(), "%s: profile '%s' has a non-number 'util' field", 
+                        error_prefix.c_str(), profile_name.c_str());
+            data->util = json_desc["util"].GetDouble();
+            xbt_assert(data->util > 0.0 && data->util <= 1.0 , "%s: profile '%s' has an invalid 'util' field (%g)",
+                        error_prefix.c_str(), profile_name.c_str(), data->util);
+        } else {
+            data->util = 1.0;
+        } 
 
         profile->data = data;
     }

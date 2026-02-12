@@ -62,6 +62,7 @@ def pytest_generate_tests(metafunc):
         "cluster512_pfs": "cluster512_pfs.xml",
         "energy128notopo": "energy_platform_homogeneous_no_net_128.xml",
         "energy128cluster": "cluster_energy_128.xml",
+        "energysmall": "energy_platform_homogeneous.xml", 
         "properties_platform": "properties_example.xml",
     }
     energy_platforms = ["energy128notopo", "energy128cluster"]
@@ -91,8 +92,9 @@ def pytest_generate_tests(metafunc):
         "usagetrace": "test_usage_trace.json",
         "walltime": "test_walltime.json",
         "walltimesmpi": "test_walltime_smpi.json",
+        "parallel_usage": "test_parallel_usage.json"
     }
-    one_job_workloads = ["delay1", "compute1", "computetot1"]
+    one_job_workloads = ["delay1", "compute1", "computetot1", "compute1util"]
     small_workloads = ["delays", "delaysequences", "mixed"]
     smpi_workloads = ["smpicomp1", "smpicomp2", "smpimapping", "smpimixed", "smpicollectives"]
     dynsub_workloads = ["delay1", "mixed"]
@@ -148,10 +150,12 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('properties_platform', generate_platforms(platform_dir, platforms_def, ['properties_platform']))
     if 'usage_trace_platform' in metafunc.fixturenames:
         metafunc.parametrize('usage_trace_platform', generate_platforms(platform_dir, platforms_def, ['smallusage']))
+    if 'energy_small_platform' in metafunc.fixturenames:
+        metafunc.parametrize('energy_small_platform', generate_platforms(platform_dir, platforms_def, ['energysmall']))
 
     # Workloads
     if 'workload' in metafunc.fixturenames:
-        metafunc.parametrize('workload', generate_workloads(workload_dir, workloads_def, [key for key in workload_def]))
+        metafunc.parametrize('workload', generate_workloads(workload_dir, workloads_def, [key for key in workloads_def]))
     if 'workflow' in metafunc.fixturenames:
         metafunc.parametrize('workflow', generate_workloads(workload_dir, workloads_def, [key for key in workflows]))
     if 'tuto_stencil_workload' in metafunc.fixturenames:
@@ -184,6 +188,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('delaysequences_workload', generate_workloads(workload_dir, workloads_def, ['delaysequences']))
     if 'mixed_workload' in metafunc.fixturenames:
         metafunc.parametrize('mixed_workload', generate_workloads(workload_dir, workloads_def, ['mixed']))
+    if 'parallel_usage_workload' in metafunc.fixturenames:
+        metafunc.parametrize('parallel_usage_workload', generate_workloads(workload_dir, workloads_def, ["parallel_usage"]))
 
     # External Events
     if 'simple_events' in metafunc.fixturenames:
