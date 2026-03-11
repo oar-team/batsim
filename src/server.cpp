@@ -431,35 +431,55 @@ void server_on_pstate_modification(ServerData * data,
 
     xbt_assert(task_data->data != nullptr, "inconsistency: task_data has null data");
     auto * message = static_cast<PStateModificationMessage *>(task_data->data);
+    const int target_pstate = message->new_pstate;
 
-    data->context->current_switches.add_switch(message->machine_ids, message->new_pstate);
-    data->context->energy_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids,
-                                                   message->new_pstate);
+    // Drop no-op requests early.
+    IntervalSet effective_machine_ids;
+    for (auto machine_it = message->machine_ids.elements_begin();
+         machine_it != message->machine_ids.elements_end();
+         ++machine_it)
+    {
+        const int machine_id = *machine_it;
+        Machine * machine = data->context->machines[machine_id];
+        if ((int)machine->host->get_pstate() == target_pstate) {
+            continue;
+        }
+        effective_machine_ids.insert(machine_id);
+    }
+
+    if (effective_machine_ids.size() == 0) {
+        return;
+    }
+
+    data->context->current_switches.add_switch(effective_machine_ids, target_pstate);
+    data->context->energy_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(),
+                                                   effective_machine_ids,
+                                                   target_pstate);
 
     // Let's quickly check whether this is a switchON or a switchOFF
     // Unknown transition states will be set to -42.
     int transition_state = -42;
-    Machine * first_machine = data->context->machines[message->machine_ids.first_element()];
-    if (first_machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE)
+    Machine * first_machine = data->context->machines[effective_machine_ids.first_element()];
+    if (first_machine->pstates[target_pstate] == PStateType::COMPUTATION_PSTATE)
     {
         transition_state = -1; // means we are switching to a COMPUTATION_PSTATE
     }
-    else if (first_machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
+    else if (first_machine->pstates[target_pstate] == PStateType::SLEEP_PSTATE)
     {
         transition_state = -2; // means we are switching to a SLEEP_PSTATE
     }
 
 
     // The pstate is set to an invalid one to know the machines are in transition.
-    data->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids,
+    data->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), effective_machine_ids,
                                                    transition_state);
 
     // Let's mark that some switches have been requested
     data->context->nb_grouped_switches++;
-    data->context->nb_machine_switches += message->machine_ids.size();
+    data->context->nb_machine_switches += effective_machine_ids.size();
 
-    for (auto machine_it = message->machine_ids.elements_begin();
-         machine_it != message->machine_ids.elements_end();
+    for (auto machine_it = effective_machine_ids.elements_begin();
+         machine_it != effective_machine_ids.elements_end();
          ++machine_it)
     {
         const int machine_id = *machine_it;
@@ -468,50 +488,50 @@ void server_on_pstate_modification(ServerData * data,
 
         if (machine->pstates[curr_pstate] == PStateType::COMPUTATION_PSTATE)
         {
-            if (machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE)
+            if (machine->pstates[target_pstate] == PStateType::COMPUTATION_PSTATE)
             {
                 XBT_INFO("Switching machine %d ('%s') pstate : %lu -> %lu.", machine->id,
-                         machine->name.c_str(), curr_pstate, message->new_pstate);
-                machine->host->set_pstate(message->new_pstate);
-                xbt_assert(machine->host->get_pstate() == message->new_pstate, "pstate inconsistency: the desired pstate has not been set");
+                         machine->name.c_str(), curr_pstate, target_pstate);
+                machine->host->set_pstate(target_pstate);
+                xbt_assert(machine->host->get_pstate() == target_pstate, "pstate inconsistency: the desired pstate has not been set");
 
                 IntervalSet all_switched_machines;
-                if (data->context->current_switches.mark_switch_as_done(machine->id, message->new_pstate,
+                if (data->context->current_switches.mark_switch_as_done(machine->id, target_pstate,
                                                                         all_switched_machines,
                                                                         data->context))
                 {
                     data->context->proto_writer->append_resource_state_changed(all_switched_machines,
-                                                                               std::to_string(message->new_pstate),
+                                                                               std::to_string(target_pstate),
                                                                                simgrid::s4u::Engine::get_clock());
                 }
             }
-            else if (machine->pstates[message->new_pstate] == PStateType::SLEEP_PSTATE)
+            else if (machine->pstates[target_pstate] == PStateType::SLEEP_PSTATE)
             {
                 machine->update_machine_state(MachineState::TRANSITING_FROM_COMPUTING_TO_SLEEPING);
 
                 string pname = "switch ON " + to_string(machine_id);
                 simgrid::s4u::Actor::create(pname.c_str(), machine->host, switch_off_machine_process,
-                                            data->context, machine_id, message->new_pstate);
+                                            data->context, machine_id, target_pstate);
 
                 ++data->nb_switching_machines;
             }
             else
             {
                 XBT_ERROR("Switching from a communication pstate to an invalid pstate on machine %d ('%s') : %lu -> %lu",
-                          machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
+                          machine->id, machine->name.c_str(), curr_pstate, target_pstate);
             }
         }
         else if (machine->pstates[curr_pstate] == PStateType::SLEEP_PSTATE)
         {
-            xbt_assert(machine->pstates[message->new_pstate] == PStateType::COMPUTATION_PSTATE,
+            xbt_assert(machine->pstates[target_pstate] == PStateType::COMPUTATION_PSTATE,
                     "Switching from a sleep pstate to a non-computation pstate on machine %d ('%s') : %lu -> %lu, which is forbidden",
-                    machine->id, machine->name.c_str(), curr_pstate, message->new_pstate);
+                    machine->id, machine->name.c_str(), curr_pstate, target_pstate);
 
             machine->update_machine_state(MachineState::TRANSITING_FROM_SLEEPING_TO_COMPUTING);
 
             string pname = "switch OFF " + to_string(machine_id);
             simgrid::s4u::Actor::create(pname.c_str(), machine->host, switch_on_machine_process,
-                                        data->context, machine_id, message->new_pstate);
+                                        data->context, machine_id, target_pstate);
 
             ++data->nb_switching_machines;
         }
@@ -1065,4 +1085,3 @@ bool is_simulation_finished(ServerData * data)
            (data->nb_waiters == 0) && // No waiter process is running
            (data->nb_killers == 0); // No jobs is being killed
 }
-
