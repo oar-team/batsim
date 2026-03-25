@@ -96,7 +96,7 @@ uint8_t batsim_edc_take_decisions(
                     extra_data = json::parse(parsed_job->job()->extra_data()->str());
                     if (extra_data.find("desired_allocation") != extra_data.end()) {
                         try {
-                            job->desired_allocation = IntervalSet::from_string_hyphen(extra_data["desired_allocation"], " ");
+                            job->desired_allocation = IntervalSet::from_string_hyphen(extra_data["desired_allocation"], " ", "-");
                         }
                         catch (const std::invalid_argument & e) {
                             printf("job '%s' has invalid extra_data '%s': cannot parse 'desired_allocation' content as an intervalset: %s\n", job->job_id.c_str(), parsed_job->job()->extra_data()->c_str(), e.what());
@@ -139,7 +139,7 @@ uint8_t batsim_edc_take_decisions(
             hosts = currently_running_job->desired_allocation;
         else
             hosts = IntervalSet(IntervalSet::ClosedInterval(0, currently_running_job->nb_hosts-1));
-        mb->add_execute_job(currently_running_job->job_id, hosts.to_string_hyphen());
+        mb->add_execute_job(currently_running_job->job_id, hosts.to_string_hyphen(" ", "-"));
     }
 
     mb->finish_message(parsed->now());

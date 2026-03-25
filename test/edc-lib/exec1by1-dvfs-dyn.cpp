@@ -174,7 +174,7 @@ uint8_t batsim_edc_take_decisions(
 
     if (execute_job) {
         job.start_time = parsed->now();
-        mb->add_execute_job(job.job_id, job.alloc.to_string_hyphen());
+        mb->add_execute_job(job.job_id, job.alloc.to_string_hyphen(" ", "-"));
     }
 
     mb->finish_message(parsed->now());

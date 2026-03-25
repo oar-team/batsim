@@ -142,7 +142,7 @@ uint8_t batsim_edc_take_decisions(
                 running_jobs[job->id] = *job_it;
                 job->maximum_finish_time = parsed->now() + job->walltime;
                 job->alloc = available_hosts.left(job->nb_hosts);
-                mb->add_execute_job(job->id, job->alloc.to_string_hyphen());
+                mb->add_execute_job(job->id, job->alloc.to_string_hyphen(" ", "-"));
                 available_hosts -= job->alloc;
                 nb_available_hosts -= job->nb_hosts;
 
@@ -184,7 +184,7 @@ uint8_t batsim_edc_take_decisions(
                 running_jobs[job->id] = *job_it;
                 job->maximum_finish_time = job_finish_time;
                 job->alloc = available_hosts.left(job->nb_hosts);
-                mb->add_execute_job(job->id, job->alloc.to_string_hyphen());
+                mb->add_execute_job(job->id, job->alloc.to_string_hyphen(" ", "-"));
                 available_hosts -= job->alloc;
                 nb_available_hosts -= job->nb_hosts;
 

@@ -153,7 +153,7 @@ uint8_t batsim_edc_take_decisions(
             exec_options.override_profile_alloc_custom_placement("w0!homogeneous", "0-3", std::make_shared<std::vector<uint32_t>>(std::vector<uint32_t>({3, 0, 2, 1})));
         }
 
-        mb->add_execute_job(currently_running_job->job_id, hosts.to_string_hyphen(), exec_options);
+        mb->add_execute_job(currently_running_job->job_id, hosts.to_string_hyphen(" ", "-"), exec_options);
     }
 
     mb->finish_message(parsed->now());

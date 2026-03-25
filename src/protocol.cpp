@@ -360,7 +360,7 @@ ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * ex
 
     // Build main job's allocation
     msg->job_allocation = std::make_shared<AllocationPlacement>();
-    msg->job_allocation->hosts = IntervalSet::from_string_hyphen(execute_job->allocation()->host_allocation()->str());
+    msg->job_allocation->hosts = IntervalSet::from_string_hyphen(execute_job->allocation()->host_allocation()->str(), " ", "-");
 
     using namespace batprotocol::fb;
     switch (execute_job->allocation()->executor_placement_type())
@@ -393,7 +393,7 @@ ExecuteJobMessage * from_execute_job(const batprotocol::fb::ExecuteJobEvent * ex
             auto profile_name = override->profile_id()->str();
             msg->profile_allocation_override[profile_name] = override_alloc;
 
-            override_alloc->hosts = IntervalSet::from_string_hyphen(override->host_allocation()->str());
+            override_alloc->hosts = IntervalSet::from_string_hyphen(override->host_allocation()->str(), " ", "-");
 
             switch (override->executor_placement_type())
             {
@@ -519,7 +519,7 @@ CreateProbeMessage * from_create_probe(const batprotocol::fb::CreateProbeEvent *
         } break;
         case batprotocol::fb::Resources_HostResources: {
             auto * host_resources = create_probe->resources_as_HostResources();
-            msg->hosts = IntervalSet::from_string_hyphen(host_resources->host_ids()->str());
+            msg->hosts = IntervalSet::from_string_hyphen(host_resources->host_ids()->str(), " ", "-");
         } break;
         case batprotocol::fb::Resources_LinkResources: {
             auto * link_resources = create_probe->resources_as_LinkResources();
@@ -893,7 +893,7 @@ ProfileRegisteredByEDCMessage * from_register_profile(const batprotocol::fb::Reg
 ChangeHostsPStateMessage * from_change_hosts_pstate(const batprotocol::fb::ChangeHostsPStateEvent * change_hosts_pstate, BatsimContext * context) {
     auto msg = new ChangeHostsPStateMessage;
 
-    msg->machine_ids = IntervalSet::from_string_hyphen(change_hosts_pstate->host_ids()->str());
+    msg->machine_ids = IntervalSet::from_string_hyphen(change_hosts_pstate->host_ids()->str(), " ", "-");
     msg->new_pstate = change_hosts_pstate->pstate();
 
     return msg;
@@ -903,7 +903,7 @@ ChangeHostsPStateMessage * from_change_hosts_pstate(const batprotocol::fb::Chang
 TurnOnOffHostsMessage * from_turn_onoff_hosts(const batprotocol::fb::TurnOnOffHostsEvent * turn_onoff_hosts, BatsimContext * context) {
     auto msg = new TurnOnOffHostsMessage;
 
-    msg->machine_ids = IntervalSet::from_string_hyphen(turn_onoff_hosts->host_ids()->str());
+    msg->machine_ids = IntervalSet::from_string_hyphen(turn_onoff_hosts->host_ids()->str(), " ", "-");
     msg->new_state = turn_onoff_hosts->state();
 
     return msg;

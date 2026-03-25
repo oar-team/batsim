@@ -104,7 +104,7 @@ uint8_t batsim_edc_take_decisions(
             IntervalSet all_hosts = IntervalSet::ClosedInterval(0, platform_nb_hosts-1);
             auto when = TemporalTrigger::make_periodic(1);
             auto cp = batprotocol::CreateProbe::make_temporal_triggerred(when);
-            cp->set_resources_as_hosts(all_hosts.to_string_hyphen());
+            cp->set_resources_as_hosts(all_hosts.to_string_hyphen(" ", "-"));
             cp->enable_accumulation_no_reset();
             mb->add_create_probe("hosts-vec", batprotocol::fb::Metrics_Power, cp);
 
@@ -202,7 +202,7 @@ uint8_t batsim_edc_take_decisions(
         currently_running_job = jobs->front();
         jobs->pop_front();
         auto hosts = IntervalSet(IntervalSet::ClosedInterval(0, currently_running_job->nb_hosts-1));
-        mb->add_execute_job(currently_running_job->job_id, hosts.to_string_hyphen());
+        mb->add_execute_job(currently_running_job->job_id, hosts.to_string_hyphen(" ", "-"));
     }
 
     // stop probes when all jobs have been executed, so the simulation can finish

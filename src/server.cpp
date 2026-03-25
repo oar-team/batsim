@@ -441,7 +441,7 @@ void server_on_change_hosts_pstate(ServerData * data,
         xbt_assert(machine->host->get_pstate() == message->new_pstate, "pstate inconsistency: the desired pstate has not been set");
     }
 
-    data->context->proto_msg_builder->add_hosts_pstate_changed(message->machine_ids.to_string_hyphen(), message->new_pstate);
+    data->context->proto_msg_builder->add_hosts_pstate_changed(message->machine_ids.to_string_hyphen(" ", "-"), message->new_pstate);
 }
 
 
@@ -560,7 +560,7 @@ void server_on_switched(ServerData * data,
         }
 
         // All switches have finished, notify the EDC
-        data->context->proto_msg_builder->add_hosts_turned_onoff(all_switched_machines.to_string_hyphen(), message->new_pstate);
+        data->context->proto_msg_builder->add_hosts_turned_onoff(all_switched_machines.to_string_hyphen(" ", "-"), message->new_pstate);
     }
 
     data->switcher_actors.erase(message->machine_id);
@@ -614,7 +614,7 @@ void server_on_periodic_trigger(ServerData * data,
 
         switch(probe_data->resource_type) {
             case batprotocol::fb::Resources_HostResources: {
-                pdata->set_resources_as_hosts(probe_data->hosts.to_string_hyphen());
+                pdata->set_resources_as_hosts(probe_data->hosts.to_string_hyphen(" ", "-"));
             } break;
             case batprotocol::fb::Resources_LinkResources: {
                 pdata->set_resources_as_links(std::make_shared<std::vector<std::string> >(std::move(probe_data->links)));
@@ -1045,7 +1045,7 @@ void server_on_execute_job(ServerData * data,
                    "Job '%s': Invalid job allocation ('%s'): machine %d (hostname='%s') cannot compute jobs now "
                    "(the machine is not computing nor idle, its state is '%s')",
                    job->id.to_cstring(),
-                   allocation->hosts.to_string_hyphen().c_str(),
+                   allocation->hosts.to_string_hyphen(" ", "-").c_str(),
                    machine->id, machine->name.c_str(),
                    machine_state_to_string(machine->state).c_str());
 
@@ -1056,7 +1056,7 @@ void server_on_execute_job(ServerData * data,
         xbt_assert(machine->pstates[ps] == PStateType::COMPUTATION_PSTATE,
                    "Job '%s': Invalid job allocation ('%s'): machine %d (hostname='%s') is not in a computation pstate (ps=%d)",
                    job->id.to_cstring(),
-                   allocation->hosts.to_string_hyphen().c_str(),
+                   allocation->hosts.to_string_hyphen(" ", "-").c_str(),
                    machine->id, machine->name.c_str(), ps);
     }
 

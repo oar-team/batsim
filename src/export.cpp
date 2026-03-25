@@ -766,7 +766,7 @@ void JobsTracer::write_job(const JobPtr job)
     _job_map["consumed_energy"] = rejected ? "" : to_string(job->consumed_energy);
 
     if (job->execution_request.get() != nullptr)
-        _job_map["allocated_resources"] = job->execution_request->job_allocation->hosts.to_string_hyphen(" ");
+        _job_map["allocated_resources"] = job->execution_request->job_allocation->hosts.to_string_hyphen(" ", "-");
     else
         _job_map["allocated_resources"] = "";
 
