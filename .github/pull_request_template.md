@@ -11,6 +11,6 @@ Branch name.
 
 Branch content.
 - [ ] Only dedicated to the problem.
-- [ ] Based on Batsim's official master branch.
+- [ ] Based on Batsim's official `main` branch.
 - [ ] Straightforward. Just a sequence of commits. Does not contain merge commits.
 - [ ] Test results are not worse than before. [How to run Batsim tests?](https://batsim.readthedocs.io/en/latest/howto-test.html)
