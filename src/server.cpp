@@ -470,6 +470,13 @@ void server_on_turn_onoff_hosts(ServerData * data,
         transition_state = -2; // means we are switching to a SLEEP_PSTATE
     }
 
+    if (data->context->energy_used)
+    {
+        data->context->energy_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(),
+                                                       message->machine_ids,
+                                                       message->new_state);
+    }
+
     // The pstate is set to an invalid one to know the machines are in transition.
     if (data->context->trace_pstate_changes)
     {
