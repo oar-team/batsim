@@ -416,17 +416,8 @@ void server_on_change_hosts_pstate(ServerData * data,
 
     auto * message = static_cast<ChangeHostsPStateMessage *>(task_data->data);
 
-    if (data->context->energy_used)
-    {
-        data->context->energy_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids,
-                                                       message->new_pstate);
-    }
-
-    if (data->context->trace_pstate_changes)
-    {
-        data->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids, message->new_pstate);
-    }
-
+    // Drop no-op requests early.
+    IntervalSet effective_machine_ids;
     for (auto machine_it = message->machine_ids.elements_begin();
          machine_it != message->machine_ids.elements_end();
          ++machine_it)
@@ -435,13 +426,29 @@ void server_on_change_hosts_pstate(ServerData * data,
         Machine * machine = data->context->machines[machine_id];
         unsigned long curr_pstate = machine->host->get_pstate();
 
+        if (curr_pstate == message->new_pstate) {
+            continue;
+        }
+        effective_machine_ids.insert(machine_id);
+
         XBT_INFO("Switching machine %d ('%s') pstate : %lu -> %lu.", machine->id,
                  machine->name.c_str(), curr_pstate, message->new_pstate);
         machine->host->set_pstate(message->new_pstate);
         xbt_assert(machine->host->get_pstate() == message->new_pstate, "pstate inconsistency: the desired pstate has not been set");
     }
 
-    data->context->proto_msg_builder->add_hosts_pstate_changed(message->machine_ids.to_string_hyphen(" ", "-"), message->new_pstate);
+    if (data->context->energy_used)
+    {
+        data->context->energy_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), effective_machine_ids,
+                                                       message->new_pstate);
+    }
+
+    if (data->context->trace_pstate_changes)
+    {
+        data->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), effective_machine_ids, message->new_pstate);
+    }
+
+    data->context->proto_msg_builder->add_hosts_pstate_changed(effective_machine_ids.to_string_hyphen(" ", "-"), message->new_pstate);
 }
 
 
@@ -452,32 +459,8 @@ void server_on_turn_onoff_hosts(ServerData * data,
 
     auto * message = static_cast<TurnOnOffHostsMessage *>(task_data->data);
 
-    data->context->current_switches.add_switch(message->machine_ids, message->new_state);
-
-    // Let's quickly check whether this is a switchON or a switchOFF
-    // Unknown transition states will be set to -42.
-    int transition_state = -42;
-    Machine * first_machine = data->context->machines[message->machine_ids.first_element()];
-    if (first_machine->pstates[message->new_state] == PStateType::COMPUTATION_PSTATE)
-    {
-        transition_state = -1; // means we are switching to a COMPUTATION_PSTATE
-    }
-    else if (first_machine->pstates[message->new_state] == PStateType::SLEEP_PSTATE)
-    {
-        transition_state = -2; // means we are switching to a SLEEP_PSTATE
-    }
-
-    // The pstate is set to an invalid one to know the machines are in transition.
-    if (data->context->trace_pstate_changes)
-    {
-        data->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), message->machine_ids,
-                                                       transition_state);
-    }
-
-    // Let's mark that some switches have been requested
-    data->context->nb_grouped_switches++;
-    data->context->nb_machine_switches += message->machine_ids.size();
-
+    // Drop no-op requests early.
+    IntervalSet effective_machine_ids;
     for (auto machine_it = message->machine_ids.elements_begin();
          machine_it != message->machine_ids.elements_end();
          ++machine_it)
@@ -485,6 +468,11 @@ void server_on_turn_onoff_hosts(ServerData * data,
         const int machine_id = *machine_it;
         Machine * machine = data->context->machines[machine_id];
         unsigned long curr_pstate = machine->host->get_pstate();
+
+        if (curr_pstate == message->new_state) {
+            continue;
+        }
+        effective_machine_ids.insert(machine_id);
 
         if (machine->pstates[curr_pstate] == PStateType::COMPUTATION_PSTATE)
         {
@@ -521,7 +509,6 @@ void server_on_turn_onoff_hosts(ServerData * data,
             string pname = "switch ON " + to_string(machine_id);
             simgrid::s4u::ActorPtr switcher_actor = simgrid::s4u::Engine::get_instance()->add_actor(pname.c_str(), machine->host, switch_on_machine_process,
                                         data->context, machine_id, message->new_state);
-
             data->switcher_actors[machine_id] = switcher_actor;
             ++data->nb_switching_machines;
         }
@@ -530,6 +517,32 @@ void server_on_turn_onoff_hosts(ServerData * data,
             xbt_die("Machine %d ('%s') has an invalid pstate : %lu", machine->id, machine->name.c_str(), curr_pstate);
         }
     }
+
+    data->context->current_switches.add_switch(effective_machine_ids, message->new_state);
+
+    // Let's quickly check whether this is a switchON or a switchOFF
+    // Unknown transition states will be set to -42.
+    int transition_state = -42;
+    Machine * first_machine = data->context->machines[effective_machine_ids.first_element()];
+    if (first_machine->pstates[message->new_state] == PStateType::COMPUTATION_PSTATE)
+    {
+        transition_state = -1; // means we are switching to a COMPUTATION_PSTATE
+    }
+    else if (first_machine->pstates[message->new_state] == PStateType::SLEEP_PSTATE)
+    {
+        transition_state = -2; // means we are switching to a SLEEP_PSTATE
+    }
+
+    // The pstate is set to an invalid one to know the machines are in transition.
+    if (data->context->trace_pstate_changes)
+    {
+        data->context->pstate_tracer.add_pstate_change(simgrid::s4u::Engine::get_clock(), effective_machine_ids,
+                                                       transition_state);
+    }
+
+    // Let's mark that some switches have been requested
+    data->context->nb_grouped_switches++;
+    data->context->nb_machine_switches += effective_machine_ids.size();
 
     if (data->context->trace_machine_states)
     {
