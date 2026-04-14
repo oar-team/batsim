@@ -55,11 +55,12 @@ You usually need to ``source`` a file to access the Nix commands.
 Installing Batsim in your system via Nix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This can be done with the following command:
+
 .. code:: bash
 
     nix profile add git+https://framagit.org/batsim/batsim\?ref=main#batsim
 
-..note::
+.. note::
     The packaging of Batsim and its ecosystem now uses the experimental flakes features of Nix.
     If flakes are not enabled on your profile you will need to run the following command:
 
@@ -68,19 +69,20 @@ This can be done with the following command:
     nix --extra-experimental-features 'nix-command flakes' profile add git+https://framagit.org/batsim/batsim\?ref=main#batsim
 
 
-Other packages from the Batsim ecosystem can be installed with similar commands:
+Other packages from the Batsim ecosystem can be installed with similar commands for pybatsim:
 
 .. code:: bash
 
-    # For example pybatsim
     nix --extra-experimental-features 'nix-command flakes' profile add git+https://gitlab.inria.fr/batsim/pybatsim?dir=pybatsim-core#pybatsim
 
+Or the interactive visualization tools evalys:
 
-    # Or interactive visualization tools.
+.. code:: bash
+
     nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA evalys
 
-..note::
-    If you prefer to work with a temporary environment you can replace the `profile add` part of the previous commands by `shell`.
+.. note::
+    If you prefer to work with a temporary environment you can replace the `profile add` part of the following commands by `shell`.
     This will drop you into a shell with the required package in your PATH.
 
 
