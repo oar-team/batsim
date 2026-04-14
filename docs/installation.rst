@@ -54,33 +54,35 @@ You usually need to ``source`` a file to access the Nix commands.
 
 Installing Batsim in your system via Nix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This can be done with ``nix-env --install`` (legacy nix) or ``nix profile install`` (experimental nix with flakes).
-With the introduction of flakes for the packaging of Batsim (and its ecosystem), the package name to install via (legacy) nix must be prefixed with `packages.<archi>.` where `<archi>` depends on the architecture you want: `x86_64-linux`, `aarch64-darwin`, `aarch64-linux` or `x86_64-darwin`.
-For example:
-
-.. code:: bash
-
-    nix-env -f https://framagit.org/batsim/batsim/-/archive/main/batsim-main.tar.gz?ref_type=heads -iA packages.x86_64-linux.batsim
-
-With the newer version of nix using flakes you can install Batsim in your profile with:
-
+This can be done with the following command:
 .. code:: bash
 
     nix profile add git+https://framagit.org/batsim/batsim\?ref=main#batsim
 
+..note::
+    The packaging of Batsim and its ecosystem now uses the experimental flakes features of Nix.
+    If flakes are not enabled on your profile you will need to run the following command:
+
+.. code:: bash
+
+    nix --extra-experimental-features 'nix-command flakes' profile add git+https://framagit.org/batsim/batsim\?ref=main#batsim
+
+
 Other packages from the Batsim ecosystem can be installed with similar commands:
-
-.. todo::
-
-    Update the commands to use flakes instead of kapack
 
 .. code:: bash
 
     # For example pybatsim
-    nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA pybatsim
+    nix --extra-experimental-features 'nix-command flakes' profile add git+https://gitlab.inria.fr/batsim/pybatsim?dir=pybatsim-core#pybatsim
+
 
     # Or interactive visualization tools.
     nix-env -f https://github.com/oar-team/nur-kapack/archive/master.tar.gz -iA evalys
+
+..note::
+    If you prefer to work with a temporary environment you can replace the `profile add` part of the previous commands by `shell`.
+    This will drop you into a shell with the required package in your PATH.
+
 
 
 .. _using_batsim_from_well_defined_nix_env:
