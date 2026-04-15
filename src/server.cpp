@@ -204,6 +204,12 @@ void finish_message_and_call_edc(ServerData * data)
     // call the external decision component
     uint8_t * decisions_buffer = nullptr;
     uint32_t decisions_buffer_size = 0u;
+
+    double now = -1;
+    std::shared_ptr<std::vector<IPMessageWithTimestamp> > messages(new std::vector<IPMessageWithTimestamp>());
+    chrono::steady_clock::time_point start;
+    chrono::steady_clock::time_point end;
+
     try
     {
         if (context->edc_json_format)
@@ -211,13 +217,9 @@ void finish_message_and_call_edc(ServerData * data)
             XBT_INFO("Sending '%s'", (const char*) what_happened_buffer);
         }
 
-        auto start = chrono::steady_clock::now();
-
+        start = chrono::steady_clock::now();
         context->edc->take_decisions(what_happened_buffer, what_happened_buffer_size, &decisions_buffer, &decisions_buffer_size);
-
-        auto end = chrono::steady_clock::now();
-        long double elapsed_microseconds = static_cast<long double>(chrono::duration <long double, micro> (end - start).count());
-        context->microseconds_used_by_scheduler += elapsed_microseconds;
+        end = chrono::steady_clock::now();
 
         if (context->edc_json_format)
         {
@@ -239,12 +241,13 @@ void finish_message_and_call_edc(ServerData * data)
     }
 
     // parse the decisions and store them in an inter-actor message list
-    double now = -1;
-    std::shared_ptr<std::vector<IPMessageWithTimestamp> > messages(new std::vector<IPMessageWithTimestamp>());
     protocol::parse_batprotocol_message(decisions_buffer, decisions_buffer_size, now, messages, context);
 
     // the what_happened buffer is no longer needed, the associated MessageBuilder can be cleared
     context->proto_msg_builder->clear(simgrid::s4u::Engine::get_clock());
+
+    long double elapsed_microseconds = static_cast<long double>(chrono::duration <long double, micro> (end - start).count());
+    context->microseconds_used_by_scheduler += elapsed_microseconds;
 
     // inject decisions from another actor, so the server can receive them
     data->sched_ready = false;
