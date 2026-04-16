@@ -6,7 +6,7 @@ Energy consumption trace
 When a Batsim simulation is run with energy enabled (see :ref:`cli`), Batsim outputs an energy-specific output file. |br|
 You can give a look at `this evalys visualization example <https://github.com/oar-team/evalys/tree/master/examples/poquetm>`_ to see how to use such data.
 
-This file is written as Batsim's export prefix + ``consumed_energy.csv`` (the prefix is `out/` by default, see :ref:`cli`).
+This file is written as Batsim's export *prefix* + ``consumed_energy.csv`` (the prefix is `out/` by default, see :ref:`cli`).
 This is a time series that contains the energy consumption of the platform
 (as defined as the sum of all the computing hosts of the platform) from time 0 to the current time.
 It contains the following fields in this order.

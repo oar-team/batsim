@@ -5,7 +5,7 @@ Power state change trace
 
 Power state change tracing can be enabled with the option `--trace-pstate-change` (see :ref:`cli`).
 
-This file is written as Batsim's export *prefix* + `pstate_changes.csv`(the prefix is `out/` by default, see :ref:`cli`).
+This file is written as Batsim's export *prefix* + ``pstate_changes.csv`` (the prefix is `out/` by default, see :ref:`cli`).
 This is a time series that contains the power state transitions of the hosts over time.
 It contains the following fields in this order.
 
