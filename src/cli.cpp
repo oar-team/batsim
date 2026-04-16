@@ -201,7 +201,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
     app.add_flag("--trace-machine-state", main_args.enable_machine_state_tracing, "Enable the generation of output file that traces machine states over time")
         ->group(output_group_name);
 
-    app.add_flag("--trace-pstate-change", main_args.enable_pstate_change_tracing, "Enable the generation of output file that traces machine pstate changes over time")
+    app.add_flag("--trace-pstate-changes", main_args.enable_pstate_change_tracing, "Enable the generation of output file that traces machine pstate changes over time")
         ->group(output_group_name);
 
     ProbeTracingStrategy probe_tracing_strategy = ProbeTracingStrategy::AS_PROBE_REQUESTED;
@@ -259,7 +259,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
         ->group(platform_group_name)
         ->option_text("<nb>");
 
-    app.add_flag("--mmax-workload", main_args.limit_machines_count_by_workload, "If set, limits the number of machines to the 'nb_res' field of the input workloads\nIf several workloads are used, the maximum value of these fields is kept")
+    app.add_flag("--mmax-workload", main_args.limit_machines_count_by_workload, "If set, limits the number of machines to the 'nb_res' field of the input workloads\nIf several workloads are used, the maximum value of these fields is kept\nIf used with --mmax option, the minimum value is kept")
         ->group(platform_group_name);
 
     // Simulation model
@@ -429,7 +429,7 @@ void parse_main_args(int argc, char * argv[], MainArguments & main_args, int & r
     }
     if (energy_host_and_link)
     {
-        fprintf(stderr, "%s--energy is not implemented.\n", error_prefix);
+        fprintf(stderr, "%s--energy is not implemented (since option --energy-link is not implemented).\n", error_prefix);
         error = true;
     }
 
