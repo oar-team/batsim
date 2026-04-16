@@ -1,15 +1,10 @@
 .. _output_energy:
 
-Energy
-======
-
-When a Batsim simulation is run with energy enabled (see :ref:`cli`),
-Batsim outputs energy-specific output files.
-
-You can give a look at `this evalys visualization example <https://github.com/oar-team/evalys/tree/master/examples/poquetm>`_ to see how to use such data.
-
 Energy consumption trace
-------------------------
+========================
+
+When a Batsim simulation is run with energy enabled (see :ref:`cli`), Batsim outputs an energy-specific output file. |br|
+You can give a look at `this evalys visualization example <https://github.com/oar-team/evalys/tree/master/examples/poquetm>`_ to see how to use such data.
 
 This file is written as Batsim's export prefix + ``consumed_energy.csv`` (the prefix is `out/` by default, see :ref:`cli`).
 This is a time series that contains the energy consumption of the platform
@@ -30,32 +25,6 @@ It contains the following fields in this order.
   - ``e`` if the event is a job end
   - ``p`` if the event is a host power state change
 
-
-Power state change trace
-------------------------
-
-This file is written as Batsim's export prefix + ``_pstate_changes.csv``.
-This is a time series that contains the power state transitions of the hosts over time.
-It contains the following fields in this order.
-
-- ``time``: The time at which the power state transition occurred.
-- ``machine_id``: The :ref:`interval_set` of hosts whose power state has been changed.
-- ``new_pstate``: The new power state (an integer) of the involved hosts.
-
-Agregated machine state trace
------------------------------
-
-This file is written as Batsim's export prefix + ``_machine_states.csv``.
-This is a time series that contains the number of hosts in each kind of power state over time.
-Please refer to :ref:`platform_energy_model` for more information about the existing kinds of power states.
-It contains the following fields in this order.
-
-- ``time``: The time at which the measure has been done.
-- ``nb_sleeping``: The number of hosts currently in a sleeping power state.
-- ``nb_switching_on``: The number of hosts currently transitioning into a computation power state.
-- ``nb_switching_off``: The number of hosts currently transitioning into a sleeping power state.
-- ``nb_idle``: The number of hosts currently in a computation power state, but without a job running on them.
-- ``nb_computing``: The number of hosts currently in a computation power state, with a job running on them.
 
 .. |br| raw:: html
 

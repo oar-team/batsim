@@ -5,7 +5,7 @@ Jobs
 
 The main Batsim output file is exported as *prefix* + ``jobs.csv`` (the prefix is `out/` by default, see :ref:`cli`).
 
-This file is formatted as CSV_ (with a header) and give information about jobs.
+This file is formatted as CSV_ (with a header) and gives information about jobs.
 There is one line per job.
 This file has the following fields in this order.
 

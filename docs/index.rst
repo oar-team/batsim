@@ -64,6 +64,8 @@ please cite it (`bibtex <https://hal.archives-ouvertes.fr/hal-01333471v1/bibtex>
    Schedule-centric <output-schedule.rst>
    Job-centric <output-jobs.rst>
    Energy-related <output-energy.rst>
+   Pstate change tracer <output-pstate.rst>
+   Machine state tracer <output-machines.rst>
 
 .. toctree::
    :maxdepth: 1
