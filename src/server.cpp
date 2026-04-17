@@ -760,12 +760,18 @@ void server_on_force_simulation_stop(ServerData * data,
     {
         for (JobPtr job : machine->jobs_being_computed)
         {
-            for (simgrid::s4u::ActorPtr actor : job->execution_actors)
+            // First try to cancel the parallel task executor
+            bool cancelled_ptask = cancel_ptasks(job->task);
+            if (!cancelled_ptask)
             {
-                actor->kill();
+                for (simgrid::s4u::ActorPtr actor : job->execution_actors)
+                {
+                    actor->kill();
+                }
+                job->execution_actors.clear();
             }
-            job->execution_actors.clear();
         }
+        machine->jobs_being_computed.clear();
     }
 
     // Switcher processes

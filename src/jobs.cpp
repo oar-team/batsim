@@ -300,7 +300,7 @@ bool job_comparator_subtime_number(const JobPtr a, const JobPtr b)
 
 Job::~Job()
 {
-    XBT_INFO("Job '%s' is being deleted", id.to_string().c_str());
+    XBT_INFO("Job '%s' is being deleted from workload %s", id.to_string().c_str(), workload->name.c_str());
     xbt_assert(execution_actors.size() == 0,
                "Internal error: job %s on destruction still has %zu execution processes (should be 0).",
                this->id.to_string().c_str(), execution_actors.size());
