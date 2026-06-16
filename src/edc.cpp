@@ -107,23 +107,26 @@ void ExternalDecisionComponent::init(const uint8_t *init_data, uint32_t init_siz
         }
     } break;
     case EDCType::PROCESS: {
+        // TODO: use multipart message instead of sequencing/serializing data by hand.
+
         // Serialize (in binary) the initialization message (integers sent in native endianness)
         // Format: init_size(u32), init_data(init_size bytes)
-        size_t msg_size = sizeof(uint32_t) + init_size;
-        zmq_msg_t msg;
-        int rc = zmq_msg_init_size(&msg, msg_size);
+        size_t msg_size = sizeof(init_size) + init_size;
+        zmq_msg_t init_msg;
+        int rc = zmq_msg_init_size(&init_msg, msg_size);
         xbt_assert(rc == 0, "Cannot initialize ZeroMQ message");
 
         // Fill the message
-        uint8_t * buffer_ptr = static_cast<uint8_t *>(zmq_msg_data(&msg));
-        memcpy(buffer_ptr, &init_size, sizeof(uint32_t)); buffer_ptr += sizeof(uint32_t);
+        uint8_t * buffer_ptr = static_cast<uint8_t *>(zmq_msg_data(&init_msg));
+        memcpy(buffer_ptr, &init_size, sizeof(init_size));
+        buffer_ptr += sizeof(init_size);
         if (init_size > 0)
         {
-            memcpy(buffer_ptr, init_data, init_size); buffer_ptr += init_size;
+            memcpy(buffer_ptr, init_data, init_size);
         }
 
         // Send the message on the socket
-        rc = zmq_msg_send(&msg, _process->zmq_socket, 0);
+        rc = zmq_msg_send(&init_msg, _process->zmq_socket, 0);
         if (rc != static_cast<int>(msg_size))
         {
             throw std::runtime_error(std::string("Cannot send initialization message on socket (errno=") + strerror(errno) + ")");
@@ -131,23 +134,24 @@ void ExternalDecisionComponent::init(const uint8_t *init_data, uint32_t init_siz
 
         // Wait & read the reply on the socket
         // format: flags(uint32), serialized Message that should contain an EDCHello event
-        zmq_msg_t msg2;
-        zmq_msg_init(&msg2);
-        if (zmq_msg_recv(&msg2, _process->zmq_socket, 0) == -1)
+        zmq_msg_t edc_hello_msg;
+        zmq_msg_init(&edc_hello_msg);
+        if (zmq_msg_recv(&edc_hello_msg, _process->zmq_socket, 0) == -1)
             throw std::runtime_error(std::string("Cannot read message on socket (errno=") + strerror(errno) + ")");
 
-        uint32_t buffer_size = zmq_msg_size(&msg2);
-        if (buffer_size < 4)
-            throw std::runtime_error(std::string("An EDC replied an invalid message to the init sequence: received message should contain at least 4 bytes for the serialization flags"));
+        uint8_t * raw_zmq_buffer = (uint8_t *)zmq_msg_data(&edc_hello_msg);
+        uint32_t raw_zmq_buffer_size = zmq_msg_size(&edc_hello_msg);
+        if (raw_zmq_buffer_size < sizeof(*flags))
+        {
+            throw std::runtime_error(std::string("An EDC replied an invalid message to the init sequence: received message should contain at least ") + std::to_string(sizeof(*flags)) + " bytes for the serialization flags");
+        }
 
-        // Get serialization_flag
-        uint8_t * buffer = (uint8_t *)zmq_msg_data(&msg2);
-        *flags = *((uint32_t*)buffer);
+        // Extract flags from raw buffer
+        *flags = *((uint32_t*)raw_zmq_buffer);
 
-        // Get the serialized Message (the remainder of msg)
-        *reply_data = buffer + 4;
-        *reply_size = buffer_size - 4;
-
+        // Get the serialized Message (the remainder of edc_hello_msg)
+        *reply_data = raw_zmq_buffer + sizeof(*flags);
+        *reply_size = raw_zmq_buffer_size - sizeof(*flags);
     } break;
     }
 }
