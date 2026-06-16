@@ -30,26 +30,11 @@ void server_process(BatsimContext * context)
     data->context = context;
     data->sched_ready = true;
 
-    // Init the EDC and retreive its answer
+    // Init the EDC and retrieve its answer
     uint32_t flags;
-    uint8_t * hello_buffer;
-    uint32_t hello_buffer_size;
-    context->edc->init((const uint8_t*)context->edc_init_str.data(), context->edc_init_str.size(),
-                      &flags,
-                      &hello_buffer, &hello_buffer_size
-    );
-
-    context->edc_json_format = ((flags & BATSIM_EDC_FORMAT_JSON) != 0);
-
-    if (context->edc_json_format)
-    {
-        XBT_INFO("Received '%s'", (char *) hello_buffer);
-    }
-
-    // Parse EDCHello message and store it in an inter-actor message list
     double now = -1;
     std::shared_ptr<std::vector<IPMessageWithTimestamp> > messages(new std::vector<IPMessageWithTimestamp>());
-    protocol::parse_batprotocol_message(hello_buffer, hello_buffer_size, now, messages, context);
+    context->edc->init((const uint8_t*)context->edc_init_str.data(), context->edc_init_str.size(), flags, now, messages, context);
 
     // There must be one event in the message and it must be EDCHello
     if (messages->size() == 1)
@@ -202,27 +187,17 @@ void finish_message_and_call_edc(ServerData * data)
     batprotocol::serialize_message(*context->proto_msg_builder, context->edc_json_format, (const uint8_t**)&what_happened_buffer, &what_happened_buffer_size);
 
     // call the external decision component
-    uint8_t * decisions_buffer = nullptr;
-    uint32_t decisions_buffer_size = 0u;
+    double now = -1;
+    std::shared_ptr<std::vector<IPMessageWithTimestamp> > messages(new std::vector<IPMessageWithTimestamp>());
     try
     {
-        if (context->edc_json_format)
-        {
-            XBT_INFO("Sending '%s'", (const char*) what_happened_buffer);
-        }
-
         auto start = chrono::steady_clock::now();
 
-        context->edc->take_decisions(what_happened_buffer, what_happened_buffer_size, &decisions_buffer, &decisions_buffer_size);
+        context->edc->take_decisions(what_happened_buffer, what_happened_buffer_size, now, messages, context);
 
         auto end = chrono::steady_clock::now();
         long double elapsed_microseconds = static_cast<long double>(chrono::duration <long double, micro> (end - start).count());
         context->microseconds_used_by_scheduler += elapsed_microseconds;
-
-        if (context->edc_json_format)
-        {
-            XBT_INFO("Received '%s'", (char *)decisions_buffer);
-        }
     }
     catch(const std::runtime_error & error)
     {
@@ -237,11 +212,6 @@ void finish_message_and_call_edc(ServerData * data)
         XBT_INFO("Output files flushed. Aborting execution now.");
         throw runtime_error("Execution aborted (communication with external decision component failed)");
     }
-
-    // parse the decisions and store them in an inter-actor message list
-    double now = -1;
-    std::shared_ptr<std::vector<IPMessageWithTimestamp> > messages(new std::vector<IPMessageWithTimestamp>());
-    protocol::parse_batprotocol_message(decisions_buffer, decisions_buffer_size, now, messages, context);
 
     // the what_happened buffer is no longer needed, the associated MessageBuilder can be cleared
     context->proto_msg_builder->clear(simgrid::s4u::Engine::get_clock());

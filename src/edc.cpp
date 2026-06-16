@@ -87,17 +87,24 @@ ExternalDecisionComponent *ExternalDecisionComponent::new_process(void *zmq_cont
  * @param[in] init_data The initialization data
  * @param[in] init_size The initialization data size (in bytes)
  * @param[out] flags The initialization flags, as set by the EDC
- * @param[out] reply_data The reply Message, serialized consistenly with flags.
- * @param[out] reply_size The reply size (in bytes)
+ * @param[out] now The timestamp of the EDC hello (reply) message
+ * @param[out] messages The inter-actor message list storing the decisions
+ * @param[inout] context Batsim context
  */
-void ExternalDecisionComponent::init(const uint8_t *init_data, uint32_t init_size, uint32_t *flags, uint8_t **reply_data, uint32_t *reply_size)
+void ExternalDecisionComponent::init(const uint8_t *init_data, uint32_t init_size, uint32_t & flags, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp>> & messages, BatsimContext * context)
 {
+    static_assert(sizeof(init_size) == 4, "batprotocol requires init_size to be encoded with 4 bytes");
+    static_assert(sizeof(flags) == 4, "batprotocol requires flags to be encoded with 4 bytes");
+
+    uint8_t * hello_buffer = nullptr;
+    uint32_t hello_buffer_size = 0u;
+
     switch(_type)
     {
     case EDCType::LIBRARY: {
         uint8_t return_code = 0u;
         try {
-            return_code = _library->init(init_data, init_size, flags, reply_data, reply_size);
+            return_code = _library->init(init_data, init_size, &flags, &hello_buffer, &hello_buffer_size);
         }
         catch (const std::exception & e) {
             throw std::runtime_error("Exception thrown by the EDC library init function: " + std::string(e.what()));
@@ -106,6 +113,7 @@ void ExternalDecisionComponent::init(const uint8_t *init_data, uint32_t init_siz
             throw std::runtime_error("Error while calling init on the EDC library: returned " + std::to_string(return_code));
         }
     } break;
+
     case EDCType::PROCESS: {
         // TODO: use multipart message instead of sequencing/serializing data by hand.
 
@@ -141,19 +149,29 @@ void ExternalDecisionComponent::init(const uint8_t *init_data, uint32_t init_siz
 
         uint8_t * raw_zmq_buffer = (uint8_t *)zmq_msg_data(&edc_hello_msg);
         uint32_t raw_zmq_buffer_size = zmq_msg_size(&edc_hello_msg);
-        if (raw_zmq_buffer_size < sizeof(*flags))
+        if (raw_zmq_buffer_size < sizeof(flags))
         {
-            throw std::runtime_error(std::string("An EDC replied an invalid message to the init sequence: received message should contain at least ") + std::to_string(sizeof(*flags)) + " bytes for the serialization flags");
+            throw std::runtime_error(std::string("An EDC replied an invalid message to the init sequence: received message should contain at least ") + std::to_string(sizeof(flags)) + " bytes for the serialization flags");
         }
 
         // Extract flags from raw buffer
-        *flags = *((uint32_t*)raw_zmq_buffer);
+        flags = *((uint32_t*)raw_zmq_buffer);
 
         // Get the serialized Message (the remainder of edc_hello_msg)
-        *reply_data = raw_zmq_buffer + sizeof(*flags);
-        *reply_size = raw_zmq_buffer_size - sizeof(*flags);
+        hello_buffer = raw_zmq_buffer + sizeof(flags);
+        hello_buffer_size = raw_zmq_buffer_size - sizeof(flags);
     } break;
     }
+
+    context->edc_json_format = ((flags & BATSIM_EDC_FORMAT_JSON) != 0);
+
+    if (context->edc_json_format)
+    {
+        XBT_INFO("Received '%s'", (char *) hello_buffer);
+    }
+
+    // Parse EDCHello message and store it in an inter-actor message list
+    protocol::parse_batprotocol_message(hello_buffer, hello_buffer_size, now, messages, context);
 }
 
 /**
@@ -185,11 +203,20 @@ ExternalDecisionComponent::~ExternalDecisionComponent()
  * @brief Calls take_decisions on an ExternalDecisionComponent
  * @param[in] what_happened_buffer The input buffer
  * @param[in] what_happened_buffer_size The input buffer size
- * @param[out] decisions_buffer The output buffer
- * @param[out] decisions_buffer_size The output buffer size
+ * @param[out] now The timestamp of the EDC decisions (reply) message
+ * @param[out] messages The inter-actor message list storing the decisions
+ * @param[in] context Batsim context
  */
-void ExternalDecisionComponent::take_decisions(uint8_t *what_happened_buffer, uint32_t what_happened_buffer_size, uint8_t **decisions_buffer, uint32_t *decisions_buffer_size)
+void ExternalDecisionComponent::take_decisions(uint8_t * what_happened_buffer, uint32_t what_happened_buffer_size, double & now, std::shared_ptr<std::vector<IPMessageWithTimestamp>> & messages, BatsimContext * context)
 {
+    uint8_t * decisions_buffer = nullptr;
+    uint32_t decisions_buffer_size = 0u;
+
+    if (context->edc_json_format)
+    {
+        XBT_INFO("Sending '%s'", (const char*) what_happened_buffer);
+    }
+
     switch(_type)
     {
     case EDCType::LIBRARY: {
@@ -197,14 +224,13 @@ void ExternalDecisionComponent::take_decisions(uint8_t *what_happened_buffer, ui
         try
         {
             XBT_DEBUG("Calling the external library");
-            return_code = _library->take_decisions(what_happened_buffer, what_happened_buffer_size, decisions_buffer, decisions_buffer_size);
+            return_code = _library->take_decisions(what_happened_buffer, what_happened_buffer_size, &decisions_buffer, &decisions_buffer_size);
             XBT_DEBUG("External library call finished");
         }
         catch (const std::exception & e)
         {
             throw std::runtime_error("Exception thrown by the EDC library take_decisions function: " + std::string(e.what()));
         }
-
         if (return_code != 0)
         {
             throw std::runtime_error("Error while calling take_decisions on the EDC library: returned " + std::to_string(return_code));
@@ -222,10 +248,18 @@ void ExternalDecisionComponent::take_decisions(uint8_t *what_happened_buffer, ui
         if (zmq_msg_recv(&msg, _process->zmq_socket, 0) == -1)
             throw std::runtime_error(std::string("Cannot read message on socket (errno=") + strerror(errno) + ")");
 
-        *decisions_buffer = (uint8_t *)zmq_msg_data(&msg);
-        *decisions_buffer_size = zmq_msg_size(&msg);
+        decisions_buffer = (uint8_t *)zmq_msg_data(&msg);
+        decisions_buffer_size = zmq_msg_size(&msg);
     } break;
     }
+
+    if (context->edc_json_format)
+    {
+        XBT_INFO("Received '%s'", (char *)decisions_buffer);
+    }
+
+    // Parse the EDC decisions and store them in an inter-actor message list
+    protocol::parse_batprotocol_message(decisions_buffer, decisions_buffer_size, now, messages, context);
 }
 
 /**
