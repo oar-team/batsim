@@ -82,6 +82,19 @@ ExternalDecisionComponent *ExternalDecisionComponent::new_process(void *zmq_cont
     return edc;
 }
 
+// Allocate a copy of zmq_data guaranteed to be NULL-terminated
+static inline void copy_zmq_buffer_with_null(
+    /* input parameters */
+    const void * const zmq_data, const size_t zmq_size,
+    /* output parameters */
+    uint8_t * & copy_data, uint32_t & copy_size)
+{
+    copy_size = zmq_size + 1;
+    copy_data = new uint8_t[copy_size];
+    memcpy(copy_data, zmq_data, zmq_size);
+    copy_data[zmq_size] = '\0';  // enforce NULL termination
+}
+
 /**
  * @brief Call init on the external decision component
  * @param[in] init_data The initialization data
@@ -157,9 +170,9 @@ void ExternalDecisionComponent::init(const uint8_t *init_data, uint32_t init_siz
         // Extract flags from raw buffer
         flags = *((uint32_t*)raw_zmq_buffer);
 
-        // Get the serialized Message (the remainder of edc_hello_msg)
-        hello_buffer = raw_zmq_buffer + sizeof(flags);
-        hello_buffer_size = raw_zmq_buffer_size - sizeof(flags);
+        // Extract the serialized message (the remainder of edc_hello_msg)
+        // Parsing expects a NULL-terminated string: use a temporary buffer
+        copy_zmq_buffer_with_null(raw_zmq_buffer + sizeof(flags), raw_zmq_buffer_size - sizeof(flags), hello_buffer, hello_buffer_size);
     } break;
     }
 
@@ -172,6 +185,13 @@ void ExternalDecisionComponent::init(const uint8_t *init_data, uint32_t init_siz
 
     // Parse EDCHello message and store it in an inter-actor message list
     protocol::parse_batprotocol_message(hello_buffer, hello_buffer_size, now, messages, context);
+
+    if (_type == EDCType::PROCESS) {
+        // Release temporary buffer
+        delete[] hello_buffer;
+        hello_buffer = nullptr;
+        hello_buffer_size = 0;
+    }
 }
 
 /**
@@ -248,8 +268,8 @@ void ExternalDecisionComponent::take_decisions(uint8_t * what_happened_buffer, u
         if (zmq_msg_recv(&msg, _process->zmq_socket, 0) == -1)
             throw std::runtime_error(std::string("Cannot read message on socket (errno=") + strerror(errno) + ")");
 
-        decisions_buffer = (uint8_t *)zmq_msg_data(&msg);
-        decisions_buffer_size = zmq_msg_size(&msg);
+        // Parsing expects a NULL-terminated string: use a temporary buffer
+        copy_zmq_buffer_with_null(zmq_msg_data(&msg), zmq_msg_size(&msg), decisions_buffer, decisions_buffer_size);
     } break;
     }
 
@@ -260,6 +280,13 @@ void ExternalDecisionComponent::take_decisions(uint8_t * what_happened_buffer, u
 
     // Parse the EDC decisions and store them in an inter-actor message list
     protocol::parse_batprotocol_message(decisions_buffer, decisions_buffer_size, now, messages, context);
+
+    if (_type == EDCType::PROCESS) {
+        // Release temporary buffer
+        delete[] decisions_buffer;
+        decisions_buffer = nullptr;
+        decisions_buffer_size = 0;
+    }
 }
 
 /**
