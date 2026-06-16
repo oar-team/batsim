@@ -173,6 +173,9 @@ void ExternalDecisionComponent::init(const uint8_t *init_data, uint32_t init_siz
         // Extract the serialized message (the remainder of edc_hello_msg)
         // Parsing expects a NULL-terminated string: use a temporary buffer
         copy_zmq_buffer_with_null(raw_zmq_buffer + sizeof(flags), raw_zmq_buffer_size - sizeof(flags), hello_buffer, hello_buffer_size);
+
+        // Release zmq internal buffer
+        zmq_msg_close(&edc_hello_msg);
     } break;
     }
 
@@ -270,6 +273,9 @@ void ExternalDecisionComponent::take_decisions(uint8_t * what_happened_buffer, u
 
         // Parsing expects a NULL-terminated string: use a temporary buffer
         copy_zmq_buffer_with_null(zmq_msg_data(&msg), zmq_msg_size(&msg), decisions_buffer, decisions_buffer_size);
+
+        // Release zmq internal buffer
+        zmq_msg_close(&msg);
     } break;
     }
 
