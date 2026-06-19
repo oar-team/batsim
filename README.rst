@@ -46,15 +46,15 @@ Please refer to `Batsim's documentation`_ for more.
     :scale: 100%
     :target: https://www.gnu.org/licenses/lgpl-3.0.en.html
 
-.. |last-release| image:: https://img.shields.io/badge/release-v5.0.0-rc1-blue.svg
+.. |last-release| image:: https://img.shields.io/badge/release-v5.0.0-rc2-blue.svg
     :alt: last release
     :scale: 100%
-    :target: https://github.com/oar-team/batsim/releases/tag/v5.0.0-rc1
+    :target: https://github.com/oar-team/batsim/releases/tag/v5.0.0-rc2
 
-.. |distance-from-previous-release| image:: https://img.shields.io/github/commits-since/oar-team/batsim/v5.0.0-rc1.svg
+.. |distance-from-previous-release| image:: https://img.shields.io/github/commits-since/oar-team/batsim/v5.0.0-rc2.svg
     :alt: distance from previous release
     :scale: 100%
-    :target: https://github.com/oar-team/batsim/compare/v5.0.0-rc1...HEAD
+    :target: https://github.com/oar-team/batsim/compare/v5.0.0-rc2...HEAD
 
 .. |pipeline-status| image:: https://framagit.org/batsim/batsim/badges/master/pipeline.svg
     :alt: pipeline status

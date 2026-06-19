@@ -95,6 +95,10 @@ Added
   talk about probes. flag --trace-probe-data
 
 
+Fixed
+~~~~~
+- Parsing of EDC replies encoded in JSON failed due to diverging conventions between ØMQ (data + length) and the parser (NULL-terminated buffer).
+
 
 Removed (**breaks**)
 ~~~~~~~~~~~~~~~~~~~~
